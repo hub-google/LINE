@@ -31,21 +31,25 @@ if errorlevel 1 (
 
 :: 3. 確保並強制鎖定在 main 分支
 for /f "tokens=*" %%i in ('git branch --show-current 2^>nul') do set "CURRENT_BRANCH=%%i"
-if /i not "%CURRENT_BRANCH%"=="%TARGET_BRANCH%" (
-    echo [提示] 偵測到當前分支為 [%CURRENT_BRANCH%]
-    echo 本專案已鎖定使用 [%TARGET_BRANCH%]，正在為您自動切換...
-    git checkout %TARGET_BRANCH%
-    if errorlevel 1 (
-        echo.
-        echo [錯誤] 無法切換至 %TARGET_BRANCH% 分支！
-        echo 可能原因：本地存在衝突變更或未提交之檔案阻礙切換。
-        echo 請先排除衝突或手動提交後再重新執行。
-        goto :EXIT_ERROR
-    )
-    echo [成功] 已切換回 %TARGET_BRANCH% 分支。
-) else (
-    echo [鎖定分支] %TARGET_BRANCH% (當前分支正確)
+if /i "%CURRENT_BRANCH%"=="%TARGET_BRANCH%" goto :BRANCH_CHECKED
+
+echo [提示] 偵測到當前分支為 [%CURRENT_BRANCH%]
+echo 本專案已強制鎖定使用 [%TARGET_BRANCH%]，正在為您自動切換...
+git checkout %TARGET_BRANCH%
+if errorlevel 1 (
+    echo.
+    echo [錯誤] 無法切換至 %TARGET_BRANCH% 分支！
+    echo 可能原因：本地存在衝突變更或未提交之檔案阻礙切換。
+    echo 請先排除衝突或手動提交後再重新執行。
+    goto :EXIT_ERROR
 )
+echo [成功] 已切換回 %TARGET_BRANCH% 分支。
+goto :PROCEED_GIT
+
+:BRANCH_CHECKED
+echo [鎖定分支] %TARGET_BRANCH%（當前分支正確）
+
+:PROCEED_GIT
 echo.
 
 :: 4. 檢查遠端倉庫連線並獲取最新狀態
