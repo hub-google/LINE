@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>已成功保留群組 - LINE群組管家</title>
+    <style>
+        :root {
+            --bg-primary: #0F172A;
+            --bg-card: #1E293B;
+            --border-color: #334155;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --accent-green: #10B981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 40px 24px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .icon-badge {
+            width: 72px;
+            height: 72px;
+            background-color: rgba(16, 185, 129, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 36px;
+        }
+
+        h1 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #10B981;
+        }
+
+        p.desc {
+            font-size: 15px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .group-badge {
+            display: inline-block;
+            background-color: #0F172A;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 600;
+            color: #F8FAFC;
+            margin-bottom: 24px;
+        }
+
+        .tip {
+            font-size: 13px;
+            color: #64748B;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon-badge">✅</div>
+        <h1>解散程序已終止！</h1>
+        <p class="desc">
+            您已成功提出異議。群組解散程序已即刻撤銷，群組將被完整保留。
+        </p>
+
+        <div class="group-badge">
+            📌 {{ group_name }}
+        </div>
+
+        <p class="desc" style="font-size: 14px;">
+            機器人已於群組內發布保留通知，並將自動離開群組。您可以直接關閉此頁面。
+        </p>
+
+        <p class="tip">
+            感謝您的操作，祝您有美好的一天！
+        </p>
+    </div>
+</body>
+</html>

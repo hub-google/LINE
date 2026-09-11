@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(uuid())
+  lineUid      String       @unique
+  displayName  String?
+  avatarUrl    String?
+  createdAt    DateTime     @default(now())
+
+  projects     Project[]    @relation("InitiatorProjects")
+  memberships  Membership[]
+  transactions Transaction[]
+}
+
+model Project {
+  id           String       @id @default(uuid())
+  initiatorId  String
+  name         String
+  amount       Decimal      @db.Decimal(10, 2)
+  payDay       Int          // 1-31
+  paymentLink  String?
+  status       String       @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt    DateTime     @default(now())
+
+  initiator    User         @relation("InitiatorProjects", fields: [initiatorId], references: [id])
+  memberships  Membership[]
+  transactions Transaction[]
+}
+
+model Membership {
+  id        String   @id @default(uuid())
+  projectId String
+  userId    String
+  role      String   @default("PAYER") // INITIATOR, PAYER
+  joinedAt  DateTime @default(now())
+  status    String   @default("ACTIVE") // ACTIVE, INACTIVE
+
+  project   Project  @relation(fields: [projectId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([projectId, userId])
+}
+
+model Transaction {
+  id           String    @id @default(uuid())
+  projectId    String
+  payerId      String
+  billingMonth String    // Format: YYYY-MM
+  amount       Decimal   @db.Decimal(10, 2)
+  status       String    @default("UNPAID") // UNPAID, PENDING, COMPLETED, OVERDUE
+  notifiedAt   DateTime?
+  paidAt       DateTime?
+  confirmedAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  project      Project   @relation(fields: [projectId], references: [id])
+  payer        User      @relation(fields: [payerId], references: [id])
+}

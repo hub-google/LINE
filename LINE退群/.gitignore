@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.so
+
+# 環境設定（含私密金鑰，禁止提交）
+.env
+credentials.json
+
+# 資料目錄（本機使用者資料）
+data/
+
+# 虛擬環境
+.venv/
+venv/
+env/
+
+# PyInstaller 輸出
+dist/
+build/
+*.spec.bak
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# 日誌
+*.log
+
+# 系統
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 圖像資產（開發用，若體積過大）
+# assets/*.png

@@ -1,0 +1,488 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------------------------
+// 1. 使用者與身分認證 (User & Identity)
+// -----------------------------------------------------------------------------
+model User {
+  id          String   @id @default(uuid())
+  lineUserId  String   @unique @map("line_user_id")
+  displayName String?  @map("display_name")
+  pictureUrl  String?  @map("picture_url")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  lastSeenAt  DateTime @default(now()) @map("last_seen_at")
+
+  memberships  MerchantMember[]
+  tickets      QueueTicket[]
+  reservations Reservation[]
+  orders       Order[]
+
+  @@map("users")
+}
+
+// -----------------------------------------------------------------------------
+// 2. 多租戶模型：商家與分店 (Merchant & Branch)
+// -----------------------------------------------------------------------------
+model Merchant {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique
+  status    String   @default("ACTIVE") // ACTIVE, SUSPENDED, INACTIVE
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  branches     Branch[]
+  members      MerchantMember[]
+  invitations  StaffInvitation[]
+  catalogItems CatalogItem[]
+  reservations Reservation[]
+  queues       Queue[]
+  tickets      QueueTicket[]
+  orders       Order[]
+  auditLogs    AuditLog[]
+
+  @@map("merchants")
+}
+
+model Branch {
+  id         String   @id @default(uuid())
+  merchantId String   @map("merchant_id")
+  name       String
+  slug       String   @unique
+  address    String?
+  phone      String?
+  timezone   String   @default("Asia/Taipei")
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  merchant          Merchant                 @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  settings          BranchSetting?
+  businessHours     BusinessHour[]
+  hourExceptions    BusinessHourException[]
+  memberScopes      MemberBranchScope[]
+  catalogItems      CatalogItem[]
+  reservationSlots  ReservationSlot[]
+  reservations      Reservation[]
+  queues            Queue[]
+  tickets           QueueTicket[]
+  orders            Order[]
+
+  @@map("branches")
+}
+
+model BranchSetting {
+  id                             String  @id @default(uuid())
+  branchId                       String  @unique @map("branch_id")
+  timezone                       String  @default("Asia/Taipei")
+  queueEnabled                   Boolean @default(true) @map("queue_enabled")
+  reservationEnabled             Boolean @default(true) @map("reservation_enabled")
+  orderingEnabled                Boolean @default(true) @map("ordering_enabled")
+  paymentEnabled                 Boolean @default(true) @map("payment_enabled")
+  defaultServiceMinutes          Int     @default(20) @map("default_service_minutes")
+  queueOpenTime                  String  @default("09:00") @map("queue_open_time")
+  queueCloseTime                 String  @default("21:00") @map("queue_close_time")
+  maxActiveTicketsPerUser        Int     @default(1) @map("max_active_tickets_per_user")
+  reservationCancelBeforeMinutes Int     @default(120) @map("reservation_cancel_before_minutes")
+  nearTurnNotifyCount            Int     @default(3) @map("near_turn_notify_count")
+  returnPolicy                   String  @default("STAFF_DECIDES") @map("return_policy") // APPEND_END, INSERT_AFTER_N, STAFF_DECIDES
+
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@map("branch_settings")
+}
+
+model BusinessHour {
+  id        String   @id @default(uuid())
+  branchId  String   @map("branch_id")
+  weekday   Int      // 0 (Sun) - 6 (Sat)
+  openTime  String   @map("open_time")  // HH:mm
+  closeTime String   @map("close_time") // HH:mm
+  isClosed  Boolean  @default(false) @map("is_closed")
+
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, weekday])
+  @@map("business_hours")
+}
+
+model BusinessHourException {
+  id        String   @id @default(uuid())
+  branchId  String   @map("branch_id")
+  date      String   // YYYY-MM-DD
+  openTime  String?  @map("open_time")
+  closeTime String?  @map("close_time")
+  closed    Boolean  @default(false)
+  note      String?
+
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, date])
+  @@map("business_hour_exceptions")
+}
+
+// -----------------------------------------------------------------------------
+// 3. 成員與安全邀請 (Members & Staff Invitations)
+// -----------------------------------------------------------------------------
+model MerchantMember {
+  id         String   @id @default(uuid())
+  merchantId String   @map("merchant_id")
+  userId     String   @map("user_id")
+  role       String   // OWNER, MANAGER, STAFF
+  status     String   @default("ACTIVE") // ACTIVE, SUSPENDED, REVOKED
+  createdBy  String?  @map("created_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  merchant     Merchant            @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branchScopes MemberBranchScope[]
+
+  @@unique([merchantId, userId])
+  @@map("merchant_members")
+}
+
+model MemberBranchScope {
+  id       String @id @default(uuid())
+  memberId String @map("member_id")
+  branchId String @map("branch_id")
+
+  member MerchantMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  branch Branch         @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, branchId])
+  @@map("member_branch_scopes")
+}
+
+model StaffInvitation {
+  id               String    @id @default(uuid())
+  merchantId       String    @map("merchant_id")
+  branchId         String?   @map("branch_id")
+  role             String    // MANAGER, STAFF
+  tokenHash        String    @unique @map("token_hash")
+  expiresAt        DateTime  @map("expires_at")
+  status           String    @default("PENDING") // PENDING, ACCEPTED, REVOKED, EXPIRED
+  invitedByUserId  String    @map("invited_by_user_id")
+  acceptedByUserId String?   @map("accepted_by_user_id")
+  acceptedAt       DateTime? @map("accepted_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@map("staff_invitations")
+}
+
+// -----------------------------------------------------------------------------
+// 4. 菜單與服務品項 (Catalog Items)
+// -----------------------------------------------------------------------------
+model CatalogItem {
+  id              String   @id @default(uuid())
+  merchantId      String   @map("merchant_id")
+  branchId        String?  @map("branch_id")
+  type            String   // SERVICE, FOOD, PRODUCT, ADDON
+  name            String
+  description     String?
+  price           Int      // 整數計價 (TWD 元)
+  currency        String   @default("TWD")
+  active          Boolean  @default(true)
+  sortOrder       Int      @default(0) @map("sort_order")
+  imageUrl        String?  @map("image_url")
+  durationMinutes Int?     @map("duration_minutes")
+  isDeleted       Boolean  @default(false) @map("is_deleted")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  branch   Branch?  @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@map("catalog_items")
+}
+
+// -----------------------------------------------------------------------------
+// 5. 預約排程 (Reservations & Slots)
+// -----------------------------------------------------------------------------
+model ReservationSlot {
+  id          String   @id @default(uuid())
+  branchId    String   @map("branch_id")
+  serviceId   String?  @map("service_id")
+  staffId     String?  @map("staff_id")
+  startAt     DateTime @map("start_at")
+  endAt       DateTime @map("end_at")
+  capacity    Int      @default(1)
+  bookedCount Int      @default(0) @map("booked_count")
+  status      String   @default("OPEN") // OPEN, FULL, CLOSED
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  branch       Branch        @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  reservations Reservation[]
+
+  @@map("reservation_slots")
+}
+
+model Reservation {
+  id              String    @id @default(uuid())
+  merchantId      String    @map("merchant_id")
+  branchId        String    @map("branch_id")
+  userId          String    @map("user_id")
+  slotId          String?   @map("slot_id")
+  customerName    String    @map("customer_name")
+  customerPhone   String?   @map("customer_phone")
+  partySize       Int       @default(1) @map("party_size")
+  status          String    @default("CONFIRMED") // PENDING, CONFIRMED, CHECKED_IN, COMPLETED, CANCELLED_BY_CUSTOMER, CANCELLED_BY_MERCHANT, NO_SHOW
+  notes           String?
+  checkInTicketId String?   @unique @map("check_in_ticket_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  merchant Merchant         @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  branch   Branch           @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slot     ReservationSlot? @relation(fields: [slotId], references: [id])
+  ticket   QueueTicket?     @relation("ReservationTicket")
+  orders   Order[]
+
+  @@map("reservations")
+}
+
+// -----------------------------------------------------------------------------
+// 6. 現場排隊與叫號引擎 (Queue Engine & Decoupled Ordering)
+// -----------------------------------------------------------------------------
+model Queue {
+  id           String    @id @default(uuid())
+  branchId     String    @map("branch_id")
+  merchantId   String    @map("merchant_id")
+  businessDate String    @map("business_date") // YYYY-MM-DD
+  status       String    @default("OPEN") // OPEN, CLOSED
+  prefix       String    @default("A")
+  nextNumber   Int       @default(1) @map("next_number")
+  openedAt     DateTime  @default(now()) @map("opened_at")
+  closedAt     DateTime? @map("closed_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  branch    Branch          @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  merchant  Merchant        @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  tickets   QueueTicket[]
+  positions QueuePosition[]
+  events    QueueEvent[]
+
+  @@unique([branchId, businessDate, prefix])
+  @@map("queues")
+}
+
+model QueueTicket {
+  id               String    @id @default(uuid())
+  merchantId       String    @map("merchant_id")
+  branchId         String    @map("branch_id")
+  queueId          String    @map("queue_id")
+  userId           String?   @map("user_id")
+  reservationId    String?   @unique @map("reservation_id")
+  ticketNumber     Int       @map("ticket_number")
+  displayNumber    String    @map("display_number") // 如 A001, A050
+  status           String    @default("WAITING") // WAITING, CALLED, SERVING, PASSED, RETURNED, COMPLETED, CANCELLED, NO_SHOW
+  joinedAt         DateTime  @default(now()) @map("joined_at")
+  calledAt         DateTime? @map("called_at")
+  serviceStartedAt DateTime? @map("service_started_at")
+  completedAt      DateTime? @map("completed_at")
+  passedAt         DateTime? @map("passed_at")
+  cancelledAt      DateTime? @map("cancelled_at")
+  priority         Int       @default(0)
+  notes            String?
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  merchant    Merchant       @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  branch      Branch         @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  queue       Queue          @relation(fields: [queueId], references: [id], onDelete: Cascade)
+  user        User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  reservation Reservation?   @relation("ReservationTicket", fields: [reservationId], references: [id], onDelete: SetNull)
+  position    QueuePosition?
+  orders      Order[]
+
+  @@map("queue_tickets")
+}
+
+model QueuePosition {
+  id             String   @id @default(uuid())
+  queueId        String   @map("queue_id")
+  ticketId       String   @unique @map("ticket_id")
+  sortKey        Float    @map("sort_key") // LexoRank 概念浮點數 (1000.0, 2000.0...)
+  insertedReason String   @default("NORMAL") @map("inserted_reason") // NORMAL, INSERT_NEXT, RETURNED
+  insertedBy     String?  @map("inserted_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  queue  Queue       @relation(fields: [queueId], references: [id], onDelete: Cascade)
+  ticket QueueTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([queueId, sortKey])
+  @@map("queue_positions")
+}
+
+model QueueEvent {
+  id          String   @id @default(uuid())
+  merchantId  String   @map("merchant_id")
+  branchId    String   @map("branch_id")
+  queueId     String   @map("queue_id")
+  ticketId    String?  @map("ticket_id")
+  eventType   String   @map("event_type") // TICKET_CREATED, TICKET_CALLED, TICKET_RECALLED, TICKET_PASSED, TICKET_RETURNED, TICKET_REORDERED, SERVICE_STARTED, SERVICE_COMPLETED, TICKET_CANCELLED
+  actorUserId String?  @map("actor_user_id")
+  oldState    String?  @map("old_state")
+  newState    String?  @map("new_state")
+  metadata    String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  queue Queue @relation(fields: [queueId], references: [id], onDelete: Cascade)
+
+  @@map("queue_events")
+}
+
+// -----------------------------------------------------------------------------
+// 7. 訂單與項目級狀態 (Orders & Order Items)
+// -----------------------------------------------------------------------------
+model Order {
+  id            String   @id @default(uuid())
+  merchantId    String   @map("merchant_id")
+  branchId      String   @map("branch_id")
+  userId        String?  @map("user_id")
+  reservationId String?  @map("reservation_id")
+  queueTicketId String?  @map("queue_ticket_id")
+  orderNumber   String   @unique @map("order_number")
+  status        String   @default("OPEN") // DRAFT, OPEN, PARTIALLY_PAID, PAID, COMPLETED, CANCELLED, REFUNDED
+  currency      String   @default("TWD")
+  subtotal      Int      @default(0)
+  discountTotal Int      @default(0) @map("discount_total")
+  paidTotal     Int      @default(0) @map("paid_total")
+  dueTotal      Int      @default(0) @map("due_total")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  merchant    Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  branch      Branch        @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  reservation Reservation?  @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  ticket      QueueTicket?  @relation(fields: [queueTicketId], references: [id], onDelete: SetNull)
+  items       OrderItem[]
+  payments    Payment[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id                String   @id @default(uuid())
+  orderId           String   @map("order_id")
+  catalogItemId     String?  @map("catalog_item_id")
+  nameSnapshot      String   @map("name_snapshot")
+  unitPrice         Int      @map("unit_price")
+  quantity          Int      @default(1)
+  totalAmount       Int      @map("total_amount")
+  paymentStatus     String   @default("UNPAID") @map("payment_status") // UNPAID, PARTIALLY_PAID, PAID, REFUNDED, VOIDED
+  fulfillmentStatus String   @default("PENDING") @map("fulfillment_status") // PENDING, PREPARING, DELIVERED, CANCELLED
+  addedSource       String   @default("ONLINE") @map("added_source") // ONLINE, STAFF_ONSITE
+  addedByUserId     String?  @map("added_by_user_id")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  order       Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  allocations PaymentAllocation[]
+
+  @@map("order_items")
+}
+
+// -----------------------------------------------------------------------------
+// 8. 金流交易與項目級分配 (Payments & Payment Allocations)
+// -----------------------------------------------------------------------------
+model Payment {
+  id                    String    @id @default(uuid())
+  orderId               String    @map("order_id")
+  provider              String    // LINE_PAY, MANUAL_CASH, MANUAL_CARD, OTHER
+  method                String    // LINE_PAY, CASH, CARD, OTHER
+  status                String    @default("CREATED") // CREATED, REQUESTED, AUTHORIZED, PAID, FAILED, CANCELLED, REFUNDED
+  amount                Int
+  currency              String    @default("TWD")
+  externalTransactionId String?   @map("external_transaction_id")
+  idempotencyKey        String    @unique @map("idempotency_key")
+  requestedAt           DateTime  @default(now()) @map("requested_at")
+  authorizedAt          DateTime? @map("authorized_at")
+  paidAt                DateTime? @map("paid_at")
+  failedAt              DateTime? @map("failed_at")
+  metadata              String?
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  order       Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  allocations PaymentAllocation[]
+
+  @@unique([provider, externalTransactionId])
+  @@map("payments")
+}
+
+model PaymentAllocation {
+  id          String   @id @default(uuid())
+  paymentId   String   @map("payment_id")
+  orderItemId String   @map("order_item_id")
+  amount      Int
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  payment   Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  @@map("payment_allocations")
+}
+
+// -----------------------------------------------------------------------------
+// 9. 通知、審計與冪等防護 (Notifications, Audit & Idempotency)
+// -----------------------------------------------------------------------------
+model Notification {
+  id         String    @id @default(uuid())
+  userId     String    @map("user_id")
+  type       String    // QUEUE_JOINED, QUEUE_CALLED, QUEUE_PASSED, RESERVATION_CONFIRMED, PAYMENT_SUCCESS
+  entityType String    @map("entity_type") // TICKET, RESERVATION, ORDER, PAYMENT
+  entityId   String    @map("entity_id")
+  dedupeKey  String    @unique @map("dedupe_key")
+  status     String    @default("PENDING") // PENDING, SENT, FAILED
+  sentAt     DateTime? @map("sent_at")
+  error      String?
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@map("notifications")
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  merchantId   String   @map("merchant_id")
+  branchId     String?  @map("branch_id")
+  actorUserId  String   @map("actor_user_id")
+  actorRole    String   @map("actor_role")
+  action       String
+  resourceType String   @map("resource_type")
+  resourceId   String   @map("resource_id")
+  beforeState  String?  @map("before_state")
+  afterState   String?  @map("after_state")
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
+}
+
+model IdempotencyRecord {
+  key            String   @id
+  userId         String?  @map("user_id")
+  endpoint       String
+  requestHash    String   @map("request_hash")
+  responseStatus Int      @map("response_status")
+  responseBody   String   @map("response_body")
+  createdAt      DateTime @default(now()) @map("created_at")
+  expiresAt      DateTime @map("expires_at")
+
+  @@map("idempotency_records")
+}

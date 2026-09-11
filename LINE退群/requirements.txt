@@ -1,0 +1,39 @@
+# ==============================================================================
+# LINE 批次退群與群組清理工具 - Python 套件依賴清單
+# ==============================================================================
+
+# --- GUI 介面 ---
+customtkinter>=6.0.0
+Pillow>=10.0.0          # 圖片顯示（CustomTkinter 依賴）
+
+# --- 視窗自動化 ---
+pywinauto>=0.6.8        # Windows UI 自動化（UIAutomation 核心）
+pyautogui>=0.9.54       # 滑鼠/鍵盤模擬
+opencv-python>=4.9.0    # 圖像比對輔助定位
+pywin32>=306            # Windows API（視窗搜尋、前景視窗切換）
+
+# --- 環境變數與設定 ---
+python-dotenv>=1.0.1
+pydantic>=2.7.0         # 設定與資料驗證
+
+# --- 工具與日誌 ---
+loguru>=0.7.2           # 結構化日誌
+rich>=13.0.0            # 終端美化輸出
+
+# --- 雲端後端與中繼服務 (FastAPI + LINE Bot + Google Sheets) ---
+fastapi>=0.111.0
+uvicorn[standard]>=0.30.0
+python-multipart>=0.0.9 # 表單資料解析 (2-Step 異議網頁確認)
+line-bot-sdk>=3.11.0    # LINE Messaging API v3
+gspread>=6.1.0          # Google Sheets API v4
+google-auth>=2.30.0     # GCP 服務帳號驗證
+APScheduler>=3.10.4     # 72 小時倒數排程引擎
+httpx>=0.27.0           # 跨端同步非同步/同步 HTTP 客戶端
+jinja2>=3.1.4           # 異議終止兩階段確認 HTML 模板引擎
+
+# --- 測試與打包工具 ---
+pytest>=8.0.0           # 單元測試框架
+pytest-asyncio>=0.23.0  # 非同步測試支援
+pyinstaller>=6.0.0      # Windows 獨立執行檔打包工具
+
+

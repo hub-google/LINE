@@ -1,0 +1,80 @@
+{
+  "_comment": "LINE 電腦版視窗元件定位設定。介面改版時只需更新此檔案，無需修改程式碼。",
+  "_version": "1.0.0",
+  "_line_version_tested": "Windows LINE 9.x",
+
+  "window": {
+    "title_contains": "LINE",
+    "class_name": "Qt5154QWindowIcon"
+  },
+
+  "chat_list": {
+    "strategy": "ui_automation",
+    "control_type": "List",
+    "auto_id_contains": "ChatList",
+    "fallback_image": "assets/chat_list_anchor.png"
+  },
+
+  "group_item": {
+    "strategy": "ui_automation",
+    "control_type": "ListItem",
+    "child_title_contains": ""
+  },
+
+  "chat_header_menu_button": {
+    "strategy": "ui_automation",
+    "control_type": "Button",
+    "name_contains": "選單",
+    "fallback_image": "assets/header_menu_btn.png",
+    "fallback_image_threshold": 0.85
+  },
+
+  "leave_group_menu_item": {
+    "strategy": "ui_automation",
+    "control_type": "MenuItem",
+    "name_options": ["退出群組", "Leave Group", "Leave group"],
+    "fallback_image": "assets/leave_group_menu.png"
+  },
+
+  "leave_group_confirm_button": {
+    "strategy": "ui_automation",
+    "control_type": "Button",
+    "name_options": ["確定", "OK", "Leave"],
+    "fallback_image": "assets/confirm_leave_btn.png"
+  },
+
+  "member_list_button": {
+    "strategy": "ui_automation",
+    "control_type": "Button",
+    "name_options": ["成員", "Members"],
+    "fallback_image": "assets/member_list_btn.png"
+  },
+
+  "kick_member_button": {
+    "strategy": "context_menu",
+    "name_options": ["移除成員", "Remove member", "Remove from group"],
+    "fallback_image": "assets/kick_member.png"
+  },
+
+  "search_box": {
+    "strategy": "ui_automation",
+    "control_type": "Edit",
+    "name_options": ["搜尋", "Search"],
+    "fallback_image": "assets/search_box.png"
+  },
+
+  "invite_button": {
+    "strategy": "ui_automation",
+    "control_type": "Button",
+    "name_options": ["邀請", "Invite"],
+    "fallback_image": "assets/invite_btn.png"
+  },
+
+  "timing": {
+    "window_connect_timeout_sec": 10,
+    "ui_element_find_timeout_sec": 5,
+    "after_click_delay_sec": 0.8,
+    "after_type_delay_sec": 0.5,
+    "scroll_pause_sec": 0.3
+  }
+}
