@@ -29,7 +29,7 @@ export default function JoinProjectPage({ params }: { params: Promise<{ id: stri
         setLiffError(err.message);
         setLoading(false);
       });
-  }, []);
+  }, [liffId]);
 
   const handleJoin = async () => {
     try {

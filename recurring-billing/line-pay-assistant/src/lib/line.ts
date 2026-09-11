@@ -1,4 +1,4 @@
-import { Client, WebhookEvent } from '@line/bot-sdk';
+import { Client } from '@line/bot-sdk';
 
 const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN || '';
 const channelSecret = process.env.LINE_CHANNEL_SECRET || '';

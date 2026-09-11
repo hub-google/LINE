@@ -17,7 +17,7 @@ type Project = {
 export default function Home() {
   const [token, setToken] = useState("");
   const [projects, setProjects] = useState<Project[]>([]);
-  const [message, setMessage] = useState("正在連接 LINE…");
+  const liffId = process.env.NEXT_PUBLIC_LIFF_ID;\n  const [message, setMessage] = useState(liffId ? "正在連接 LINE…" : "尚未設定 NEXT_PUBLIC_LIFF_ID");
   const [form, setForm] = useState({ name: "", amount: "", payDay: "10", paymentLink: "" });
 
   async function loadProjects(jwt: string) {
@@ -50,7 +50,7 @@ export default function Home() {
       setMessage(`你好，${data.user.displayName || "LINE 使用者"}`);
       await loadProjects(data.token);
     }).catch((e: Error) => setMessage(e.message));
-  }, []);
+  }, [liffId]);
 
   async function createProject(e: React.FormEvent) {
     e.preventDefault();
