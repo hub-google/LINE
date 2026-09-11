@@ -3,90 +3,85 @@
 import { useEffect, useState, use } from "react";
 import liff from "@line/liff";
 
+type Project = {
+  id: string;
+  name: string;
+  amount: string;
+  payDay: number;
+  initiator: { displayName: string | null };
+};
+
 export default function JoinProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: projectId } = use(params);
-  const [liffError, setLiffError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const liffId = process.env.NEXT_PUBLIC_LIFF_ID;
+  const [project, setProject] = useState<Project | null>(null);
+  const [error, setError] = useState<string | null>(liffId ? null : "LIFF ID is not configured.");
+  const [loading, setLoading] = useState(Boolean(liffId));
+  const [joining, setJoining] = useState(false);
 
   useEffect(() => {
-    const liffId = process.env.NEXT_PUBLIC_LIFF_ID;
-    if (!liffId) {
-      setLiffError("LIFF ID is not configured.");
-      setLoading(false);
-      return;
-    }
+    if (!liffId) return;
+    Promise.all([
+      fetch("/api/projects/" + projectId).then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "找不到專案");
+        return data.project as Project;
+      }),
+      liff.init({ liffId }).then(() => {
+        if (!liff.isLoggedIn()) liff.login({ redirectUri: window.location.href });
+      }),
+    ]).then(([p]) => setProject(p))
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [liffId, projectId]);
 
-    liff.init({ liffId })
-      .then(() => {
-        if (!liff.isLoggedIn()) {
-          liff.login({ redirectUri: window.location.href });
-        } else {
-          setLoading(false);
-          // TODO: Call API to get project details and confirm join
-        }
-      })
-      .catch((err: Error) => {
-        setLiffError(err.message);
-        setLoading(false);
-      });
-  }, [liffId]);
-
-  const handleJoin = async () => {
+  async function handleJoin() {
+    setJoining(true);
     try {
       const idToken = liff.getIDToken();
-      // 1. Auth to get JWT
-      const authRes = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken })
+      if (!idToken) throw new Error("無法取得 LINE 登入資訊");
+      const authRes = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
       });
-      const { token } = await authRes.json();
-
-      // 2. Join project
-      const joinRes = await fetch(`/api/projects/${projectId}/join`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+      const auth = await authRes.json();
+      if (!authRes.ok) throw new Error(auth.error || "登入失敗");
+      const joinRes = await fetch("/api/projects/" + projectId + "/join", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + auth.token },
       });
-      
-      if (joinRes.ok) {
-        alert("加入成功！");
-        liff.closeWindow();
-      } else {
-        alert("加入失敗，請稍後再試。");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("發生錯誤");
+      const result = await joinRes.json();
+      if (!joinRes.ok) throw new Error(result.error || "加入失敗");
+      alert("加入成功！");
+      if (liff.isInClient()) liff.closeWindow();
+      else window.location.href = "/";
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "加入失敗");
+    } finally {
+      setJoining(false);
     }
-  };
-
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-500">載入中...</div>;
   }
 
-  return (
-    <main className="min-h-screen bg-gray-50 p-4 flex flex-col items-center justify-center">
-      <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 w-full max-w-sm text-center">
-        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-          </svg>
-        </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">加入定期收費專案</h1>
-        <p className="text-gray-500 mb-8">
-          您即將同意加入此專案。未來每月將會透過 LINE 收到繳費提醒。
-        </p>
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-500">載入中…</div>;
+  if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
+  if (!project) return <div className="min-h-screen flex items-center justify-center">找不到專案</div>;
 
-        {liffError ? (
-          <p className="text-red-500 text-sm">{liffError}</p>
-        ) : (
-          <button 
-            onClick={handleJoin}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-2xl shadow-md transition-all active:scale-[0.98]"
-          >
-            同意並加入
-          </button>
-        )}
+  return (
+    <main className="min-h-screen bg-gray-50 p-4 flex items-center justify-center">
+      <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 w-full max-w-sm">
+        <p className="text-sm text-gray-500">受邀加入固定收費專案</p>
+        <h1 className="text-2xl font-bold mt-1">{project.name}</h1>
+        <div className="my-6 rounded-2xl bg-gray-50 p-4">
+          <div className="text-sm text-gray-500">每月應付</div>
+          <div className="text-3xl font-bold">NT$ {Number(project.amount).toLocaleString()}</div>
+          <div className="text-sm text-gray-600 mt-2">每月 {project.payDay} 日前繳款</div>
+          <div className="text-sm text-gray-600">發起人：{project.initiator.displayName || "LINE 使用者"}</div>
+        </div>
+        <p className="text-xs text-gray-500 mb-5">系統只提供提醒與人工對帳，不會自動扣款；實際付款在第三方支付服務完成。</p>
+        <button disabled={joining} onClick={handleJoin} className="w-full bg-[#06c755] disabled:opacity-50 text-white font-semibold py-4 rounded-2xl">
+          {joining ? "加入中…" : "同意並加入"}
+        </button>
       </div>
     </main>
   );
