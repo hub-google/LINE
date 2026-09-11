@@ -1,10 +1,13 @@
 @echo off
-title LINE 專案 - 資料夾與 GIT 倉庫同步工具
+title LINE 專案 - 資料夾與 GIT 倉庫同步工具 (鎖定 main 分支)
 chcp 65001 >nul
 cd /d "%~dp0"
 
+:: 固定鎖定目標分支為 main
+set "TARGET_BRANCH=main"
+
 echo ========================================================
-echo        LINE 專案 - 資料夾與 GIT 倉庫同步工具
+echo   LINE 專案 - 資料夾與 GIT 倉庫同步工具 [鎖定: %TARGET_BRANCH%]
 echo ========================================================
 echo.
 
@@ -26,19 +29,28 @@ if errorlevel 1 (
     goto :EXIT_ERROR
 )
 
-:: 3. 取得當前分支名稱
+:: 3. 確保並強制鎖定在 main 分支
 for /f "tokens=*" %%i in ('git branch --show-current 2^>nul') do set "CURRENT_BRANCH=%%i"
-if "%CURRENT_BRANCH%"=="" (
-    echo [錯誤] 無法取得當前分支名稱（可能處於分離 HEAD 狀態）。
-    echo.
-    goto :EXIT_ERROR
+if /i not "%CURRENT_BRANCH%"=="%TARGET_BRANCH%" (
+    echo [提示] 偵測到當前分支為 [%CURRENT_BRANCH%]
+    echo 本專案已鎖定使用 [%TARGET_BRANCH%]，正在為您自動切換...
+    git checkout %TARGET_BRANCH%
+    if errorlevel 1 (
+        echo.
+        echo [錯誤] 無法切換至 %TARGET_BRANCH% 分支！
+        echo 可能原因：本地存在衝突變更或未提交之檔案阻礙切換。
+        echo 請先排除衝突或手動提交後再重新執行。
+        goto :EXIT_ERROR
+    )
+    echo [成功] 已切換回 %TARGET_BRANCH% 分支。
+) else (
+    echo [鎖定分支] %TARGET_BRANCH% (當前分支正確)
 )
-echo [當前分支] %CURRENT_BRANCH%
 echo.
 
 :: 4. 檢查遠端倉庫連線並獲取最新狀態
-echo [1/4] 正在檢查遠端 Git 倉庫狀態...
-git fetch origin %CURRENT_BRANCH% >nul 2>&1
+echo [1/4] 正在檢查遠端 Git 倉庫狀態 (origin/%TARGET_BRANCH%)...
+git fetch origin %TARGET_BRANCH% >nul 2>&1
 if errorlevel 1 (
     echo [警告] 無法連線至遠端倉庫（請檢查網路連線或 GitHub 存取權限）。
     echo 將僅比對本地資料狀態...
@@ -55,8 +67,8 @@ for /f "tokens=*" %%i in ('git status --porcelain 2^>nul') do (
 set LOCAL_AHEAD=0
 set REMOTE_AHEAD=0
 
-for /f %%i in ('git rev-list --count origin/%CURRENT_BRANCH%..%CURRENT_BRANCH% 2^>nul') do set LOCAL_AHEAD=%%i
-for /f %%i in ('git rev-list --count %CURRENT_BRANCH%..origin/%CURRENT_BRANCH% 2^>nul') do set REMOTE_AHEAD=%%i
+for /f %%i in ('git rev-list --count origin/%TARGET_BRANCH%..%TARGET_BRANCH% 2^>nul') do set LOCAL_AHEAD=%%i
+for /f %%i in ('git rev-list --count %TARGET_BRANCH%..origin/%TARGET_BRANCH% 2^>nul') do set REMOTE_AHEAD=%%i
 
 echo [2/4] 比對檔案與版本狀態：
 if "%HAS_LOCAL_CHANGES%"=="1" (
@@ -97,7 +109,7 @@ echo.
 echo [同步方向] 遠端倉庫較新（領先 %REMOTE_AHEAD% 個版本）
 echo 正在從遠端倉庫同步最新資料至本地資料夾...
 echo.
-git pull origin %CURRENT_BRANCH%
+git pull origin %TARGET_BRANCH%
 if errorlevel 1 (
     echo.
     echo [失敗] 下載遠端更新失敗，請檢查網路或衝突狀態。
@@ -127,15 +139,14 @@ if defined USER_MSG set "COMMIT_MSG=%USER_MSG%"
 git add -A
 git commit -m "%COMMIT_MSG%"
 if errorlevel 1 (
-    echo.
     echo [失敗] 本地提交失敗！
     goto :EXIT_ERROR
 )
 
 :PUSH_COMMITS
 echo.
-echo 正在推送到遠端倉庫 origin/%CURRENT_BRANCH%...
-git push -u origin %CURRENT_BRANCH%
+echo 正在推送到遠端倉庫 origin/%TARGET_BRANCH%...
+git push -u origin %TARGET_BRANCH%
 if errorlevel 1 (
     echo.
     echo [失敗] 上傳至遠端倉庫失敗！請確認連線或 GitHub 權限。
@@ -165,7 +176,6 @@ if defined USER_MSG set "COMMIT_MSG=%USER_MSG%"
 git add -A
 git commit -m "%COMMIT_MSG%"
 if errorlevel 1 (
-    echo.
     echo [失敗] 本地提交失敗！
     goto :EXIT_ERROR
 )
@@ -173,7 +183,7 @@ if errorlevel 1 (
 :MERGE_PULL
 echo.
 echo 正在拉取遠端更新並合併...
-git pull --no-rebase origin %CURRENT_BRANCH%
+git pull --no-rebase origin %TARGET_BRANCH%
 if errorlevel 1 (
     echo.
     echo ========================================================
@@ -185,7 +195,7 @@ if errorlevel 1 (
 
 echo.
 echo 正在將合併結果推送至遠端倉庫...
-git push -u origin %CURRENT_BRANCH%
+git push -u origin %TARGET_BRANCH%
 if errorlevel 1 (
     echo.
     echo [失敗] 推送合併版本至遠端倉庫失敗！
