@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  group-cleanup:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: group-cleanup
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: python -m pytest -q
+        env:
+          MOCK_MODE: "true"
+
+  store-operations:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: store-operations
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: store-operations/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/line_ci
+          APP_BASE_URL: http://localhost:3000
+          SESSION_SECRET: ci-session-secret-ci-session-secret
+          MOCK_LINE_SERVICES: "true"
+
+  recurring-billing:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: recurring-billing/line-pay-assistant
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: recurring-billing/line-pay-assistant/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/line_ci
+          JWT_SECRET: ci-jwt-secret-ci-jwt-secret-ci-jwt-secret
+          CRON_SECRET: ci-cron-secret
+          NEXT_PUBLIC_LIFF_ID: "2000000000-abcdefgh"
+          LINE_CHANNEL_SECRET: ci-channel-secret
+          LINE_CHANNEL_ACCESS_TOKEN: ci-channel-access-token
