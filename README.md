@@ -1,49 +1,26 @@
-﻿# LINE 應用與整合生態系專案集 (LINE Ecosystem Projects)
+# LINE — 三個獨立產品
 
-本專案集收錄了針對 LINE 平台開發的多個整合與自動化應用系統，涵蓋商業門市營運、群組自動化管理及 LINE Pay 定期支付等解決方案。
+這個 repository 不是單一產品，而是三個面向不同客群、可獨立部署與銷售的 LINE 相關產品。
 
----
+| 目錄 | 產品 | 主要客群 | 技術 |
+|---|---|---|---|
+| `group-cleanup/` | LINE 群組清理工具 | 一般 LINE 重度使用者 | Python / Windows UI Automation / LINE Bot |
+| `recurring-billing/` | LINE 定期收款對帳小幫手 | 社團、團購、家長群、固定分攤團體 | Next.js / LIFF / Messaging API / PostgreSQL |
+| `store-operations/` | LINE OA 門市營運系統 | 餐飲、美容、診所、維修等門市 | Next.js / Prisma / LINE OA / LINE Pay |
 
-## 專案架構概覽
+三個產品維持獨立的資料模型、部署與商業模式，不共用 UI，也不要求同一使用者同時使用。
 
-```text
-LINE/
-├── LINE群組管理/          # LINE 門市營運與群組服務系統 (Next.js + Prisma)
-├── LINE退群/              # LINE 桌面端自動退群與白名單管理工具 (Python + GUI)
-└── 定期支付/              # LINE Pay 定期扣款助理與需求規劃 (Next.js + LINE Pay)
-```
+## 完成標準
 
----
+本 repo 的「完成」分成兩層：
 
-## 子專案詳細介紹
+1. **程式碼完成**：需求書中的流程已實作、可建置、測試可執行、沒有預設樣板頁或明顯 TODO stub。
+2. **正式上線完成**：仍需使用者自行提供 LINE Developers / LINE OA / LINE Pay / DB 等正式憑證與商家資格，並完成實機驗收。第三方憑證不會提交到 Git。
 
-### 1. LINE群組管理 (LINE Store & Group Operations)
-- **技術棧**：Next.js, TypeScript, Tailwind CSS, Prisma ORM, PostgreSQL
-- **主要功能**：
-  - LINE Login & LIFF 身分驗證與顧客端/商家端權限劃分 (RBAC)
-  - 門市現場排隊取號與即時叫號狀態更新
-  - 線上預約時段管理與可用額度動態計算
-  - LINE Pay 結帳流程串接與冪等性 (Idempotency) 保障
-  - LINE Messaging API 推播通知與多角色圖文選單 (Rich Menu) 切換
+每次 push 到 `main` 都會由 GitHub Actions 同時驗證三個產品。
 
-### 2. LINE退群 (LINE Group Batch Leave & Auto-Manager)
-- **技術棧**：Python 3, Tkinter GUI, PyAutoGUI, Windows UI Automation
-- **主要功能**：
-  - LINE 電腦版群組掃描與批次自動退出
-  - 核心重要群組白名單 (Whitelist) 機制，防止誤退重要群組
-  - 退群頻率限制 (Rate Limiting) 與防封號保護
-  - 操作審計日誌 (Audit Log) 與 CSV 記錄匯出
-  - 支援 Windows 獨立執行檔 (.exe) 打包
+## 產品入口
 
-### 3. 定期支付 (LINE Pay Recurring Payment Assistant)
-- **技術棧**：Next.js, TypeScript, Prisma, LINE Pay Online API v4
-- **主要功能**：
-  - 定期訂閱/週期性專案繳費管理
-  - LINE Pay 預約扣款與自動定期扣款授權機制
-  - 週期性 Cron 排程發送繳費提醒通知
-  - 完整交易狀態機追蹤與付款結果確認回呼
-
----
-
-## 授權說明
-本專案集僅供作品展示與學習交流使用。
+- [group-cleanup](./group-cleanup)
+- [recurring-billing](./recurring-billing)
+- [store-operations](./store-operations)

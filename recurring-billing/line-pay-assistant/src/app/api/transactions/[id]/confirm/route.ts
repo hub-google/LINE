@@ -1,52 +1,40 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import jwt from 'jsonwebtoken';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getUserFromAuthHeader } from "@/lib/auth";
+import { getLineClient } from "@/lib/line";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-development-only';
-
-const getUserFromAuthHeader = (req: NextRequest) => {
-  const authHeader = req.headers.get('authorization');
-  if (!authHeader?.startsWith('Bearer ')) return null;
-  const token = authHeader.split(' ')[1];
-  try {
-    return jwt.verify(token, JWT_SECRET) as { userId: string, lineUid: string };
-  } catch {
-    return null;
-  }
-}
-
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = getUserFromAuthHeader(req);
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const transactionId = params.id;
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { id } = await params;
 
   try {
-    const transaction = await prisma.transaction.findUnique({
-      where: { id: transactionId },
-      include: { project: true }
+    const tx = await prisma.transaction.findUnique({
+      where: { id },
+      include: { project: true, payer: true },
+    });
+    if (!tx) return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
+    if (tx.project.initiatorId !== user.userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (tx.status !== "PENDING") return NextResponse.json({ error: "Transaction is not pending" }, { status: 409 });
+
+    const updated = await prisma.transaction.update({
+      where: { id },
+      data: { status: "COMPLETED", confirmedAt: new Date() },
     });
 
-    if (!transaction) return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
-    if (transaction.project.initiatorId !== user.userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-
-    if (transaction.status !== 'PENDING') {
-      return NextResponse.json({ error: 'Transaction is not pending' }, { status: 400 });
-    }
-
-    const updatedTransaction = await prisma.transaction.update({
-      where: { id: transactionId },
-      data: {
-        status: 'COMPLETED',
-        confirmedAt: new Date()
+    if (tx.payer.notificationsEnabled) {
+      try {
+        await getLineClient().pushMessage(tx.payer.lineUid, {
+          type: "text",
+          text: "【收款確認】「" + tx.project.name + "」" + tx.billingMonth + " 帳款 NT$ " + tx.amount.toString() + " 已由發起人確認收款。",
+        });
+      } catch (error) {
+        console.error("Notify payer failed:", error);
       }
-    });
-
-    // TODO: Trigger push notification to payer using lineClient
-
-    return NextResponse.json({ success: true, transaction: updatedTransaction });
+    }
+    return NextResponse.json({ success: true, transaction: updated });
   } catch (error) {
-    console.error('Confirm transaction error:', error);
-    return NextResponse.json({ error: 'Failed to update transaction' }, { status: 500 });
+    console.error("Confirm transaction error:", error);
+    return NextResponse.json({ error: "Failed to confirm transaction" }, { status: 500 });
   }
 }
