@@ -69,7 +69,7 @@ begin
   end if;
   staff:=public.so_demo_is_staff();
   select coalesce(jsonb_agg(jsonb_build_object(
-    'ticket_no',t.ticket_no,'display_number','A'||lpad(t.ticket_no::text,3,'0'),
+    'ticket_no',t.ticket_no,'display_number','A'||lpad(t.ticket_no::text,greatest(length(t.ticket_no::text),3),'0'),
     'name',case when staff or t.user_id=auth.uid() then t.display_name else '候位顧客' end,
     'mine',(t.user_id=auth.uid()),'source',t.source,'status',t.status,
     'reservation_id',case when staff or t.user_id=auth.uid() then t.reservation_id else null end
@@ -135,11 +135,11 @@ begin
   select * into t from public.so_demo_tickets
     where queue_day=public.so_demo_today() and user_id=auth.uid()
       and status in ('WAITING','CALLED','SERVING') limit 1;
-  if found then return jsonb_build_object('ticket_no',t.ticket_no,'display_number','A'||lpad(t.ticket_no::text,3,'0'),'existing',true); end if;
+  if found then return jsonb_build_object('ticket_no',t.ticket_no,'display_number','A'||lpad(t.ticket_no::text,greatest(length(t.ticket_no::text),3),'0'),'existing',true); end if;
   insert into public.so_demo_tickets(queue_day,user_id,display_name,source)
     values(public.so_demo_today(),auth.uid(),p_name,'WALKIN') returning * into t;
   update public.so_demo_tickets set sort_key=t.ticket_no where ticket_no=t.ticket_no;
-  return jsonb_build_object('ticket_no',t.ticket_no,'display_number','A'||lpad(t.ticket_no::text,3,'0'),'existing',false);
+  return jsonb_build_object('ticket_no',t.ticket_no,'display_number','A'||lpad(t.ticket_no::text,greatest(length(t.ticket_no::text),3),'0'),'existing',false);
 end;
 $$;
 
@@ -189,7 +189,7 @@ begin
       values(public.so_demo_today(),r.user_id,r.display_name,'RESERVATION',r.id) returning ticket_no into new_no;
     update public.so_demo_tickets set sort_key=new_no where ticket_no=new_no;
     update public.so_demo_reservations set status='CHECKED_IN' where id=r.id;
-    return jsonb_build_object('ticket_no',new_no,'display_number','A'||lpad(new_no::text,3,'0'));
+    return jsonb_build_object('ticket_no',new_no,'display_number','A'||lpad(new_no::text,greatest(length(new_no::text),3),'0'));
   end if;
   if p_action='call' then
     if exists(select 1 from public.so_demo_tickets where queue_day=public.so_demo_today() and status in ('CALLED','SERVING')) then
@@ -225,7 +225,7 @@ begin
       raise exception '未知店員操作';
     end if;
   end if;
-  return jsonb_build_object('ticket_no',t.ticket_no,'display_number','A'||lpad(t.ticket_no::text,3,'0'),'action',p_action);
+  return jsonb_build_object('ticket_no',t.ticket_no,'display_number','A'||lpad(t.ticket_no::text,greatest(length(t.ticket_no::text),3),'0'),'action',p_action);
 end;
 $$;
 
