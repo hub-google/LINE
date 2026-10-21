@@ -2,11 +2,11 @@
 
 ## 驗收環境
 
-- 靜態網站：https://hub-google.github.io/LINE/live.html
-- 主程式：store-operations/demo/live.html
+- 靜態網站：https://hub-google.github.io/LINE/
+- 主程式：store-operations/demo/index.html（live.html 是同版備用入口）
 - PostgreSQL Schema：store-operations/supabase/schema.sql
 - 公開設定（不是密碼）：store-operations/demo/db-config.js，在 gh-pages 分支則是根目錄 db-config.js
-- 舊版 localStorage 假資料演示：https://hub-google.github.io/LINE/（僅供比較，不是正式持久化）
+- 舊版 localStorage 假資料演示：https://hub-google.github.io/LINE/preview.html（僅供比較，不是正式持久化）
 
 ### 目前狀態與必要授權
 
