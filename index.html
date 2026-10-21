@@ -1,199 +1,126 @@
 <!doctype html>
-<html lang="zh-Hant">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#06c755">
-<title>LINE 門市預約・取號・叫號｜流程測試 Demo</title>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>門市預約與叫號｜真實資料庫版</title>
 <style>
-:root{--green:#06c755;--deep:#04783d;--ink:#18212d;--muted:#64748b;--line:#e2e8f0;--bg:#f4f7f8;--blue:#2563eb;--red:#dc2626;--amber:#b45309}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;color:var(--ink);line-height:1.5}
-button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.42;cursor:not-allowed}a{color:inherit;text-decoration:none}
-.shell{max-width:1050px;margin:0 auto;padding:20px 16px 85px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
-.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}.logo-icon{width:41px;height:41px;background:var(--green);color:white;border-radius:13px;display:grid;place-items:center;font-weight:900;font-size:23px}
-.demo{font-size:11px;font-weight:800;color:#075985;background:#e0f2fe;border-radius:40px;padding:5px 9px}.nav{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
-.nav button{border:1px solid var(--line);background:white;border-radius:12px;padding:9px 12px;font-weight:700;font-size:13px}
-.nav button.active{background:#dcfce7;color:var(--deep);border-color:#86efac}.nav button.staff.active{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd}
-.notice{border:1px solid #fcd34d;background:#fffbeb;color:#92400e;padding:11px 14px;border-radius:13px;font-size:12px;margin:16px 0}
-.main{display:grid;grid-template-columns:1fr 250px;gap:18px;align-items:start}.panel{background:white;border:1px solid var(--line);border-radius:17px;padding:19px;box-shadow:0 3px 18px #0f172a08;margin-bottom:14px}
-.hero{background:linear-gradient(115deg,#08b74f,#078c65);color:#fff;border:0;padding:26px}
-.hero h1{margin:5px 0 9px;font-size:27px;line-height:1.25}.hero p{margin:0;color:#e5fff0}.eyebrow{text-transform:uppercase;letter-spacing:.08em;font-size:11px;font-weight:800;opacity:.8}
-.hrow{display:flex;align-items:center;justify-content:space-between;gap:10px}.hrow h2,.panel h2{font-size:18px;margin:0 0 10px}.hint{font-size:13px;color:var(--muted)}.small{font-size:12px;color:var(--muted)}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
-.action{background:white;border:1px solid var(--line);border-radius:14px;padding:18px;text-align:left;display:flex;flex-direction:column;gap:8px;min-height:125px;color:var(--ink)}
-.action strong{font-size:17px}.action span{font-size:12px;color:var(--muted)}.action:hover{border-color:#86efac;background:#f8fffb}
-.emoji{font-size:26px}.stat{background:white;border:1px solid var(--line);padding:15px;border-radius:14px}.stat strong{display:block;font-size:28px;font-variant-numeric:tabular-nums}.stat span{font-size:12px;color:var(--muted)}
-.label{font-weight:700;font-size:13px;display:block;margin:13px 0 6px}.field{border:1px solid #cbd5e1;background:white;border-radius:10px;padding:12px;width:100%;min-width:0;color:var(--ink)}
-.field:focus{outline:2px solid #86efac;outline-offset:1px}.btn{border:0;border-radius:11px;background:var(--green);color:white;font-weight:800;padding:11px 15px;min-height:43px}
-.btn:hover:not(:disabled){filter:brightness(.95)}.btn.secondary{background:#e8f8ed;color:#087a3a}.btn.blue{background:var(--blue)}.btn.gray{background:#f1f5f9;color:#334155}.btn.danger{background:#fee2e2;color:#b91c1c}.btn.wide{width:100%}
-.btn-row{display:flex;gap:8px;flex-wrap:wrap}.time-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.time{border:1px solid var(--line);border-radius:10px;background:white;padding:11px 7px;text-align:center;color:var(--ink);font-size:14px;font-weight:800}
-.time span{display:block;font-size:11px;font-weight:400;color:var(--muted)}.time.active{border-color:var(--green);background:#ecfdf5;color:var(--deep)}.time:disabled{background:#f1f5f9}
-.ticket{border:2px dashed #86efac;border-radius:19px;background:#f0fdf4;text-align:center;padding:25px 15px}.ticket .no{font-size:62px;letter-spacing:.045em;font-weight:900;color:#067d3d;line-height:1.3}
-.ticket .sub{font-weight:700}.pill{border-radius:30px;font-size:11px;font-weight:800;padding:4px 9px;display:inline-block;background:#f1f5f9;color:#475569}
-.pill.waiting{background:#dbeafe;color:#1d4ed8}.pill.called{background:#dcfce7;color:#166534}.pill.passed{background:#fee2e2;color:#b91c1c}.pill.done{background:#e2e8f0;color:#475569}
-.rowitem{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}.rowitem:last-child{border:0}.rowitem strong{font-size:16px}.rowitem .meta{font-size:12px;color:var(--muted);margin-top:3px}
-.number{font-size:45px;color:var(--green);font-weight:900;letter-spacing:.03em}
-.right h3{font-size:14px;margin:0 0 8px}.right p{margin:0 0 12px;font-size:12px;color:var(--muted)}
-.empty{text-align:center;padding:23px 12px;color:var(--muted);font-size:13px;background:#f8fafc;border-radius:10px}
-.status{background:#e8f8ed;color:#166534;border-radius:13px;padding:10px;font-size:12px;font-weight:700;margin-top:12px}
-.footer{text-align:center;color:#94a3b8;font-size:11px;margin:20px 0}
-.muted-list{padding-left:19px;font-size:12px;color:var(--muted);line-height:1.9;margin:8px 0}
-.kicker{font-size:12px;color:var(--muted);font-weight:700}.cardline{border-top:1px solid var(--line);margin-top:15px;padding-top:12px}
-.live{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--deep);font-weight:700}.live:before{content:"";height:7px;width:7px;border-radius:50%;background:var(--green)}
-.mobile-nav{display:none}#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:50;border-radius:40px;background:#0f172a;color:white;padding:12px 20px;font-size:13px;font-weight:700;box-shadow:0 12px 35px #0003;max-width:90%;text-align:center;display:none}
-@media(max-width:740px){.shell{padding:12px 12px 90px}.main{grid-template-columns:1fr}.right{order:2}.top{flex-wrap:wrap}.logo{font-size:16px}.top>.nav{width:100%;overflow-x:auto;flex-wrap:nowrap}.nav button{white-space:nowrap;flex-shrink:0}.hero{padding:22px}.hero h1{font-size:23px}.panel{padding:16px}.grid-3{grid-template-columns:repeat(3,1fr)}.time-grid{grid-template-columns:repeat(3,1fr)}.btn-row .btn{flex:1}.number{font-size:39px}}
+:root{font-family:system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif;color:#172b3b;background:#f4f7f8}
+*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}
+.wrap{max-width:1040px;margin:auto;padding:18px 14px 65px}.head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+h1{font-size:23px;margin:4px 0}.sub{font-size:13px;color:#64748b}.badge{border-radius:30px;background:#dcfce7;color:#166534;padding:4px 8px;font-size:11px;font-weight:800}
+nav{display:flex;gap:7px;flex-wrap:wrap;margin:16px 0}nav button{background:white;border:1px solid #e2e8f0;padding:10px;border-radius:10px;font-size:13px;font-weight:700}
+nav button.on{background:#dcfce7;color:#04783d;border-color:#86efac}nav button.blue.on{background:#dbeafe;color:#1d4ed8}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:18px}.panel{background:white;border:1px solid #e2e8f0;border-radius:16px;padding:19px;margin-bottom:14px}
+.panel h2{margin:0 0 12px;font-size:19px}.panel p{font-size:13px;color:#64748b;line-height:1.65}.hero{background:linear-gradient(115deg,#06c755,#087d5a);color:white;padding:26px}.hero p{color:#eaffef}.hero h2{font-size:24px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.tile{padding:14px;border:1px solid #e2e8f0;border-radius:12px;background:white;text-align:left}.tile strong{display:block;font-size:26px;color:#059669}
+.primary{background:#06c755;border:0;color:white;font-weight:800}.secondary{background:#dbeafe;color:#1d4ed8;border:0;font-weight:700}.plain{background:#f1f5f9;color:#334155;border:0;font-weight:700}.danger{background:#fee2e2;color:#b91c1c;border:0;font-weight:700}
+.btn{border-radius:10px;padding:11px 14px;min-height:44px}.btn.full{width:100%}.buttons{display:flex;gap:7px;flex-wrap:wrap}.field{width:100%;border:1px solid #cbd5e1;border-radius:10px;background:#fff;padding:11px;min-width:0}
+label{display:block;font-size:13px;font-weight:700;margin:12px 0 5px}.slots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.slot{border:1px solid #cbd5e1;background:white;border-radius:10px;padding:9px 3px;font-weight:800}.slot span{display:block;color:#64748b;font-weight:400;font-size:11px}.slot.on{background:#dcfce7;border-color:#06c755}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid #e2e8f0;padding:12px 0}.row:last-child{border-bottom:0}
+.small{font-size:12px;color:#64748b}.no{font-size:49px;color:#059669;font-weight:900}.status{display:inline-block;background:#eff6ff;border-radius:20px;padding:4px 9px;font-size:12px;font-weight:700}
+.notice{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;padding:12px;border-radius:12px;margin-bottom:14px;font-size:13px}
+.error{color:#991b1b;background:#fee2e2;padding:12px;border-radius:12px;margin:10px 0;font-size:13px}
+.ok{color:#166534;background:#dcfce7;padding:12px;border-radius:12px;margin:10px 0;font-size:13px}
+pre{white-space:pre-wrap;word-break:break-all;font-size:12px;background:#f1f5f9;padding:8px;border-radius:10px}.hint{margin-top:11px;color:#64748b;font-size:12px}
+@media(max-width:760px){.layout{grid-template-columns:1fr}.slots{grid-template-columns:repeat(3,1fr)}.wrap{padding:13px 12px 50px}.panel{padding:15px}.head h1{font-size:20px}.no{font-size:42px}}
 </style>
-</head>
-<body>
-<div class="shell">
-<header class="top"><div class="logo"><div class="logo-icon">L</div><div>門市預約與叫號 <span class="demo">DEMO v1</span></div></div><nav class="nav" id="nav"></nav></header>
-<div class="notice"><b>流程體驗版：</b>這是 GitHub Pages 靜態 Demo，預約與叫號均為模擬操作。資料存在本瀏覽器，同瀏覽器分頁可同步；不同手機、其他裝置、真正 LINE 推播尚未連接。請勿輸入真實顧客個資。</div>
-<div class="main"><main id="app"></main><aside class="right" id="sidebar"></aside></div>
-<div class="footer">LINE 門市營運系統｜GitHub Pages 流程驗收版・正式上線前再串接 LINE LIFF / API / 資料庫</div>
-</div><div id="toast" role="status" aria-live="polite"></div>
-<script>
-(function(){
-"use strict";
-var KEY="hub-google-line-store-operations-demo-v1";
-var ME="hub-google-line-demo-my-ticket";
-var MYR="hub-google-line-demo-my-reservation";
-var channel=null;
-try{channel=new BroadcastChannel("line-store-operations-demo-v1")}catch(e){}
-function pad(n){return String(n).padStart(2,"0")}
-function localDay(offset){var d=new Date(Date.now()+(offset||0)*86400000);return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit"}).format(d).replace(/\//g,"-")}
-function stamp(){return new Date().toLocaleTimeString("zh-TW",{timeZone:"Asia/Taipei",hour:"2-digit",minute:"2-digit"})}
-function seed(){return {version:1,seq:4,rseq:3,tickets:[{id:"demo-t1",number:"A001",name:"示範顧客甲",status:"WAITING",kind:"現場取號",created:Date.now()-900000},{id:"demo-t2",number:"A002",name:"示範顧客乙",status:"WAITING",kind:"現場取號",created:Date.now()-600000},{id:"demo-t3",number:"A003",name:"示範顧客丙",status:"WAITING",kind:"現場取號",created:Date.now()-300000}],reservations:[{id:"demo-r1",number:"R001",name:"預約測試甲",date:localDay(0),time:"14:00",party:1,status:"CONFIRMED",created:Date.now()-600000},{id:"demo-r2",number:"R002",name:"預約測試乙",date:localDay(0),time:"16:00",party:2,status:"CONFIRMED",created:Date.now()-400000}],logs:[]}}
-function load(){try{var raw=localStorage.getItem(KEY);var value=raw?JSON.parse(raw):null;if(value&&value.version===1&&Array.isArray(value.tickets)&&Array.isArray(value.reservations))return value}catch(e){}var value=seed();localStorage.setItem(KEY,JSON.stringify(value));return value}
-var state=load(),draft={date:localDay(0),time:"",name:"",party:1},view=location.hash.slice(1)||"customer-home";
-var choices=["10:00","11:00","14:00","15:00","16:00","18:00","19:00"];
-function persist(){localStorage.setItem(KEY,JSON.stringify(state));if(channel)channel.postMessage("update");render()}
-function safe(s){return String(s===undefined||s===null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
-function $(id){return document.getElementById(id)}
-function uid(kind){return kind+"-"+Date.now()+"-"+Math.random().toString(36).slice(2,8)}
-function say(msg){var el=$("toast");el.textContent=msg;el.style.display="block";clearTimeout(say.timer);say.timer=setTimeout(function(){el.style.display="none"},3100)}
-function navTo(next){location.hash=next;if(view===next)render()}
-function pill(status){var map={WAITING:["等待中","waiting"],CALLED:["已叫號","called"],SERVING:["服務中","called"],PASSED:["過號","passed"],COMPLETED:["已完成","done"],CANCELLED:["已取消","done"],CONFIRMED:["已確認","waiting"],CHECKED_IN:["已報到","called"]};var t=map[status]||[status,""];return '<span class="pill '+t[1]+'">'+t[0]+"</span>"}
-function current(){return state.tickets.find(function(t){return t.status==="CALLED"||t.status==="SERVING"})}
-function waiting(){return state.tickets.filter(function(t){return t.status==="WAITING"})}
-function activeTicket(){var id=localStorage.getItem(ME);return state.tickets.find(function(t){return t.id===id})||null}
-function myReservation(){var id=localStorage.getItem(MYR);return state.reservations.find(function(r){return r.id===id})||null}
-function number(){return "A"+pad(Math.floor(state.seq/100))+pad(state.seq%100)}
-function btn(label,action,cls,disable){return '<button class="btn '+(cls||"")+'" data-action="'+action+'"'+(disable?' disabled':'')+'>'+label+"</button>"}
-function mainHtml(content){$("app").innerHTML=content}
-function sidebar(){
-var list=state.logs.slice(-4).reverse().map(function(x){return "<div class='rowitem'><div><div class='small'>"+safe(x.time)+"</div><div style='font-size:12px'>"+safe(x.msg)+"</div></div></div>"}).join("");
-$("sidebar").innerHTML='<section class="panel"><h3>🟢 系統測試狀態</h3><div class="live">瀏覽器模擬資料已啟用</div><div class="status">今天發出 '+state.tickets.length+' 張號碼牌，正在等待 '+waiting().length+' 組</div><p style="margin-top:12px">建議分別在兩個瀏覽器分頁開啟「顧客端」與「店員端」，就能觀察叫號如何同步更新。</p>'+btn("清除並重新載入示範資料","reset","gray wide")+'</section><section class="panel"><h3>最近操作紀錄</h3>'+(list||'<div class="empty">尚無操作</div>')+'</section><section class="panel"><h3>正式 LINE LIFF 階段</h3><ul class="muted-list"><li>LINE 帳號登入</li><li>跨裝置資料庫</li><li>預約提醒與叫號推播</li><li>門市權限管理</li></ul><p>以上正式功能尚未串接，本頁不是正式營運系統。</p></section>';
-}
-function topnav(){
-var isStaff=view.indexOf("staff-")===0;
-var items=[["customer-home","顧客首頁"],["customer-reserve","線上預約"],["customer-queue","現場取號"],["staff-queue","店員叫號"],["staff-reserve","預約報到"]];
-$("nav").innerHTML=items.map(function(i){return '<button data-go="'+i[0]+'" class="'+(view===i[0]?"active ":"")+(i[0].indexOf("staff-")===0?"staff":"")+'">'+i[1]+"</button>"}).join("");
-}
-function home(){
-var c=current();var r=myReservation();
-mainHtml('<section class="panel hero"><div class="eyebrow">CUSTOMER PORTAL</div><h1>青禾風格美髮・台北門市</h1><p>線上預約、現場取號、追蹤目前叫號進度。</p></section>'+
-'<div class="grid-3" style="margin-bottom:14px"><div class="stat"><span>目前叫號</span><strong>'+safe(c?c.number:"—")+'</strong></div><div class="stat"><span>排隊組數</span><strong>'+waiting().length+'</strong></div><div class="stat"><span>預估每組</span><strong>5<small style="font-size:13px"> 分</small></strong></div></div>'+
-'<div class="grid" style="margin-bottom:14px"><button class="action" data-go="customer-reserve"><span class="emoji">📅</span><strong>預約日期與時段</strong><span>選日期、時間及人數，完成線上預約 →</span></button><button class="action" data-go="customer-queue"><span class="emoji">🎟️</span><strong>現場取號與查號</strong><span>抽取 A 號牌，查看等待進度 →</span></button></div>'+
-'<section class="panel"><h2>我的最近預約</h2>'+(r?'<div class="rowitem"><div><strong>'+safe(r.number)+'・'+safe(r.name)+'</strong><div class="meta">'+safe(r.date)+' '+safe(r.time)+'・'+safe(r.party)+' 位</div></div>'+pill(r.status)+'</div>':'<div class="empty">尚無預約。先點上方「預約日期與時段」試試。</div>')+'</section>');
-}
-function slotRemaining(t){return 3-state.reservations.filter(function(r){return r.date===draft.date&&r.time===t&&r.status!=="CANCELLED"}).reduce(function(n,r){return n+Number(r.party||1)},0)}
-function reserve(){
-if(draft.time&&slotRemaining(draft.time)<1)draft.time="";
-var slots=choices.map(function(t){var remain=slotRemaining(t);return '<button class="time '+(draft.time===t?"active":"")+'" data-time="'+t+'" '+(remain<1?'disabled':'')+'>'+t+'<span>'+(remain<1?"已額滿":"剩餘 "+remain+" 位")+'</span></button>'}).join("");
-mainHtml('<section class="panel"><div class="hrow"><div><div class="kicker">CUSTOMER / RESERVATION</div><h2>📅 線上預約服務</h2></div>'+pill("CONFIRMED")+'</div><p class="hint">每時段示範容量 3 人，超過容量不可預約；送出後會同步出現在店員的預約名單。</p>'+
-'<label class="label" for="booking-date">選擇日期</label><input class="field" type="date" id="booking-date" min="'+localDay(0)+'" value="'+safe(draft.date)+'">'+
-'<label class="label">選擇服務時段</label><div class="time-grid">'+slots+'</div>'+
-'<div class="grid"><div><label class="label" for="booking-name">預約姓名（測試暱稱）</label><input class="field" id="booking-name" maxlength="30" placeholder="例如：測試小明" value="'+safe(draft.name)+'"></div>'+
-'<div><label class="label" for="booking-party">預約人數</label><select class="field" id="booking-party"><option value="1"'+(draft.party===1?" selected":"")+'>1 位</option><option value="2"'+(draft.party===2?" selected":"")+'>2 位</option><option value="3"'+(draft.party===3?" selected":"")+'>3 位</option></select></div></div>'+
-'<div style="margin-top:18px">'+btn("確認送出預約","book","wide")+'</div></section>');
-}
-function queue(){
-var c=current(),t=activeTicket();
-var intro='<section class="panel"><div class="kicker">CUSTOMER / WALK-IN QUEUE</div><h2>🎟️ 現場取號</h2><p class="hint">目前叫號：<b>'+safe(c?c.number:"尚未叫號")+'</b>　等待 '+waiting().length+' 組</p>';
-if(t){
-var idx=waiting().findIndex(function(x){return x.id===t.id});
-intro+='<div class="ticket"><div class="kicker">您的號碼</div><div class="no">'+safe(t.number)+'</div><div class="sub">'+pill(t.status)+'</div><p class="hint" style="margin:12px 0 0">'+(t.status==="WAITING"?(idx===0?"下一位可能輪到您":"前方還有 "+idx+" 組，預估約 "+idx*5+" 分鐘"):(t.status==="CALLED"?"已叫到您的號碼，請到櫃檯":t.status==="SERVING"?"正在服務中":"此號碼牌已結束等候"))+'</p><div class="small">'+safe(t.name)+'・'+safe(t.kind)+'</div></div>'+
-'<div class="btn-row" style="margin-top:14px">'+btn("更新進度","refresh","secondary")+(t.status==="WAITING"?btn("取消取號","cancel-ticket","danger"):"")+'</div>';
-if(["PASSED","CANCELLED","COMPLETED"].includes(t.status))intro+='<div class="cardline">'+btn("重新取號","clear-mine","gray")+'</div>';
-}else{
-intro+='<div class="empty">目前沒有您的有效號碼牌，點下方按鈕即可模擬取號。</div>'+
-'<label for="ticket-name" class="label">取號暱稱（選填）</label><input class="field" id="ticket-name" maxlength="25" placeholder="例如：測試小明">'+
-'<div style="margin-top:14px">'+btn("立即取得號碼牌","take-ticket","wide")+'</div>';
-}
-intro+='</section><section class="panel"><h2>排隊狀態</h2>'+ (waiting().length?waiting().slice(0,7).map(function(x,i){return '<div class="rowitem"><div><strong>'+safe(x.number)+'</strong><div class="meta">候位順序：'+(i+1)+'</div></div>'+pill(x.status)+'</div>'}).join(""):'<div class="empty">沒有等待中的號碼牌</div>')+'</section>';
-mainHtml(intro);
-}
-function staffQueue(){
-var c=current(),all=waiting(),passed=state.tickets.filter(function(t){return t.status==="PASSED"});
-var canCall=!c&&all.length>0;
-mainHtml('<section class="panel"><div class="hrow"><div><div class="kicker">STAFF / QUEUE CONSOLE</div><h2>👩‍💼 店員叫號控制台</h2></div><span class="pill waiting">測試後台</span></div>'+
-'<div class="grid-3"><div class="stat"><span>目前服務</span><strong style="color:#16a34a">'+safe(c?c.number:"—")+'</strong></div><div class="stat"><span>等候中</span><strong>'+all.length+'</strong></div><div class="stat"><span>已完成</span><strong>'+state.tickets.filter(function(t){return t.status==="COMPLETED"}).length+'</strong></div></div>'+
-'<div class="cardline"><div class="btn-row">'+btn("📣 叫下一位","call-next","blue",!canCall)+btn("🔁 再叫一次","recall","gray",!c||c.status!=="CALLED")+btn("▶ 開始服務","start-service","secondary",!c||c.status!=="CALLED")+btn("✅ 服務完成","complete","secondary",!c)+btn("⚠ 標記過號","pass","danger",!c)+'</div><p class="small">叫下一位前請先對目前號碼執行「完成」或「過號」。顧客端會跟著更新。</p></div></section>'+
-'<div class="grid"><section class="panel"><h2>等待名單（'+all.length+'）</h2>'+ (all.length?all.map(function(t,i){return '<div class="rowitem"><div><strong>'+safe(t.number)+'</strong><div class="meta">'+safe(t.name)+'・'+safe(t.kind)+'</div></div><span class="pill waiting">第 '+(i+1)+' 位</span></div>'}).join(""):'<div class="empty">目前無等候顧客</div>')+'</section>'+
-'<section class="panel"><h2>過號名單（'+passed.length+'）</h2>'+ (passed.length?passed.map(function(t){return '<div class="rowitem"><div><strong>'+safe(t.number)+'</strong><div class="meta">'+safe(t.name)+'</div></div><button class="btn gray" data-insert="'+safe(t.id)+'">安排下一位</button></div>'}).join(""):'<div class="empty">目前沒有過號顧客</div>')+'</section></div>');
-}
-function staffReserve(){
-var rs=state.reservations.slice().sort(function(a,b){return (a.date+a.time).localeCompare(b.date+b.time)});
-mainHtml('<section class="panel"><div class="kicker">STAFF / RESERVATIONS</div><h2>📋 預約報到管理</h2><p class="hint">這裡讀取顧客端真正在 Demo 建立的預約（含兩筆種子資料）；報到會產生新的排隊號碼牌。</p>'+
-(rs.length?rs.map(function(r){return '<div class="rowitem"><div><strong>'+safe(r.number)+'・'+safe(r.name)+'</strong><div class="meta">'+safe(r.date)+'　'+safe(r.time)+'　'+r.party+' 位'+(r.ticketId?"・號碼 "+safe((state.tickets.find(function(t){return t.id===r.ticketId})||{}).number||""):"")+'</div></div><div class="btn-row">'+pill(r.status)+(r.status==="CONFIRMED"?'<button class="btn secondary" data-checkin="'+safe(r.id)+'">確認到店報到</button>':"")+'</div></div>'}).join(""):'<div class="empty">目前無預約紀錄</div>')+'</section>');
-}
+</head><body><div class="wrap">
+<header class="head"><div><h1>📅 門市預約・取號・叫號</h1><div class="sub">GitHub Pages + 雲端 PostgreSQL 實際儲存版</div></div><div><span class="badge" id="connection">等待連線</span></div></header>
+<div id="message" aria-live="polite"></div><nav id="nav"></nav>
+<div class="layout"><main id="app"></main><aside id="side"></aside></div>
+</div>
+<script src="./db-config.js"></script>
+<script type="module">
+import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+const $=id=>document.getElementById(id);
+const navItems=[["home","顧客首頁"],["reserve","預約時段"],["queue","現場取號"],["staff","店員叫號"],["checkin","預約報到"],["login","店員登入"]];
+let page="home",client=null, data=null, busy=false, error="", notice="",session=null;
+let currentDate=taipeiDate(),slot="",name="",party=1;
+const keyStorage="store-operations-supabase-config-v1";
+const initialConfig=window.STORE_DEMO_DB||{};
+function taipeiDate(offset=0){const d=new Date(Date.now()+offset*86400000);const f=new Intl.DateTimeFormat("en-US",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(d);return ["year","month","day"].map(k=>f.find(x=>x.type===k).value).join("-")}
+function safe(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function config(){try{const local=JSON.parse(localStorage.getItem(keyStorage)||"{}");return {...initialConfig,...local}}catch(e){return initialConfig}}
+function isConfigured(c){return /^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test((c.url||"").trim())&&/^(sb_publishable_|eyJ)/.test((c.publishableKey||"").trim())}
+function showErr(msg){error=msg;notice="";render()}
+function showOK(msg){notice=msg;error="";render()}
+function label(s){return ({WAITING:"候位中",CALLED:"已叫號",SERVING:"服務中",PASSED:"已過號",COMPLETED:"已完成",CANCELLED:"已取消",CONFIRMED:"已預約",CHECKED_IN:"已報到"})[s]||s}
+function top(){const online=!!(client&&session&&data);$("connection").textContent=online?"✅ 真實資料庫已連線":"⚠ 尚未完成資料庫連線";$("nav").innerHTML=navItems.map(([p,title])=>'<button data-page="'+p+'" class="'+(p===page?'on ':'')+(['staff','checkin','login'].includes(p)?'blue':'')+'">'+title+'</button>').join("");$("message").innerHTML=(error?'<div class="error">'+safe(error)+'</div>':"")+(notice?'<div class="ok">'+safe(notice)+'</div>':"")}
+function button(title,action,cls="",off=false){return '<button data-action="'+action+'" class="btn '+cls+'" '+(off?'disabled':'')+'>'+title+'</button>'}
+function row(title,meta,trailing){return '<div class="row"><div><strong>'+safe(title)+'</strong><div class="small">'+safe(meta)+'</div></div><div>'+trailing+'</div></div>'}
 function render(){
-if(!["customer-home","customer-reserve","customer-queue","staff-queue","staff-reserve"].includes(view))view="customer-home";
-topnav();sidebar();
-if(view==="customer-home")home();
-if(view==="customer-reserve")reserve();
-if(view==="customer-queue")queue();
-if(view==="staff-queue")staffQueue();
-if(view==="staff-reserve")staffReserve();
-}
-function log(msg){state.logs.push({time:stamp(),msg:msg});state.logs=state.logs.slice(-30)}
-function click(action,button){
-if(action==="refresh"){state=load();render();say("已更新顧客與門市資料");return}
-if(action==="reset"){if(!confirm("清除這個瀏覽器的 Demo 資料，還原為最初的測試預約與號碼？"))return;state=seed();localStorage.removeItem(ME);localStorage.removeItem(MYR);draft={date:localDay(0),time:"",name:"",party:1};persist();say("已重置示範資料");return}
-if(action==="book"){
-draft.name=($("booking-name")||{}).value||"";draft.party=Number(($("booking-party")||{}).value||1);
-if(!draft.name.trim()||!draft.time){say("請填入測試暱稱並選擇時段");return}
-if(draft.date<localDay(0)){say("日期不能早於今天");return}
-if(slotRemaining(draft.time)<draft.party){say("此時段剩餘人數不足，請重新選擇");return}
-var booking={id:uid("r"),number:"R"+String(state.rseq++).padStart(3,"0"),name:draft.name.trim(),date:draft.date,time:draft.time,party:draft.party,status:"CONFIRMED",created:Date.now()};
-state.reservations.push(booking);localStorage.setItem(MYR,booking.id);log(booking.number+" 預約 "+booking.date+" "+booking.time);draft.time="";persist();navTo("customer-home");say("預約 "+booking.number+" 成功！請到店員端確認");return;
-}
-if(action==="take-ticket"){
-var existing=activeTicket();if(existing&&["WAITING","CALLED","SERVING"].includes(existing.status)){say("您已有一張有效號碼牌");return}
-var nm=($("ticket-name")||{}).value||"";
-var t={id:uid("t"),number:"A"+String(state.seq++).padStart(3,"0"),name:nm.trim()||"現場顧客",status:"WAITING",kind:"現場取號",created:Date.now()};
-state.tickets.push(t);localStorage.setItem(ME,t.id);log(t.number+" 已現場取號");persist();say("取得 "+t.number+"，請留意叫號進度");return;
-}
-if(action==="cancel-ticket"){var mine=activeTicket();if(!mine||mine.status!=="WAITING")return;if(!confirm("確定取消 "+mine.number+" 嗎？"))return;mine.status="CANCELLED";log(mine.number+" 取消取號");persist();say("已取消號碼 "+mine.number);return}
-if(action==="clear-mine"){localStorage.removeItem(ME);render();return}
-if(action==="call-next"){if(current()){say("請先處理正在叫號的顧客");return}var t=waiting()[0];if(!t){say("目前沒有待叫號顧客");return}t.status="CALLED";t.called=Date.now();log("叫號 "+t.number+"（"+t.name+"）");persist();say("現在叫號 "+t.number);return}
-if(["recall","start-service","complete","pass"].includes(action)){
-var t=current();if(!t){say("目前沒有正在叫號的顧客");return}
-if(action==="recall"&&t.status==="CALLED"){log("再次呼叫 "+t.number);persist();say("再次呼叫 "+t.number);return}
-if(action==="start-service"&&t.status==="CALLED"){t.status="SERVING";log(t.number+" 開始服務");persist();say(t.number+" 服務中");return}
-if(action==="complete"){t.status="COMPLETED";log(t.number+" 已完成服務");persist();say(t.number+" 已完成");return}
-if(action==="pass"){t.status="PASSED";log(t.number+" 已標記過號");persist();say(t.number+" 已標記過號");return}
+top();
+if(!client||!session||!data){setupScreen();return}
+const t=data.tickets||[],r=data.reservations||[],live=t.find(x=>x.status==="CALLED"||x.status==="SERVING"),wait=t.filter(x=>x.status==="WAITING");
+$("side").innerHTML='<section class="panel"><h2>💾 真實資料庫狀態</h2><p>以下資料每 5 秒從 Supabase 重新讀取。關閉分頁、重新整理或更換裝置，資料都保留在雲端。</p><div class="grid"><div class="tile"><span class="small">等待中</span><strong>'+wait.length+'</strong></div><div class="tile"><span class="small">叫號中</span><strong>'+safe(live?live.display_number:"—")+'</strong></div></div><div class="hint">今日 '+safe(data.today)+'・目前以匿名顧客登入：'+(!data.is_staff?"是":"否")+'</div></section><section class="panel"><h2>測試提醒</h2><p>目前為測試資料庫，請只使用暱稱，不要填真實顧客姓名、電話或個人資料。</p><p>取號、預約和報到由資料庫交易處理，所有店員操作需通過伺服器端身分驗證。</p></section>';
+if(page==="home"){
+$("app").innerHTML='<section class="panel hero"><h2>青禾風格美髮・台北示範門市</h2><p>這次的操作會真的寫入資料庫，不再使用瀏覽器假資料。</p></section><div class="grid3 panel"><div class="tile"><div class="small">目前叫號</div><strong>'+safe(live?.display_number||"—")+'</strong></div><div class="tile"><div class="small">候位組數</div><strong>'+wait.length+'</strong></div><div class="tile"><div class="small">我的預約</div><strong>'+r.filter(x=>x.mine&&x.status!=="CANCELLED").length+'</strong></div></div><div class="panel"><h2>請選擇服務</h2><div class="grid"><button data-page="reserve" class="tile"><b>📅 線上預約</b><p>時間、人數與容量真實記錄</p></button><button data-page="queue" class="tile"><b>🎟️ 現場取號</b><p>取得獨立號碼並跨裝置查看</p></button></div></div><section class="panel"><h2>我最近的預約</h2>'+(r.filter(x=>x.mine).map(x=>row(x.name,x.day+" "+x.time+"・"+x.party+" 位",'<span class="status">'+label(x.status)+'</span>')).join("")||'<p>目前沒有預約。</p>')+'</section>';
+}else if(page==="reserve"){
+const slots=(data.slots||[]).map(x=>'<button class="slot '+(slot===x.time?"on":"")+'" data-slot="'+safe(x.time)+'" '+(x.available<1?"disabled":"")+'>'+safe(x.time)+'<span>'+x.available+' 位可預約</span></button>').join("");
+$("app").innerHTML='<section class="panel"><h2>📅 選擇預約時段</h2><p>單一時段最多 3 位。多人同時預約由資料庫防止超賣。</p><label for="book-date">日期（30 日內）</label><input class="field" id="book-date" type="date" min="'+taipeiDate()+'" max="'+taipeiDate(30)+'" value="'+safe(currentDate)+'"><label>時段</label><div class="slots">'+slots+'</div><div class="grid"><div><label for="book-name">暱稱</label><input class="field" id="book-name" maxlength="32" placeholder="測試小明" value="'+safe(name)+'"></div><div><label for="book-party">人數</label><select class="field" id="book-party"><option value="1">1 位</option><option value="2">2 位</option><option value="3">3 位</option></select></div></div><div style="margin-top:16px">'+button("確認送出預約","book","primary full",busy)+'</div></section><section class="panel"><h2>我的預約</h2>'+(r.filter(x=>x.mine).map(x=>row(x.name,x.day+" "+x.time+"・"+x.party+" 位",'<div class="buttons"><span class="status">'+label(x.status)+'</span>'+(x.status==="CONFIRMED"?'<button class="btn danger" data-cancel-book="'+safe(x.id)+'">取消</button>':"")+'</div>')).join("")||'<p>沒有預約紀錄。</p>')+'</section>';
+$("book-party").value=String(party);
+}else if(page==="queue"){
+const mine=t.find(x=>x.mine&&["WAITING","CALLED","SERVING"].includes(x.status));
+$("app").innerHTML='<section class="panel"><h2>🎟️ 現場取號</h2><p>資料存於資料庫，同一位使用者同一天不可同時擁有兩張有效票。</p>'+(mine?'<div class="tile" style="text-align:center"><div class="small">我的號碼</div><div class="no">'+safe(mine.display_number)+'</div><span class="status">'+label(mine.status)+'</span><p>前面等候 '+Math.max(0,wait.findIndex(x=>x.ticket_no===mine.ticket_no))+' 組</p></div><div style="margin-top:12px">'+(mine.status==="WAITING"?button("取消取號","cancel-ticket","danger",busy):"")+'</div>':'<label for="take-name">取號暱稱</label><input id="take-name" maxlength="32" class="field" placeholder="測試小明"><div style="margin-top:12px">'+button("立即取號","take-ticket","primary full",busy)+'</div>')+'</section><section class="panel"><h2>現在叫號 '+safe(live?.display_number||"—")+'</h2>'+ (wait.map((x,i)=>row(x.display_number,"第 "+(i+1)+" 位等待",'<span class="status">'+label(x.status)+'</span>')).join("")||'<p>尚無候位號碼。</p>')+'</section>';
+}else if(page==="login"){
+$("app").innerHTML='<section class="panel"><h2>🔐 店員登入</h2><p>需要先在 Supabase Authentication 建立店員帳號，再將該使用者 ID 加到 so_demo_staff 表。這個頁面不會在瀏覽器暴露管理員密鑰。</p><label for="staff-email">電子郵件</label><input id="staff-email" type="email" class="field" autocomplete="username"><label for="staff-password">密碼</label><input id="staff-password" type="password" class="field" autocomplete="current-password"><div class="buttons" style="margin-top:13px">'+button("登入店員帳號","staff-login","primary",busy)+button("登出並切回匿名顧客","logout","plain",busy)+'</div></section>';
+}else if(page==="staff"||page==="checkin"){
+if(!data.is_staff){$("app").innerHTML='<section class="panel"><h2>🔒 需要店員權限</h2><p>店員叫號、過號回歸和預約報到不能由一般顧客執行。</p>'+button("前往店員登入","go-login","primary")+'</section>';return}
+if(page==="staff"){
+const missed=t.filter(x=>x.status==="PASSED");
+$("app").innerHTML='<section class="panel"><h2>📣 店員叫號控制台</h2><div class="grid3"><div class="tile"><span class="small">現在叫號</span><strong>'+safe(live?.display_number||"—")+'</strong></div><div class="tile"><span class="small">等候中</span><strong>'+wait.length+'</strong></div><div class="tile"><span class="small">過號</span><strong>'+missed.length+'</strong></div></div><div class="buttons" style="margin-top:17px">'+button("叫下一位","call","primary",busy||!!live||!wait.length)+button("再叫一次","recall","plain",busy||!live||live.status!=="CALLED")+button("開始服務","start","secondary",busy||!live||live.status!=="CALLED")+button("完成服務","complete","secondary",busy||!live)+button("標記過號","pass","danger",busy||!live)+'</div></section><section class="panel"><h2>候位順序</h2>'+(wait.map((x,i)=>row(x.display_number,x.name+"・"+(x.source==="WALKIN"?"現場取號":"預約報到"),'<span class="small">第 '+(i+1)+' 位</span>')).join("")||'<p>沒有等待中的顧客</p>')+'</section><section class="panel"><h2>過號名單</h2>'+(missed.map(x=>row(x.display_number,x.name,'<button class="btn plain" data-return="'+x.ticket_no+'">安排下一位</button>')).join("")||'<p>目前無過號</p>')+'</section>';
+}else{
+$("app").innerHTML='<section class="panel"><h2>✅ 預約到店報到</h2><p>只有今日的有效預約可報到。報到後將新增一張真實號碼牌。</p>'+(r.filter(x=>x.day===data.today).map(x=>row(x.name,x.time+"・"+x.party+" 位・"+label(x.status),(x.status==="CONFIRMED"?'<button class="btn secondary" data-checkin="'+safe(x.id)+'">報到取號</button>':x.ticket_no?'<span class="status">A'+String(x.ticket_no).padStart(3,"0")+'</span>':""))).join("")||'<p>今日沒有預約紀錄</p>')+'</section>';
 }
 }
-document.addEventListener("click",function(e){var b=e.target.closest("[data-go],[data-action],[data-time],[data-checkin],[data-insert]");if(!b)return;
-if(b.dataset.go){navTo(b.dataset.go);return}
-if(b.dataset.time){draft.name=($("booking-name")||{}).value||draft.name;draft.party=Number(($("booking-party")||{}).value||draft.party);draft.time=b.dataset.time;render();return}
-if(b.dataset.checkin){
-var r=state.reservations.find(function(x){return x.id===b.dataset.checkin});if(!r||r.status!=="CONFIRMED")return;
-var t={id:uid("t"),number:"A"+String(state.seq++).padStart(3,"0"),name:r.name,status:"WAITING",kind:"預約報到",reservationId:r.id,created:Date.now()};
-state.tickets.push(t);r.status="CHECKED_IN";r.ticketId=t.id;log(r.number+" 到店報到，產生 "+t.number);persist();say(r.name+" 已報到，號碼 "+t.number);return;
 }
-if(b.dataset.insert){var t=state.tickets.find(function(x){return x.id===b.dataset.insert});if(!t||t.status!=="PASSED")return;
-state.tickets=state.tickets.filter(function(x){return x.id!==t.id});t.status="WAITING";state.tickets.unshift(t);log(t.number+" 過號回歸，排下一位");persist();say(t.number+" 已安排到下一位");return}
-if(b.dataset.action)click(b.dataset.action,b);
+function setupScreen(){
+$("side").innerHTML='<section class="panel"><h2>部署狀態</h2><p>GitHub Pages 已部署；尚未有可連線的 Supabase 專案。資料庫建立之前，不會假裝預約成功。</p><p>資料庫 SQL：<a href="https://github.com/hub-google/LINE/blob/main/store-operations/supabase/schema.sql">schema.sql</a></p></section>';
+$("app").innerHTML='<section class="panel"><h2>💾 連接雲端 PostgreSQL</h2><p>本版所有操作都會寫入 Supabase，需先建立免費專案、在 SQL Editor 執行 schema.sql，並在 Authentication 啟用匿名登入。</p><p><b>請只輸入 Supabase Project URL 和 publishable key。</b>不要輸入 secret / service_role 密鑰。</p><label for="db-url">Supabase Project URL</label><input class="field" id="db-url" placeholder="https://xxxxxxxx.supabase.co" value="'+safe(config().url||"")+'"><label for="db-key">Publishable key（公開金鑰）</label><input class="field" id="db-key" placeholder="sb_publishable_..." value="'+safe(config().publishableKey||"")+'"><div style="margin-top:13px">'+button("連接真實資料庫","connect","primary full")+'</div><div class="hint">輸入設定僅保存在你目前瀏覽器；完成驗收後，可把公開設定寫入 GitHub Pages，讓任何裝置直接使用同一套後端。</div></section>';
+}
+async function refresh(){if(!client||!session)return;const r=await client.rpc("so_demo_state",{p_date:currentDate});if(r.error)throw r.error;data=r.data;render()}
+async function start(){
+const c=config();
+if(!isConfigured(c)){error="尚未配置 Supabase 資料庫，請先連接。";render();return}
+try{
+client=createClient(c.url.trim(),c.publishableKey.trim(),{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+const r=await client.auth.getSession();if(r.error)throw r.error;session=r.data.session;
+if(!session){const anon=await client.auth.signInAnonymously();if(anon.error)throw anon.error;session=anon.data.session}
+await refresh();error="";
+}catch(e){data=null;error="雲端連線失敗："+(e.message||e)+"。請確認 Supabase Anonymous Sign-Ins 已開啟、SQL 已套用。";render()}
+}
+async function run(fn){
+if(busy)return;
+busy=true;error="";notice="";render();
+try{await fn();await refresh()}catch(e){error=e.message||String(e);render()}
+finally{busy=false;render()}
+}
+function rpc(name,params){return client.rpc(name,params).then(r=>{if(r.error)throw r.error;return r.data})}
+document.addEventListener("click",e=>{
+const b=e.target.closest("button");if(!b)return;
+if(b.dataset.page){name=$("book-name")?.value||name;party=Number($("book-party")?.value||party);page=b.dataset.page;render();return}
+if(b.dataset.slot){name=$("book-name")?.value||name;party=Number($("book-party")?.value||party);slot=b.dataset.slot;render();return}
+if(b.dataset.action==="connect"){
+const url=$("db-url").value.trim(),publishableKey=$("db-key").value.trim();
+if(!isConfigured({url,publishableKey})){showErr("請輸入正確的 Supabase URL 和 publishable key");return}
+localStorage.setItem(keyStorage,JSON.stringify({url,publishableKey}));client=null;session=null;data=null;start();return;
+}
+if(!client||!session||!data)return;
+if(b.dataset.action==="go-login"){page="login";render();return}
+if(b.dataset.action==="book"){const bookingName=($("book-name")?.value||"").trim();const bookingParty=Number($("book-party")?.value||1);name=bookingName;party=bookingParty;
+run(async()=>{if(!slot||!bookingName)throw Error("請填暱稱並選擇時段");await rpc("so_demo_book",{p_name:bookingName,p_date:currentDate,p_slot:slot,p_party:bookingParty});notice="預約已寫入資料庫";slot=""});return}
+if(b.dataset.action==="take-ticket"){const nm=($("take-name")?.value||"").trim()||"現場顧客";run(async()=>{const x=await rpc("so_demo_take_ticket",{p_name:nm});notice="取號成功："+x.display_number});return}
+if(b.dataset.action==="cancel-ticket"){const t=data.tickets.find(x=>x.mine&&x.status==="WAITING");if(t&&confirm("確定取消 "+t.display_number+"？"))run(async()=>{await rpc("so_demo_cancel_ticket",{p_ticket_no:t.ticket_no});notice="已取消取號"});return}
+if(b.dataset.cancelBook){if(confirm("確定取消這筆預約？"))run(async()=>{await rpc("so_demo_cancel_reservation",{p_id:b.dataset.cancelBook});notice="已取消預約"});return}
+if(b.dataset.action==="staff-login"){const email=$("staff-email")?.value,password=$("staff-password")?.value;
+run(async()=>{const r=await client.auth.signInWithPassword({email,password});if(r.error)throw r.error;session=r.data.session;page="staff";notice="登入完成，正在檢查店員權限"});return}
+if(b.dataset.action==="logout"){run(async()=>{const q=await client.auth.signOut();if(q.error)throw q.error;const a=await client.auth.signInAnonymously();if(a.error)throw a.error;session=a.data.session;page="home";notice="已切回匿名顧客"});return}
+if(b.dataset.action&&["call","recall","start","complete","pass"].includes(b.dataset.action)){
+const action=b.dataset.action;run(async()=>{const result=await rpc("so_demo_staff_action",{p_action:action});notice="店員操作完成："+(result.display_number||action)});return}
+if(b.dataset.return){run(async()=>{await rpc("so_demo_staff_action",{p_action:"return",p_ticket_no:Number(b.dataset.return)});notice="已安排到下一位"});return}
+if(b.dataset.checkin){run(async()=>{const r=await rpc("so_demo_staff_action",{p_action:"checkin",p_reservation_id:b.dataset.checkin});notice="報到成功，號碼 "+r.display_number});return}
 });
-document.addEventListener("change",function(e){if(e.target.id==="booking-date"){draft.date=e.target.value;draft.name=($("booking-name")||{}).value||draft.name;draft.party=Number(($("booking-party")||{}).value||draft.party);draft.time="";render()}});
-window.addEventListener("hashchange",function(){view=location.hash.slice(1)||"customer-home";render()});
-window.addEventListener("storage",function(e){if(e.key===KEY||e.key===ME||e.key===MYR){state=load();render()}});
-if(channel)channel.onmessage=function(){state=load();render()};
-if(!location.hash)history.replaceState(null,"","#customer-home");
-render();
-})();
-</script>
-</body>
-</html>
+document.addEventListener("change",e=>{if(e.target.id==="book-date"){currentDate=e.target.value;slot="";run(async()=>{await refresh()})}});
+window.addEventListener("focus",()=>{if(client&&session)refresh().catch(e=>showErr(e.message||String(e)))});
+setInterval(()=>{if(!document.hidden&&client&&session&&!busy)refresh().catch(e=>{error=e.message||String(e);render()})},5000);
+start();
+</script></body></html>
