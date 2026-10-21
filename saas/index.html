@@ -105,7 +105,7 @@ function platformRender(){
   html=box("新增企業客戶",'<p class="muted">完成後立刻建立獨立資料租戶與網址，不必建立新的 GitHub 專案。</p><div class="grid"><div>'+
      field("企業名稱","create-name","示範企業")+field("網址英文代碼","create-slug","my-company","text",'pattern="[a-z0-9-]{3,40}"')+
      '</div><div>'+field("第一位企業管理者 Email（選填）","create-owner","","email")+'<p class="small">填寫後產生待接受邀請。管理者須使用此信箱註冊並接受邀請。</p></div></div><label>功能勾選</label>'+featureChecks({reservation:true,queue:true,calling:true},"create-feature")+
-      '<div style="margin-top:17px">'+btn("建立企業專屬網站","create-tenant","primary")+'</div>');
+      '<div class="grid"><div>'+field("企業電話","create-phone")+field("企業地址","create-address")+field("每日開始營業時間","create-open","10:00","time")+'</div><div>'+field("品牌色（#RRGGBB）","create-accent","#147e68")+field("單時段最多預約人數","create-capacity",3,"number",'min="1" max="100"')+field("每日結束營業時間","create-close","20:00","time")+'</div></div><div style="margin-top:17px">'+btn("建立企業專屬網站","create-tenant","primary")+'</div>');
  }else html=box("平台運作方式",'<p>每家企業使用同一個 GitHub Pages 前端；預約、號碼、員工、設定分別以企業 ID 保存在 Supabase。</p><p>平台登入使用 Supabase Auth，管理權限在資料庫中驗證。LINE OA 尚未接入；目前完成的是獨立網頁與資料庫功能。</p>');
  return layout("公司總後台","企業開通與模組管理",menu,html);
 }
@@ -206,7 +206,7 @@ document.addEventListener("click",async ev=>{
  if(a==="accept-invite"){await act(async()=>{await rpc("so_accept_invite",{p_invite_id:id});return "已接受企業邀請";});return}
  if(a==="claim-admin"){await act(async()=>{await rpc("so_claim_platform_admin",{p_token:val("bootstrap-token")});return "已取得平台管理員權限";});return}
  if(a==="new-tenant"){platformTab="create";render();return}
- if(a==="create-tenant"){await act(async()=>{const result=await rpc("so_create_tenant",{p_name:val("create-name"),p_slug:val("create-slug"),p_modules:checked("create-feature"),p_owner_email:val("create-owner")||null});platformTab="list";chosenCompany=result.slug;return "企業已建立，專屬網址可立即使用";});return}
+ if(a==="create-tenant"){await act(async()=>{const result=await rpc("so_create_tenant",{p_name:val("create-name"),p_slug:val("create-slug"),p_modules:checked("create-feature"),p_owner_email:val("create-owner")||null});await rpc("so_update_tenant",{p_slug:result.slug,p_patch:{phone:val("create-phone"),address:val("create-address"),open_time:val("create-open"),close_time:val("create-close"),accent:val("create-accent"),slot_capacity:Number(val("create-capacity"))}});platformTab="list";chosenCompany=result.slug;return "企業已建立，專屬網址可立即使用";});return}
  if(a==="company-config"){chosenCompany=b.dataset.slug;render();return}
  if(a==="save-company"){await act(async()=>{await rpc("so_update_tenant",{p_slug:chosenCompany,p_patch:{name:val("config-name"),modules:checked("config-feature")}});return "企業名稱及模組已更新";});return}
  if(a==="toggle-company"){await act(async()=>{const t=overview.find(x=>x.slug===chosenCompany);await rpc("so_update_tenant",{p_slug:chosenCompany,p_patch:{status:t.status==="ACTIVE"?"SUSPENDED":"ACTIVE"}});return "已更新企業啟用狀態";});return}
