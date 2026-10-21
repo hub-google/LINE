@@ -84,7 +84,7 @@ function featureChecks(data={},prefix="feature"){
 }
 function platformRender(){
  if(!authReady())return requireAuth();
- if(!context||!context.platform_admin)return box("平台管理權限待核准",'<p>你已登入 <strong>'+esc(normalUser())+'</strong>，但目前不是平台管理員。</p><p class="muted">此平台不允許任何新註冊者自行取得全平台權限。請在 Supabase 管理介面將核准帳號加入 <code>so_platform_admins</code> 後重新整理。</p>');
+ if(!context||!context.platform_admin)return box("首次啟用公司總後台",'<p>目前登入帳號：<strong>'+esc(normalUser())+'</strong></p><p class="muted">公司總後台採管理員專用授權，不會因註冊帳號就自動獲得權限。請使用一次性開通碼啟用，完成後此碼立即失效。</p>'+field("公司總後台一次性開通碼","bootstrap-token","","text",'autocomplete="off" maxlength="64"')+'<div style="margin-top:15px">'+btn("啟用我的平台管理員權限","claim-admin","primary")+'</div><p class="small">需要使用已驗證電子郵件的正式帳號，匿名顧客帳號不能啟用。</p>');
  const menu=nav("企業列表","list",platformTab,"platform")+nav("開通新企業","create",platformTab,"platform")+nav("平台說明","about",platformTab,"platform");
  let html="";
  if(platformTab==="list"){
@@ -204,6 +204,7 @@ document.addEventListener("click",async ev=>{
  if(r.error)throw Error(r.error.message);session=r.data.session;return a==="signup"?"帳號已送出註冊；如需確認信，請先驗證後登入。":"登入成功";});return}
  if(a==="logout"){await act(async()=>{const r=await supa.auth.signOut();if(r.error)throw Error(r.error.message);session=null;context=null;staff=null;return "已登出";});return}
  if(a==="accept-invite"){await act(async()=>{await rpc("so_accept_invite",{p_invite_id:id});return "已接受企業邀請";});return}
+ if(a==="claim-admin"){await act(async()=>{await rpc("so_claim_platform_admin",{p_token:val("bootstrap-token")});return "已取得平台管理員權限";});return}
  if(a==="new-tenant"){platformTab="create";render();return}
  if(a==="create-tenant"){await act(async()=>{const result=await rpc("so_create_tenant",{p_name:val("create-name"),p_slug:val("create-slug"),p_modules:checked("create-feature"),p_owner_email:val("create-owner")||null});platformTab="list";chosenCompany=result.slug;return "企業已建立，專屬網址可立即使用";});return}
  if(a==="company-config"){chosenCompany=b.dataset.slug;render();return}
@@ -224,6 +225,6 @@ document.addEventListener("click",async ev=>{
 });
 document.addEventListener("change",async ev=>{if(ev.target.id==="staff-day"||ev.target.id==="customer-day"){day=ev.target.value;chosenSlot="";await load()}});
 window.addEventListener("focus",()=>{if(!busy&&(view==="customer"||view==="staff"))load()});
-setInterval(()=>{if(!document.hidden&&!busy&&(view==="customer"||view==="staff"))load()},15000);
+setInterval(()=>{if(!document.hidden&&!busy&&!document.activeElement?.matches("input,select,textarea")&&(view==="customer"||view==="staff"))load()},15000);
 load();
 </script></body></html>
