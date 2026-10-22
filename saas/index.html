@@ -50,9 +50,9 @@ const $=id=>document.getElementById(id);
 const params=new URLSearchParams(location.search);
 let view=params.get("view")||"home",slug=params.get("merchant")||"greenfield-salon";
 let session=null,context=null,overview=[],customer=null,staff=null,busy=false,flash="",err="";
-let day=taipei(),customerTab="home",staffTab="dashboard",platformTab="list",chosenSlot="",chosenCompany="",registration=false;
+let day=taipei(),customerTab=["home","reserve","queue","mine"].includes(params.get("tab"))?params.get("tab"):"home",staffTab="dashboard",platformTab="list",chosenSlot="",chosenCompany="",registration=false;
 const features=[["reservation","線上預約"],["queue","線上取號"],["calling","現場叫號"]];
-const route=(v,s=slug)=>location.pathname+"?view="+encodeURIComponent(v)+(s?"&merchant="+encodeURIComponent(s):"");
+const route=(v,s=slug,tab="")=>location.pathname+"?view="+encodeURIComponent(v)+(s?"&merchant="+encodeURIComponent(s):"")+(v==="customer"&&tab?"&tab="+encodeURIComponent(tab):"");
 function taipei(){return new Intl.DateTimeFormat("sv-SE",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date())}
 function esc(x){return String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function jsStatus(s){return ({CONFIRMED:"已預約",CHECKED_IN:"已報到",COMPLETED:"已完成",CANCELLED:"已取消",NO_SHOW:"未到",WAITING:"等候中",CALLED:"已叫號",SERVING:"服務中",PASSED:"已過號",ACTIVE:"啟用中",SUSPENDED:"已停用"})[s]||s}
@@ -183,7 +183,7 @@ async function load(){err="";try{
  const s=await supa.auth.getSession();if(s.error)throw s.error;session=s.data.session;
  if(view==="customer"&&!session){const x=await supa.auth.signInAnonymously();if(x.error)throw x.error;session=x.data.session;}
  await loadContext();
- if(view==="customer")customer=await rpc("so_public_state",{p_slug:slug,p_date:day});
+ if(view==="customer"){customer=await rpc("so_public_state",{p_slug:slug,p_date:day});if(customerTab==="reserve"&&!customer.tenant.modules?.reservation)customerTab="home";if(customerTab==="queue"&&!customer.tenant.modules?.queue)customerTab="home";}
  if(view==="platform"&&context?.platform_admin)overview=await rpc("so_platform_overview");
  if(view==="staff"&&authReady()&&(context?.platform_admin||context?.memberships?.some(m=>m.slug===slug)))staff=await rpc("so_staff_state",{p_slug:slug,p_date:day});
  else if(view==="staff")staff=null;
@@ -194,7 +194,7 @@ function val(id){return ($(id)?.value||"").trim()}
 function urlFor(v,s){return new URL(route(v,s),location.href).href}
 document.addEventListener("click",async ev=>{
  const b=ev.target.closest("button");if(!b||busy)return;
- if(b.dataset.nav){const v=b.dataset.nav;const tab=b.dataset.tab;if(v==="customer"){customerTab=tab;if(!customer?.tenant.modules[tab==="reserve"?"reservation":tab==="queue"?"queue":"reservation"]&&["reserve","queue"].includes(tab))customerTab="home"}if(v==="staff")staffTab=tab;if(v==="platform")platformTab=tab;err="";flash="";render();return}
+ if(b.dataset.nav){const v=b.dataset.nav;const tab=b.dataset.tab;if(v==="customer"){customerTab=tab;if(!customer?.tenant.modules[tab==="reserve"?"reservation":tab==="queue"?"queue":"reservation"]&&["reserve","queue"].includes(tab))customerTab="home";history.replaceState(null,"",route("customer",slug,customerTab))}if(v==="staff")staffTab=tab;if(v==="platform")platformTab=tab;err="";flash="";render();return}
  if(b.dataset.slot){chosenSlot=b.dataset.slot;render();return}
  const a=b.dataset.act,id=b.dataset.id;
  if(!a)return;
