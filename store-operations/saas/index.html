@@ -61,7 +61,7 @@ function btn(label,action,style="",extra=""){return '<button class="btn '+style+
 function stat(label,n){return '<div class="stat"><span>'+esc(label)+'</span><strong>'+esc(n)+'</strong></div>'}
 function field(label,id,val="",type="text",attrs=""){return '<label for="'+id+'">'+esc(label)+'</label><input class="field" id="'+id+'" type="'+type+'" '+attrs+' value="'+esc(val)+'">'}
 function box(title,inner){return '<section class="card"><h2>'+title+'</h2>'+inner+'</section>'}
-function requireAuth(){return '<div class="card auth"><h1>員工與平台管理員登入</h1><p class="muted">使用 Supabase Auth 電子郵件帳號。員工必須取得企業邀請；平台管理員需要另外核准權限。</p><div class="grid"><div>'+field("電子郵件","auth-email","","email",'autocomplete="email"')+'</div><div>'+field("密碼","auth-pass","","password",'autocomplete="current-password" minlength="8"')+'</div></div><div class="flex" style="margin-top:17px">'+btn("登入","login","primary")+btn("註冊員工帳號","signup","outline")+'</div><p class="small">註冊後如有驗證信，請先完成電子郵件驗證；系統不會讓一般註冊者自動取得管理權限。</p></div>'}
+function requireAuth(){return '<div class="card auth"><h1>測試登入</h1><p class="muted">測試顧客預約、取號與雲端資料保存。公開測試帳密僅供訪客使用，不具店員或平台管理權限。</p><div class="grid"><div>'+field("測試帳號","demo-user","demo","text",'readonly autocomplete="off"')+'</div><div>'+field("測試密碼","demo-password","demo12345","text",'readonly autocomplete="off"')+'</div></div><div class="flex" style="margin:16px 0 24px">'+btn("登入測試網站","demo-login","primary")+'</div><hr style="border:0;border-top:1px solid #e2e8f0;margin:24px 0"><h2>正式員工與平台管理員登入</h2><p class="muted">使用 Supabase Auth 電子郵件帳號。員工必須取得企業邀請；平台管理員需要另外核准權限。</p><div class="grid"><div>'+field("電子郵件","auth-email","","email",'autocomplete="email"')+'</div><div>'+field("密碼","auth-pass","","password",'autocomplete="current-password" minlength="8"')+'</div></div><div class="flex" style="margin-top:17px">'+btn("登入","login","primary")+btn("註冊員工帳號","signup","outline")+'</div><p class="small">註冊後如有驗證信，請先完成電子郵件驗證；系統不會讓一般註冊者自動取得管理權限。</p></div>'}
 function authReady(){return !!(session&&session.user&&!session.user.is_anonymous)}
 function normalUser(){return session&&session.user?session.user.email||"匿名使用者":"尚未登入"}
 function nav(label,tab,current,which){return '<button class="side-item '+(tab===current?"active":"")+'" data-nav="'+which+'" data-tab="'+tab+'">'+label+'</button>'}
@@ -198,6 +198,7 @@ document.addEventListener("click",async ev=>{
  if(b.dataset.slot){chosenSlot=b.dataset.slot;render();return}
  const a=b.dataset.act,id=b.dataset.id;
  if(!a)return;
+ if(a==="demo-login"){await act(async()=>{if(!session){const r=await supa.auth.signInAnonymously();if(r.error)throw Error(r.error.message);session=r.data.session;}view="customer";slug="greenfield-salon";customerTab="home";history.replaceState(null,"",route("customer",slug));return "已進入真實資料庫測試顧客網站";});return}
  if(a==="login"||a==="signup"){const email=val("auth-email"),password=val("auth-pass");if(!email||password.length<8){err="請輸入 Email 與至少 8 字元的密碼";render();return}
  await act(async()=>{if(session?.user?.is_anonymous){await supa.auth.signOut();session=null}
  const r=a==="login"?await supa.auth.signInWithPassword({email,password}):await supa.auth.signUp({email,password});
