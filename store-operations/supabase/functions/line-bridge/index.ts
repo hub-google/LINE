@@ -152,7 +152,7 @@ async function oaAddFriendUrl(): Promise<string | null> {
     if (!res.ok) return null;
     const info = await res.json();
     const id = typeof info.basicId === "string" ? info.basicId : "";
-    return /^@[a-z0-9_.-]{2,100}$/i.test(id) ? "https://line.me/R/ti/p/" + encodeURIComponent(id) : null;
+    return /^@[a-z0-9_.-]{2,100}$/i.test(id) ? "https://line.me/R/ti/p/" + id : null;
   } catch { return null; }
 }
 
