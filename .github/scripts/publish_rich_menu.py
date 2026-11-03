@@ -18,12 +18,12 @@ SPLITS_Y = [0, 843, HEIGHT]
 BASE = "https://hub-google.github.io/LINE/saas/"
 CENTER = BASE + "merchant-center.html"
 ITEMS = [
-    ("免費體驗", "真實系統操作", "play", {"type": "uri", "label": "免費體驗", "uri": BASE + "?view=platform"}),
-    ("開通門市", "申請使用服務", "store", {"type": "message", "label": "開通門市", "text": "我要申請開通門市"}),
-    ("店家後台", "預約與叫號管理", "dashboard", {"type": "uri", "label": "店家後台", "uri": BASE + "?view=staff"}),
-    ("功能介紹", "了解產品特色", "features", {"type": "uri", "label": "功能介紹", "uri": CENTER + "#features"}),
-    ("使用教學", "快速操作指南", "guide", {"type": "uri", "label": "使用教學", "uri": CENTER + "#guide"}),
-    ("聯絡客服", "問題與協助", "support", {"type": "message", "label": "聯絡客服", "text": "我要聯絡客服"}),
+    ("搜尋店家", "找店家並預約", "search", {"type": "uri", "label": "搜尋店家", "uri": BASE + "directory.html?mode=search"}),
+    ("我的預約", "查看與取消", "features", {"type": "uri", "label": "我的預約", "uri": BASE + "directory.html?mode=mine"}),
+    ("現場取號", "選店家領號碼", "play", {"type": "uri", "label": "現場取號", "uri": BASE + "directory.html?mode=queue"}),
+    ("商家免費開通", "沒有 OA 也能用", "store", {"type": "uri", "label": "商家免費開通", "uri": CENTER + "#activate"}),
+    ("商家管理後台", "預約與叫號管理", "dashboard", {"type": "uri", "label": "商家管理後台", "uri": BASE + "?view=staff"}),
+    ("客服與教學", "操作說明與協助", "support", {"type": "uri", "label": "客服與教學", "uri": CENTER + "#guide"}),
 ]
 
 
@@ -41,7 +41,10 @@ def font(size, bold=False):
 
 def icon(draw, kind, x, y, ink):
     stroke = 18
-    if kind == "play":
+    if kind == "search":
+        draw.ellipse((x - 98, y - 100, x + 35, y + 33), outline=ink, width=stroke)
+        draw.line((x + 23, y + 20, x + 103, y + 102), fill=ink, width=stroke)
+    elif kind == "play":
         draw.ellipse((x - 96, y - 96, x + 96, y + 96), outline=ink, width=stroke)
         draw.polygon([(x - 24, y - 52), (x + 68, y), (x - 24, y + 52)], fill=ink)
     elif kind == "store":
