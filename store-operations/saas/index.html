@@ -887,6 +887,17 @@ async function load(){err="";try{
    history.replaceState(null,"",route("staff",slug));
  }
  if(view!=="customer"){await bridgeConfig();await loadContext();}
+ // Recover an already-authorized original test manager after the local UI
+ // preference has been cleared. Never use this to grant new permissions.
+ if(view==="staff"&&!recoveryMode&&!testMode&&session?.user?.is_anonymous){
+   const original=context?.memberships?.find(m=>m.slug===ORIGINAL_QA_STORE);
+   if(original){
+     testInfo={slug:ORIGINAL_QA_STORE};testMode=true;
+     localStorage.setItem(TEST_KEY,JSON.stringify(testInfo));
+     slug=ORIGINAL_QA_STORE;
+     history.replaceState(null,"",route("staff",slug));
+   }
+ }
   if(testMode&&view!=="customer"&&session?.user?.is_anonymous){
    const membership=context?.memberships?.find(m=>m.slug===testInfo?.slug);
    if(!membership){testMode=false;testInfo=null;localStorage.removeItem(TEST_KEY)}
@@ -973,7 +984,9 @@ document.addEventListener("click",async ev=>{
   }catch(e){showActionFeedback(e.message||String(e),"error");}
   return;
  }
- if(a==="test-login"){await act(async()=>{
+ if(a==="test-login"){
+  if(view==="staff"&&!confirm("這會建立新的空白測試門市，與原本的預約及取號紀錄分開。確定建立新門市嗎？"))return;
+  await act(async()=>{
    if(session&&!session.user?.is_anonymous){const out=await supa.auth.signOut();if(out.error)throw out.error;session=null}
    if(!session){const created=await supa.auth.signInAnonymously();if(created.error)throw created.error;session=created.data.session}
    const result=await rpc("so_test_login",{p_view:view==="platform"?"PLATFORM":"STAFF"});
