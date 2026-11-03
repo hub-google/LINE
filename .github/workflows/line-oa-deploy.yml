@@ -1,0 +1,64 @@
+name: LINE OA 憑證同步與後端部署
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-line:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      LINE_MESSAGING_CHANNEL_ID: ${{ secrets.LINE_MESSAGING_CHANNEL_ID }}
+      LINE_MESSAGING_CHANNEL_SECRET: ${{ secrets.LINE_MESSAGING_CHANNEL_SECRET }}
+      LINE_MESSAGING_ACCESS_TOKEN: ${{ secrets.LINE_MESSAGING_ACCESS_TOKEN }}
+      LINE_LOGIN_CHANNEL_ID: ${{ secrets.LINE_LOGIN_CHANNEL_ID }}
+      LINE_LOGIN_CHANNEL_SECRET: ${{ secrets.LINE_LOGIN_CHANNEL_SECRET }}
+      LINE_LIFF_ID: ${{ secrets.LINE_LIFF_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate required encrypted secrets without disclosing values
+        shell: bash
+        run: |
+          for key in SUPABASE_ACCESS_TOKEN LINE_MESSAGING_CHANNEL_ID LINE_MESSAGING_CHANNEL_SECRET LINE_MESSAGING_ACCESS_TOKEN LINE_LOGIN_CHANNEL_ID LINE_LOGIN_CHANNEL_SECRET LINE_LIFF_ID; do
+            if [ -z "${!key}" ]; then
+              echo "::error title=Missing secret::Repository secret $key is not configured"
+              exit 1
+            fi
+          done
+      - uses: supabase/setup-cli@v3
+        with:
+          version: latest
+      - name: Deploy backend and sync encrypted LINE configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          secrets_file="$(mktemp)"
+          trap 'rm -f "$secrets_file"' EXIT
+          {
+            printf 'LINE_MESSAGING_CHANNEL_ID=%s\n' "$LINE_MESSAGING_CHANNEL_ID"
+            printf 'LINE_MESSAGING_CHANNEL_SECRET=%s\n' "$LINE_MESSAGING_CHANNEL_SECRET"
+            printf 'LINE_MESSAGING_ACCESS_TOKEN=%s\n' "$LINE_MESSAGING_ACCESS_TOKEN"
+            printf 'LINE_LOGIN_CHANNEL_ID=%s\n' "$LINE_LOGIN_CHANNEL_ID"
+            printf 'LINE_LOGIN_CHANNEL_SECRET=%s\n' "$LINE_LOGIN_CHANNEL_SECRET"
+            printf 'LINE_LIFF_ID=%s\n' "$LINE_LIFF_ID"
+          } > "$secrets_file"
+          supabase secrets set --env-file "$secrets_file" --project-ref unapiwajmgqqtdkixaab
+          mkdir -p supabase/functions/line-bridge
+          cp store-operations/supabase/functions/line-bridge/index.ts supabase/functions/line-bridge/index.ts
+          supabase functions deploy line-bridge --project-ref unapiwajmgqqtdkixaab --no-verify-jwt --use-api
+      - name: Verify configuration and backend reachability without printing keys
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json,urllib.request
+          url="https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/line-bridge?action=config"
+          response=json.load(urllib.request.urlopen(url, timeout=20))
+          assert response.get("liffId")==__import__("os").environ["LINE_LIFF_ID"],"LIFF ID config does not match secret"
+          assert response.get("loginReady") is True,"LINE Login is not configured"
+          assert response.get("messagingReady") is True,"LINE Messaging is not configured"
+          print("LINE bridge config verified; no secrets displayed.")
+          PY
