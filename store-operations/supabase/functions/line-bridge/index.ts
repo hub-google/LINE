@@ -525,11 +525,13 @@ Deno.serve(async (req: Request) => {
       if (waitingBefore.error || activeCount.error || activeTicket.error || lastCalled.error)
         return reply(503, { error: "QUEUE_POSITION_UNAVAILABLE" }, origin);
       const ahead = (waitingBefore.count ?? 0) + (activeCount.count ?? 0);
+      // The Flex message is an immutable issuance-time snapshot. Only the
+      // linked LIFF board can show current numbers as they change.
       const calling = activeTicket.data
-        ? "現在叫到：A" + String(activeTicket.data.ticket_no).padStart(3, "0")
+        ? "取號當時叫到：A" + String(activeTicket.data.ticket_no).padStart(3, "0")
         : lastCalled.data
-          ? "最近叫到：A" + String(lastCalled.data.ticket_no).padStart(3, "0")
-          : "目前尚未開始叫號";
+          ? "取號當時最近叫到：A" + String(lastCalled.data.ticket_no).padStart(3, "0")
+          : "取號當時尚未開始叫號";
       return pushNotice(db, tenant, user.id, "TICKET_CREATED", ticket.id,
         flexNotice("取號成功", [
           "店家：" + tenant.name,
@@ -538,7 +540,8 @@ Deno.serve(async (req: Request) => {
           "前方還有 " + ahead + " 組候位／服務中",
           ...selectedServicesText(ticket.selected_items),
           ...shopDetails(tenant),
-          "叫號進度可能變動，請以最新頁面為準。",
+          "以上是取號當下的狀態；LINE 聊天室訊息不會自行更新。",
+          "點下方綠色按鈕，可查看持續更新的叫號看板。",
         ], [
           { label: "查看即時叫號", uri: liffQueueProgressLink(tenant, ticket.id) },
           { label: "取消排隊", uri: liffManageLink(tenant, "ticket", ticket.id, "cancel") },
