@@ -439,7 +439,7 @@ Deno.serve(async (req: Request) => {
       const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
       const { data: ticket } = await db.from("so_tickets")
         .select("id,user_id,status,updated_at,ticket_no,line_call_event_id")
-        .eq("tenant_id", tenant.id).eq("id", ticketId).maybeSingle();
+        .eq("tenant_id", tenant.id).eq("id", ticketId).is("deleted_at", null).maybeSingle();
       if (!ticket || ticket.status !== "CALLED" || ticket.line_call_event_id !== eventId ||
           !recently(ticket.updated_at, 90_000))
         return reply(409, { error: "CALL_EVENT_EXPIRED_OR_SUPERSEDED" }, origin);
@@ -455,7 +455,7 @@ Deno.serve(async (req: Request) => {
       if (!tenant || tenant.status !== "ACTIVE") return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
       const { data: booking } = await db.from("so_reservations")
         .select("id,user_id,status,created_at,booking_date,booking_time,party_size,selected_items")
-        .eq("id", payload.reservationId).eq("tenant_id", tenant.id).eq("user_id", user.id).maybeSingle();
+        .eq("id", payload.reservationId).eq("tenant_id", tenant.id).eq("user_id", user.id).is("deleted_at", null).maybeSingle();
       if (!booking || booking.status !== "CONFIRMED" || !recently(booking.created_at, 300_000))
         return reply(409, { error: "RESERVATION_NOT_RECENT" }, origin);
       const dateText = String(booking.booking_date);
@@ -481,20 +481,20 @@ Deno.serve(async (req: Request) => {
       if (!tenant || tenant.status !== "ACTIVE") return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
       const { data: ticket } = await db.from("so_tickets")
         .select("id,user_id,status,created_at,ticket_no,business_date,selected_items")
-        .eq("id", payload.ticketId).eq("tenant_id", tenant.id).eq("user_id", user.id).maybeSingle();
+        .eq("id", payload.ticketId).eq("tenant_id", tenant.id).eq("user_id", user.id).is("deleted_at", null).maybeSingle();
       if (!ticket || ticket.status !== "WAITING" || !recently(ticket.created_at, 300_000))
         return reply(409, { error: "TICKET_NOT_RECENT" }, origin);
       const number = "A" + String(ticket.ticket_no).padStart(3, "0");
       const [waitingBefore, activeCount, activeTicket, lastCalled] = await Promise.all([
         db.from("so_tickets").select("id", { count: "exact", head: true })
-          .eq("tenant_id", tenant.id).eq("status", "WAITING").lt("created_at", ticket.created_at),
+          .eq("tenant_id", tenant.id).eq("status", "WAITING").is("deleted_at", null).lt("created_at", ticket.created_at),
         db.from("so_tickets").select("id", { count: "exact", head: true })
-          .eq("tenant_id", tenant.id).in("status", ["CALLED", "SERVING"]),
+          .eq("tenant_id", tenant.id).in("status", ["CALLED", "SERVING"]).is("deleted_at", null),
         db.from("so_tickets").select("ticket_no,business_date")
-          .eq("tenant_id", tenant.id).in("status", ["CALLED", "SERVING"])
+          .eq("tenant_id", tenant.id).in("status", ["CALLED", "SERVING"]).is("deleted_at", null)
           .order("updated_at", { ascending: false }).limit(1).maybeSingle(),
         db.from("so_tickets").select("ticket_no,last_called_at")
-          .eq("tenant_id", tenant.id).eq("business_date", ticket.business_date)
+          .eq("tenant_id", tenant.id).eq("business_date", ticket.business_date).is("deleted_at", null)
           .not("last_called_at", "is", null)
           .order("last_called_at", { ascending: false }).limit(1).maybeSingle(),
       ]);
@@ -532,7 +532,7 @@ Deno.serve(async (req: Request) => {
       if (isTicket) {
         const { data: ticket } = await db.from("so_tickets")
           .select("id,user_id,status,ticket_no,line_cancel_event_id")
-          .eq("id", refId).eq("tenant_id", tenant.id).maybeSingle();
+          .eq("id", refId).eq("tenant_id", tenant.id).is("deleted_at", null).maybeSingle();
         if (!ticket || ticket.status !== "CANCELLED" || !ticket.line_cancel_event_id)
           return reply(409, { error: "TICKET_NOT_CANCELLED" }, origin);
         if (!await canManageRecipient(db, tenant.id, user.id, ticket.user_id))
@@ -547,7 +547,7 @@ Deno.serve(async (req: Request) => {
       }
       const { data: booking } = await db.from("so_reservations")
         .select("id,user_id,status,booking_date,booking_time,party_size,line_cancel_event_id,line_update_event_id,selected_items")
-        .eq("id", refId).eq("tenant_id", tenant.id).maybeSingle();
+        .eq("id", refId).eq("tenant_id", tenant.id).is("deleted_at", null).maybeSingle();
       if (!booking || !await canManageRecipient(db, tenant.id, user.id, booking.user_id))
         return reply(403, { error: "NOT_AUTHORIZED" }, origin);
       const detail = [
