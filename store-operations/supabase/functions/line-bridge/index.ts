@@ -156,13 +156,72 @@ async function oaAddFriendUrl(): Promise<string | null> {
   } catch { return null; }
 }
 
+type ShopInfo = { id: string; slug: string; name: string; address?: string | null; phone?: string | null };
+function liffManageLink(shop: ShopInfo, kind: "reservation" | "ticket", refId: string, mode: string): string | null {
+  const id = Deno.env.get("LINE_LIFF_ID") || "";
+  if (!/^\d{8,}-[A-Za-z0-9]+$/.test(id)) return null;
+  const query = new URLSearchParams({
+    view: "customer", merchant: shop.slug, tab: "mine",
+    manage: kind, item: refId, mode,
+  });
+  return "https://liff.line.me/" + id + "/?" + query.toString();
+}
+function flexNotice(title: string, details: string[], actions: { label: string; uri: string | null }[]): Record<string, unknown> {
+  const buttons = actions.filter((a): a is { label: string; uri: string } => !!a.uri);
+  const rows = details.filter(Boolean);
+  return {
+    type: "flex",
+    altText: [title, ...rows].join("｜").slice(0, 1500),
+    contents: {
+      type: "bubble",
+      size: "mega",
+      body: {
+        type: "box", layout: "vertical", spacing: "md", paddingAll: "20px",
+        contents: [
+          { type: "text", text: title, size: "xl", weight: "bold", color: "#096248", wrap: true },
+          ...rows.map((text) => ({ type: "text", text, size: "sm", color: "#334155", wrap: true })),
+        ],
+      },
+      ...(buttons.length ? { footer: {
+        type: "box", layout: "vertical", spacing: "sm", paddingAll: "15px",
+        contents: buttons.map((button, index) => ({
+          type: "button", height: "sm", style: index === 0 ? "primary" : "secondary",
+          ...(index === 0 ? { color: "#147e68" } : {}),
+          action: { type: "uri", label: button.label, uri: button.uri },
+        })),
+      } } : {}),
+    },
+  };
+}
+function shopDetails(shop: ShopInfo): string[] {
+  return [
+    ...(shop.address?.trim() ? ["地址：" + shop.address.trim()] : []),
+    ...(shop.phone?.trim() ? ["電話：" + shop.phone.trim()] : []),
+  ];
+}
+async function canManageRecipient(
+  db: ReturnType<typeof service>, shopId: string, actor: string, recipient: string,
+): Promise<boolean> {
+  if (actor === recipient) return true;
+  const { data: membership } = await db.from("so_members")
+    .select("role").eq("tenant_id", shopId).eq("user_id", actor).maybeSingle();
+  if (membership) return true;
+  const { data: platform } = await db.from("so_platform_admins")
+    .select("user_id").eq("user_id", actor).maybeSingle();
+  if (platform) return true;
+  const [a, r] = await Promise.all([
+    db.from("so_line_links").select("line_sub").eq("tenant_id", shopId).eq("user_id", actor).maybeSingle(),
+    db.from("so_line_links").select("line_sub").eq("tenant_id", shopId).eq("user_id", recipient).maybeSingle(),
+  ]);
+  return !a.error && !r.error && !!a.data?.line_sub && a.data.line_sub === r.data?.line_sub;
+}
 async function pushNotice(
   db: ReturnType<typeof service>,
   tenant: { id: string; name: string },
   recipient: string,
-  eventKind: "CALLED" | "RESERVED" | "TICKET_CREATED",
+  eventKind: "CALLED" | "RESERVED" | "TICKET_CREATED" | "TICKET_CANCELLED" | "RESERVATION_CANCELLED" | "RESERVATION_UPDATED",
   referenceId: string,
-  message: string,
+  message: string | Record<string, unknown>,
   origin: string | null,
 ) {
   const token = Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
@@ -196,7 +255,7 @@ async function pushNotice(
     response = await fetch("https://api.line.me/v2/bot/message/push", {
       method: "POST",
       headers: { authorization: "Bearer " + token, "content-type": "application/json" },
-      body: JSON.stringify({ to: linked.line_sub, messages: [{ type: "text", text: message }] }),
+      body: JSON.stringify({ to: linked.line_sub, messages: [typeof message === "string" ? { type: "text", text: message } : message] }),
     });
   } catch {
     await releaseClaim();
@@ -387,7 +446,7 @@ Deno.serve(async (req: Request) => {
     if (payload.action === "notify-reservation") {
       const slug = String(payload.slug || "");
       if (!slug || !validUUID(payload.reservationId)) return reply(400, { error: "BAD_REQUEST" }, origin);
-      const { data: tenant } = await db.from("so_tenants").select("id,name,status").eq("slug", slug).maybeSingle();
+      const { data: tenant } = await db.from("so_tenants").select("id,slug,name,status,address,phone").eq("slug", slug).maybeSingle();
       if (!tenant || tenant.status !== "ACTIVE") return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
       const { data: booking } = await db.from("so_reservations")
         .select("id,user_id,status,created_at,booking_date,booking_time,party_size")
@@ -397,21 +456,109 @@ Deno.serve(async (req: Request) => {
       const dateText = String(booking.booking_date);
       const timeText = String(booking.booking_time).slice(0, 5);
       return pushNotice(db, tenant, user.id, "RESERVED", booking.id,
-        tenant.name + "：預約成功！" + dateText + " " + timeText + "，" + booking.party_size + " 位。請準時到店。", origin);
+        flexNotice("預約已成立", [
+          "店家：" + tenant.name,
+          "日期：" + dateText,
+          "時間：" + timeText,
+          "人數：" + booking.party_size + " 位",
+          ...shopDetails(tenant),
+          "如需調整，可使用下方按鈕。",
+        ], [
+          { label: "編輯預約", uri: liffManageLink(tenant, "reservation", booking.id, "edit") },
+          { label: "取消預約", uri: liffManageLink(tenant, "reservation", booking.id, "cancel") },
+        ]), origin);
     }
     if (payload.action === "notify-ticket") {
       const slug = String(payload.slug || "");
       if (!slug || !validUUID(payload.ticketId)) return reply(400, { error: "BAD_REQUEST" }, origin);
-      const { data: tenant } = await db.from("so_tenants").select("id,name,status").eq("slug", slug).maybeSingle();
+      const { data: tenant } = await db.from("so_tenants").select("id,slug,name,status,address,phone").eq("slug", slug).maybeSingle();
       if (!tenant || tenant.status !== "ACTIVE") return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
       const { data: ticket } = await db.from("so_tickets")
-        .select("id,user_id,status,created_at,ticket_no")
+        .select("id,user_id,status,created_at,ticket_no,business_date")
         .eq("id", payload.ticketId).eq("tenant_id", tenant.id).eq("user_id", user.id).maybeSingle();
       if (!ticket || ticket.status !== "WAITING" || !recently(ticket.created_at, 300_000))
         return reply(409, { error: "TICKET_NOT_RECENT" }, origin);
       const number = "A" + String(ticket.ticket_no).padStart(3, "0");
+      const [waitingBefore, activeCount, activeTicket] = await Promise.all([
+        db.from("so_tickets").select("id", { count: "exact", head: true })
+          .eq("tenant_id", tenant.id).eq("status", "WAITING").lt("created_at", ticket.created_at),
+        db.from("so_tickets").select("id", { count: "exact", head: true })
+          .eq("tenant_id", tenant.id).in("status", ["CALLED", "SERVING"]),
+        db.from("so_tickets").select("ticket_no,business_date")
+          .eq("tenant_id", tenant.id).in("status", ["CALLED", "SERVING"])
+          .order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+      ]);
+      if (waitingBefore.error || activeCount.error || activeTicket.error)
+        return reply(503, { error: "QUEUE_POSITION_UNAVAILABLE" }, origin);
+      const ahead = (waitingBefore.count ?? 0) + (activeCount.count ?? 0);
+      const calling = activeTicket.data
+        ? "目前叫號：A" + String(activeTicket.data.ticket_no).padStart(3, "0")
+        : "目前尚未開始叫號";
       return pushNotice(db, tenant, user.id, "TICKET_CREATED", ticket.id,
-        tenant.name + "：取號成功！您的號碼是 " + number + "。請留意後續叫號通知。", origin);
+        flexNotice("取號成功", [
+          "店家：" + tenant.name,
+          "您的號碼：" + number,
+          calling,
+          "前方還有 " + ahead + " 組候位／服務中",
+          ...shopDetails(tenant),
+          "叫號進度可能變動，請以最新頁面為準。",
+        ], [
+          { label: "查看排隊進度", uri: liffManageLink(tenant, "ticket", ticket.id, "view") },
+          { label: "取消排隊", uri: liffManageLink(tenant, "ticket", ticket.id, "cancel") },
+        ]), origin);
+    }
+
+    if (payload.action === "notify-ticket-cancel" || payload.action === "notify-reservation-cancel" || payload.action === "notify-reservation-updated") {
+      const slug = String(payload.slug || "");
+      const isTicket = payload.action === "notify-ticket-cancel";
+      const refId = isTicket ? payload.ticketId : payload.reservationId;
+      if (!slug || !validUUID(refId)) return reply(400, { error: "BAD_REQUEST" }, origin);
+      const { data: tenant } = await db.from("so_tenants")
+        .select("id,slug,name,status,address,phone").eq("slug", slug).maybeSingle();
+      if (!tenant || tenant.status !== "ACTIVE") return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
+      if (isTicket) {
+        const { data: ticket } = await db.from("so_tickets")
+          .select("id,user_id,status,ticket_no,line_cancel_event_id")
+          .eq("id", refId).eq("tenant_id", tenant.id).maybeSingle();
+        if (!ticket || ticket.status !== "CANCELLED" || !ticket.line_cancel_event_id)
+          return reply(409, { error: "TICKET_NOT_CANCELLED" }, origin);
+        if (!await canManageRecipient(db, tenant.id, user.id, ticket.user_id))
+          return reply(403, { error: "NOT_AUTHORIZED" }, origin);
+        return pushNotice(db, tenant, ticket.user_id, "TICKET_CANCELLED", ticket.line_cancel_event_id,
+          flexNotice("已取消排隊", [
+            "店家：" + tenant.name,
+            "取消號碼：A" + String(ticket.ticket_no).padStart(3, "0"),
+            "此號碼已不在候位名單中。",
+            ...shopDetails(tenant),
+          ], [{ label: "查看我的紀錄", uri: liffManageLink(tenant, "ticket", ticket.id, "view") }]), origin);
+      }
+      const { data: booking } = await db.from("so_reservations")
+        .select("id,user_id,status,booking_date,booking_time,party_size,line_cancel_event_id,line_update_event_id")
+        .eq("id", refId).eq("tenant_id", tenant.id).maybeSingle();
+      if (!booking || !await canManageRecipient(db, tenant.id, user.id, booking.user_id))
+        return reply(403, { error: "NOT_AUTHORIZED" }, origin);
+      const detail = [
+        "店家：" + tenant.name,
+        "日期：" + booking.booking_date,
+        "時間：" + String(booking.booking_time).slice(0, 5),
+        "人數：" + booking.party_size + " 位",
+        ...shopDetails(tenant),
+      ];
+      if (payload.action === "notify-reservation-cancel") {
+        if (booking.status !== "CANCELLED" || !booking.line_cancel_event_id)
+          return reply(409, { error: "RESERVATION_NOT_CANCELLED" }, origin);
+        return pushNotice(db, tenant, booking.user_id, "RESERVATION_CANCELLED", booking.line_cancel_event_id,
+          flexNotice("預約已取消", detail, [
+            { label: "查看我的紀錄", uri: liffManageLink(tenant, "reservation", booking.id, "view") },
+          ]), origin);
+      }
+      if (booking.status !== "CONFIRMED" || !booking.line_update_event_id)
+        return reply(409, { error: "RESERVATION_NOT_UPDATED" }, origin);
+      return pushNotice(db, tenant, booking.user_id, "RESERVATION_UPDATED", booking.line_update_event_id,
+        flexNotice("預約已更新", [...detail, "以下為目前最新的預約資訊。"], [
+          { label: "編輯預約", uri: liffManageLink(tenant, "reservation", booking.id, "edit") },
+          { label: "取消預約", uri: liffManageLink(tenant, "reservation", booking.id, "cancel") },
+        ]), origin);
     }
     return reply(400, { error: "UNKNOWN_ACTION" }, origin);
   } catch (error) {
