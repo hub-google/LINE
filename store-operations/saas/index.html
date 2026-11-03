@@ -138,7 +138,7 @@ const liffState=params.get("liff.state")||"";
 const liffArgs=new URLSearchParams(liffState.includes("?")?liffState.slice(liffState.indexOf("?")+1):"");
 let view=params.get("view")||liffArgs.get("view")||"customer",slug=params.get("merchant")||liffArgs.get("merchant")||"greenfield-salon",demoMode=params.get("demo")==="1";
 let session=null,context=null,overview=[],customer=null,staff=null,busy=false,flash="",err="";
-let day=taipei(),customerTab=["home","reserve","queue","mine"].includes(params.get("tab"))?params.get("tab"):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
+let day=taipei(),customerTab=["home","reserve","queue","mine"].includes(params.get("tab")||liffArgs.get("tab"))?(params.get("tab")||liffArgs.get("tab")):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
 const features=[["reservation","線上預約"],["queue","線上取號"],["calling","現場叫號"]];
 const route=(v,s=slug,tab="")=>location.pathname+"?view="+encodeURIComponent(v)+(s?"&merchant="+encodeURIComponent(s):"")+(v==="customer"&&tab?"&tab="+encodeURIComponent(tab):"")+(demoMode?"&demo=1":"");
 function taipei(){return new Intl.DateTimeFormat("sv-SE",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date())}
@@ -276,12 +276,16 @@ function render(){head();$("root").innerHTML=message()+(demoMode?'<div class="no
 async function rpc(name,arg={}){if(demoMode)return window.LineDemo.rpc(name,arg,taipei());const r=await supa.rpc(name,arg);if(r.error)throw Error(r.error.message);return r.data}
 async function loadContext(){if(authReady())context=await rpc("so_my_context");else context=null}
 async function load(){err="";try{
-  if(demoMode){const d=window.LineDemo.load({view,slug,day,today:taipei()});context=d.context;overview=d.overview;staff=d.staff;customer=d.customer;if(view==="customer"&&customer){if(customerTab==="queue"&&!customer.tenant.modules.queue)customerTab="home";if(customerTab==="reserve"&&!customer.tenant.modules.reservation)customerTab="home";}render();return;}
-  const s=await supa.auth.getSession();if(s.error)throw s.error;session=s.data.session;
+ if(demoMode){const d=window.LineDemo.load({view,slug,day,today:taipei()});context=d.context;overview=d.overview;staff=d.staff;customer=d.customer;if(view==="customer"&&customer){if(customerTab==="queue"&&!customer.tenant.modules.queue)customerTab="home";if(customerTab==="reserve"&&!customer.tenant.modules.reservation)customerTab="home";}render();return;}
+ const s=await supa.auth.getSession();if(s.error)throw s.error;session=s.data.session;
  if(view==="customer"&&!session){const x=await supa.auth.signInAnonymously();if(x.error)throw x.error;session=x.data.session;}
  if(view==="customer")await connectLineSession();
- await loadContext();
- if(view==="customer"){customer=await rpc("so_public_state",{p_slug:slug,p_date:day});if(customerTab==="reserve"&&!customer.tenant.modules?.reservation)customerTab="home";if(customerTab==="queue"&&!customer.tenant.modules?.queue)customerTab="home";}
+ if(view!=="customer")await loadContext();
+ if(view==="customer"){
+   customer=lineLinkStatus==="linked"?await rpc("so_public_state",{p_slug:slug,p_date:day}):null;
+   if(customer&&customerTab==="reserve"&&!customer.tenant.modules?.reservation)customerTab="home";
+   if(customer&&customerTab==="queue"&&!customer.tenant.modules?.queue)customerTab="home";
+ }
  if(view==="platform"&&context?.platform_admin)overview=await rpc("so_platform_overview");
  if(view==="staff"&&authReady()&&(context?.platform_admin||context?.memberships?.some(m=>m.slug===slug)))staff=await rpc("so_staff_state",{p_slug:slug,p_date:day});
  else if(view==="staff")staff=null;
@@ -289,7 +293,7 @@ async function load(){err="";try{
 async function act(fn){if(busy)return;busy=true;err="";flash="";try{const m=await fn();if(m)flash=m;await load()}catch(e){err=e.message||String(e);render()}finally{busy=false;render()}}
 function checked(prefix){const m={};document.querySelectorAll("."+prefix).forEach(x=>{m[x.dataset.feature]=x.checked});return m}
 function val(id){return ($(id)?.value||"").trim()}
-function urlFor(v,s){return new URL(route(v,s),location.href).href}
+async function urlFor(v,s){if(v==="customer"&&!demoMode){const config=await bridgeConfig();if(config.liffId)return "https://liff.line.me/"+encodeURIComponent(config.liffId)+"/?view=customer&merchant="+encodeURIComponent(s);}return new URL(route(v,s),location.href).href}
 document.addEventListener("click",async ev=>{
  const b=ev.target.closest("button");if(!b||busy)return;
  if(b.dataset.nav){const v=b.dataset.nav;const tab=b.dataset.tab;if(v==="customer"){customerTab=tab;if(!customer?.tenant.modules[tab==="reserve"?"reservation":tab==="queue"?"queue":"reservation"]&&["reserve","queue"].includes(tab))customerTab="home";history.replaceState(null,"",route("customer",slug,customerTab))}if(v==="staff")staffTab=tab;if(v==="platform")platformTab=tab;err="";flash="";render();return}
@@ -311,12 +315,12 @@ document.addEventListener("click",async ev=>{
  if(a==="company-config"){chosenCompany=b.dataset.slug;render();return}
  if(a==="save-company"){await act(async()=>{await rpc("so_update_tenant",{p_slug:chosenCompany,p_patch:{name:val("config-name"),modules:checked("config-feature")}});return "企業名稱及模組已更新";});return}
  if(a==="toggle-company"){await act(async()=>{const t=overview.find(x=>x.slug===chosenCompany);await rpc("so_update_tenant",{p_slug:chosenCompany,p_patch:{status:t.status==="ACTIVE"?"SUSPENDED":"ACTIVE"}});return "已更新企業啟用狀態";});return}
- if(a==="copy-customer"||a==="copy-staff"){const s=view==="platform"?chosenCompany:slug;const v=a==="copy-customer"?"customer":"staff";const u=urlFor(v,s);try{await navigator.clipboard.writeText(u);flash="已複製："+u;}catch(e){window.prompt("複製網址",u)}render();return}
+ if(a==="copy-customer"||a==="copy-staff"){const s=view==="platform"?chosenCompany:slug;const v=a==="copy-customer"?"customer":"staff";const u=await urlFor(v,s);try{await navigator.clipboard.writeText(u);flash="已複製："+u;}catch(e){window.prompt("複製網址",u)}render();return}
  if(a==="update-settings"){await act(async()=>{await rpc("so_update_tenant",{p_slug:slug,p_patch:{name:val("set-name"),phone:val("set-phone"),address:val("set-address"),accent:val("set-accent"),description:val("set-description"),logo_url:val("set-logo"),open_time:val("set-open"),close_time:val("set-close"),slot_capacity:Number(val("set-capacity")),slot_minutes:Number(val("set-minutes"))}});return "企業設定已保存";});return}
  if(a==="invite-staff"){await act(async()=>{await rpc("so_invite_staff",{p_slug:slug,p_email:val("invite-email"),p_role:val("invite-role")});return "員工邀請已儲存，請通知對方登入接受";});return}
- if(a==="book"){await act(async()=>{if(!chosenSlot)throw Error("請先選擇時段");const result=await rpc("so_book",{p_slug:slug,p_date:day,p_time:chosenSlot,p_name:val("customer-name"),p_party:Number(val("customer-party"))});chosenSlot="";customerTab="mine";const notice=await sendLineNotice("notify-reservation",{reservationId:result.id});return "預約成功，資料已存入雲端；"+notice;});return}
+ if(a==="book"){await act(async()=>{if(!demoMode&&lineLinkStatus!=="linked")throw Error("請先完成 LINE 授權");if(!chosenSlot)throw Error("請先選擇時段");const result=await rpc("so_book",{p_slug:slug,p_date:day,p_time:chosenSlot,p_name:demoMode?"LINE 展示顧客":lineDisplayName,p_party:Number(val("customer-party"))});chosenSlot="";customerTab="mine";const notice=await sendLineNotice("notify-reservation",{reservationId:result.id});return "預約成功，資料已存入雲端；"+notice;});return}
  if(a==="cancel-my-book"){if(!confirm("確定取消這筆預約？"))return;await act(async()=>{await rpc("so_cancel_booking",{p_id:id});return "已取消預約";});return}
- if(a==="take"){await act(async()=>{const result=await rpc("so_take_number",{p_slug:slug,p_name:val("ticket-name")});const notice=await sendLineNotice("notify-ticket",{ticketId:result.id});return "取號成功："+result.number+"；"+notice;});return}
+ if(a==="take"){await act(async()=>{if(!demoMode&&lineLinkStatus!=="linked")throw Error("請先完成 LINE 授權");const result=await rpc("so_take_number",{p_slug:slug,p_name:demoMode?"LINE 展示顧客":lineDisplayName});const notice=await sendLineNotice("notify-ticket",{ticketId:result.id});return "取號成功："+result.number+"；"+notice;});return}
  if(a==="line-connect"){await act(async()=>{await connectLineSession(true);return lineLinkStatus==="linked"?"LINE 帳號已連結，後續通知可發送":"請完成 LINE 登入或從 LINE 內重新開啟";});return}
  if(a==="cancel-my-number"){if(!confirm("確定取消號碼？"))return;await act(async()=>{await rpc("so_cancel_number",{p_id:id});return "已取消號碼";});return}
  if(["call","recall","start","complete","pass","return","cancel","checkin","no-show","cancel-book-staff"].includes(a)){
