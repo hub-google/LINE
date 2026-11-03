@@ -68,3 +68,13 @@
 - Webhook 已支援 follow/unfollow 防重送且拒收已知取消好友者的推播。通知目前由前端完成預約／取號／叫號資料庫 RPC 後呼叫 Edge Function，尚未包含完全獨立於網頁的通知佇列與失敗重試、跨裝置顧客身分整併、多企業獨立 OA Token 自助管理。
 - CI 的 LIFF 設定自動讀取與修正需要額外的 `LINE_LOGIN_CHANNEL_SECRET` GitHub Secret；2026-11-03 13:30（台灣時間）檢查時該值尚未設定，故此項僅警告、不阻擋部署。當日已有一筆成功的 LINE 身分連結紀錄，不能僅憑此警告斷言 LIFF 身分功能失敗。
 - 實機測試尚未驗證 LINE 推播已送達；需先加示範 OA 好友且未封鎖。資料庫目前平台管理員與店員權限皆為零，沒有授權帳號之前不能測試店員叫號；勿為驗收隨意授權匿名用戶。
+
+## 真實資料庫／LINE 端到端測試規範（2026-11-03）
+
+- **已撤除** `demo / demo12345` 與 `?demo=1` 的本機模擬後台，正式網址只操作真正 Supabase。不要重建 localStorage 虛擬取號、虛擬員工或虛擬總公司資料，也不能把模擬按鈕點擊當作驗收。
+- 顧客用 LINE LIFF 授權，前端由 Supabase 匿名認證建立內部識別（無需顧客填寫帳密），Edge Function 驗證 LINE ID Token、取得 LINE 暱稱並寫入 `so_line_links`。後端 `so_book` 和 `so_take_number` 以資料庫已驗證的顯示名稱為準，忽略不可信的前端暱稱。
+- 顧客預約／取號 RPC 寫入 `so_reservations`／`so_tickets`。真實店員以授權 Email 登入，從 `so_staff_state` 讀取同一套資料，按叫號時 `so_staff_action` 更新資料庫，`line-bridge` 根據資料庫真實的剛叫號票券使用 LINE Messaging API 發送通知。預約／取號成功也會觸發相應的 LINE 推播。
+- 總公司總覽透過 `so_platform_overview` 即時顯示各企業今日預約、候位、現在叫號、已完成及員工數；平台管理權限必須由 `so_platform_admins` 授予。員工管理使用真正的 `so_members` 和 `so_invites`。
+- **管理權限未自動開通**：2026-11-03 查詢時 `so_platform_admins` 和 `so_members` 都是 0 筆。第一位平台管理員必須先以真實已驗證 Email 建立帳號，使用既有的一次性開通碼啟用，或由專案管理者確認 Email 後在資料庫授權；不可開放公共 demo 密碼直接獲得管理員權限。
+- `line-bridge?action=config` 顯示登入及 Messaging API 憑證已配置，只代表設定就緒，**不等於**真實使用者已收到通知；還需本人在 LINE 授權、加官方帳號為好友，並驗證預約成功、取號成功和店員叫號的實際推播。
+- LINE Channel Secret、Messaging Access Token、Supabase service_role 等秘密資料只放後端環境／GitHub Actions Secrets，禁止提交公開原始碼。
