@@ -134,25 +134,18 @@ async function webhook(req: Request, origin: string | null) {
         continue;
       }
       const occurredAt = new Date(time).toISOString();
-      // LINE resends the SAME webhookEventId; claim it before applying any side-effect.
-      const { error: claimError } = await db.from("so_line_webhook_events")
-        .insert({ event_id: eventId, event_type: String(event.type), occurred_at: occurredAt });
-      if (claimError?.code === "23505") { duplicates++; continue; }
-      if (claimError) throw claimError;
-      try {
-        // Event delivery may be reordered: an older event must not undo a later follow state.
-        const { error: updateError } = await db.from("so_line_links")
-          .update({ is_following: event.type === "follow", friendship_updated_at: occurredAt })
-          .eq("line_sub", source.userId)
-          .or("friendship_updated_at.is.null,friendship_updated_at.lt." + occurredAt);
-        if (updateError) throw updateError;
-        processed++;
-      } catch (error) {
-        // Release failed claims so an enabled LINE redelivery can retry.
-        const { error: rollbackError } = await db.from("so_line_webhook_events").delete().eq("event_id", eventId);
-        if (rollbackError) console.error("LINE webhook event claim could not be released", rollbackError.code || "unknown");
-        throw error;
-      }
+      // PostgreSQL atomically records this ID AND updates friendship state.
+      // A crash cannot leave a claimed but unprocessed event.
+      const { data: outcome, error: applyError } = await db.rpc("so_apply_line_webhook_friend_event", {
+        p_event_id: eventId,
+        p_event_type: String(event.type),
+        p_line_sub: source.userId,
+        p_occurred_at: occurredAt,
+      });
+      if (applyError) throw applyError;
+      if (outcome === "DUPLICATE") duplicates++;
+      else if (outcome === "PROCESSED") processed++;
+      else throw new Error("UNEXPECTED_LINE_EVENT_RESULT");
     }
     return reply(200, { ok: true, processed, duplicates }, origin);
   } catch (error) {
