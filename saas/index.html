@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="f98d0fdfa3c107bef18e3e3b4dade40f1bd5285c">
-<script defer src="./version-watch.js?build=f98d0fdfa3c107bef18e3e3b4dade40f1bd5285c"></script>
+<meta name="line-saas-build" content="29a7974e5f249ab7d86844c41c92111c29f99933">
+<script defer src="./version-watch.js?build=29a7974e5f249ab7d86844c41c92111c29f99933"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 門市營運｜企業開通、員工後台與顧客預約</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -147,6 +147,9 @@ function customerUrl(merchant){
  return id?"https://liff.line.me/"+encodeURIComponent(id)+"/?view=customer&merchant="+encodeURIComponent(merchant):null;
 }
 function lineLoginUrl(){
+  if(view==="staff"&&recoveryMode)
+    return "https://liff.line.me/"+encodeURIComponent(lineConfig?.liffId||"")+
+      "/?view=staff&merchant="+encodeURIComponent(ORIGINAL_QA_STORE)+"&recover=1";
   return "https://liff.line.me/"+encodeURIComponent(lineConfig?.liffId||"")+"/?view=customer&merchant="+encodeURIComponent(slug)+(customerTab?"&tab="+encodeURIComponent(customerTab):"")+
     (manageKind&&manageItem?"&manage="+encodeURIComponent(manageKind)+"&item="+encodeURIComponent(manageItem)+"&mode="+encodeURIComponent(manageMode):"")+
     (customerTab==="progress"&&progressTicketId?"&ticket="+encodeURIComponent(progressTicketId):"");
@@ -169,14 +172,16 @@ function recoverLineLogin(manual=false){
     location.replace(lineLoginUrl());
   }else{
     const redirectUri=location.origin+location.pathname+
-      "?view=customer&merchant="+encodeURIComponent(slug)+(customerTab?"&tab="+encodeURIComponent(customerTab):"")+
-      (customerTab==="progress"&&progressTicketId?"&ticket="+encodeURIComponent(progressTicketId):"");
+      (view==="staff"&&recoveryMode?
+        "?view=staff&merchant="+encodeURIComponent(ORIGINAL_QA_STORE)+"&recover=1":
+        "?view=customer&merchant="+encodeURIComponent(slug)+(customerTab?"&tab="+encodeURIComponent(customerTab):"")+
+        (customerTab==="progress"&&progressTicketId?"&ticket="+encodeURIComponent(progressTicketId):""));
     window.liff.login({redirectUri});
   }
   return true;
 }
 async function connectLineSession(force=false){
-  if(view!=="customer"||!session?.access_token)return;
+  if(!(view==="customer"||(view==="staff"&&recoveryMode))||!session?.access_token)return;
   if(force)lineLinkAttempted=false;
   if(lineLinkAttempted)return;
   const config=await bridgeConfig();
@@ -317,6 +322,7 @@ function refreshLiffRoute(){
  if(isSafeMerchant(nextMerchant))slug=nextMerchant;
  const nextView=lastParam(stateQuery,"view")||lastParam(live,"view");
  if(["customer","staff","platform","home"].includes(nextView))view=nextView;
+ if(lastParam(stateQuery,"recover")==="1"||lastParam(live,"recover")==="1")recoveryMode=true;
  const nextTab=lastParam(stateQuery,"tab")||lastParam(live,"tab");
  if(["home","reserve","queue","mine","progress"].includes(nextTab))customerTab=nextTab;
  const newTicket=lastParam(stateQuery,"ticket")||lastParam(live,"ticket");
@@ -345,10 +351,12 @@ function refreshLiffRoute(){
  }
  if(normalized.href!==location.href)history.replaceState(null,"",normalized.pathname+normalized.search+normalized.hash);
 }
+const ORIGINAL_QA_STORE="qa-84b3ef9297eb470685a91a527ca499ca";
 const TEST_KEY="line_saas_real_qa_v1";
 let testInfo=null;
 try{testInfo=JSON.parse(localStorage.getItem(TEST_KEY)||"null")}catch(e){localStorage.removeItem(TEST_KEY)}
 let testMode=!!(testInfo?.slug&&/^qa-[a-z0-9-]{3,36}$/.test(testInfo.slug));
+let recoveryMode=incomingParam("recover")==="1";
 let view=incomingParam("view")||"customer",slug=(isSafeMerchant(incomingParam("merchant"))?incomingParam("merchant"):null)||(testMode?testInfo.slug:"greenfield-salon");
 let session=null,context=null,overview=[],customer=null,staff=null,busy=false,flash="",err="";
 let staffHistoryDays=14;
@@ -455,11 +463,24 @@ function showActionFeedback(message,kind="success"){
 function requireAuth(){
  const staffView=view==="staff",title=staffView?"門市店員登入":"總公司管理員登入";
  const testId=staffView?"TEST-STAFF（獨立門市）":"TEST-HQ（獨立總公司）";
- return '<div class="card auth"><h1>'+title+'</h1>'+
-  '<p class="muted">真實 Supabase 測試帳號。網頁自動取得測試身分與獨立門市；總公司、店員、顧客使用同一套真實資料，其他正式企業的權限不會開放。</p>'+
+ const recoveryPanel=staffView?
+  (recoveryMode?
+    '<div class="notice"><strong>正在驗證原測試門市管理權限</strong>'+
+    '<p>需要先以原本用來測試預約的 LINE 帳號驗證。'+
+    esc(lineLinkStatus==="failed"?(lineConnectError||"LINE 驗證失敗"):
+      "原本的預約及號碼牌資料不會刪除，也不會自動建立其他測試門市。")+'</p>'+
+    '<div class="flex">'+btn("重新執行 LINE 驗證","recover-test-store","primary")+'</div></div>':
+    '<div class="notice"><strong>恢復原本有資料的測試門市</strong>'+
+    '<p>保留先前所有預約、號碼及設定。管理員身分透過原 LINE 帳號驗證，避免其他人進入你的測試門市。</p>'+
+    btn("用 LINE 恢復原測試門市","recover-test-store","primary")+
+    '<p class="small">這是原本有預約資料的門市，不會重新開店。</p></div>'):"";
+ return '<div class="card auth"><h1>'+title+'</h1>'+recoveryPanel+
+  '<p class="muted">'+(staffView?
+   '如果確定要一個沒有任何資料的新門市，可另外建立全新隔離測試環境。':
+   '測試身分與獨立門市由 Supabase 建立，正式企業權限不會開放。')+'</p>'+
   '<div class="grid"><div>'+field("測試帳號（自動帶入）","test-account",testId,"text",'readonly')+'</div><div>'+
   field("測試密碼","test-password","自動驗證，免輸入","text",'readonly')+'</div></div>'+
-  '<div class="flex" style="margin:16px 0 8px">'+btn(staffView?"一鍵登入測試店員後台":"一鍵登入測試總公司後台","test-login","primary")+'</div>'+
+  '<div class="flex" style="margin:16px 0 8px">'+btn(staffView?"建立全新隔離測試門市":"一鍵登入測試總公司後台","test-login",staffView?"outline":"primary")+'</div>'+
   '<p class="small">預約、取號、叫號、員工管理全部寫入 Supabase。顧客須在 LINE 授權並加測試官方帳號為好友，才能接收真實通知。</p>'+
   '<hr style="border:0;border-top:1px solid #e2e8f0;margin:24px 0">'+
   '<h2>正式帳號登入</h2><div class="grid"><div>'+field("Email","auth-email","","email",'autocomplete="email"')+'</div><div>'+
@@ -851,8 +872,20 @@ async function loadContext(){if(authReady())context=await rpc("so_my_context");e
 async function load(){err="";try{
 
  const s=await supa.auth.getSession();if(s.error)throw s.error;session=s.data.session;
- if(view==="customer"&&!session){const x=await supa.auth.signInAnonymously();if(x.error)throw x.error;session=x.data.session;}
- if(view==="customer")await connectLineSession();
+ if((view==="customer"||(view==="staff"&&recoveryMode))&&!session){
+   const x=await supa.auth.signInAnonymously();
+   if(x.error)throw x.error;
+   session=x.data.session;
+ }
+ if(view==="customer"||(view==="staff"&&recoveryMode))await connectLineSession();
+ if(view==="staff"&&recoveryMode&&lineLinkStatus==="linked"){
+   const restored=await rpc("so_claim_qa_recovery",{p_slug:ORIGINAL_QA_STORE});
+   if(!restored.recovered)throw Error("原測試門市驗證未通過");
+   slug=restored.slug;
+   testInfo={slug};testMode=true;localStorage.setItem(TEST_KEY,JSON.stringify(testInfo));
+   recoveryMode=false;
+   history.replaceState(null,"",route("staff",slug));
+ }
  if(view!=="customer"){await bridgeConfig();await loadContext();}
   if(testMode&&view!=="customer"&&session?.user?.is_anonymous){
    const membership=context?.memberships?.find(m=>m.slug===testInfo?.slug);
@@ -930,6 +963,16 @@ document.addEventListener("click",async ev=>{
  const a=b.dataset.act,id=b.dataset.id;
  if(!a)return;
 
+ if(a==="recover-test-store"){
+  try{
+    const cfg=await bridgeConfig();
+    if(!cfg.liffId)throw Error("LINE LIFF 尚未完成設定，無法還原原測試門市");
+    const url="https://liff.line.me/"+encodeURIComponent(cfg.liffId)+
+       "/?view=staff&merchant="+encodeURIComponent(ORIGINAL_QA_STORE)+"&recover=1";
+    location.assign(url);
+  }catch(e){showActionFeedback(e.message||String(e),"error");}
+  return;
+ }
  if(a==="test-login"){await act(async()=>{
    if(session&&!session.user?.is_anonymous){const out=await supa.auth.signOut();if(out.error)throw out.error;session=null}
    if(!session){const created=await supa.auth.signInAnonymously();if(created.error)throw created.error;session=created.data.session}
