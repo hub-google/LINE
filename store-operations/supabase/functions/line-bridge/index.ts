@@ -199,6 +199,11 @@ function shopDetails(shop: ShopInfo): string[] {
     ...(shop.phone?.trim() ? ["電話：" + shop.phone.trim()] : []),
   ];
 }
+function selectedServicesText(items: unknown): string[] {
+  if (!Array.isArray(items) || !items.length) return [];
+  const names=items.map(x=>typeof x?.name==="string"?x.name.trim():"").filter(Boolean);
+  return names.length?["已選餐點／服務：" + names.join("、").slice(0,1300)]:[];
+}
 async function canManageRecipient(
   db: ReturnType<typeof service>, shopId: string, actor: string, recipient: string,
 ): Promise<boolean> {
@@ -449,7 +454,7 @@ Deno.serve(async (req: Request) => {
       const { data: tenant } = await db.from("so_tenants").select("id,slug,name,status,address,phone").eq("slug", slug).maybeSingle();
       if (!tenant || tenant.status !== "ACTIVE") return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
       const { data: booking } = await db.from("so_reservations")
-        .select("id,user_id,status,created_at,booking_date,booking_time,party_size")
+        .select("id,user_id,status,created_at,booking_date,booking_time,party_size,selected_items")
         .eq("id", payload.reservationId).eq("tenant_id", tenant.id).eq("user_id", user.id).maybeSingle();
       if (!booking || booking.status !== "CONFIRMED" || !recently(booking.created_at, 300_000))
         return reply(409, { error: "RESERVATION_NOT_RECENT" }, origin);
@@ -461,6 +466,7 @@ Deno.serve(async (req: Request) => {
           "日期：" + dateText,
           "時間：" + timeText,
           "人數：" + booking.party_size + " 位",
+          ...selectedServicesText(booking.selected_items),
           ...shopDetails(tenant),
           "如需調整，可使用下方按鈕。",
         ], [
@@ -474,7 +480,7 @@ Deno.serve(async (req: Request) => {
       const { data: tenant } = await db.from("so_tenants").select("id,slug,name,status,address,phone").eq("slug", slug).maybeSingle();
       if (!tenant || tenant.status !== "ACTIVE") return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
       const { data: ticket } = await db.from("so_tickets")
-        .select("id,user_id,status,created_at,ticket_no,business_date")
+        .select("id,user_id,status,created_at,ticket_no,business_date,selected_items")
         .eq("id", payload.ticketId).eq("tenant_id", tenant.id).eq("user_id", user.id).maybeSingle();
       if (!ticket || ticket.status !== "WAITING" || !recently(ticket.created_at, 300_000))
         return reply(409, { error: "TICKET_NOT_RECENT" }, origin);
@@ -506,6 +512,7 @@ Deno.serve(async (req: Request) => {
           "您的號碼：" + number,
           calling,
           "前方還有 " + ahead + " 組候位／服務中",
+          ...selectedServicesText(ticket.selected_items),
           ...shopDetails(tenant),
           "叫號進度可能變動，請以最新頁面為準。",
         ], [
@@ -539,7 +546,7 @@ Deno.serve(async (req: Request) => {
           ], [{ label: "查看我的紀錄", uri: liffManageLink(tenant, "ticket", ticket.id, "view") }]), origin);
       }
       const { data: booking } = await db.from("so_reservations")
-        .select("id,user_id,status,booking_date,booking_time,party_size,line_cancel_event_id,line_update_event_id")
+        .select("id,user_id,status,booking_date,booking_time,party_size,line_cancel_event_id,line_update_event_id,selected_items")
         .eq("id", refId).eq("tenant_id", tenant.id).maybeSingle();
       if (!booking || !await canManageRecipient(db, tenant.id, user.id, booking.user_id))
         return reply(403, { error: "NOT_AUTHORIZED" }, origin);
@@ -548,6 +555,7 @@ Deno.serve(async (req: Request) => {
         "日期：" + booking.booking_date,
         "時間：" + String(booking.booking_time).slice(0, 5),
         "人數：" + booking.party_size + " 位",
+        ...selectedServicesText(booking.selected_items),
         ...shopDetails(tenant),
       ];
       if (payload.action === "notify-reservation-cancel") {
