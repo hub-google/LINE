@@ -133,7 +133,7 @@ const $=id=>document.getElementById(id);
 const params=new URLSearchParams(location.search);
 const liffState=params.get("liff.state")||"";
 const liffArgs=new URLSearchParams(liffState.includes("?")?liffState.slice(liffState.indexOf("?")+1):"");
-let view=params.get("view")||liffArgs.get("view")||"customer",slug=params.get("merchant")||liffArgs.get("merchant")||"greenfield-salon";const demoMode=false;
+let view=params.get("view")||liffArgs.get("view")||"customer",slug=params.get("merchant")||liffArgs.get("merchant")||"greenfield-salon";
 let session=null,context=null,overview=[],customer=null,staff=null,busy=false,flash="",err="";
 let day=taipei(),customerTab=["home","reserve","queue","mine"].includes(params.get("tab")||liffArgs.get("tab"))?(params.get("tab")||liffArgs.get("tab")):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
 const features=[["reservation","線上預約"],["queue","線上取號"],["calling","現場叫號"]];
@@ -174,11 +174,14 @@ function platformRender(){
  const menu=nav("總公司營運總覽","dashboard",platformTab,"platform")+nav("企業列表","list",platformTab,"platform")+nav("開通新企業","create",platformTab,"platform")+nav("平台說明","about",platformTab,"platform");
  let html="";
  if(platformTab==="dashboard"){
-   const enabled=overview.filter(t=>t.status==="ACTIVE").length,staffCount=overview.reduce((n,t)=>n+(Number(t.staff)||0),0);
-   const demo=demoMode?window.LineDemo.data(taipei()):null,tickets=demo?demo.tickets.filter(q=>q.day===taipei()):[],reservations=demo?demo.reservations.filter(r=>r.day===taipei()&&r.status!=="CANCELLED"):[];
-   html='<div class="grid4" style="margin-bottom:16px">'+stat("企業總數",overview.length)+stat("營運中企業",enabled)+stat("企業員工",staffCount)+stat(demoMode?"今日候位":"已啟用模組",demoMode?tickets.filter(q=>q.status==="WAITING").length:overview.reduce((n,t)=>n+features.filter(f=>t.modules?.[f[0]]).length,0))+'</div>'+
-    box("總公司跨企業視角",'<p class="muted">'+(demoMode?"下表是同一瀏覽器的展示資料，可跨分頁同步操作。":"正式模式僅提供具權限的企業與員工摘要；跨企業交易數據需獨立安全彙總 API。")+'</p><div class="scroll"><table class="rows"><thead><tr><th>企業</th><th>狀態</th><th>員工</th><th>今日預約</th><th>今日候位</th><th>目前叫號</th><th>操作</th></tr></thead><tbody>'+
-    overview.map(t=>{const q=tickets.filter(x=>x.slug===t.slug);return '<tr><td><strong>'+esc(t.name)+'</strong></td><td>'+tag(t.status)+'</td><td>'+esc(t.staff)+'</td><td>'+esc(demoMode?reservations.filter(r=>r.slug===t.slug).length:"—")+'</td><td>'+esc(demoMode?q.filter(x=>x.status==="WAITING").length:"—")+'</td><td>'+esc(demoMode?(q.find(x=>["CALLED","SERVING"].includes(x.status))?.number||"—"):"—")+'</td><td><a href="'+esc(route("staff",t.slug))+'">店員後台</a> ・ <a href="'+esc(route("customer",t.slug,"queue"))+'">顧客頁</a></td></tr>'}).join("")+'</tbody></table></div>');
+   const active=overview.filter(t=>t.status==="ACTIVE").length;
+   const bookings=overview.reduce((n,t)=>n+Number(t.today_reservations||0),0);
+   const waiting=overview.reduce((n,t)=>n+Number(t.today_waiting||0),0);
+   const completed=overview.reduce((n,t)=>n+Number(t.today_completed||0),0);
+   const staffCount=overview.reduce((n,t)=>n+Number(t.staff||0),0);
+   html='<div class="grid4" style="margin-bottom:16px">'+stat("企業總數",overview.length)+stat("營運中企業",active)+stat("今日預約",bookings)+stat("今日候位",waiting)+'</div>'+
+    box("總公司跨企業即時營運",'<p class="muted">以下直接從 Supabase 讀取實際資料。員工總數 '+esc(staffCount)+' 人，今日已完成 '+esc(completed)+' 組，每 15 秒更新。</p><div class="scroll"><table class="rows"><thead><tr><th>企業</th><th>狀態</th><th>員工</th><th>今日預約</th><th>候位</th><th>目前叫號</th><th>已完成</th><th>操作</th></tr></thead><tbody>'+
+    overview.map(t=>'<tr><td><strong>'+esc(t.name)+'</strong></td><td>'+tag(t.status)+'</td><td>'+esc(t.staff)+'</td><td>'+esc(t.today_reservations||0)+'</td><td>'+esc(t.today_waiting||0)+'</td><td>'+esc(t.current_number||"—")+'</td><td>'+esc(t.today_completed||0)+'</td><td><a href="'+esc(route("staff",t.slug))+'">店員後台</a> ・ <a href="'+esc(route("customer",t.slug,"queue"))+'">顧客頁</a></td></tr>').join("")+'</tbody></table></div>');
   }else if(platformTab==="list"){
    html='<div class="toolbar"><h2>已開通企業（'+overview.length+'）</h2>'+btn("＋ 新增企業","new-tenant","primary")+'</div>'+
     '<div class="card scroll"><table class="rows"><thead><tr><th>企業</th><th>啟用功能</th><th>狀態</th><th>員工</th><th>操作</th></tr></thead><tbody>'+
@@ -198,7 +201,7 @@ function platformRender(){
      field("企業名稱","create-name","示範企業")+field("網址英文代碼","create-slug","my-company","text",'pattern="[a-z0-9-]{3,40}"')+
      '</div><div>'+field("第一位企業管理者 Email（選填）","create-owner","","email")+'<p class="small">填寫後產生待接受邀請。管理者須使用此信箱註冊並接受邀請。</p></div></div><label>功能勾選</label>'+featureChecks({reservation:true,queue:true,calling:true},"create-feature")+
       '<div class="grid"><div>'+field("企業電話","create-phone")+field("企業地址","create-address")+field("每日開始營業時間","create-open","10:00","time")+'</div><div>'+field("品牌色（#RRGGBB）","create-accent","#147e68")+field("單時段最多預約人數","create-capacity",3,"number",'min="1" max="100"')+field("每日結束營業時間","create-close","20:00","time")+'</div></div><div style="margin-top:17px">'+btn("建立企業專屬網站","create-tenant","primary")+'</div>');
- }else html=box("平台運作方式",'<p>每家企業使用同一個 GitHub Pages 前端；預約、號碼、員工、設定分別以企業 ID 保存在 Supabase。</p><p>平台登入使用 Supabase Auth，管理權限在資料庫中驗證。LINE OA 尚未接入；目前完成的是獨立網頁與資料庫功能。</p>');
+ }else html=box("平台運作方式",'<p>每家企業使用同一個 GitHub Pages 前端；預約、號碼、員工、設定分別以企業 ID 保存在 Supabase。</p><p>平台登入使用 Supabase Auth，管理權限在資料庫中驗證。測試 LINE 官方帳號已連接 Supabase Edge Function。真實通知需完成 LINE 身分驗證與加好友；多企業各自綁定不同官方帳號尚未開放。</p>');
  return layout("公司總後台","企業開通與模組管理",menu,html);
 }
 function staffRender(){
@@ -215,7 +218,7 @@ function staffRender(){
  if(staffTab==="dashboard"){
   html+='<div class="grid4" style="margin-bottom:16px">'+stat("當日預約",r.filter(x=>x.status!=="CANCELLED").length)+stat("候位中",waiting.length)+stat("叫號中",active?.number||"—")+stat("當日已完成",q.filter(x=>x.status==="COMPLETED").length)+'</div>'+
   box("今天需要處理的事",'<div class="listline"><div><strong>預約待報到</strong><div class="small">今日未報到預約</div></div>'+r.filter(x=>x.status==="CONFIRMED").length+' 筆</div>'+
-  '<div class="listline"><div><strong>現場等待</strong><div class="small">候位中的號碼牌</div></div>'+waiting.length+' 組</div><div class="listline"><div><strong>LINE 官方帳號</strong><div class="small">目前尚未提供自動綁定</div></div>'+esc(t.line_status)+'</div>');
+  '<div class="listline"><div><strong>現場等待</strong><div class="small">候位中的號碼牌</div></div>'+waiting.length+' 組</div><div class="listline"><div><strong>LINE 官方帳號</strong><div class="small">測試 LINE 官方帳號已部署</div></div>'+esc(t.line_status)+'</div>');
  }else if(staffTab==="bookings"){
   html+=box("預約名單",'<div class="scroll"><table class="rows"><thead><tr><th>時間</th><th>顧客暱稱</th><th>人數</th><th>狀態</th><th>操作</th></tr></thead><tbody>'+r.map(x=>'<tr><td>'+esc(x.time)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.party)+'</td><td>'+tag(x.status)+'</td><td>'+(x.status==="CONFIRMED"&&day===taipei()?(btn("到店報到","checkin","primary",'data-id="'+esc(x.id)+'"')+' '+btn("未到","no-show","outline",'data-id="'+esc(x.id)+'"')+' '+btn("取消","cancel-book-staff","danger",'data-id="'+esc(x.id)+'"')):"—")+'</td></tr>').join("")+'<tr '+(r.length?"style=\"display:none\"":"")+'><td colspan="5">這天尚無預約</td></tr></tbody></table></div>');
  }else if(staffTab==="queue"){
@@ -236,7 +239,7 @@ function staffRender(){
   html+=box("企業基本設定",!isManager?'<p class="muted">只有管理者可以修改設定。</p>':
    '<div class="grid"><div>'+field("企業名稱","set-name",t.name)+field("電話","set-phone",t.phone)+field("地址","set-address",t.address)+field("品牌色（#RRGGBB）","set-accent",t.accent)+'</div><div>'+field("網站簡介","set-description",t.description)+field("LOGO 圖片網址","set-logo",t.logo_url)+field("開始營業","set-open",t.open_time,"time")+field("結束營業","set-close",t.close_time,"time")+'</div></div>'+
    '<div class="grid"><div>'+field("每個時段可預約人數","set-capacity",t.slot_capacity,"number",'min="1" max="100"')+'</div><div><label>預約時段間隔</label><select class="field" id="set-minutes"><option value="15" '+(t.slot_minutes===15?"selected":"")+'>15 分鐘</option><option value="30" '+(t.slot_minutes===30?"selected":"")+'>30 分鐘</option><option value="60" '+(t.slot_minutes===60?"selected":"")+'>60 分鐘</option></select></div></div><div style="margin-top:15px">'+btn("儲存企業設定","update-settings","primary")+'</div>')+
-  box("LINE 官方帳號串接",'<p>綁定狀態：'+esc(t.line_status)+'</p><div class="alert">LINE OA 綁定尚未實作。不能在這裡直接輸入 Channel Secret 或 Token，也不會假裝已綁定。</div>')+
+  box("LINE 官方帳號串接",'<p>綁定狀態：'+esc(t.line_status)+'</p><div class="alert">目前使用同一組測試 LINE 官方帳號，預約／取號／叫號會嘗試發送真實通知。請先授權 LINE 身分及加入好友；不同商家獨立 OA 綁定尚未開放。</div>')+
   box("專屬網址",'<div><a href="'+esc(route("customer",slug))+'" target="_blank" rel="noopener">'+esc(new URL(route("customer",slug),location.href).href)+'</a></div><p class="spacer"></p>'+btn("複製顧客連結","copy-customer","outline"));
  }
  return layout(t.name,"企業員工營運後台",menu,html);
