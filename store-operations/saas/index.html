@@ -823,14 +823,49 @@ document.addEventListener("click",async ev=>{
   catch(e){window.prompt("複製網址",u);return "請複製顯示的網址";}
  });return;}
  if(a==="save-directory"){await act(async()=>{const enabled=!!$("directory-enabled")?.checked;await rpc("so_set_directory_listing",{p_slug:slug,p_enabled:enabled,p_oa_mode:"PLATFORM"});return enabled?"門市已開放在總公司 LINE 平台搜尋":"門市已取消公開搜尋（原有專屬連結仍可使用）";});return;}
+ if(a==="menu-edit"){editingMenuItemId=id;render();return;}
+ if(a==="menu-edit-clear"){editingMenuItemId="";render();return;}
+ if(a==="menu-save"){
+   await act(async()=>{
+     const priceText=val("menu-price"),price=priceText===""?null:Number(priceText);
+     if(price!==null&&(!Number.isFinite(price)||price<0))throw Error("請輸入有效的價格");
+     const result=await rpc("so_menu_save",{
+       p_slug:slug,p_kind:val("menu-kind"),p_name:val("menu-name"),
+       p_description:val("menu-description"),p_price:price,
+       p_sort_order:Number(val("menu-order")||0),
+       p_active:!!$("menu-active")?.checked,
+       p_item_id:editingMenuItemId||null
+     });
+     editingMenuItemId="";
+     return "「"+result.name+"」已儲存";
+   });return;
+ }
+ if(a==="menu-toggle"){
+   const item=(staff?.menu_items||[]).find(x=>x.id===id);
+   if(!item){showActionFeedback("找不到這個項目","error");return;}
+   await act(async()=>{
+     await rpc("so_menu_save",{p_slug:slug,p_kind:item.kind,p_name:item.name,
+       p_description:item.description||"",p_price:item.price,
+       p_sort_order:item.sort_order,p_active:!item.active,p_item_id:item.id});
+     return "「"+item.name+"」已"+(item.active?"停用":"上架");
+   });return;
+ }
+ if(a==="save-menu-modes"){
+   await act(async()=>{
+     const value=await rpc("so_menu_set_modes",{p_slug:slug,
+       p_booking_mode:val("menu-book-mode"),p_queue_mode:val("menu-queue-mode")});
+     return "菜單及服務規則已儲存：預約「"+menuModeLabel(value.booking)+"」，現場取號「"+menuModeLabel(value.queue)+"」";
+   });return;
+ }
  if(a==="update-settings"){await act(async()=>{await rpc("so_update_tenant",{p_slug:slug,p_patch:{name:val("set-name"),phone:val("set-phone"),address:val("set-address"),accent:val("set-accent"),description:val("set-description"),logo_url:val("set-logo"),open_time:val("set-open"),close_time:val("set-close"),slot_capacity:Number(val("set-capacity")),slot_minutes:Number(val("set-minutes"))}});return "企業設定已保存";});return}
  if(a==="invite-staff"){await act(async()=>{await rpc("so_invite_staff",{p_slug:slug,p_email:val("invite-email"),p_role:val("invite-role")});return "員工邀請已儲存，請通知對方登入接受";});return}
  if(a==="book"){await act(async()=>{
   if(lineLinkStatus!=="linked")throw Error("請先完成 LINE 授權");
   if(!chosenSlot)throw Error("請先選擇時段");
   const party=Number(val("customer-party")),time=chosenSlot;
-  const result=await rpc("so_book",{p_slug:slug,p_date:day,p_time:time,p_name:lineDisplayName,p_party:party});
-  chosenSlot="";customerTab="mine";
+  const items=bookingChosenItems.slice();
+  const result=await rpc("so_book_with_items",{p_slug:slug,p_date:day,p_time:time,p_name:lineDisplayName,p_party:party,p_items:items});
+  chosenSlot="";bookingChosenItems=[];customerTab="mine";
   const notice=await sendLineNotice("notify-reservation",{reservationId:result.id});
   return "預約已成立："+day+" "+time+"，"+party+" 位"+customerNoticeSuffix(notice);
  });return}
@@ -844,8 +879,8 @@ document.addEventListener("click",async ev=>{
     showActionFeedback("請確認預約日期、時間及人數","error");return;
   }
   await act(async()=>{
-    const result=await rpc("so_customer_edit_booking",{p_slug:slug,p_booking_id:bookingId,p_date:targetDate,p_time:targetTime,p_party:party});
-    editingBookingId="";editSlots=null;finishManageLink();
+    const result=await rpc("so_customer_edit_booking_with_items",{p_slug:slug,p_booking_id:bookingId,p_date:targetDate,p_time:targetTime,p_party:party,p_items:editChosenItems.slice()});
+    editingBookingId="";editSlots=null;editChosenItems=[];finishManageLink();
     if(!result.changed)return "預約資料沒有變更";
     const notice=await sendLineNotice("notify-reservation-updated",{reservationId:bookingId});
     return "預約已更新："+targetDate+" "+targetTime+"，"+party+" 位"+customerNoticeSuffix(notice);
@@ -863,7 +898,8 @@ document.addEventListener("click",async ev=>{
 }
  if(a==="take"){await act(async()=>{
   if(lineLinkStatus!=="linked")throw Error("請先完成 LINE 授權");
-  const result=await rpc("so_take_number",{p_slug:slug,p_name:lineDisplayName});
+  const result=await rpc("so_take_number_with_items",{p_slug:slug,p_name:lineDisplayName,p_items:queueChosenItems.slice()});
+  queueChosenItems=[];
   const notice=await sendLineNotice("notify-ticket",{ticketId:result.id});
   return "取號成功！您的號碼是 "+result.number+customerNoticeSuffix(notice);
  });return}
@@ -931,6 +967,14 @@ document.addEventListener("click",async ev=>{
 });
 document.addEventListener("change",async ev=>{
  const el=ev.target;
+ if(el.dataset.menuChoice){
+   const flow=el.dataset.menuChoice;
+   const list=flow==="booking"?bookingChosenItems:flow==="queue"?queueChosenItems:editChosenItems;
+   const id=el.value;
+   if(el.checked&&!list.includes(id))list.push(id);
+   if(!el.checked){const index=list.indexOf(id);if(index>=0)list.splice(index,1);}
+   render();return;
+ }
  if(el.id==="staff-history-days"){staffHistoryDays=Number(el.value);await load();return;}
  if(el.id==="customer-day"){day=el.value;chosenSlot="";await load();return;}
  if(el.id==="edit-book-date"){editDate=el.value;editTime="";await fetchBookingEditSlots();return;}
