@@ -1089,6 +1089,10 @@ document.addEventListener("click",async ev=>{
       {p_slug:slug,p_ticket_id:previous.id,p_status:previous.before,p_expected_status:previous.after};
     const result=await rpc(proc,args);
     if(result.changed)lastStaffChange=null;
+    if(result.changed&&previous.kind==="reservation"&&previous.after==="CANCELLED"&&previous.before==="CONFIRMED"){
+      const notice=await sendLineNotice("notify-reservation-restored",{reservationId:previous.id});
+      return "已還原 "+previous.label+" 為「"+jsStatus(previous.before)+"」；"+notice;
+    }
     return "已還原 "+previous.label+" 為「"+jsStatus(previous.before)+"」；不會重新發送 LINE 通知";
   });return;
  }
@@ -1161,6 +1165,11 @@ document.addEventListener("change",async ev=>{
        ?await sendLineNotice("notify-ticket-cancel",{ticketId:id})
        :await sendLineNotice("notify-reservation-cancel",{reservationId:id});
      msg+=customerNoticeSuffix(notice);
+   }
+   if(result.changed&&kind==="reservation"&&previous==="CANCELLED"&&desired==="CONFIRMED"){
+     // Restored reservations reuse the existing booking confirmation LINE card.
+     const notice=await sendLineNotice("notify-reservation-restored",{reservationId:id});
+     msg+="；"+notice;
    }
    return msg;
   });return;
