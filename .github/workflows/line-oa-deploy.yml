@@ -107,3 +107,66 @@ jobs:
           else:
             print("LINE webhook is enabled.")
           PY
+      - name: Verify signed webhook and reject forged requests
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, hmac, json, os, urllib.error, urllib.request
+          endpoint = "https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/line-bridge?action=webhook"
+          body = b'{"events":[]}'
+          signature = base64.b64encode(hmac.new(os.environ["LINE_MESSAGING_CHANNEL_SECRET"].encode(), body, hashlib.sha256).digest()).decode()
+          def test(sig):
+            req = urllib.request.Request(endpoint, body, method="POST",
+              headers={"Content-Type":"application/json", "X-Line-Signature":sig})
+            try:
+              with urllib.request.urlopen(req, timeout=25) as res:
+                return res.status, json.loads(res.read().decode())
+            except urllib.error.HTTPError as err:
+              return err.code, json.loads(err.read().decode())
+          ok_status, ok = test(signature)
+          assert ok_status == 200 and ok.get("ok") is True, "Signed webhook verification failed"
+          bad_status, _ = test("invalid")
+          assert bad_status == 401, "Unsigned or forged LINE event was not rejected"
+          print("Signed LINE webhook accepted; forged webhook rejected (401).")
+          PY
+      - name: Inspect and repair LIFF endpoint and openid scope
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.error, urllib.parse, urllib.request
+          client_id = os.environ["LINE_LOGIN_CHANNEL_ID"]
+          client_secret = os.environ.get("LINE_LOGIN_CHANNEL_SECRET", "")
+          liff_id = os.environ["LINE_LIFF_ID"]
+          target = "https://hub-google.github.io/LINE/saas/?view=customer&merchant=greenfield-salon&tab=queue"
+          if not client_secret:
+            print("::warning title=LIFF read-back unavailable::LINE_LOGIN_CHANNEL_SECRET not configured; check LIFF endpoint and openid scope manually.")
+            raise SystemExit(0)
+          form = urllib.parse.urlencode({"grant_type":"client_credentials", "client_id":client_id, "client_secret":client_secret}).encode()
+          req = urllib.request.Request("https://api.line.me/v2/oauth/accessToken", form, method="POST",
+            headers={"Content-Type":"application/x-www-form-urlencoded"})
+          with urllib.request.urlopen(req, timeout=25) as res:
+            token = json.load(res)["access_token"]
+          base = "https://api.line.me/liff/v1/apps"
+          def api(path="", method="GET", body=None):
+            raw = None if body is None else json.dumps(body).encode()
+            request = urllib.request.Request(base+path, raw, method=method,
+              headers={"Authorization":"Bearer "+token, "Content-Type":"application/json"})
+            with urllib.request.urlopen(request, timeout=25) as response:
+              return json.loads(response.read().decode() or "{}")
+          apps = api().get("apps", [])
+          app = next((a for a in apps if a.get("liffId")==liff_id), None)
+          assert app is not None, "Configured LIFF app does not belong to LINE Login channel"
+          current_url = (app.get("view") or {}).get("url", "")
+          current_scopes = list(app.get("scope") or [])
+          updates = {}
+          if current_url != target:
+            updates["view"] = {"url":target}
+          if "openid" not in current_scopes:
+            updates["scope"] = list(dict.fromkeys(current_scopes+["openid"]))
+          if updates:
+            api("/"+urllib.parse.quote(liff_id, safe=""),"PUT",updates)
+            app = next((a for a in api().get("apps", []) if a.get("liffId")==liff_id), None)
+          assert app is not None and app.get("view",{}).get("url")==target, "LIFF endpoint mismatch"
+          assert "openid" in (app.get("scope") or []), "LIFF openid scope missing"
+          print("LIFF endpoint verified; openid scope enabled. No credentials displayed.")
+          PY
