@@ -23,7 +23,7 @@ small{color:var(--muted)}.hidden{display:none}.status{display:inline-block;backg
   <h2>免帳密測試入口</h2>
   <p>原本的 <strong>TEST-HQ</strong> 測試總公司帳號保留，按一下就能測試商家申請、審核及開通。不會讀取或操作正式商家申請。</p>
   <div class="actions"><button id="qa-login">一鍵登入測試總公司後台</button>
-  <a class="btn secondary" href="./?view=staff">一鍵測試店員後台</a>
+  <button id="qa-staff" class="secondary">一鍵登入測試店員後台</button>
   <a class="btn secondary" href="./?view=platform">測試總公司營運後台</a></div>
 </section>
 <section class="card" id="auth-card"><h2>商家帳號</h2><p>請使用已驗證電子郵件的正式帳號申請。一般顧客不需要這個帳號。</p>
@@ -101,17 +101,26 @@ async function act(fn){
  catch(err){message(err.message||String(err),true)}
  finally{busy=false;document.querySelectorAll("button").forEach(b=>b.disabled=false)}
 }
-$("qa-login").onclick=()=>act(async()=>{
-   const s=await sb.auth.getSession();if(s.error)throw s.error;
-   if(s.data.session&&!s.data.session.user.is_anonymous){
+async function qaSignIn(p_view){
+   const current=await sb.auth.getSession();if(current.error)throw current.error;
+   if(current.data.session&&!current.data.session.user.is_anonymous){
      const out=await sb.auth.signOut();if(out.error)throw out.error;
    }
-   let current=await sb.auth.getSession();if(current.error)throw current.error;
-   if(!current.data.session){const created=await sb.auth.signInAnonymously();if(created.error)throw created.error;}
-   const result=await rpc("so_test_login",{p_view:"PLATFORM"});
+   const check=await sb.auth.getSession();if(check.error)throw check.error;
+   if(!check.data.session){const created=await sb.auth.signInAnonymously();if(created.error)throw created.error;}
+   const result=await rpc("so_test_login",{p_view});
    if(!result?.slug||!/^qa-[a-z0-9-]{3,36}$/.test(result.slug))throw Error("測試身分建立失敗");
    localStorage.setItem("line_saas_real_qa_v1",JSON.stringify({slug:result.slug}));
-   return "已登入原本 TEST-HQ 測試身分，現在可建立並審核測試商家";
+   return result;
+ }
+ $("qa-login").onclick=()=>act(async()=>{
+   await qaSignIn("PLATFORM");
+   return "已登入 TEST-HQ，現在可建立、審核、核准或拒絕隔離測試商家";
+ });
+ $("qa-staff").onclick=()=>act(async()=>{
+   const result=await qaSignIn("STAFF");
+   location.assign("./?view=staff&merchant="+encodeURIComponent(result.slug));
+   return "已登入 TEST-STAFF，正在進入門市後台";
  });
  $("qa-create").onclick=()=>act(async()=>{
    if(!qaVerified)throw Error("請先一鍵登入 TEST-HQ");
