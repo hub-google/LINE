@@ -48,7 +48,7 @@ const SB_URL="https://unapiwajmgqqtdkixaab.supabase.co";
 const SB_KEY="sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy";
 const supa=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
 const LINE_BRIDGE_URL=SB_URL+"/functions/v1/line-bridge";
-let lineConfig=null,lineLinkStatus="not-ready",lineLinkAttempted=false,lineFriendStatus=null;
+let lineConfig=null,lineLinkStatus="not-ready",lineLinkAttempted=false,lineFriendStatus=null,lineDisplayName="",lineConnectError="";
 async function bridgeConfig(){
   if(lineConfig!==null)return lineConfig;
   try{const res=await fetch(LINE_BRIDGE_URL+"?action=config");if(res.ok)lineConfig=await res.json();}
@@ -60,29 +60,50 @@ async function connectLineSession(force=false){
   if(force)lineLinkAttempted=false;
   if(lineLinkAttempted)return;
   const config=await bridgeConfig();
-  if(!config.liffId){lineLinkStatus="not-ready";return;}
+  if(!config.liffId){lineLinkStatus="not-ready";lineConnectError="尚未設定 LINE LIFF，請通知店家。";return;}
   if(!window.liff){
     for(let attempt=0;attempt<40&&!window.liff;attempt++)await new Promise(resolve=>setTimeout(resolve,100));
   }
-  if(!window.liff){lineLinkStatus="sdk-missing";return;}
+  if(!window.liff){lineLinkStatus="sdk-missing";lineConnectError="LINE 登入元件未能載入。";return;}
   lineLinkAttempted=true;
+  lineLinkStatus="connecting";
+  lineConnectError="";
   try {
     await window.liff.init({liffId:config.liffId});
     if(!window.liff.isLoggedIn()){
       lineLinkStatus="not-logged-in";
-      if(force&&!window.liff.isInClient())window.liff.login({redirectUri:location.href.split("#")[0]});
+      if(!window.liff.isInClient())window.liff.login({redirectUri:location.origin+location.pathname+location.search});
       return;
     }
     const idToken=window.liff.getIDToken();
-    if(!idToken)throw Error("LINE 未核發 ID Token（請確認 LIFF 啟用 openid scope）");
-    const res=await fetch(LINE_BRIDGE_URL,{method:"POST",headers:{"content-type":"application/json","authorization":"Bearer "+session.access_token},body:JSON.stringify({action:"link",slug,idToken})});
-    const result=await res.json();
-    if(!res.ok||!result.linked)throw Error(result.error||"LINE 綁定失敗");
+    if(!idToken)throw Error("LINE 尚未授權身分資料，請確認 LIFF 的 openid 權限。");
+    const accessToken=window.liff.getAccessToken()||"";
+    const link=async()=>{
+      const res=await fetch(LINE_BRIDGE_URL,{
+        method:"POST",
+        headers:{"content-type":"application/json","authorization":"Bearer "+session.access_token},
+        body:JSON.stringify({action:"link",slug,idToken,accessToken})
+      });
+      return {res,result:await res.json()};
+    };
+    let {res,result}=await link();
+    if(res.status===409&&result.error==="LINE_ACCOUNT_CHANGED"&&session.user?.is_anonymous){
+      const signedOut=await supa.auth.signOut();
+      if(signedOut.error)throw signedOut.error;
+      const fresh=await supa.auth.signInAnonymously();
+      if(fresh.error||!fresh.data.session)throw fresh.error||Error("無法建立顧客識別");
+      session=fresh.data.session;
+      ({res,result}=await link());
+    }
+    if(!res.ok||!result.linked)throw Error(result.error||"LINE 身分驗證失敗");
+    if(!result.displayName)throw Error("LINE 未提供使用者名稱，請開啟 LIFF 的 profile 權限。");
+    lineDisplayName=result.displayName;
     lineLinkStatus="linked";
     lineFriendStatus=result.isFollowing===true?true:result.isFollowing===false?false:null;
   }catch(e){
     lineLinkStatus="failed";
-    console.warn("LINE 身分連接失敗",e instanceof Error?e.message:String(e));
+    lineConnectError=e instanceof Error?e.message:String(e);
+    console.warn("LINE 身分連接失敗",lineConnectError);
   }
 }
 async function sendLineNotice(action,ids){
@@ -100,21 +121,24 @@ async function sendLineNotice(action,ids){
 }
 async function notifyLineCalled(ticketNumber){return sendLineNotice("notify",{number:ticketNumber});}
 function lineStatusBadge(){
-  if(demoMode)return "";
-  if(!lineConfig?.liffId)return "";
-  if(lineLinkStatus==="linked"&&lineFriendStatus===false)return '<div class="alert">LINE 帳號已連結，但已取消官方帳號好友或封鎖通知，請先重新加為好友再重整頁面。</div>';
-  if(lineLinkStatus==="linked")return '<div class="notice">LINE 帳號已連結。預約、取號與叫號通知由官方帳號傳送；請確認已加為好友且未封鎖。</div>';
-  const detail=lineLinkStatus==="failed"?"LINE 身分驗證失敗。請確認 LIFF 的 openid 權限與網址設定。":
-    lineLinkStatus==="sdk-missing"?"無法載入 LINE SDK。請嘗試在 LINE 內開啟。":
-    lineLinkStatus==="not-logged-in"?"尚未完成 LINE 登入。":"想收到 LINE 通知，請先連結 LINE 帳號。";
-  return '<div class="alert">'+esc(detail)+' <button class="btn secondary" data-act="line-connect" type="button">連結 LINE 接收通知</button>　<a href="https://liff.line.me/'+encodeURIComponent(lineConfig.liffId)+'">從 LINE 開啟</a></div>';
+  if(demoMode)return '<div class="notice">展示模式：使用模擬 LINE 顯示名稱，不會發送通知。</div>';
+  if(lineLinkStatus==="linked"){
+    return '<div class="notice">LINE 使用者：<strong>'+esc(lineDisplayName)+'</strong>。預約與取號會自動使用此名稱。'+(lineFriendStatus===false?'目前尚無法接收 LINE 通知，請加回官方帳號好友。':'請加入官方帳號好友，以接收預約、取號與叫號通知。')+'</div>';
+  }
+  const detail=lineLinkStatus==="connecting"?"正在連接 LINE 帳號…":
+    lineLinkStatus==="not-logged-in"?"正在開啟 LINE 授權…":
+    lineConnectError||"請授權 LINE 使用者資訊後繼續。";
+  const liffUrl=lineConfig?.liffId?'https://liff.line.me/'+encodeURIComponent(lineConfig.liffId)+'/?view=customer&merchant='+encodeURIComponent(slug):"";
+  return '<div class="alert">'+esc(detail)+' '+btn("重新連接 LINE","line-connect","secondary")+(liffUrl?' <a href="'+esc(liffUrl)+'">從 LINE 開啟</a>':'')+'</div>';
 }
 
 const $=id=>document.getElementById(id);
 const params=new URLSearchParams(location.search);
-let view=params.get("view")||"home",slug=params.get("merchant")||"greenfield-salon",demoMode=params.get("demo")==="1";
+const liffState=params.get("liff.state")||"";
+const liffArgs=new URLSearchParams(liffState.includes("?")?liffState.slice(liffState.indexOf("?")+1):"");
+let view=params.get("view")||liffArgs.get("view")||"customer",slug=params.get("merchant")||liffArgs.get("merchant")||"greenfield-salon",demoMode=params.get("demo")==="1";
 let session=null,context=null,overview=[],customer=null,staff=null,busy=false,flash="",err="";
-let day=taipei(),customerTab=["home","reserve","queue","mine"].includes(params.get("tab"))?params.get("tab"):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
+let day=taipei(),customerTab=["home","reserve","queue","mine"].includes(params.get("tab")||liffArgs.get("tab"))?(params.get("tab")||liffArgs.get("tab")):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
 const features=[["reservation","線上預約"],["queue","線上取號"],["calling","現場叫號"]];
 const route=(v,s=slug,tab="")=>location.pathname+"?view="+encodeURIComponent(v)+(s?"&merchant="+encodeURIComponent(s):"")+(v==="customer"&&tab?"&tab="+encodeURIComponent(tab):"")+(demoMode?"&demo=1":"");
 function taipei(){return new Intl.DateTimeFormat("sv-SE",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date())}
@@ -130,9 +154,10 @@ function authReady(){return demoMode||!!(session&&session.user&&!session.user.is
 function normalUser(){return demoMode?"展示操作員（模擬資料）":session&&session.user?session.user.email||"匿名使用者":"尚未登入"}
 function nav(label,tab,current,which){return '<button class="side-item '+(tab===current?"active":"")+'" data-nav="'+which+'" data-tab="'+tab+'">'+label+'</button>'}
 function layout(title,subtitle,menu,body){
- return '<div class="toolbar"><div><div class="eyebrow">LINE STORE OPERATIONS</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div><div class="flex"><span class="small">'+esc(normalUser())+'</span>'+(authReady()?btn("登出","logout","outline"):"")+'</div></div><div class="layout"><aside>'+menu+'</aside><section class="content">'+body+'</section></div>';
+ const identityLabel=view==="customer"?(demoMode?"LINE 展示顧客":lineDisplayName):normalUser();
+ return '<div class="toolbar"><div><div class="eyebrow">LINE STORE OPERATIONS</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div><div class="flex"><span class="small">'+esc(identityLabel)+'</span>'+(view!=="customer"&&authReady()?btn("登出","logout","outline"):"")+'</div></div><div class="layout"><aside>'+menu+'</aside><section class="content">'+body+'</section></div>';
 }
-function head(){const links=[["home","產品入口"],["platform","公司總後台"],["staff","企業員工後台"],["customer","顧客使用網頁"]];
+function head(){const links=view==="customer"?[["customer","預約／取號"]]:[["home","產品入口"],["platform","公司總後台"],["staff","企業員工後台"],["customer","顧客使用網頁"]];
 $("headlinks").innerHTML=links.map(x=>'<a href="'+esc(route(x[0],x[0]==="platform"||x[0]==="home"?"":slug))+'" class="'+(x[0]===view?"active":"")+'">'+x[1]+'</a>').join("");
 }
 function message(){return (err?'<div class="error" role="alert">'+esc(err)+'</div>':"")+(flash?'<div class="notice" role="status">'+esc(flash)+'</div>':"")}
@@ -220,8 +245,9 @@ function staffRender(){
  return layout(t.name,"企業員工營運後台",menu,html);
 }
 function customerRender(){
- if(!customer)return box("正在讀取顧客網站",'<p class="muted">正在確認企業營運設定與登入狀態...</p>');
- const t=customer.tenant,m=t.modules||{},items=customer.my_reservations||[],tickets=customer.my_tickets||[],live=tickets.find(x=>["WAITING","CALLED","SERVING"].includes(x.status));
+  if(!demoMode&&lineLinkStatus!=="linked")return box("LINE 身分授權",'<p class="muted">使用 LINE 帳號登入後即可預約與取號，不需另填姓名或帳密。</p>'+lineStatusBadge());
+  if(!customer)return box("正在讀取顧客網站",'<p class="muted">正在確認企業設定與登入狀態...</p>');
+  const t=customer.tenant,m=t.modules||{},items=customer.my_reservations||[],tickets=customer.my_tickets||[],live=tickets.find(x=>["WAITING","CALLED","SERVING"].includes(x.status));
  document.documentElement.style.setProperty("--primary",/^#[a-fA-F0-9]{6}$/.test(t.accent)?t.accent:"#147e68");
  const menu=nav("首頁","home",customerTab,"customer")+(m.reservation?nav("線上預約","reserve",customerTab,"customer"):"")+(m.queue?nav("現場取號","queue",customerTab,"customer"):"")+nav("我的紀錄","mine",customerTab,"customer");
  let html='';
@@ -233,29 +259,33 @@ function customerRender(){
   if(!m.reservation)html=box("未開放預約",'<p>企業目前沒有啟用此功能。</p>');
   else html=box("選擇預約日期與時間",'<div class="grid"><div>'+field("預約日期","customer-day",day,"date",'min="'+taipei()+'"')+'</div><div>'+field("預約人數","customer-party",1,"number",'min="1" max="20"')+'</div></div><label>可預約時段</label>'+
     '<div class="slots">'+(customer.slots||[]).map(s=>'<button class="slot '+(chosenSlot===s.time?"active":"")+'" data-slot="'+esc(s.time)+'" '+(s.available<=0?"disabled":"")+'>'+esc(s.time)+'<small>剩 '+esc(s.available)+' 位</small></button>').join("")+'</div>'+
-    field("預約者暱稱（測試期間請勿填真名）","customer-name","","text",'maxlength="60"')+
+    '<p class="small">預約者：<strong>'+esc(demoMode?"LINE 展示顧客":lineDisplayName)+'</strong>（由 LINE 自動帶入）</p>'+
     '<div style="margin-top:15px">'+btn("確定送出預約","book","primary full",!chosenSlot?"disabled":"")+'</div>')+
     box("我的近期預約",renderBookings(items,true));
  }else if(customerTab==="queue"){
   if(!m.queue)html=box("尚未開放取號",'<p>本企業只提供線上預約。</p>');
   else html='<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",customer.current||"—")+stat("等候組數",customer.waiting)+stat("我的號碼",live?.number||"—")+'</div>'+
    box("我的現場號碼",live?'<div class="ticket">'+esc(live.number)+'</div><p>'+tag(live.status)+'</p>'+(live.status==="WAITING"?btn("取消取號","cancel-my-number","danger",'data-id="'+esc(live.id)+'"'):""):
-    '<p class="muted">現在可在網站上取得號碼。</p>'+field("暱稱","ticket-name","","text",'maxlength="60"')+'<div style="margin-top:14px">'+btn("立即線上取號","take","primary")+'</div>');
+    '<p class="muted">現在可在網站上取得號碼。</p>'+'<p>取號者：<strong>'+esc(demoMode?"LINE 展示顧客":lineDisplayName)+'</strong>（由 LINE 自動帶入）</p>'+'<div style="margin-top:14px">'+btn("立即線上取號","take","primary")+'</div>');
  }else html=box("我的預約紀錄",renderBookings(items,true))+
  box("我的號碼紀錄",tickets.map(k=>'<div class="listline"><strong>'+esc(k.number)+'</strong><span>'+tag(k.status)+'</span></div>').join("")||'<p class="muted">目前沒有號碼紀錄。</p>');
- return layout(t.name,demoMode?"顧客展示網頁・本機模擬資料":"顧客網頁・即時連接 Supabase",menu,lineStatusBadge()+html);
+ return layout(t.name,demoMode?"顧客展示網頁・本機模擬資料":"LINE 預約與取號",menu,lineStatusBadge()+html);
 }
 function renderBookings(items,allowCancel){return items.length?items.map(x=>'<div class="listline"><div><strong>'+esc(x.day)+' '+esc(x.time)+'</strong><div class="small">'+esc(x.name)+'・'+esc(x.party)+' 位</div></div><div class="flex">'+tag(x.status)+(allowCancel&&x.status==="CONFIRMED"?btn("取消","cancel-my-book","danger",'data-id="'+esc(x.id)+'"'):"")+'</div></div>').join(""):'<p class="muted">目前沒有預約紀錄。</p>'}
 function render(){head();$("root").innerHTML=message()+(demoMode?'<div class="notice" role="status"><strong>功能展示模式／模擬資料</strong>　總公司、店員、顧客可互通；資料僅在本瀏覽器同步，不操作正式 Supabase、不發送 LINE 通知。 '+btn("重置展示資料","demo-reset","outline")+' '+btn("離開展示模式","logout","outline")+'</div>':"")+(view==="platform"?platformRender():view==="staff"?staffRender():view==="customer"?customerRender():renderHome())+'<footer>'+(demoMode?"本機展示資料・無正式管理權限・不發送 LINE 通知":"採用 Supabase PostgreSQL 真實儲存・各企業資料及權限獨立・LINE 通知需綁定與加好友")+'</footer>'}
 async function rpc(name,arg={}){if(demoMode)return window.LineDemo.rpc(name,arg,taipei());const r=await supa.rpc(name,arg);if(r.error)throw Error(r.error.message);return r.data}
 async function loadContext(){if(authReady())context=await rpc("so_my_context");else context=null}
 async function load(){err="";try{
-  if(demoMode){const d=window.LineDemo.load({view,slug,day,today:taipei()});context=d.context;overview=d.overview;staff=d.staff;customer=d.customer;if(view==="customer"&&customer){if(customerTab==="queue"&&!customer.tenant.modules.queue)customerTab="home";if(customerTab==="reserve"&&!customer.tenant.modules.reservation)customerTab="home";}render();return;}
-  const s=await supa.auth.getSession();if(s.error)throw s.error;session=s.data.session;
+ if(demoMode){const d=window.LineDemo.load({view,slug,day,today:taipei()});context=d.context;overview=d.overview;staff=d.staff;customer=d.customer;if(view==="customer"&&customer){if(customerTab==="queue"&&!customer.tenant.modules.queue)customerTab="home";if(customerTab==="reserve"&&!customer.tenant.modules.reservation)customerTab="home";}render();return;}
+ const s=await supa.auth.getSession();if(s.error)throw s.error;session=s.data.session;
  if(view==="customer"&&!session){const x=await supa.auth.signInAnonymously();if(x.error)throw x.error;session=x.data.session;}
  if(view==="customer")await connectLineSession();
- await loadContext();
- if(view==="customer"){customer=await rpc("so_public_state",{p_slug:slug,p_date:day});if(customerTab==="reserve"&&!customer.tenant.modules?.reservation)customerTab="home";if(customerTab==="queue"&&!customer.tenant.modules?.queue)customerTab="home";}
+ if(view!=="customer")await loadContext();
+ if(view==="customer"){
+   customer=lineLinkStatus==="linked"?await rpc("so_public_state",{p_slug:slug,p_date:day}):null;
+   if(customer&&customerTab==="reserve"&&!customer.tenant.modules?.reservation)customerTab="home";
+   if(customer&&customerTab==="queue"&&!customer.tenant.modules?.queue)customerTab="home";
+ }
  if(view==="platform"&&context?.platform_admin)overview=await rpc("so_platform_overview");
  if(view==="staff"&&authReady()&&(context?.platform_admin||context?.memberships?.some(m=>m.slug===slug)))staff=await rpc("so_staff_state",{p_slug:slug,p_date:day});
  else if(view==="staff")staff=null;
@@ -263,7 +293,7 @@ async function load(){err="";try{
 async function act(fn){if(busy)return;busy=true;err="";flash="";try{const m=await fn();if(m)flash=m;await load()}catch(e){err=e.message||String(e);render()}finally{busy=false;render()}}
 function checked(prefix){const m={};document.querySelectorAll("."+prefix).forEach(x=>{m[x.dataset.feature]=x.checked});return m}
 function val(id){return ($(id)?.value||"").trim()}
-function urlFor(v,s){return new URL(route(v,s),location.href).href}
+async function urlFor(v,s){if(v==="customer"&&!demoMode){const config=await bridgeConfig();if(config.liffId)return "https://liff.line.me/"+encodeURIComponent(config.liffId)+"/?view=customer&merchant="+encodeURIComponent(s);}return new URL(route(v,s),location.href).href}
 document.addEventListener("click",async ev=>{
  const b=ev.target.closest("button");if(!b||busy)return;
  if(b.dataset.nav){const v=b.dataset.nav;const tab=b.dataset.tab;if(v==="customer"){customerTab=tab;if(!customer?.tenant.modules[tab==="reserve"?"reservation":tab==="queue"?"queue":"reservation"]&&["reserve","queue"].includes(tab))customerTab="home";history.replaceState(null,"",route("customer",slug,customerTab))}if(v==="staff")staffTab=tab;if(v==="platform")platformTab=tab;err="";flash="";render();return}
@@ -285,12 +315,12 @@ document.addEventListener("click",async ev=>{
  if(a==="company-config"){chosenCompany=b.dataset.slug;render();return}
  if(a==="save-company"){await act(async()=>{await rpc("so_update_tenant",{p_slug:chosenCompany,p_patch:{name:val("config-name"),modules:checked("config-feature")}});return "企業名稱及模組已更新";});return}
  if(a==="toggle-company"){await act(async()=>{const t=overview.find(x=>x.slug===chosenCompany);await rpc("so_update_tenant",{p_slug:chosenCompany,p_patch:{status:t.status==="ACTIVE"?"SUSPENDED":"ACTIVE"}});return "已更新企業啟用狀態";});return}
- if(a==="copy-customer"||a==="copy-staff"){const s=view==="platform"?chosenCompany:slug;const v=a==="copy-customer"?"customer":"staff";const u=urlFor(v,s);try{await navigator.clipboard.writeText(u);flash="已複製："+u;}catch(e){window.prompt("複製網址",u)}render();return}
+ if(a==="copy-customer"||a==="copy-staff"){const s=view==="platform"?chosenCompany:slug;const v=a==="copy-customer"?"customer":"staff";const u=await urlFor(v,s);try{await navigator.clipboard.writeText(u);flash="已複製："+u;}catch(e){window.prompt("複製網址",u)}render();return}
  if(a==="update-settings"){await act(async()=>{await rpc("so_update_tenant",{p_slug:slug,p_patch:{name:val("set-name"),phone:val("set-phone"),address:val("set-address"),accent:val("set-accent"),description:val("set-description"),logo_url:val("set-logo"),open_time:val("set-open"),close_time:val("set-close"),slot_capacity:Number(val("set-capacity")),slot_minutes:Number(val("set-minutes"))}});return "企業設定已保存";});return}
  if(a==="invite-staff"){await act(async()=>{await rpc("so_invite_staff",{p_slug:slug,p_email:val("invite-email"),p_role:val("invite-role")});return "員工邀請已儲存，請通知對方登入接受";});return}
- if(a==="book"){await act(async()=>{if(!chosenSlot)throw Error("請先選擇時段");const result=await rpc("so_book",{p_slug:slug,p_date:day,p_time:chosenSlot,p_name:val("customer-name"),p_party:Number(val("customer-party"))});chosenSlot="";customerTab="mine";const notice=await sendLineNotice("notify-reservation",{reservationId:result.id});return "預約成功，資料已存入雲端；"+notice;});return}
+ if(a==="book"){await act(async()=>{if(!demoMode&&lineLinkStatus!=="linked")throw Error("請先完成 LINE 授權");if(!chosenSlot)throw Error("請先選擇時段");const result=await rpc("so_book",{p_slug:slug,p_date:day,p_time:chosenSlot,p_name:demoMode?"LINE 展示顧客":lineDisplayName,p_party:Number(val("customer-party"))});chosenSlot="";customerTab="mine";const notice=await sendLineNotice("notify-reservation",{reservationId:result.id});return "預約成功，資料已存入雲端；"+notice;});return}
  if(a==="cancel-my-book"){if(!confirm("確定取消這筆預約？"))return;await act(async()=>{await rpc("so_cancel_booking",{p_id:id});return "已取消預約";});return}
- if(a==="take"){await act(async()=>{const result=await rpc("so_take_number",{p_slug:slug,p_name:val("ticket-name")});const notice=await sendLineNotice("notify-ticket",{ticketId:result.id});return "取號成功："+result.number+"；"+notice;});return}
+ if(a==="take"){await act(async()=>{if(!demoMode&&lineLinkStatus!=="linked")throw Error("請先完成 LINE 授權");const result=await rpc("so_take_number",{p_slug:slug,p_name:demoMode?"LINE 展示顧客":lineDisplayName});const notice=await sendLineNotice("notify-ticket",{ticketId:result.id});return "取號成功："+result.number+"；"+notice;});return}
  if(a==="line-connect"){await act(async()=>{await connectLineSession(true);return lineLinkStatus==="linked"?"LINE 帳號已連結，後續通知可發送":"請完成 LINE 登入或從 LINE 內重新開啟";});return}
  if(a==="cancel-my-number"){if(!confirm("確定取消號碼？"))return;await act(async()=>{await rpc("so_cancel_number",{p_id:id});return "已取消號碼";});return}
  if(["call","recall","start","complete","pass","return","cancel","checkin","no-show","cancel-book-staff"].includes(a)){
