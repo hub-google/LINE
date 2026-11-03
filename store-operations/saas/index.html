@@ -47,7 +47,7 @@ const SB_URL="https://unapiwajmgqqtdkixaab.supabase.co";
 const SB_KEY="sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy";
 const supa=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
 const LINE_BRIDGE_URL=SB_URL+"/functions/v1/line-bridge";
-let lineConfig=null,lineLinkStatus="not-ready",lineLinkAttempted=false;
+let lineConfig=null,lineLinkStatus="not-ready",lineLinkAttempted=false,lineFriendStatus=null;
 async function bridgeConfig(){
   if(lineConfig!==null)return lineConfig;
   try{const res=await fetch(LINE_BRIDGE_URL+"?action=config");if(res.ok)lineConfig=await res.json();}
@@ -78,6 +78,7 @@ async function connectLineSession(force=false){
     const result=await res.json();
     if(!res.ok||!result.linked)throw Error(result.error||"LINE 綁定失敗");
     lineLinkStatus="linked";
+    lineFriendStatus=result.isFollowing===true?true:result.isFollowing===false?false:null;
   }catch(e){
     lineLinkStatus="failed";
     console.warn("LINE 身分連接失敗",e instanceof Error?e.message:String(e));
@@ -91,13 +92,15 @@ async function sendLineNotice(action,ids){
     if(out.sent)return "LINE 已接受通知發送（需已加官方帳號好友）";
     if(out.reason==="ALREADY_SENT")return "LINE 通知已發送過，未重複傳送";
     if(out.reason==="CUSTOMER_NOT_LINKED")return "LINE 尚未連結，未發送通知";
+    if(out.reason==="CUSTOMER_UNFOLLOWED")return "LINE 官方帳號已被取消好友或封鎖，未發送通知；請先加回好友";
     return "LINE 通知失敗："+(out.error||"未知原因")+(out.status?" ("+out.status+")":"");
   }catch(e){return "LINE 通知暫時無法連線";}
 }
 async function notifyLineCalled(ticketNumber){return sendLineNotice("notify",{number:ticketNumber});}
 function lineStatusBadge(){
   if(!lineConfig?.liffId)return "";
-  if(lineLinkStatus==="linked")return '<div class="notice">LINE 帳號已連結。預約、取號及叫號通知會透過官方帳號發送；請確認已加為好友。</div>';
+  if(lineLinkStatus==="linked"&&lineFriendStatus===false)return '<div class="alert">LINE 帳號已連結，但已取消官方帳號好友或封鎖通知，請先重新加為好友再重整頁面。</div>';
+  if(lineLinkStatus==="linked")return '<div class="notice">LINE 帳號已連結。預約、取號與叫號通知由官方帳號傳送；請確認已加為好友且未封鎖。</div>';
   const detail=lineLinkStatus==="failed"?"LINE 身分驗證失敗。請確認 LIFF 的 openid 權限與網址設定。":
     lineLinkStatus==="sdk-missing"?"無法載入 LINE SDK。請嘗試在 LINE 內開啟。":
     lineLinkStatus==="not-logged-in"?"尚未完成 LINE 登入。":"想收到 LINE 通知，請先連結 LINE 帳號。";
