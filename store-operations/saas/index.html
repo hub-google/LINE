@@ -332,13 +332,23 @@ function staffStatusPicker(kind,item,editable){
   choices.map(([value,title])=>'<label class="staff-choice"><input type="radio" name="'+kind+'-'+esc(item.id)+'" data-status-kind="'+kind+'" data-id="'+esc(item.id)+'" data-previous="'+esc(item.status)+'" value="'+value+'" '+(value===item.status?'checked ':'')+((Array.isArray(editable)?editable.includes(value):editable)?'':'disabled ')+'><span>'+title+'</span></label>').join("")+
  '</fieldset>';
 }
+let actionFeedbackTimer=null;
+function dismissActionFeedback(){
+ clearTimeout(actionFeedbackTimer);
+ actionFeedbackTimer=null;
+ document.getElementById("action-feedback")?.remove();
+}
 function showActionFeedback(message,kind="success"){
+ clearTimeout(actionFeedbackTimer);
+ actionFeedbackTimer=null;
  let node=document.getElementById("action-feedback");
  if(!node){node=document.createElement("div");node.id="action-feedback";document.body.appendChild(node);}
  node.className="action-feedback "+(kind==="error"?"failure":kind);
  node.setAttribute("role",kind==="error"?"alert":"status");
  node.setAttribute("aria-live",kind==="error"?"assertive":"polite");
  node.innerHTML='<div><strong>'+esc(kind==="pending"?"處理中":kind==="error"?"操作失敗":kind==="warning"?"操作已儲存，但通知待確認":"操作成功")+'</strong><div>'+esc(message)+'</div></div><button type="button" data-act="dismiss-feedback" aria-label="關閉提示">×</button>';
+ // Do not hide an operation while it is still pending.
+ if(kind!=="pending")actionFeedbackTimer=setTimeout(dismissActionFeedback,10000);
 }
 
 function requireAuth(){
@@ -586,7 +596,7 @@ async function urlFor(v,s){
 }
 document.addEventListener("click",async ev=>{
  const b=ev.target.closest("button");if(!b||busy)return;
- if(b.dataset.act==="dismiss-feedback"){document.getElementById("action-feedback")?.remove();flash="";err="";render();return;}
+ if(b.dataset.act==="dismiss-feedback"){dismissActionFeedback();flash="";err="";render();return;}
  if(b.dataset.act==="open-bookings"||b.dataset.act==="open-queue"){staffTab=b.dataset.act==="open-bookings"?"bookings":"queue";err="";render();return;}
  if(b.dataset.nav){const v=b.dataset.nav;const tab=b.dataset.tab;if(v==="customer"){customerTab=tab;if(!customer?.tenant.modules[tab==="reserve"?"reservation":tab==="queue"?"queue":"reservation"]&&["reserve","queue"].includes(tab))customerTab="home";/* Customer subviews change in-place on the same page, not by opening separate URLs. */}if(v==="staff")staffTab=tab;if(v==="platform")platformTab=tab;err="";flash="";render();return}
  if(b.dataset.slot){chosenSlot=b.dataset.slot;render();return}
