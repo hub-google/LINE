@@ -623,6 +623,7 @@ async function beginBookingEdit(id){
  const record=(customer?.my_reservations||[]).find(x=>x.id===id);
  if(!record||record.status!=="CONFIRMED"){showActionFeedback("這筆預約目前無法編輯","error");return;}
  editingBookingId=id;editDate=String(record.day);editTime=String(record.time);editParty=Number(record.party);
+ editChosenItems=Array.isArray(record.selected_items)?record.selected_items.map(x=>x.id):[];
  customerTab="mine";manageMode="edit";manageKind="reservation";manageItem=id;
  await fetchBookingEditSlots();
 }
@@ -640,6 +641,7 @@ function editBookingForm(record){
   '<label for="edit-book-time">預約時間</label>'+
   (editLoading?'<p class="muted">正在讀取可預約時段…</p>':
    '<select id="edit-book-time" class="field"><option value="">請選擇時段</option>'+choices+'</select>')+
+  menuSelectSection(customer?.tenant?.menu_booking_mode||"DISABLED",customer?.menu_items||[],editChosenItems,"edit")+
   '<p class="staff-help">修改後會再次確認名額，預約編號維持不變，並發送更新通知。</p>'+
   '<div class="staff-actionbar">'+btn("儲存預約修改","save-book-edit","primary",!editTime||editLoading?'disabled':'')+
   btn("返回","close-book-edit","outline")+'</div></div>';
@@ -649,6 +651,7 @@ function customerRender(){
   if(lineLinkStatus!=="linked")return box("LINE 身分授權",'<p class="muted">使用 LINE 帳號登入後即可預約與取號，不需另填姓名或帳密。</p><p class="small">目前指定門市：<strong>'+esc(slug)+'</strong></p>'+lineStatusBadge());
   if(!customer)return box("正在讀取顧客網站",'<p class="muted">正在確認企業設定與登入狀態...</p>');
   const t=customer.tenant,m=t.modules||{},items=customer.my_reservations||[],tickets=customer.my_tickets||[],live=tickets.find(x=>["WAITING","CALLED","SERVING"].includes(x.status));
+  const catalogue=customer.menu_items||[];
  document.documentElement.style.setProperty("--primary",/^#[a-fA-F0-9]{6}$/.test(t.accent)?t.accent:"#147e68");
  const menu=nav("首頁","home",customerTab,"customer")+(m.reservation?nav("線上預約","reserve",customerTab,"customer"):"")+(m.queue?nav("現場取號","queue",customerTab,"customer"):"")+nav("我的紀錄","mine",customerTab,"customer");
  let html='';
@@ -660,14 +663,23 @@ function customerRender(){
   if(!m.reservation)html=box("未開放預約",'<p>企業目前沒有啟用此功能。</p>');
   else html=box("選擇預約日期與時間",'<div class="grid"><div>'+field("預約日期","customer-day",day,"date",'min="'+taipei()+'"')+'</div><div>'+field("預約人數","customer-party",1,"number",'min="1" max="20"')+'</div></div><label>可預約時段</label>'+
     '<div class="slots">'+(customer.slots||[]).map(s=>'<button class="slot '+(chosenSlot===s.time?"active":"")+'" data-slot="'+esc(s.time)+'" '+(s.available<=0?"disabled":"")+'>'+esc(s.time)+'<small>剩 '+esc(s.available)+' 位</small></button>').join("")+'</div>'+
+    menuSelectSection(t.menu_booking_mode||"DISABLED",catalogue,bookingChosenItems,"booking")+
     '<p class="small">預約者：<strong>'+esc(lineDisplayName)+'</strong>（由 LINE 自動帶入）</p>'+
-    '<div style="margin-top:15px">'+btn("確定送出預約","book","primary full",!chosenSlot?"disabled":"")+'</div>')+
+    '<div style="margin-top:15px">'+btn("確定送出預約","book","primary full",
+      !chosenSlot||!menuChoiceReady(t.menu_booking_mode,bookingChosenItems,catalogue)?"disabled":"")+'</div>')+
     box("我的近期預約",renderBookings(items,true));
  }else if(customerTab==="queue"){
   if(!m.queue)html=box("尚未開放取號",'<p>本企業只提供線上預約。</p>');
   else html='<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",customer.current||"—")+stat("等候組數",customer.waiting)+stat("我的號碼",live?.number||"—")+'</div>'+
-   box("我的現場號碼",live?'<div class="ticket">'+esc(live.number)+'</div><p>'+tag(live.status)+'</p>'+(live.status==="WAITING"?btn("取消取號","cancel-my-number","danger",'data-id="'+esc(live.id)+'"'):""):
-    '<p class="muted">現在可在網站上取得號碼。</p>'+'<p>取號者：<strong>'+esc(lineDisplayName)+'</strong>（由 LINE 自動帶入）</p>'+'<div style="margin-top:14px">'+btn("立即線上取號","take","primary")+'</div>');
+   box("我的現場號碼",live?'<div class="ticket">'+esc(live.number)+'</div><p>'+tag(live.status)+'</p>'+
+    '<p class="small">取號時間：'+esc(formatTaipeiCreated(live.created_at))+'</p>'+
+    selectedItemsHtml(live.selected_items)+
+    (live.status==="WAITING"?btn("取消取號","cancel-my-number","danger",'data-id="'+esc(live.id)+'"'):""):
+    '<p class="muted">現在可在網站上取得號碼。</p>'+
+    '<p>取號者：<strong>'+esc(lineDisplayName)+'</strong>（由 LINE 自動帶入）</p>'+
+    menuSelectSection(t.menu_queue_mode||"DISABLED",catalogue,queueChosenItems,"queue")+
+    '<div style="margin-top:14px">'+btn("立即線上取號","take","primary",
+    !menuChoiceReady(t.menu_queue_mode,queueChosenItems,catalogue)?"disabled":"")+'</div>');
  }else html=box("我的預約紀錄",renderBookings(items,true))+
  box("我的號碼紀錄",renderMyTickets(tickets));
  return layout(t.name,"LINE 預約與取號・Supabase 即時資料",menu,lineStatusBadge()+html);
@@ -683,7 +695,9 @@ function renderBookings(items,allowCancel){
    btn(focused&&manageMode==="cancel"?"確認取消預約":"取消預約","cancel-my-book","outline",'data-id="'+esc(x.id)+'"')+'</div>':"";
   return '<article class="staff-record" style="'+(focused?'border:2px solid #0d9488;':'')+'">'+
    '<div class="staff-record-head"><div><strong>'+esc(x.day)+' '+esc(x.time)+'</strong>'+
-   '<div class="small">'+esc(x.name)+' ・ '+esc(x.party)+' 位</div></div>'+tag(x.status)+'</div>'+
+   '<div class="small">'+esc(x.name)+' ・ '+esc(x.party)+' 位</div>'+
+   '<div class="small">送出預約時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
+   selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+
    (focused&&manageMode==="cancel"&&editable?'<p class="staff-help">請核對預約資料，再點「確認取消預約」。</p>':'')+
    buttons+editBookingForm(x)+'</article>';
  }).join("");
@@ -694,7 +708,9 @@ function renderMyTickets(tickets){
   const focused=manageKind==="ticket"&&manageItem===x.id;
   return '<article class="staff-record" style="'+(focused?'border:2px solid #0d9488;':'')+'">'+
     '<div class="staff-record-head"><div><strong>'+esc(x.number)+'</strong>'+
-    '<div class="small">'+esc(x.date||"")+'</div></div>'+tag(x.status)+'</div>'+
+    '<div class="small">'+esc(x.date||"")+'</div>'+
+    '<div class="small">取號時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
+    selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+
     (x.status==="WAITING"?(focused&&manageMode==="cancel"?'<p class="staff-help">確認不再候位後，點下方取消按鈕。</p>':'')+
       btn(focused&&manageMode==="cancel"?"確認取消排隊":"取消排隊","cancel-my-number","outline",'data-id="'+esc(x.id)+'"'):"")+'</article>';
  }).join("");
@@ -726,6 +742,7 @@ async function load(){err="";try{
      const rec=(customer.my_reservations||[]).find(x=>x.id===manageItem&&x.status==="CONFIRMED");
      if(rec){
        editingBookingId=rec.id;editDate=String(rec.day);editTime=String(rec.time);editParty=Number(rec.party);
+       editChosenItems=Array.isArray(rec.selected_items)?rec.selected_items.map(x=>x.id):[];
        const data=await rpc("so_public_state",{p_slug:slug,p_date:editDate});
        editSlots=data.slots||[];
      }
