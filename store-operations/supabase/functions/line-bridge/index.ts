@@ -262,6 +262,20 @@ Deno.serve(async (req: Request) => {
         ? payload.accessToken : undefined;
       if (!idToken && !accessToken) return reply(400, { error: "LINE_LOGIN_TOKEN_REQUIRED" }, origin);
       const line = await lineVerify(idToken, accessToken);
+      // Query LINE itself rather than trusting a browser-supplied friend flag.
+      // Requires the LINE Login channel to be linked to the Messaging OA.
+      let verifiedFriendship: boolean | null = null;
+      if (accessToken) {
+        try {
+          const friendship = await fetch("https://api.line.me/friendship/v1/status", {
+            headers: { authorization: "Bearer " + accessToken },
+          });
+          if (friendship.ok) {
+            const result = await friendship.json();
+            if (typeof result.friendFlag === "boolean") verifiedFriendship = result.friendFlag;
+          }
+        } catch { /* LINE Login/OA friendship linkage not available: remain unknown. */ }
+      }
       const { data: tenant, error: te } = await db.from("so_tenants").select("id,slug,status").eq("slug", slug).eq("status", "ACTIVE").single();
       if (te || !tenant) return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
       const { data: previous, error: previousError } = await db.from("so_line_links")
@@ -271,6 +285,10 @@ Deno.serve(async (req: Request) => {
       if (previous && previous.line_sub !== line.sub)
         return reply(409, { error: "LINE_ACCOUNT_CHANGED" }, origin);
       link.display_name = line.name;
+      if (verifiedFriendship !== null) {
+        link.is_following = verifiedFriendship;
+        link.friendship_updated_at = new Date().toISOString();
+      }
       const { error } = await db.from("so_line_links").upsert(link, { onConflict: "tenant_id,user_id" });
       if (error) throw error;
       const { data: linked, error: linkedError } = await db.from("so_line_links")
@@ -292,17 +310,19 @@ Deno.serve(async (req: Request) => {
       if (!member && !admin) return reply(403, { error: "STAFF_REQUIRED" }, origin);
       // Ticket UUID is authoritative; ticket numbers can repeat across calendar dates.
       const ticketId = String(payload.ticketId || "");
-      if (ticketId && !validUUID(ticketId)) return reply(400, { error: "BAD_TICKET_ID" }, origin);
+      const eventId = String(payload.eventId || "");
+      if (!validUUID(ticketId) || !validUUID(eventId))
+        return reply(400, { error: "CALL_EVENT_ID_REQUIRED" }, origin);
       const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
-      let ticketQuery = db.from("so_tickets").select("id,user_id,status,updated_at,ticket_no").eq("tenant_id", tenant.id);
-      ticketQuery = ticketId ? ticketQuery.eq("id", ticketId)
-        : ticketQuery.eq("business_date", today).eq("ticket_no", Number(number.substring(1)));
-      const { data: ticket } = await ticketQuery.maybeSingle();
-      if (!ticket || ticket.status !== "CALLED" || !recently(ticket.updated_at, 90_000))
-        return reply(409, { error: "TICKET_NOT_RECENTLY_CALLED" }, origin);
+      const { data: ticket } = await db.from("so_tickets")
+        .select("id,user_id,status,updated_at,ticket_no,line_call_event_id")
+        .eq("tenant_id", tenant.id).eq("id", ticketId).maybeSingle();
+      if (!ticket || ticket.status !== "CALLED" || ticket.line_call_event_id !== eventId ||
+          !recently(ticket.updated_at, 90_000))
+        return reply(409, { error: "CALL_EVENT_EXPIRED_OR_SUPERSEDED" }, origin);
       const actualNumber = "A" + String(ticket.ticket_no).padStart(3, "0");
       if (number !== actualNumber) return reply(409, { error: "TICKET_NUMBER_MISMATCH" }, origin);
-      return pushNotice(db, tenant, ticket.user_id, "CALLED", ticket.id,
+      return pushNotice(db, tenant, ticket.user_id, "CALLED", eventId,
         tenant.name + "：現在叫到 " + actualNumber + "，請至櫃檯報到。", origin);
     }
     if (payload.action === "notify-reservation") {
