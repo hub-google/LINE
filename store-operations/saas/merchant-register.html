@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>商家開通申請｜LINE 預約系統</title><meta name="description" content="沒有自己的 LINE OA，也可以申請使用總公司 LINE 預約服務。">
+<style>
+:root{--green:#0c725b;--ink:#173d35;--muted:#597469;--border:#d7e4df}*{box-sizing:border-box}
+body{margin:0;background:#f5faf7;color:var(--ink);font:15px/1.6 system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif}
+header{background:#103e35;color:white;padding:19px}header>div{max-width:840px;margin:auto;font-weight:800;font-size:19px}
+main{max-width:840px;margin:22px auto 70px;padding:0 15px}h1{font-size:27px;line-height:1.3;margin:0 0 9px}h2{font-size:20px;margin:0 0 13px}
+.card{background:#fff;border:1px solid var(--border);border-radius:15px;padding:23px;margin:16px 0}
+p{color:var(--muted);margin:0 0 13px}.row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+label{display:block;font-weight:700;margin:9px 0 5px}input,select{width:100%;padding:12px 13px;border:1px solid #b9cdc1;border-radius:10px;background:white;font:inherit}
+button,.btn{display:inline-block;background:var(--green);color:white;border:0;padding:11px 15px;border-radius:10px;min-height:44px;font:inherit;font-weight:750;cursor:pointer;text-decoration:none}
+button.secondary,.btn.secondary{background:#e9f5ee;color:#0b6550;border:1px solid #b1ddc3}button.danger{background:#9c3030}button:disabled{opacity:.5;cursor:not-allowed}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}.message{margin:13px 0;padding:13px 15px;background:#e3f8e9;border:1px solid #a4cdb2;border-radius:10px}.message.error{background:#ffefed;color:#a22a25;border-color:#ffc4bc}
+small{color:var(--muted)}.hidden{display:none}.status{display:inline-block;background:#e4f5e9;border-radius:9px;padding:3px 9px}.item{padding:15px 0;border-bottom:1px solid var(--border)}.item:last-child{border:0}
+@media(max-width:580px){.row{grid-template-columns:1fr}.card{padding:17px}h1{font-size:24px}}
+</style></head>
+<body><header><div>LINE 預約平台｜商家合作</div></header><main>
+<section class="card"><h1>沒有 LINE OA，也能讓顧客用 LINE 預約</h1><p>申請開通後，店家可取得自己的預約／取號連結。沒有官方帳號的店家，由總公司 LINE OA 提供共同入口及訊息通知；店員仍可管理自己的預約和叫號。</p>
+<p>已經有自己 LINE OA 的店家也可以先使用平台 OA。每家商家自行串接 OA 的功能仍在開發中。</p></section>
+<div id="message" role="status" aria-live="polite"></div>
+<section class="card" id="auth-card"><h2>商家帳號</h2><p>請使用已驗證電子郵件的正式帳號申請。一般顧客不需要這個帳號。</p>
+<div class="row"><div><label for="email">Email</label><input id="email" type="email" autocomplete="email"></div><div><label for="pass">密碼（至少 8 字元）</label><input id="pass" type="password" minlength="8" autocomplete="current-password"></div></div>
+<div class="actions"><button id="login">登入</button><button class="secondary" id="signup">註冊帳號</button></div>
+<small>註冊後如收到驗證信，請先驗證 Email 再登入。</small></section>
+<section class="card hidden" id="account"><p>已登入：<strong id="account-name"></strong></p><button class="secondary" id="logout">登出</button></section>
+<section class="card hidden" id="application"><h2>填寫門市申請</h2>
+<div class="row">
+<div><label for="business">門市名稱</label><input id="business" maxlength="120" placeholder="例如：幸福髮藝"></div>
+<div><label for="slug">門市網址代碼（英文）</label><input id="slug" maxlength="40" placeholder="例如：happy-salon"></div>
+<div><label for="phone">聯絡電話（選填）</label><input id="phone" maxlength="50"></div>
+<div><label for="address">門市地址（選填）</label><input id="address" maxlength="240"></div>
+</div>
+<label for="oa-mode">店家是否已有 LINE OA</label>
+<select id="oa-mode"><option value="PLATFORM">沒有，使用總公司 LINE OA 接待顧客</option><option value="OWN">已有，但先使用總公司 LINE OA（自有 OA 串接後續開放）</option></select>
+<p style="margin-top:15px">提交後由總公司審核。正式門市開通後預設不會公開出現在搜尋清單，店家管理員確認資訊後才可自行選擇公開。</p>
+<button id="apply">送出開通申請</button></section>
+<section class="card hidden" id="my-requests"><h2>我的開通申請</h2><div id="requests"></div></section>
+<section class="card hidden" id="admin-panel"><h2>總公司｜待審核商家</h2><p>僅限真正的平台管理員。核准後會建立獨立門市，並將申請人設為店家負責人。</p><div id="admin-list"></div></section>
+<div class="actions"><a class="btn secondary" href="merchant-center.html#guide">使用教學</a><a class="btn secondary" href="directory.html?mode=search">搜尋店家</a></div>
+</main><script type="module">
+import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+const sb=createClient("https://unapiwajmgqqtdkixaab.supabase.co","sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+const $=id=>document.getElementById(id);
+const e=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let session=null,busy=false;
+function message(v,isError=false){$("message").className=v?"message"+(isError?" error":""):"";$("message").textContent=v||""}
+async function rpc(name,args={}){const {data,error}=await sb.rpc(name,args);if(error)throw Error(error.message);return data}
+function show(id,on){$(id).classList.toggle("hidden",!on)}
+function status(s){return ({PENDING:"審核中",APPROVED:"已開通",REJECTED:"未通過"})[s]||s}
+async function refresh(){
+ const a=await sb.auth.getSession();if(a.error)throw a.error;session=a.data.session;
+ const signed=!!session&&!session.user?.is_anonymous;
+ show("auth-card",!signed);show("account",signed);show("application",signed);
+ show("my-requests",signed);show("admin-panel",signed&&new URLSearchParams(location.search).get("admin")==="1");
+ if(!signed)return;
+ $("account-name").textContent=session.user.email||"已登入";
+ const mine=await rpc("so_my_merchant_requests");
+ $("requests").innerHTML=mine.length?mine.map(r=>'<div class="item"><strong>'+e(r.name)+'</strong> · '+e(r.slug)+
+ '<div><span class="status">'+e(status(r.status))+'</span></div>'+
+ (r.status==="APPROVED"?'<div class="actions"><a class="btn secondary" href="./?view=staff&merchant='+encodeURIComponent(r.slug)+'">進入門市後台</a></div>':"")+'</div>').join(""):"<p>尚無申請紀錄。</p>";
+ if(new URLSearchParams(location.search).get("admin")==="1"){
+   try{
+    const pending=await rpc("so_pending_merchant_requests");
+    $("admin-list").innerHTML=pending.length?pending.map(r=>'<div class="item"><strong>'+e(r.name)+'</strong> · '+e(r.slug)+
+     '<p>'+e(r.email)+' ・ '+(r.requested_oa_mode==="PLATFORM"?"無自有 OA":"已有 OA，暫用總公司 OA")+'</p>'+
+     (r.phone?'<p>電話：'+e(r.phone)+'</p>':"")+(r.address?'<p>地址：'+e(r.address)+'</p>':"")+
+     '<div class="actions"><button data-review="'+e(r.id)+'" data-approve="true">核准並開通</button><button class="danger" data-review="'+e(r.id)+'" data-approve="false">拒絕申請</button></div></div>').join(""):"<p>沒有待審核的店家。</p>";
+   }catch(err){$("admin-list").textContent=err.message}
+ }
+}
+async function act(fn){
+ if(busy)return;busy=true;document.querySelectorAll("button").forEach(b=>b.disabled=true);message("處理中...");
+ try{const result=await fn();await refresh();message(result||"操作成功");}
+ catch(err){message(err.message||String(err),true)}
+ finally{busy=false;document.querySelectorAll("button").forEach(b=>b.disabled=false)}
+}
+$("login").onclick=()=>act(async()=>{
+ const email=$("email").value.trim(),password=$("pass").value;
+ const {error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;return "登入成功";
+});
+$("signup").onclick=()=>act(async()=>{
+ const email=$("email").value.trim(),password=$("pass").value;
+ if(!email||password.length<8)throw Error("請輸入正確 Email 與至少 8 字元密碼");
+ const {error}=await sb.auth.signUp({email,password});if(error)throw error;return "已送出註冊，請確認 Email 驗證信；如已完成驗證即可登入";
+});
+$("logout").onclick=()=>act(async()=>{const {error}=await sb.auth.signOut();if(error)throw error;return "已登出"});
+$("apply").onclick=()=>act(async()=>{
+ const name=$("business").value.trim(),slug=$("slug").value.trim().toLowerCase();
+ if(name.length<2||!/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug))throw Error("請填寫店名與 3–40 字元英文代碼");
+ const result=await rpc("so_request_merchant",{p_name:name,p_slug:slug,p_phone:$("phone").value.trim()||null,p_address:$("address").value.trim()||null,p_requested_oa_mode:$("oa-mode").value});
+ return "申請已送出，狀態："+status(result.status)+"。核准後可從此頁進入門市後台。";
+});
+document.addEventListener("click",ev=>{
+ const b=ev.target.closest("button[data-review]");if(!b)return;
+ const approving=b.dataset.approve==="true";
+ if(!confirm(approving?"確定核准並建立門市？":"確定拒絕這筆商家申請？"))return;
+ act(async()=>{const v=await rpc("so_review_merchant_request",{p_id:b.dataset.review,p_approve:approving});return "已處理："+status(v.status)});
+});
+refresh().catch(err=>message(err.message||String(err),true));
+</script></body></html>
