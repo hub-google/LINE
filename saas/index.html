@@ -567,12 +567,24 @@ function staffRender(){
   const deletedBookingIds=new Set(deletedBookings.map(x=>x.id));
   const card=x=>'<article class="staff-record '+(x.deleted_at?'staff-deleted-record':'')+'"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.number)+'　'+esc(x.name)+'</div>'+
    '<div class="small">'+esc(x.day)+' ・ '+esc(x.source==="RESERVATION"?"預約報到":"現場取號")+
-   (x.reservation_id?" ・ 已連動預約":"")+'</div>'+
+   (x.reservation_id?" ・ 已連動預約":"")+" ・ 第"+esc(x.number_round||1)+"輪"+'</div>'+
    '<div class="small">取號時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
    selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+(x.deleted_at?'<p class="staff-help">此號碼已從顧客端隱藏；取消勾選刪除即可恢復。</p>':staffStatusPicker("ticket",x,true))+
    staffDeletePicker("ticket",x,deletedBookingIds.has(x.reservation_id))+'</article>';
   html+='<div class="grid4" style="margin-bottom:16px">'+stat("正在叫號",active?.number||"—")+stat("候位中",waiting.length)+
    stat("已過號",passed.length)+stat("已結束",doneTickets.length)+'</div>'+
+   box("號碼設定",
+    '<p class="muted">每家門市獨立計數，流水號為 1～9999999，不補零。每天台灣時間 00:00 自動從 1 開始，也可以手動重置。</p>'+
+    '<p class="small">目前前綴：<strong>'+esc(t.queue_prefix||"（空白）")+'</strong>　｜　下一張：<strong>'+
+    esc((t.queue_prefix||"")+String(Math.min(9999999,Number(t.queue_last_number||0)+1)))+
+    '</strong>　｜　第 '+esc(t.queue_round||1)+' 輪</p>'+
+    (isManager?
+      '<div class="grid"><div>'+field("號碼前綴（可留空，最多3字）","queue-prefix",t.queue_prefix||"","text",'maxlength="3" placeholder="例：ABC、#、診所"')+'</div>'+
+      '<div><label>重新編號</label><p class="small">按下重置後，下一張從 1 開始；舊票券、候位及歷史紀錄都保留。</p></div></div>'+
+      '<div class="staff-actionbar">'+btn("儲存前綴","queue-save-prefix","primary")+
+      btn("重置號碼（從 1 開始）","queue-reset-number","danger")+'</div>'
+      :'<p class="small">僅企業管理者可以儲存前綴與重置號碼。</p>')+
+    '<p class="staff-help">修改前綴不會更動已發出的號碼。同一天重置可能出現相同顯示號碼，後台以日期與批次區分。</p>')+
    box("叫號操作",'<p class="muted">仍在候位的跨日號碼會繼續排隊。號碼狀態可直接勾選與更正。</p>'+
     '<div class="staff-actionbar">'+btn("叫下一位","call","primary",(!waiting.length||!!active||!t.modules.calling?"disabled":""))+
     btn("再叫一次","recall","outline",(!active||active.status!=="CALLED"?"disabled":"")+' data-id="'+esc(active?.id||"")+'"')+
@@ -880,6 +892,27 @@ document.addEventListener("click",async ev=>{
        p_description:item.description||"",p_price:item.price,
        p_sort_order:item.sort_order,p_active:!item.active,p_item_id:item.id});
      return "「"+item.name+"」已"+(item.active?"停用":"上架");
+   });return;
+ }
+
+ if(a==="queue-save-prefix"){
+   const prefix=$("queue-prefix")?.value??"";
+   if(Array.from(prefix).length>3||/[\x00-\x1f\x7f]/.test(prefix)){
+     showActionFeedback("號碼前綴最多 3 個字元，不能包含換行或控制字元","error");return;
+   }
+   await act(async()=>{
+     const result=await rpc("so_set_queue_prefix",{p_slug:slug,p_prefix:prefix});
+     return "前綴已儲存："+(result.prefix||"（空白）")+"，下次取號開始適用";
+   });return;
+ }
+ if(a==="queue-reset-number"){
+   const stillOpen=(staff?.active_tickets||[]).length;
+   if(!confirm("確定要重置本店叫號流水號？下一張從 "+(staff?.tenant?.queue_prefix||"")+"1 開始。"+
+     (stillOpen?"目前有 "+stillOpen+" 張未結案號碼，重置後可能出現同號，但系統會用日期與批次區分。":"")+
+     "既有號碼不會被刪除或取消，也不會發送 LINE 通知。"))return;
+   await act(async()=>{
+     const result=await rpc("so_reset_queue_number",{p_slug:slug});
+     return "已重置號碼，下一張從 "+(result.prefix||"")+"1 開始（第 "+result.round+" 輪）";
    });return;
  }
  if(a==="save-menu-modes"){
