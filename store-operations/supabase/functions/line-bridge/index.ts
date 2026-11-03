@@ -32,57 +32,93 @@ async function identity(req: Request, db: ReturnType<typeof service>) {
   return data.user;
 }
 async function lineVerify(idToken: string, accessToken?: string) {
-  // A LIFF ID starts with the LINE Login channel ID. Use the very same
-  // channel for ID-token verification, not a separately provisioned secret
-  // which can accidentally point at another channel.
+  // LINE Login ID tokens last one hour. A separate valid access token is
+  // an official alternative to securely look up the same LINE user's profile.
   const liffId = Deno.env.get("LINE_LIFF_ID") || "";
   const channelId = /^([0-9]{8,})-[A-Za-z0-9]+$/.exec(liffId)?.[1];
   if (!channelId) throw new Error("LINE_LOGIN_NOT_CONFIGURED");
-  const form = new URLSearchParams({ id_token: idToken, client_id: channelId });
-  const response = await fetch("https://api.line.me/oauth2/v2.1/verify", {
-    method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: form,
-  });
-  if (!response.ok) {
-    // Return only public error categories, never tokens or full provider
-    // errors. This distinguishes configuration mismatch from expiry.
-    const failure = await response.json().catch(() => ({}));
-    const reason = typeof failure.error_description === "string" ? failure.error_description : "";
-    if (/Audience/i.test(reason)) throw new Error("LINE_ID_TOKEN_AUDIENCE_MISMATCH");
-    if (/expired/i.test(reason)) throw new Error("LINE_ID_TOKEN_EXPIRED");
-    throw new Error("INVALID_LINE_ID_TOKEN");
-  }
-  const profile = await response.json();
-  if (profile.aud !== channelId || !/^U[a-f0-9]{32}$/i.test(profile.sub || "")) throw new Error("INVALID_LINE_IDENTITY");
-  let displayName = typeof profile.name === "string" ? profile.name.trim() : "";
-  if (accessToken) {
-    const profileResponse = await fetch("https://api.line.me/v2/profile", {
-      headers: { authorization: "Bearer " + accessToken },
+
+  let idTokenFailure = "INVALID_LINE_ID_TOKEN";
+  let subject = "";
+  let displayName = "";
+
+  if (idToken) {
+    const form = new URLSearchParams({ id_token: idToken, client_id: channelId });
+    const verified = await fetch("https://api.line.me/oauth2/v2.1/verify", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: form,
     });
-    if (profileResponse.ok) {
-      const lineProfile = await profileResponse.json();
-      // A profile access token must belong to exactly the verified ID-token subject.
-      if (lineProfile.userId !== profile.sub) throw new Error("LINE_PROFILE_IDENTITY_MISMATCH");
-      displayName = typeof lineProfile.displayName === "string" ? lineProfile.displayName.trim() : displayName;
+    if (verified.ok) {
+      const payload = await verified.json();
+      if (payload.aud !== channelId || !/^U[a-f0-9]{32}$/i.test(payload.sub || "")) {
+        throw new Error("INVALID_LINE_IDENTITY");
+      }
+      subject = payload.sub;
+      displayName = typeof payload.name === "string" ? payload.name.trim() : "";
+    } else {
+      const failure = await verified.json().catch(() => ({}));
+      const reason = typeof failure.error_description === "string" ? failure.error_description : "";
+      idTokenFailure = /audience/i.test(reason) ? "LINE_ID_TOKEN_AUDIENCE_MISMATCH" :
+        /expired/i.test(reason) ? "LINE_ID_TOKEN_EXPIRED" : "INVALID_LINE_ID_TOKEN";
     }
   }
-  // A customer may only grant openid in an older LIFF configuration.
-  // When this LINE user has friended the same Messaging API OA, we can
-  // retrieve the verified profile name without exposing a token in the browser.
+
+  if (accessToken) {
+    // Server-side validation of LINE access token: the channel must match
+    // this LIFF app and the token must be unexpired. Never trust a profile
+    // or user ID supplied by the browser.
+    const url = new URL("https://api.line.me/oauth2/v2.1/verify");
+    url.searchParams.set("access_token", accessToken);
+    const checked = await fetch(url);
+    if (checked.ok) {
+      const token = await checked.json();
+      if (token.client_id !== channelId) throw new Error("LINE_ACCESS_TOKEN_CHANNEL_MISMATCH");
+      if (!Number.isFinite(Number(token.expires_in)) || Number(token.expires_in) <= 0) {
+        throw new Error("LINE_ACCESS_TOKEN_EXPIRED");
+      }
+      if (typeof token.scope !== "string" || !token.scope.split(/\s+/).includes("profile")) {
+        if (!subject || !displayName) throw new Error("LINE_PROFILE_SCOPE_REQUIRED");
+      } else {
+        const response = await fetch("https://api.line.me/v2/profile", {
+          headers: { authorization: "Bearer " + accessToken },
+        });
+        if (response.ok) {
+          const profile = await response.json();
+          if (!/^U[a-f0-9]{32}$/i.test(profile.userId || "")) throw new Error("INVALID_LINE_IDENTITY");
+          if (subject && subject !== profile.userId) throw new Error("LINE_PROFILE_IDENTITY_MISMATCH");
+          subject = profile.userId;
+          if (typeof profile.displayName === "string" && profile.displayName.trim()) {
+            displayName = profile.displayName.trim();
+          }
+        } else if (!subject || !displayName) {
+          throw new Error("LINE_PROFILE_SCOPE_REQUIRED");
+        }
+      }
+    } else if (!subject) {
+      throw new Error(idToken ? idTokenFailure : "LINE_ACCESS_TOKEN_EXPIRED");
+    }
+  }
+
+  if (!subject) throw new Error(idToken ? idTokenFailure : "LINE_ACCESS_TOKEN_REQUIRED");
+  // If profile scope was not granted, try retrieving the display name from
+  // the official account only when this LINE user is accessible to the OA.
   if (!displayName) {
     const botToken = Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
     if (botToken) {
-      const botResponse = await fetch("https://api.line.me/v2/bot/profile/" + encodeURIComponent(profile.sub), {
-        headers: { authorization: "Bearer " + botToken },
-      });
-      if (botResponse.ok) {
-        const botProfile = await botResponse.json();
-        if (botProfile.userId !== profile.sub) throw new Error("LINE_PROFILE_IDENTITY_MISMATCH");
-        displayName = typeof botProfile.displayName === "string" ? botProfile.displayName.trim() : "";
+      const response = await fetch(
+        "https://api.line.me/v2/bot/profile/" + encodeURIComponent(subject),
+        { headers: { authorization: "Bearer " + botToken } },
+      );
+      if (response.ok) {
+        const profile = await response.json();
+        if (profile.userId !== subject) throw new Error("LINE_PROFILE_IDENTITY_MISMATCH");
+        displayName = typeof profile.displayName === "string" ? profile.displayName.trim() : "";
       }
     }
   }
   if (!displayName || displayName.length > 60) throw new Error("LINE_PROFILE_SCOPE_REQUIRED");
-  return { sub: profile.sub as string, name: displayName };
+  return { sub: subject, name: displayName };
 }
 
 function validUUID(value: unknown): value is string {
@@ -221,9 +257,10 @@ Deno.serve(async (req: Request) => {
     if (payload.action === "link") {
       const slug = String(payload.slug || "");
       const idToken = String(payload.idToken || "");
-      if (!slug || !idToken || idToken.length > 10000) return reply(400, { error: "BAD_REQUEST" }, origin);
+      if (!slug || idToken.length > 10000) return reply(400, { error: "BAD_REQUEST" }, origin);
       const accessToken = typeof payload.accessToken === "string" && payload.accessToken.length <= 10000
         ? payload.accessToken : undefined;
+      if (!idToken && !accessToken) return reply(400, { error: "LINE_LOGIN_TOKEN_REQUIRED" }, origin);
       const line = await lineVerify(idToken, accessToken);
       const { data: tenant, error: te } = await db.from("so_tenants").select("id,slug,status").eq("slug", slug).eq("status", "ACTIVE").single();
       if (te || !tenant) return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
@@ -293,7 +330,7 @@ Deno.serve(async (req: Request) => {
     return reply(400, { error: "UNKNOWN_ACTION" }, origin);
   } catch (error) {
     const msg = error instanceof Error ? error.message : "UNKNOWN_ERROR";
-    const status = ["LOGIN_REQUIRED", "INVALID_SUPABASE_SESSION", "INVALID_LINE_ID_TOKEN", "LINE_ID_TOKEN_EXPIRED", "LINE_ID_TOKEN_AUDIENCE_MISMATCH", "INVALID_LINE_IDENTITY", "LINE_PROFILE_SCOPE_REQUIRED", "LINE_PROFILE_IDENTITY_MISMATCH"].includes(msg) ? 401 : ["LINE_LOGIN_NOT_CONFIGURED", "SUPABASE_ADMIN_NOT_CONFIGURED"].includes(msg) ? 503 : 500;
+    const status = ["LOGIN_REQUIRED", "INVALID_SUPABASE_SESSION", "INVALID_LINE_ID_TOKEN", "LINE_ID_TOKEN_EXPIRED", "LINE_ID_TOKEN_AUDIENCE_MISMATCH", "LINE_ACCESS_TOKEN_EXPIRED", "LINE_ACCESS_TOKEN_REQUIRED", "LINE_ACCESS_TOKEN_CHANNEL_MISMATCH", "INVALID_LINE_IDENTITY", "LINE_PROFILE_SCOPE_REQUIRED", "LINE_PROFILE_IDENTITY_MISMATCH"].includes(msg) ? 401 : ["LINE_LOGIN_NOT_CONFIGURED", "SUPABASE_ADMIN_NOT_CONFIGURED"].includes(msg) ? 503 : 500;
     if (status === 500) console.error("LINE integration operation failed", error instanceof Error ? error.name : "unknown");
     return reply(status, { error: status === 500 ? "INTERNAL_ERROR" : msg }, origin);
   }
