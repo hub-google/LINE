@@ -221,6 +221,10 @@ function platformRender(){
      '</div><div>'+field("第一位企業管理者 Email（選填）","create-owner","","email")+'<p class="small">填寫後產生待接受邀請。管理者須使用此信箱註冊並接受邀請。</p></div></div><label>功能勾選</label>'+featureChecks({reservation:true,queue:true,calling:true},"create-feature")+
       '<div class="grid"><div>'+field("企業電話","create-phone")+field("企業地址","create-address")+field("每日開始營業時間","create-open","10:00","time")+'</div><div>'+field("品牌色（#RRGGBB）","create-accent","#147e68")+field("單時段最多預約人數","create-capacity",3,"number",'min="1" max="100"')+field("每日結束營業時間","create-close","20:00","time")+'</div></div><div style="margin-top:17px">'+btn("建立企業專屬網站","create-tenant","primary")+'</div>');
  }else html=box("平台運作方式",'<p>每家企業使用同一個 GitHub Pages 前端；預約、號碼、員工、設定分別以企業 ID 保存在 Supabase。</p><p>平台登入使用 Supabase Auth，管理權限在資料庫中驗證。測試 LINE 官方帳號已連接 Supabase Edge Function。真實通知需完成 LINE 身分驗證與加好友；多企業各自綁定不同官方帳號尚未開放。</p>');
+ if(testMode&&session?.user?.is_anonymous)html=box("LINE 顧客實測入口",
+   '<p class="muted">真正的 Supabase 資料庫測試環境，請複製顧客 LINE 網址至另一支手機，取號後會同步到店員與總公司視角。</p>'+
+   btn("複製專屬 LINE 顧客網址","copy-test-line","primary")+
+   '<p class="small">顧客須完成 LINE 授權並加官方帳號好友，通知才可能實際送達。</p>')+html;
  return layout("公司總後台","企業開通與模組管理",menu,html);
 }
 function staffRender(){
@@ -234,6 +238,10 @@ function staffRender(){
  const menu=nav("營運總覽","dashboard",staffTab,"staff")+nav("預約與報到","bookings",staffTab,"staff")+
  nav("現場叫號","queue",staffTab,"staff")+nav("員工管理","members",staffTab,"staff")+nav("企業設定","settings",staffTab,"staff");
  let html='<div class="toolbar"><div class="small">管理範圍：<strong>'+esc(t.name)+'</strong>・'+esc(role)+'</div><div class="flex"><label for="staff-day" style="margin:0">查看日期</label><input class="field" id="staff-day" type="date" value="'+esc(day)+'" style="width:170px"></div></div>';
+ if(testMode&&session?.user?.is_anonymous)html+=box("LINE 真實測試",
+   '<p>專屬測試門市：<strong>'+esc(slug)+'</strong></p>'+
+   '<p class="muted">先讓 LINE 顧客進入此門市取號，再從「現場叫號」操作。號碼與通知都使用真實後端。</p>'+
+   btn("複製 LINE 顧客網址","copy-test-line","primary"));
  if(staffTab==="dashboard"){
   html+='<div class="grid4" style="margin-bottom:16px">'+stat("當日預約",r.filter(x=>x.status!=="CANCELLED").length)+stat("候位中",waiting.length)+stat("叫號中",active?.number||"—")+stat("當日已完成",q.filter(x=>x.status==="COMPLETED").length)+'</div>'+
   box("今天需要處理的事",'<div class="listline"><div><strong>預約待報到</strong><div class="small">今日未報到預約</div></div>'+r.filter(x=>x.status==="CONFIRMED").length+' 筆</div>'+
@@ -251,7 +259,7 @@ function staffRender(){
    '<div class="flex">'+(x.status==="PASSED"&&day===taipei()?btn("回到候位","return","outline",'data-id="'+esc(x.id)+'"'):"")+
    (["WAITING","PASSED"].includes(x.status)&&day===taipei()?btn("取消","cancel","danger",'data-id="'+esc(x.id)+'"'):"")+'</div></div>').join("")||'<p class="muted">今日還沒有取號紀錄</p>');
  }else if(staffTab==="members"){
-  html+=box("已加入的員工",'<div class="scroll"><table class="rows"><tr><th>帳號</th><th>角色</th></tr>'+ (staff.members||[]).map(m=>'<tr><td>'+esc(m.email)+'</td><td>'+esc(m.role)+'</td></tr>').join("")+'</table></div>')+
+  html+=box("已加入的員工",'<div class="scroll"><table class="rows"><tr><th>帳號</th><th>角色</th></tr>'+ (staff.members||[]).map(m=>'<tr><td>'+esc(m.email||('測試員工（Auth ID '+String(m.user_id||'').slice(0,8)+'）'))+'</td><td>'+esc(m.role)+'</td></tr>').join("")+'</table></div>')+
   box("待接受邀請",(staff.invites||[]).map(i=>'<div class="listline"><span>'+esc(i.email)+'</span>'+tag(i.role)+'</div>').join("")||'<p class="muted">尚無邀請</p>')+
   (isManager?box("邀請企業員工",field("員工 Email","invite-email","","email")+'<label>角色</label><select id="invite-role" class="field"><option value="STAFF">員工</option><option value="MANAGER">管理者</option><option value="OWNER">負責人</option></select><div style="margin-top:15px">'+btn("送出邀請","invite-staff","primary")+'</div><p class="small">員工使用同一 Email 註冊、驗證後，登入即可接受邀請。</p>'):"");
  }else if(staffTab==="settings"){
@@ -339,6 +347,13 @@ document.addEventListener("click",async ev=>{
    slug=result.slug;history.replaceState(null,"",route(view,view==="platform"?"":slug));
    return "已登入真正的 Supabase 測試帳號，專屬門市："+result.slug;
   });return}
+  if(a==="copy-test-line"){
+   if(!testMode||!testInfo?.slug){err="請先一鍵登入測試帳號";render();return}
+   const link=await urlFor("customer",testInfo.slug);
+   try{await navigator.clipboard.writeText(link);flash="已複製 LINE 顧客測試網址："+link}
+   catch(e){window.prompt("複製 LINE 顧客網址",link);flash="顧客網址："+link}
+   render();return;
+  }
   if(a==="login"||a==="signup"){const email=val("auth-email"),password=val("auth-pass");if(!email||password.length<8){err="請輸入 Email 與至少 8 字元的密碼";render();return}
  await act(async()=>{testMode=false;testInfo=null;localStorage.removeItem(TEST_KEY);if(session?.user?.is_anonymous){await supa.auth.signOut();session=null}
  const r=a==="login"?await supa.auth.signInWithPassword({email,password}):await supa.auth.signUp({email,password});
