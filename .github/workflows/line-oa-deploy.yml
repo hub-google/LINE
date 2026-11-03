@@ -49,7 +49,7 @@ jobs:
           supabase secrets set --env-file "$secrets_file" --project-ref unapiwajmgqqtdkixaab --yes
           mkdir -p supabase/functions/line-bridge
           cp store-operations/supabase/functions/line-bridge/index.ts supabase/functions/line-bridge/index.ts
-          supabase functions deploy line-bridge --project-ref unapiwajmgqqtdkixaab --no-verify-jwt --use-api
+          supabase functions deploy line-bridge --project-ref unapiwajmgqqtdkixaab --no-verify-jwt --use-api --yes
       - name: Verify configuration and backend reachability without printing keys
         shell: bash
         run: |
