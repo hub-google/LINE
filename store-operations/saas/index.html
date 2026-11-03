@@ -46,6 +46,56 @@ import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2
 const SB_URL="https://unapiwajmgqqtdkixaab.supabase.co";
 const SB_KEY="sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy";
 const supa=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+const LINE_BRIDGE_URL=SB_URL+"/functions/v1/line-bridge";
+let lineConfig=null,lineLinkStatus="not-ready",lineLinkAttempted=false;
+async function bridgeConfig(){
+  if(lineConfig!==null)return lineConfig;
+  try{const res=await fetch(LINE_BRIDGE_URL+"?action=config");if(res.ok)lineConfig=await res.json();}
+  catch(e){console.warn("LINE 設定尚不可用");}
+  return lineConfig||{};
+}
+async function connectLineSession(){
+  if(view!=="customer"||!session?.access_token||lineLinkAttempted)return;
+  const config=await bridgeConfig();
+  if(!config.liffId)return;
+  // The public LIFF ID identifies the app; Channel secrets and tokens never leave the server.
+  if(!window.liff){
+    for(let attempt=0;attempt<20&&!window.liff;attempt++)await new Promise(resolve=>setTimeout(resolve,100));
+  }
+  if(!window.liff)return;
+  lineLinkAttempted=true;
+  try {
+    await window.liff.init({liffId:config.liffId});
+    if(!window.liff.isLoggedIn()){
+      lineLinkStatus="not-logged-in";
+      return;
+    }
+    const idToken=window.liff.getIDToken();
+    if(!idToken)throw Error("LINE 未核發 ID Token");
+    const res=await fetch(LINE_BRIDGE_URL,{method:"POST",headers:{"content-type":"application/json","authorization":"Bearer "+session.access_token},body:JSON.stringify({action:"link",slug,idToken})});
+    const result=await res.json();
+    if(!res.ok||!result.linked)throw Error(result.error||"LINE 綁定失敗");
+    lineLinkStatus="linked";
+  }catch(e){
+    lineLinkStatus="failed";
+    console.warn("LINE 身分連接失敗",e instanceof Error?e.message:String(e));
+  }
+}
+async function notifyLineCalled(ticketNumber){
+  if(!ticketNumber||!session?.access_token)return "叫號成功，未傳送 LINE 通知";
+  const res=await fetch(LINE_BRIDGE_URL,{method:"POST",headers:{"content-type":"application/json","authorization":"Bearer "+session.access_token},body:JSON.stringify({action:"notify",slug,number:ticketNumber})});
+  const out=await res.json().catch(()=>({error:"LINE_RESPONSE_ERROR"}));
+  if(out.sent)return "叫號成功，LINE 通知已送出";
+  if(out.reason==="CUSTOMER_NOT_LINKED")return "叫號成功，顧客尚未綁定 LINE，未傳送通知";
+  return "叫號成功，但 LINE 通知尚未送達（"+(out.error||"未設定")+"）";
+}
+function lineStatusBadge(){
+  const id=lineConfig?.liffId;
+  if(!id)return "";
+  const detail=lineLinkStatus==="linked"?"LINE 身分已連結":lineLinkStatus==="failed"?"LINE 身分驗證失敗，請重新開啟 LIFF":"請從商家 LINE 官方帳號開啟取號";
+  return '<p class="small">'+esc(detail)+'</p>';
+}
+
 const $=id=>document.getElementById(id);
 const params=new URLSearchParams(location.search);
 let view=params.get("view")||"home",slug=params.get("merchant")||"greenfield-salon";
@@ -170,7 +220,7 @@ function customerRender(){
   if(!m.queue)html=box("尚未開放取號",'<p>本企業只提供線上預約。</p>');
   else html='<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",customer.current||"—")+stat("等候組數",customer.waiting)+stat("我的號碼",live?.number||"—")+'</div>'+
    box("我的現場號碼",live?'<div class="ticket">'+esc(live.number)+'</div><p>'+tag(live.status)+'</p>'+(live.status==="WAITING"?btn("取消取號","cancel-my-number","danger",'data-id="'+esc(live.id)+'"'):""):
-    '<p class="muted">現在可在網站上取得號碼。</p>'+field("暱稱","ticket-name","","text",'maxlength="60"')+'<div style="margin-top:14px">'+btn("立即線上取號","take","primary")+'</div>');
+    '<p class="muted">現在可在網站上取得號碼。</p>'+lineStatusBadge()+field("暱稱","ticket-name","","text",'maxlength="60"')+'<div style="margin-top:14px">'+btn("立即線上取號","take","primary")+'</div>');
  }else html=box("我的預約紀錄",renderBookings(items,true))+
  box("我的號碼紀錄",tickets.map(k=>'<div class="listline"><strong>'+esc(k.number)+'</strong><span>'+tag(k.status)+'</span></div>').join("")||'<p class="muted">目前沒有號碼紀錄。</p>');
  return layout(t.name,"顧客網頁・即時連接 Supabase",menu,html);
@@ -182,6 +232,7 @@ async function loadContext(){if(authReady())context=await rpc("so_my_context");e
 async function load(){err="";try{
  const s=await supa.auth.getSession();if(s.error)throw s.error;session=s.data.session;
  if(view==="customer"&&!session){const x=await supa.auth.signInAnonymously();if(x.error)throw x.error;session=x.data.session;}
+ if(view==="customer")await connectLineSession();
  await loadContext();
  if(view==="customer"){customer=await rpc("so_public_state",{p_slug:slug,p_date:day});if(customerTab==="reserve"&&!customer.tenant.modules?.reservation)customerTab="home";if(customerTab==="queue"&&!customer.tenant.modules?.queue)customerTab="home";}
  if(view==="platform"&&context?.platform_admin)overview=await rpc("so_platform_overview");
@@ -221,11 +272,11 @@ document.addEventListener("click",async ev=>{
  if(["call","recall","start","complete","pass","return","cancel","checkin","no-show","cancel-book-staff"].includes(a)){
  if(["cancel","no-show","cancel-book-staff"].includes(a)&&!confirm("確定執行此操作？"))return;
  const x=a==="no-show"?"no_show":a==="cancel-book-staff"?"cancel_booking":a;
- await act(async()=>{const result=await rpc("so_staff_action",{p_slug:slug,p_action:x,p_ticket_id:["call","checkin","no_show","cancel_booking"].includes(x)?null:id,p_reservation_id:["checkin","no_show","cancel_booking"].includes(x)?id:null});return "操作完成"+(result.number?"："+result.number:"");});return;
+ await act(async()=>{const result=await rpc("so_staff_action",{p_slug:slug,p_action:x,p_ticket_id:["call","checkin","no_show","cancel_booking"].includes(x)?null:id,p_reservation_id:["checkin","no_show","cancel_booking"].includes(x)?id:null});if(x==="call"&&result.number){try{return await notifyLineCalled(result.number);}catch(e){return "叫號成功，但 LINE 通知服務目前無法連線";}}return "操作完成"+(result.number?"："+result.number:"");});return;
  }
 });
 document.addEventListener("change",async ev=>{if(ev.target.id==="staff-day"||ev.target.id==="customer-day"){day=ev.target.value;chosenSlot="";await load()}});
 window.addEventListener("focus",()=>{if(!busy&&(view==="customer"||view==="staff"))load()});
 setInterval(()=>{if(!document.hidden&&!busy&&!document.activeElement?.matches("input,select,textarea")&&(view==="customer"||view==="staff"))load()},15000);
 load();
-</script></body></html>
+</script><script src="https://static.line-scdn.net/liff/edge/2/sdk.js" defer></script></body></html>
