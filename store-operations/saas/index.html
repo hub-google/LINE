@@ -319,6 +319,7 @@ let testMode=!!(testInfo?.slug&&/^qa-[a-z0-9-]{3,36}$/.test(testInfo.slug));
 let view=incomingParam("view")||"customer",slug=(isSafeMerchant(incomingParam("merchant"))?incomingParam("merchant"):null)||(testMode?testInfo.slug:"greenfield-salon");
 let session=null,context=null,overview=[],customer=null,staff=null,busy=false,flash="",err="";
 let staffHistoryDays=14;
+let editingMenuItemId="",bookingChosenItems=[],queueChosenItems=[],editChosenItems=[];
 let day=taipei(),customerTab=["home","reserve","queue","mine"].includes(incomingParam("tab"))?incomingParam("tab"):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
 let manageKind=["reservation","ticket"].includes(incomingParam("manage"))?incomingParam("manage"):"";
 let manageItem=/^[0-9a-f-]{36}$/i.test(incomingParam("item")||"")?incomingParam("item"):"";
@@ -339,6 +340,44 @@ function btn(label,action,style="",extra=""){return '<button class="btn '+style+
 function stat(label,n){return '<div class="stat"><span>'+esc(label)+'</span><strong>'+esc(n)+'</strong></div>'}
 function field(label,id,val="",type="text",attrs=""){return '<label for="'+id+'">'+esc(label)+'</label><input class="field" id="'+id+'" type="'+type+'" '+attrs+' value="'+esc(val)+'">'}
 function box(title,inner){return '<section class="card"><h2>'+title+'</h2>'+inner+'</section>'}
+function formatTaipeiCreated(x){
+ if(!x)return "時間未記錄";
+ const d=new Date(x);
+ return Number.isFinite(d.getTime())
+  ?new Intl.DateTimeFormat("zh-TW",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false}).format(d)
+  :"時間未記錄";
+}
+function selectedItemsHtml(items){
+ if(!Array.isArray(items)||!items.length)return "";
+ return '<div class="small" style="margin-top:6px">已選餐點／服務：'+
+  items.map(x=>esc(x.name||"")).join("、")+'</div>';
+}
+function menuModeLabel(mode){return ({REQUIRED:"必填",OPTIONAL:"選填",DISABLED:"不開放填寫"})[mode]||mode}
+function menuModeSelect(id,value){
+ return '<select class="field" id="'+id+'">'+
+  [["REQUIRED","必填｜選完才能送出"],["OPTIONAL","選填｜可直接略過"],["DISABLED","不開放填寫"]]
+    .map(([v,t])=>'<option value="'+v+'" '+(v===value?'selected':'')+'>'+t+'</option>').join("")+'</select>';
+}
+function menuPrice(x){
+ return x.price===null||x.price===undefined||x.price===""?"":"NT$ "+Number(x.price).toLocaleString("zh-TW",{maximumFractionDigits:2});
+}
+function menuSelectSection(mode,items,chosen,flow){
+ if(mode==="DISABLED")return "";
+ const active=Array.isArray(items)?items.filter(x=>x.active!==false):[];
+ return '<section class="staff-record" style="margin:12px 0">'+
+  '<h3 style="margin:0 0 7px">選擇餐點／服務 '+(mode==="REQUIRED"?"（必填）":"（選填）")+'</h3>'+
+  (active.length?'<div class="menu-choices">'+active.map(item=>
+   '<label class="menu-choice"><input type="checkbox" data-menu-choice="'+flow+'" value="'+esc(item.id)+'" '+
+    (chosen.includes(item.id)?"checked ":"")+'><span><strong>'+esc(item.name)+'</strong>'+
+    '<span class="small">'+(item.kind==="MENU"?"餐點":"服務")+(menuPrice(item)?" ・ "+esc(menuPrice(item)):"")+'</span>'+
+    (item.description?'<span class="small">'+esc(item.description)+'</span>':"")+'</span></label>').join("")+'</div>':
+   '<p class="staff-help">店家尚未上架任何餐點或服務，請先聯絡店家。</p>')+
+  (mode==="REQUIRED"?'<p class="staff-help">請至少選擇一項，才能完成送出。</p>':'<p class="staff-help">不需要預選服務，也可以直接送出。</p>')+
+ '</section>';
+}
+function menuChoiceReady(mode,ids,items){
+ return mode!=="REQUIRED"||(ids.length>0&&ids.some(id=>items?.some(item=>item.id===id&&item.active!==false)));
+}
 
 let lastStaffChange=null;
 function staffStatusPicker(kind,item,editable){
@@ -457,7 +496,7 @@ function staffRender(){
  const pendingBookings=openBookings.filter(x=>x.status==="CONFIRMED"), finishedBookings=doneBookings.filter(x=>x.status==="COMPLETED");
  const role=staff.role,isManager=["OWNER","MANAGER","PLATFORM"].includes(role);
  const menu=nav("營運工作台","dashboard",staffTab,"staff")+nav("預約管理","bookings",staffTab,"staff")+
- nav("叫號管理","queue",staffTab,"staff")+nav("員工管理","members",staffTab,"staff")+nav("企業設定","settings",staffTab,"staff");
+ nav("叫號管理","queue",staffTab,"staff")+nav("菜單及服務設定","menu",staffTab,"staff")+nav("員工管理","members",staffTab,"staff")+nav("企業設定","settings",staffTab,"staff");
  let html='<div class="toolbar"><div class="small">管理範圍：<strong>'+esc(t.name)+'</strong>・'+esc(role)+'</div>'+
   '<div class="flex"><span class="small">按狀態管理，跨天未結案仍會保留</span>'+
   '<label for="staff-history-days" style="margin:0">已處理紀錄</label><select class="field" id="staff-history-days" style="width:145px">'+
@@ -512,6 +551,32 @@ function staffRender(){
     '<p class="staff-help">叫號通知使用票券識別碼，避免跨天同號誤通知。已發出的 LINE 訊息無法撤回。</p>')+
    box("未結案號碼牌（"+openTickets.length+" 筆）",openTickets.length?openTickets.map(card).join(""):'<p class="muted">目前沒有未結案號碼牌。</p>')+
    box("已結束號碼牌（最近 "+staffHistoryDays+" 天，"+doneTickets.length+" 筆）",doneTickets.length?doneTickets.map(card).join(""):'<p class="muted">沒有已結束的號碼牌。</p>');
+ }else if(staffTab==="menu"){
+  const items=staff.menu_items||[],selected=items.find(x=>x.id===editingMenuItemId)||null;
+  html+=box("預約／抽號選擇規則",
+   '<p class="muted">預約與現場取號可分別設定；必填時顧客要先選好至少一項餐點或服務，才可以送出。</p>'+
+   '<div class="grid"><div><label for="menu-book-mode">線上預約</label>'+menuModeSelect("menu-book-mode",t.menu_booking_mode||"DISABLED")+
+   '</div><div><label for="menu-queue-mode">現場取號</label>'+menuModeSelect("menu-queue-mode",t.menu_queue_mode||"DISABLED")+'</div></div>'+
+   (isManager?'<div class="staff-actionbar">'+btn("儲存選擇規則","save-menu-modes","primary")+'</div>':'<p class="small">僅管理員可修改設定。</p>'))+
+   box("菜單／服務項目（"+items.length+" 項）",
+    '<p class="muted">可設定餐點或服務、說明、價格、排序及是否上架。歷史預約會保留當時選擇的項目。</p>'+
+    (items.length?'<div class="scroll"><table class="rows"><thead><tr><th>類型</th><th>名稱與說明</th><th>價格</th><th>狀態</th><th>操作</th></tr></thead><tbody>'+
+      items.map(item=>'<tr><td>'+esc(item.kind==="MENU"?"餐點":"服務")+'</td><td><strong>'+esc(item.name)+'</strong>'+
+       (item.description?'<div class="small">'+esc(item.description)+'</div>':'')+'</td>'+
+       '<td>'+esc(menuPrice(item)||"未設定")+'</td><td>'+esc(item.active?"上架中":"已停用")+'</td><td>'+
+       (isManager?btn("編輯","menu-edit","outline",'data-id="'+esc(item.id)+'"')+' '+
+        btn(item.active?"停用":"重新上架","menu-toggle","secondary",'data-id="'+esc(item.id)+'"'):'—')+
+       '</td></tr>').join("")+'</tbody></table></div>':'<p class="muted">尚未建立餐點或服務。</p>'))+
+   (isManager?box(selected?"修改餐點／服務":"新增餐點／服務",
+    '<div class="grid"><div><label for="menu-kind">類型</label><select class="field" id="menu-kind">'+
+    [["MENU","餐點"],["SERVICE","服務"]].map(([v,label])=>'<option value="'+v+'" '+((selected?.kind||"MENU")===v?"selected":"")+'>'+label+'</option>').join("")+
+    '</select>'+field("名稱","menu-name",selected?.name||"")+
+    field("價格（NT$，可留空）","menu-price",selected?.price??"","number",'min="0" step="0.01"')+'</div>'+
+    '<div>'+field("說明（選填）","menu-description",selected?.description||"")+
+    field("排序（數字越小越前面）","menu-order",selected?.sort_order??0,"number",'min="-9999" max="9999"')+
+    '<label class="checklist"><input type="checkbox" id="menu-active" '+(selected?.active===false?"":"checked")+'> 開放顧客選擇</label></div></div>'+
+    '<div class="staff-actionbar">'+btn(selected?"儲存修改":"新增項目","menu-save","primary")+
+     (selected?btn("取消編輯","menu-edit-clear","outline"):"")+'</div>'):"");
  }else if(staffTab==="members"){
   html+=box("已加入的員工",'<div class="scroll"><table class="rows"><tr><th>帳號</th><th>角色</th></tr>'+ (staff.members||[]).map(m=>'<tr><td>'+esc(m.email||('測試員工（Auth ID '+String(m.user_id||'').slice(0,8)+'）'))+'</td><td>'+esc(m.role)+'</td></tr>').join("")+'</table></div>')+
   box("待接受邀請",(staff.invites||[]).map(i=>'<div class="listline"><span>'+esc(i.email)+'</span>'+tag(i.role)+'</div>').join("")||'<p class="muted">尚無邀請</p>')+
