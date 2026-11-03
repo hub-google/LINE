@@ -96,7 +96,14 @@ async function connectLineSession(force=false){
       session=fresh.data.session;
       ({res,result}=await link());
     }
-    if(!res.ok||!result.linked)throw Error(result.error||"LINE 身分驗證失敗");
+    if(!res.ok||!result.linked){
+      const reasons={
+       LINE_ID_TOKEN_EXPIRED:"LINE 登入憑證已過期，請重新登入 LINE 後再開啟顧客網址。",
+       LINE_ID_TOKEN_AUDIENCE_MISMATCH:"LINE 登入頻道與憑證不一致，請使用專屬 LINE 顧客網址重新登入。",
+       INVALID_LINE_ID_TOKEN:"LINE 身分憑證無法通過驗證，請在 LINE App 內重新開啟顧客網址。"
+      };
+      throw Error(reasons[result.error]||result.error||"LINE 身分驗證失敗");
+    }
     if(!result.displayName)throw Error("LINE 未提供使用者名稱，請開啟 LIFF 的 profile 權限。");
     lineDisplayName=result.displayName;
     lineLinkStatus="linked";
@@ -150,6 +157,18 @@ function refreshLiffRoute(){
  if(["customer","staff","platform","home"].includes(nextView))view=nextView;
  const nextTab=lastParam(stateQuery,"tab")||lastParam(live,"tab");
  if(["home","reserve","queue","mine"].includes(nextTab))customerTab=nextTab;
+ // Only normalize our own duplicate query keys after LIFF has initialized.
+ // Keep all LINE SDK query keys (liff.*, access_token, etc.) untouched.
+ const normalized=new URL(location.href);
+ for(const key of ["view","merchant","tab"]){
+   const values=normalized.searchParams.getAll(key);
+   if(values.length>1){
+     const value=key==="merchant"?slug:key==="view"?view:customerTab;
+     normalized.searchParams.delete(key);
+     normalized.searchParams.set(key,value);
+   }
+ }
+ if(normalized.href!==location.href)history.replaceState(null,"",normalized.pathname+normalized.search+normalized.hash);
 }
 const TEST_KEY="line_saas_real_qa_v1";
 let testInfo=null;
@@ -290,7 +309,7 @@ function staffRender(){
  return layout(t.name,"企業員工營運後台",menu,html);
 }
 function customerRender(){
-  if(lineLinkStatus!=="linked")return box("LINE 身分授權",'<p class="muted">使用 LINE 帳號登入後即可預約與取號，不需另填姓名或帳密。</p>'+lineStatusBadge());
+  if(lineLinkStatus!=="linked")return box("LINE 身分授權",'<p class="muted">使用 LINE 帳號登入後即可預約與取號，不需另填姓名或帳密。</p><p class="small">目前指定門市：<strong>'+esc(slug)+'</strong></p>'+lineStatusBadge());
   if(!customer)return box("正在讀取顧客網站",'<p class="muted">正在確認企業設定與登入狀態...</p>');
   const t=customer.tenant,m=t.modules||{},items=customer.my_reservations||[],tickets=customer.my_tickets||[],live=tickets.find(x=>["WAITING","CALLED","SERVING"].includes(x.status));
  document.documentElement.style.setProperty("--primary",/^#[a-fA-F0-9]{6}$/.test(t.accent)?t.accent:"#147e68");
