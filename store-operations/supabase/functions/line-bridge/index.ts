@@ -212,6 +212,24 @@ function selectedServicesText(items: unknown): string[] {
   const names=items.map(x=>typeof x?.name==="string"?x.name.trim():"").filter(Boolean);
   return names.length?["已選餐點／服務：" + names.join("、").slice(0,1300)]:[];
 }
+// Both a new booking and a restored booking use this one, maintained LINE card.
+function reservationConfirmationNotice(tenant: ShopInfo, booking: {
+  id: string; booking_date: string; booking_time: string; party_size: number; selected_items: unknown;
+}): Record<string, unknown> {
+  return flexNotice("預約已成立", [
+    "店家：" + tenant.name,
+    "日期：" + String(booking.booking_date),
+    "時間：" + String(booking.booking_time).slice(0, 5),
+    "人數：" + booking.party_size + " 位",
+    ...selectedServicesText(booking.selected_items),
+    ...shopDetails(tenant),
+    "如需調整，可使用下方按鈕。",
+  ], [
+    { label: "編輯預約", uri: liffManageLink(tenant, "reservation", booking.id, "edit") },
+    { label: "取消預約", uri: liffManageLink(tenant, "reservation", booking.id, "cancel") },
+  ]);
+}
+
 async function canManageRecipient(
   db: ReturnType<typeof service>, shopId: string, actor: string, recipient: string,
 ): Promise<boolean> {
@@ -232,7 +250,7 @@ async function pushNotice(
   db: ReturnType<typeof service>,
   tenant: { id: string; name: string },
   recipient: string,
-  eventKind: "CALLED" | "RESERVED" | "TICKET_CREATED" | "TICKET_CANCELLED" | "RESERVATION_CANCELLED" | "RESERVATION_UPDATED",
+  eventKind: "CALLED" | "RESERVED" | "TICKET_CREATED" | "TICKET_CANCELLED" | "RESERVATION_CANCELLED" | "RESERVATION_UPDATED" | "RESERVATION_RESTORED",
   referenceId: string,
   message: string | Record<string, unknown>,
   origin: string | null,
@@ -456,31 +474,29 @@ Deno.serve(async (req: Request) => {
       return pushNotice(db, tenant, ticket.user_id, "CALLED", eventId,
         tenant.name + "：現在叫到 " + actualNumber + "，請至櫃檯報到。", origin);
     }
-    if (payload.action === "notify-reservation") {
+    if (payload.action === "notify-reservation" || payload.action === "notify-reservation-restored") {
+      const restored = payload.action === "notify-reservation-restored";
       const slug = String(payload.slug || "");
       if (!slug || !validUUID(payload.reservationId)) return reply(400, { error: "BAD_REQUEST" }, origin);
       const { data: tenant } = await db.from("so_tenants").select("id,slug,name,status,address,phone").eq("slug", slug).maybeSingle();
       if (!tenant || tenant.status !== "ACTIVE") return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
       const { data: booking } = await db.from("so_reservations")
-        .select("id,user_id,status,created_at,booking_date,booking_time,party_size,selected_items")
-        .eq("id", payload.reservationId).eq("tenant_id", tenant.id).eq("user_id", user.id).is("deleted_at", null).maybeSingle();
-      if (!booking || booking.status !== "CONFIRMED" || !recently(booking.created_at, 300_000))
+        .select("id,user_id,status,created_at,booking_date,booking_time,party_size,selected_items,line_restore_event_id")
+        .eq("id", payload.reservationId).eq("tenant_id", tenant.id).is("deleted_at", null).maybeSingle();
+      if (!booking || booking.status !== "CONFIRMED")
+        return reply(409, { error: "RESERVATION_NOT_CONFIRMED" }, origin);
+      if (restored) {
+        // Only a CANCELLED -> CONFIRMED transition stamps this id in the database.
+        if (!booking.line_restore_event_id) return reply(409, { error: "RESERVATION_NOT_RESTORED" }, origin);
+        if (!await canManageRecipient(db, tenant.id, user.id, booking.user_id))
+          return reply(403, { error: "NOT_AUTHORIZED" }, origin);
+      } else if (booking.user_id !== user.id || !recently(booking.created_at, 300_000)) {
         return reply(409, { error: "RESERVATION_NOT_RECENT" }, origin);
-      const dateText = String(booking.booking_date);
-      const timeText = String(booking.booking_time).slice(0, 5);
-      return pushNotice(db, tenant, user.id, "RESERVED", booking.id,
-        flexNotice("預約已成立", [
-          "店家：" + tenant.name,
-          "日期：" + dateText,
-          "時間：" + timeText,
-          "人數：" + booking.party_size + " 位",
-          ...selectedServicesText(booking.selected_items),
-          ...shopDetails(tenant),
-          "如需調整，可使用下方按鈕。",
-        ], [
-          { label: "編輯預約", uri: liffManageLink(tenant, "reservation", booking.id, "edit") },
-          { label: "取消預約", uri: liffManageLink(tenant, "reservation", booking.id, "cancel") },
-        ]), origin);
+      }
+      return pushNotice(db, tenant, booking.user_id,
+        restored ? "RESERVATION_RESTORED" : "RESERVED",
+        restored ? booking.line_restore_event_id! : booking.id,
+        reservationConfirmationNotice(tenant, booking), origin);
     }
     if (payload.action === "notify-ticket") {
       const slug = String(payload.slug || "");
