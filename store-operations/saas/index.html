@@ -271,32 +271,20 @@ function customerNoticeSuffix(notice){
 }
 async function notifyLineCalled(ticketNumber,ticketId,eventId){return sendLineNotice("notify",{number:ticketNumber,ticketId,eventId});}
 function lineStatusBadge(){
+  // Hide successful LINE verification: it is internal diagnostics, not customer content.
+  // Only show actionable problems; LINE identity and notifications remain enabled.
   if(lineLinkStatus==="linked"){
-    let description="",tone="notice";
-    if(lineOaRecipient==="REACHABLE"){
-      description=lineFriendStatus===true?
-        "已確認：平台官方帳號可以辨識這個 LINE 帳號，且 LINE Login 顯示已加入好友。":
-        "已確認：平台官方帳號可以辨識這個 LINE 帳號。"+(lineFriendStatus===false?"請加為好友，以確保持續收到通知。":"可測試 LINE 通知；實際送達仍由 LINE 決定。");
-    }else if(lineOaRecipient==="NOT_REACHABLE"){
-      tone="alert";
-      description=lineProviderMismatch?
-        "偵測到 LINE Login 的好友結果與實際發送 PUSH 的官方帳號不一致。可能綁錯官方帳號或 LINE Provider 不同；請確認 LINE Login 與 Messaging API 對應同一個官方帳號。":
-        "實際發送 PUSH 的 LINE 官方帳號目前無法辨識你的 LINE 帳號。可能尚未加好友、已封鎖，或 LINE Login 與 Messaging API 使用不同 Provider。請先加入下方官方帳號，再重新檢查。";
-    }else{
-      tone="alert";
-      description=lineFriendCheck==="LINK_OR_SCOPE_CONFIGURATION"?
-        "LINE Login 好友查詢無法使用，請檢查頻道 Linked LINE Official Account 設定；官方帳號查詢也暫時不可用。":
-        lineFriendCheck==="TOKEN_OR_PROFILE_SCOPE"?
-        "LINE 授權尚未包含完整的 profile 權限，請點「重新授權 LINE」，再重新檢查。":
-        "官方帳號連線檢查暫時失敗，無法確認是否能收到 PUSH。請重新檢查。";
-    }
-    const addFriend=lineOaAddFriendUrl&&lineOaRecipient!=="REACHABLE"?
+    if(lineOaRecipient!=="NOT_REACHABLE"&&lineFriendCheck!=="TOKEN_OR_PROFILE_SCOPE")return "";
+    const description=lineOaRecipient==="NOT_REACHABLE"?
+      (lineProviderMismatch?
+        "LINE 官方帳號設定不一致，可能影響通知。請聯絡店家協助確認。":
+        "目前無法透過 LINE 官方帳號通知您，請先加入下方官方帳號。"):
+      "LINE 授權資訊不完整，請重新授權 LINE。";
+    const addFriend=lineOaAddFriendUrl&&lineOaRecipient==="NOT_REACHABLE"?
       ' <a class="btn" style="display:inline-block;padding:10px 14px;border:1px solid #059669;border-radius:10px;background:#ecfdf5" href="'+esc(lineOaAddFriendUrl)+'" target="_blank" rel="noopener">加入平台 LINE 官方帳號</a>':"";
-    return '<div class="'+tone+'">LINE 使用者：<strong>'+esc(lineDisplayName)+'</strong>。'+esc(description)+
+    return '<div class="alert">'+esc(description)+
       '<div class="flex" style="margin-top:8px">'+
-      btn("重新檢查 LINE 通知資格","line-check-friendship","outline")+
-      (lineOaRecipient!=="REACHABLE"||lineFriendCheck==="TOKEN_OR_PROFILE_SCOPE"?' '+btn("重新授權 LINE","line-reauth","outline"):'')+
-      addFriend+'</div></div>';
+      addFriend+' '+btn("重新授權 LINE","line-reauth","outline")+'</div></div>';
   }
   const detail=lineLinkStatus==="connecting"?"正在連接 LINE 帳號…":
     lineLinkStatus==="not-logged-in"?"正在開啟 LINE 授權…":
