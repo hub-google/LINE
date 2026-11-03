@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="__LINE_SAAS_BUILD__">
-<script defer src="./version-watch.js?build=__LINE_SAAS_BUILD__"></script>
+<meta name="line-saas-build" content="10e402bac161ffed0167760260fb72fd57412b35">
+<script defer src="./version-watch.js?build=10e402bac161ffed0167760260fb72fd57412b35"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 門市營運｜企業開通、員工後台與顧客預約</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -96,6 +96,12 @@ body{overflow-x:hidden}
 .menu-choice:has(input:checked){background:#ecfdf5;border:2px solid #059669;padding:12px 13px}
 .menu-choice:focus-within{outline:3px solid #93c5fd;outline-offset:1px}
 @media(max-width:540px){.menu-choices{grid-template-columns:1fr}}
+
+.staff-delete{display:flex;gap:10px;align-items:center;margin-top:13px;padding:11px 13px;border:1px solid #f1c3c3;background:#fff7f7;border-radius:10px;color:#8f2929;font-size:13px;cursor:pointer}
+.staff-delete input{width:18px;height:18px;flex:none;accent-color:#b91c1c}
+.staff-delete input:disabled{opacity:.6;cursor:not-allowed}
+.staff-deleted-record{border-color:#f0c6c6;background:#fffafa}
+.staff-deleted-record .staff-record-title{text-decoration:line-through;color:#8f4a4a}
 </style></head>
 <body>
 <header><div class="top">
@@ -396,6 +402,13 @@ function staffStatusPicker(kind,item,editable){
   choices.map(([value,title])=>'<label class="staff-choice"><input type="radio" name="'+kind+'-'+esc(item.id)+'" data-status-kind="'+kind+'" data-id="'+esc(item.id)+'" data-previous="'+esc(item.status)+'" value="'+value+'" '+(value===item.status?'checked ':'')+((Array.isArray(editable)?editable.includes(value):editable)?'':'disabled ')+'><span>'+title+'</span></label>').join("")+
  '</fieldset>';
 }
+function staffDeletePicker(kind,item,parentHidden=false){
+ const checked=!!item.deleted_at;
+ return '<label class="staff-delete"><input type="checkbox" data-delete-kind="'+kind+
+   '" data-id="'+esc(item.id)+'" '+(checked?'checked ':'')+(parentHidden?'disabled ':'')+
+   '><span>刪除（顧客端不顯示、不會發送 LINE 通知）'+
+   (parentHidden?'；請先恢復原預約':'')+'</span></label>';
+}
 let actionFeedbackTimer=null;
 function dismissActionFeedback(){
  clearTimeout(actionFeedbackTimer);
@@ -497,7 +510,7 @@ function staffRender(){
  const memberships=context?.memberships||[];
  if(!staff){return box("企業員工後台",'<p class="muted">請先加入企業或由公司平台管理員核發邀請。'+(memberships.length?"請從下列企業進入：":"")+'</p>'+memberships.map(m=>'<p><a href="'+esc(route("staff",m.slug))+'">'+esc(m.name)+'（'+esc(m.role)+'）→</a></p>').join("")+
     (context?.invitations||[]).map(i=>'<div class="listline"><div>'+esc(i.tenant)+'－'+esc(i.role)+'</div>'+btn("接受邀請","accept-invite","primary",'data-id="'+esc(i.id)+'"')+'</div>').join("")); }
- const t=staff.tenant,openBookings=staff.pending_reservations||[],doneBookings=staff.processed_reservations||[],openTickets=staff.active_tickets||[],doneTickets=staff.processed_tickets||[];
+ const t=staff.tenant,openBookings=staff.pending_reservations||[],doneBookings=staff.processed_reservations||[],openTickets=staff.active_tickets||[],doneTickets=staff.processed_tickets||[],deletedBookings=staff.deleted_reservations||[],deletedTickets=staff.deleted_tickets||[];
  const r=openBookings.concat(doneBookings),q=openTickets.concat(doneTickets);
  const active=openTickets.find(x=>["CALLED","SERVING"].includes(x.status)),waiting=openTickets.filter(x=>x.status==="WAITING"),passed=openTickets.filter(x=>x.status==="PASSED");
  const pendingBookings=openBookings.filter(x=>x.status==="CONFIRMED"), finishedBookings=doneBookings.filter(x=>x.status==="COMPLETED");
@@ -531,11 +544,11 @@ function staffRender(){
  }else if(staffTab==="bookings"){
   const card=x=>{
    const linked=q.find(k=>k.reservation_id===x.id);
-   return '<article class="staff-record"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.day)+'　'+esc(x.time)+'　'+esc(x.name)+'</div>'+
+   return '<article class="staff-record '+(x.deleted_at?'staff-deleted-record':'')+'"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.day)+'　'+esc(x.time)+'　'+esc(x.name)+'</div>'+
    '<div class="small">預約人數 '+esc(x.party)+' 位'+(linked?' ・ 號碼 '+esc(linked.number)+'（'+esc(linked.day)+'）':'')+'</div>'+
    '<div class="small">送出預約時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
    selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+
-   staffStatusPicker("reservation",x,x.day>taipei()?["CONFIRMED","CANCELLED"]:true)+
+   (x.deleted_at?'<p class="staff-help">此預約已從顧客端隱藏；取消勾選刪除即可恢復。</p>':staffStatusPicker("reservation",x,x.day>taipei()?["CONFIRMED","CANCELLED"]:true))+staffDeletePicker("reservation",x)+
    (x.status==="CHECKED_IN"&&linked?'<p class="staff-help">已報到，可到叫號管理處理 '+esc(linked.number)+'</p>':'')+'</article>';
   };
   html+='<div class="grid4" style="margin-bottom:16px">'+stat("待處理預約",openBookings.length)+stat("待報到",pendingBookings.length)+
@@ -546,13 +559,18 @@ function staffRender(){
     (lastStaffChange&&lastStaffChange.slug===slug?btn("還原上一步","undo-staff","outline"):"")+'</div>')+
    box("待處理預約（"+openBookings.length+" 筆）",openBookings.length?openBookings.map(card).join(""):'<p class="muted">目前沒有未結案預約。</p>')+
    box("已處理預約（最近 "+staffHistoryDays+" 天，"+doneBookings.length+" 筆）",'<p class="staff-help">包含已完成、未到、已取消。此區仍可修正狀態，資料依處理時間排序。</p>'+
-    (doneBookings.length?doneBookings.map(card).join(""):'<p class="muted">選定範圍內還沒有已處理預約。</p>'));
+    (doneBookings.length?doneBookings.map(card).join(""):'<p class="muted">選定範圍內還沒有已處理預約。</p>'))+
+   box("已刪除預約（最近 "+staffHistoryDays+" 天，"+deletedBookings.length+" 筆）",
+    '<p class="staff-help">顧客不會看到這些預約，也不會收到刪除通知。取消勾選即可恢復。</p>'+
+    (deletedBookings.length?deletedBookings.map(card).join(""):'<p class="muted">目前沒有已刪除預約。</p>'));
  }else if(staffTab==="queue"){
-  const card=x=>'<article class="staff-record"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.number)+'　'+esc(x.name)+'</div>'+
+  const deletedBookingIds=new Set(deletedBookings.map(x=>x.id));
+  const card=x=>'<article class="staff-record '+(x.deleted_at?'staff-deleted-record':'')+'"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.number)+'　'+esc(x.name)+'</div>'+
    '<div class="small">'+esc(x.day)+' ・ '+esc(x.source==="RESERVATION"?"預約報到":"現場取號")+
    (x.reservation_id?" ・ 已連動預約":"")+'</div>'+
    '<div class="small">取號時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
-   selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+staffStatusPicker("ticket",x,true)+'</article>';
+   selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+(x.deleted_at?'<p class="staff-help">此號碼已從顧客端隱藏；取消勾選刪除即可恢復。</p>':staffStatusPicker("ticket",x,true))+
+   staffDeletePicker("ticket",x,deletedBookingIds.has(x.reservation_id))+'</article>';
   html+='<div class="grid4" style="margin-bottom:16px">'+stat("正在叫號",active?.number||"—")+stat("候位中",waiting.length)+
    stat("已過號",passed.length)+stat("已結束",doneTickets.length)+'</div>'+
    box("叫號操作",'<p class="muted">仍在候位的跨日號碼會繼續排隊。號碼狀態可直接勾選與更正。</p>'+
@@ -561,7 +579,10 @@ function staffRender(){
     (lastStaffChange&&lastStaffChange.slug===slug?btn("還原上一步","undo-staff","secondary"):"")+'</div>'+
     '<p class="staff-help">叫號通知使用票券識別碼，避免跨天同號誤通知。已發出的 LINE 訊息無法撤回。</p>')+
    box("未結案號碼牌（"+openTickets.length+" 筆）",openTickets.length?openTickets.map(card).join(""):'<p class="muted">目前沒有未結案號碼牌。</p>')+
-   box("已結束號碼牌（最近 "+staffHistoryDays+" 天，"+doneTickets.length+" 筆）",doneTickets.length?doneTickets.map(card).join(""):'<p class="muted">沒有已結束的號碼牌。</p>');
+   box("已結束號碼牌（最近 "+staffHistoryDays+" 天，"+doneTickets.length+" 筆）",doneTickets.length?doneTickets.map(card).join(""):'<p class="muted">沒有已結束的號碼牌。</p>')+
+   box("已刪除號碼牌（最近 "+staffHistoryDays+" 天，"+deletedTickets.length+" 筆）",
+    '<p class="staff-help">刪除不是取消：顧客端不再顯示，也不會發送 LINE 通知；取消勾選即可恢復。</p>'+
+    (deletedTickets.length?deletedTickets.map(card).join(""):'<p class="muted">目前沒有已刪除號碼牌。</p>'));
  }else if(staffTab==="menu"){
   const items=staff.menu_items||[],selected=items.find(x=>x.id===editingMenuItemId)||null;
   html+=box("預約／抽號選擇規則",
@@ -771,7 +792,7 @@ async function load(){err="";try{
  else if(view==="staff")staff=null;
  }catch(e){err=e.message||String(e)}render();}
 async function act(fn){if(busy)return;busy=true;err="";flash="";showActionFeedback("正在儲存，請勿重複點擊。","pending");
- document.querySelectorAll("button[data-act],input[data-status-kind]").forEach(x=>x.disabled=true);
+ document.querySelectorAll("button[data-act],input[data-status-kind],input[data-delete-kind]").forEach(x=>x.disabled=true);
  try{const m=await fn();await load();flash=m||"已成功儲存";
  const hasNoticeProblem=/提醒暫時無法送出|LINE 通知失敗|LINE 通知暫時|官方帳號查詢失敗/.test(flash);
  showActionFeedback(flash,hasNoticeProblem?"warning":"success")}
@@ -991,6 +1012,18 @@ document.addEventListener("change",async ev=>{
  if(el.id==="edit-book-date"){editDate=el.value;editTime="";await fetchBookingEditSlots();return;}
  if(el.id==="edit-book-time"){editTime=el.value;render();return;}
  if(el.id==="edit-book-party"){editParty=Number(el.value);render();return;}
+ if(el.dataset.deleteKind){
+  if(busy)return;
+  const kind=el.dataset.deleteKind,id=el.dataset.id,deleted=el.checked;
+  if(!id||!["reservation","ticket"].includes(kind))return;
+  if(deleted&&!confirm("確定刪除這筆"+(kind==="reservation"?"預約":"號碼牌")+"？\n顧客的預約或取號畫面將直接不顯示，且不會發送 LINE 通知。")){render();return;}
+  await act(async()=>{
+    const result=await rpc("so_staff_set_record_deleted",{p_slug:slug,p_kind:kind,p_id:id,p_deleted:deleted});
+    lastStaffChange=null;
+    return (result.changed?(deleted?"已刪除":"已恢復"):"無須變更")+
+      (kind==="reservation"?"預約":"號碼牌")+"；不會發送 LINE 通知";
+  });return;
+ }
  if(el.dataset.statusKind){
   if(busy)return;
   const kind=el.dataset.statusKind, id=el.dataset.id, previous=el.dataset.previous, desired=el.value;
