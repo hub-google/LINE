@@ -34,6 +34,33 @@ code{background:#eef2f7;padding:3px 5px;border-radius:5px;word-break:break-all;f
 footer{margin:22px 0;color:#94a3b8;font-size:12px;text-align:center}
 @media(max-width:850px){.layout{grid-template-columns:1fr}aside{display:flex;overflow-x:auto;gap:5px;padding:9px}.side-title{display:none}.side-item{white-space:nowrap;width:auto;flex:none}.grid4{grid-template-columns:repeat(2,1fr)}} 
 @media(max-width:540px){.container{padding:0 12px}.card{padding:16px}.top{padding:13px 12px}h1{font-size:24px}.grid,.grid3{grid-template-columns:1fr}.slots{grid-template-columns:repeat(3,minmax(0,1fr))}.rows{font-size:12px}.btn{padding:10px 12px}.stat strong{font-size:23px}}
+
+/* One responsive customer site regardless of browser, LINE, or screen width. */
+html{-webkit-text-size-adjust:100%}
+body{overflow-x:hidden}
+.card,.content,.grid>*,.grid3>*,.grid4>*{min-width:0}
+.routecard{width:100%;min-width:0;text-align:left;cursor:pointer}
+.customer-layout .content{width:100%}
+.customer-layout .side-item{min-height:44px}
+.headlinks a,.btn,.slot{touch-action:manipulation}
+@media(max-width:850px){
+ .customer-layout{grid-template-columns:minmax(0,1fr);gap:14px}
+ .customer-layout aside{display:flex;overflow-x:auto;gap:6px;padding:8px;scrollbar-width:thin}
+ .customer-layout aside .side-item{white-space:nowrap;flex:0 0 auto}
+}
+@media(max-width:540px){
+ .container{margin:14px auto;padding:0 12px 34px}
+ .top{gap:9px}
+ .brand{font-size:clamp(15px,4.5vw,19px)}
+ .brand small{font-size:11px}
+ .customer-layout .hero{padding:20px}
+ .customer-layout .ticket{font-size:clamp(38px,12vw,62px)}
+ .customer-layout .slots{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .customer-layout .stat{padding:12px}
+ .customer-layout .grid3{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .customer-layout .grid3>:last-child:nth-child(odd){grid-column:1/-1}
+ .customer-layout .btn.full{min-height:46px}
+}
 </style></head>
 <body>
 <header><div class="top">
@@ -59,6 +86,10 @@ async function bridgeConfig(){
   try{const res=await fetch(LINE_BRIDGE_URL+"?action=config");if(res.ok)lineConfig=await res.json();}
   catch(e){console.warn("LINE 設定尚不可用");}
   return lineConfig||{};
+}
+function customerUrl(merchant){
+ const id=lineConfig?.liffId;
+ return id?"https://liff.line.me/"+encodeURIComponent(id)+"/?view=customer&merchant="+encodeURIComponent(merchant):null;
 }
 function lineLoginUrl(){
   return "https://liff.line.me/"+encodeURIComponent(lineConfig?.liffId||"")+"/?view=customer&merchant="+encodeURIComponent(slug)+(customerTab?"&tab="+encodeURIComponent(customerTab):"");
@@ -220,6 +251,11 @@ let session=null,context=null,overview=[],customer=null,staff=null,busy=false,fl
 let day=taipei(),customerTab=["home","reserve","queue","mine"].includes(incomingParam("tab"))?incomingParam("tab"):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
 const features=[["reservation","線上預約"],["queue","線上取號"],["calling","現場叫號"]];
 const route=(v,s=slug,tab="")=>location.pathname+"?view="+encodeURIComponent(v)+(s?"&merchant="+encodeURIComponent(s):"")+(v==="customer"&&tab?"&tab="+encodeURIComponent(tab):"");
+function lineIndicator(tenant){
+ const shared=!!(lineConfig?.loginReady&&lineConfig?.messagingReady);
+ const own=tenant.line_status==="UNBOUND"?"店家自有 OA 尚未綁定（獨立綁定功能尚未完成）":String(tenant.line_status||"未設定");
+ return (shared?"平台共用測試 OA 已配置":"平台共用測試 OA 尚未就緒")+"；"+own;
+}
 function taipei(){return new Intl.DateTimeFormat("sv-SE",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date())}
 function esc(x){return String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function jsStatus(s){return ({CONFIRMED:"已預約",CHECKED_IN:"已報到",COMPLETED:"已完成",CANCELLED:"已取消",NO_SHOW:"未到",WAITING:"等候中",CALLED:"已叫號",SERVING:"服務中",PASSED:"已過號",ACTIVE:"啟用中",SUSPENDED:"已停用"})[s]||s}
@@ -249,18 +285,18 @@ function platformReady(){return !!(context?.platform_admin||(testMode&&session?.
 function nav(label,tab,current,which){return '<button class="side-item '+(tab===current?"active":"")+'" data-nav="'+which+'" data-tab="'+tab+'">'+label+'</button>'}
 function layout(title,subtitle,menu,body){
  const identityLabel=view==="customer"?lineDisplayName:normalUser();
- return '<div class="toolbar"><div><div class="eyebrow">LINE STORE OPERATIONS</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div><div class="flex"><span class="small">'+esc(identityLabel)+'</span>'+(view!=="customer"&&authReady()?btn("登出","logout","outline"):"")+'</div></div><div class="layout"><aside>'+menu+'</aside><section class="content">'+body+'</section></div>';
+ return '<div class="toolbar"><div><div class="eyebrow">LINE STORE OPERATIONS</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div><div class="flex"><span class="small">'+esc(identityLabel)+'</span>'+(view!=="customer"&&authReady()?btn("登出","logout","outline"):"")+'</div></div><div class="layout'+(view==="customer"?" customer-layout":"")+'"><aside>'+menu+'</aside><section class="content">'+body+'</section></div>';
 }
 function head(){const links=view==="customer"?[["customer","預約／取號"]]:[["home","產品入口"],["platform","公司總後台"],["staff","企業員工後台"],["customer","顧客使用網頁"]];
-$("headlinks").innerHTML=links.map(x=>'<a href="'+esc(route(x[0],x[0]==="platform"||x[0]==="home"?"":slug))+'" class="'+(x[0]===view?"active":"")+'">'+x[1]+'</a>').join("");
+$("headlinks").innerHTML=links.map(x=>'<a href="'+esc(x[0]==="customer"?(customerUrl(slug)||route("customer",slug)):route(x[0],x[0]==="platform"||x[0]==="home"?"":slug))+'" class="'+(x[0]===view?"active":"")+'">'+x[1]+'</a>').join("");
 }
 function message(){return (err?'<div class="error" role="alert">'+esc(err)+'</div>':"")+(flash?'<div class="notice" role="status">'+esc(flash)+'</div>':"")}
 function renderHome(){
  return '<div class="hero"><div class="eyebrow" style="color:#d9fff2">MULTI-TENANT SAAS</div><h1>一套系統，服務每一家企業</h1><p class="muted">公司開站 → 員工管理預約與叫號 → 顧客透過專屬連結完成預約。資料實際儲存於 Supabase。</p></div><div class="grid3">'+
  '<a class="routecard" href="'+esc(route("platform",""))+'"><h2>01 公司總後台</h2><p class="muted">開通新企業、選功能、設定品牌與員工邀請。</p><strong>進入平台管理 →</strong></a>'+
  '<a class="routecard" href="'+esc(route("staff","greenfield-salon"))+'"><h2>02 企業員工後台</h2><p class="muted">查看預約名單、報到、叫號、員工管理。</p><strong>進入企業後台 →</strong></a>'+
- '<a class="routecard" href="'+esc(route("customer","greenfield-salon"))+'"><h2>03 顧客使用網頁</h2><p class="muted">線上預約、取號、查看自己目前的排隊狀態。</p><strong>試用顧客入口 →</strong></a></div>'+
- box("兩家測試企業",'<div class="listline"><div><strong>青禾風格美髮（測試門市）</strong><div class="small">預約、取號、叫號</div></div><a href="'+esc(route("customer","greenfield-salon"))+'">顧客入口 →</a></div><div class="listline"><div><strong>澄心健康服務中心（測試門市）</strong><div class="small">僅開放預約</div></div><a href="'+esc(route("customer","demo-clinic"))+'">顧客入口 →</a></div>');
+ '<a class="routecard" href="'+esc((customerUrl("greenfield-salon")||route("customer","greenfield-salon")))+'"><h2>03 顧客使用網頁</h2><p class="muted">線上預約、取號、查看自己目前的排隊狀態。</p><strong>試用顧客入口 →</strong></a></div>'+
+ box("兩家測試企業",'<div class="listline"><div><strong>青禾風格美髮（測試門市）</strong><div class="small">預約、取號、叫號</div></div><a href="'+esc((customerUrl("greenfield-salon")||route("customer","greenfield-salon")))+'">顧客入口 →</a></div><div class="listline"><div><strong>澄心健康服務中心（測試門市）</strong><div class="small">僅開放預約</div></div><a href="'+esc((customerUrl("demo-clinic")||route("customer","demo-clinic")))+'">顧客入口 →</a></div>');
 }
 function featureChecks(data={},prefix="feature"){
  return '<div class="grid">'+features.map(f=>'<label class="checklist"><input type="checkbox" class="'+prefix+'" data-feature="'+f[0]+'" '+(data[f[0]]?"checked":"")+'> '+f[1]+'</label>').join("")+'</div>';
@@ -278,7 +314,7 @@ function platformRender(){
    const staffCount=overview.reduce((n,t)=>n+Number(t.staff||0),0);
    html='<div class="grid4" style="margin-bottom:16px">'+stat("企業總數",overview.length)+stat("營運中企業",active)+stat("今日預約",bookings)+stat("今日候位",waiting)+'</div>'+
     box("總公司跨企業即時營運",'<p class="muted">以下直接從 Supabase 讀取實際資料。員工總數 '+esc(staffCount)+' 人，今日已完成 '+esc(completed)+' 組，每 15 秒更新。</p><div class="scroll"><table class="rows"><thead><tr><th>企業</th><th>狀態</th><th>員工</th><th>今日預約</th><th>候位</th><th>目前叫號</th><th>已完成</th><th>操作</th></tr></thead><tbody>'+
-    overview.map(t=>'<tr><td><strong>'+esc(t.name)+'</strong></td><td>'+tag(t.status)+'</td><td>'+esc(t.staff)+'</td><td>'+esc(t.today_reservations||0)+'</td><td>'+esc(t.today_waiting||0)+'</td><td>'+esc(t.current_number||"—")+'</td><td>'+esc(t.today_completed||0)+'</td><td><a href="'+esc(route("staff",t.slug))+'">店員後台</a> ・ <a href="'+esc(route("customer",t.slug,"queue"))+'">顧客頁</a></td></tr>').join("")+'</tbody></table></div>');
+    overview.map(t=>'<tr><td><strong>'+esc(t.name)+'</strong></td><td>'+tag(t.status)+'</td><td>'+esc(t.staff)+'</td><td>'+esc(t.today_reservations||0)+'</td><td>'+esc(t.today_waiting||0)+'</td><td>'+esc(t.current_number||"—")+'</td><td>'+esc(t.today_completed||0)+'</td><td><a href="'+esc(route("staff",t.slug))+'">店員後台</a> ・ <a href="'+esc((customerUrl(t.slug)||(customerUrl(t.slug)||route("customer",t.slug))))+'">顧客頁</a></td></tr>').join("")+'</tbody></table></div>');
   }else if(platformTab==="list"){
    html='<div class="toolbar"><h2>已開通企業（'+overview.length+'）</h2>'+btn("＋ 新增企業","new-tenant","primary")+'</div>'+
     '<div class="card scroll"><table class="rows"><thead><tr><th>企業</th><th>啟用功能</th><th>狀態</th><th>員工</th><th>操作</th></tr></thead><tbody>'+
@@ -291,7 +327,7 @@ function platformRender(){
      btn(t.status==="ACTIVE"?"暫停企業":"恢復企業","toggle-company","outline")+
      btn("複製顧客網址","copy-customer","outline")+
      btn("複製員工網址","copy-staff","outline")+'</div>'+
-     '<p class="small">LINE 官方帳號目前狀態：'+esc(t.line_status)+ '。LINE 綁定需後續加入正式 OAuth／憑證交換流程，不能只勾選即視為已綁定。</p>');
+     '<p class="small">LINE 測試 OA 與企業自有 OA 狀態：'+esc(lineIndicator(t))+ '。LINE 綁定需後續加入正式 OAuth／憑證交換流程，不能只勾選即視為已綁定。</p>');
    }
  }else if(platformTab==="create"){
   html=box("新增企業客戶",'<p class="muted">完成後立刻建立獨立資料租戶與網址，不必建立新的 GitHub 專案。</p><div class="grid"><div>'+
@@ -323,7 +359,7 @@ function staffRender(){
  if(staffTab==="dashboard"){
   html+='<div class="grid4" style="margin-bottom:16px">'+stat("當日預約",r.filter(x=>x.status!=="CANCELLED").length)+stat("候位中",waiting.length)+stat("叫號中",active?.number||"—")+stat("當日已完成",q.filter(x=>x.status==="COMPLETED").length)+'</div>'+
   box("今天需要處理的事",'<div class="listline"><div><strong>預約待報到</strong><div class="small">今日未報到預約</div></div>'+r.filter(x=>x.status==="CONFIRMED").length+' 筆</div>'+
-  '<div class="listline"><div><strong>現場等待</strong><div class="small">候位中的號碼牌</div></div>'+waiting.length+' 組</div><div class="listline"><div><strong>LINE 官方帳號</strong><div class="small">測試 LINE 官方帳號已部署</div></div>'+esc(t.line_status)+'</div>');
+  '<div class="listline"><div><strong>現場等待</strong><div class="small">候位中的號碼牌</div></div>'+waiting.length+' 組</div><div class="listline"><div><strong>LINE 官方帳號</strong><div class="small">平台共用測試 OA 使用已部署的 LINE Token</div></div>'+esc(lineIndicator(t))+'</div>');
  }else if(staffTab==="bookings"){
   html+=box("預約名單",'<div class="scroll"><table class="rows"><thead><tr><th>時間</th><th>顧客暱稱</th><th>人數</th><th>狀態</th><th>操作</th></tr></thead><tbody>'+r.map(x=>'<tr><td>'+esc(x.time)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.party)+'</td><td>'+tag(x.status)+'</td><td>'+(x.status==="CONFIRMED"&&day===taipei()?(btn("到店報到","checkin","primary",'data-id="'+esc(x.id)+'"')+' '+btn("未到","no-show","outline",'data-id="'+esc(x.id)+'"')+' '+btn("取消","cancel-book-staff","danger",'data-id="'+esc(x.id)+'"')):"—")+'</td></tr>').join("")+'<tr '+(r.length?"style=\"display:none\"":"")+'><td colspan="5">這天尚無預約</td></tr></tbody></table></div>');
  }else if(staffTab==="queue"){
@@ -344,8 +380,8 @@ function staffRender(){
   html+=box("企業基本設定",!isManager?'<p class="muted">只有管理者可以修改設定。</p>':
    '<div class="grid"><div>'+field("企業名稱","set-name",t.name)+field("電話","set-phone",t.phone)+field("地址","set-address",t.address)+field("品牌色（#RRGGBB）","set-accent",t.accent)+'</div><div>'+field("網站簡介","set-description",t.description)+field("LOGO 圖片網址","set-logo",t.logo_url)+field("開始營業","set-open",t.open_time,"time")+field("結束營業","set-close",t.close_time,"time")+'</div></div>'+
    '<div class="grid"><div>'+field("每個時段可預約人數","set-capacity",t.slot_capacity,"number",'min="1" max="100"')+'</div><div><label>預約時段間隔</label><select class="field" id="set-minutes"><option value="15" '+(t.slot_minutes===15?"selected":"")+'>15 分鐘</option><option value="30" '+(t.slot_minutes===30?"selected":"")+'>30 分鐘</option><option value="60" '+(t.slot_minutes===60?"selected":"")+'>60 分鐘</option></select></div></div><div style="margin-top:15px">'+btn("儲存企業設定","update-settings","primary")+'</div>')+
-  box("LINE 官方帳號串接",'<p>綁定狀態：'+esc(t.line_status)+'</p><div class="alert">目前使用同一組測試 LINE 官方帳號，預約／取號／叫號會嘗試發送真實通知。請先授權 LINE 身分及加入好友；不同商家獨立 OA 綁定尚未開放。</div>')+
-  box("專屬網址",'<div><a href="'+esc(route("customer",slug))+'" target="_blank" rel="noopener">'+esc(new URL(route("customer",slug),location.href).href)+'</a></div><p class="spacer"></p>'+btn("複製顧客連結","copy-customer","outline"));
+  box("LINE 官方帳號串接",'<p>平台測試 OA／企業自有 OA：'+esc(lineIndicator(t))+'</p><div class="alert">目前使用同一組測試 LINE 官方帳號，預約／取號／叫號會嘗試發送真實通知。請先授權 LINE 身分及加入好友；不同商家獨立 OA 綁定尚未開放。</div>')+
+  box("唯一顧客網址（同時支援電腦與手機）",'<div><a href="'+esc(customerUrl(slug)||route("customer",slug))+'" target="_blank" rel="noopener">'+esc(customerUrl(slug)||new URL(route("customer",slug),location.href).href)+'</a></div><p class="spacer"></p>'+btn("複製顧客連結","copy-customer","outline"));
  }
  return layout(t.name,"企業員工營運後台",menu,html);
 }
@@ -385,7 +421,7 @@ async function load(){err="";try{
  const s=await supa.auth.getSession();if(s.error)throw s.error;session=s.data.session;
  if(view==="customer"&&!session){const x=await supa.auth.signInAnonymously();if(x.error)throw x.error;session=x.data.session;}
  if(view==="customer")await connectLineSession();
- if(view!=="customer")await loadContext();
+ if(view!=="customer"){await bridgeConfig();await loadContext();}
   if(testMode&&view!=="customer"&&session?.user?.is_anonymous){
    const membership=context?.memberships?.find(m=>m.slug===testInfo?.slug);
    if(!membership){testMode=false;testInfo=null;localStorage.removeItem(TEST_KEY)}
@@ -408,10 +444,18 @@ async function load(){err="";try{
 async function act(fn){if(busy)return;busy=true;err="";flash="";try{const m=await fn();if(m)flash=m;await load()}catch(e){err=e.message||String(e);render()}finally{busy=false;render()}}
 function checked(prefix){const m={};document.querySelectorAll("."+prefix).forEach(x=>{m[x.dataset.feature]=x.checked});return m}
 function val(id){return ($(id)?.value||"").trim()}
-async function urlFor(v,s){if(v==="customer"){const config=await bridgeConfig();if(config.liffId)return "https://liff.line.me/"+encodeURIComponent(config.liffId)+"/?view=customer&merchant="+encodeURIComponent(s);}return new URL(route(v,s),location.href).href}
+async function urlFor(v,s){
+ if(v==="customer"){
+  await bridgeConfig();
+  const u=customerUrl(s);
+  if(!u)throw Error("LINE 顧客入口尚未配置，請確認 LIFF 後端設定");
+  return u;
+ }
+ return new URL(route(v,s),location.href).href;
+}
 document.addEventListener("click",async ev=>{
  const b=ev.target.closest("button");if(!b||busy)return;
- if(b.dataset.nav){const v=b.dataset.nav;const tab=b.dataset.tab;if(v==="customer"){customerTab=tab;if(!customer?.tenant.modules[tab==="reserve"?"reservation":tab==="queue"?"queue":"reservation"]&&["reserve","queue"].includes(tab))customerTab="home";history.replaceState(null,"",route("customer",slug,customerTab))}if(v==="staff")staffTab=tab;if(v==="platform")platformTab=tab;err="";flash="";render();return}
+ if(b.dataset.nav){const v=b.dataset.nav;const tab=b.dataset.tab;if(v==="customer"){customerTab=tab;if(!customer?.tenant.modules[tab==="reserve"?"reservation":tab==="queue"?"queue":"reservation"]&&["reserve","queue"].includes(tab))customerTab="home";/* Customer subviews change in-place on the same page, not by opening separate URLs. */}if(v==="staff")staffTab=tab;if(v==="platform")platformTab=tab;err="";flash="";render();return}
  if(b.dataset.slot){chosenSlot=b.dataset.slot;render();return}
  const a=b.dataset.act,id=b.dataset.id;
  if(!a)return;
