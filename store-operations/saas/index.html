@@ -66,6 +66,7 @@ body{overflow-x:hidden}
 .action-feedback{position:fixed;bottom:20px;right:20px;z-index:10000;max-width:min(510px,calc(100vw - 28px));width:max-content;display:flex;align-items:start;gap:18px;padding:14px 16px;border-radius:13px;background:#ecfdf5;border:2px solid #34d399;color:#065f46;box-shadow:0 12px 38px rgba(15,23,42,.2);font-size:14px;line-height:1.5}
 .action-feedback.pending{background:#eff6ff;border-color:#93c5fd;color:#1e40af}
 .action-feedback.failure{background:#fef2f2;border-color:#fca5a5;color:#991b1b}
+.action-feedback.warning{background:#fffbeb;border-color:#f59e0b;color:#92400e}
 .action-feedback button{background:transparent;border:0;color:inherit;font-size:23px;cursor:pointer;line-height:1;min-width:28px;min-height:28px}
 .staff-guide{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
 .staff-guide span{flex:1 1 155px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:10px;padding:10px 12px;font-size:13px}
@@ -215,17 +216,21 @@ async function sendLineNotice(action,ids){
   try{
     const res=await fetch(LINE_BRIDGE_URL,{method:"POST",headers:{"content-type":"application/json","authorization":"Bearer "+session.access_token},body:JSON.stringify({action,slug,...ids})});
     const out=await res.json().catch(()=>({error:"LINE_RESPONSE_ERROR"}));
-    if(out.sent)return "LINE 已接受通知發送（需已加官方帳號好友）";
-    if(out.reason==="ALREADY_SENT")return "LINE 通知已發送過，未重複傳送";
+    if(out.sent)return "LINE API 已受理（不代表已送達，請確認顧客已加入官方帳號好友）";
+    if(out.reason==="ALREADY_SENT")return "LINE 此次通知已受理過，未重複傳送";
     if(out.reason==="CUSTOMER_NOT_LINKED")return "LINE 尚未連結，未發送通知";
     if(out.reason==="CUSTOMER_UNFOLLOWED")return "LINE 官方帳號已被取消好友或封鎖，未發送通知；請先加回好友";
     return "LINE 通知失敗："+(out.error||"未知原因")+(out.status?" ("+out.status+")":"");
   }catch(e){return "LINE 通知暫時無法連線";}
 }
-async function notifyLineCalled(ticketNumber,ticketId){return sendLineNotice("notify",{number:ticketNumber,ticketId});}
+async function notifyLineCalled(ticketNumber,ticketId,eventId){return sendLineNotice("notify",{number:ticketNumber,ticketId,eventId});}
 function lineStatusBadge(){
   if(lineLinkStatus==="linked"){
-    return '<div class="notice">LINE 使用者：<strong>'+esc(lineDisplayName)+'</strong>。預約與取號會自動使用此名稱。'+(lineFriendStatus===false?'目前尚無法接收 LINE 通知，請加回官方帳號好友。':'請加入官方帳號好友，以接收預約、取號與叫號通知。')+'</div>';
+    return '<div class="'+(lineFriendStatus===true?'notice':'alert')+'">LINE 使用者：<strong>'+esc(lineDisplayName)+'</strong>。'+
+      (lineFriendStatus===false?'尚未加入或已封鎖平台官方帳號，無法保證收到 LINE PUSH。':
+       lineFriendStatus===null?'LINE 好友狀態尚未確認，API 已受理不等於手機收到。請確認 LINE Login 已綁定官方帳號。':
+       '官方帳號好友狀態已確認。')+
+      (lineFriendStatus!==true?' '+btn("重新檢查好友狀態","line-check-friendship","outline"):'')+'</div>';
   }
   const detail=lineLinkStatus==="connecting"?"正在連接 LINE 帳號…":
     lineLinkStatus==="not-logged-in"?"正在開啟 LINE 授權…":
@@ -306,7 +311,7 @@ function showActionFeedback(message,kind="success"){
  node.className="action-feedback "+(kind==="error"?"failure":kind);
  node.setAttribute("role",kind==="error"?"alert":"status");
  node.setAttribute("aria-live",kind==="error"?"assertive":"polite");
- node.innerHTML='<div><strong>'+esc(kind==="pending"?"處理中":kind==="error"?"操作失敗":"操作成功")+'</strong><div>'+esc(message)+'</div></div><button type="button" data-act="dismiss-feedback" aria-label="關閉提示">×</button>';
+ node.innerHTML='<div><strong>'+esc(kind==="pending"?"處理中":kind==="error"?"操作失敗":kind==="warning"?"操作已儲存，但通知待確認":"操作成功")+'</strong><div>'+esc(message)+'</div></div><button type="button" data-act="dismiss-feedback" aria-label="關閉提示">×</button>';
 }
 
 function requireAuth(){
@@ -535,7 +540,9 @@ async function load(){err="";try{
  }catch(e){err=e.message||String(e)}render();}
 async function act(fn){if(busy)return;busy=true;err="";flash="";showActionFeedback("正在儲存，請勿重複點擊。","pending");
  document.querySelectorAll("button[data-act],input[data-status-kind]").forEach(x=>x.disabled=true);
- try{const m=await fn();await load();flash=m||"已成功儲存";showActionFeedback(flash,"success")}
+ try{const m=await fn();await load();flash=m||"已成功儲存";
+ const hasNoticeProblem=/LINE 通知失敗|LINE 通知暫時|LINE 尚未連結|LINE 尚未|好友狀態未知|官方帳號好友狀態尚未確認|LINE 通知：/.test(flash);
+ showActionFeedback(flash,hasNoticeProblem?"warning":"success")}
  catch(e){err=e.message||String(e);showActionFeedback(err,"error")}
  finally{busy=false;render()}
 }
@@ -600,6 +607,13 @@ document.addEventListener("click",async ev=>{
  if(a==="book"){await act(async()=>{if(lineLinkStatus!=="linked")throw Error("請先完成 LINE 授權");if(!chosenSlot)throw Error("請先選擇時段");const result=await rpc("so_book",{p_slug:slug,p_date:day,p_time:chosenSlot,p_name:lineDisplayName,p_party:Number(val("customer-party"))});chosenSlot="";customerTab="mine";const notice=await sendLineNotice("notify-reservation",{reservationId:result.id});return "預約成功，資料已存入雲端；"+notice;});return}
  if(a==="cancel-my-book"){if(!confirm("確定取消這筆預約？"))return;await act(async()=>{await rpc("so_cancel_booking",{p_id:id});return "已取消預約";});return}
  if(a==="take"){await act(async()=>{if(lineLinkStatus!=="linked")throw Error("請先完成 LINE 授權");const result=await rpc("so_take_number",{p_slug:slug,p_name:lineDisplayName});const notice=await sendLineNotice("notify-ticket",{ticketId:result.id});return "取號成功："+result.number+"；"+notice;});return}
+ if(a==="line-check-friendship"){await act(async()=>{
+  await connectLineSession(true);
+  if(lineLinkStatus!=="linked")throw Error("LINE 身分連結失敗："+(lineConnectError||"請重新授權"));
+  return lineFriendStatus===true?"已確認你是平台官方帳號好友":
+   lineFriendStatus===false?"尚未加入平台官方帳號，請先加為好友再重新檢查":
+   "好友狀態未知：請確認 LINE Login 頻道已在 LINE Developers 綁定正確的官方帳號";
+ });return;}
  if(a==="line-connect"||a==="line-reauth"){
    await act(async()=>{
      const cfg=await bridgeConfig();
@@ -634,7 +648,7 @@ document.addEventListener("click",async ev=>{
   const result=await rpc("so_staff_action",{p_slug:slug,p_action:x,p_ticket_id:["call","checkin","no_show","cancel_booking"].includes(x)?null:id,p_reservation_id:["checkin","no_show","cancel_booking"].includes(x)?id:null});
   if(x==="call"&&result.number&&nextBefore)lastStaffChange={kind:"ticket",id:nextBefore.id,label:result.number,before:"WAITING",after:"CALLED",slug,day};
   if((x==="call"||x==="recall")&&result.number){
-    const notice=await notifyLineCalled(result.number,result.ticket_id);
+    const notice=await notifyLineCalled(result.number,result.ticket_id,result.line_call_event_id);
     return (x==="call"?"已叫號 ":"已重新呼叫 ")+result.number+"；"+notice;
   }
   return "已完成「"+({checkin:"到店報到",start:"開始服務",complete:"完成服務",pass:"標記過號",return:"回到候位",cancel:"取消號碼",no_show:"預約未到",cancel_booking:"取消預約"}[x]||jsStatus(x))+"」"+(result.number?"："+result.number:"");
@@ -660,7 +674,7 @@ document.addEventListener("change",async ev=>{
    if(result.changed)lastStaffChange={kind,id,label:label||(kind==="ticket"?"號碼牌":"預約"),before:previous,after:desired,slug,day};
    let msg=(kind==="ticket"?"號碼牌 ":"預約 ")+(label||"")+"：已改為「"+jsStatus(desired)+"」";
    if(kind==="reservation"&&desired==="CHECKED_IN")msg+="，已加入候位名單";
-   if(kind==="ticket"&&desired==="CALLED"&&result.changed)msg+="；"+await notifyLineCalled(result.number,result.ticket_id);
+   if(kind==="ticket"&&desired==="CALLED"&&result.changed)msg+="；"+await notifyLineCalled(result.number,result.ticket_id,result.line_call_event_id);
    return msg;
   });return;
  }
