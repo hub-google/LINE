@@ -864,7 +864,6 @@ function crossTicketCards(){
        '</div>'+
        '<div class="staff-actionbar">'+
        btn("查看該店詳細進度","open-cross-ticket","secondary",'data-merchant="'+esc(x.slug)+'" data-ticket="'+esc(x.id)+'"')+
-       (x.status==="WAITING"?btn("取消取號","cancel-cross-ticket","outline",'data-merchant="'+esc(x.slug)+'" data-ticket="'+esc(x.id)+'"'):"")+
        '</div></article>';
    }).join(""):'<p class="muted">'+(crossFilter==="active"?"目前沒有進行中的取號。":"此分類目前沒有紀錄。")+'</p>')+
    (shown.length>crossPageSize?'<div class="staff-actionbar">'+btn("顯示更多（剩餘 "+(shown.length-crossPageSize)+" 筆）","cross-more","outline")+'</div>':"")+
@@ -1224,18 +1223,10 @@ document.addEventListener("click",async ev=>{
    history.replaceState(null,"",u.pathname+u.search+u.hash);
    render();syncCrossQueueRealtime();return;
  }
- if(a==="open-cross-ticket"||a==="cancel-cross-ticket"){
+ if(a==="open-cross-ticket"){
    const merchant=b.dataset.merchant,ticket=b.dataset.ticket;
    if(!isSafeMerchant(merchant)||!/^[0-9a-f-]{36}$/i.test(ticket||"")){
      showActionFeedback("號碼資料不正確，請重新整理","error");return;
-   }
-   if(a==="cancel-cross-ticket"&&!confirm("確定取消這張號碼？"))return;
-   if(a==="cancel-cross-ticket"){
-     await act(async()=>{
-       await rpc("so_cancel_number",{p_id:ticket});
-       const notice=await sendLineNotice("notify-ticket-cancel",{ticketId:ticket});
-       return "已取消排隊"+customerNoticeSuffix(notice);
-     });return;
    }
    if(merchant===slug){
      progressTicketId=ticket;customerTab="progress";stopCrossQueueRealtime();
