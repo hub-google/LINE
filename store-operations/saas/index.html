@@ -478,8 +478,8 @@ function requireAuth(){
   '<p class="muted">'+(staffView?
    '如果確定要一個沒有任何資料的新門市，可另外建立全新隔離測試環境。':
    '測試身分與獨立門市由 Supabase 建立，正式企業權限不會開放。')+'</p>'+
-  '<div class="grid"><div>'+field("測試帳號（自動帶入）","test-account",testId,"text",'readonly')+'</div><div>'+
-  field("測試密碼","test-password","自動驗證，免輸入","text",'readonly')+'</div></div>'+
+  (staffView?"":'<div class="grid"><div>'+field("測試帳號（自動帶入）","test-account",testId,"text",'readonly')+'</div><div>'+
+  field("測試密碼","test-password","自動驗證，免輸入","text",'readonly')+'</div></div>')+
   '<div class="flex" style="margin:16px 0 8px">'+btn(staffView?"建立全新隔離測試門市":"一鍵登入測試總公司後台","test-login",staffView?"outline":"primary")+'</div>'+
   '<p class="small">預約、取號、叫號、員工管理全部寫入 Supabase。顧客須在 LINE 授權並加測試官方帳號為好友，才能接收真實通知。</p>'+
   '<hr style="border:0;border-top:1px solid #e2e8f0;margin:24px 0">'+
@@ -551,7 +551,7 @@ function platformRender(){
  return layout("公司總後台","企業開通與模組管理",menu,html);
 }
 function staffRender(){
- if(!authReady())return requireAuth();
+ if(recoveryMode||!authReady())return requireAuth();
  const memberships=context?.memberships||[];
  if(!staff){return box("企業員工後台",'<p class="muted">請先加入企業或由公司平台管理員核發邀請。'+(memberships.length?"請從下列企業進入：":"")+'</p>'+memberships.map(m=>'<p><a href="'+esc(route("staff",m.slug))+'">'+esc(m.name)+'（'+esc(m.role)+'）→</a></p>').join("")+
     (context?.invitations||[]).map(i=>'<div class="listline"><div>'+esc(i.tenant)+'－'+esc(i.role)+'</div>'+btn("接受邀請","accept-invite","primary",'data-id="'+esc(i.id)+'"')+'</div>').join("")); }
