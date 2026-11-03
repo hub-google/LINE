@@ -106,6 +106,7 @@ if(initialView==="customer")authOptions.storageKey="line-saas-customer-session-v
 const supa=createClient(SB_URL,SB_KEY,{auth:authOptions});
 const LINE_BRIDGE_URL=SB_URL+"/functions/v1/line-bridge";
 let lineConfig=null,lineLinkStatus="not-ready",lineLinkAttempted=false,lineFriendStatus=null,lineDisplayName="",lineConnectError="";
+let lineOaRecipient="UNKNOWN",lineFriendCheck="UNAVAILABLE",lineOaAddFriendUrl="",lineProviderMismatch=false;
 async function bridgeConfig(){
   if(lineConfig!==null)return lineConfig;
   try{const res=await fetch(LINE_BRIDGE_URL+"?action=config");if(res.ok)lineConfig=await res.json();}
@@ -205,6 +206,11 @@ async function connectLineSession(force=false){
     lineLinkStatus="linked";
     sessionStorage.removeItem(authRecoveryKey());
     lineFriendStatus=result.isFollowing===true?true:result.isFollowing===false?false:null;
+    lineOaRecipient=["REACHABLE","NOT_REACHABLE","UNKNOWN"].includes(result.recipientReachability)?result.recipientReachability:"UNKNOWN";
+    lineFriendCheck=String(result.friendCheckStatus||"UNAVAILABLE");
+    lineOaAddFriendUrl=typeof result.oaAddFriendUrl==="string"&&
+      /^https:\/\/line\.me\/R\/ti\/p\/%40[a-zA-Z0-9_.-]{2,100}$/.test(result.oaAddFriendUrl)?result.oaAddFriendUrl:"";
+    lineProviderMismatch=result.providerMismatchSuspected===true;
   }catch(e){
     lineLinkStatus="failed";
     lineConnectError=e instanceof Error?e.message:String(e);
@@ -220,17 +226,34 @@ async function sendLineNotice(action,ids){
     if(out.reason==="ALREADY_SENT")return "LINE 此次通知已受理過，未重複傳送";
     if(out.reason==="CUSTOMER_NOT_LINKED")return "LINE 尚未連結，未發送通知";
     if(out.reason==="CUSTOMER_UNFOLLOWED")return "LINE 官方帳號已被取消好友或封鎖，未發送通知；請先加回好友";
+    if(out.reason==="OA_CANNOT_REACH_CUSTOMER")return "LINE 官方帳號無法辨識此顧客，未發送通知。請讓顧客加入正確的官方帳號，並檢查 LINE Login 與 Messaging API 是否在同一 Provider。";
     return "LINE 通知失敗："+(out.error||"未知原因")+(out.status?" ("+out.status+")":"");
   }catch(e){return "LINE 通知暫時無法連線";}
 }
 async function notifyLineCalled(ticketNumber,ticketId,eventId){return sendLineNotice("notify",{number:ticketNumber,ticketId,eventId});}
 function lineStatusBadge(){
   if(lineLinkStatus==="linked"){
-    return '<div class="'+(lineFriendStatus===true?'notice':'alert')+'">LINE 使用者：<strong>'+esc(lineDisplayName)+'</strong>。'+
-      (lineFriendStatus===false?'尚未加入或已封鎖平台官方帳號，無法保證收到 LINE PUSH。':
-       lineFriendStatus===null?'LINE 好友狀態尚未確認，API 已受理不等於手機收到。請確認 LINE Login 已綁定官方帳號。':
-       '官方帳號好友狀態已確認。')+
-      (lineFriendStatus!==true?' '+btn("重新檢查好友狀態","line-check-friendship","outline"):'')+'</div>';
+    let description="",tone="notice";
+    if(lineOaRecipient==="REACHABLE"){
+      description=lineFriendStatus===true?
+        "已確認：平台官方帳號可以辨識這個 LINE 帳號，且 LINE Login 顯示已加入好友。":
+        "已確認：平台官方帳號可以辨識這個 LINE 帳號。"+(lineFriendStatus===false?"請加為好友，以確保持續收到通知。":"可測試 LINE 通知；實際送達仍由 LINE 決定。");
+    }else if(lineOaRecipient==="NOT_REACHABLE"){
+      tone="alert";
+      description=lineProviderMismatch?
+        "偵測到 LINE Login 的好友結果與實際發送 PUSH 的官方帳號不一致。可能綁錯官方帳號或 LINE Provider 不同；請確認 LINE Login 與 Messaging API 對應同一個官方帳號。":
+        "實際發送 PUSH 的 LINE 官方帳號目前無法辨識你的 LINE 帳號。可能尚未加好友、已封鎖，或 LINE Login 與 Messaging API 使用不同 Provider。請先加入下方官方帳號，再重新檢查。";
+    }else{
+      tone="alert";
+      description=lineFriendCheck==="LINK_OR_SCOPE_CONFIGURATION"?
+        "LINE 好友 API 無法檢查頻道關係，且官方帳號查詢暫時不可用。請檢查 LINE Login 頻道的 Linked LINE Official Account 設定。":
+        "官方帳號連線檢查暫時失敗，無法確認是否能收到 PUSH。請重新檢查。";
+    }
+    const addFriend=lineOaAddFriendUrl&&lineOaRecipient!=="REACHABLE"?
+      ' <a class="btn" style="display:inline-block;padding:10px 14px;border:1px solid #059669;border-radius:10px;background:#ecfdf5" href="'+esc(lineOaAddFriendUrl)+'" target="_blank" rel="noopener">加入平台 LINE 官方帳號</a>':"";
+    return '<div class="'+tone+'">LINE 使用者：<strong>'+esc(lineDisplayName)+'</strong>。'+esc(description)+
+      '<div class="flex" style="margin-top:8px">'+
+      btn("重新檢查 LINE 通知資格","line-check-friendship","outline")+addFriend+'</div></div>';
   }
   const detail=lineLinkStatus==="connecting"?"正在連接 LINE 帳號…":
     lineLinkStatus==="not-logged-in"?"正在開啟 LINE 授權…":
@@ -541,7 +564,7 @@ async function load(){err="";try{
 async function act(fn){if(busy)return;busy=true;err="";flash="";showActionFeedback("正在儲存，請勿重複點擊。","pending");
  document.querySelectorAll("button[data-act],input[data-status-kind]").forEach(x=>x.disabled=true);
  try{const m=await fn();await load();flash=m||"已成功儲存";
- const hasNoticeProblem=/LINE 通知失敗|LINE 通知暫時|LINE 尚未連結|LINE 尚未|好友狀態未知|官方帳號好友狀態尚未確認|LINE 通知：/.test(flash);
+ const hasNoticeProblem=/LINE 通知失敗|LINE 通知暫時|LINE 尚未連結|LINE 尚未|好友狀態未知|官方帳號好友狀態尚未確認|LINE 官方帳號無法|官方帳號查詢失敗|LINE 通知：/.test(flash);
  showActionFeedback(flash,hasNoticeProblem?"warning":"success")}
  catch(e){err=e.message||String(e);showActionFeedback(err,"error")}
  finally{busy=false;render()}
@@ -610,9 +633,11 @@ document.addEventListener("click",async ev=>{
  if(a==="line-check-friendship"){await act(async()=>{
   await connectLineSession(true);
   if(lineLinkStatus!=="linked")throw Error("LINE 身分連結失敗："+(lineConnectError||"請重新授權"));
-  return lineFriendStatus===true?"已確認你是平台官方帳號好友":
-   lineFriendStatus===false?"尚未加入平台官方帳號，請先加為好友再重新檢查":
-   "好友狀態未知：請確認 LINE Login 頻道已在 LINE Developers 綁定正確的官方帳號";
+  return lineOaRecipient==="REACHABLE"?
+    "已確認：平台官方帳號可以辨識這位 LINE 使用者（不代表已收到 PUSH）":
+    lineOaRecipient==="NOT_REACHABLE"?
+    "LINE 官方帳號無法辨識此顧客，請先加入畫面上的官方帳號，再重新檢查":
+    "LINE 官方帳號查詢失敗，請確認 LINE 官方帳號與 Login 頻道設定";
  });return;}
  if(a==="line-connect"||a==="line-reauth"){
    await act(async()=>{
