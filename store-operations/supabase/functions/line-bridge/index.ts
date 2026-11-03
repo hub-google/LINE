@@ -31,7 +31,7 @@ async function identity(req: Request, db: ReturnType<typeof service>) {
   if (error || !data.user) throw new Error("INVALID_SUPABASE_SESSION");
   return data.user;
 }
-async function lineVerify(idToken: string) {
+async function lineVerify(idToken: string, accessToken?: string) {
   const channelId = Deno.env.get("LINE_LOGIN_CHANNEL_ID");
   if (!channelId) throw new Error("LINE_LOGIN_NOT_CONFIGURED");
   const form = new URLSearchParams({ id_token: idToken, client_id: channelId });
@@ -41,7 +41,20 @@ async function lineVerify(idToken: string) {
   if (!response.ok) throw new Error("INVALID_LINE_ID_TOKEN");
   const profile = await response.json();
   if (profile.aud !== channelId || !/^U[a-f0-9]{32}$/i.test(profile.sub || "")) throw new Error("INVALID_LINE_IDENTITY");
-  return profile as { sub: string; name?: string };
+  let displayName = typeof profile.name === "string" ? profile.name.trim() : "";
+  if (accessToken) {
+    const profileResponse = await fetch("https://api.line.me/v2/profile", {
+      headers: { authorization: "Bearer " + accessToken },
+    });
+    if (profileResponse.ok) {
+      const lineProfile = await profileResponse.json();
+      // A profile access token must belong to exactly the verified ID-token subject.
+      if (lineProfile.userId !== profile.sub) throw new Error("LINE_PROFILE_IDENTITY_MISMATCH");
+      displayName = typeof lineProfile.displayName === "string" ? lineProfile.displayName.trim() : displayName;
+    }
+  }
+  if (!displayName || displayName.length > 60) throw new Error("LINE_PROFILE_SCOPE_REQUIRED");
+  return { sub: profile.sub as string, name: displayName };
 }
 
 function validUUID(value: unknown): value is string {
@@ -174,14 +187,18 @@ Deno.serve(async (req: Request) => {
       const slug = String(payload.slug || "");
       const idToken = String(payload.idToken || "");
       if (!slug || !idToken || idToken.length > 10000) return reply(400, { error: "BAD_REQUEST" }, origin);
-      const line = await lineVerify(idToken);
+      const accessToken = typeof payload.accessToken === "string" && payload.accessToken.length <= 10000
+        ? payload.accessToken : undefined;
+      const line = await lineVerify(idToken, accessToken);
       const { data: tenant, error: te } = await db.from("so_tenants").select("id,slug,status").eq("slug", slug).eq("status", "ACTIVE").single();
       if (te || !tenant) return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
       const { data: previous, error: previousError } = await db.from("so_line_links")
         .select("line_sub").eq("tenant_id", tenant.id).eq("user_id", user.id).maybeSingle();
       if (previousError) throw previousError;
       const link: Record<string, unknown> = { tenant_id: tenant.id, user_id: user.id, line_sub: line.sub, updated_at: new Date().toISOString() };
-      if (previous && previous.line_sub !== line.sub) { link.is_following = null; link.friendship_updated_at = null; }
+      if (previous && previous.line_sub !== line.sub)
+        return reply(409, { error: "LINE_ACCOUNT_CHANGED" }, origin);
+      link.display_name = line.name;
       const { error } = await db.from("so_line_links").upsert(link, { onConflict: "tenant_id,user_id" });
       if (error) throw error;
       const { data: linked, error: linkedError } = await db.from("so_line_links")
@@ -241,7 +258,7 @@ Deno.serve(async (req: Request) => {
     return reply(400, { error: "UNKNOWN_ACTION" }, origin);
   } catch (error) {
     const msg = error instanceof Error ? error.message : "UNKNOWN_ERROR";
-    const status = ["LOGIN_REQUIRED", "INVALID_SUPABASE_SESSION", "INVALID_LINE_ID_TOKEN", "INVALID_LINE_IDENTITY"].includes(msg) ? 401 : ["LINE_LOGIN_NOT_CONFIGURED", "SUPABASE_ADMIN_NOT_CONFIGURED"].includes(msg) ? 503 : 500;
+    const status = ["LOGIN_REQUIRED", "INVALID_SUPABASE_SESSION", "INVALID_LINE_ID_TOKEN", "INVALID_LINE_IDENTITY", "LINE_PROFILE_SCOPE_REQUIRED", "LINE_PROFILE_IDENTITY_MISMATCH"].includes(msg) ? 401 : ["LINE_LOGIN_NOT_CONFIGURED", "SUPABASE_ADMIN_NOT_CONFIGURED"].includes(msg) ? 503 : 500;
     if (status === 500) console.error("LINE integration operation failed", error instanceof Error ? error.name : "unknown");
     return reply(status, { error: status === 500 ? "INTERNAL_ERROR" : msg }, origin);
   }
