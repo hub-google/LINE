@@ -1,0 +1,57 @@
+name: LINE 預約網站自動部署與版本更新
+on:
+  push:
+    branches: [main]
+    paths:
+      - "store-operations/saas/**"
+      - ".github/scripts/build-line-saas.mjs"
+      - ".github/workflows/line-saas-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: line-saas-gh-pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Validate browser script syntax
+        run: |
+          node --check store-operations/saas/version-watch.js
+          node --check .github/scripts/build-line-saas.mjs
+      - name: Build versioned LINE Pages files
+        shell: bash
+        run: |
+          set -euo pipefail
+          node .github/scripts/build-line-saas.mjs "$RUNNER_TEMP/line-saas-dist"
+          grep -q "$GITHUB_SHA" "$RUNNER_TEMP/line-saas-dist/index.html"
+          grep -q "$GITHUB_SHA" "$RUNNER_TEMP/line-saas-dist/release.json"
+      - name: Publish only LINE SaaS pages, preserving other products
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin refs/heads/gh-pages:refs/remotes/origin/gh-pages
+          pubdir="$RUNNER_TEMP/line-gh-pages"
+          git worktree add --detach "$pubdir" origin/gh-pages
+          mkdir -p "$pubdir/saas"
+          for f in index.html directory.html merchant-register.html merchant-center.html version-watch.js release.json; do
+            cp "$RUNNER_TEMP/line-saas-dist/$f" "$pubdir/saas/$f"
+          done
+          git -C "$pubdir" add -- saas/index.html saas/directory.html saas/merchant-register.html saas/merchant-center.html saas/version-watch.js saas/release.json
+          if git -C "$pubdir" diff --cached --quiet; then
+            echo "LINE SaaS pages already current."
+            exit 0
+          fi
+          git -C "$pubdir" -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "deploy: LINE booking website $GITHUB_SHA"
+          git -C "$pubdir" push origin HEAD:gh-pages
+          echo "Published /LINE/saas/ and release.json (CDN propagation may take several minutes)."
