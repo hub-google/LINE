@@ -209,7 +209,7 @@ async function connectLineSession(force=false){
     lineOaRecipient=["REACHABLE","NOT_REACHABLE","UNKNOWN"].includes(result.recipientReachability)?result.recipientReachability:"UNKNOWN";
     lineFriendCheck=String(result.friendCheckStatus||"UNAVAILABLE");
     lineOaAddFriendUrl=typeof result.oaAddFriendUrl==="string"&&
-      /^https:\/\/line\.me\/R\/ti\/p\/%40[a-zA-Z0-9_.-]{2,100}$/.test(result.oaAddFriendUrl)?result.oaAddFriendUrl:"";
+      /^https:\/\/line\.me\/R\/ti\/p\/@[a-zA-Z0-9_.-]{2,100}$/.test(result.oaAddFriendUrl)?result.oaAddFriendUrl:"";
     lineProviderMismatch=result.providerMismatchSuspected===true;
   }catch(e){
     lineLinkStatus="failed";
