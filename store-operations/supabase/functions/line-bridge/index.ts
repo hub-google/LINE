@@ -479,7 +479,7 @@ Deno.serve(async (req: Request) => {
       if (!ticket || ticket.status !== "WAITING" || !recently(ticket.created_at, 300_000))
         return reply(409, { error: "TICKET_NOT_RECENT" }, origin);
       const number = "A" + String(ticket.ticket_no).padStart(3, "0");
-      const [waitingBefore, activeCount, activeTicket] = await Promise.all([
+      const [waitingBefore, activeCount, activeTicket, lastCalled] = await Promise.all([
         db.from("so_tickets").select("id", { count: "exact", head: true })
           .eq("tenant_id", tenant.id).eq("status", "WAITING").lt("created_at", ticket.created_at),
         db.from("so_tickets").select("id", { count: "exact", head: true })
@@ -487,13 +487,19 @@ Deno.serve(async (req: Request) => {
         db.from("so_tickets").select("ticket_no,business_date")
           .eq("tenant_id", tenant.id).in("status", ["CALLED", "SERVING"])
           .order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+        db.from("so_tickets").select("ticket_no,last_called_at")
+          .eq("tenant_id", tenant.id).eq("business_date", ticket.business_date)
+          .not("last_called_at", "is", null)
+          .order("last_called_at", { ascending: false }).limit(1).maybeSingle(),
       ]);
-      if (waitingBefore.error || activeCount.error || activeTicket.error)
+      if (waitingBefore.error || activeCount.error || activeTicket.error || lastCalled.error)
         return reply(503, { error: "QUEUE_POSITION_UNAVAILABLE" }, origin);
       const ahead = (waitingBefore.count ?? 0) + (activeCount.count ?? 0);
       const calling = activeTicket.data
-        ? "目前叫號：A" + String(activeTicket.data.ticket_no).padStart(3, "0")
-        : "目前尚未開始叫號";
+        ? "現在叫到：A" + String(activeTicket.data.ticket_no).padStart(3, "0")
+        : lastCalled.data
+          ? "最近叫到：A" + String(lastCalled.data.ticket_no).padStart(3, "0")
+          : "目前尚未開始叫號";
       return pushNotice(db, tenant, user.id, "TICKET_CREATED", ticket.id,
         flexNotice("取號成功", [
           "店家：" + tenant.name,
