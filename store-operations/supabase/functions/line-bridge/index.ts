@@ -63,9 +63,10 @@ async function pushNotice(
   const token = Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
   if (!token) return reply(503, { error: "LINE_MESSAGING_NOT_CONFIGURED" }, origin);
   const { data: linked, error: linkError } = await db.from("so_line_links")
-    .select("line_sub").eq("tenant_id", tenant.id).eq("user_id", recipient).maybeSingle();
+    .select("line_sub,is_following").eq("tenant_id", tenant.id).eq("user_id", recipient).maybeSingle();
   if (linkError) throw linkError;
   if (!linked) return reply(200, { ok: true, sent: false, reason: "CUSTOMER_NOT_LINKED" }, origin);
+  if (linked.is_following === false) return reply(200, { ok: true, sent: false, reason: "CUSTOMER_UNFOLLOWED" }, origin);
 
   // A single database claim per real booking/ticket event prevents duplicated push charges.
   const claim = { tenant_id: tenant.id, event_kind: eventKind, reference_id: referenceId };
@@ -108,8 +109,56 @@ async function webhook(req: Request, origin: string | null) {
   let mismatch = 0;
   for (let i = 0; i < computed.length; i++) mismatch |= computed.charCodeAt(i) ^ signature.charCodeAt(i);
   if (mismatch) return reply(401, { error: "INVALID_SIGNATURE" }, origin);
-  try { JSON.parse(original); } catch { return reply(400, { error: "INVALID_JSON" }, origin); }
-  return reply(200, { ok: true }, origin);
+  let payload: { events?: unknown };
+  try { payload = JSON.parse(original); } catch { return reply(400, { error: "INVALID_JSON" }, origin); }
+  if (!Array.isArray(payload?.events)) return reply(400, { error: "INVALID_EVENTS" }, origin);
+  // Verify requests (events:[]) are accepted without touching the database.
+  const events = payload.events.filter((item): item is Record<string, unknown> =>
+    item !== null && typeof item === "object" &&
+    (item as { type?: unknown }).type !== undefined &&
+    ["follow", "unfollow"].includes(String((item as { type: unknown }).type)));
+  if (!events.length) return reply(200, { ok: true }, origin);
+  try {
+    const db = service();
+    let processed = 0;
+    let duplicates = 0;
+    for (const event of events) {
+      const eventId = event.webhookEventId;
+      const source = event.source as { type?: unknown; userId?: unknown } | undefined;
+      const time = event.timestamp;
+      if (typeof eventId !== "string" || !/^[a-zA-Z0-9_-]{10,100}$/.test(eventId) ||
+          source?.type !== "user" || typeof source.userId !== "string" ||
+          !/^U[a-f0-9]{32}$/i.test(source.userId) ||
+          typeof time !== "number" || !Number.isFinite(time) || !Number.isFinite(new Date(time).getTime())) {
+        console.warn("LINE follow event missing valid identifier or timestamp");
+        continue;
+      }
+      const occurredAt = new Date(time).toISOString();
+      // LINE resends the SAME webhookEventId; claim it before applying any side-effect.
+      const { error: claimError } = await db.from("so_line_webhook_events")
+        .insert({ event_id: eventId, event_type: String(event.type), occurred_at: occurredAt });
+      if (claimError?.code === "23505") { duplicates++; continue; }
+      if (claimError) throw claimError;
+      try {
+        // Event delivery may be reordered: an older event must not undo a later follow state.
+        const { error: updateError } = await db.from("so_line_links")
+          .update({ is_following: event.type === "follow", friendship_updated_at: occurredAt })
+          .eq("line_sub", source.userId)
+          .or("friendship_updated_at.is.null,friendship_updated_at.lt." + occurredAt);
+        if (updateError) throw updateError;
+        processed++;
+      } catch (error) {
+        // Release failed claims so an enabled LINE redelivery can retry.
+        const { error: rollbackError } = await db.from("so_line_webhook_events").delete().eq("event_id", eventId);
+        if (rollbackError) console.error("LINE webhook event claim could not be released", rollbackError.code || "unknown");
+        throw error;
+      }
+    }
+    return reply(200, { ok: true, processed, duplicates }, origin);
+  } catch (error) {
+    console.error("LINE webhook event handling failed", error instanceof Error ? error.name : "unknown");
+    return reply(503, { error: "LINE_EVENT_PROCESSING_FAILED" }, origin);
+  }
 }
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get("origin");
@@ -135,7 +184,12 @@ Deno.serve(async (req: Request) => {
       const line = await lineVerify(idToken);
       const { data: tenant, error: te } = await db.from("so_tenants").select("id,slug,status").eq("slug", slug).eq("status", "ACTIVE").single();
       if (te || !tenant) return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
-      const { error } = await db.from("so_line_links").upsert({ tenant_id: tenant.id, user_id: user.id, line_sub: line.sub, updated_at: new Date().toISOString() }, { onConflict: "tenant_id,user_id" });
+      const { data: previous, error: previousError } = await db.from("so_line_links")
+        .select("line_sub").eq("tenant_id", tenant.id).eq("user_id", user.id).maybeSingle();
+      if (previousError) throw previousError;
+      const link: Record<string, unknown> = { tenant_id: tenant.id, user_id: user.id, line_sub: line.sub, updated_at: new Date().toISOString() };
+      if (previous && previous.line_sub !== line.sub) { link.is_following = null; link.friendship_updated_at = null; }
+      const { error } = await db.from("so_line_links").upsert(link, { onConflict: "tenant_id,user_id" });
       if (error) throw error;
       return reply(200, { ok: true, linked: true, displayName: line.name || null }, origin);
     }
