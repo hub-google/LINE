@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LINE 預約｜搜尋店家與我的預約</title><meta name="description" content="使用 LINE 預約平台搜尋合作店家、預約服務、現場取號及查詢個人紀錄。">
+<style>
+:root{--brand:#096955;--dark:#103e35;--light:#e1f4ea;--ink:#173c33;--muted:#5a756a;--border:#d8e8de}
+*{box-sizing:border-box}body{margin:0;background:#f7faf8;font:15px/1.55 system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif;color:var(--ink)}
+header{background:var(--dark);color:white;padding:22px 16px}header .inner{max-width:960px;margin:auto}h1{font-size:27px;margin:0}h2{font-size:19px;margin:0 0 6px}p{margin:4px 0 12px;color:var(--muted)}main{max-width:960px;margin:0 auto;padding:20px 15px 50px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:19px}.tabs a{text-align:center;text-decoration:none;border-radius:12px;border:1px solid var(--border);background:white;color:var(--ink);font-weight:700;padding:12px 8px}.tabs a.active{background:var(--brand);color:white;border-color:var(--brand}
+.search{width:100%;border:1px solid #a5c5b4;background:#fff;padding:15px;border-radius:12px;font:inherit;outline-color:#4b9e85;margin:12px 0 18px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.card,.notice{background:white;border:1px solid var(--border);border-radius:16px;padding:19px}.card{min-height:160px}.notice{margin-bottom:17px}.badge{display:inline-block;background:var(--light);color:var(--dark);font-size:12px;border-radius:20px;padding:3px 8px;margin-right:6px;margin-bottom:7px}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}a.btn{display:inline-flex;align-items:center;justify-content:center;background:var(--brand);color:white;text-decoration:none;padding:10px 13px;font-weight:700;border-radius:10px;min-height:44px}a.btn.secondary{background:#ecf8f0;color:#165c49;border:1px solid #bbdccc}
+.empty{background:white;text-align:center;border:1px solid var(--border);padding:40px 18px;border-radius:15px}.empty strong{display:block;font-size:18px;margin-bottom:8px}.hidden{display:none}
+.test{margin-top:20px;border:1px dashed #bdd5c9;background:#f0f6f2;border-radius:13px;padding:16px}footer{text-align:center;color:#688075;font-size:12px;padding:22px}@media(max-width:680px){.grid{grid-template-columns:1fr}h1{font-size:23px}main{padding-top:14px}}
+</style></head>
+<body><header><div class="inner"><h1>LINE 預約服務平台</h1><div>搜尋店家 · 預約服務 · 現場取號</div></div></header>
+<main><nav class="tabs" aria-label="顧客功能"><a id="tab-search" href="?mode=search">搜尋店家</a><a id="tab-mine" href="?mode=mine">我的預約</a><a id="tab-queue" href="?mode=queue">現場取號</a></nav>
+<div id="intro" class="notice">正在載入...</div><input id="keyword" class="search" type="search" placeholder="輸入店家名稱或地點來搜尋" aria-label="搜尋店家">
+<div class="grid" id="results" aria-live="polite"></div>
+<div id="test" class="test hidden"><strong>測試功能（非正式合作店家）</strong><p>若要先體驗預約、取號與叫號，可以進入示範門市。示範店家不會混入正式店家搜尋結果。</p><div class="actions"><a class="btn secondary" href="./?view=customer&merchant=greenfield-salon" id="demo-link">前往示範門市</a></div></div>
+<div class="notice" style="margin-top:22px"><strong>你是店家嗎？</strong><p>沒有 LINE OA 的店家也能使用平台總公司 LINE OA 作為顧客預約入口。</p><div class="actions"><a class="btn secondary" href="merchant-center.html#activate">了解開通方式</a><a class="btn secondary" href="./?view=staff">商家管理後台</a></div></div>
+</main><footer>預約與取號直接讀取實際資料庫，不顯示模擬店家。</footer>
+<script type="module">
+import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+const SB_URL="https://unapiwajmgqqtdkixaab.supabase.co";
+const SB_KEY="sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy";
+const bridge=SB_URL+"/functions/v1/line-bridge?action=config";
+const sb=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"line-saas-customer-session-v2"}});
+const params=new URLSearchParams(location.search),mode=["search","queue","mine"].includes(params.get("mode"))?params.get("mode"):"search";
+const els={intro:document.getElementById("intro"),results:document.getElementById("results"),keyword:document.getElementById("keyword"),test:document.getElementById("test")};
+document.getElementById("tab-"+mode).classList.add("active");
+let all=[],liffId="";
+function e(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function customerUrl(slug,tab){
+ const qs="?view=customer&merchant="+encodeURIComponent(slug)+"&tab="+encodeURIComponent(tab);
+ return liffId?"https://liff.line.me/"+encodeURIComponent(liffId)+"/"+qs:"./"+qs;
+}
+function badges(t){
+ const m=t.modules||{};
+ return (m.reservation?'<span class="badge">線上預約</span>':"")+(m.queue?'<span class="badge">現場取號</span>':"")+
+ (t.oa_mode==="PLATFORM"?'<span class="badge">平台 LINE 服務</span>':"");
+}
+function render(){
+ const keyword=els.keyword.value.trim().toLocaleLowerCase("zh-TW");
+ const filtered=all.filter(t=>((t.name||"")+" "+(t.address||"")).toLocaleLowerCase("zh-TW").includes(keyword));
+ if(!filtered.length){
+   const msg=mode==="mine"?"尚未找到這個登入身分的預約或取號紀錄。":"目前沒有符合條件的已公開店家。";
+   els.results.innerHTML='<div class="empty"><strong>'+e(msg)+'</strong><p>'+(mode==="mine"?"若你曾在其他裝置預約，請透過該店家 LINE 顧客網址登入相同 LINE 帳號查詢。":"可更換關鍵字，或稍後再查看正式開放的店家。")+'</p></div>';
+   return;
+ }
+ els.results.innerHTML=filtered.map(t=>{
+  const name=e(t.name),desc=e(t.description||""),address=e(t.address||"");
+  let actions="";
+  if(mode==="mine"){
+    actions='<a class="btn" href="'+e(customerUrl(t.slug,"mine"))+'">查看我的紀錄</a>'+
+    ((t.modules||{}).queue?'<a class="btn secondary" href="'+e(customerUrl(t.slug,"queue"))+'">查看號碼</a>':"");
+  }else{
+    actions=((t.modules||{}).reservation?'<a class="btn" href="'+e(customerUrl(t.slug,"reserve"))+'">立即預約</a>':"")+
+    ((t.modules||{}).queue?'<a class="btn secondary" href="'+e(customerUrl(t.slug,"queue"))+'">現場取號</a>':"");
+  }
+  return '<article class="card"><h2>'+name+'</h2><div>'+badges(t)+'</div>'+
+    (address?'<p>地點：'+address+'</p>':"")+(desc?'<p>'+desc+'</p>':"")+
+    (mode==="mine"?'<p>最近預約：'+Number(t.booking_count||0)+' 筆・取號：'+Number(t.ticket_count||0)+' 筆</p>':"")+
+    '<div class="actions">'+actions+'</div></article>';
+ }).join("");
+}
+els.keyword.addEventListener("input",render);
+async function load(){
+ try{
+  const conf=await fetch(bridge,{cache:"no-store"}).then(r=>r.ok?r.json():{}).catch(()=>({}));
+  liffId=conf.liffId||"";
+  if(mode==="mine"){
+    els.intro.innerHTML='<strong>我的預約與取號</strong><p>顯示目前瀏覽器已授權 LINE 預約系統後，可辨識的店家紀錄。選擇店家可查看明細或取消預約。</p>';
+    const s=await sb.auth.getSession();
+    if(s.error)throw s.error;
+    if(!s.data.session){const x=await sb.auth.signInAnonymously();if(x.error)throw x.error}
+    const {data,error}=await sb.rpc("so_my_merchant_activity");
+    if(error)throw error;
+    all=Array.isArray(data)?data:[];
+  }else{
+    els.intro.innerHTML=mode==="search"?
+      '<strong>搜尋合作店家</strong><p>從已公開的店家中挑選服務，直接使用 LINE 帳號完成預約，不需另填姓名或建立顧客密碼。</p>':
+      '<strong>現場取號</strong><p>請先選擇有開放取號的店家，再取得候位號碼並查看叫號進度。</p>';
+    const {data,error}=await sb.rpc("so_public_directory",{p_query:null,p_mode:mode==="queue"?"queue":"all"});
+    if(error)throw error;
+    all=Array.isArray(data)?data:[];
+    els.test.classList.remove("hidden");
+    document.getElementById("demo-link").href=customerUrl("greenfield-salon",mode==="queue"?"queue":"reserve");
+  }
+  render();
+ }catch(error){
+  els.intro.innerHTML='<strong>讀取失敗</strong><p>'+e(error?.message||"無法連接資料庫")+'</p>';
+  els.results.innerHTML='<div class="empty"><strong>資料暫時無法載入</strong><p>請重新整理。系統不會以假資料填充搜尋結果。</p></div>';
+ }
+}
+load();
+</script></body></html>
