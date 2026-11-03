@@ -54,24 +54,26 @@ async function bridgeConfig(){
   catch(e){console.warn("LINE 設定尚不可用");}
   return lineConfig||{};
 }
-async function connectLineSession(){
-  if(view!=="customer"||!session?.access_token||lineLinkAttempted)return;
+async function connectLineSession(force=false){
+  if(view!=="customer"||!session?.access_token)return;
+  if(force)lineLinkAttempted=false;
+  if(lineLinkAttempted)return;
   const config=await bridgeConfig();
-  if(!config.liffId)return;
-  // The public LIFF ID identifies the app; Channel secrets and tokens never leave the server.
+  if(!config.liffId){lineLinkStatus="not-ready";return;}
   if(!window.liff){
-    for(let attempt=0;attempt<20&&!window.liff;attempt++)await new Promise(resolve=>setTimeout(resolve,100));
+    for(let attempt=0;attempt<40&&!window.liff;attempt++)await new Promise(resolve=>setTimeout(resolve,100));
   }
-  if(!window.liff)return;
+  if(!window.liff){lineLinkStatus="sdk-missing";return;}
   lineLinkAttempted=true;
   try {
     await window.liff.init({liffId:config.liffId});
     if(!window.liff.isLoggedIn()){
       lineLinkStatus="not-logged-in";
+      if(force&&!window.liff.isInClient())window.liff.login({redirectUri:location.href.split("#")[0]});
       return;
     }
     const idToken=window.liff.getIDToken();
-    if(!idToken)throw Error("LINE 未核發 ID Token");
+    if(!idToken)throw Error("LINE 未核發 ID Token（請確認 LIFF 啟用 openid scope）");
     const res=await fetch(LINE_BRIDGE_URL,{method:"POST",headers:{"content-type":"application/json","authorization":"Bearer "+session.access_token},body:JSON.stringify({action:"link",slug,idToken})});
     const result=await res.json();
     if(!res.ok||!result.linked)throw Error(result.error||"LINE 綁定失敗");
@@ -81,19 +83,25 @@ async function connectLineSession(){
     console.warn("LINE 身分連接失敗",e instanceof Error?e.message:String(e));
   }
 }
-async function notifyLineCalled(ticketNumber){
-  if(!ticketNumber||!session?.access_token)return "叫號成功，未傳送 LINE 通知";
-  const res=await fetch(LINE_BRIDGE_URL,{method:"POST",headers:{"content-type":"application/json","authorization":"Bearer "+session.access_token},body:JSON.stringify({action:"notify",slug,number:ticketNumber})});
-  const out=await res.json().catch(()=>({error:"LINE_RESPONSE_ERROR"}));
-  if(out.sent)return "叫號成功，LINE 通知已送出";
-  if(out.reason==="CUSTOMER_NOT_LINKED")return "叫號成功，顧客尚未綁定 LINE，未傳送通知";
-  return "叫號成功，但 LINE 通知尚未送達（"+(out.error||"未設定")+"）";
+async function sendLineNotice(action,ids){
+  if(!session?.access_token)return "LINE 通知：登入狀態尚未建立";
+  try{
+    const res=await fetch(LINE_BRIDGE_URL,{method:"POST",headers:{"content-type":"application/json","authorization":"Bearer "+session.access_token},body:JSON.stringify({action,slug,...ids})});
+    const out=await res.json().catch(()=>({error:"LINE_RESPONSE_ERROR"}));
+    if(out.sent)return "LINE 已接受通知發送（需已加官方帳號好友）";
+    if(out.reason==="ALREADY_SENT")return "LINE 通知已發送過，未重複傳送";
+    if(out.reason==="CUSTOMER_NOT_LINKED")return "LINE 尚未連結，未發送通知";
+    return "LINE 通知失敗："+(out.error||"未知原因")+(out.status?" ("+out.status+")":"");
+  }catch(e){return "LINE 通知暫時無法連線";}
 }
+async function notifyLineCalled(ticketNumber){return sendLineNotice("notify",{number:ticketNumber});}
 function lineStatusBadge(){
-  const id=lineConfig?.liffId;
-  if(!id)return "";
-  const detail=lineLinkStatus==="linked"?"LINE 身分已連結":lineLinkStatus==="failed"?"LINE 身分驗證失敗，請重新開啟 LIFF":"請從商家 LINE 官方帳號開啟取號";
-  return '<p class="small">'+esc(detail)+'</p>';
+  if(!lineConfig?.liffId)return "";
+  if(lineLinkStatus==="linked")return '<div class="notice">LINE 帳號已連結。預約、取號及叫號通知會透過官方帳號發送；請確認已加為好友。</div>';
+  const detail=lineLinkStatus==="failed"?"LINE 身分驗證失敗。請確認 LIFF 的 openid 權限與網址設定。":
+    lineLinkStatus==="sdk-missing"?"無法載入 LINE SDK。請嘗試在 LINE 內開啟。":
+    lineLinkStatus==="not-logged-in"?"尚未完成 LINE 登入。":"想收到 LINE 通知，請先連結 LINE 帳號。";
+  return '<div class="alert">'+esc(detail)+' <button class="btn secondary" data-act="line-connect" type="button">連結 LINE 接收通知</button>　<a href="https://liff.line.me/'+encodeURIComponent(lineConfig.liffId)+'">從 LINE 開啟</a></div>';
 }
 
 const $=id=>document.getElementById(id);
@@ -220,13 +228,13 @@ function customerRender(){
   if(!m.queue)html=box("尚未開放取號",'<p>本企業只提供線上預約。</p>');
   else html='<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",customer.current||"—")+stat("等候組數",customer.waiting)+stat("我的號碼",live?.number||"—")+'</div>'+
    box("我的現場號碼",live?'<div class="ticket">'+esc(live.number)+'</div><p>'+tag(live.status)+'</p>'+(live.status==="WAITING"?btn("取消取號","cancel-my-number","danger",'data-id="'+esc(live.id)+'"'):""):
-    '<p class="muted">現在可在網站上取得號碼。</p>'+lineStatusBadge()+field("暱稱","ticket-name","","text",'maxlength="60"')+'<div style="margin-top:14px">'+btn("立即線上取號","take","primary")+'</div>');
+    '<p class="muted">現在可在網站上取得號碼。</p>'+field("暱稱","ticket-name","","text",'maxlength="60"')+'<div style="margin-top:14px">'+btn("立即線上取號","take","primary")+'</div>');
  }else html=box("我的預約紀錄",renderBookings(items,true))+
  box("我的號碼紀錄",tickets.map(k=>'<div class="listline"><strong>'+esc(k.number)+'</strong><span>'+tag(k.status)+'</span></div>').join("")||'<p class="muted">目前沒有號碼紀錄。</p>');
- return layout(t.name,"顧客網頁・即時連接 Supabase",menu,html);
+ return layout(t.name,"顧客網頁・即時連接 Supabase",menu,lineStatusBadge()+html);
 }
 function renderBookings(items,allowCancel){return items.length?items.map(x=>'<div class="listline"><div><strong>'+esc(x.day)+' '+esc(x.time)+'</strong><div class="small">'+esc(x.name)+'・'+esc(x.party)+' 位</div></div><div class="flex">'+tag(x.status)+(allowCancel&&x.status==="CONFIRMED"?btn("取消","cancel-my-book","danger",'data-id="'+esc(x.id)+'"'):"")+'</div></div>').join(""):'<p class="muted">目前沒有預約紀錄。</p>'}
-function render(){head();$("root").innerHTML=message()+(view==="platform"?platformRender():view==="staff"?staffRender():view==="customer"?customerRender():renderHome())+'<footer>採用 Supabase PostgreSQL 真實儲存・各企業資料及權限獨立・LINE OA 尚待正式串接</footer>'}
+function render(){head();$("root").innerHTML=message()+(view==="platform"?platformRender():view==="staff"?staffRender():view==="customer"?customerRender():renderHome())+'<footer>採用 Supabase PostgreSQL 真實儲存・各企業資料及權限獨立・LINE 通知需綁定與加好友</footer>'}
 async function rpc(name,arg={}){const r=await supa.rpc(name,arg);if(r.error)throw Error(r.error.message);return r.data}
 async function loadContext(){if(authReady())context=await rpc("so_my_context");else context=null}
 async function load(){err="";try{
@@ -265,9 +273,10 @@ document.addEventListener("click",async ev=>{
  if(a==="copy-customer"||a==="copy-staff"){const s=view==="platform"?chosenCompany:slug;const v=a==="copy-customer"?"customer":"staff";const u=urlFor(v,s);try{await navigator.clipboard.writeText(u);flash="已複製："+u;}catch(e){window.prompt("複製網址",u)}render();return}
  if(a==="update-settings"){await act(async()=>{await rpc("so_update_tenant",{p_slug:slug,p_patch:{name:val("set-name"),phone:val("set-phone"),address:val("set-address"),accent:val("set-accent"),description:val("set-description"),logo_url:val("set-logo"),open_time:val("set-open"),close_time:val("set-close"),slot_capacity:Number(val("set-capacity")),slot_minutes:Number(val("set-minutes"))}});return "企業設定已保存";});return}
  if(a==="invite-staff"){await act(async()=>{await rpc("so_invite_staff",{p_slug:slug,p_email:val("invite-email"),p_role:val("invite-role")});return "員工邀請已儲存，請通知對方登入接受";});return}
- if(a==="book"){await act(async()=>{if(!chosenSlot)throw Error("請先選擇時段");await rpc("so_book",{p_slug:slug,p_date:day,p_time:chosenSlot,p_name:val("customer-name"),p_party:Number(val("customer-party"))});chosenSlot="";customerTab="mine";return "預約成功，資料已存入雲端";});return}
+ if(a==="book"){await act(async()=>{if(!chosenSlot)throw Error("請先選擇時段");const result=await rpc("so_book",{p_slug:slug,p_date:day,p_time:chosenSlot,p_name:val("customer-name"),p_party:Number(val("customer-party"))});chosenSlot="";customerTab="mine";const notice=await sendLineNotice("notify-reservation",{reservationId:result.id});return "預約成功，資料已存入雲端；"+notice;});return}
  if(a==="cancel-my-book"){if(!confirm("確定取消這筆預約？"))return;await act(async()=>{await rpc("so_cancel_booking",{p_id:id});return "已取消預約";});return}
- if(a==="take"){await act(async()=>{const result=await rpc("so_take_number",{p_slug:slug,p_name:val("ticket-name")});return "取號成功："+result.number;});return}
+ if(a==="take"){await act(async()=>{const result=await rpc("so_take_number",{p_slug:slug,p_name:val("ticket-name")});const notice=await sendLineNotice("notify-ticket",{ticketId:result.id});return "取號成功："+result.number+"；"+notice;});return}
+ if(a==="line-connect"){await act(async()=>{await connectLineSession(true);return lineLinkStatus==="linked"?"LINE 帳號已連結，後續通知可發送":"請完成 LINE 登入或從 LINE 內重新開啟";});return}
  if(a==="cancel-my-number"){if(!confirm("確定取消號碼？"))return;await act(async()=>{await rpc("so_cancel_number",{p_id:id});return "已取消號碼";});return}
  if(["call","recall","start","complete","pass","return","cancel","checkin","no-show","cancel-book-staff"].includes(a)){
  if(["cancel","no-show","cancel-book-staff"].includes(a)&&!confirm("確定執行此操作？"))return;
