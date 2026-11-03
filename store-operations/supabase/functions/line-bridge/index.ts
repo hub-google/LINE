@@ -290,13 +290,20 @@ Deno.serve(async (req: Request) => {
       const { data: admin } = await db.from("so_platform_admins").select("user_id")
         .eq("user_id", user.id).maybeSingle();
       if (!member && !admin) return reply(403, { error: "STAFF_REQUIRED" }, origin);
+      // Ticket UUID is authoritative; ticket numbers can repeat across calendar dates.
+      const ticketId = String(payload.ticketId || "");
+      if (ticketId && !validUUID(ticketId)) return reply(400, { error: "BAD_TICKET_ID" }, origin);
       const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
-      const { data: ticket } = await db.from("so_tickets").select("id,user_id,status,updated_at")
-        .eq("tenant_id", tenant.id).eq("business_date", today).eq("ticket_no", Number(number.substring(1))).maybeSingle();
+      let ticketQuery = db.from("so_tickets").select("id,user_id,status,updated_at,ticket_no").eq("tenant_id", tenant.id);
+      ticketQuery = ticketId ? ticketQuery.eq("id", ticketId)
+        : ticketQuery.eq("business_date", today).eq("ticket_no", Number(number.substring(1)));
+      const { data: ticket } = await ticketQuery.maybeSingle();
       if (!ticket || ticket.status !== "CALLED" || !recently(ticket.updated_at, 90_000))
         return reply(409, { error: "TICKET_NOT_RECENTLY_CALLED" }, origin);
+      const actualNumber = "A" + String(ticket.ticket_no).padStart(3, "0");
+      if (number !== actualNumber) return reply(409, { error: "TICKET_NUMBER_MISMATCH" }, origin);
       return pushNotice(db, tenant, ticket.user_id, "CALLED", ticket.id,
-        tenant.name + "：現在叫到 " + number + "，請至櫃檯報到。", origin);
+        tenant.name + "：現在叫到 " + actualNumber + "，請至櫃檯報到。", origin);
     }
     if (payload.action === "notify-reservation") {
       const slug = String(payload.slug || "");
