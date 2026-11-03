@@ -133,7 +133,11 @@ const $=id=>document.getElementById(id);
 const params=new URLSearchParams(location.search);
 const liffState=params.get("liff.state")||"";
 const liffArgs=new URLSearchParams(liffState.includes("?")?liffState.slice(liffState.indexOf("?")+1):"");
-let view=params.get("view")||liffArgs.get("view")||"customer",slug=params.get("merchant")||liffArgs.get("merchant")||"greenfield-salon";
+const TEST_KEY="line_saas_real_qa_v1";
+let testInfo=null;
+try{testInfo=JSON.parse(localStorage.getItem(TEST_KEY)||"null")}catch(e){localStorage.removeItem(TEST_KEY)}
+let testMode=!!(testInfo?.slug&&/^qa-[a-z0-9-]{3,36}$/.test(testInfo.slug));
+let view=params.get("view")||liffArgs.get("view")||"customer",slug=params.get("merchant")||liffArgs.get("merchant")||(testMode?testInfo.slug:"greenfield-salon");
 let session=null,context=null,overview=[],customer=null,staff=null,busy=false,flash="",err="";
 let day=taipei(),customerTab=["home","reserve","queue","mine"].includes(params.get("tab")||liffArgs.get("tab"))?(params.get("tab")||liffArgs.get("tab")):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
 const features=[["reservation","線上預約"],["queue","線上取號"],["calling","現場叫號"]];
@@ -146,9 +150,24 @@ function btn(label,action,style="",extra=""){return '<button class="btn '+style+
 function stat(label,n){return '<div class="stat"><span>'+esc(label)+'</span><strong>'+esc(n)+'</strong></div>'}
 function field(label,id,val="",type="text",attrs=""){return '<label for="'+id+'">'+esc(label)+'</label><input class="field" id="'+id+'" type="'+type+'" '+attrs+' value="'+esc(val)+'">'}
 function box(title,inner){return '<section class="card"><h2>'+title+'</h2>'+inner+'</section>'}
-function requireAuth(){return '<div class="card auth"><h1>'+(view==="platform"?"總公司管理員登入":"門市店員登入")+'</h1><p class="muted">本後台即時連接 Supabase。請以已授權的員工或平台管理員 Email 登入；顧客直接以 LINE 授權，不需帳密。</p><div class="grid"><div>'+field("員工／管理員 Email","auth-email","","email",'autocomplete="email"')+'</div><div>'+field("密碼","auth-pass","","password",'autocomplete="current-password" minlength="8"')+'</div></div><div class="flex" style="margin-top:17px">'+btn("正式登入","login","primary")+btn("建立員工帳號","signup","outline")+'</div><p class="small">完成 Email 驗證後，總公司管理員需啟用管理權限；店員需接受企業邀請。公開測試密碼已停用。</p></div>'}
-function authReady(){return !!(session&&session.user&&!session.user.is_anonymous)}
-function normalUser(){return session&&session.user?session.user.email||"匿名使用者":"尚未登入"}
+function requireAuth(){
+ const staffView=view==="staff",title=staffView?"門市店員登入":"總公司管理員登入";
+ const testId=staffView?"TEST-STAFF（獨立門市）":"TEST-HQ（獨立總公司）";
+ return '<div class="card auth"><h1>'+title+'</h1>'+
+  '<p class="muted">真實 Supabase 測試帳號。網頁自動取得測試身分與獨立門市；總公司、店員、顧客使用同一套真實資料，其他正式企業的權限不會開放。</p>'+
+  '<div class="grid"><div>'+field("測試帳號（自動帶入）","test-account",testId,"text",'readonly')+'</div><div>'+
+  field("測試密碼","test-password","自動驗證，免輸入","text",'readonly')+'</div></div>'+
+  '<div class="flex" style="margin:16px 0 8px">'+btn(staffView?"一鍵登入測試店員後台":"一鍵登入測試總公司後台","test-login","primary")+'</div>'+
+  '<p class="small">預約、取號、叫號、員工管理全部寫入 Supabase。顧客須在 LINE 授權並加測試官方帳號為好友，才能接收真實通知。</p>'+
+  '<hr style="border:0;border-top:1px solid #e2e8f0;margin:24px 0">'+
+  '<h2>正式帳號登入</h2><div class="grid"><div>'+field("Email","auth-email","","email",'autocomplete="email"')+'</div><div>'+
+  field("密碼","auth-pass","","password",'autocomplete="current-password" minlength="8"')+'</div></div>'+
+  '<div class="flex" style="margin-top:17px">'+btn("正式登入","login","outline")+btn("建立正式帳號","signup","outline")+'</div>'+
+  '<p class="small">正式總公司或店員身分仍需另外授權，公開測試帳號無法管理其他企業。</p></div>';
+}
+function authReady(){return !!(session?.user&&(!session.user.is_anonymous||testMode))}
+function normalUser(){return testMode&&session?.user?.is_anonymous?"Supabase 真實測試帳號":session&&session.user?session.user.email||"匿名使用者":"尚未登入"}
+function platformReady(){return !!(context?.platform_admin||(testMode&&session?.user?.is_anonymous&&context?.memberships?.some(m=>m.slug.startsWith("qa-")&&m.role==="OWNER")))}
 function nav(label,tab,current,which){return '<button class="side-item '+(tab===current?"active":"")+'" data-nav="'+which+'" data-tab="'+tab+'">'+label+'</button>'}
 function layout(title,subtitle,menu,body){
  const identityLabel=view==="customer"?lineDisplayName:normalUser();
@@ -170,7 +189,7 @@ function featureChecks(data={},prefix="feature"){
 }
 function platformRender(){
  if(!authReady())return requireAuth();
- if(!context||!context.platform_admin)return box("首次啟用公司總後台",'<p>目前登入帳號：<strong>'+esc(normalUser())+'</strong></p><p class="muted">公司總後台採管理員專用授權，不會因註冊帳號就自動獲得權限。請使用一次性開通碼啟用，完成後此碼立即失效。</p>'+field("公司總後台一次性開通碼","bootstrap-token","","password",'autocomplete="off" maxlength="64"')+'<div style="margin-top:15px">'+btn("啟用我的平台管理員權限","claim-admin","primary")+'</div><p class="small">需要使用已驗證電子郵件的正式帳號，匿名顧客帳號不能啟用。</p>');
+ if(!platformReady())return box("首次啟用公司總後台",'<p>目前登入帳號：<strong>'+esc(normalUser())+'</strong></p><p class="muted">公司總後台採管理員專用授權，不會因註冊帳號就自動獲得權限。請使用一次性開通碼啟用，完成後此碼立即失效。</p>'+field("公司總後台一次性開通碼","bootstrap-token","","password",'autocomplete="off" maxlength="64"')+'<div style="margin-top:15px">'+btn("啟用我的平台管理員權限","claim-admin","primary")+'</div><p class="small">需要使用已驗證電子郵件的正式帳號，匿名顧客帳號不能啟用。</p>');
  const menu=nav("總公司營運總覽","dashboard",platformTab,"platform")+nav("企業列表","list",platformTab,"platform")+nav("開通新企業","create",platformTab,"platform")+nav("平台說明","about",platformTab,"platform");
  let html="";
  if(platformTab==="dashboard"){
@@ -198,7 +217,7 @@ function platformRender(){
    }
  }else if(platformTab==="create"){
   html=box("新增企業客戶",'<p class="muted">完成後立刻建立獨立資料租戶與網址，不必建立新的 GitHub 專案。</p><div class="grid"><div>'+
-     field("企業名稱","create-name","示範企業")+field("網址英文代碼","create-slug","my-company","text",'pattern="[a-z0-9-]{3,40}"')+
+     field("企業名稱","create-name","示範企業")+field("網址英文代碼","create-slug",testMode?"qa-new-shop":"my-company","text",'pattern="[a-z0-9-]{3,40}"')+
      '</div><div>'+field("第一位企業管理者 Email（選填）","create-owner","","email")+'<p class="small">填寫後產生待接受邀請。管理者須使用此信箱註冊並接受邀請。</p></div></div><label>功能勾選</label>'+featureChecks({reservation:true,queue:true,calling:true},"create-feature")+
       '<div class="grid"><div>'+field("企業電話","create-phone")+field("企業地址","create-address")+field("每日開始營業時間","create-open","10:00","time")+'</div><div>'+field("品牌色（#RRGGBB）","create-accent","#147e68")+field("單時段最多預約人數","create-capacity",3,"number",'min="1" max="100"')+field("每日結束營業時間","create-close","20:00","time")+'</div></div><div style="margin-top:17px">'+btn("建立企業專屬網站","create-tenant","primary")+'</div>');
  }else html=box("平台運作方式",'<p>每家企業使用同一個 GitHub Pages 前端；預約、號碼、員工、設定分別以企業 ID 保存在 Supabase。</p><p>平台登入使用 Supabase Auth，管理權限在資料庫中驗證。測試 LINE 官方帳號已連接 Supabase Edge Function。真實通知需完成 LINE 身分驗證與加好友；多企業各自綁定不同官方帳號尚未開放。</p>');
@@ -281,12 +300,22 @@ async function load(){err="";try{
  if(view==="customer"&&!session){const x=await supa.auth.signInAnonymously();if(x.error)throw x.error;session=x.data.session;}
  if(view==="customer")await connectLineSession();
  if(view!=="customer")await loadContext();
+  if(testMode&&view!=="customer"&&session?.user?.is_anonymous){
+   const membership=context?.memberships?.find(m=>m.slug===testInfo?.slug);
+   if(!membership){testMode=false;testInfo=null;localStorage.removeItem(TEST_KEY)}
+   else{
+    if(view==="platform"&&!platformReady()){await rpc("so_test_login",{p_view:"PLATFORM"});await loadContext()}
+    if(view==="staff"&&!context?.memberships?.some(m=>m.slug===slug)){
+      slug=testInfo.slug;history.replaceState(null,"",route("staff",slug))
+    }
+   }
+  }
  if(view==="customer"){
    customer=lineLinkStatus==="linked"?await rpc("so_public_state",{p_slug:slug,p_date:day}):null;
    if(customer&&customerTab==="reserve"&&!customer.tenant.modules?.reservation)customerTab="home";
    if(customer&&customerTab==="queue"&&!customer.tenant.modules?.queue)customerTab="home";
  }
- if(view==="platform"&&context?.platform_admin)overview=await rpc("so_platform_overview");
+ if(view==="platform"&&platformReady())overview=await rpc("so_platform_overview");
  if(view==="staff"&&authReady()&&(context?.platform_admin||context?.memberships?.some(m=>m.slug===slug)))staff=await rpc("so_staff_state",{p_slug:slug,p_date:day});
  else if(view==="staff")staff=null;
  }catch(e){err=e.message||String(e)}render();}
@@ -301,17 +330,26 @@ document.addEventListener("click",async ev=>{
  const a=b.dataset.act,id=b.dataset.id;
  if(!a)return;
 
- if(a==="login"||a==="signup"){const email=val("auth-email"),password=val("auth-pass");if(!email||password.length<8){err="請輸入 Email 與至少 8 字元的密碼";render();return}
- await act(async()=>{if(session?.user?.is_anonymous){await supa.auth.signOut();session=null}
+ if(a==="test-login"){await act(async()=>{
+   if(session&&!session.user?.is_anonymous){const out=await supa.auth.signOut();if(out.error)throw out.error;session=null}
+   if(!session){const created=await supa.auth.signInAnonymously();if(created.error)throw created.error;session=created.data.session}
+   const result=await rpc("so_test_login",{p_view:view==="platform"?"PLATFORM":"STAFF"});
+   if(!result?.slug||!/^qa-[a-z0-9-]{3,36}$/.test(result.slug))throw Error("無法取得測試企業");
+   testInfo={slug:result.slug};testMode=true;localStorage.setItem(TEST_KEY,JSON.stringify(testInfo));
+   slug=result.slug;history.replaceState(null,"",route(view,view==="platform"?"":slug));
+   return "已登入真正的 Supabase 測試帳號，專屬門市："+result.slug;
+  });return}
+  if(a==="login"||a==="signup"){const email=val("auth-email"),password=val("auth-pass");if(!email||password.length<8){err="請輸入 Email 與至少 8 字元的密碼";render();return}
+ await act(async()=>{testMode=false;testInfo=null;localStorage.removeItem(TEST_KEY);if(session?.user?.is_anonymous){await supa.auth.signOut();session=null}
  const r=a==="login"?await supa.auth.signInWithPassword({email,password}):await supa.auth.signUp({email,password});
  if(r.error)throw Error(r.error.message);session=r.data.session;return a==="signup"?"帳號已送出註冊；如需確認信，請先驗證後登入。":"登入成功";});return}
 
 
-  if(a==="logout"){await act(async()=>{const r=await supa.auth.signOut();if(r.error)throw Error(r.error.message);session=null;context=null;staff=null;return "已登出";});return}
+  if(a==="logout"){await act(async()=>{const r=await supa.auth.signOut();if(r.error)throw Error(r.error.message);session=null;context=null;staff=null;testMode=false;testInfo=null;localStorage.removeItem(TEST_KEY);return "已登出";});return}
  if(a==="accept-invite"){await act(async()=>{await rpc("so_accept_invite",{p_invite_id:id});return "已接受企業邀請";});return}
  if(a==="claim-admin"){await act(async()=>{await rpc("so_claim_platform_admin",{p_token:val("bootstrap-token")});return "已取得平台管理員權限";});return}
  if(a==="new-tenant"){platformTab="create";render();return}
- if(a==="create-tenant"){await act(async()=>{const result=await rpc("so_create_tenant",{p_name:val("create-name"),p_slug:val("create-slug"),p_modules:checked("create-feature"),p_owner_email:val("create-owner")||null});await rpc("so_update_tenant",{p_slug:result.slug,p_patch:{phone:val("create-phone"),address:val("create-address"),open_time:val("create-open"),close_time:val("create-close"),accent:val("create-accent"),slot_capacity:Number(val("create-capacity"))}});platformTab="list";chosenCompany=result.slug;return "企業已建立，專屬網址可立即使用";});return}
+ if(a==="create-tenant"){await act(async()=>{const result=await rpc("so_create_tenant",{p_name:val("create-name"),p_slug:testMode&&session?.user?.is_anonymous&&!val("create-slug").startsWith("qa-")?"qa-"+val("create-slug"):val("create-slug"),p_modules:checked("create-feature"),p_owner_email:val("create-owner")||null});await rpc("so_update_tenant",{p_slug:result.slug,p_patch:{phone:val("create-phone"),address:val("create-address"),open_time:val("create-open"),close_time:val("create-close"),accent:val("create-accent"),slot_capacity:Number(val("create-capacity"))}});platformTab="list";chosenCompany=result.slug;return "企業已建立，專屬網址可立即使用";});return}
  if(a==="company-config"){chosenCompany=b.dataset.slug;render();return}
  if(a==="save-company"){await act(async()=>{await rpc("so_update_tenant",{p_slug:chosenCompany,p_patch:{name:val("config-name"),modules:checked("config-feature")}});return "企業名稱及模組已更新";});return}
  if(a==="toggle-company"){await act(async()=>{const t=overview.find(x=>x.slug===chosenCompany);await rpc("so_update_tenant",{p_slug:chosenCompany,p_patch:{status:t.status==="ACTIVE"?"SUSPENDED":"ACTIVE"}});return "已更新企業啟用狀態";});return}
