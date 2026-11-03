@@ -219,17 +219,19 @@ async function connectLineSession(force=false){
   }
 }
 async function sendLineNotice(action,ids){
-  if(!session?.access_token)return "LINE 通知：登入狀態尚未建立";
-  try{
-    const res=await fetch(LINE_BRIDGE_URL,{method:"POST",headers:{"content-type":"application/json","authorization":"Bearer "+session.access_token},body:JSON.stringify({action,slug,...ids})});
-    const out=await res.json().catch(()=>({error:"LINE_RESPONSE_ERROR"}));
-    if(out.sent)return "LINE API 已受理（不代表已送達，請確認顧客已加入官方帳號好友）";
-    if(out.reason==="ALREADY_SENT")return "LINE 此次通知已受理過，未重複傳送";
-    if(out.reason==="CUSTOMER_NOT_LINKED")return "LINE 尚未連結，未發送通知";
-    if(out.reason==="CUSTOMER_UNFOLLOWED")return "LINE 官方帳號已被取消好友或封鎖，未發送通知；請先加回好友";
-    if(out.reason==="OA_CANNOT_REACH_CUSTOMER")return "LINE 官方帳號無法辨識此顧客，未發送通知。請讓顧客加入正確的官方帳號，並檢查 LINE Login 與 Messaging API 是否在同一 Provider。";
-    return "LINE 通知失敗："+(out.error||"未知原因")+(out.status?" ("+out.status+")":"");
-  }catch(e){return "LINE 通知暫時無法連線";}
+ if(!session?.access_token)return "提醒暫時無法送出，請重新登入";
+ try{
+  const res=await fetch(LINE_BRIDGE_URL,{method:"POST",headers:{"content-type":"application/json","authorization":"Bearer "+session.access_token},body:JSON.stringify({action,slug,...ids})});
+  const out=await res.json().catch(()=>({error:"LINE_RESPONSE_ERROR"}));
+  if(out.sent)return "LINE 提醒已送出";
+  if(out.reason==="ALREADY_SENT")return "LINE 提醒已送出";
+  if(["CUSTOMER_NOT_LINKED","CUSTOMER_UNFOLLOWED","OA_CANNOT_REACH_CUSTOMER"].includes(out.reason))
+   return "提醒暫時無法送出，請先加入店家的 LINE 官方帳號";
+  return "提醒暫時無法送出，預約／號碼狀態仍已儲存";
+ }catch(e){return "提醒暫時無法送出，預約／號碼狀態仍已儲存";}
+}
+function customerNoticeSuffix(notice){
+ return /提醒暫時無法送出/.test(notice)?"；"+notice:"";
 }
 async function notifyLineCalled(ticketNumber,ticketId,eventId){return sendLineNotice("notify",{number:ticketNumber,ticketId,eventId});}
 function lineStatusBadge(){
@@ -675,7 +677,7 @@ async function load(){err="";try{
 async function act(fn){if(busy)return;busy=true;err="";flash="";showActionFeedback("正在儲存，請勿重複點擊。","pending");
  document.querySelectorAll("button[data-act],input[data-status-kind]").forEach(x=>x.disabled=true);
  try{const m=await fn();await load();flash=m||"已成功儲存";
- const hasNoticeProblem=/LINE 通知失敗|LINE 通知暫時|LINE 尚未連結|LINE 尚未|好友狀態未知|官方帳號好友狀態尚未確認|LINE 官方帳號無法|官方帳號查詢失敗|LINE 通知：/.test(flash);
+ const hasNoticeProblem=/提醒暫時無法送出|LINE 通知失敗|LINE 通知暫時|官方帳號查詢失敗/.test(flash);
  showActionFeedback(flash,hasNoticeProblem?"warning":"success")}
  catch(e){err=e.message||String(e);showActionFeedback(err,"error")}
  finally{busy=false;render()}
@@ -738,9 +740,48 @@ document.addEventListener("click",async ev=>{
  if(a==="save-directory"){await act(async()=>{const enabled=!!$("directory-enabled")?.checked;await rpc("so_set_directory_listing",{p_slug:slug,p_enabled:enabled,p_oa_mode:"PLATFORM"});return enabled?"門市已開放在總公司 LINE 平台搜尋":"門市已取消公開搜尋（原有專屬連結仍可使用）";});return;}
  if(a==="update-settings"){await act(async()=>{await rpc("so_update_tenant",{p_slug:slug,p_patch:{name:val("set-name"),phone:val("set-phone"),address:val("set-address"),accent:val("set-accent"),description:val("set-description"),logo_url:val("set-logo"),open_time:val("set-open"),close_time:val("set-close"),slot_capacity:Number(val("set-capacity")),slot_minutes:Number(val("set-minutes"))}});return "企業設定已保存";});return}
  if(a==="invite-staff"){await act(async()=>{await rpc("so_invite_staff",{p_slug:slug,p_email:val("invite-email"),p_role:val("invite-role")});return "員工邀請已儲存，請通知對方登入接受";});return}
- if(a==="book"){await act(async()=>{if(lineLinkStatus!=="linked")throw Error("請先完成 LINE 授權");if(!chosenSlot)throw Error("請先選擇時段");const result=await rpc("so_book",{p_slug:slug,p_date:day,p_time:chosenSlot,p_name:lineDisplayName,p_party:Number(val("customer-party"))});chosenSlot="";customerTab="mine";const notice=await sendLineNotice("notify-reservation",{reservationId:result.id});return "預約成功，資料已存入雲端；"+notice;});return}
- if(a==="cancel-my-book"){if(!confirm("確定取消這筆預約？"))return;await act(async()=>{await rpc("so_cancel_booking",{p_id:id});return "已取消預約";});return}
- if(a==="take"){await act(async()=>{if(lineLinkStatus!=="linked")throw Error("請先完成 LINE 授權");const result=await rpc("so_take_number",{p_slug:slug,p_name:lineDisplayName});const notice=await sendLineNotice("notify-ticket",{ticketId:result.id});return "取號成功："+result.number+"；"+notice;});return}
+ if(a==="book"){await act(async()=>{
+  if(lineLinkStatus!=="linked")throw Error("請先完成 LINE 授權");
+  if(!chosenSlot)throw Error("請先選擇時段");
+  const party=Number(val("customer-party")),time=chosenSlot;
+  const result=await rpc("so_book",{p_slug:slug,p_date:day,p_time:time,p_name:lineDisplayName,p_party:party});
+  chosenSlot="";customerTab="mine";
+  const notice=await sendLineNotice("notify-reservation",{reservationId:result.id});
+  return "預約已成立："+day+" "+time+"，"+party+" 位"+customerNoticeSuffix(notice);
+ });return}
+
+ if(a==="edit-book"){await beginBookingEdit(id);return;}
+ if(a==="close-book-edit"){editingBookingId="";finishManageLink();render();return;}
+ if(a==="save-book-edit"){
+  const bookingId=editingBookingId, targetDate=val("edit-book-date");
+  const targetTime=val("edit-book-time"), party=Number(val("edit-book-party"));
+  if(!bookingId||!targetDate||!targetTime||!Number.isInteger(party)||party<1||party>20){
+    showActionFeedback("請確認預約日期、時間及人數","error");return;
+  }
+  await act(async()=>{
+    const result=await rpc("so_customer_edit_booking",{p_slug:slug,p_booking_id:bookingId,p_date:targetDate,p_time:targetTime,p_party:party});
+    editingBookingId="";editSlots=null;finishManageLink();
+    if(!result.changed)return "預約資料沒有變更";
+    const notice=await sendLineNotice("notify-reservation-updated",{reservationId:bookingId});
+    return "預約已更新："+targetDate+" "+targetTime+"，"+party+" 位"+customerNoticeSuffix(notice);
+  });return;
+ }
+ if(a==="cancel-my-book"){
+  if(!confirm("確定取消這筆預約嗎？取消後將無法直接復原。"))return;
+  await act(async()=>{
+    await rpc("so_cancel_booking",{p_id:id});
+    if(editingBookingId===id)editingBookingId="";
+    finishManageLink();
+    const notice=await sendLineNotice("notify-reservation-cancel",{reservationId:id});
+    return "預約已取消"+customerNoticeSuffix(notice);
+  });return;
+}
+ if(a==="take"){await act(async()=>{
+  if(lineLinkStatus!=="linked")throw Error("請先完成 LINE 授權");
+  const result=await rpc("so_take_number",{p_slug:slug,p_name:lineDisplayName});
+  const notice=await sendLineNotice("notify-ticket",{ticketId:result.id});
+  return "取號成功！您的號碼是 "+result.number+customerNoticeSuffix(notice);
+ });return}
  if(a==="line-check-friendship"){await act(async()=>{
   await connectLineSession(true);
   if(lineLinkStatus!=="linked")throw Error("LINE 身分連結失敗："+(lineConnectError||"請重新授權"));
@@ -761,7 +802,16 @@ document.addEventListener("click",async ev=>{
      return "正在開啟 LINE 登入…";
    });return;
   }
- if(a==="cancel-my-number"){if(!confirm("確定取消號碼？"))return;await act(async()=>{await rpc("so_cancel_number",{p_id:id});return "已取消號碼";});return}
+ if(a==="cancel-my-number"){
+  if(!confirm("確定取消排隊號碼嗎？"))return;
+  await act(async()=>{
+    const ticket=(customer?.my_tickets||[]).find(x=>x.id===id);
+    await rpc("so_cancel_number",{p_id:id});
+    finishManageLink();
+    const notice=await sendLineNotice("notify-ticket-cancel",{ticketId:id});
+    return "已取消排隊"+(ticket?.number?"："+ticket.number:"")+customerNoticeSuffix(notice);
+  });return;
+}
  if(a==="undo-staff"){
   const previous=lastStaffChange;
   if(!previous||previous.slug!==slug){err="沒有可還原的操作";showActionFeedback(err,"error");render();return;}
@@ -787,7 +837,10 @@ document.addEventListener("click",async ev=>{
     const notice=await notifyLineCalled(result.number,result.ticket_id,result.line_call_event_id);
     return (x==="call"?"已叫號 ":"已重新呼叫 ")+result.number+"；"+notice;
   }
-  return "已完成「"+({checkin:"到店報到",start:"開始服務",complete:"完成服務",pass:"標記過號",return:"回到候位",cancel:"取消號碼",no_show:"預約未到",cancel_booking:"取消預約"}[x]||jsStatus(x))+"」"+(result.number?"："+result.number:"");
+  let notice="";
+  if(x==="cancel"&&result.ticket_id)notice=await sendLineNotice("notify-ticket-cancel",{ticketId:result.ticket_id});
+  if(x==="cancel_booking"&&id)notice=await sendLineNotice("notify-reservation-cancel",{reservationId:id});
+  return "已完成「"+({checkin:"到店報到",start:"開始服務",complete:"完成服務",pass:"標記過號",return:"回到候位",cancel:"取消號碼",no_show:"預約未到",cancel_booking:"取消預約"}[x]||jsStatus(x))+"」"+(result.number?"："+result.number:"")+customerNoticeSuffix(notice);
  });return;
  }
 });
@@ -795,10 +848,14 @@ document.addEventListener("change",async ev=>{
  const el=ev.target;
  if(el.id==="staff-history-days"){staffHistoryDays=Number(el.value);await load();return;}
  if(el.id==="customer-day"){day=el.value;chosenSlot="";await load();return;}
+ if(el.id==="edit-book-date"){editDate=el.value;editTime="";await fetchBookingEditSlots();return;}
+ if(el.id==="edit-book-time"){editTime=el.value;render();return;}
+ if(el.id==="edit-book-party"){editParty=Number(el.value);render();return;}
  if(el.dataset.statusKind){
   if(busy)return;
   const kind=el.dataset.statusKind, id=el.dataset.id, previous=el.dataset.previous, desired=el.value;
   if(!id||!previous||desired===previous)return;
+  if(desired==="CANCELLED"&&!confirm("確定取消嗎？系統會通知顧客。")){render();return;}
   await act(async()=>{
    const procedure=kind==="reservation"?"so_staff_set_reservation_status":"so_staff_set_ticket_status";
    const args=kind==="reservation"?
@@ -810,7 +867,14 @@ document.addEventListener("change",async ev=>{
    if(result.changed)lastStaffChange={kind,id,label:label||(kind==="ticket"?"號碼牌":"預約"),before:previous,after:desired,slug,day};
    let msg=(kind==="ticket"?"號碼牌 ":"預約 ")+(label||"")+"：已改為「"+jsStatus(desired)+"」";
    if(kind==="reservation"&&desired==="CHECKED_IN")msg+="，已加入候位名單";
-   if(kind==="ticket"&&desired==="CALLED"&&result.changed)msg+="；"+await notifyLineCalled(result.number,result.ticket_id,result.line_call_event_id);
+   if(kind==="ticket"&&desired==="CALLED"&&result.changed)
+     msg+="；"+await notifyLineCalled(result.number,result.ticket_id,result.line_call_event_id);
+   if(result.changed&&desired==="CANCELLED"){
+     const notice=kind==="ticket"
+       ?await sendLineNotice("notify-ticket-cancel",{ticketId:id})
+       :await sendLineNotice("notify-reservation-cancel",{reservationId:id});
+     msg+=customerNoticeSuffix(notice);
+   }
    return msg;
   });return;
  }
