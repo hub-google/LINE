@@ -576,7 +576,7 @@ function staffRender(){
    box("號碼設定",
     '<p class="muted">每家門市獨立計數，流水號為 1～9999999，不補零。每天台灣時間 00:00 自動從 1 開始，也可以手動重置。</p>'+
     '<p class="small">目前前綴：<strong>'+esc(t.queue_prefix||"（空白）")+'</strong>　｜　下一張：<strong>'+
-    esc((t.queue_prefix||"")+String(Math.min(9999999,Number(t.queue_last_number||0)+1)))+
+    esc(Number(t.queue_last_number||0)>=9999999?"已達上限，請重置":(t.queue_prefix||"")+String(Number(t.queue_last_number||0)+1))+
     '</strong>　｜　第 '+esc(t.queue_round||1)+' 輪</p>'+
     (isManager?
       '<div class="grid"><div>'+field("號碼前綴（可留空，最多3字）","queue-prefix",t.queue_prefix||"","text",'maxlength="3" placeholder="例：ABC、#、診所"')+'</div>'+
