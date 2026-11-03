@@ -99,7 +99,18 @@ jobs:
             api("/v2/bot/channel/webhook/endpoint", "PUT", {"endpoint": endpoint})
           verified = api("/v2/bot/channel/webhook/endpoint")
           assert verified.get("endpoint") == endpoint, "LINE webhook endpoint does not match"
-          checked = api("/v2/bot/channel/webhook/test", "POST", {"endpoint": endpoint})
+          # LINE sometimes returns statusCode=0 during Edge cold starts. Retry,
+          # but never convert a consistently failed webhook test into success.
+          import time
+          for attempt in range(4):
+            checked = api("/v2/bot/channel/webhook/test", "POST", {"endpoint": endpoint})
+            if checked.get("success") is True:
+              break
+            if attempt < 3:
+              urllib.request.urlopen(
+                "https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/line-bridge?action=config", timeout=20
+              ).close()
+              time.sleep(2 * (attempt + 1))
           assert checked.get("success") is True, "LINE test webhook failed (HTTP status %s)" % checked.get("statusCode")
           print("Webhook endpoint verified with LINE API; test webhook HTTP %s." % checked.get("statusCode"))
           if not verified.get("active"):
@@ -129,7 +140,7 @@ jobs:
           assert bad_status == 401, "Unsigned or forged LINE event was not rejected"
           print("Signed LINE webhook accepted; forged webhook rejected (401).")
           PY
-      - name: Inspect and repair LIFF endpoint and openid scope
+      - name: Inspect and repair LIFF endpoint, openid and profile scopes
         shell: bash
         run: |
           python3 - <<'PY'
@@ -161,12 +172,13 @@ jobs:
           updates = {}
           if current_url != target:
             updates["view"] = {"url":target}
-          if "openid" not in current_scopes:
-            updates["scope"] = list(dict.fromkeys(current_scopes+["openid"]))
+          missing_scopes = [scope for scope in ("openid", "profile") if scope not in current_scopes]
+          if missing_scopes:
+            updates["scope"] = list(dict.fromkeys(current_scopes + missing_scopes))
           if updates:
             api("/"+urllib.parse.quote(liff_id, safe=""),"PUT",updates)
             app = next((a for a in api().get("apps", []) if a.get("liffId")==liff_id), None)
           assert app is not None and app.get("view",{}).get("url")==target, "LIFF endpoint mismatch"
-          assert "openid" in (app.get("scope") or []), "LIFF openid scope missing"
-          print("LIFF endpoint verified; openid scope enabled. No credentials displayed.")
+          assert all(scope in (app.get("scope") or []) for scope in ("openid","profile")), "LIFF openid/profile scopes missing"
+          print("LIFF endpoint verified; openid and profile scopes enabled. No credentials displayed.")
           PY
