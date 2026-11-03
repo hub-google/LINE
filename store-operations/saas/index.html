@@ -363,7 +363,7 @@ function showActionFeedback(message,kind="success"){
  node.setAttribute("aria-live",kind==="error"?"assertive":"polite");
  node.innerHTML='<div><strong>'+esc(kind==="pending"?"處理中":kind==="error"?"操作失敗":kind==="warning"?"操作已儲存，但通知待確認":"操作成功")+'</strong><div>'+esc(message)+'</div></div><button type="button" data-act="dismiss-feedback" aria-label="關閉提示">×</button>';
  // Do not hide an operation while it is still pending.
- if(kind!=="pending")actionFeedbackTimer=setTimeout(dismissActionFeedback,10000);
+ if(kind!=="pending")actionFeedbackTimer=setTimeout(dismissActionFeedback,5000);
 }
 
 function requireAuth(){
