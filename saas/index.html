@@ -329,6 +329,14 @@ function lineIndicator(tenant){
  return (shared?"總公司共用 OA 已配置":"總公司共用 OA 尚未就緒")+"；"+own;
 }
 function taipei(){return new Intl.DateTimeFormat("sv-SE",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date())}
+function taipeiTimestamp(value){
+ const date=value?new Date(value):null;
+ if(!date||Number.isNaN(date.getTime()))return "未提供";
+ return new Intl.DateTimeFormat("sv-SE",{
+  timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit",
+  hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"
+ }).format(date);
+}
 function esc(x){return String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function jsStatus(s){return ({CONFIRMED:"已預約",CHECKED_IN:"已報到",COMPLETED:"已完成",CANCELLED:"已取消",NO_SHOW:"未到",WAITING:"等候中",CALLED:"已叫號",SERVING:"服務中",PASSED:"已過號",ACTIVE:"啟用中",SUSPENDED:"已停用"})[s]||s}
 function tag(s){return '<span class="tag '+(["ACTIVE","COMPLETED","CONFIRMED","CONNECTED"].includes(s)?"ok":(["SUSPENDED","PASSED","CANCELLED"].includes(s)?"warn":""))+'">'+esc(jsStatus(s))+'</span>'}
@@ -483,7 +491,8 @@ function staffRender(){
   const card=x=>{
    const linked=q.find(k=>k.reservation_id===x.id);
    return '<article class="staff-record"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.day)+'　'+esc(x.time)+'　'+esc(x.name)+'</div>'+
-   '<div class="small">預約人數 '+esc(x.party)+' 位'+(linked?' ・ 號碼 '+esc(linked.number)+'（'+esc(linked.day)+'）':'')+'</div></div>'+tag(x.status)+'</div>'+
+   '<div class="small">預約人數 '+esc(x.party)+' 位'+(linked?' ・ 號碼 '+esc(linked.number)+'（'+esc(linked.day)+'）':'')+'</div>'+
+   '<div class="small" style="margin-top:5px">顧客送出時間：'+esc(taipeiTimestamp(x.created_at))+'</div></div>'+tag(x.status)+'</div>'+
    staffStatusPicker("reservation",x,x.day>taipei()?["CONFIRMED","CANCELLED"]:true)+
    (x.status==="CHECKED_IN"&&linked?'<p class="staff-help">已報到，可到叫號管理處理 '+esc(linked.number)+'</p>':'')+'</article>';
   };
@@ -822,6 +831,10 @@ document.addEventListener("click",async ev=>{
       {p_slug:slug,p_ticket_id:previous.id,p_status:previous.before,p_expected_status:previous.after};
     const result=await rpc(proc,args);
     if(result.changed)lastStaffChange=null;
+    if(result.changed&&previous.kind==="reservation"&&previous.after==="CANCELLED"&&previous.before==="CONFIRMED"){
+      const notice=await sendLineNotice("notify-reservation-restored",{reservationId:previous.id});
+      return "已還原 "+previous.label+" 為「已預約」；"+notice;
+    }
     return "已還原 "+previous.label+" 為「"+jsStatus(previous.before)+"」；不會重新發送 LINE 通知";
   });return;
  }
@@ -873,7 +886,11 @@ document.addEventListener("change",async ev=>{
      const notice=kind==="ticket"
        ?await sendLineNotice("notify-ticket-cancel",{ticketId:id})
        :await sendLineNotice("notify-reservation-cancel",{reservationId:id});
-     msg+=customerNoticeSuffix(notice);
+     msg+="；"+notice;
+   }
+   if(result.changed&&kind==="reservation"&&previous==="CANCELLED"&&desired==="CONFIRMED"){
+     const notice=await sendLineNotice("notify-reservation-restored",{reservationId:id});
+     msg+="；"+notice;
    }
    return msg;
   });return;
