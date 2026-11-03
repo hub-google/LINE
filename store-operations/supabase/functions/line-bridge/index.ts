@@ -174,8 +174,8 @@ function liffQueueProgressLink(shop: ShopInfo, ticketId: string): string | null 
   });
   return "https://liff.line.me/"+id+"/?"+query.toString();
 }
-function flexNotice(title: string, details: string[], actions: { label: string; uri: string | null }[]): Record<string, unknown> {
-  const buttons = actions.filter((a): a is { label: string; uri: string } => !!a.uri);
+function flexNotice(title: string, details: string[], actions: { label: string; uri?: string | null; postback?: string | null }[]): Record<string, unknown> {
+  const buttons = actions.filter((a) => !!a.uri || !!a.postback);
   const rows = details.filter(Boolean);
   return {
     type: "flex",
@@ -195,7 +195,9 @@ function flexNotice(title: string, details: string[], actions: { label: string; 
         contents: buttons.map((button, index) => ({
           type: "button", height: "sm", style: index === 0 ? "primary" : "secondary",
           ...(index === 0 ? { color: "#147e68" } : {}),
-          action: { type: "uri", label: button.label, uri: button.uri },
+          action: button.postback
+            ? { type: "postback", label: button.label, data: button.postback }
+            : { type: "uri", label: button.label, uri: button.uri },
         })),
       } } : {}),
     },
@@ -212,6 +214,66 @@ function selectedServicesText(items: unknown): string[] {
   const names=items.map(x=>typeof x?.name==="string"?x.name.trim():"").filter(Boolean);
   return names.length?["已選餐點／服務：" + names.join("、").slice(0,1300)]:[];
 }
+// Shared ticket Flex notice used for issuance and each user-requested refresh.
+async function ticketProgressNotice(
+  db: ReturnType<typeof service>,
+  tenant: ShopInfo,
+  ticket: {
+    id: string; status: string; ticket_no: number; created_at: string;
+    business_date: string; selected_items: unknown;
+  },
+): Promise<Record<string, unknown>> {
+  const [waitingBefore, activeCount, activeTicket, lastCalled] = await Promise.all([
+    db.from("so_tickets").select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenant.id).eq("status", "WAITING").is("deleted_at", null)
+      .lt("created_at", ticket.created_at),
+    db.from("so_tickets").select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenant.id).in("status", ["CALLED", "SERVING"]).is("deleted_at", null),
+    db.from("so_tickets").select("ticket_no,business_date")
+      .eq("tenant_id", tenant.id).in("status", ["CALLED", "SERVING"]).is("deleted_at", null)
+      .order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+    db.from("so_tickets").select("ticket_no,last_called_at")
+      .eq("tenant_id", tenant.id).eq("business_date", ticket.business_date).is("deleted_at", null)
+      .not("last_called_at", "is", null)
+      .order("last_called_at", { ascending: false }).limit(1).maybeSingle(),
+  ]);
+  if (waitingBefore.error || activeCount.error || activeTicket.error || lastCalled.error) {
+    throw new Error("QUEUE_POSITION_UNAVAILABLE");
+  }
+  const ahead = (waitingBefore.count ?? 0) + (activeCount.count ?? 0);
+  const at = new Intl.DateTimeFormat("zh-TW", {
+    timeZone: "Asia/Taipei", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).format(new Date());
+  const number = "A" + String(ticket.ticket_no).padStart(3, "0");
+  const calling = activeTicket.data
+    ? "目前叫到：A" + String(activeTicket.data.ticket_no).padStart(3, "0")
+    : lastCalled.data
+      ? "最近叫到：A" + String(lastCalled.data.ticket_no).padStart(3, "0")
+      : "目前尚未開始叫號";
+  const statuses: Record<string, string> = {
+    WAITING: "等候中", CALLED: "已叫號", SERVING: "服務中",
+    COMPLETED: "已完成", CANCELLED: "已取消", PASSED: "已過號",
+  };
+  const position = ticket.status === "WAITING"
+    ? at + " 時 前方還有 " + ahead + " 組"
+    : at + " 時 您的號碼狀態：" + (statuses[ticket.status] || ticket.status);
+  return flexNotice("取號成功", [
+    "店家：" + tenant.name,
+    "您的號碼：" + number,
+    calling,
+    position,
+    ...selectedServicesText(ticket.selected_items),
+    ...shopDetails(tenant),
+    "叫號進度可能變動，請以最新資訊為準。",
+  ], [
+    { label: "查看即時叫號網頁", uri: liffQueueProgressLink(tenant, ticket.id) },
+    { label: "叫號進度", postback: "queue_progress:" + ticket.id },
+    ...(ticket.status === "WAITING"
+      ? [{ label: "取消排隊", uri: liffManageLink(tenant, "ticket", ticket.id, "cancel") }]
+      : []),
+  ]);
+}
+
 // Both a new booking and a restored booking use this one, maintained LINE card.
 function reservationConfirmationNotice(tenant: ShopInfo, booking: {
   id: string; booking_date: string; booking_time: string; party_size: number; selected_items: unknown;
@@ -319,7 +381,7 @@ async function webhook(req: Request, origin: string | null) {
   const events = payload.events.filter((item): item is Record<string, unknown> =>
     item !== null && typeof item === "object" &&
     (item as { type?: unknown }).type !== undefined &&
-    ["follow", "unfollow"].includes(String((item as { type: unknown }).type)));
+    ["follow", "unfollow", "postback"].includes(String((item as { type: unknown }).type)));
   if (!events.length) return reply(200, { ok: true }, origin);
   try {
     const db = service();
@@ -336,6 +398,57 @@ async function webhook(req: Request, origin: string | null) {
         console.warn("LINE follow event missing valid identifier or timestamp");
         continue;
       }
+      if (event.type === "postback") {
+        const postback = event.postback as { data?: unknown } | undefined;
+        const command = typeof postback?.data === "string" ? postback.data : "";
+        const ticketId = command.startsWith("queue_progress:") ? command.slice("queue_progress:".length) : "";
+        const replyToken = event.replyToken;
+        if (!validUUID(ticketId) || typeof replyToken !== "string" ||
+            !replyToken || replyToken.length > 512) continue;
+        const { data: ticket, error: ticketError } = await db.from("so_tickets")
+          .select("id,tenant_id,user_id,status,ticket_no,created_at,business_date,selected_items")
+          .eq("id", ticketId).is("deleted_at", null).maybeSingle();
+        if (ticketError) throw ticketError;
+        let notice: Record<string, unknown> = {
+          type: "text", text: "這張號碼目前無法查詢，請返回門市叫號網頁查看。",
+        };
+        if (ticket) {
+          // A signed LINE event identifies the person, but a ticket ID is
+          // never authority: match both tenant and linked ticket owner.
+          const [linkResult, tenantResult] = await Promise.all([
+            db.from("so_line_links").select("user_id")
+              .eq("tenant_id", ticket.tenant_id).eq("user_id", ticket.user_id)
+              .eq("line_sub", source.userId).limit(1),
+            db.from("so_tenants").select("id,slug,name,status,address,phone")
+              .eq("id", ticket.tenant_id).eq("status", "ACTIVE").maybeSingle(),
+          ]);
+          if (linkResult.error) throw linkResult.error;
+          if (tenantResult.error) throw tenantResult.error;
+          if (linkResult.data?.length && tenantResult.data) {
+            notice = await ticketProgressNotice(db, tenantResult.data, ticket);
+          }
+        }
+        const token = Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
+        if (!token) throw new Error("LINE_MESSAGING_NOT_CONFIGURED");
+        const response = await fetch("https://api.line.me/v2/bot/message/reply", {
+          method: "POST",
+          headers: { authorization: "Bearer " + token, "content-type": "application/json" },
+          body: JSON.stringify({ replyToken, messages: [notice] }),
+        });
+        if (!response.ok) {
+          // Reply tokens are single use; avoid an infinite LINE redelivery
+          // cycle after a successful first response.
+          const context = event.deliveryContext as { isRedelivery?: unknown } | undefined;
+          if (response.status === 400 && context?.isRedelivery === true) {
+            duplicates++;
+            continue;
+          }
+          throw new Error("LINE_REPLY_FAILED_" + response.status);
+        }
+        processed++;
+        continue;
+      }
+
       const occurredAt = new Date(time).toISOString();
       // PostgreSQL atomically records this ID AND updates friendship state.
       // A crash cannot leave a claimed but unprocessed event.
@@ -508,44 +621,8 @@ Deno.serve(async (req: Request) => {
         .eq("id", payload.ticketId).eq("tenant_id", tenant.id).eq("user_id", user.id).is("deleted_at", null).maybeSingle();
       if (!ticket || ticket.status !== "WAITING" || !recently(ticket.created_at, 300_000))
         return reply(409, { error: "TICKET_NOT_RECENT" }, origin);
-      const number = "A" + String(ticket.ticket_no).padStart(3, "0");
-      const [waitingBefore, activeCount, activeTicket, lastCalled] = await Promise.all([
-        db.from("so_tickets").select("id", { count: "exact", head: true })
-          .eq("tenant_id", tenant.id).eq("status", "WAITING").is("deleted_at", null).lt("created_at", ticket.created_at),
-        db.from("so_tickets").select("id", { count: "exact", head: true })
-          .eq("tenant_id", tenant.id).in("status", ["CALLED", "SERVING"]).is("deleted_at", null),
-        db.from("so_tickets").select("ticket_no,business_date")
-          .eq("tenant_id", tenant.id).in("status", ["CALLED", "SERVING"]).is("deleted_at", null)
-          .order("updated_at", { ascending: false }).limit(1).maybeSingle(),
-        db.from("so_tickets").select("ticket_no,last_called_at")
-          .eq("tenant_id", tenant.id).eq("business_date", ticket.business_date).is("deleted_at", null)
-          .not("last_called_at", "is", null)
-          .order("last_called_at", { ascending: false }).limit(1).maybeSingle(),
-      ]);
-      if (waitingBefore.error || activeCount.error || activeTicket.error || lastCalled.error)
-        return reply(503, { error: "QUEUE_POSITION_UNAVAILABLE" }, origin);
-      const ahead = (waitingBefore.count ?? 0) + (activeCount.count ?? 0);
-      // The Flex message is an immutable issuance-time snapshot. Only the
-      // linked LIFF board can show current numbers as they change.
-      const calling = activeTicket.data
-        ? "取號當時叫到：A" + String(activeTicket.data.ticket_no).padStart(3, "0")
-        : lastCalled.data
-          ? "取號當時最近叫到：A" + String(lastCalled.data.ticket_no).padStart(3, "0")
-          : "取號當時尚未開始叫號";
       return pushNotice(db, tenant, user.id, "TICKET_CREATED", ticket.id,
-        flexNotice("取號成功", [
-          "店家：" + tenant.name,
-          "您的號碼：" + number,
-          calling,
-          "前方還有 " + ahead + " 組候位／服務中",
-          ...selectedServicesText(ticket.selected_items),
-          ...shopDetails(tenant),
-          "以上是取號當下的狀態；LINE 聊天室訊息不會自行更新。",
-          "點下方綠色按鈕，可查看持續更新的叫號看板。",
-        ], [
-          { label: "查看即時叫號", uri: liffQueueProgressLink(tenant, ticket.id) },
-          { label: "取消排隊", uri: liffManageLink(tenant, "ticket", ticket.id, "cancel") },
-        ]), origin);
+        await ticketProgressNotice(db, tenant, ticket), origin);
     }
 
     if (payload.action === "notify-ticket-cancel" || payload.action === "notify-reservation-cancel" || payload.action === "notify-reservation-updated") {
