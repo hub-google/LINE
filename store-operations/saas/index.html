@@ -525,7 +525,9 @@ function staffRender(){
   const card=x=>{
    const linked=q.find(k=>k.reservation_id===x.id);
    return '<article class="staff-record"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.day)+'　'+esc(x.time)+'　'+esc(x.name)+'</div>'+
-   '<div class="small">預約人數 '+esc(x.party)+' 位'+(linked?' ・ 號碼 '+esc(linked.number)+'（'+esc(linked.day)+'）':'')+'</div></div>'+tag(x.status)+'</div>'+
+   '<div class="small">預約人數 '+esc(x.party)+' 位'+(linked?' ・ 號碼 '+esc(linked.number)+'（'+esc(linked.day)+'）':'')+'</div>'+
+   '<div class="small">送出預約時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
+   selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+
    staffStatusPicker("reservation",x,x.day>taipei()?["CONFIRMED","CANCELLED"]:true)+
    (x.status==="CHECKED_IN"&&linked?'<p class="staff-help">已報到，可到叫號管理處理 '+esc(linked.number)+'</p>':'')+'</article>';
   };
@@ -541,7 +543,9 @@ function staffRender(){
  }else if(staffTab==="queue"){
   const card=x=>'<article class="staff-record"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.number)+'　'+esc(x.name)+'</div>'+
    '<div class="small">'+esc(x.day)+' ・ '+esc(x.source==="RESERVATION"?"預約報到":"現場取號")+
-   (x.reservation_id?" ・ 已連動預約":"")+'</div></div>'+tag(x.status)+'</div>'+staffStatusPicker("ticket",x,true)+'</article>';
+   (x.reservation_id?" ・ 已連動預約":"")+'</div>'+
+   '<div class="small">取號時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
+   selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+staffStatusPicker("ticket",x,true)+'</article>';
   html+='<div class="grid4" style="margin-bottom:16px">'+stat("正在叫號",active?.number||"—")+stat("候位中",waiting.length)+
    stat("已過號",passed.length)+stat("已結束",doneTickets.length)+'</div>'+
    box("叫號操作",'<p class="muted">仍在候位的跨日號碼會繼續排隊。號碼狀態可直接勾選與更正。</p>'+
