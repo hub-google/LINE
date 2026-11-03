@@ -1,6 +1,11 @@
 name: LINE OA 憑證同步與後端部署
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/line-oa-deploy.yml'
+      - 'store-operations/supabase/functions/line-bridge/index.ts'
 
 permissions:
   contents: read
@@ -61,4 +66,44 @@ jobs:
           assert response.get("loginReady") is True,"LINE Login is not configured"
           assert response.get("messagingReady") is True,"LINE Messaging is not configured"
           print("LINE bridge config verified; no secrets displayed.")
+          PY
+      - name: Verify LINE access token and configure webhook securely
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.error, urllib.request
+          token = os.environ["LINE_MESSAGING_ACCESS_TOKEN"]
+          base = "https://api.line.me"
+          endpoint = "https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/line-bridge?action=webhook"
+          def api(path, method="GET", body=None):
+            data = None if body is None else json.dumps(body).encode("utf-8")
+            req = urllib.request.Request(
+              base + path, data=data, method=method,
+              headers={"Authorization":"Bearer "+token, "Content-Type":"application/json"},
+            )
+            with urllib.request.urlopen(req, timeout=20) as response:
+              return json.loads(response.read().decode("utf-8") or "{}")
+          info = api("/v2/bot/info")
+          assert info.get("userId", "").startswith("U"), "Messaging API token did not resolve an OA"
+          print("LINE Messaging API token is valid (OA identity verified, redacted).")
+          try:
+            existing = api("/v2/bot/channel/webhook/endpoint")
+          except urllib.error.HTTPError as error:
+            if error.code != 404:
+              raise
+            existing = {}
+          other = existing.get("endpoint")
+          if other and other != endpoint:
+            raise RuntimeError("LINE OA already has a DIFFERENT webhook endpoint; refusing to overwrite another service.")
+          if other != endpoint:
+            api("/v2/bot/channel/webhook/endpoint", "PUT", {"endpoint": endpoint})
+          verified = api("/v2/bot/channel/webhook/endpoint")
+          assert verified.get("endpoint") == endpoint, "LINE webhook endpoint does not match"
+          checked = api("/v2/bot/channel/webhook/test", "POST", {"endpoint": endpoint})
+          assert checked.get("success") is True, "LINE test webhook failed (HTTP status %s)" % checked.get("statusCode")
+          print("Webhook endpoint verified with LINE API; test webhook HTTP %s." % checked.get("statusCode"))
+          if not verified.get("active"):
+            print("::warning title=Enable LINE webhooks::Webhook URL is configured and tested, but LINE 'Use webhook' is disabled in the OA console.")
+          else:
+            print("LINE webhook is enabled.")
           PY
