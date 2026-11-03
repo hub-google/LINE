@@ -137,7 +137,7 @@ $("apply").onclick=()=>act(async()=>{
 document.addEventListener("click",ev=>{
  const b=ev.target.closest("button[data-review]");if(!b)return;
  const approving=b.dataset.approve==="true";
- if(!confirm(approving?"確定核准並建立門市？":"確定拒絕這筆商家申請？"))return;
+ if(!qaVerified&&!confirm(approving?"確定核准並建立門市？":"確定拒絕這筆商家申請？"))return;
  act(async()=>{const v=await rpc(qaVerified?"so_test_review_merchant_request":"so_review_merchant_request",{p_id:b.dataset.review,p_approve:approving});return (qaVerified?"QA 測試｜":"")+"已處理："+status(v.status)});
 });
 refresh().catch(err=>message(err.message||String(err),true));
