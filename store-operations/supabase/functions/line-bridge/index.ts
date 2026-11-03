@@ -166,6 +166,14 @@ function liffManageLink(shop: ShopInfo, kind: "reservation" | "ticket", refId: s
   });
   return "https://liff.line.me/" + id + "/?" + query.toString();
 }
+function liffQueueProgressLink(shop: ShopInfo, ticketId: string): string | null {
+  const id=Deno.env.get("LINE_LIFF_ID") || "";
+  if (!/^\d{8,}-[A-Za-z0-9]+$/.test(id)) return null;
+  const query=new URLSearchParams({
+    view:"customer",merchant:shop.slug,tab:"progress",ticket:ticketId,
+  });
+  return "https://liff.line.me/"+id+"/?"+query.toString();
+}
 function flexNotice(title: string, details: string[], actions: { label: string; uri: string | null }[]): Record<string, unknown> {
   const buttons = actions.filter((a): a is { label: string; uri: string } => !!a.uri);
   const rows = details.filter(Boolean);
@@ -516,7 +524,7 @@ Deno.serve(async (req: Request) => {
           ...shopDetails(tenant),
           "叫號進度可能變動，請以最新頁面為準。",
         ], [
-          { label: "查看排隊進度", uri: liffManageLink(tenant, "ticket", ticket.id, "view") },
+          { label: "查看即時叫號", uri: liffQueueProgressLink(tenant, ticket.id) },
           { label: "取消排隊", uri: liffManageLink(tenant, "ticket", ticket.id, "cancel") },
         ]), origin);
     }
