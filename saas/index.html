@@ -222,7 +222,7 @@ async function sendLineNotice(action,ids){
     return "LINE 通知失敗："+(out.error||"未知原因")+(out.status?" ("+out.status+")":"");
   }catch(e){return "LINE 通知暫時無法連線";}
 }
-async function notifyLineCalled(ticketNumber){return sendLineNotice("notify",{number:ticketNumber});}
+async function notifyLineCalled(ticketNumber,ticketId){return sendLineNotice("notify",{number:ticketNumber,ticketId});}
 function lineStatusBadge(){
   if(lineLinkStatus==="linked"){
     return '<div class="notice">LINE 使用者：<strong>'+esc(lineDisplayName)+'</strong>。預約與取號會自動使用此名稱。'+(lineFriendStatus===false?'目前尚無法接收 LINE 通知，請加回官方帳號好友。':'請加入官方帳號好友，以接收預約、取號與叫號通知。')+'</div>';
@@ -272,6 +272,7 @@ try{testInfo=JSON.parse(localStorage.getItem(TEST_KEY)||"null")}catch(e){localSt
 let testMode=!!(testInfo?.slug&&/^qa-[a-z0-9-]{3,36}$/.test(testInfo.slug));
 let view=incomingParam("view")||"customer",slug=(isSafeMerchant(incomingParam("merchant"))?incomingParam("merchant"):null)||(testMode?testInfo.slug:"greenfield-salon");
 let session=null,context=null,overview=[],customer=null,staff=null,busy=false,flash="",err="";
+let staffHistoryDays=14;
 let day=taipei(),customerTab=["home","reserve","queue","mine"].includes(incomingParam("tab"))?incomingParam("tab"):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
 const features=[["reservation","線上預約"],["queue","線上取號"],["calling","現場叫號"]];
 const route=(v,s=slug,tab="")=>location.pathname+"?view="+encodeURIComponent(v)+(s?"&merchant="+encodeURIComponent(s):"")+(v==="customer"&&tab?"&tab="+encodeURIComponent(tab):"");
@@ -390,63 +391,67 @@ function staffRender(){
  const memberships=context?.memberships||[];
  if(!staff){return box("企業員工後台",'<p class="muted">請先加入企業或由公司平台管理員核發邀請。'+(memberships.length?"請從下列企業進入：":"")+'</p>'+memberships.map(m=>'<p><a href="'+esc(route("staff",m.slug))+'">'+esc(m.name)+'（'+esc(m.role)+'）→</a></p>').join("")+
     (context?.invitations||[]).map(i=>'<div class="listline"><div>'+esc(i.tenant)+'－'+esc(i.role)+'</div>'+btn("接受邀請","accept-invite","primary",'data-id="'+esc(i.id)+'"')+'</div>').join("")); }
- const t=staff.tenant,r=staff.reservations||[],q=staff.tickets||[];
- const active=q.find(x=>["CALLED","SERVING"].includes(x.status)),waiting=q.filter(x=>x.status==="WAITING"),passed=q.filter(x=>x.status==="PASSED");
- const isToday=day===taipei(), pendingBookings=r.filter(x=>x.status==="CONFIRMED"), finishedBookings=r.filter(x=>x.status==="COMPLETED");
+ const t=staff.tenant,openBookings=staff.pending_reservations||[],doneBookings=staff.processed_reservations||[],openTickets=staff.active_tickets||[],doneTickets=staff.processed_tickets||[];
+ const r=openBookings.concat(doneBookings),q=openTickets.concat(doneTickets);
+ const active=openTickets.find(x=>["CALLED","SERVING"].includes(x.status)),waiting=openTickets.filter(x=>x.status==="WAITING"),passed=openTickets.filter(x=>x.status==="PASSED");
+ const pendingBookings=openBookings.filter(x=>x.status==="CONFIRMED"), finishedBookings=doneBookings.filter(x=>x.status==="COMPLETED");
  const role=staff.role,isManager=["OWNER","MANAGER","PLATFORM"].includes(role);
- const menu=nav("今日工作台","dashboard",staffTab,"staff")+nav("預約管理","bookings",staffTab,"staff")+
+ const menu=nav("營運工作台","dashboard",staffTab,"staff")+nav("預約管理","bookings",staffTab,"staff")+
  nav("叫號管理","queue",staffTab,"staff")+nav("員工管理","members",staffTab,"staff")+nav("企業設定","settings",staffTab,"staff");
- let html='<div class="toolbar"><div class="small">管理範圍：<strong>'+esc(t.name)+'</strong>・'+esc(role)+'</div><div class="flex"><label for="staff-day" style="margin:0">查看日期</label><input class="field" id="staff-day" type="date" value="'+esc(day)+'" style="width:170px"></div></div>';
+ let html='<div class="toolbar"><div class="small">管理範圍：<strong>'+esc(t.name)+'</strong>・'+esc(role)+'</div>'+
+  '<div class="flex"><span class="small">按狀態管理，跨天未結案仍會保留</span>'+
+  '<label for="staff-history-days" style="margin:0">已處理紀錄</label><select class="field" id="staff-history-days" style="width:145px">'+
+  [7,14,30,90].map(n=>'<option value="'+n+'" '+(n===staffHistoryDays?"selected":"")+'>最近 '+n+' 天</option>').join("")+
+  '</select></div></div>';
  if(testMode&&session?.user?.is_anonymous)html+=box("LINE 真實測試",
    '<p>專屬測試門市：<strong>'+esc(slug)+'</strong></p>'+
    '<p class="muted">先讓 LINE 顧客進入此門市取號，再從「現場叫號」操作。號碼與通知都使用真實後端。</p>'+
    btn("複製 LINE 顧客網址","copy-test-line","primary"));
 
- if(!isToday)html+='<div class="alert">'+(day>taipei()?'目前查看未來 '+esc(day)+' 的預約：可取消或恢復預約；到店報到請於預約當天處理。':'目前查看 '+esc(day)+' 的歷史紀錄，僅供查詢；請切回今日操作。')+'</div>';
+
  if(staffTab==="dashboard"){
-  html+='<div class="grid4" style="margin-bottom:16px">'+
-   stat("尚未報到",pendingBookings.length)+stat("現場候位",waiting.length)+stat("正在服務",active?.number||"—")+stat("今日預約已完成",finishedBookings.length)+'</div>'+
-   box("今日店員工作流程",'<p class="muted">從預約管理開始，依照顧客實際情況點選狀態。每次選擇都會立即儲存，手誤可重新選擇或使用「還原上一步」。</p>'+
-     '<div class="staff-guide"><span><strong>① 查看預約</strong><div>確認時段、姓名和預約人數</div></span><span><strong>② 顧客到店</strong><div>勾選「已報到」，自動取得候位號碼</div></span><span><strong>③ 叫號服務</strong><div>叫下一位 → 服務中 → 已完成</div></span><span><strong>④ 異常處理</strong><div>未到、過號、取消或誤按都可修改</div></span></div>'+
-     '<div class="staff-actionbar">'+btn("前往預約管理（待報到 "+pendingBookings.length+" 筆）","open-bookings","primary")+
-     btn("前往叫號管理（候位 "+waiting.length+" 組）","open-queue","secondary")+'</div>')+
-   box("目前叫號狀態",active?'<div class="call">'+esc(active.number)+'</div><p>'+esc(active.name)+' ・ '+tag(active.status)+'</p>'+
-    '<div class="staff-actionbar">'+btn("前往處理此號碼","open-queue","primary")+'</div>':
-    '<p class="muted">目前沒有已叫號或服務中的顧客。</p>');
+  html+='<div class="grid4" style="margin-bottom:16px">'+stat("尚未報到",pendingBookings.length)+stat("已報到未結案",openBookings.filter(x=>x.status==="CHECKED_IN").length)+
+   stat("候位中",waiting.length)+stat("正在叫號",active?.number||"—")+'</div>'+
+   box("營運流程",'<p class="muted">預約沒有午夜自動結案。跨天仍未完成的預約與號碼牌會持續出現在工作清單。</p>'+
+    '<div class="staff-guide"><span><strong>① 查看待處理預約</strong><div>依預約日期、時間排序</div></span>'+
+    '<span><strong>② 到店報到</strong><div>勾選「已報到」，加入候位</div></span>'+
+    '<span><strong>③ 叫號服務</strong><div>叫下一位、服務中、已完成</div></span>'+
+    '<span><strong>④ 已結案與更正</strong><div>已完成／未到／取消統一放在已處理區，仍能修正</div></span></div>'+
+    '<div class="staff-actionbar">'+btn("處理未結案預約（"+openBookings.length+"）","open-bookings","primary")+
+    btn("查看叫號（"+openTickets.length+"）","open-queue","secondary")+'</div>')+
+   box("待處理預約",openBookings.length?openBookings.slice(0,6).map(x=>'<div class="listline"><div><strong>'+esc(x.day)+' '+esc(x.time)+'　'+esc(x.name)+'</strong><div class="small">'+esc(jsStatus(x.status))+'</div></div></div>').join(""):'<p class="muted">沒有待處理預約。</p>')+
+   box("已處理預約（最近 "+staffHistoryDays+" 天）",doneBookings.length?doneBookings.slice(0,6).map(x=>'<div class="listline"><div><strong>'+esc(x.day)+' '+esc(x.time)+'　'+esc(x.name)+'</strong><div class="small">'+esc(jsStatus(x.status))+'</div></div></div>').join("")+
+    '<div class="staff-actionbar">'+btn("查看與修正已處理預約","open-bookings","outline")+'</div>':'<p class="muted">選定範圍內尚無已處理預約。</p>');
  }else if(staffTab==="bookings"){
-  html+='<div class="grid4" style="margin-bottom:16px">'+stat("全部預約",r.length)+stat("待報到",pendingBookings.length)+
-    stat("已報到",r.filter(x=>x.status==="CHECKED_IN").length)+stat("已完成",finishedBookings.length)+'</div>'+
-   box("員工怎麼操作預約？",
-    '<div class="staff-guide"><span><strong>1. 已預約</strong><div>顧客尚未抵達，保留預約時段</div></span>'+
-    '<span><strong>2. 已報到</strong><div>顧客到店後勾選，自動產生候位號碼</div></span>'+
-    '<span><strong>3. 已完成</strong><div>服務結束勾選，也會同步更新號碼牌</div></span>'+
-    '<span><strong>未到／已取消</strong><div>可直接標記，也能改回已預約</div></span></div>'+
-    '<p class="staff-help">所有狀態都能直接點選。不需要逐顆按鈕猜流程；報到後請到「叫號管理」處理候位。</p>'+
-    '<div class="staff-actionbar">'+btn("查看已報到的候位號碼","open-queue","secondary")+
-    (lastStaffChange&&lastStaffChange.slug===slug&&lastStaffChange.day===day?btn("還原上一步","undo-staff","outline"):"")+'</div>')+
-   box("當日預約名單",
-     r.length?r.map(x=>{
-       const ticket=q.find(k=>k.reservation_id===x.id);
-       return '<article class="staff-record"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.time)+'　'+esc(x.name)+'</div>'+
-         '<div class="small">預約人數：'+esc(x.party)+' 位'+(ticket?' ・ 已建立號碼 '+esc(ticket.number):'')+'</div></div>'+tag(x.status)+'</div>'+
-         staffStatusPicker("reservation",x,isToday?true:day>taipei()?["CONFIRMED","CANCELLED"]:false)+
-         (x.status==="CHECKED_IN"&&ticket?'<div class="staff-help">已報到，號碼 '+esc(ticket.number)+'。可到「叫號管理」叫號。</div>':'')+
-         '</article>';
-      }).join(""):'<p class="muted">這一天沒有預約紀錄。</p>');
+  const card=x=>{
+   const linked=q.find(k=>k.reservation_id===x.id);
+   return '<article class="staff-record"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.day)+'　'+esc(x.time)+'　'+esc(x.name)+'</div>'+
+   '<div class="small">預約人數 '+esc(x.party)+' 位'+(linked?' ・ 號碼 '+esc(linked.number)+'（'+esc(linked.day)+'）':'')+'</div></div>'+tag(x.status)+'</div>'+
+   staffStatusPicker("reservation",x,x.day>taipei()?["CONFIRMED","CANCELLED"]:true)+
+   (x.status==="CHECKED_IN"&&linked?'<p class="staff-help">已報到，可到叫號管理處理 '+esc(linked.number)+'</p>':'')+'</article>';
+  };
+  html+='<div class="grid4" style="margin-bottom:16px">'+stat("待處理預約",openBookings.length)+stat("待報到",pendingBookings.length)+
+    stat("已報到未結案",openBookings.filter(x=>x.status==="CHECKED_IN").length)+stat("已處理預約",doneBookings.length)+'</div>'+
+   box("預約管理方式",'<p class="muted">只要沒有標記完成、未到或取消，預約就不因跨過午夜而消失。店員可直接勾選狀態，也可重新選擇修正手誤。</p>'+
+    '<p class="staff-help">「已報到」會產生或恢復候位號碼；同一顧客有其他號碼也能由店員操作。未來的預約僅可取消或恢復。</p>'+
+    '<div class="staff-actionbar">'+btn("前往叫號管理","open-queue","secondary")+
+    (lastStaffChange&&lastStaffChange.slug===slug?btn("還原上一步","undo-staff","outline"):"")+'</div>')+
+   box("待處理預約（"+openBookings.length+" 筆）",openBookings.length?openBookings.map(card).join(""):'<p class="muted">目前沒有未結案預約。</p>')+
+   box("已處理預約（最近 "+staffHistoryDays+" 天，"+doneBookings.length+" 筆）",'<p class="staff-help">包含已完成、未到、已取消。此區仍可修正狀態，資料依處理時間排序。</p>'+
+    (doneBookings.length?doneBookings.map(card).join(""):'<p class="muted">選定範圍內還沒有已處理預約。</p>'));
  }else if(staffTab==="queue"){
-  html+='<div class="grid4" style="margin-bottom:16px">'+stat("現在叫號",active?.number||"—")+
-    stat("候位中",waiting.length)+stat("已過號",passed.length)+stat("已完成",q.filter(x=>x.status==="COMPLETED").length)+'</div>'+
-   box("現場叫號操作",
-    '<p class="muted">先點「叫下一位」。每位顧客下方有完整狀態選項，勾選後立即更新。誤按「過號、取消、完成」都可以重新勾選恢復。</p>'+
-    '<div class="staff-actionbar">'+btn("叫下一位","call","primary",(!waiting.length||!!active||!isToday||!t.modules.calling?"disabled":""))+
-    btn("再叫一次","recall","outline",(!active||active.status!=="CALLED"||!isToday?"disabled":"")+' data-id="'+esc(active?.id||"")+'"')+
-    (lastStaffChange&&lastStaffChange.slug===slug&&lastStaffChange.day===day?btn("還原上一步","undo-staff","secondary"):"")+'</div>'+
-    '<p class="staff-help">叫號會發送 LINE 通知；已發出的通知無法撤回。狀態修正不會自動重複通知。</p>')+
-   box("今日號碼牌（共 "+q.length+" 筆）",
-    q.length?q.map(x=>'<article class="staff-record"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.number)+'　'+esc(x.name)+'</div>'+
-      '<div class="small">'+esc(x.source==="RESERVATION"?"預約報到":"現場取號")+(x.reservation_id?" ・ 已連動預約狀態":"")+'</div></div>'+tag(x.status)+'</div>'+
-      staffStatusPicker("ticket",x,isToday)+
-      '</article>').join(""):'<p class="muted">今日尚無號碼牌。請先請顧客取號，或到「預約管理」把已抵達顧客標記為已報到。</p>');
+  const card=x=>'<article class="staff-record"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.number)+'　'+esc(x.name)+'</div>'+
+   '<div class="small">'+esc(x.day)+' ・ '+esc(x.source==="RESERVATION"?"預約報到":"現場取號")+
+   (x.reservation_id?" ・ 已連動預約":"")+'</div></div>'+tag(x.status)+'</div>'+staffStatusPicker("ticket",x,true)+'</article>';
+  html+='<div class="grid4" style="margin-bottom:16px">'+stat("正在叫號",active?.number||"—")+stat("候位中",waiting.length)+
+   stat("已過號",passed.length)+stat("已結束",doneTickets.length)+'</div>'+
+   box("叫號操作",'<p class="muted">仍在候位的跨日號碼會繼續排隊。號碼狀態可直接勾選與更正。</p>'+
+    '<div class="staff-actionbar">'+btn("叫下一位","call","primary",(!waiting.length||!!active||!t.modules.calling?"disabled":""))+
+    btn("再叫一次","recall","outline",(!active||active.status!=="CALLED"?"disabled":"")+' data-id="'+esc(active?.id||"")+'"')+
+    (lastStaffChange&&lastStaffChange.slug===slug?btn("還原上一步","undo-staff","secondary"):"")+'</div>'+
+    '<p class="staff-help">叫號通知使用票券識別碼，避免跨天同號誤通知。已發出的 LINE 訊息無法撤回。</p>')+
+   box("未結案號碼牌（"+openTickets.length+" 筆）",openTickets.length?openTickets.map(card).join(""):'<p class="muted">目前沒有未結案號碼牌。</p>')+
+   box("已結束號碼牌（最近 "+staffHistoryDays+" 天，"+doneTickets.length+" 筆）",doneTickets.length?doneTickets.map(card).join(""):'<p class="muted">沒有已結束的號碼牌。</p>');
  }else if(staffTab==="members"){
   html+=box("已加入的員工",'<div class="scroll"><table class="rows"><tr><th>帳號</th><th>角色</th></tr>'+ (staff.members||[]).map(m=>'<tr><td>'+esc(m.email||('測試員工（Auth ID '+String(m.user_id||'').slice(0,8)+'）'))+'</td><td>'+esc(m.role)+'</td></tr>').join("")+'</table></div>')+
   box("待接受邀請",(staff.invites||[]).map(i=>'<div class="listline"><span>'+esc(i.email)+'</span>'+tag(i.role)+'</div>').join("")||'<p class="muted">尚無邀請</p>')+
@@ -513,7 +518,14 @@ async function load(){err="";try{
    if(customer&&customerTab==="queue"&&!customer.tenant.modules?.queue)customerTab="home";
  }
  if(view==="platform"&&platformReady())overview=await rpc("so_platform_overview");
- if(view==="staff"&&authReady()&&(context?.platform_admin||context?.memberships?.some(m=>m.slug===slug)))staff=await rpc("so_staff_state",{p_slug:slug,p_date:day});
+ if(view==="staff"&&authReady()&&(context?.platform_admin||context?.memberships?.some(m=>m.slug===slug))){
+ const [meta,work]=await Promise.all([
+  rpc("so_staff_state",{p_slug:slug,p_date:taipei()}),
+  rpc("so_staff_worklist",{p_slug:slug,p_history_days:staffHistoryDays})
+ ]);
+ staff={...meta,...work,reservations:(work.pending_reservations||[]).concat(work.processed_reservations||[]),
+   tickets:(work.active_tickets||[]).concat(work.processed_tickets||[])};
+}
  else if(view==="staff")staff=null;
  }catch(e){err=e.message||String(e)}render();}
 async function act(fn){if(busy)return;busy=true;err="";flash="";showActionFeedback("正在儲存，請勿重複點擊。","pending");
@@ -596,7 +608,7 @@ document.addEventListener("click",async ev=>{
  if(a==="cancel-my-number"){if(!confirm("確定取消號碼？"))return;await act(async()=>{await rpc("so_cancel_number",{p_id:id});return "已取消號碼";});return}
  if(a==="undo-staff"){
   const previous=lastStaffChange;
-  if(!previous||previous.slug!==slug||previous.day!==day){err="沒有可還原的操作";showActionFeedback(err,"error");render();return;}
+  if(!previous||previous.slug!==slug){err="沒有可還原的操作";showActionFeedback(err,"error");render();return;}
   await act(async()=>{
     const proc=previous.kind==="reservation"?"so_staff_set_reservation_status":"so_staff_set_ticket_status";
     const args=previous.kind==="reservation"?
@@ -616,7 +628,7 @@ document.addEventListener("click",async ev=>{
   const result=await rpc("so_staff_action",{p_slug:slug,p_action:x,p_ticket_id:["call","checkin","no_show","cancel_booking"].includes(x)?null:id,p_reservation_id:["checkin","no_show","cancel_booking"].includes(x)?id:null});
   if(x==="call"&&result.number&&nextBefore)lastStaffChange={kind:"ticket",id:nextBefore.id,label:result.number,before:"WAITING",after:"CALLED",slug,day};
   if((x==="call"||x==="recall")&&result.number){
-    const notice=await notifyLineCalled(result.number);
+    const notice=await notifyLineCalled(result.number,result.ticket_id);
     return (x==="call"?"已叫號 ":"已重新呼叫 ")+result.number+"；"+notice;
   }
   return "已完成「"+({checkin:"到店報到",start:"開始服務",complete:"完成服務",pass:"標記過號",return:"回到候位",cancel:"取消號碼",no_show:"預約未到",cancel_booking:"取消預約"}[x]||jsStatus(x))+"」"+(result.number?"："+result.number:"");
@@ -625,7 +637,8 @@ document.addEventListener("click",async ev=>{
 });
 document.addEventListener("change",async ev=>{
  const el=ev.target;
- if(el.id==="staff-day"||el.id==="customer-day"){day=el.value;chosenSlot="";lastStaffChange=null;await load();return;}
+ if(el.id==="staff-history-days"){staffHistoryDays=Number(el.value);await load();return;}
+ if(el.id==="customer-day"){day=el.value;chosenSlot="";await load();return;}
  if(el.dataset.statusKind){
   if(busy)return;
   const kind=el.dataset.statusKind, id=el.dataset.id, previous=el.dataset.previous, desired=el.value;
@@ -641,7 +654,7 @@ document.addEventListener("change",async ev=>{
    if(result.changed)lastStaffChange={kind,id,label:label||(kind==="ticket"?"號碼牌":"預約"),before:previous,after:desired,slug,day};
    let msg=(kind==="ticket"?"號碼牌 ":"預約 ")+(label||"")+"：已改為「"+jsStatus(desired)+"」";
    if(kind==="reservation"&&desired==="CHECKED_IN")msg+="，已加入候位名單";
-   if(kind==="ticket"&&desired==="CALLED"&&result.changed)msg+="；"+await notifyLineCalled(result.number);
+   if(kind==="ticket"&&desired==="CALLED"&&result.changed)msg+="；"+await notifyLineCalled(result.number,result.ticket_id);
    return msg;
   });return;
  }
