@@ -45,7 +45,13 @@ footer{margin:22px 0;color:#94a3b8;font-size:12px;text-align:center}
 import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 const SB_URL="https://unapiwajmgqqtdkixaab.supabase.co";
 const SB_KEY="sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy";
-const supa=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+// Separate LINE customer and operator Supabase sessions in the same browser.
+const routeBeforeAuth=new URLSearchParams(location.search);
+const initialViews=routeBeforeAuth.getAll("view");
+const initialView=initialViews[initialViews.length-1]||"customer";
+const authOptions={persistSession:true,autoRefreshToken:true,detectSessionInUrl:false};
+if(initialView==="customer")authOptions.storageKey="line-saas-customer-session-v2";
+const supa=createClient(SB_URL,SB_KEY,{auth:authOptions});
 const LINE_BRIDGE_URL=SB_URL+"/functions/v1/line-bridge";
 let lineConfig=null,lineLinkStatus="not-ready",lineLinkAttempted=false,lineFriendStatus=null,lineDisplayName="",lineConnectError="";
 async function bridgeConfig(){
@@ -53,6 +59,32 @@ async function bridgeConfig(){
   try{const res=await fetch(LINE_BRIDGE_URL+"?action=config");if(res.ok)lineConfig=await res.json();}
   catch(e){console.warn("LINE 設定尚不可用");}
   return lineConfig||{};
+}
+function lineLoginUrl(){
+  return "https://liff.line.me/"+encodeURIComponent(lineConfig?.liffId||"")+"/?view=customer&merchant="+encodeURIComponent(slug)+(customerTab?"&tab="+encodeURIComponent(customerTab):"");
+}
+function authRecoveryKey(){return "line-saas-reauth-v2:"+slug}
+function recoverLineLogin(manual=false){
+  const key=authRecoveryKey(),last=Number(sessionStorage.getItem(key)||0);
+  if(!manual&&last>0&&Date.now()-last<120000){
+    lineLinkStatus="failed";
+    lineConnectError="LINE 憑證重新驗證仍失敗，請按「重新登入 LINE」再次授權。";
+    return false;
+  }
+  sessionStorage.setItem(key,String(Date.now()));
+  lineLinkStatus="connecting";
+  lineConnectError="正在重新取得 LINE 登入憑證…";
+  // The LIFF browser logs in automatically on initialization. External
+  // browsers, including desktop Chrome, use LINE Login via liff.login().
+  if(window.liff?.isLoggedIn())window.liff.logout();
+  if(window.liff?.isInClient()){
+    location.replace(lineLoginUrl());
+  }else{
+    const redirectUri=location.origin+location.pathname+
+      "?view=customer&merchant="+encodeURIComponent(slug)+(customerTab?"&tab="+encodeURIComponent(customerTab):"");
+    window.liff.login({redirectUri});
+  }
+  return true;
 }
 async function connectLineSession(force=false){
   if(view!=="customer"||!session?.access_token)return;
@@ -76,9 +108,12 @@ async function connectLineSession(force=false){
       if(!window.liff.isInClient())window.liff.login({redirectUri:location.origin+location.pathname+location.search});
       return;
     }
-    const idToken=window.liff.getIDToken();
-    if(!idToken)throw Error("LINE 尚未授權身分資料，請確認 LIFF 的 openid 權限。");
+    const idToken=window.liff.getIDToken()||"";
     const accessToken=window.liff.getAccessToken()||"";
+    if(!idToken&&!accessToken){
+      recoverLineLogin(force);
+      return;
+    }
     const link=async()=>{
       const res=await fetch(LINE_BRIDGE_URL,{
         method:"POST",
@@ -97,6 +132,11 @@ async function connectLineSession(force=false){
       ({res,result}=await link());
     }
     if(!res.ok||!result.linked){
+      const refreshable=["LINE_ID_TOKEN_EXPIRED","LINE_ACCESS_TOKEN_EXPIRED","INVALID_LINE_ID_TOKEN","LINE_ACCESS_TOKEN_REQUIRED","LINE_LOGIN_TOKEN_REQUIRED"];
+      if(refreshable.includes(result.error)){
+        recoverLineLogin(force);
+        return;
+      }
       const reasons={
        LINE_ID_TOKEN_EXPIRED:"LINE 登入憑證已過期，請重新登入 LINE 後再開啟顧客網址。",
        LINE_ID_TOKEN_AUDIENCE_MISMATCH:"LINE 登入頻道與憑證不一致，請使用專屬 LINE 顧客網址重新登入。",
@@ -107,6 +147,7 @@ async function connectLineSession(force=false){
     if(!result.displayName)throw Error("LINE 未提供使用者名稱，請開啟 LIFF 的 profile 權限。");
     lineDisplayName=result.displayName;
     lineLinkStatus="linked";
+    sessionStorage.removeItem(authRecoveryKey());
     lineFriendStatus=result.isFollowing===true?true:result.isFollowing===false?false:null;
   }catch(e){
     lineLinkStatus="failed";
@@ -134,8 +175,8 @@ function lineStatusBadge(){
   const detail=lineLinkStatus==="connecting"?"正在連接 LINE 帳號…":
     lineLinkStatus==="not-logged-in"?"正在開啟 LINE 授權…":
     lineConnectError||"請授權 LINE 使用者資訊後繼續。";
-  const liffUrl=lineConfig?.liffId?'https://liff.line.me/'+encodeURIComponent(lineConfig.liffId)+'/?view=customer&merchant='+encodeURIComponent(slug):"";
-  return '<div class="alert">'+esc(detail)+' '+btn("重新連接 LINE","line-connect","secondary")+(liffUrl?' <a href="'+esc(liffUrl)+'">從 LINE 開啟</a>':'')+'</div>';
+  const liffUrl=lineConfig?.liffId?lineLoginUrl():"";
+  return '<div class="alert">'+esc(detail)+' '+btn("重新登入 LINE","line-reauth","secondary")+(liffUrl?' <a href="'+esc(liffUrl)+'">使用 LINE 登入（手機／電腦）</a>':'')+'</div>';
 }
 
 const $=id=>document.getElementById(id);
@@ -411,7 +452,17 @@ document.addEventListener("click",async ev=>{
  if(a==="book"){await act(async()=>{if(lineLinkStatus!=="linked")throw Error("請先完成 LINE 授權");if(!chosenSlot)throw Error("請先選擇時段");const result=await rpc("so_book",{p_slug:slug,p_date:day,p_time:chosenSlot,p_name:lineDisplayName,p_party:Number(val("customer-party"))});chosenSlot="";customerTab="mine";const notice=await sendLineNotice("notify-reservation",{reservationId:result.id});return "預約成功，資料已存入雲端；"+notice;});return}
  if(a==="cancel-my-book"){if(!confirm("確定取消這筆預約？"))return;await act(async()=>{await rpc("so_cancel_booking",{p_id:id});return "已取消預約";});return}
  if(a==="take"){await act(async()=>{if(lineLinkStatus!=="linked")throw Error("請先完成 LINE 授權");const result=await rpc("so_take_number",{p_slug:slug,p_name:lineDisplayName});const notice=await sendLineNotice("notify-ticket",{ticketId:result.id});return "取號成功："+result.number+"；"+notice;});return}
- if(a==="line-connect"){await act(async()=>{await connectLineSession(true);return lineLinkStatus==="linked"?"LINE 帳號已連結，後續通知可發送":"請完成 LINE 登入或從 LINE 內重新開啟";});return}
+ if(a==="line-connect"||a==="line-reauth"){
+   await act(async()=>{
+     const cfg=await bridgeConfig();
+     if(!cfg.liffId)throw Error("LINE LIFF 尚未配置");
+     if(!window.liff)throw Error("LINE 登入元件未載入，請重新整理網站");
+     await window.liff.init({liffId:cfg.liffId});
+     refreshLiffRoute();
+     recoverLineLogin(true);
+     return "正在開啟 LINE 登入…";
+   });return;
+  }
  if(a==="cancel-my-number"){if(!confirm("確定取消號碼？"))return;await act(async()=>{await rpc("so_cancel_number",{p_id:id});return "已取消號碼";});return}
  if(["call","recall","start","complete","pass","return","cancel","checkin","no-show","cancel-book-staff"].includes(a)){
  if(["cancel","no-show","cancel-book-staff"].includes(a)&&!confirm("確定執行此操作？"))return;
