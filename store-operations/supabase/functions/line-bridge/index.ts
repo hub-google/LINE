@@ -128,6 +128,34 @@ function recently(timestamp: string | null | undefined, maxMs: number): boolean 
   const t = Date.parse(timestamp || "");
   return Number.isFinite(t) && t <= Date.now() + 5_000 && Date.now() - t <= maxMs;
 }
+
+type OaReachability = "REACHABLE" | "NOT_REACHABLE" | "UNKNOWN";
+async function oaRecipientReachability(userId: string): Promise<OaReachability> {
+  const token = Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
+  if (!token) return "UNKNOWN";
+  try {
+    const res = await fetch("https://api.line.me/v2/bot/profile/" + encodeURIComponent(userId), {
+      headers: { authorization: "Bearer " + token },
+    });
+    if (res.ok) return "REACHABLE";
+    if (res.status === 404 || res.status === 400) return "NOT_REACHABLE";
+  } catch { /* Network error; never infer user is blocked. */ }
+  return "UNKNOWN";
+}
+async function oaAddFriendUrl(): Promise<string | null> {
+  const token = Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
+  if (!token) return null;
+  try {
+    const res = await fetch("https://api.line.me/v2/bot/info", {
+      headers: { authorization: "Bearer " + token },
+    });
+    if (!res.ok) return null;
+    const info = await res.json();
+    const id = typeof info.basicId === "string" ? info.basicId : "";
+    return /^@[a-z0-9_.-]{2,100}$/i.test(id) ? "https://line.me/R/ti/p/" + encodeURIComponent(id) : null;
+  } catch { return null; }
+}
+
 async function pushNotice(
   db: ReturnType<typeof service>,
   tenant: { id: string; name: string },
@@ -143,7 +171,15 @@ async function pushNotice(
     .select("line_sub,is_following").eq("tenant_id", tenant.id).eq("user_id", recipient).maybeSingle();
   if (linkError) throw linkError;
   if (!linked) return reply(200, { ok: true, sent: false, reason: "CUSTOMER_NOT_LINKED" }, origin);
-  if (linked.is_following === false) return reply(200, { ok: true, sent: false, reason: "CUSTOMER_UNFOLLOWED" }, origin);
+  // Messaging API can accept a push without delivering it. Verify that this
+  // exact OA can resolve the recipient's user ID before claiming the push.
+  const reachability = await oaRecipientReachability(linked.line_sub);
+  if (reachability === "NOT_REACHABLE") {
+    return reply(200, { ok: true, sent: false, reason: "OA_CANNOT_REACH_CUSTOMER" }, origin);
+  }
+  if (reachability === "UNKNOWN") {
+    return reply(503, { error: "OA_PROFILE_CHECK_UNAVAILABLE" }, origin);
+  }
 
   // A single database claim per real booking/ticket event prevents duplicated push charges.
   const claim = { tenant_id: tenant.id, event_kind: eventKind, reference_id: referenceId };
@@ -262,9 +298,10 @@ Deno.serve(async (req: Request) => {
         ? payload.accessToken : undefined;
       if (!idToken && !accessToken) return reply(400, { error: "LINE_LOGIN_TOKEN_REQUIRED" }, origin);
       const line = await lineVerify(idToken, accessToken);
-      // Query LINE itself rather than trusting a browser-supplied friend flag.
-      // Requires the LINE Login channel to be linked to the Messaging OA.
+      // LINE Login friendship checks often fail when the Login channel has
+      // no linked OA. Always independently test the actual Messaging OA.
       let verifiedFriendship: boolean | null = null;
+      let friendCheckStatus = "UNAVAILABLE";
       if (accessToken) {
         try {
           const friendship = await fetch("https://api.line.me/friendship/v1/status", {
@@ -272,10 +309,21 @@ Deno.serve(async (req: Request) => {
           });
           if (friendship.ok) {
             const result = await friendship.json();
-            if (typeof result.friendFlag === "boolean") verifiedFriendship = result.friendFlag;
+            if (typeof result.friendFlag === "boolean") {
+              verifiedFriendship = result.friendFlag;
+              friendCheckStatus = "VERIFIED";
+            }
+          } else if (friendship.status === 400) {
+            friendCheckStatus = "LINK_OR_SCOPE_CONFIGURATION";
+          } else if (friendship.status === 401 || friendship.status === 403) {
+            friendCheckStatus = "TOKEN_OR_PROFILE_SCOPE";
           }
-        } catch { /* LINE Login/OA friendship linkage not available: remain unknown. */ }
+        } catch { friendCheckStatus = "LINE_API_UNAVAILABLE"; }
       }
+      const [recipientReachability, addFriendUrl] = await Promise.all([
+        oaRecipientReachability(line.sub),
+        oaAddFriendUrl(),
+      ]);
       const { data: tenant, error: te } = await db.from("so_tenants").select("id,slug,status").eq("slug", slug).eq("status", "ACTIVE").single();
       if (te || !tenant) return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
       const { data: previous, error: previousError } = await db.from("so_line_links")
@@ -285,16 +333,27 @@ Deno.serve(async (req: Request) => {
       if (previous && previous.line_sub !== line.sub)
         return reply(409, { error: "LINE_ACCOUNT_CHANGED" }, origin);
       link.display_name = line.name;
-      if (verifiedFriendship !== null) {
+      // A LINE Login channel can be linked to a different OA. Never turn
+      // that channel's friendFlag into proof this Messaging OA can message.
+      if (verifiedFriendship !== null && recipientReachability === "REACHABLE") {
         link.is_following = verifiedFriendship;
         link.friendship_updated_at = new Date().toISOString();
+      } else if (recipientReachability === "NOT_REACHABLE") {
+        link.is_following = null;
+        link.friendship_updated_at = null;
       }
       const { error } = await db.from("so_line_links").upsert(link, { onConflict: "tenant_id,user_id" });
       if (error) throw error;
       const { data: linked, error: linkedError } = await db.from("so_line_links")
         .select("is_following").eq("tenant_id", tenant.id).eq("user_id", user.id).single();
       if (linkedError) throw linkedError;
-      return reply(200, { ok: true, linked: true, isFollowing: linked.is_following, displayName: line.name || null }, origin);
+      return reply(200, {
+        ok: true, linked: true, isFollowing: linked.is_following,
+        displayName: line.name || null, recipientReachability,
+        friendCheckStatus,
+        oaAddFriendUrl: addFriendUrl,
+        providerMismatchSuspected: verifiedFriendship === true && recipientReachability === "NOT_REACHABLE",
+      }, origin);
     }
 
     if (payload.action === "notify") {
