@@ -102,6 +102,19 @@ body{overflow-x:hidden}
 .staff-delete input:disabled{opacity:.6;cursor:not-allowed}
 .staff-deleted-record{border-color:#f0c6c6;background:#fffafa}
 .staff-deleted-record .staff-record-title{text-decoration:line-through;color:#8f4a4a}
+
+.queue-board{border:1px solid #a7f3d0;border-radius:18px;padding:22px;background:linear-gradient(180deg,#f0fdf4,#fff);text-align:center}
+.queue-board-lead{font-size:15px;color:#047857;font-weight:750}
+.queue-board-current{font-size:clamp(70px,15vw,124px);font-weight:900;line-height:1.15;color:#065f46;letter-spacing:-3px;font-variant-numeric:tabular-nums}
+.queue-board-sub{font-size:13px;color:#475569}
+.queue-board-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}
+.queue-board-stat{background:white;border:1px solid #d1fae5;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:3px}
+.queue-board-stat span{color:#64748b;font-size:13px}
+.queue-board-stat strong{font-size:clamp(28px,6vw,44px);font-variant-numeric:tabular-nums}
+.queue-board-stat small{font-size:12px;color:#64748b}
+.queue-board-note{font-size:14px;font-weight:650}
+.queue-board .staff-actionbar{justify-content:center}
+@media(max-width:500px){.queue-board{padding:16px 10px}.queue-board-grid{gap:8px}.queue-board-stat{padding:11px 6px}}
 </style></head>
 <body>
 <header><div class="top">
@@ -135,7 +148,8 @@ function customerUrl(merchant){
 }
 function lineLoginUrl(){
   return "https://liff.line.me/"+encodeURIComponent(lineConfig?.liffId||"")+"/?view=customer&merchant="+encodeURIComponent(slug)+(customerTab?"&tab="+encodeURIComponent(customerTab):"")+
-    (manageKind&&manageItem?"&manage="+encodeURIComponent(manageKind)+"&item="+encodeURIComponent(manageItem)+"&mode="+encodeURIComponent(manageMode):"");
+    (manageKind&&manageItem?"&manage="+encodeURIComponent(manageKind)+"&item="+encodeURIComponent(manageItem)+"&mode="+encodeURIComponent(manageMode):"")+
+    (customerTab==="progress"&&progressTicketId?"&ticket="+encodeURIComponent(progressTicketId):"");
 }
 function authRecoveryKey(){return "line-saas-reauth-v2:"+slug}
 function recoverLineLogin(manual=false){
@@ -155,7 +169,8 @@ function recoverLineLogin(manual=false){
     location.replace(lineLoginUrl());
   }else{
     const redirectUri=location.origin+location.pathname+
-      "?view=customer&merchant="+encodeURIComponent(slug)+(customerTab?"&tab="+encodeURIComponent(customerTab):"");
+      "?view=customer&merchant="+encodeURIComponent(slug)+(customerTab?"&tab="+encodeURIComponent(customerTab):"")+
+      (customerTab==="progress"&&progressTicketId?"&ticket="+encodeURIComponent(progressTicketId):"");
     window.liff.login({redirectUri});
   }
   return true;
@@ -303,7 +318,12 @@ function refreshLiffRoute(){
  const nextView=lastParam(stateQuery,"view")||lastParam(live,"view");
  if(["customer","staff","platform","home"].includes(nextView))view=nextView;
  const nextTab=lastParam(stateQuery,"tab")||lastParam(live,"tab");
- if(["home","reserve","queue","mine"].includes(nextTab))customerTab=nextTab;
+ if(["home","reserve","queue","mine","progress"].includes(nextTab))customerTab=nextTab;
+ const newTicket=lastParam(stateQuery,"ticket")||lastParam(live,"ticket");
+ if(/^[0-9a-f-]{36}$/i.test(newTicket||"")){
+   progressTicketId=newTicket;
+   if(nextTab==="progress")customerTab="progress";
+ }
  const newKind=lastParam(stateQuery,"manage")||lastParam(live,"manage");
  const newItem=lastParam(stateQuery,"item")||lastParam(live,"item");
  const newMode=lastParam(stateQuery,"mode")||lastParam(live,"mode");
@@ -333,11 +353,15 @@ let view=incomingParam("view")||"customer",slug=(isSafeMerchant(incomingParam("m
 let session=null,context=null,overview=[],customer=null,staff=null,busy=false,flash="",err="";
 let staffHistoryDays=14;
 let editingMenuItemId="",bookingChosenItems=[],queueChosenItems=[],editChosenItems=[];
-let day=taipei(),customerTab=["home","reserve","queue","mine"].includes(incomingParam("tab"))?incomingParam("tab"):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
+let day=taipei(),customerTab=["home","reserve","queue","mine","progress"].includes(incomingParam("tab"))?incomingParam("tab"):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
 let manageKind=["reservation","ticket"].includes(incomingParam("manage"))?incomingParam("manage"):"";
 let manageItem=/^[0-9a-f-]{36}$/i.test(incomingParam("item")||"")?incomingParam("item"):"";
 let manageMode=["edit","cancel","view"].includes(incomingParam("mode"))?incomingParam("mode"):"view";
 let editingBookingId="",editDate="",editTime="",editParty=1,editSlots=null,editLoading=false;
+let progressTicketId=/^[0-9a-f-]{36}$/i.test(incomingParam("ticket")||"")?incomingParam("ticket"):"";
+let queueLive=null,queueLiveShop="",queueLiveLoading=false,queueLiveError="";
+let queueRealtimeChannel=null,queueRealtimeTenant="";
+
 const features=[["reservation","線上預約"],["queue","線上取號"],["calling","現場叫號"]];
 const route=(v,s=slug,tab="")=>location.pathname+"?view="+encodeURIComponent(v)+(s?"&merchant="+encodeURIComponent(s):"")+(v==="customer"&&tab?"&tab="+encodeURIComponent(tab):"");
 function lineIndicator(tenant){
@@ -679,13 +703,83 @@ function editBookingForm(record){
   btn("返回","close-book-edit","outline")+'</div></div>';
 }
 
+
+function stopQueueRealtime(){
+ if(queueRealtimeChannel){
+   const ch=queueRealtimeChannel;queueRealtimeChannel=null;queueRealtimeTenant="";
+   void supa.removeChannel(ch);
+ }
+}
+function queueTicketToDisplay(){
+ const all=customer?.my_tickets||[];
+ return progressTicketId||
+   all.find(x=>["WAITING","CALLED","SERVING"].includes(x.status))?.id||
+   all.find(x=>x.status==="PASSED")?.id||null;
+}
+async function refreshQueueProgress(){
+ if(view!=="customer"||customerTab!=="progress"||lineLinkStatus!=="linked"||queueLiveLoading)return;
+ const shop=slug;
+ queueLiveLoading=true;
+ try{
+  const data=await rpc("so_queue_live",{p_slug:shop,p_ticket_id:queueTicketToDisplay()});
+  if(view!=="customer"||customerTab!=="progress"||slug!==shop)return;
+  queueLive=data;queueLiveShop=shop;queueLiveError="";
+  render();
+  if(data?.tenant_id&&queueRealtimeTenant!==data.tenant_id){
+    stopQueueRealtime();
+    queueRealtimeTenant=data.tenant_id;
+    queueRealtimeChannel=supa.channel("queue-display-"+data.tenant_id)
+      .on("postgres_changes",{event:"UPDATE",schema:"public",table:"so_queue_displays",
+        filter:"tenant_id=eq."+data.tenant_id},()=>{void refreshQueueProgress();})
+      .subscribe();
+  }
+ }catch(e){
+  if(view==="customer"&&customerTab==="progress"&&slug===shop){
+    queueLiveError="進度暫時無法同步，請點重新整理。";
+    render();
+  }
+ }finally{queueLiveLoading=false;}
+}
+function queueProgressBoard(){
+ const fresh=queueLiveShop===slug?queueLive:null;
+ const own=fresh?.mine||null;
+ const fallbackTicket=(customer?.my_tickets||[]).find(x=>x.id===progressTicketId)||
+   (customer?.my_tickets||[]).find(x=>["WAITING","CALLED","SERVING"].includes(x.status));
+ const ownNumber=own?.number||fallbackTicket?.number||"—";
+ const ownStatus=own?.status||fallbackTicket?.status||"";
+ let note="號碼與候位組數會隨店員叫號自動更新。";
+ if(ownStatus==="CALLED")note="已叫到您的號碼，請依現場人員指示報到。";
+ else if(ownStatus==="SERVING")note="您的號碼目前服務中。";
+ else if(ownStatus==="COMPLETED")note="您的服務已完成。";
+ else if(ownStatus==="CANCELLED")note="這張號碼已取消，不再參與候位。";
+ else if(ownStatus==="PASSED")note="您的號碼已過號，如需協助請洽門市。";
+ return '<div class="queue-board" aria-live="polite">'+
+   '<div class="queue-board-lead">現在叫到</div>'+
+   '<div class="queue-board-current">'+esc(fresh?.current||"—")+'</div>'+
+   '<div class="queue-board-sub">'+esc(fresh?.current?"請依現場叫號進度為準":"目前尚未開始叫號")+'</div>'+
+   '<div class="queue-board-grid">'+
+     '<div class="queue-board-stat"><span>我的號碼</span><strong>'+esc(ownNumber)+'</strong>'+
+       (ownStatus?'<small>'+esc(jsStatus(ownStatus))+'</small>':"")+'</div>'+
+     '<div class="queue-board-stat"><span>前面還有</span><strong>'+
+       (own?.ahead===null||own?.ahead===undefined?"—":esc(own.ahead)+" 組")+
+       '</strong><small>依實際候位與服務中計算</small></div>'+
+   '</div>'+
+   '<p class="queue-board-note">'+esc(note)+'</p>'+
+   '<p class="small">'+(queueLiveError?esc(queueLiveError):
+      "即時更新中・若 LINE 切換背景，重新開啟將自動同步最新號碼")+'</p>'+
+   '<div class="staff-actionbar">'+btn("重新整理進度","queue-refresh","outline")+
+      btn("查看我的紀錄","queue-records","secondary")+
+      (ownStatus==="WAITING"&&own?.id?btn("取消排隊","cancel-my-number","outline",'data-id="'+esc(own.id)+'"'):"")+
+   '</div></div>';
+}
+
 function customerRender(){
   if(lineLinkStatus!=="linked")return box("LINE 身分授權",'<p class="muted">使用 LINE 帳號登入後即可預約與取號，不需另填姓名或帳密。</p><p class="small">目前指定門市：<strong>'+esc(slug)+'</strong></p>'+lineStatusBadge());
   if(!customer)return box("正在讀取顧客網站",'<p class="muted">正在確認企業設定與登入狀態...</p>');
   const t=customer.tenant,m=t.modules||{},items=customer.my_reservations||[],tickets=customer.my_tickets||[],live=tickets.find(x=>["WAITING","CALLED","SERVING"].includes(x.status));
   const catalogue=customer.menu_items||[];
  document.documentElement.style.setProperty("--primary",/^#[a-fA-F0-9]{6}$/.test(t.accent)?t.accent:"#147e68");
- const menu=nav("首頁","home",customerTab,"customer")+(m.reservation?nav("線上預約","reserve",customerTab,"customer"):"")+(m.queue?nav("現場取號","queue",customerTab,"customer"):"")+nav("我的紀錄","mine",customerTab,"customer");
+ const menu=nav("首頁","home",customerTab,"customer")+(m.reservation?nav("線上預約","reserve",customerTab,"customer"):"")+(m.queue?nav("現場取號","queue",customerTab,"customer")+nav("即時叫號","progress",customerTab,"customer"):"")+nav("我的紀錄","mine",customerTab,"customer");
  let html='';
  if(customerTab==="home") html='<div class="hero"><div class="eyebrow" style="color:#ddfff2">CUSTOMER PORTAL</div><h1>'+esc(t.name)+'</h1><p class="muted">'+esc(t.description||"歡迎使用線上服務")+'</p><p class="muted">'+esc(t.address||"")+'</p></div>'+
  '<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",customer.current||"—")+stat("現場候位",customer.waiting+" 組")+stat("我的有效預約",items.filter(x=>x.status==="CONFIRMED").length)+'</div>'+
@@ -712,6 +806,10 @@ function customerRender(){
     menuSelectSection(t.menu_queue_mode||"DISABLED",catalogue,queueChosenItems,"queue")+
     '<div style="margin-top:14px">'+btn("立即線上取號","take","primary",
     !menuChoiceReady(t.menu_queue_mode,queueChosenItems,catalogue)?"disabled":"")+'</div>');
+ }else if(customerTab==="progress"){
+  if(!m.queue)html=box("未開放叫號",'<p class="muted">門市目前沒有開放現場叫號。</p>');
+  else html=box("即時叫號進度",'<p class="muted">以下為 <strong>'+esc(t.name)+'</strong> 的即時候位資訊。</p>'+
+    queueProgressBoard());
  }else html=box("我的預約紀錄",renderBookings(items,true))+
  box("我的號碼紀錄",renderMyTickets(tickets));
  return layout(t.name,"LINE 預約與取號・Supabase 即時資料",menu,lineStatusBadge()+html);
@@ -769,7 +867,7 @@ async function load(){err="";try{
  if(view==="customer"){
    customer=lineLinkStatus==="linked"?await rpc("so_public_state",{p_slug:slug,p_date:day}):null;
    if(customer&&customerTab==="reserve"&&!customer.tenant.modules?.reservation)customerTab="home";
-   if(customer&&customerTab==="queue"&&!customer.tenant.modules?.queue)customerTab="home";
+   if(customer&&["queue","progress"].includes(customerTab)&&!customer.tenant.modules?.queue)customerTab="home";
    if(customer&&manageKind==="reservation"&&manageMode==="edit"&&manageItem&&editingBookingId!==manageItem){
      const rec=(customer.my_reservations||[]).find(x=>x.id===manageItem&&x.status==="CONFIRMED");
      if(rec){
@@ -790,7 +888,13 @@ async function load(){err="";try{
    tickets:(work.active_tickets||[]).concat(work.processed_tickets||[])};
 }
  else if(view==="staff")staff=null;
- }catch(e){err=e.message||String(e)}render();}
+ }catch(e){err=e.message||String(e)}render();
+ if(view==="customer"&&customerTab==="progress"&&lineLinkStatus==="linked"){
+   void refreshQueueProgress();
+ }else if(queueRealtimeChannel){
+   stopQueueRealtime();
+ }
+}
 async function act(fn){if(busy)return;busy=true;err="";flash="";showActionFeedback("正在儲存，請勿重複點擊。","pending");
  document.querySelectorAll("button[data-act],input[data-status-kind],input[data-delete-kind]").forEach(x=>x.disabled=true);
  try{const m=await fn();await load();flash=m||"已成功儲存";
@@ -814,7 +918,14 @@ document.addEventListener("click",async ev=>{
  const b=ev.target.closest("button");if(!b||busy)return;
  if(b.dataset.act==="dismiss-feedback"){dismissActionFeedback();flash="";err="";render();return;}
  if(b.dataset.act==="open-bookings"||b.dataset.act==="open-queue"){staffTab=b.dataset.act==="open-bookings"?"bookings":"queue";err="";render();return;}
- if(b.dataset.nav){const v=b.dataset.nav;const tab=b.dataset.tab;if(v==="customer"){customerTab=tab;if(!customer?.tenant.modules[tab==="reserve"?"reservation":tab==="queue"?"queue":"reservation"]&&["reserve","queue"].includes(tab))customerTab="home";/* Customer subviews change in-place on the same page, not by opening separate URLs. */}if(v==="staff")staffTab=tab;if(v==="platform")platformTab=tab;err="";flash="";render();return}
+ if(b.dataset.nav){const v=b.dataset.nav;const tab=b.dataset.tab;if(v==="customer"){
+  customerTab=tab;
+  if(["reserve","queue","progress"].includes(tab)&&!customer?.tenant.modules[tab==="reserve"?"reservation":"queue"])customerTab="home";
+  if(customerTab==="progress"){queueLive=null;queueLiveShop="";void refreshQueueProgress();}
+  else stopQueueRealtime();
+  /* Customer subviews change in-place on the same page. */
+ }
+ if(v==="staff")staffTab=tab;if(v==="platform")platformTab=tab;err="";flash="";render();return}
  if(b.dataset.slot){chosenSlot=b.dataset.slot;render();return}
  const a=b.dataset.act,id=b.dataset.id;
  if(!a)return;
@@ -932,9 +1043,12 @@ document.addEventListener("click",async ev=>{
   if(lineLinkStatus!=="linked")throw Error("請先完成 LINE 授權");
   const result=await rpc("so_take_number_with_items",{p_slug:slug,p_name:lineDisplayName,p_items:queueChosenItems.slice()});
   queueChosenItems=[];
+  progressTicketId=result.id;customerTab="progress";queueLive=null;queueLiveShop="";
   const notice=await sendLineNotice("notify-ticket",{ticketId:result.id});
   return "取號成功！您的號碼是 "+result.number+customerNoticeSuffix(notice);
  });return}
+ if(a==="queue-refresh"){void refreshQueueProgress();return;}
+ if(a==="queue-records"){customerTab="mine";stopQueueRealtime();render();return;}
  if(a==="line-check-friendship"){await act(async()=>{
   await connectLineSession(true);
   if(lineLinkStatus!=="linked")throw Error("LINE 身分連結失敗："+(lineConnectError||"請重新授權"));
@@ -1054,6 +1168,8 @@ document.addEventListener("change",async ev=>{
 });
 
 window.addEventListener("focus",()=>{if(!busy&&["customer","staff","platform"].includes(view))load()});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&view==="customer"&&customerTab==="progress")void refreshQueueProgress();});
+setInterval(()=>{if(!document.hidden&&!busy&&view==="customer"&&customerTab==="progress")void refreshQueueProgress();},6000);
 setInterval(()=>{if(!document.hidden&&!busy&&!document.activeElement?.matches("input,select,textarea")&&(["customer","staff","platform"].includes(view)))load()},15000);
 load();
 </script><script src="https://static.line-scdn.net/liff/edge/2/sdk.js" defer></script></body></html>
