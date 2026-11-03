@@ -191,7 +191,10 @@ Deno.serve(async (req: Request) => {
       if (previous && previous.line_sub !== line.sub) { link.is_following = null; link.friendship_updated_at = null; }
       const { error } = await db.from("so_line_links").upsert(link, { onConflict: "tenant_id,user_id" });
       if (error) throw error;
-      return reply(200, { ok: true, linked: true, displayName: line.name || null }, origin);
+      const { data: linked, error: linkedError } = await db.from("so_line_links")
+        .select("is_following").eq("tenant_id", tenant.id).eq("user_id", user.id).single();
+      if (linkedError) throw linkedError;
+      return reply(200, { ok: true, linked: true, isFollowing: linked.is_following, displayName: line.name || null }, origin);
     }
 
     if (payload.action === "notify") {
