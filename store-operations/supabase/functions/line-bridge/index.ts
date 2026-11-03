@@ -32,13 +32,25 @@ async function identity(req: Request, db: ReturnType<typeof service>) {
   return data.user;
 }
 async function lineVerify(idToken: string, accessToken?: string) {
-  const channelId = Deno.env.get("LINE_LOGIN_CHANNEL_ID");
+  // A LIFF ID starts with the LINE Login channel ID. Use the very same
+  // channel for ID-token verification, not a separately provisioned secret
+  // which can accidentally point at another channel.
+  const liffId = Deno.env.get("LINE_LIFF_ID") || "";
+  const channelId = /^([0-9]{8,})-[A-Za-z0-9]+$/.exec(liffId)?.[1];
   if (!channelId) throw new Error("LINE_LOGIN_NOT_CONFIGURED");
   const form = new URLSearchParams({ id_token: idToken, client_id: channelId });
   const response = await fetch("https://api.line.me/oauth2/v2.1/verify", {
     method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: form,
   });
-  if (!response.ok) throw new Error("INVALID_LINE_ID_TOKEN");
+  if (!response.ok) {
+    // Return only public error categories, never tokens or full provider
+    // errors. This distinguishes configuration mismatch from expiry.
+    const failure = await response.json().catch(() => ({}));
+    const reason = typeof failure.error_description === "string" ? failure.error_description : "";
+    if (/Audience/i.test(reason)) throw new Error("LINE_ID_TOKEN_AUDIENCE_MISMATCH");
+    if (/expired/i.test(reason)) throw new Error("LINE_ID_TOKEN_EXPIRED");
+    throw new Error("INVALID_LINE_ID_TOKEN");
+  }
   const profile = await response.json();
   if (profile.aud !== channelId || !/^U[a-f0-9]{32}$/i.test(profile.sub || "")) throw new Error("INVALID_LINE_IDENTITY");
   let displayName = typeof profile.name === "string" ? profile.name.trim() : "";
@@ -191,7 +203,14 @@ Deno.serve(async (req: Request) => {
     return webhook(req, origin);
   }
   if (req.method === "GET" && url.searchParams.get("action") === "config") {
-    return reply(200, { liffId: Deno.env.get("LINE_LIFF_ID") || null, loginReady: !!Deno.env.get("LINE_LOGIN_CHANNEL_ID"), messagingReady: !!Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN") }, origin);
+    const liffId = Deno.env.get("LINE_LIFF_ID") || "";
+    const expectedChannelId = /^([0-9]{8,})-[A-Za-z0-9]+$/.exec(liffId)?.[1] || null;
+    return reply(200, {
+      liffId: liffId || null,
+      loginReady: !!expectedChannelId,
+      messagingReady: !!Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN"),
+      loginChannelMatchesLiff: !!expectedChannelId && expectedChannelId === Deno.env.get("LINE_LOGIN_CHANNEL_ID"),
+    }, origin);
   }
   if (req.method !== "POST") return reply(405, { error: "METHOD_NOT_ALLOWED" }, origin);
   if (origin && origin !== originAllowed) return reply(403, { error: "ORIGIN_DENIED" }, origin);
@@ -274,7 +293,7 @@ Deno.serve(async (req: Request) => {
     return reply(400, { error: "UNKNOWN_ACTION" }, origin);
   } catch (error) {
     const msg = error instanceof Error ? error.message : "UNKNOWN_ERROR";
-    const status = ["LOGIN_REQUIRED", "INVALID_SUPABASE_SESSION", "INVALID_LINE_ID_TOKEN", "INVALID_LINE_IDENTITY", "LINE_PROFILE_SCOPE_REQUIRED", "LINE_PROFILE_IDENTITY_MISMATCH"].includes(msg) ? 401 : ["LINE_LOGIN_NOT_CONFIGURED", "SUPABASE_ADMIN_NOT_CONFIGURED"].includes(msg) ? 503 : 500;
+    const status = ["LOGIN_REQUIRED", "INVALID_SUPABASE_SESSION", "INVALID_LINE_ID_TOKEN", "LINE_ID_TOKEN_EXPIRED", "LINE_ID_TOKEN_AUDIENCE_MISMATCH", "INVALID_LINE_IDENTITY", "LINE_PROFILE_SCOPE_REQUIRED", "LINE_PROFILE_IDENTITY_MISMATCH"].includes(msg) ? 401 : ["LINE_LOGIN_NOT_CONFIGURED", "SUPABASE_ADMIN_NOT_CONFIGURED"].includes(msg) ? 503 : 500;
     if (status === 500) console.error("LINE integration operation failed", error instanceof Error ? error.name : "unknown");
     return reply(status, { error: status === 500 ? "INTERNAL_ERROR" : msg }, origin);
   }
