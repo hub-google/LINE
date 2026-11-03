@@ -118,7 +118,8 @@ function customerUrl(merchant){
  return id?"https://liff.line.me/"+encodeURIComponent(id)+"/?view=customer&merchant="+encodeURIComponent(merchant):null;
 }
 function lineLoginUrl(){
-  return "https://liff.line.me/"+encodeURIComponent(lineConfig?.liffId||"")+"/?view=customer&merchant="+encodeURIComponent(slug)+(customerTab?"&tab="+encodeURIComponent(customerTab):"");
+  return "https://liff.line.me/"+encodeURIComponent(lineConfig?.liffId||"")+"/?view=customer&merchant="+encodeURIComponent(slug)+(customerTab?"&tab="+encodeURIComponent(customerTab):"")+
+    (manageKind&&manageItem?"&manage="+encodeURIComponent(manageKind)+"&item="+encodeURIComponent(manageItem)+"&mode="+encodeURIComponent(manageMode):"");
 }
 function authRecoveryKey(){return "line-saas-reauth-v2:"+slug}
 function recoverLineLogin(manual=false){
@@ -285,6 +286,14 @@ function refreshLiffRoute(){
  if(["customer","staff","platform","home"].includes(nextView))view=nextView;
  const nextTab=lastParam(stateQuery,"tab")||lastParam(live,"tab");
  if(["home","reserve","queue","mine"].includes(nextTab))customerTab=nextTab;
+ const newKind=lastParam(stateQuery,"manage")||lastParam(live,"manage");
+ const newItem=lastParam(stateQuery,"item")||lastParam(live,"item");
+ const newMode=lastParam(stateQuery,"mode")||lastParam(live,"mode");
+ if(["reservation","ticket"].includes(newKind)&&/^[0-9a-f-]{36}$/i.test(newItem||"")){
+   manageKind=newKind;manageItem=newItem;
+   manageMode=["edit","cancel","view"].includes(newMode)?newMode:"view";
+   customerTab="mine";
+ }
  // Only normalize our own duplicate query keys after LIFF has initialized.
  // Keep all LINE SDK query keys (liff.*, access_token, etc.) untouched.
  const normalized=new URL(location.href);
@@ -306,6 +315,10 @@ let view=incomingParam("view")||"customer",slug=(isSafeMerchant(incomingParam("m
 let session=null,context=null,overview=[],customer=null,staff=null,busy=false,flash="",err="";
 let staffHistoryDays=14;
 let day=taipei(),customerTab=["home","reserve","queue","mine"].includes(incomingParam("tab"))?incomingParam("tab"):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
+let manageKind=["reservation","ticket"].includes(incomingParam("manage"))?incomingParam("manage"):"";
+let manageItem=/^[0-9a-f-]{36}$/i.test(incomingParam("item")||"")?incomingParam("item"):"";
+let manageMode=["edit","cancel","view"].includes(incomingParam("mode"))?incomingParam("mode"):"view";
+let editingBookingId="",editDate="",editTime="",editParty=1,editSlots=null,editLoading=false;
 const features=[["reservation","線上預約"],["queue","線上取號"],["calling","現場叫號"]];
 const route=(v,s=slug,tab="")=>location.pathname+"?view="+encodeURIComponent(v)+(s?"&merchant="+encodeURIComponent(s):"")+(v==="customer"&&tab?"&tab="+encodeURIComponent(tab):"");
 function lineIndicator(tenant){
@@ -512,6 +525,56 @@ function staffRender(){
  }
  return layout(t.name,"企業員工營運後台",menu,html);
 }
+
+function finishManageLink(){
+ manageKind="";manageItem="";manageMode="view";
+ const url=new URL(location.href);
+ for(const key of ["manage","item","mode"])url.searchParams.delete(key);
+ if(!url.searchParams.has("liff.state"))history.replaceState(null,"",url.pathname+url.search+url.hash);
+}
+function dateInThirtyDays(){
+ const d=new Date(taipei()+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+30);
+ return d.toISOString().slice(0,10);
+}
+async function fetchBookingEditSlots(){
+ const id=editingBookingId,lookup=editDate;
+ editLoading=true;editSlots=null;render();
+ try{
+   const viewData=await rpc("so_public_state",{p_slug:slug,p_date:lookup});
+   if(editingBookingId===id&&editDate===lookup){
+     editSlots=viewData.slots||[];
+     if(!editSlots.some(s=>s.time===editTime))editTime="";
+   }
+ }catch(e){
+   showActionFeedback("無法取得可預約時段："+(e.message||String(e)),"error");
+ }finally{editLoading=false;render();}
+}
+async function beginBookingEdit(id){
+ const record=(customer?.my_reservations||[]).find(x=>x.id===id);
+ if(!record||record.status!=="CONFIRMED"){showActionFeedback("這筆預約目前無法編輯","error");return;}
+ editingBookingId=id;editDate=String(record.day);editTime=String(record.time);editParty=Number(record.party);
+ customerTab="mine";manageMode="edit";manageKind="reservation";manageItem=id;
+ await fetchBookingEditSlots();
+}
+function editBookingForm(record){
+ if(editingBookingId!==record.id)return "";
+ const choices=(editSlots||[]).map(x=>{
+  const isOriginal=x.time===record.time&&editDate===record.day;
+  return '<option value="'+esc(x.time)+'" '+(editTime===x.time?'selected ':'')+
+   (!isOriginal&&x.available<editParty?'disabled ':'')+'>'+esc(x.time)+'（剩餘 '+esc(x.available)+' 位）</option>';
+ }).join("");
+ return '<div class="staff-record" style="margin-top:12px;background:#f8fafc">'+
+  '<h3 style="margin-top:0">編輯預約資訊</h3><div class="grid">'+
+  '<div>'+field("預約日期","edit-book-date",editDate,"date",'min="'+taipei()+'" max="'+dateInThirtyDays()+'"')+'</div>'+
+  '<div>'+field("預約人數","edit-book-party",editParty,"number",'min="1" max="20"')+'</div></div>'+
+  '<label for="edit-book-time">預約時間</label>'+
+  (editLoading?'<p class="muted">正在讀取可預約時段…</p>':
+   '<select id="edit-book-time" class="field"><option value="">請選擇時段</option>'+choices+'</select>')+
+  '<p class="staff-help">修改後會再次確認名額，預約編號維持不變，並發送更新通知。</p>'+
+  '<div class="staff-actionbar">'+btn("儲存預約修改","save-book-edit","primary",!editTime||editLoading?'disabled':'')+
+  btn("返回","close-book-edit","outline")+'</div></div>';
+}
+
 function customerRender(){
   if(lineLinkStatus!=="linked")return box("LINE 身分授權",'<p class="muted">使用 LINE 帳號登入後即可預約與取號，不需另填姓名或帳密。</p><p class="small">目前指定門市：<strong>'+esc(slug)+'</strong></p>'+lineStatusBadge());
   if(!customer)return box("正在讀取顧客網站",'<p class="muted">正在確認企業設定與登入狀態...</p>');
@@ -536,10 +599,36 @@ function customerRender(){
    box("我的現場號碼",live?'<div class="ticket">'+esc(live.number)+'</div><p>'+tag(live.status)+'</p>'+(live.status==="WAITING"?btn("取消取號","cancel-my-number","danger",'data-id="'+esc(live.id)+'"'):""):
     '<p class="muted">現在可在網站上取得號碼。</p>'+'<p>取號者：<strong>'+esc(lineDisplayName)+'</strong>（由 LINE 自動帶入）</p>'+'<div style="margin-top:14px">'+btn("立即線上取號","take","primary")+'</div>');
  }else html=box("我的預約紀錄",renderBookings(items,true))+
- box("我的號碼紀錄",tickets.map(k=>'<div class="listline"><strong>'+esc(k.number)+'</strong><span>'+tag(k.status)+'</span></div>').join("")||'<p class="muted">目前沒有號碼紀錄。</p>');
+ box("我的號碼紀錄",renderMyTickets(tickets));
  return layout(t.name,"LINE 預約與取號・Supabase 即時資料",menu,lineStatusBadge()+html);
 }
-function renderBookings(items,allowCancel){return items.length?items.map(x=>'<div class="listline"><div><strong>'+esc(x.day)+' '+esc(x.time)+'</strong><div class="small">'+esc(x.name)+'・'+esc(x.party)+' 位</div></div><div class="flex">'+tag(x.status)+(allowCancel&&x.status==="CONFIRMED"?btn("取消","cancel-my-book","danger",'data-id="'+esc(x.id)+'"'):"")+'</div></div>').join(""):'<p class="muted">目前沒有預約紀錄。</p>'}
+function renderBookings(items,allowCancel){
+ if(!items.length)return '<p class="muted">目前沒有預約紀錄。</p>';
+ return items.map(x=>{
+  const focused=manageKind==="reservation"&&manageItem===x.id;
+  const editable=allowCancel&&x.status==="CONFIRMED";
+  const buttons=editable?
+   '<div class="staff-actionbar">'+
+   btn("編輯預約","edit-book","secondary",'data-id="'+esc(x.id)+'"')+
+   btn(focused&&manageMode==="cancel"?"確認取消預約":"取消預約","cancel-my-book","outline",'data-id="'+esc(x.id)+'"')+'</div>':"";
+  return '<article class="staff-record" style="'+(focused?'border:2px solid #0d9488;':'')+'">'+
+   '<div class="staff-record-head"><div><strong>'+esc(x.day)+' '+esc(x.time)+'</strong>'+
+   '<div class="small">'+esc(x.name)+' ・ '+esc(x.party)+' 位</div></div>'+tag(x.status)+'</div>'+
+   (focused&&manageMode==="cancel"&&editable?'<p class="staff-help">請核對預約資料，再點「確認取消預約」。</p>':'')+
+   buttons+editBookingForm(x)+'</article>';
+ }).join("");
+}
+function renderMyTickets(tickets){
+ if(!tickets.length)return '<p class="muted">目前沒有號碼紀錄。</p>';
+ return tickets.map(x=>{
+  const focused=manageKind==="ticket"&&manageItem===x.id;
+  return '<article class="staff-record" style="'+(focused?'border:2px solid #0d9488;':'')+'">'+
+    '<div class="staff-record-head"><div><strong>'+esc(x.number)+'</strong>'+
+    '<div class="small">'+esc(x.date||"")+'</div></div>'+tag(x.status)+'</div>'+
+    (x.status==="WAITING"?(focused&&manageMode==="cancel"?'<p class="staff-help">確認不再候位後，點下方取消按鈕。</p>':'')+
+      btn(focused&&manageMode==="cancel"?"確認取消排隊":"取消排隊","cancel-my-number","outline",'data-id="'+esc(x.id)+'"'):"")+'</article>';
+ }).join("");
+}
 function render(){head();$("root").innerHTML=message()+(view==="platform"?platformRender():view==="staff"?staffRender():view==="customer"?customerRender():renderHome())+'<footer>Supabase 即時儲存・真實店員權限・LINE Messaging API 通知</footer>'}
 async function rpc(name,arg={}){const r=await supa.rpc(name,arg);if(r.error)throw Error(r.error.message);return r.data}
 async function loadContext(){if(authReady())context=await rpc("so_my_context");else context=null}
@@ -563,6 +652,14 @@ async function load(){err="";try{
    customer=lineLinkStatus==="linked"?await rpc("so_public_state",{p_slug:slug,p_date:day}):null;
    if(customer&&customerTab==="reserve"&&!customer.tenant.modules?.reservation)customerTab="home";
    if(customer&&customerTab==="queue"&&!customer.tenant.modules?.queue)customerTab="home";
+   if(customer&&manageKind==="reservation"&&manageMode==="edit"&&manageItem&&editingBookingId!==manageItem){
+     const rec=(customer.my_reservations||[]).find(x=>x.id===manageItem&&x.status==="CONFIRMED");
+     if(rec){
+       editingBookingId=rec.id;editDate=String(rec.day);editTime=String(rec.time);editParty=Number(rec.party);
+       const data=await rpc("so_public_state",{p_slug:slug,p_date:editDate});
+       editSlots=data.slots||[];
+     }
+   }
  }
  if(view==="platform"&&platformReady())overview=await rpc("so_platform_overview");
  if(view==="staff"&&authReady()&&(context?.platform_admin||context?.memberships?.some(m=>m.slug===slug))){
