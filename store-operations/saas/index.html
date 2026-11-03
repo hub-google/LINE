@@ -48,7 +48,7 @@ const SB_URL="https://unapiwajmgqqtdkixaab.supabase.co";
 const SB_KEY="sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy";
 const supa=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
 const LINE_BRIDGE_URL=SB_URL+"/functions/v1/line-bridge";
-let lineConfig=null,lineLinkStatus="not-ready",lineLinkAttempted=false,lineFriendStatus=null;
+let lineConfig=null,lineLinkStatus="not-ready",lineLinkAttempted=false,lineFriendStatus=null,lineDisplayName="",lineConnectError="";
 async function bridgeConfig(){
   if(lineConfig!==null)return lineConfig;
   try{const res=await fetch(LINE_BRIDGE_URL+"?action=config");if(res.ok)lineConfig=await res.json();}
@@ -60,29 +60,50 @@ async function connectLineSession(force=false){
   if(force)lineLinkAttempted=false;
   if(lineLinkAttempted)return;
   const config=await bridgeConfig();
-  if(!config.liffId){lineLinkStatus="not-ready";return;}
+  if(!config.liffId){lineLinkStatus="not-ready";lineConnectError="尚未設定 LINE LIFF，請通知店家。";return;}
   if(!window.liff){
     for(let attempt=0;attempt<40&&!window.liff;attempt++)await new Promise(resolve=>setTimeout(resolve,100));
   }
-  if(!window.liff){lineLinkStatus="sdk-missing";return;}
+  if(!window.liff){lineLinkStatus="sdk-missing";lineConnectError="LINE 登入元件未能載入。";return;}
   lineLinkAttempted=true;
+  lineLinkStatus="connecting";
+  lineConnectError="";
   try {
     await window.liff.init({liffId:config.liffId});
     if(!window.liff.isLoggedIn()){
       lineLinkStatus="not-logged-in";
-      if(force&&!window.liff.isInClient())window.liff.login({redirectUri:location.href.split("#")[0]});
+      if(!window.liff.isInClient())window.liff.login({redirectUri:location.origin+location.pathname+location.search});
       return;
     }
     const idToken=window.liff.getIDToken();
-    if(!idToken)throw Error("LINE 未核發 ID Token（請確認 LIFF 啟用 openid scope）");
-    const res=await fetch(LINE_BRIDGE_URL,{method:"POST",headers:{"content-type":"application/json","authorization":"Bearer "+session.access_token},body:JSON.stringify({action:"link",slug,idToken})});
-    const result=await res.json();
-    if(!res.ok||!result.linked)throw Error(result.error||"LINE 綁定失敗");
+    if(!idToken)throw Error("LINE 尚未授權身分資料，請確認 LIFF 的 openid 權限。");
+    const accessToken=window.liff.getAccessToken()||"";
+    const link=async()=>{
+      const res=await fetch(LINE_BRIDGE_URL,{
+        method:"POST",
+        headers:{"content-type":"application/json","authorization":"Bearer "+session.access_token},
+        body:JSON.stringify({action:"link",slug,idToken,accessToken})
+      });
+      return {res,result:await res.json()};
+    };
+    let {res,result}=await link();
+    if(res.status===409&&result.error==="LINE_ACCOUNT_CHANGED"&&session.user?.is_anonymous){
+      const signedOut=await supa.auth.signOut();
+      if(signedOut.error)throw signedOut.error;
+      const fresh=await supa.auth.signInAnonymously();
+      if(fresh.error||!fresh.data.session)throw fresh.error||Error("無法建立顧客識別");
+      session=fresh.data.session;
+      ({res,result}=await link());
+    }
+    if(!res.ok||!result.linked)throw Error(result.error||"LINE 身分驗證失敗");
+    if(!result.displayName)throw Error("LINE 未提供使用者名稱，請開啟 LIFF 的 profile 權限。");
+    lineDisplayName=result.displayName;
     lineLinkStatus="linked";
     lineFriendStatus=result.isFollowing===true?true:result.isFollowing===false?false:null;
   }catch(e){
     lineLinkStatus="failed";
-    console.warn("LINE 身分連接失敗",e instanceof Error?e.message:String(e));
+    lineConnectError=e instanceof Error?e.message:String(e);
+    console.warn("LINE 身分連接失敗",lineConnectError);
   }
 }
 async function sendLineNotice(action,ids){
@@ -100,19 +121,22 @@ async function sendLineNotice(action,ids){
 }
 async function notifyLineCalled(ticketNumber){return sendLineNotice("notify",{number:ticketNumber});}
 function lineStatusBadge(){
-  if(demoMode)return "";
-  if(!lineConfig?.liffId)return "";
-  if(lineLinkStatus==="linked"&&lineFriendStatus===false)return '<div class="alert">LINE 帳號已連結，但已取消官方帳號好友或封鎖通知，請先重新加為好友再重整頁面。</div>';
-  if(lineLinkStatus==="linked")return '<div class="notice">LINE 帳號已連結。預約、取號與叫號通知由官方帳號傳送；請確認已加為好友且未封鎖。</div>';
-  const detail=lineLinkStatus==="failed"?"LINE 身分驗證失敗。請確認 LIFF 的 openid 權限與網址設定。":
-    lineLinkStatus==="sdk-missing"?"無法載入 LINE SDK。請嘗試在 LINE 內開啟。":
-    lineLinkStatus==="not-logged-in"?"尚未完成 LINE 登入。":"想收到 LINE 通知，請先連結 LINE 帳號。";
-  return '<div class="alert">'+esc(detail)+' <button class="btn secondary" data-act="line-connect" type="button">連結 LINE 接收通知</button>　<a href="https://liff.line.me/'+encodeURIComponent(lineConfig.liffId)+'">從 LINE 開啟</a></div>';
+  if(demoMode)return '<div class="notice">展示模式：使用模擬 LINE 顯示名稱，不會發送通知。</div>';
+  if(lineLinkStatus==="linked"){
+    return '<div class="notice">LINE 使用者：<strong>'+esc(lineDisplayName)+'</strong>。預約與取號會自動使用此名稱。'+(lineFriendStatus===false?'目前尚無法接收 LINE 通知，請加回官方帳號好友。':'請加入官方帳號好友，以接收預約、取號與叫號通知。')+'</div>';
+  }
+  const detail=lineLinkStatus==="connecting"?"正在連接 LINE 帳號…":
+    lineLinkStatus==="not-logged-in"?"正在開啟 LINE 授權…":
+    lineConnectError||"請授權 LINE 使用者資訊後繼續。";
+  const liffUrl=lineConfig?.liffId?'https://liff.line.me/'+encodeURIComponent(lineConfig.liffId)+'/?view=customer&merchant='+encodeURIComponent(slug):"";
+  return '<div class="alert">'+esc(detail)+' '+btn("重新連接 LINE","line-connect","secondary")+(liffUrl?' <a href="'+esc(liffUrl)+'">從 LINE 開啟</a>':'')+'</div>';
 }
 
 const $=id=>document.getElementById(id);
 const params=new URLSearchParams(location.search);
-let view=params.get("view")||"home",slug=params.get("merchant")||"greenfield-salon",demoMode=params.get("demo")==="1";
+const liffState=params.get("liff.state")||"";
+const liffArgs=new URLSearchParams(liffState.includes("?")?liffState.slice(liffState.indexOf("?")+1):"");
+let view=params.get("view")||liffArgs.get("view")||"customer",slug=params.get("merchant")||liffArgs.get("merchant")||"greenfield-salon",demoMode=params.get("demo")==="1";
 let session=null,context=null,overview=[],customer=null,staff=null,busy=false,flash="",err="";
 let day=taipei(),customerTab=["home","reserve","queue","mine"].includes(params.get("tab"))?params.get("tab"):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
 const features=[["reservation","線上預約"],["queue","線上取號"],["calling","現場叫號"]];
