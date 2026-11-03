@@ -78,3 +78,10 @@
 - **管理權限未自動開通**：2026-11-03 查詢時 `so_platform_admins` 和 `so_members` 都是 0 筆。第一位平台管理員必須先以真實已驗證 Email 建立帳號，使用既有的一次性開通碼啟用，或由專案管理者確認 Email 後在資料庫授權；不可開放公共 demo 密碼直接獲得管理員權限。
 - `line-bridge?action=config` 顯示登入及 Messaging API 憑證已配置，只代表設定就緒，**不等於**真實使用者已收到通知；還需本人在 LINE 授權、加官方帳號為好友，並驗證預約成功、取號成功和店員叫號的實際推播。
 - LINE Channel Secret、Messaging Access Token、Supabase service_role 等秘密資料只放後端環境／GitHub Actions Secrets，禁止提交公開原始碼。
+
+## 真實 Supabase 一鍵測試登入
+- 總公司與門市店員入口皆提供一鍵登入；輸入欄位僅為自動配置的測試身分說明，沒有公開固定管理員密碼。
+- 登入會在 Supabase Auth 建立真正的匿名使用者，呼叫 `so_test_login` 開通每個瀏覽器專屬的 QA 企業及真實 `so_members` 管理權限。
+- 總公司測試帳號只可操作自己建立的 QA 企業，不能讀取或修改其他正式企業。總公司列表、員工管理、預約、取號、叫號均直接讀寫 Supabase。
+- 店員頁面可複製專屬 LINE 顧客網址，需使用真實 LINE 帳號授權、加好友並取號，再驗證 Messaging API 推播。
+- 測試帳號保存在該瀏覽器的 Supabase Auth 工作階段，清除瀏覽器資料或登出後可能需要重新建立新測試企業。
