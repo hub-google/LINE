@@ -53,6 +53,22 @@ async function lineVerify(idToken: string, accessToken?: string) {
       displayName = typeof lineProfile.displayName === "string" ? lineProfile.displayName.trim() : displayName;
     }
   }
+  // A customer may only grant openid in an older LIFF configuration.
+  // When this LINE user has friended the same Messaging API OA, we can
+  // retrieve the verified profile name without exposing a token in the browser.
+  if (!displayName) {
+    const botToken = Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
+    if (botToken) {
+      const botResponse = await fetch("https://api.line.me/v2/bot/profile/" + encodeURIComponent(profile.sub), {
+        headers: { authorization: "Bearer " + botToken },
+      });
+      if (botResponse.ok) {
+        const botProfile = await botResponse.json();
+        if (botProfile.userId !== profile.sub) throw new Error("LINE_PROFILE_IDENTITY_MISMATCH");
+        displayName = typeof botProfile.displayName === "string" ? botProfile.displayName.trim() : "";
+      }
+    }
+  }
   if (!displayName || displayName.length > 60) throw new Error("LINE_PROFILE_SCOPE_REQUIRED");
   return { sub: profile.sub as string, name: displayName };
 }
