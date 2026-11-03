@@ -296,7 +296,7 @@ function staffStatusPicker(kind,item,editable){
   [["WAITING","候位中"],["CALLED","已叫號"],["SERVING","服務中"],["COMPLETED","已完成"],["PASSED","已過號"],["CANCELLED","已取消"]];
  const label=kind==="reservation"?"預約":"號碼牌";
  return '<fieldset class="staff-picker"><legend>點選狀態即儲存（可重新選擇修正）</legend>'+
-  choices.map(([value,title])=>'<label class="staff-choice"><input type="radio" name="'+kind+'-'+esc(item.id)+'" data-status-kind="'+kind+'" data-id="'+esc(item.id)+'" data-previous="'+esc(item.status)+'" value="'+value+'" '+(value===item.status?'checked ':'')+(editable?'':'disabled ')+'><span>'+title+'</span></label>').join("")+
+  choices.map(([value,title])=>'<label class="staff-choice"><input type="radio" name="'+kind+'-'+esc(item.id)+'" data-status-kind="'+kind+'" data-id="'+esc(item.id)+'" data-previous="'+esc(item.status)+'" value="'+value+'" '+(value===item.status?'checked ':'')+((Array.isArray(editable)?editable.includes(value):editable)?'':'disabled ')+'><span>'+title+'</span></label>').join("")+
  '</fieldset>';
 }
 function showActionFeedback(message,kind="success"){
@@ -402,7 +402,7 @@ function staffRender(){
    '<p class="muted">先讓 LINE 顧客進入此門市取號，再從「現場叫號」操作。號碼與通知都使用真實後端。</p>'+
    btn("複製 LINE 顧客網址","copy-test-line","primary"));
 
- if(!isToday)html+='<div class="alert">目前查看的是 '+esc(day)+' 歷史紀錄。狀態修改只開放今天，請切回今日操作。</div>';
+ if(!isToday)html+='<div class="alert">'+(day>taipei()?'目前查看未來 '+esc(day)+' 的預約：可取消或恢復預約；到店報到請於預約當天處理。':'目前查看 '+esc(day)+' 的歷史紀錄，僅供查詢；請切回今日操作。')+'</div>';
  if(staffTab==="dashboard"){
   html+='<div class="grid4" style="margin-bottom:16px">'+
    stat("尚未報到",pendingBookings.length)+stat("現場候位",waiting.length)+stat("正在服務",active?.number||"—")+stat("今日預約已完成",finishedBookings.length)+'</div>'+
@@ -429,7 +429,7 @@ function staffRender(){
        const ticket=q.find(k=>k.reservation_id===x.id);
        return '<article class="staff-record"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.time)+'　'+esc(x.name)+'</div>'+
          '<div class="small">預約人數：'+esc(x.party)+' 位'+(ticket?' ・ 已建立號碼 '+esc(ticket.number):'')+'</div></div>'+tag(x.status)+'</div>'+
-         staffStatusPicker("reservation",x,isToday)+
+         staffStatusPicker("reservation",x,isToday?true:day>taipei()?["CONFIRMED","CANCELLED"]:false)+
          (x.status==="CHECKED_IN"&&ticket?'<div class="staff-help">已報到，號碼 '+esc(ticket.number)+'。可到「叫號管理」叫號。</div>':'')+
          '</article>';
       }).join(""):'<p class="muted">這一天沒有預約紀錄。</p>');
@@ -551,13 +551,12 @@ document.addEventListener("click",async ev=>{
    slug=result.slug;history.replaceState(null,"",route(view,view==="platform"?"":slug));
    return "已登入真正的 Supabase 測試帳號，專屬門市："+result.slug;
   });return}
-  if(a==="copy-test-line"){
-   if(!testMode||!testInfo?.slug){err="請先一鍵登入測試帳號";render();return}
-   const link=await urlFor("customer",testInfo.slug);
-   try{await navigator.clipboard.writeText(link);flash="已複製 LINE 顧客測試網址："+link}
-   catch(e){window.prompt("複製 LINE 顧客網址",link);flash="顧客網址："+link}
-   render();return;
-  }
+  if(a==="copy-test-line"){await act(async()=>{
+  if(!testMode||!testInfo?.slug)throw Error("請先一鍵登入測試帳號");
+  const link=await urlFor("customer",testInfo.slug);
+  try{await navigator.clipboard.writeText(link);return "已複製 LINE 顧客測試網址："+link;}
+  catch(e){window.prompt("複製 LINE 顧客網址",link);return "請複製顯示的 LINE 顧客測試網址";}
+ });return;}
   if(a==="login"||a==="signup"){const email=val("auth-email"),password=val("auth-pass");if(!email||password.length<8){err="請輸入 Email 與至少 8 字元的密碼";render();return}
  await act(async()=>{testMode=false;testInfo=null;localStorage.removeItem(TEST_KEY);if(session?.user?.is_anonymous){await supa.auth.signOut();session=null}
  const r=a==="login"?await supa.auth.signInWithPassword({email,password}):await supa.auth.signUp({email,password});
@@ -572,7 +571,12 @@ document.addEventListener("click",async ev=>{
  if(a==="company-config"){chosenCompany=b.dataset.slug;render();return}
  if(a==="save-company"){await act(async()=>{await rpc("so_update_tenant",{p_slug:chosenCompany,p_patch:{name:val("config-name"),modules:checked("config-feature")}});return "企業名稱及模組已更新";});return}
  if(a==="toggle-company"){await act(async()=>{const t=overview.find(x=>x.slug===chosenCompany);await rpc("so_update_tenant",{p_slug:chosenCompany,p_patch:{status:t.status==="ACTIVE"?"SUSPENDED":"ACTIVE"}});return "已更新企業啟用狀態";});return}
- if(a==="copy-customer"||a==="copy-staff"){const s=view==="platform"?chosenCompany:slug;const v=a==="copy-customer"?"customer":"staff";const u=await urlFor(v,s);try{await navigator.clipboard.writeText(u);flash="已複製："+u;}catch(e){window.prompt("複製網址",u)}render();return}
+ if(a==="copy-customer"||a==="copy-staff"){await act(async()=>{
+  const s=view==="platform"?chosenCompany:slug,v=a==="copy-customer"?"customer":"staff";
+  const u=await urlFor(v,s);
+  try{await navigator.clipboard.writeText(u);return "已複製網址："+u;}
+  catch(e){window.prompt("複製網址",u);return "請複製顯示的網址";}
+ });return;}
  if(a==="update-settings"){await act(async()=>{await rpc("so_update_tenant",{p_slug:slug,p_patch:{name:val("set-name"),phone:val("set-phone"),address:val("set-address"),accent:val("set-accent"),description:val("set-description"),logo_url:val("set-logo"),open_time:val("set-open"),close_time:val("set-close"),slot_capacity:Number(val("set-capacity")),slot_minutes:Number(val("set-minutes"))}});return "企業設定已保存";});return}
  if(a==="invite-staff"){await act(async()=>{await rpc("so_invite_staff",{p_slug:slug,p_email:val("invite-email"),p_role:val("invite-role")});return "員工邀請已儲存，請通知對方登入接受";});return}
  if(a==="book"){await act(async()=>{if(lineLinkStatus!=="linked")throw Error("請先完成 LINE 授權");if(!chosenSlot)throw Error("請先選擇時段");const result=await rpc("so_book",{p_slug:slug,p_date:day,p_time:chosenSlot,p_name:lineDisplayName,p_party:Number(val("customer-party"))});chosenSlot="";customerTab="mine";const notice=await sendLineNotice("notify-reservation",{reservationId:result.id});return "預約成功，資料已存入雲端；"+notice;});return}
