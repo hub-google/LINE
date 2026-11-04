@@ -23,10 +23,11 @@
 17. [`20261104_workforce_prd_auto_schedule_drafts.sql`](./migrations/20261104_workforce_prd_auto_schedule_drafts.sql)
 18. [`20261104_workforce_prd_demo_auto_draft.sql`](./migrations/20261104_workforce_prd_demo_auto_draft.sql)
 19. [`20261104_workforce_prd_gps_punch_guard.sql`](./migrations/20261104_workforce_prd_gps_punch_guard.sql)
+20. [`20261104_workforce_prd_demo_departments_templates_seed.sql`](./migrations/20261104_workforce_prd_demo_departments_templates_seed.sql)
 
 ## 已部署情況與重建注意事項
 
 - 前四份最初透過 Supabase `apply_migration` 套用，已在遠端遷移歷史中。
-- 第 5–19 份在本次開發以 Supabase SQL 即時套用，**已真正存在遠端資料庫，但尚未另外登記進 `supabase_migrations.schema_migrations`**。檔案已提交到 GitHub 作為版本化原始資料。請勿在同一正式環境直接重跑全套 SQL；重建應先於隔離的空資料庫依序測試。
+- 第 5–20 份在本次開發以 Supabase SQL 即時套用，**已真正存在遠端資料庫，但尚未另外登記進 `supabase_migrations.schema_migrations`**。檔案已提交到 GitHub 作為版本化原始資料。請勿在同一正式環境直接重跑全套 SQL；重建應先於隔離的空資料庫依序測試。
 - 不執行清空或 TRUNCATE，原預約／叫號和人資 DEMO 資料皆保留。
 - 函式及 RLS 的完整正式驗證，必須使用不同權限的真實測試帳號及資料庫交易測試；不能單憑部署判定全案完成。
