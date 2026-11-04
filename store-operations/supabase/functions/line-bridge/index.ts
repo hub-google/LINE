@@ -188,6 +188,16 @@ function liffQueueProgressLink(shop: ShopInfo, ticketId: string): string | null 
   });
   return "https://liff.line.me/"+id+"/?"+query.toString();
 }
+// Google Maps URLs work on mobile and desktop without an API key.
+function googleMapsDirectionsUrl(address: string): string | null {
+  const value = address.trim();
+  if (!value || value.length > 300 ||
+      /(?:測試用途|無實體地址|僅供測試|虛擬地址|示範地址|測試地址|尚未提供地址|未提供地址|暫無地址|請填寫地址|placeholder|test only|not a real address)/i.test(value)) {
+    return null;
+  }
+  const uri = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(value);
+  return uri.length <= 2048 ? uri : null;
+}
 function flexNotice(title: string, details: string[], actions: { label: string; uri?: string | null; postback?: string | null }[]): Record<string, unknown> {
   const buttons = actions.filter((a) => !!a.uri || !!a.postback);
   const rows = details.filter(Boolean);
@@ -201,7 +211,18 @@ function flexNotice(title: string, details: string[], actions: { label: string; 
         type: "box", layout: "vertical", spacing: "md", paddingAll: "20px",
         contents: [
           { type: "text", text: title, size: "xl", weight: "bold", color: "#096248", wrap: true },
-          ...rows.map((text) => ({ type: "text", text, size: "sm", color: "#334155", wrap: true })),
+          ...rows.flatMap((text) => {
+            const address = text.startsWith("地址：") ? text.slice("地址：".length) : "";
+            const mapUrl = address ? googleMapsDirectionsUrl(address) : null;
+            const label = { type: "text", text, size: "sm", color: mapUrl ? "#147e68" : "#334155", wrap: true,
+              ...(mapUrl ? { action: { type: "uri", label: "Google Maps 導航", uri: mapUrl } } : {}),
+            };
+            return mapUrl ? [label, {
+              type: "text", text: "開啟 Google Maps 導航", size: "sm", weight: "bold",
+              color: "#147e68", wrap: true,
+              action: { type: "uri", label: "開啟 Google Maps 導航", uri: mapUrl },
+            }] : [label];
+          }),
         ],
       },
       ...(buttons.length ? { footer: {
