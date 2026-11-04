@@ -3,8 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="line-saas-build" content="7c937b5dada311fda31518e3e37834d2fb7c6d72">
-  <script defer src="./version-watch.js?build=7c937b5dada311fda31518e3e37834d2fb7c6d72"></script>
+  <meta name="line-saas-build" content="011b962e3e7dbfcaa4f1f0963ee9b3ef0bddca24">
+<link rel="manifest" href="./manifest.webmanifest">
+<script>
+if("serviceWorker" in navigator && location.protocol==="https:"){
+ window.addEventListener("load",()=>navigator.serviceWorker.register("./pwa-sw.js",{scope:"./"}).catch(()=>{}),{once:true});
+}
+</script>
+  <script defer src="./version-watch.js?build=011b962e3e7dbfcaa4f1f0963ee9b3ef0bddca24"></script>
   <meta name="theme-color" content="#f8faf5">
   <meta name="description" content="LINE 預約服務平台：商家可管理線上預約、現場取號與叫號；顧客從 LINE 或店家連結查看預約與進度。">
   <meta property="og:type" content="website">
@@ -212,6 +218,7 @@
         <div class="hero-cta">
           <a class="btn btn-solid" href="./merchant-register.html">我是店家・開始使用 <span class="arrow" aria-hidden="true">›</span></a>
           <a class="btn btn-white" href="./directory.html?mode=search">我是顧客・找店家 <span class="arrow" aria-hidden="true">›</span></a>
+          <button id="install-booking-app" class="btn btn-outline" type="button" hidden>安裝到桌面</button>
         </div>
         <div class="proof"><b aria-hidden="true">✓</b> 手機與電腦同一網站 <span aria-hidden="true">·</span> <b aria-hidden="true">✓</b> 保留原有店家與測試帳號</div>
       </div>
@@ -324,5 +331,22 @@
     <div class="footer-note">LINE 預約為獨立開發之服務，非 LINE 官方產品。介面預覽是示意圖；實際功能依門市設定、LINE 授權及系統版本而定。</div>
   </div>
 </footer>
+<script>
+(() => {
+ let promptEvent=null;
+ const button=document.getElementById("install-booking-app");
+ window.addEventListener("beforeinstallprompt",event=>{
+  event.preventDefault();promptEvent=event;
+  if(button)button.hidden=false;
+ });
+ window.addEventListener("appinstalled",()=>{promptEvent=null;if(button)button.hidden=true;});
+ button?.addEventListener("click",async()=>{
+  if(!promptEvent)return;
+  const current=promptEvent;promptEvent=null;
+  if(button)button.hidden=true;
+  await current.prompt();
+ });
+})();
+</script>
 </body>
 </html>
