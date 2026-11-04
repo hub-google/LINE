@@ -124,3 +124,27 @@
 | 尚缺 | 尚無真實 iOS／Android LINE LIFF、多人競爭最後一個名額、取消返回的瀏覽器實機 E2E 記錄；FR-112 的全面正式驗收須補足 |
 
 **相容與回滾：** 關閉確認只影響 UI 層，不改變後端容量驗證或冪等。若需回滾 UI，還原單次變更的 `saas/index.html`；保留可向前相容的 `require_confirmation` 欄位與 RPC，不得刪除表或既有資料。無外部商家 OA 或付款憑證時，仍可在既有測試店的預約入口驗證基本操作。
+
+
+## 2026-11-04 本輪後續交付：FR-110、FR-108／109（原 PRD 範圍）
+
+> 已在原專案 `store-operations/` 的原管理端及顧客端整合；沒有另開 GitHub issue/task，沒有另建產品、沒有刪除既有顧客或預約。
+
+| PRD | 已實作並儲存 | 後端測試／限制 |
+| --- | --- | --- |
+| FR-110／C39 門市公告與照片 | 新增 `so_store_announcements`、帶店家隔離及管理者權限的新增／編輯／公開 API；原店家設定編輯，顧客首頁展示公告與最多八張可左右滑動的 HTTPS 照片 | 以既有 QA 商家身分在 PostgreSQL transaction 建立公告，驗證店員／顧客查詢與停用後隱藏，最後 `ROLLBACK`，保留正式資料 |
+| FR-108／109／C32–C35 顧客簿、No-show、黑名單 | 新增 `so_customer_flags`、各店獨立顧客簿 RPC、管理者註記與標籤、黑名單警示及拒絕新預約的資料庫 trigger，支援原店家後台設定；只以同租戶既有 reservation / LINE 驗證身分關聯 | QA OWNER 在回滾 transaction 中成功儲存顧客旗標並讀回。實際前後台禁訂 E2E、申訴流程、進階全量 CRM 尚未全部驗收 |
+
+### 本輪程式與 SQL
+
+- `store-operations/saas/index.html`：沿用既有 LINE 預約單頁程式，不另建流程。
+- `store-operations/supabase/migrations/20261104_store_announcements_fr110.sql`：已實際套用到 Supabase。
+- `store-operations/supabase/migrations/20261104_tenant_customer_book_fr109.sql`：已實際套用到 Supabase。
+- `store-operations/tests/store-announcements-fr110.test.mjs` 與 `customer-ledger-blacklist-fr109.test.mjs`：原有 CI 清單已加入新增契約測試。
+- `gh-pages/booking/index.html` 與 `gh-pages/saas/index.html`：已能讀取到 FR-112、FR-110、FR-108／109 前端代碼；但**沒有實際手機 LINE E2E、不同門市安全滲測或付款驗收，勿宣稱整份 PRD Done**。
+
+### 尚需完成（保留原需求，不刪除）
+
+- NR-05/06 服務與資源時段防撞、容量重複利用：另有既存開發 PR #30，應驗收其最終合併結果，不並行覆寫。
+- C01–58／K01–32／其餘 NR、FR、UX：尚需逐項依本文件前述表格補齊，特別是 LINE 多 OA 實機、資源排程、OTP、完整 CRM、Calendar、Web Push、多窗口、看板、金流及第三方 POS/設備。
+- 本輪有前端語法檢查、DB transaction 操作及資料庫/Pages 檔案核查，**尚無所有既有合約測試在本輪完整 PASS 的證據**。正式 LIFF、消費者與兩店員端到端操作、企業真實金流仍須經各自帳號/授權及實機驗證。
