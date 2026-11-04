@@ -8,6 +8,14 @@
   const marketingKeys=new Set(["utm_source","utm_medium","utm_campaign","utm_content","utm_term","gclid","fbclid"]);
   const hasOnlyMarketingParameters=[...qs.keys()].every(key=>marketingKeys.has(key));
   const atBookingRoot=/\/(?:saas|booking)\/(?:index\.html)?$/.test(location.pathname);
+  const isUnscopedCustomer=qs.getAll("view").at(-1)==="customer" && !qs.has("merchant");
+  const lineCallbackKeys=["liff.state","code","state","access_token","ticket","manage","recover"];
+  if(atBookingRoot && isUnscopedCustomer && !location.hash && !lineCallbackKeys.some(key=>qs.has(key))){
+    const directory=new URL("./directory.html?mode=search",location.href);
+    directory.pathname=directory.pathname.replace(/\/saas\/directory\.html$/,"/booking/directory.html");
+    location.replace(directory.href);
+    return;
+  }
   if(atBookingRoot && hasOnlyMarketingParameters && !location.hash){
     const landing=new URL("./home.html",location.href);
     // Previously shared /saas/ links land on the new independent booking homepage.
@@ -453,7 +461,7 @@ let view=incomingParam("view")||"customer",slug=(isSafeMerchant(incomingParam("m
 let session=null,context=null,overview=[],customer=null,staff=null,busy=false,flash="",err="";
 let staffHistoryDays=14,analyticsDays=30,staffAnalytics=null,businessGroups=[],staffNoticeHealth=null;
 let editingMenuItemId="",bookingChosenItems=[],queueChosenItems=[],editChosenItems=[];
-let day=taipei(),customerTab=["home","reserve","queue","mine","progress"].includes(incomingParam("tab"))?incomingParam("tab"):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
+let day=taipei(),bookingParty=1,customerTab=["home","reserve","queue","mine","progress"].includes(incomingParam("tab"))?incomingParam("tab"):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
 let manageKind=["reservation","ticket"].includes(incomingParam("manage"))?incomingParam("manage"):"";
 let manageItem=/^[0-9a-f-]{36}$/i.test(incomingParam("item")||"")?incomingParam("item"):"";
 let manageMode=["edit","cancel","view"].includes(incomingParam("mode"))?incomingParam("mode"):"view";
@@ -1062,6 +1070,30 @@ function crossRecords(){
  return errMessage+box("我的跨店預約紀錄",bookingHtml)+box("我的跨店取號紀錄",ticketHtml);
 }
 
+function availableForParty(slot,party=bookingParty){
+ return Number.isInteger(party)&&party>=1&&party<=20 &&
+   Number.isFinite(Number(slot?.available))&&Number(slot.available)>=party;
+}
+function syncBookingPartyInput(raw){
+ const requested=Number(raw);
+ bookingParty=Number.isInteger(requested)&&requested>=1&&requested<=20?requested:0;
+ const slots=customer?.slots||[];
+ if(chosenSlot&&!slots.some(x=>x.time===chosenSlot&&availableForParty(x)))chosenSlot="";
+ for(const button of document.querySelectorAll("button[data-slot]")){
+   const slot=slots.find(x=>x.time===button.dataset.slot);
+   const enabled=!!slot&&availableForParty(slot);
+   button.disabled=!enabled;
+   button.classList.toggle("active",enabled&&chosenSlot===button.dataset.slot);
+   button.setAttribute("aria-disabled",String(!enabled));
+ }
+ const helper=document.getElementById("booking-capacity-hint");
+ if(helper)helper.textContent=bookingParty?
+   "已依 "+bookingParty+" 位篩選時段；名額不足的時間不能選擇。":
+   "請輸入 1～20 位的有效預約人數。";
+ const submit=document.querySelector('button[data-act="book"]');
+ if(submit)submit.disabled=!chosenSlot||!bookingParty||
+   !menuChoiceReady(customer?.tenant?.menu_booking_mode||"DISABLED",bookingChosenItems,customer?.menu_items||[]);
+}
 function customerRender(){
   if(lineLinkStatus!=="linked")return box("LINE 身分授權",'<p class="muted">使用 LINE 帳號登入後即可預約與取號，不需另填姓名或帳密。</p><p class="small">目前指定門市：<strong>'+esc(slug)+'</strong></p>'+lineStatusBadge());
   if(!customer)return box("正在讀取顧客網站",'<p class="muted">正在確認企業設定與登入狀態...</p>');
@@ -1076,12 +1108,13 @@ function customerRender(){
  (m.queue?'<button class="routecard" data-nav="customer" data-tab="queue"><h2>現場取號</h2><p class="muted">直接取得候位號碼與查看進度</p><strong>立即取號 →</strong></button>':"")+'</div>';
  else if(customerTab==="reserve"){
   if(!m.reservation)html=box("未開放預約",'<p>企業目前沒有啟用此功能。</p>');
-  else html=box("選擇預約日期與時間",'<div class="grid"><div>'+field("預約日期","customer-day",day,"date",'min="'+taipei()+'"')+'</div><div>'+field("預約人數","customer-party",1,"number",'min="1" max="20"')+'</div></div><label>可預約時段</label>'+
-    '<div class="slots">'+(customer.slots||[]).map(s=>'<button class="slot '+(chosenSlot===s.time?"active":"")+'" data-slot="'+esc(s.time)+'" '+(s.available<=0?"disabled":"")+'>'+esc(s.time)+'<small>剩 '+esc(s.available)+' 位</small></button>').join("")+'</div>'+
+  else html=box("選擇預約日期與時間",'<div class="grid"><div>'+field("預約日期","customer-day",day,"date",'min="'+taipei()+'"')+'</div><div>'+field("預約人數","customer-party",bookingParty||"","number",'min="1" max="20" required')+'</div></div><label>可預約時段</label>'+
+    '<p class="small" id="booking-capacity-hint" role="status">'+(bookingParty?"已依 "+bookingParty+" 位篩選時段；名額不足的時間不能選擇。":"請輸入 1～20 位的有效預約人數。")+'</p>'+
+    '<div class="slots">'+(customer.slots||[]).map(s=>'<button class="slot '+(chosenSlot===s.time&&availableForParty(s)?"active":"")+'" data-slot="'+esc(s.time)+'" '+(!availableForParty(s)?"disabled aria-disabled=\"true\"":"")+'>'+esc(s.time)+'<small>'+(!availableForParty(s)?"名額不足・":"")+'剩 '+esc(s.available)+' 位</small></button>').join("")+'</div>'+
     menuSelectSection(t.menu_booking_mode||"DISABLED",catalogue,bookingChosenItems,"booking")+
     '<p class="small">預約者：<strong>'+esc(lineDisplayName)+'</strong>（由 LINE 自動帶入）</p>'+
     '<div style="margin-top:15px">'+btn("確定送出預約","book","primary full",
-      !chosenSlot||!menuChoiceReady(t.menu_booking_mode,bookingChosenItems,catalogue)?"disabled":"")+'</div>')+
+      !chosenSlot||!bookingParty||!menuChoiceReady(t.menu_booking_mode,bookingChosenItems,catalogue)?"disabled":"")+'</div>')+
     box("我的近期預約",renderBookings(items,true));
  }else if(customerTab==="queue"){
   if(!m.queue)html=box("尚未開放取號",'<p>本企業只提供線上預約。</p>');
@@ -1109,10 +1142,10 @@ function renderBookings(items,allowCancel){
  return items.map(x=>{
   const focused=manageKind==="reservation"&&manageItem===x.id;
   const editable=allowCancel&&x.status==="CONFIRMED";
-  const buttons=editable?
-   '<div class="staff-actionbar">'+
-   btn("編輯預約","edit-book","secondary",'data-id="'+esc(x.id)+'"')+
-   btn(focused&&manageMode==="cancel"?"確認取消預約":"取消預約","cancel-my-book","outline",'data-id="'+esc(x.id)+'"')+'</div>':"";
+  const buttons='<div class="staff-actionbar">'+
+   btn("查看／列印預約憑證","booking-receipt","outline",'data-id="'+esc(x.id)+'"')+
+   (editable?btn("編輯預約","edit-book","secondary",'data-id="'+esc(x.id)+'"')+
+   btn(focused&&manageMode==="cancel"?"確認取消預約":"取消預約","cancel-my-book","outline",'data-id="'+esc(x.id)+'"'):"")+'</div>';
   return '<article class="staff-record" style="'+(focused?'border:2px solid #0d9488;':'')+'">'+
    '<div class="staff-record-head"><div><strong>'+'預約 '+esc(x.number||"—")+' '+esc(x.day)+' '+esc(x.time)+'</strong>'+
    '<div class="small">'+esc(x.name)+' ・ '+esc(x.party)+' 位</div>'+
@@ -1134,6 +1167,34 @@ function renderMyTickets(tickets){
     (x.status==="WAITING"?(focused&&manageMode==="cancel"?'<p class="staff-help">確認不再候位後，點下方取消按鈕。</p>':'')+
       btn(focused&&manageMode==="cancel"?"確認取消排隊":"取消排隊","cancel-my-number","outline",'data-id="'+esc(x.id)+'"'):"")+'</article>';
  }).join("");
+}
+function openBookingReceipt(bookingId){
+ if(view!=="customer"||lineLinkStatus!=="linked"){
+   showActionFeedback("請先以原 LINE 帳號驗證，再查閱自己的預約。","error");return;
+ }
+ const record=(customer?.my_reservations||[]).find(x=>x.id===bookingId);
+ if(!record){showActionFeedback("找不到這筆預約，請重新整理確認。","error");return;}
+ document.getElementById("booking-receipt-overlay")?.remove();
+ const now=new Date().toISOString();
+ const shop=customer?.tenant?.name||"門市";
+ const status=jsStatus(record.status);
+ const ref=String(record.id||"").slice(0,8).toUpperCase();
+ const services=Array.isArray(record.selected_items)?record.selected_items.map(x=>x.name||x.title||"").filter(Boolean):[];
+ const markup='<div id="booking-receipt-overlay" class="receipt-backdrop" role="dialog" aria-modal="true" aria-label="預約憑證">'+
+   '<article class="receipt-card"><div class="receipt-eyebrow">LINE BOOKING · 預約紀錄</div>'+
+   '<h2>'+esc(shop)+'</h2><p class="receipt-number">'+esc(record.number||"—")+'</p>'+
+   '<div class="receipt-field"><span>預約日期</span><strong>'+esc(record.day||"—")+'</strong></div>'+
+   '<div class="receipt-field"><span>預約時間</span><strong>'+esc(record.time||"—")+'</strong></div>'+
+   '<div class="receipt-field"><span>人數</span><strong>'+esc(record.party||"—")+' 位</strong></div>'+
+   '<div class="receipt-field"><span>目前狀態</span><strong>'+esc(status)+'</strong></div>'+
+   '<div class="receipt-field"><span>服務項目</span><strong>'+esc(services.length?services.join("、"):"以門市紀錄為準")+'</strong></div>'+
+   '<div class="receipt-field"><span>建立時間</span><strong>'+esc(formatTaipeiCreated(record.created_at))+'</strong></div>'+
+   '<div class="receipt-field"><span>查核參考碼</span><strong>'+esc(ref)+'</strong></div>'+
+   '<p class="receipt-warning">本憑證為 '+esc(formatTaipeiCreated(now))+' 查詢時的紀錄快照，不是即時有效性保證。改期、取消或刪除後，舊截圖及列印內容可能失效；請由店員在最新資料庫核對。參考碼不能取代身分驗證。</p>'+
+   '<div class="receipt-actions">'+btn("列印／儲存 PDF","receipt-print","primary")+
+   btn("關閉","receipt-close","outline")+'</div></article></div>';
+ document.body.insertAdjacentHTML("beforeend",markup);
+ document.querySelector('#booking-receipt-overlay button[data-act="receipt-close"]')?.focus();
 }
 function render(){document.body.dataset.portal=view;head();$("root").innerHTML=message()+(view==="platform"?platformRender():view==="staff"?staffRender():view==="customer"?customerRender():renderHome())+'<footer>LINE 預約服務 ・ <a href="privacy.html">隱私權說明</a> ・ <a href="terms.html">使用條款</a></footer>'}
 const CUSTOMER_BOOKING_REQUEST_KEY="line-saas-customer-booking-submission-v1";
@@ -1210,6 +1271,7 @@ async function load(){err="";try{
   }
  if(view==="customer"){
    customer=lineLinkStatus==="linked"?await rpc("so_public_state",{p_slug:slug,p_date:day}):null;
+   if(customer&&chosenSlot&&!(customer.slots||[]).some(x=>x.time===chosenSlot&&availableForParty(x)))chosenSlot="";
    if(lineLinkStatus==="linked"){
      try{
        customerActivity=await rpc("so_customer_cross_store_overview",{p_slug:slug});
@@ -1293,7 +1355,13 @@ document.addEventListener("click",async ev=>{
    if(["analytics","branches"].includes(tab)){void load();return;}
  }
  if(v==="platform")platformTab=tab;err="";flash="";render();return}
- if(b.dataset.slot){chosenSlot=b.dataset.slot;render();return}
+ if(b.dataset.slot){
+  const option=(customer?.slots||[]).find(x=>x.time===b.dataset.slot);
+  if(!availableForParty(option)){
+    showActionFeedback("此時段剩餘名額不足，請更換時間或人數。","warning");return;
+  }
+  chosenSlot=b.dataset.slot;render();return;
+ }
  const a=b.dataset.act,id=b.dataset.id;
  if(!a)return;
 
@@ -1471,6 +1539,9 @@ document.addEventListener("click",async ev=>{
   if(lineLinkStatus!=="linked")throw Error("請先完成 LINE 授權");
   if(!chosenSlot)throw Error("請先選擇時段");
   const party=Number(val("customer-party")),time=chosenSlot;
+  if(!Number.isInteger(party)||party<1||party>20)throw Error("請輸入 1～20 位的有效預約人數。");
+  const selected=(customer?.slots||[]).find(x=>x.time===time);
+  if(!availableForParty(selected,party))throw Error("此時段已沒有足夠名額，請重新選擇時間。");
   const items=bookingChosenItems.slice();
   const requestId=customerBookingRequestId({merchant:slug,date:day,time,party,items});
   const result=await rpc("so_book_with_items_once",{p_slug:slug,p_date:day,p_time:time,p_name:lineDisplayName,p_party:party,p_items:items,p_request_id:requestId});
@@ -1484,6 +1555,9 @@ document.addEventListener("click",async ev=>{
   return "預約已成立："+day+" "+time+"，"+party+" 位"+customerNoticeSuffix(notice);
  });return}
 
+ if(a==="booking-receipt"){openBookingReceipt(id);return;}
+ if(a==="receipt-close"){document.getElementById("booking-receipt-overlay")?.remove();return;}
+ if(a==="receipt-print"){window.print();return;}
  if(a==="edit-book"){await beginBookingEdit(id);return;}
  if(a==="close-book-edit"){editingBookingId="";finishManageLink();render();return;}
  if(a==="save-book-edit"){
@@ -1622,6 +1696,10 @@ document.addEventListener("click",async ev=>{
  });return;
  }
 });
+document.addEventListener("input",ev=>{
+ const el=ev.target;
+ if(el?.id==="customer-party")syncBookingPartyInput(el.value);
+});
 document.addEventListener("change",async ev=>{
  const el=ev.target;
  if(el.dataset.menuChoice){
@@ -1635,6 +1713,7 @@ document.addEventListener("change",async ev=>{
  if(el.id==="staff-history-days"){staffHistoryDays=Number(el.value);await load();return;}
  if(el.id==="analytics-days"){analyticsDays=Number(el.value);await load();return;}
  if(el.id==="customer-day"){day=el.value;chosenSlot="";await load();return;}
+ if(el.id==="customer-party"){syncBookingPartyInput(el.value);return;}
  if(el.id==="edit-book-date"){editDate=el.value;editTime="";await fetchBookingEditSlots();return;}
  if(el.id==="edit-book-time"){editTime=el.value;render();return;}
  if(el.id==="edit-book-party"){editParty=Number(el.value);render();return;}
