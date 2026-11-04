@@ -721,13 +721,16 @@ Deno.serve(async (req: Request) => {
         .select("id").eq("slug", slug).eq("status", "ACTIVE").maybeSingle();
       if (tenantError) throw tenantError;
       if (!tenant) return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
+      const ownOa = await merchantLineConfig(db, tenant.id);
+      const expectedChannelId = ownOa?.channelId ||
+        /^([0-9]{8,})-[A-Za-z0-9]+$/.exec(Deno.env.get("LINE_LIFF_ID") || "")?.[1] || "";
       const { data: linked, error: linkError } = await db.from("so_line_links")
-        .select("display_name,is_following,updated_at")
+        .select("display_name,is_following,updated_at,login_channel_id")
         .eq("tenant_id", tenant.id).eq("user_id", user.id).maybeSingle();
       if (linkError) throw linkError;
       const verifiedAt = Date.parse(String(linked?.updated_at || ""));
       const maxAge = 30 * 24 * 60 * 60 * 1000;
-      if (!linked?.display_name?.trim() || !Number.isFinite(verifiedAt) ||
+      if (!linked?.display_name?.trim() || linked.login_channel_id !== expectedChannelId || !Number.isFinite(verifiedAt) ||
           verifiedAt > Date.now() + 60000 || Date.now() - verifiedAt > maxAge) {
         return reply(401, { error: "LINE_REAUTH_REQUIRED" }, origin);
       }
@@ -744,7 +747,15 @@ Deno.serve(async (req: Request) => {
       const accessToken = typeof payload.accessToken === "string" && payload.accessToken.length <= 10000
         ? payload.accessToken : undefined;
       if (!idToken && !accessToken) return reply(400, { error: "LINE_LOGIN_TOKEN_REQUIRED" }, origin);
-      const line = await lineVerify(idToken, accessToken);
+      const { data: tenant, error: te } = await db.from("so_tenants")
+        .select("id,slug,status").eq("slug", slug).eq("status", "ACTIVE").single();
+      if (te || !tenant) return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
+      const ownOa = await merchantLineConfig(db, tenant.id);
+      const expectedChannelId = ownOa?.channelId ||
+        /^([0-9]{8,})-[A-Za-z0-9]+$/.exec(Deno.env.get("LINE_LIFF_ID") || "")?.[1] || "";
+      const line = await lineVerify(idToken, accessToken, {
+        channelId:expectedChannelId, botToken:ownOa?.token
+      });
       // LINE Login friendship checks often fail when the Login channel has
       // no linked OA. Always independently test the actual Messaging OA.
       let verifiedFriendship: boolean | null = null;
@@ -768,16 +779,15 @@ Deno.serve(async (req: Request) => {
         } catch { friendCheckStatus = "LINE_API_UNAVAILABLE"; }
       }
       const [recipientReachability, addFriendUrl] = await Promise.all([
-        oaRecipientReachability(line.sub),
-        oaAddFriendUrl(),
+        oaRecipientReachability(line.sub,ownOa?.token),
+        oaAddFriendUrl(ownOa?.token),
       ]);
-      const { data: tenant, error: te } = await db.from("so_tenants").select("id,slug,status").eq("slug", slug).eq("status", "ACTIVE").single();
-      if (te || !tenant) return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
       const { data: previous, error: previousError } = await db.from("so_line_links")
-        .select("line_sub").eq("tenant_id", tenant.id).eq("user_id", user.id).maybeSingle();
+        .select("line_sub,login_channel_id").eq("tenant_id", tenant.id).eq("user_id", user.id).maybeSingle();
       if (previousError) throw previousError;
-      const link: Record<string, unknown> = { tenant_id: tenant.id, user_id: user.id, line_sub: line.sub, updated_at: new Date().toISOString() };
-      if (previous && previous.line_sub !== line.sub)
+      const link: Record<string, unknown> = { tenant_id: tenant.id, user_id: user.id,
+        line_sub: line.sub, login_channel_id: expectedChannelId, updated_at: new Date().toISOString() };
+      if (previous && (previous.line_sub !== line.sub || previous.login_channel_id !== expectedChannelId))
         return reply(409, { error: "LINE_ACCOUNT_CHANGED" }, origin);
       link.display_name = line.name;
       // A LINE Login channel can be linked to a different OA. Never turn
