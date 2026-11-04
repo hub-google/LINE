@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="169cb1a3291a886813ea57a45920fc21c8ff090f">
-<script defer src="./version-watch.js?build=169cb1a3291a886813ea57a45920fc21c8ff090f"></script>
+<meta name="line-saas-build" content="1a31a13e43b58a2415b42ca5ee0ef1c6a4771351">
+<script defer src="./version-watch.js?build=1a31a13e43b58a2415b42ca5ee0ef1c6a4771351"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 門市營運｜企業開通、員工後台與顧客預約</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -433,7 +433,7 @@ let testMode=!!(testInfo?.slug&&/^qa-[a-z0-9-]{3,36}$/.test(testInfo.slug));
 let recoveryMode=incomingParam("recover")==="1";
 let view=incomingParam("view")||"customer",slug=(isSafeMerchant(incomingParam("merchant"))?incomingParam("merchant"):null)||(testMode?testInfo.slug:"greenfield-salon");
 let session=null,context=null,overview=[],customer=null,staff=null,busy=false,flash="",err="";
-let staffHistoryDays=14,analyticsDays=30,staffAnalytics=null,businessGroups=[];
+let staffHistoryDays=14,analyticsDays=30,staffAnalytics=null,businessGroups=[],staffNoticeHealth=null;
 let editingMenuItemId="",bookingChosenItems=[],queueChosenItems=[],editChosenItems=[];
 let day=taipei(),customerTab=["home","reserve","queue","mine","progress"].includes(incomingParam("tab"))?incomingParam("tab"):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
 let manageKind=["reservation","ticket"].includes(incomingParam("manage"))?incomingParam("manage"):"";
@@ -662,6 +662,11 @@ function staffRender(){
 
 
  if(staffTab==="dashboard"){
+  if(isManager&&staffNoticeHealth&&(Number(staffNoticeHealth.failed||0)>0||Number(staffNoticeHealth.retry||0)>0))
+    html+=box("LINE 通知異常｜需管理者處理",
+      '<div class="alert">最近 7 天有 '+esc(staffNoticeHealth.retry||0)+' 筆等待重試、'+esc(staffNoticeHealth.failed||0)+
+      ' 筆已達重試上限。系統會自動重試可補發的通知；請確認 LINE OA 通知憑證、好友狀態及額度。'+
+      (staffNoticeHealth.recent_error?'（最近錯誤：'+esc(staffNoticeHealth.recent_error)+'）':'')+'</div>');
   html+='<div class="grid4" style="margin-bottom:16px">'+stat("尚未報到",pendingBookings.length)+stat("已報到未結案",openBookings.filter(x=>x.status==="CHECKED_IN").length)+
    stat("候位中",waiting.length)+stat("正在叫號",active?.number||"—")+'</div>'+
    box("營運流程",'<p class="muted">預約沒有午夜自動結案。跨天仍未完成的預約與號碼牌會持續出現在工作清單。</p>'+
@@ -1181,6 +1186,10 @@ async function load(){err="";try{
    tickets:(work.active_tickets||[]).concat(work.processed_tickets||[])};
  if(staffTab==="analytics"&&["OWNER","MANAGER","PLATFORM"].includes(staff.role))
    staffAnalytics=await rpc("so_staff_analytics",{p_slug:slug,p_days:analyticsDays});
+ if(staffTab==="dashboard"&&["OWNER","MANAGER","PLATFORM"].includes(staff.role)){
+   try{staffNoticeHealth=await rpc("so_line_notice_health",{p_slug:slug})}
+   catch(e){console.warn("LINE notification diagnostics unavailable")}
+ }
  if(staffTab==="branches")businessGroups=await rpc("so_my_business_groups");
 }
  else if(view==="staff")staff=null;
