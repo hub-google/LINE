@@ -1,21 +1,23 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="514b4c6aea36967dfa3066613979575b414490b9">
-<!-- Keep every existing view/merchant/LIFF callback URL working; route only the bare storefront entry. -->
+<meta name="line-saas-build" content="8da69ef430a07b7da15cf3ec9ac4a7798a8c1253">
+<!-- Preserve existing view/merchant/LIFF callbacks; only bare legacy/booking roots enter marketing home. -->
 <script>
 (() => {
   const qs=new URLSearchParams(location.search);
   const marketingKeys=new Set(["utm_source","utm_medium","utm_campaign","utm_content","utm_term","gclid","fbclid"]);
   const hasOnlyMarketingParameters=[...qs.keys()].every(key=>marketingKeys.has(key));
-  const atSaasRoot=/\/saas\/(?:index\.html)?$/.test(location.pathname);
-  if(atSaasRoot && hasOnlyMarketingParameters && !location.hash){
+  const atBookingRoot=/\/(?:saas|booking)\/(?:index\.html)?$/.test(location.pathname);
+  if(atBookingRoot && hasOnlyMarketingParameters && !location.hash){
     const landing=new URL("./home.html",location.href);
+    // Previously shared /saas/ links land on the new independent booking homepage.
+    landing.pathname=landing.pathname.replace(/\/saas\/home\.html$/,"/booking/home.html");
     landing.search=location.search;
     location.replace(landing.href);
   }
 })();
 </script>
-<script defer src="./version-watch.js?build=514b4c6aea36967dfa3066613979575b414490b9"></script>
+<script defer src="./version-watch.js?build=8da69ef430a07b7da15cf3ec9ac4a7798a8c1253"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 門市營運｜企業開通、員工後台與顧客預約</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -146,10 +148,12 @@ body{overflow-x:hidden}
 .cross-record{border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0}
 .cross-record .staff-actionbar{margin-top:9px}
 @media(max-width:540px){.cross-ticket{padding:13px 11px}.cross-ticket-stats{gap:6px}.cross-ticket-stat{padding:9px 4px}.cross-ticket-stat strong{font-size:clamp(20px,6vw,30px)}}
-</style></head>
+</style>
+<link rel="stylesheet" href="./booking-theme.css?build=8da69ef430a07b7da15cf3ec9ac4a7798a8c1253">
+</head>
 <body>
 <header><div class="top">
-<div class="brand"><span class="brandmark">L</span>LINE 門市營運平台<small>企業服務開通・員工管理・顧客預約</small></div>
+<div class="brand"><span class="brandmark">L</span>LINE 預約<small>線上預約・現場取號・門市管理</small></div>
 <nav class="headlinks" id="headlinks"></nav>
 </div></header>
 <div class="container" id="root"><div class="card"><h2>資料更新中，請稍後</h2></div></div>
@@ -177,7 +181,7 @@ async function bridgeConfig(){
   return lineConfig||{};
 }
 function customerUrl(merchant){
- const canonical=location.origin+location.pathname+"?view=customer&merchant="+encodeURIComponent(merchant);
+ const canonical=location.origin+bookingPath+"?view=customer&merchant="+encodeURIComponent(merchant);
  // Other shops may use a different LINE provider. Never reuse this shop's LIFF ID.
  if(merchant!==slug)return canonical;
  const id=lineConfig?.liffId;
@@ -461,7 +465,10 @@ let customerActivity={tickets:[],reservations:[]},customerActivityError="";
 let crossFilter="active",crossPageSize=12,crossCurrentStore=false,crossRealtimeChannel=null,crossRealtimeKey="",crossRefreshBusy=false;
 
 const features=[["reservation","線上預約"],["queue","線上取號"],["calling","現場叫號"]];
-const route=(v,s=slug,tab="")=>location.pathname+"?view="+encodeURIComponent(v)+(s?"&merchant="+encodeURIComponent(s):"")+(v==="customer"&&tab?"&tab="+encodeURIComponent(tab):"");
+// New links always use the dedicated booking product path. Historic /saas/ URLs
+// still render, including the LINE LIFF configured callback endpoint.
+const bookingPath=location.pathname.replace(/\/(?:saas|booking)\/(?:index\.html)?$/,"/booking/");
+const route=(v,s=slug,tab="")=>bookingPath+"?view="+encodeURIComponent(v)+(s?"&merchant="+encodeURIComponent(s):"")+(v==="customer"&&tab?"&tab="+encodeURIComponent(tab):"");
 function lineIndicator(tenant){
  const shared=!!(lineConfig?.loginReady&&lineConfig?.messagingReady);
  const own=tenant.line_status==="UNBOUND"?"店家自有 OA 尚未綁定（獨立綁定功能尚未完成）":String(tenant.line_status||"未設定");
@@ -584,10 +591,10 @@ function platformReady(){return !!(context?.platform_admin||(testMode&&session?.
 function nav(label,tab,current,which){return '<button class="side-item '+(tab===current?"active":"")+'" data-nav="'+which+'" data-tab="'+tab+'">'+label+'</button>'}
 function layout(title,subtitle,menu,body){
  const identityLabel=view==="customer"?lineDisplayName:normalUser();
- return '<div class="toolbar"><div><div class="eyebrow">LINE STORE OPERATIONS</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div><div class="flex"><span class="small">'+esc(identityLabel)+'</span>'+(view!=="customer"&&authReady()?btn("登出","logout","outline"):"")+'</div></div><div class="layout'+(view==="customer"?" customer-layout":"")+'"><aside>'+menu+'</aside><section class="content">'+body+'</section></div>';
+ return '<div class="toolbar"><div><div class="eyebrow">'+(view==="customer"?"LINE BOOKING · 顧客服務":view==="staff"?"LINE BOOKING · 門市管理":"LINE BOOKING · 平台管理")+'</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div><div class="flex"><span class="small">'+esc(identityLabel)+'</span>'+(view!=="customer"&&authReady()?btn("登出","logout","outline"):"")+'</div></div><div class="layout'+(view==="customer"?" customer-layout":"")+'"><aside>'+menu+'</aside><section class="content">'+body+'</section></div>';
 }
-function head(){const links=view==="customer"?[["customer","預約／取號"]]:[["home","產品入口"],["platform","公司總後台"],["staff","企業員工後台"],["customer","顧客使用網頁"]];
-$("headlinks").innerHTML=links.map(x=>'<a href="'+esc(x[0]==="customer"?(customerUrl(slug)||route("customer",slug)):route(x[0],x[0]==="platform"||x[0]==="home"?"":slug))+'" class="'+(x[0]===view?"active":"")+'">'+x[1]+'</a>').join("");
+function head(){const links=view==="customer"?[["customer","預約與取號"]]:[["marketing","網站首頁"],["platform","總公司管理"],["staff","店家管理"],["customer","顧客入口"]];
+$("headlinks").innerHTML=links.map(x=>'<a href="'+esc(x[0]==="marketing"?new URL("./home.html",location.origin+bookingPath).pathname:x[0]==="customer"?(customerUrl(slug)||route("customer",slug)):route(x[0],x[0]==="platform"?"":slug))+'" class="'+(x[0]===view?"active":"")+'">'+x[1]+'</a>').join("");
 }
 function message(){return (err?'<div class="error" role="alert">'+esc(err)+'</div>':"")+(flash?'<div class="notice" role="status">'+esc(flash)+'</div>':"")}
 function renderHome(){
@@ -1063,7 +1070,7 @@ function customerRender(){
  document.documentElement.style.setProperty("--primary",/^#[a-fA-F0-9]{6}$/.test(t.accent)?t.accent:"#147e68");
  const menu=nav("首頁","home",customerTab,"customer")+(m.reservation?nav("線上預約","reserve",customerTab,"customer"):"")+(m.queue?nav("現場取號","queue",customerTab,"customer"):"")+nav("我的取號","progress",customerTab,"customer")+nav("我的紀錄","mine",customerTab,"customer");
  let html='';
- if(customerTab==="home") html='<div class="hero"><div class="eyebrow" style="color:#ddfff2">CUSTOMER PORTAL</div><h1>'+esc(t.name)+'</h1><p class="muted">'+esc(t.description||"歡迎使用線上服務")+'</p><p class="muted">'+esc(t.address||"")+'</p></div>'+
+ if(customerTab==="home") html='<div class="hero"><div class="eyebrow">LINE 門市線上服務</div><h1>'+esc(t.name)+'</h1><p class="muted">'+esc(t.description||"線上預約與現場候位，從這裡開始")+'</p><p class="muted">'+esc(t.address||"")+'</p></div>'+
  '<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",customer.current||"—")+stat("現場候位",customer.waiting+" 組")+stat("我的有效預約",items.filter(x=>x.status==="CONFIRMED").length)+'</div>'+
  '<div class="grid">'+(m.reservation?'<button class="routecard" data-nav="customer" data-tab="reserve"><h2>線上預約</h2><p class="muted">選日期與時段，確定後儲存到資料庫</p><strong>立即預約 →</strong></button>':"")+
  (m.queue?'<button class="routecard" data-nav="customer" data-tab="queue"><h2>現場取號</h2><p class="muted">直接取得候位號碼與查看進度</p><strong>立即取號 →</strong></button>':"")+'</div>';
@@ -1128,7 +1135,7 @@ function renderMyTickets(tickets){
       btn(focused&&manageMode==="cancel"?"確認取消排隊":"取消排隊","cancel-my-number","outline",'data-id="'+esc(x.id)+'"'):"")+'</article>';
  }).join("");
 }
-function render(){head();$("root").innerHTML=message()+(view==="platform"?platformRender():view==="staff"?staffRender():view==="customer"?customerRender():renderHome())+'<footer>Supabase 即時儲存・真實店員權限・LINE Messaging API 通知 ・ <a href="privacy.html">隱私權說明</a> ・ <a href="terms.html">使用條款</a></footer>'}
+function render(){document.body.dataset.portal=view;head();$("root").innerHTML=message()+(view==="platform"?platformRender():view==="staff"?staffRender():view==="customer"?customerRender():renderHome())+'<footer>LINE 預約服務 ・ <a href="privacy.html">隱私權說明</a> ・ <a href="terms.html">使用條款</a></footer>'}
 const CUSTOMER_BOOKING_REQUEST_KEY="line-saas-customer-booking-submission-v1";
 let pendingCustomerBookingRequest=null;
 // Preserve a request ID after a network timeout: retrying the identical booking

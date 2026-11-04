@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-Hant"><head>
+<meta name="line-saas-build" content="8da69ef430a07b7da15cf3ec9ac4a7798a8c1253">
+<script defer src="./version-watch.js?build=8da69ef430a07b7da15cf3ec9ac4a7798a8c1253"></script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LINE 預約系統｜商家服務中心</title><meta name="description" content="LINE OA 門市預約、取號與叫號：體驗、功能介紹、導入教學與客服。">
+<style>
+:root{font-family:system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif;color:#163d36;background:#f5f9f7}
+*{box-sizing:border-box}body{margin:0;line-height:1.7}a{color:#086655}nav{background:#073d35;color:white;padding:18px 22px}nav div{max-width:960px;margin:auto;font-weight:800;font-size:19px}main{max-width:960px;margin:auto;padding:26px 18px 65px}h1{font-size:clamp(26px,5vw,38px);line-height:1.25;margin:0 0 12px}h2{margin:0 0 14px;font-size:23px}h3{margin:8px 0}p{margin:8px 0 15px;color:#45665f}.hero{background:#e0f4e9;border:1px solid #badccc;border-radius:22px;padding:30px;margin-bottom:22px}.section{background:white;border:1px solid #dce9e2;border-radius:18px;padding:25px;margin:18px 0;scroll-margin-top:16px}.links{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.btn{display:inline-block;text-decoration:none;border-radius:10px;background:#097761;color:white;font-weight:750;padding:11px 18px;min-height:43px}.btn.secondary{color:#095748;background:white;border:1px solid #8cbbaa}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.feature{background:#f3faf6;border:1px solid #dcece1;border-radius:12px;padding:16px}.feature p{margin:4px 0;font-size:14px}.muted{color:#63756e;font-size:13px}ol{padding-left:22px}li{margin:9px 0}footer{text-align:center;color:#657e75;font-size:13px;padding:24px}html{scroll-behavior:smooth}@media(max-width:600px){.grid{grid-template-columns:1fr}.section,.hero{padding:19px}}
+</style></head>
+<body><nav><div>LINE 預約系統｜商家服務中心</div></nav><main>
+<section class="hero" id="trial"><h1>一個網站，管理預約、取號與叫號</h1><p>商家使用同一套網頁管理，手機與電腦皆可操作。消費者可以透過總公司 LINE OA 搜尋店家、預約與取號；已有自己的 LINE OA 的店家，可在企業管理後台設定獨立 LINE LIFF 與 Messaging API 頻道。</p><div class="links">
+<a class="btn" href="./?view=platform">免費體驗總公司測試後台</a><a class="btn secondary" href="./?view=staff">體驗店員操作</a>
+</div><p class="muted">目前體驗會建立真實但獨立的 QA 測試門市；不是正式商家帳號，無須使用正式顧客資料。</p></section>
+<section class="section" id="activate"><h2>商家免費開通</h2><p><strong>沒有 LINE OA 的店家可以直接申請。</strong>通過總公司審核後，會取得獨立門市預約網址；顧客可從總公司 OA 的搜尋店家或專屬連結進來預約，通知由平台 LINE OA 發送。</p><p>已有 LINE OA 的店家也能先使用總公司 OA；自有 LINE OA 可在企業後台的「LINE 官方帳號串接」設定；需提供同一 Provider 的 LIFF ID、Messaging API Token 與 Channel Secret，並設定商家專屬 Webhook。</p><p class="muted">需要使用已驗證 Email 的商家帳號申請。申請不需提供 Channel Secret 或 Access Token；正式公開搜尋須經店家管理者另行啟用。</p><div class="links"><a class="btn" href="merchant-register.html">立即申請開通</a><a class="btn secondary" href="merchant-register.html?admin=1">總公司審核申請</a></div></section>
+<section class="section" id="features"><h2>系統功能</h2><div class="grid">
+<div class="feature"><h3>線上預約</h3><p>選擇日期與時段，後端儲存預約狀態。</p></div>
+<div class="feature"><h3>現場取號</h3><p>顧客領取號碼並查看即時叫號進度。</p></div>
+<div class="feature"><h3>店員叫號</h3><p>現場叫號、重新叫號、過號與狀態修正。</p></div>
+<div class="feature"><h3>LINE 訊息通知</h3><p>現有測試 OA 支援預約、取號及叫號通知；需完成真實 LINE 授權與加好友。</p></div>
+</div><p class="muted">商家自有 LINE OA 的串接介面已提供；正式啟用前仍需由商家完成真實頻道設定與 LINE 推播驗收。</p></section>
+<section class="section" id="guide"><h2>使用教學</h2><ol>
+<li>想了解系統：先按上方「免費體驗」，使用測試帳號進入真正的 QA 資料庫。</li>
+<li>門市店員：開啟「店家後台」，登入有授權的門市帳號；測試階段可用一鍵測試登入。</li>
+<li>預約與取號：店員後台可複製該測試門市的 LINE 顧客網址，顧客授權 LINE 帳號後操作。</li>
+<li>叫號與更正：在「現場叫號」管理名單；操作錯誤可依頁面提供的狀態選擇或還原功能修正。</li>
+<li>正式開通：從「商家免費開通」註冊正式帳號、提出申請，總公司核准後即可取得門市專屬網址，並可自行決定是否公開在總公司搜尋。</li>
+</ol><div class="links"><a class="btn" href="./?view=staff">前往店家後台</a><a class="btn secondary" href="./?view=home">查看產品入口</a></div></section>
+<section class="section" id="support"><h2>聯絡客服</h2><p>請回到總公司 LINE OA 聊天視窗直接傳送問題，並簡述使用的頁面與遇到的錯誤訊息。請勿在聊天中傳送密碼、Channel Secret 或 Access Token。</p></section>
+</main><footer>LINE 預約系統｜商家服務中心 ・ <a href="privacy.html">隱私權說明</a> ・ <a href="terms.html">使用條款</a></footer></body></html>
