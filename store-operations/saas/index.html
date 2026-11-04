@@ -732,9 +732,20 @@ function staffRender(){
   box("待接受邀請",(staff.invites||[]).map(i=>'<div class="listline"><span>'+esc(i.email)+'</span>'+tag(i.role)+'</div>').join("")||'<p class="muted">尚無邀請</p>')+
   (isManager?box("邀請企業員工",field("員工 Email","invite-email","","email")+'<label>角色</label><select id="invite-role" class="field"><option value="STAFF">員工</option><option value="MANAGER">管理者</option><option value="OWNER">負責人</option></select><div style="margin-top:15px">'+btn("送出邀請","invite-staff","primary")+'</div><p class="small">員工使用同一 Email 註冊、驗證後，登入即可接受邀請。</p>'):"");
  }else if(staffTab==="settings"){
+  const policy=staff.bookingPolicy||{};
+  const weekdayChecks=[["0","週日"],["1","週一"],["2","週二"],["3","週三"],["4","週四"],["5","週五"],["6","週六"]]
+      .map(([day,title])=>'<label class="checklist"><input type="checkbox" class="policy-closed-day" value="'+day+'" '+((policy.closed_weekdays||[]).includes(Number(day))?"checked":"")+'> '+title+'</label>').join("");
   html+=box("企業基本設定",!isManager?'<p class="muted">只有管理者可以修改設定。</p>':
    '<div class="grid"><div>'+field("企業名稱","set-name",t.name)+field("電話","set-phone",t.phone)+field("地址","set-address",t.address)+field("品牌色（#RRGGBB）","set-accent",t.accent)+'</div><div>'+field("網站簡介","set-description",t.description)+field("LOGO 圖片網址","set-logo",t.logo_url)+field("開始營業","set-open",t.open_time,"time")+field("結束營業","set-close",t.close_time,"time")+'</div></div>'+
    '<div class="grid"><div>'+field("每個時段可預約人數","set-capacity",t.slot_capacity,"number",'min="1" max="100"')+'</div><div><label>預約時段間隔</label><select class="field" id="set-minutes"><option value="15" '+(t.slot_minutes===15?"selected":"")+'>15 分鐘</option><option value="30" '+(t.slot_minutes===30?"selected":"")+'>30 分鐘</option><option value="60" '+(t.slot_minutes===60?"selected":"")+'>60 分鐘</option></select></div></div><div style="margin-top:15px">'+btn("儲存企業設定","update-settings","primary")+'</div>')+
+  (isManager?box("預約營業日與休息設定",
+      '<p class="small">選擇每週固定公休日；特殊日期用西元日期，例如 2026-11-15,2026-11-22。既有預約不會被自動取消。</p>'+
+      '<label>每週固定公休日</label><div class="grid">'+weekdayChecks+'</div>'+
+      field("特殊休假日期（逗號分隔）","policy-closed-dates",(policy.closed_dates||[]).join(","))+
+      '<div class="grid"><div>'+field("每日休息開始（可留空）","policy-break-start",policy.break_start||"","time")+
+      field("最晚提前預約分鐘數","policy-notice",policy.min_notice_minutes??0,"number",'min="0" max="10080"')+'</div>'+
+      '<div>'+field("每日休息結束（可留空）","policy-break-end",policy.break_end||"","time")+'</div></div>'+
+      '<div style="margin-top:14px">'+btn("儲存預約營業規則","save-booking-policy","primary")+'</div>'):"")+
   box("LINE 官方帳號串接",'<p>平台測試 OA／企業自有 OA：'+esc(lineIndicator(t))+'</p><div class="alert">目前使用同一組測試 LINE 官方帳號，預約／取號／叫號會嘗試發送真實通知。請先授權 LINE 身分及加入好友；不同商家獨立 OA 綁定尚未開放。</div>')+
   (isManager?box("總公司 LINE 平台店家搜尋",'<p>無論店家有沒有自己的 LINE OA，都可以使用總公司共用 LINE OA 的預約及通知服務。開放公開搜尋後，顧客可從總公司選單「搜尋店家／現場取號」找到本店。</p>'+
     '<label class="checklist"><input id="directory-enabled" type="checkbox" '+(t.directory_enabled?'checked ':'')+'>允許在總公司 LINE 預約平台公開搜尋我的門市</label>'+
@@ -1099,11 +1110,12 @@ async function load(){err="";try{
  }
  if(view==="platform"&&platformReady())overview=await rpc("so_platform_overview");
  if(view==="staff"&&authReady()&&(context?.platform_admin||context?.memberships?.some(m=>m.slug===slug))){
- const [meta,work]=await Promise.all([
+ const [meta,work,policy]=await Promise.all([
   rpc("so_staff_state",{p_slug:slug,p_date:taipei()}),
-  rpc("so_staff_worklist",{p_slug:slug,p_history_days:staffHistoryDays})
+  rpc("so_staff_worklist",{p_slug:slug,p_history_days:staffHistoryDays}),
+  rpc("so_get_booking_policy",{p_slug:slug})
  ]);
- staff={...meta,...work,reservations:(work.pending_reservations||[]).concat(work.processed_reservations||[]),
+ staff={...meta,...work,bookingPolicy:policy,reservations:(work.pending_reservations||[]).concat(work.processed_reservations||[]),
    tickets:(work.active_tickets||[]).concat(work.processed_tickets||[])};
 }
  else if(view==="staff")staff=null;
@@ -1252,6 +1264,19 @@ document.addEventListener("click",async ev=>{
      const value=await rpc("so_menu_set_modes",{p_slug:slug,
        p_booking_mode:val("menu-book-mode"),p_queue_mode:val("menu-queue-mode")});
      return "菜單及服務規則已儲存：預約「"+menuModeLabel(value.booking)+"」，現場取號「"+menuModeLabel(value.queue)+"」";
+   });return;
+ }
+ if(a==="save-booking-policy"){
+   await act(async()=>{
+     const dates=val("policy-closed-dates").split(/[,，;；\s]+/).filter(Boolean);
+     if(dates.some(x=>!/^\d{4}-\d{2}-\d{2}$/.test(x)))throw Error("請使用 YYYY-MM-DD 格式填寫特殊休假日期");
+     const days=Array.from(document.querySelectorAll(".policy-closed-day:checked"),x=>Number(x.value));
+     await rpc("so_set_booking_policy",{
+       p_slug:slug,p_closed_weekdays:days,p_closed_dates:dates,
+       p_break_start:val("policy-break-start"),p_break_end:val("policy-break-end"),
+       p_min_notice_minutes:Number(val("policy-notice")||0)
+     });
+     return "預約營業規則已更新";
    });return;
  }
  if(a==="update-settings"){await act(async()=>{await rpc("so_update_tenant",{p_slug:slug,p_patch:{name:val("set-name"),phone:val("set-phone"),address:val("set-address"),accent:val("set-accent"),description:val("set-description"),logo_url:val("set-logo"),open_time:val("set-open"),close_time:val("set-close"),slot_capacity:Number(val("set-capacity")),slot_minutes:Number(val("set-minutes"))}});return "企業設定已保存";});return}
