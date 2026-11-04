@@ -470,6 +470,8 @@ action=async function(name,data){
    else if(name==='month_close')result=await rpc('wm_close_month',{p_tenant:tenant_id,p_year:Number(data.year),p_month:Number(data.month)});
    else if(name==='period_adjustment')result=await rpc('wm_adjust_closed_month',{p_close_id:data.closure_id,p_member_id:data.member_id,p_minutes:Number(data.minutes_delta),p_reason:data.reason});
    else if(name==='copy_week')result=await rpc('wm_copy_week',{p_tenant:tenant_id,p_week_start:data.week_start});
+   else if(name==='employee_import')result=await rpc('wm_import_employees',{p_tenant:tenant_id,p_rows:data.rows});
+   else if(name==='auto_draft')result=await rpc('wm_insert_draft_schedule',{p_tenant:tenant_id,p_assignments:data.assignments});
    else if(name==='swap_create')result=await rpc('wm_create_swap',{p_source:data.source_shift_id,p_target:data.target_shift_id,p_reason:data.reason||''});
    else if(name==='swap_accept')result=await rpc('wm_consent_swap',{p_request:data.id,p_accepted:data.accepted===true});
    else if(name==='swap_review')result=await rpc('wm_review_swap',{p_request:data.id,p_approved:data.approved===true});
@@ -698,4 +700,162 @@ $('appContent').addEventListener('click',async e=>{
     await action('swap_accept',{id:b.dataset.id,accepted});
   }
  }catch(err){banner(err.message,true);}
+});
+
+
+
+/* HR-ORG-02 / HR-SCH-07: transactional staff import and manager-reviewed auto drafts. */
+extraNames.add('employee_import');
+extraNames.add('auto_draft');
+const existingEmployeesWithCsv=employees;
+employees=function(){
+ existingEmployeesWithCsv();
+ if(app.mode==='demo'||role()==='owner'){
+  $('appContent').insertAdjacentHTML('beforeend',
+   panel('員工 CSV 批次匯入',
+   '<p class="muted">只新增員工，不會修改或覆寫相同編號的既有員工。檔案採 UTF-8 CSV，欄位為員工編號、姓名、分店、角色、聘僱類型。</p>'+
+   '<div class="flex"><button class="btn" data-extra="importCsv">選取 CSV 匯入</button>'+
+   '<button class="btn" data-extra="sampleCsv">下載範例 CSV</button></div>'));
+ }
+};
+function csvRows(text){
+ const source=String(text||'').replace(/^\uFEFF/,'');const rows=[];
+ let cell='',row=[],quoted=false;
+ for(let i=0;i<source.length;i++){
+  const c=source[i];
+  if(c==='"'){if(quoted&&source[i+1]==='"'){cell+='"';i++;}else quoted=!quoted;}
+  else if(c===','&&!quoted){row.push(cell);cell='';}
+  else if((c==='\n'||c==='\r')&&!quoted){
+   if(c==='\r'&&source[i+1]==='\n')i++;
+   row.push(cell);cell='';if(row.some(x=>x.trim()))rows.push(row);row=[];
+  }else cell+=c;
+ }
+ if(quoted)throw Error('CSV 引號沒有正確結束');
+ row.push(cell);if(row.some(x=>x.trim()))rows.push(row);
+ if(rows.length<2)throw Error('CSV 缺少標題或員工資料');
+ const names=rows.shift().map(x=>x.trim());
+ const col=(alts)=>alts.map(x=>names.indexOf(x)).find(x=>x>=0);
+ const code=col(['員工編號','employee_code','code']),name=col(['姓名','員工姓名','name','display_name']);
+ const br=col(['分店','分店名稱','branch','branch_id']),rolecol=col(['角色','role']),typecol=col(['聘僱類型','employment_type']);
+ if(code===undefined||name===undefined||br===undefined)throw Error('CSV 必須包含員工編號、姓名、分店欄位');
+ const out=rows.map((r,i)=>{
+  const b=String(r[br]||'').trim(),branchRecord=(app.data?.branches||[]).find(x=>x.id===b||x.name===b);
+  if(!branchRecord)throw Error('第 '+(i+2)+' 列：分店不存在（'+b+'）');
+  let role=String(r[rolecol]||'employee').trim().toLowerCase();
+  role=({'員工':'employee','主管':'manager','店長':'manager','人資':'hr'})[role]||role;
+  let employment_type=String(r[typecol]||'full_time').trim().toLowerCase();
+  employment_type=({'正職':'full_time','兼職':'part_time','計時':'hourly'})[employment_type]||employment_type;
+  const x={code:String(r[code]||'').trim(),name:String(r[name]||'').trim(),
+   branch_id:branchRecord.id,role,employment_type};
+  if(!x.code||!x.name||!['employee','manager','hr'].includes(role)
+   ||!['full_time','part_time','hourly'].includes(employment_type))
+   throw Error('第 '+(i+2)+' 列：員工編號、姓名、角色或聘僱類型不正確');
+  return x;
+ });
+ if(out.length>(app.mode==='demo'?20:200))throw Error('本次最多匯入 '+(app.mode==='demo'?20:200)+' 人');
+ return out;
+}
+function downloadCsv(){
+ const b=app.data?.branches?.[0]?.name||'台北總店';
+ const data='\uFEFF員工編號,姓名,分店,角色,聘僱類型\r\nCSV001,測試小華,'+b+',員工,正職\r\nCSV002,測試小林,'+b+',員工,兼職';
+ const blob=new Blob([data],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='workforce-employee-template.csv';document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function openCsvImport(){
+ openModal('員工 CSV 匯入','<p class="muted">匯入資料會立即新增到目前選擇的企業。相同員工編號直接略過，不會覆寫。</p>'+
+ '<div class="field"><label for="csvFile">UTF-8 CSV 檔案</label>'+
+ '<input id="csvFile" type="file" accept=".csv,text/csv" required></div>'+
+ '<div class="modal-actions"><button class="btn primary" data-extra="runImport">確認匯入</button></div>');
+}
+async function runCsvImport(){
+ const file=$('csvFile')?.files?.[0];if(!file)throw Error('請先選擇 CSV 檔案');
+ if(file.size>500000)throw Error('檔案超過 500 KB');
+ const rows=csvRows(await file.text());
+ if(!confirm('確定匯入 '+rows.length+' 名員工？已存在的編號將略過。'))return;
+ const result=await action('employee_import',{rows});
+ banner('已新增 '+(result?.created||0)+' 人，略過重複 '+(result?.skipped_existing||0)+' 人');
+}
+app.autoSuggestions=null;
+function proposeWorkforceWeek(){
+ const monday=dayAdd(app.date,-((new Date(app.date+'T12:00:00Z').getUTCDay()+6)%7));
+ const d=app.data||{};
+ const assigned=[...(d.shifts||[]).filter(s=>s.status!=='cancelled').map(s=>({...s}))];
+ const suggestions=[],gaps=[];
+ const weekdayNames=['日','一','二','三','四','五','六'];
+ const rules=d.requirements||[];
+ if(!rules.length)return {suggestions,gaps:[{day:monday,reason:'尚未設定分店最低人力需求'}]};
+ for(let offset=0;offset<7;offset++){
+  const date=dayAdd(monday,offset),weekday=new Date(date+'T12:00:00Z').getUTCDay();
+  for(const rule of rules.filter(r=>r.weekday===weekday)){
+   const start=date+'T'+String(rule.starts_local).slice(0,5)+':00+08:00';
+   const endDay=String(rule.ends_local)<=String(rule.starts_local)?dayAdd(date,1):date;
+   const end=endDay+'T'+String(rule.ends_local).slice(0,5)+':00+08:00';
+   const startMs=new Date(start).getTime(),endMs=new Date(end).getTime();
+   let covering=assigned.filter(s=>s.branch_id===rule.branch_id&&new Date(s.starts_at)<=startMs&&new Date(s.ends_at)>=endMs).length;
+   let vacancies=Math.max(0,Number(rule.needed)-covering);
+   while(vacancies>0&&suggestions.length<30){
+    const candidates=(d.members||[]).filter(m=>m.status==='active'&&m.branch_id===rule.branch_id).map(m=>{
+     const ms=assigned.filter(s=>s.member_id===m.id);
+     const overlaps=ms.some(s=>new Date(s.starts_at)<endMs&&new Date(s.ends_at)>startMs);
+     const tooClose=ms.some(s=>{
+      const st=new Date(s.starts_at).getTime(),en=new Date(s.ends_at).getTime();
+      return (en<=startMs&&startMs-en<11*3600000)||(st>=endMs&&st-endMs<11*3600000);
+     });
+     const weekMs=ms.filter(s=>taiDay(s.starts_at)>=monday&&taiDay(s.starts_at)<=dayAdd(monday,6))
+       .reduce((sum,s)=>sum+new Date(s.ends_at)-new Date(s.starts_at),0);
+     const conflicts=(d.requests||[]).some(r=>r.member_id===m.id&&r.kind==='leave'&&r.status==='approved'
+       &&new Date(r.starts_at)<endMs&&new Date(r.ends_at)>startMs);
+     const availability=(d.availability||[]).filter(x=>x.member_id===m.id&&new Date(x.starts_at)<endMs&&new Date(x.ends_at)>startMs);
+     const blocked=availability.some(x=>!x.available);
+     const positive=(d.availability||[]).filter(x=>x.member_id===m.id&&x.available&&taiDay(x.starts_at)>=monday&&taiDay(x.starts_at)<=dayAdd(monday,6));
+     const preferred=positive.some(x=>new Date(x.starts_at)<=startMs&&new Date(x.ends_at)>=endMs);
+     const mustMatch=positive.length>0&&!preferred;
+     return {m,weekMs,preferred,eligible:!overlaps&&!tooClose&&!conflicts&&!blocked&&!mustMatch&&weekMs+(endMs-startMs)<=40*3600000};
+    }).filter(x=>x.eligible).sort((a,b)=>Number(b.preferred)-Number(a.preferred)||a.weekMs-b.weekMs||a.m.employee_code.localeCompare(b.m.employee_code));
+    if(!candidates.length)break;
+    const chosen=candidates[0];
+    const proposal={member_id:chosen.m.id,branch_id:rule.branch_id,
+      starts_at:new Date(startMs).toISOString(),ends_at:new Date(endMs).toISOString(),
+      reason:'週'+weekdayNames[weekday]+'人力需求 '+rule.needed+' 人；先排較少工時且無衝突者'};
+    suggestions.push(proposal);assigned.push({...proposal,status:'draft'});vacancies--;
+   }
+   if(vacancies>0)gaps.push({day:date,branch_id:rule.branch_id,missing:vacancies,reason:'可排人員不足或休息／請假衝突'});
+  }
+ }
+ return {suggestions,gaps,monday};
+}
+const previousScheduleAuto=schedule;
+schedule=function(){
+ previousScheduleAuto();
+ const p=app.autoSuggestions;
+ const controls=manager()?'<div class="flex"><button class="btn" data-extra="autoPreview">產生排班建議</button>'+
+ (p?.suggestions?.length?'<button class="btn primary" data-extra="autoCommit">確認建立 '+p.suggestions.length+' 個班表草稿</button>':'')+'</div>':'';
+ const preview=p?table(['員工','分店','開始','結束','建議原因'],
+  p.suggestions.map(s=>tr([personLabel(s.member_id),esc(branch(s.branch_id)?.name||''),taiStamp(s.starts_at),taiStamp(s.ends_at),esc(s.reason)]))):
+  '<p class="muted">設定分店最低人力需求後，可先生成班表建議，主管確認才寫入資料庫草稿。</p>';
+ const gaps=p?.gaps?.length?'<div class="notice warning">目前有 '+p.gaps.length+' 個未滿足人力需求的班段，系統不會強制排出超時／衝突班表。</div>':'';
+ $('appContent').insertAdjacentHTML('beforeend',
+  panel('自動排班建議（主管確認後才存草稿）',
+   controls+'<div class="notice">演算法參考已排班、排休、可上班時段及目前工時，暫以每週 40 小時和班間 11 小時作保守建議門檻；這不是法定工時計算結果。</div>'+
+   preview+gaps));
+};
+$('appContent').addEventListener('click',async e=>{
+ const b=e.target.closest('[data-extra]');if(!b)return;
+ try{
+  if(b.dataset.extra==='importCsv')openCsvImport();
+  else if(b.dataset.extra==='sampleCsv')downloadCsv();
+  else if(b.dataset.extra==='autoPreview'){app.autoSuggestions=proposeWorkforceWeek();render();}
+  else if(b.dataset.extra==='autoCommit'){
+   const assignments=app.autoSuggestions?.suggestions||[];
+   if(!assignments.length)throw Error('尚無可建立的班表建議');
+   if(!confirm('確認將 '+assignments.length+' 個建議寫入資料庫草稿？不會直接發布。'))return;
+   const result=await action('auto_draft',{assignments});
+   app.autoSuggestions=null;render();banner('已建立 '+(result?.draft_count||0)+' 個草稿，請主管逐一確認發布');
+  }
+ }catch(err){banner(err.message,true);}
+});
+$('overlay').addEventListener('click',async e=>{
+ const b=e.target.closest('[data-extra]');if(!b)return;
+ if(b.dataset.extra==='runImport')try{await runCsvImport();}catch(err){banner(err.message,true);}
 });
