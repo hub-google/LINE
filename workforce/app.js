@@ -150,7 +150,7 @@ function schedule(){
  heading(manager()?'<button class="btn primary" data-action="newShift">＋ 新增班次</button>':'');
  const cards=week.map(day=>{
   const entries=shifts.filter(x=>taiDay(x.starts_at)===day&&x.status!=='cancelled').sort((a,b)=>a.starts_at.localeCompare(b.starts_at));
-  return '<div class="day '+(day===today()?'today':'')+'"><strong>'+esc(day.slice(5))+'　'+esc('一二三四五六日'[week.indexOf(day)])+'</strong>'+entries.map(x=>'<div class="shift-card '+esc(x.status)+'"><b>'+personLabel(x.member_id)+'</b><span>'+taiTime(x.starts_at)+'－'+taiTime(x.ends_at)+'</span><div class="muted">'+esc(branch(x.branch_id)?.name||'')+' · '+esc(x.status==='draft'?'草稿':'已發布')+'</div></div>').join('')+(entries.length?'':'<span class="muted">無排班</span>')+'</div>';
+  return '<div class="day '+(day===today()?'today':'')+'" data-schedule-day="'+esc(day)+'"><strong>'+esc(day.slice(5))+'　'+esc('一二三四五六日'[week.indexOf(day)])+'</strong>'+entries.map(x=>'<div class="shift-card '+esc(x.status)+'" data-shift-id="'+esc(x.id)+'" '+(manager()?'draggable="true"':'')+'><b>'+personLabel(x.member_id)+'</b><span>'+taiTime(x.starts_at)+'－'+taiTime(x.ends_at)+'</span><div class="muted">'+esc(branch(x.branch_id)?.name||'')+' · '+esc(x.status==='draft'?'草稿':'已發布')+'</div></div>').join('')+(entries.length?'':'<span class="muted">無排班</span>')+'</div>';
  }).join('');
  const rows=shifts.filter(x=>taiDay(x.starts_at)>=mon&&taiDay(x.starts_at)<=week[6]).sort((a,b)=>a.starts_at.localeCompare(b.starts_at)).map(x=>tr([personLabel(x.member_id),esc(branch(x.branch_id)?.name||''),taiStamp(x.starts_at),taiStamp(x.ends_at),status(x.status),rowButtons(x.id,x.status==='draft'?'draft':'shift')]));
  $('appContent').innerHTML='<div class="panel"><div class="toolbar"><div class="field"><label>查看週次</label><input id="weekPicker" class="filter" type="date" value="'+esc(date)+'"></div><button class="btn" data-action="prevWeek">上一週</button><button class="btn" data-action="nextWeek">下一週</button><button class="btn" data-action="todayWeek">今天</button></div><div class="schedule-week">'+cards+'</div></div>'+panel('本週班表明細',table(['員工','分店','開始','結束','狀態','操作'],rows));
@@ -551,6 +551,7 @@ action=async function(name,data){
    else if(name==='swap_create')result=await rpc('wm_create_swap',{p_source:data.source_shift_id,p_target:data.target_shift_id,p_reason:data.reason||''});
    else if(name==='swap_accept')result=await rpc('wm_consent_swap',{p_request:data.id,p_accepted:data.accepted===true});
    else if(name==='swap_review')result=await rpc('wm_review_swap',{p_request:data.id,p_approved:data.approved===true});
+   else if(name==='shift_move')result=await rpc('wm_move_shift',{p_tenant:tenant_id,p_shift:data.id,p_start:data.starts_at});
    else if(name==='availability')result=await insert('wm_availability',{member_id:data.member_id,starts_at:data.starts_at,ends_at:data.ends_at,available:data.available===true||data.available==='true',note:data.note||''});
   }
   app.busy=false;closeModal();
@@ -1243,4 +1244,147 @@ $('overlay').addEventListener('click',async e=>{
   try{await uploadEvidence();}catch(error){banner(error.message,true);}
   finally{b.disabled=false;}
  }
+});
+
+
+
+/* HR-SCH-02: time editing, templates, day/week/month calendar and export. */
+extraNames.add('shift_move');
+app.scheduleView='week';
+const baseShiftForm=showShift;
+showShift=function(){
+ baseShiftForm();
+ const form=$('overlay')?.querySelector('form[data-form="shift"]');
+ if(!form)return;
+ const templates=app.data?.templates||[];
+ if(templates.length)form.insertAdjacentHTML('afterbegin',
+  '<div class="field wide"><label for="shiftTemplate">套用班型範本</label>'+
+  '<select id="shiftTemplate"><option value="">自訂</option>'+
+  templates.map(t=>'<option value="'+esc(t.id)+'">'+esc(t.name)+'</option>').join('')+'</select></div>');
+};
+$('overlay').addEventListener('change',e=>{
+ if(e.target.id!=='shiftTemplate')return;
+ const t=(app.data?.templates||[]).find(x=>x.id===e.target.value);
+ if(!t)return;
+ const start=$('starts_at'),end=$('ends_at');if(!start||!end)return;
+ const date=start.value.slice(0,10)||app.date;
+ const startTime=String(t.starts_local).slice(0,5),endTime=String(t.ends_local).slice(0,5);
+ start.value=date+'T'+startTime;
+ end.value=(endTime<=startTime?dayAdd(date,1):date)+'T'+endTime;
+});
+const oldShiftActions=rowButtons;
+rowButtons=function(id,mode){
+ const current=oldShiftActions(id,mode);
+ return manager()?current+'<button class="btn small" data-extra="moveShift" data-id="'+esc(id)+'">改期</button>':current;
+};
+function calendarRows(){
+ const all=(app.data?.shifts||[]).filter(x=>x.status!=='cancelled');
+ const date=app.date,d=new Date(date+'T12:00:00Z'),monday=dayAdd(date,-((d.getUTCDay()+6)%7));
+ return all.filter(s=>{
+  const day=taiDay(s.starts_at);
+  return app.scheduleView==='day'?day===date:
+    app.scheduleView==='month'?day.slice(0,7)===date.slice(0,7):
+    day>=monday&&day<=dayAdd(monday,6);
+ }).sort((a,b)=>a.starts_at.localeCompare(b.starts_at));
+}
+function exportCalendar(){
+ const rows=[['員工編號','姓名','門市','開始時間','結束時間','狀態'],
+ ...calendarRows().map(s=>[person(s.member_id)?.employee_code||'',
+  person(s.member_id)?.display_name||'',branch(s.branch_id)?.name||'',
+  taiStamp(s.starts_at),taiStamp(s.ends_at),s.status])];
+ const cell=v=>{let x=String(v??'');if(/^\s*[=+\-@]/.test(x))x="'"+x;return '"'+x.replaceAll('"','""')+'"';};
+ const blob=new Blob(['\uFEFF'+rows.map(row=>row.map(cell).join(',')).join('\r\n')],
+ {type:'text/csv;charset=utf-8'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='workforce-schedule-'+app.date+'.csv';document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function dateCard(day,compact=false){
+ const shifts=(app.data?.shifts||[]).filter(x=>x.status!=='cancelled'&&taiDay(x.starts_at)===day)
+  .sort((a,b)=>a.starts_at.localeCompare(b.starts_at));
+ return '<div class="day" data-schedule-day="'+esc(day)+'"><strong>'+esc(day.slice(5))+'</strong>'+
+ shifts.slice(0,compact?3:50).map(x=>'<div class="shift-card" '+(manager()?'draggable="true"':'')+
+  ' data-shift-id="'+esc(x.id)+'"><b>'+personLabel(x.member_id)+'</b>'+
+  '<span>'+taiTime(x.starts_at)+'–'+taiTime(x.ends_at)+'</span></div>').join('')+
+ (shifts.length>(compact?3:50)?'<small>另 '+(shifts.length-3)+' 筆</small>':'')+
+ (!shifts.length?'<small class="muted">無班次</small>':'')+'</div>';
+}
+const formerCalendar=schedule;
+schedule=function(){
+ formerCalendar();
+ const main=$('appContent'),view=app.scheduleView;
+ const buttons=['day','week','month'].map((x,i)=>
+  '<button class="btn '+(x===view?'primary':'')+'" data-extra="scheduleView" data-view="'+x+'">'+['日','週','月'][i]+'</button>').join('');
+ main.insertAdjacentHTML('afterbegin',panel('排班檢視及匯出',
+  '<div class="toolbar">'+buttons+'<button class="btn" data-extra="exportSchedule">匯出 CSV</button>'+
+  '<button class="btn" data-extra="printSchedule">列印</button></div>'));
+ if(view==='week')return;
+ const old=main.querySelector('.schedule-week');if(old)old.hidden=true;
+ let dates=[];
+ if(view==='day')dates=[app.date];
+ else{
+  const first=app.date.slice(0,7)+'-01',dow=(new Date(first+'T12:00:00Z').getUTCDay()+6)%7;
+  const monday=dayAdd(first,-dow);
+  dates=Array.from({length:42},(_,i)=>dayAdd(monday,i));
+ }
+ const grid='<div style="overflow-x:auto"><div class="schedule-week" style="min-width:'+
+   (view==='day'?'250px':'760px')+';grid-template-columns:repeat('+(view==='day'?1:7)+',minmax(0,1fr))">'+
+   dates.map(d=>dateCard(d,view==='month')).join('')+'</div></div>';
+ main.insertAdjacentHTML('afterbegin',panel(view==='day'?'當日排班':'月份排班',grid));
+};
+function changeShiftDate(id){
+ if(!manager())throw Error('只有主管可以修改班表');
+ const s=(app.data?.shifts||[]).find(x=>x.id===id&&x.status!=='cancelled');
+ if(!s)throw Error('找不到有效班次');
+ openModal('調整班次日期與開始時間',
+  '<p>'+personLabel(s.member_id)+' · '+esc(branch(s.branch_id)?.name||'')+'</p>'+
+  '<p class="muted">保留原班次長度；重疊與已月結日期會被資料庫拒絕。</p>'+
+  '<div class="field"><label for="shiftNewStart">新開始時間</label>'+
+  '<input id="shiftNewStart" type="datetime-local" value="'+esc(taiDay(s.starts_at)+'T'+taiTime(s.starts_at))+'"></div>'+
+  '<input type="hidden" id="shiftMoveId" value="'+esc(id)+'">'+
+  '<div class="modal-actions"><button class="btn primary" data-extra="commitMoveShift">儲存改期</button></div>');
+}
+async function commitShiftMove(id,local){
+ if(!manager())throw Error('只有主管可以修改班表');
+ const s=(app.data?.shifts||[]).find(x=>x.id===id);
+ if(!s||!local)throw Error('日期或班次不正確');
+ if(!confirm('確定移動班次並由系統檢查時段衝突？'))return;
+ await action('shift_move',{id,starts_at:tzIso(local)});
+}
+let draggingShift='';
+$('appContent').addEventListener('dragstart',e=>{
+ const shift=e.target.closest('[data-shift-id]');
+ if(!manager()||!shift)return;
+ draggingShift=shift.dataset.shiftId;
+ e.dataTransfer.setData('text/plain',draggingShift);
+ e.dataTransfer.effectAllowed='move';
+});
+$('appContent').addEventListener('dragover',e=>{
+ if(draggingShift&&manager()&&e.target.closest('[data-schedule-day]'))e.preventDefault();
+});
+$('appContent').addEventListener('drop',async e=>{
+ const day=e.target.closest('[data-schedule-day]')?.dataset.scheduleDay;
+ if(!day||!draggingShift||!manager())return;
+ e.preventDefault();
+ const id=draggingShift;draggingShift='';
+ const s=(app.data?.shifts||[]).find(x=>x.id===id);
+ if(!s||taiDay(s.starts_at)===day)return;
+ try{await commitShiftMove(id,day+'T'+taiTime(s.starts_at));}
+ catch(error){banner(error.message,true);}
+});
+$('appContent').addEventListener('click',e=>{
+ const b=e.target.closest('[data-extra]');if(!b)return;
+ try{
+  if(b.dataset.extra==='scheduleView'){app.scheduleView=b.dataset.view;render();}
+  else if(b.dataset.extra==='exportSchedule')exportCalendar();
+  else if(b.dataset.extra==='printSchedule')window.print();
+  else if(b.dataset.extra==='moveShift')changeShiftDate(b.dataset.id);
+ }catch(error){banner(error.message,true);}
+});
+$('overlay').addEventListener('click',async e=>{
+ const b=e.target.closest('[data-extra="commitMoveShift"]');if(!b)return;
+ b.disabled=true;
+ try{await commitShiftMove($('shiftMoveId')?.value,$('shiftNewStart')?.value);}
+ catch(error){banner(error.message,true);}
+ finally{b.disabled=false;}
 });
