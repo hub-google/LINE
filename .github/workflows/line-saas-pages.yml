@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - "store-operations/saas/**"
+      - "store-operations/tests/saas-contract.test.mjs"
       - ".github/scripts/build-line-saas.mjs"
       - ".github/workflows/line-saas-pages.yml"
   workflow_dispatch:
@@ -29,6 +30,8 @@ jobs:
         run: |
           node --check store-operations/saas/version-watch.js
           node --check .github/scripts/build-line-saas.mjs
+      - name: Verify LINE customer and notification contracts
+        run: node --test store-operations/tests/saas-contract.test.mjs
       - name: Build versioned LINE Pages files
         shell: bash
         run: |
