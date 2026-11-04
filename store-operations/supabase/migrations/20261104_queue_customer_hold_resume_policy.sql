@@ -153,7 +153,7 @@ begin
  end if;
  insert into public.so_audit(tenant_id,actor,action,info) values(t.id,auth.uid(),p_action,jsonb_build_object('ticket',p_ticket_id,'reservation',p_reservation_id));
  return jsonb_build_object('success',true,'number',case when k.id is null then null else coalesce(k.number_prefix,'')||k.ticket_no::text end,'ticket_id',k.id,'line_call_event_id',k.line_call_event_id);
-end$function$
+end$function$;
 
 
 CREATE OR REPLACE FUNCTION public.so_staff_set_ticket_status(p_slug text, p_ticket_id uuid, p_status text, p_expected_status text)
@@ -216,7 +216,7 @@ begin
  insert into public.so_audit(tenant_id,actor,action,info)
  values(t.id,auth.uid(),'set_ticket_status',jsonb_build_object('ticket',k.id,'reservation',k.reservation_id,'from',v_old,'to',p_status));
  return jsonb_build_object('changed',true,'ticket_id',k.id,'previous_status',v_old,'status',p_status,'number',coalesce(k.number_prefix,'')||k.ticket_no::text,'line_call_event_id',k.line_call_event_id);
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.so_staff_worklist(p_slug text, p_history_days integer DEFAULT 14)
@@ -315,7 +315,7 @@ begin
      order by deleted_at desc limit 500) k
  ),'[]'::jsonb)
  );
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.so_queue_live(p_slug text, p_ticket_id uuid DEFAULT NULL::uuid)
@@ -375,7 +375,7 @@ begin
      'created_at',k.created_at
    ) end
  );
-end $function$
+end $function$;
 
 
 
@@ -391,7 +391,7 @@ begin
  update public.so_tickets as ticket set status='CANCELLED',updated_at=now() where id=p_id and exists(select 1 from public.so_line_links active_link join public.so_line_links linked on linked.tenant_id=active_link.tenant_id and linked.line_sub=active_link.line_sub where active_link.user_id=auth.uid() and active_link.tenant_id=ticket.tenant_id and linked.user_id=ticket.user_id) and deleted_at is null and status in ('WAITING','HOLD') returning * into k;
  if not found then raise exception '不能取消此號碼';end if;
  return jsonb_build_object('id',k.id,'status',k.status);
-end$function$
+end$function$;
 
 
 CREATE OR REPLACE FUNCTION public.so_customer_cross_store_overview(p_slug text)
@@ -487,7 +487,7 @@ begin
 
   return jsonb_build_object('tickets',v_tickets,'reservations',v_reservations);
 end
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.so_public_state(p_slug text, p_date date DEFAULT NULL::date)
@@ -525,5 +525,5 @@ begin
  'date',v_day,'today',v_today,'slots',v_slots,'current',v_current,'waiting',v_waiting,
  'my_reservations',coalesce((select jsonb_agg(jsonb_build_object('id',r.id,'reference_code',r.reference_code,'number',coalesce(r.booking_prefix,'')||r.booking_no::text,'name',r.customer_name,'day',r.booking_date,'time',to_char(r.booking_time,'HH24:MI'),'party',r.party_size,'status',r.status,'created_at',r.created_at,'selected_items',r.selected_items) order by r.booking_date desc,r.booking_time desc) from public.so_reservations r where r.tenant_id=t.id and r.deleted_at is null and r.user_id in (select linked.user_id from public.so_line_links active_link join public.so_line_links linked on linked.tenant_id=active_link.tenant_id and linked.line_sub=active_link.line_sub where active_link.user_id in (select linked.user_id from public.so_line_links active_link join public.so_line_links linked on linked.tenant_id=active_link.tenant_id and linked.line_sub=active_link.line_sub where active_link.user_id=auth.uid() and active_link.tenant_id=t.id) and active_link.tenant_id=t.id) and r.booking_date >= v_today-30),'[]'::jsonb),
  'my_tickets',coalesce((select jsonb_agg(jsonb_build_object('id',k.id,'reference_code',k.reference_code,'number',coalesce(k.number_prefix,'')||k.ticket_no::text,'status',k.status,'date',k.business_date,'created_at',k.created_at,'selected_items',k.selected_items,'party',k.party_size) order by k.created_at desc) from public.so_tickets k where k.tenant_id=t.id and k.deleted_at is null and k.user_id in (select linked.user_id from public.so_line_links active_link join public.so_line_links linked on linked.tenant_id=active_link.tenant_id and linked.line_sub=active_link.line_sub where active_link.user_id=auth.uid() and active_link.tenant_id=t.id) and (k.status in ('WAITING','HOLD','CALLED','SERVING','PASSED') or k.business_date>=v_today-30)),'[]'::jsonb));
-end$function$
+end$function$;
 
