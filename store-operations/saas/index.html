@@ -1,6 +1,13 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
 <meta name="line-saas-build" content="__LINE_SAAS_BUILD__">
+<meta name="theme-color" content="#173e34">
+<link rel="manifest" href="./manifest.webmanifest">
+<script>
+if("serviceWorker" in navigator && location.protocol==="https:"){
+ window.addEventListener("load",()=>navigator.serviceWorker.register("./pwa-sw.js",{scope:"./"}).catch(()=>{}),{once:true});
+}
+</script>
 <!-- Preserve existing view/merchant/LIFF callbacks; only bare legacy/booking roots enter marketing home. -->
 <script>
 (() => {
