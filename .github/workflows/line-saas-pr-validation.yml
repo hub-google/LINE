@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: "22"
       - name: Verify existing SaaS and TV board contracts
-        run: node --test store-operations/tests/saas-contract.test.mjs store-operations/tests/queue-board-contract.test.mjs store-operations/tests/qr-poster-contract.test.mjs store-operations/tests/marketing-home-contract.test.mjs store-operations/tests/booking-branding-contract.test.mjs store-operations/tests/booking-capacity-receipt.test.mjs store-operations/tests/booking-idempotency-contract.test.mjs store-operations/tests/booking-break-overlap-contract.test.mjs
+        run: node --test store-operations/tests/saas-contract.test.mjs store-operations/tests/queue-board-contract.test.mjs store-operations/tests/qr-poster-contract.test.mjs store-operations/tests/marketing-home-contract.test.mjs store-operations/tests/booking-branding-contract.test.mjs store-operations/tests/booking-capacity-receipt.test.mjs store-operations/tests/booking-staff-filter-csv.test.mjs store-operations/tests/booking-idempotency-contract.test.mjs store-operations/tests/booking-break-overlap-contract.test.mjs
       - name: Verify versioned build without deploying
         env:
           GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
