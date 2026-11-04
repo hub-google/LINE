@@ -35,3 +35,4 @@ jobs:
           test -f /tmp/line-saas-pr-dist/index.html
           test -f /tmp/line-saas-pr-dist/home.html
           test -f /tmp/line-saas-pr-dist/release.json
+          test -s /tmp/line-saas-pr-dist/booking-theme.css
