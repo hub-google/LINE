@@ -1555,6 +1555,7 @@ function renderMyTickets(tickets){
     '<div class="staff-record-head"><div><strong>'+esc(x.number)+'</strong>'+
     '<div class="small">'+esc(x.date||"")+'</div>'+
     '<div class="small">取號時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
+    (x.reference_code?'<div class="small">查核參考碼：'+esc(x.reference_code)+'</div>':"")+
     selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+
     (x.status==="WAITING"?(focused&&manageMode==="cancel"?'<p class="staff-help">確認不再候位後，點下方取消按鈕。</p>':'')+
       btn(focused&&manageMode==="cancel"?"確認取消排隊":"取消排隊","cancel-my-number","outline",'data-id="'+esc(x.id)+'"'):"")+'</article>';
@@ -1570,7 +1571,7 @@ function openBookingReceipt(bookingId){
  const now=new Date().toISOString();
  const shop=customer?.tenant?.name||"門市";
  const status=jsStatus(record.status);
- const ref=String(record.id||"").slice(0,8).toUpperCase();
+ const ref=String(record.reference_code||"—");
  const services=Array.isArray(record.selected_items)?record.selected_items.map(x=>x.name||x.title||"").filter(Boolean):[];
  const markup='<div id="booking-receipt-overlay" class="receipt-backdrop" role="dialog" aria-modal="true" aria-label="預約憑證">'+
    '<article class="receipt-card"><div class="receipt-eyebrow">LINE BOOKING · 預約紀錄</div>'+
