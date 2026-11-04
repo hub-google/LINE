@@ -1,0 +1,35 @@
+name: LINE 預約 PR 獨立驗證
+on:
+  pull_request:
+    paths:
+      - "store-operations/saas/**"
+      - "store-operations/tests/**"
+      - ".github/scripts/build-line-saas.mjs"
+      - ".github/workflows/line-saas-pages.yml"
+      - ".github/workflows/line-saas-pr-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout pull request
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify existing SaaS and TV board contracts
+        run: node --test store-operations/tests/saas-contract.test.mjs store-operations/tests/queue-board-contract.test.mjs
+      - name: Verify versioned build without deploying
+        env:
+          GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          node .github/scripts/build-line-saas.mjs /tmp/line-saas-pr-dist
+          test -f /tmp/line-saas-pr-dist/board.html
+          grep -q "$GITHUB_SHA" /tmp/line-saas-pr-dist/board.html
+          test -f /tmp/line-saas-pr-dist/index.html
+          test -f /tmp/line-saas-pr-dist/release.json
