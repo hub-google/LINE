@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="dd7f8266db747196fc807335f9600df78bcc39c3">
+<meta name="line-saas-build" content="df8cf012af1a9b9f02e0ad606ce406d2ac91d87c">
 <meta name="theme-color" content="#173e34">
 <link rel="manifest" href="./manifest.webmanifest">
 <script>
@@ -32,7 +32,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   }
 })();
 </script>
-<script defer src="./version-watch.js?build=dd7f8266db747196fc807335f9600df78bcc39c3"></script>
+<script defer src="./version-watch.js?build=df8cf012af1a9b9f02e0ad606ce406d2ac91d87c"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 門市營運｜企業開通、員工後台與顧客預約</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -164,7 +164,7 @@ body{overflow-x:hidden}
 .cross-record .staff-actionbar{margin-top:9px}
 @media(max-width:540px){.cross-ticket{padding:13px 11px}.cross-ticket-stats{gap:6px}.cross-ticket-stat{padding:9px 4px}.cross-ticket-stat strong{font-size:clamp(20px,6vw,30px)}}
 </style>
-<link rel="stylesheet" href="./booking-theme.css?build=dd7f8266db747196fc807335f9600df78bcc39c3">
+<link rel="stylesheet" href="./booking-theme.css?build=df8cf012af1a9b9f02e0ad606ce406d2ac91d87c">
 </head>
 <body>
 <header><div class="top">
@@ -476,6 +476,7 @@ let calendarMode="month",calendarAnchor=taipei(),calendarStatus="ALL";
 let calendarPage=1,calendarResult=null,calendarLoading=false,calendarError="";
 let calendarRequestToken=0,calendarTenant="",calendarDataKey="";
 let editingMenuItemId="",bookingChosenItems=[],queueChosenItems=[],editChosenItems=[];
+let serviceSlotPreview=null,serviceSlotRequest=0,serviceSlotError="";
 let bookingConfirmationKey="";
 let announcementEditId="",staffAnnouncements=[],customerAnnouncements=[],staffCustomerBook=[],customerFlagSelected="";
 let day=taipei(),bookingParty=1,queuePartySize=2,customerTab=["home","reserve","queue","mine","progress"].includes(incomingParam("tab"))?incomingParam("tab"):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
@@ -1116,6 +1117,33 @@ function staffRender(){
     '<label class="checklist"><input type="checkbox" id="menu-active" '+(selected?.active===false?"":"checked")+'> 開放顧客選擇</label></div></div>'+
     '<div class="staff-actionbar">'+btn(selected?"儲存修改":"新增項目","menu-save","primary")+
      (selected?btn("取消編輯","menu-edit-clear","outline"):"")+'</div>'):"");
+   const resources=staff.resourceContext?.resources||[],rules=staff.resourceContext?.service_rules||[];
+  const services=items.filter(x=>x.kind==="SERVICE");
+  const firstService=services[0],firstRule=rules.find(x=>x.item_id===firstService?.id);
+  html+=box("預約資源（員工／房間／設備）",
+   '<p class="small">同一資源在服務時長＋緩衝時間內不可重複預約；停用資源不會改變既有預約。</p>'+
+   (resources.length?'<div class="scroll"><table class="rows"><thead><tr><th>類型</th><th>名稱</th><th>狀態</th><th>操作</th></tr></thead><tbody>'+
+     resources.map(x=>'<tr><td>'+esc(({STAFF:"員工",ROOM:"房間",EQUIPMENT:"設備"})[x.kind]||x.kind)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.active?"啟用":"停用")+'</td><td>'+
+        (isManager?btn(x.active?"停用":"啟用","resource-toggle","outline",'data-id="'+esc(x.id)+'"'):"—")+'</td></tr>').join("")+
+     '</tbody></table></div>':'<p class="small">尚未建立資源；可以先建立服務項目，之後再指派員工或房間。</p>')+
+   (isManager?'<div class="grid"><div>'+field("資源名稱","resource-name","")+'</div><div><label for="resource-kind">類型</label><select class="field" id="resource-kind">'+
+      [["STAFF","員工"],["ROOM","房間"],["EQUIPMENT","設備"]].map(([v,n])=>'<option value="'+v+'">'+n+'</option>').join("")+
+      '</select></div></div>'+btn("新增資源","resource-save","primary"):""))+
+    box("服務時長與緩衝（預約資源排程）",
+     '<p class="small">可指定每項服務的時間及一個員工／房間／設備。服務時間與緩衝會在後端交易中阻止撞期；原預約資料不變。</p>'+
+     (services.length?'<div class="scroll"><table class="rows"><thead><tr><th>服務</th><th>分鐘＋緩衝</th><th>指定資源</th></tr></thead><tbody>'+
+       services.map(x=>{const rule=rules.find(z=>z.item_id===x.id);const res=resources.find(z=>z.id===rule?.resource_id);
+         return '<tr><td>'+esc(x.name)+'</td><td>'+esc(rule?rule.duration_minutes+" + "+rule.buffer_minutes:"預設時段 "+t.slot_minutes+" + 0")+'</td><td>'+esc(res?.name||"未指派")+'</td></tr>'}).join("")+
+       '</tbody></table></div>':'<p class="small">請先在上方新增「服務」項目，再設定專屬時長。</p>')+
+     (isManager&&services.length?
+       '<div class="grid"><div><label for="rule-service">選擇服務</label><select id="rule-service" class="field">'+
+        services.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join("")+'</select>'+
+        field("服務時間（分鐘）","rule-duration",firstRule?.duration_minutes??t.slot_minutes,"number",'min="5" max="480"')+
+        field("緩衝時間（分鐘）","rule-buffer",firstRule?.buffer_minutes??0,"number",'min="0" max="120"')+
+        '</div><div><label for="rule-resource">指定服務資源</label><select id="rule-resource" class="field"><option value="">不指定</option>'+
+        resources.filter(x=>x.active||x.id===firstRule?.resource_id).map(x=>'<option value="'+esc(x.id)+'" '+(x.id===firstRule?.resource_id?"selected":"")+'>'+esc(x.name)+'</option>').join("")+
+        '</select><label class="checklist"><input type="checkbox" id="rule-show-duration" '+(firstRule?.show_duration_to_customer===false?"":"checked")+'>可向顧客顯示服務時長</label></div></div>'+
+        '<div class="staff-actionbar">'+btn("儲存服務排程","service-rule-save","primary")+'</div>':""));
  }else if(staffTab==="members"){
   html+=box("已加入的員工",'<div class="scroll"><table class="rows"><tr><th>帳號</th><th>角色</th></tr>'+ (staff.members||[]).map(m=>'<tr><td>'+esc(m.email||('測試員工（Auth ID '+String(m.user_id||'').slice(0,8)+'）'))+'</td><td>'+esc(m.role)+'</td></tr>').join("")+'</table></div>')+
   box("待接受邀請",(staff.invites||[]).map(i=>'<div class="listline"><span>'+esc(i.email)+'</span>'+tag(i.role)+'</div>').join("")||'<p class="muted">尚無邀請</p>')+
@@ -1474,6 +1502,25 @@ function crossRecords(){
  return errMessage+box("我的跨店預約紀錄",bookingHtml)+box("我的跨店取號紀錄",ticketHtml);
 }
 
+function serviceSlotsKey(){return slug+"|"+day+"|"+bookingChosenItems.slice().sort().join(",")}
+function currentBookingSlots(){return serviceSlotPreview?.key===serviceSlotsKey()?serviceSlotPreview.slots:[]}
+async function refreshServiceSlots(){
+ if(view!=="customer"||customerTab!=="reserve"||lineLinkStatus!=="linked")return;
+ const key=serviceSlotsKey(),shop=slug,date=day,ids=bookingChosenItems.slice();
+ const token=++serviceSlotRequest;
+ serviceSlotPreview=null;serviceSlotError="";render();
+ try{
+   const result=await rpc("so_service_slot_availability",{p_slug:shop,p_date:date,p_items:ids});
+   if(token!==serviceSlotRequest||serviceSlotsKey()!==key||view!=="customer"||customerTab!=="reserve")return;
+   serviceSlotPreview={key,slots:Array.isArray(result?.slots)?result.slots:[]};
+   if(chosenSlot&&!currentBookingSlots().some(x=>x.time===chosenSlot&&availableForParty(x)))chosenSlot="";
+   serviceSlotError="";
+ }catch(e){
+   if(token!==serviceSlotRequest||serviceSlotsKey()!==key)return;
+   serviceSlotPreview=null;chosenSlot="";
+   serviceSlotError=e?.message||"暫時無法取得服務時段";
+ }finally{if(token===serviceSlotRequest&&serviceSlotsKey()===key)render()}
+}
 function availableForParty(slot,party=bookingParty){
  return Number.isInteger(party)&&party>=1&&party<=20 &&
    Number.isFinite(Number(slot?.available))&&Number(slot.available)>=party;
@@ -1481,7 +1528,7 @@ function availableForParty(slot,party=bookingParty){
 function syncBookingPartyInput(raw){
  const requested=Number(raw);
  bookingParty=Number.isInteger(requested)&&requested>=1&&requested<=20?requested:0;
- const slots=customer?.slots||[];
+ const slots=currentBookingSlots();
  if(chosenSlot&&!slots.some(x=>x.time===chosenSlot&&availableForParty(x)))chosenSlot="";
  for(const button of document.querySelectorAll("button[data-slot]")){
    const slot=slots.find(x=>x.time===button.dataset.slot);
@@ -1521,9 +1568,11 @@ function customerRender(){
    const estimatedCost=amountKnown?bookingItems.reduce((sum,item)=>sum+Number(item.price),0):null;
    html=box("選擇預約日期與時間",'<div class="grid"><div>'+field("預約日期","customer-day",day,"date",'min="'+taipei()+'"')+'</div><div>'+field("預約人數","customer-party",bookingParty||"","number",'min="1" max="20" required')+'</div></div><label>可預約時段</label>'+
     '<p class="small" id="booking-capacity-hint" role="status">'+(bookingParty?"已依 "+bookingParty+" 位篩選時段；名額不足的時間不能選擇。":"請輸入 1～20 位的有效預約人數。")+'</p>'+
-    '<div class="slots">'+(customer.slots||[]).map(s=>'<button class="slot '+(chosenSlot===s.time&&availableForParty(s)?"active":"")+'" data-slot="'+esc(s.time)+'" '+(!availableForParty(s)?"disabled aria-disabled=\"true\"":"")+'>'+esc(s.time)+'<small>'+(!availableForParty(s)?"名額不足・":"")+'剩 '+esc(s.available)+' 位</small></button>').join("")+'</div>'+
+    (serviceSlotError?'<p class="alert">'+esc(serviceSlotError)+'</p>':serviceSlotPreview?.key===serviceSlotsKey()?"":'<p class="small">正在確認實際服務時間與資源剩餘名額…</p>')+
+    '<div class="slots">'+currentBookingSlots().map(s=>'<button class="slot '+(chosenSlot===s.time&&availableForParty(s)?"active":"")+'" data-slot="'+esc(s.time)+'" '+(!availableForParty(s)?"disabled aria-disabled=\"true\"":"")+'>'+esc(s.time)+'<small>'+(!availableForParty(s)?"名額不足・":"")+'剩 '+esc(s.available)+' 位</small></button>').join("")+'</div>'+
     menuSelectSection(t.menu_booking_mode||"DISABLED",catalogue,bookingChosenItems,"booking")+
     '<p class="small">預約者：<strong>'+esc(lineDisplayName)+'</strong>（由 LINE 自動帶入）</p>'+
+    '<div class="staff-actionbar">'+btn("重新整理服務時段","refresh-service-slots","outline")+'</div>'+
     '<div style="margin-top:15px">'+(confirming?
      '<div class="notice" role="group" aria-label="預約二次確認"><strong>請確認預約內容</strong>'+
      '<p>門市：'+esc(t.name)+'</p><p>日期：'+esc(day)+'（台灣時間 UTC+8）</p>'+
@@ -1812,6 +1861,7 @@ async function load(){err="";try{
  ]);
  staff={...meta,...work,bookingPolicy:policy,reservations:(work.pending_reservations||[]).concat(work.processed_reservations||[]),
    tickets:(work.active_tickets||[]).concat(work.processed_tickets||[])};
+ if(staffTab==="menu")staff.resourceContext=await rpc("so_staff_resource_context",{p_slug:slug});
  if(staffTab==="analytics"&&["OWNER","MANAGER","PLATFORM"].includes(staff.role))
    staffAnalytics=await rpc("so_staff_analytics",{p_slug:slug,p_days:analyticsDays});
  if(staffTab==="dashboard"&&["OWNER","MANAGER","PLATFORM"].includes(staff.role)){
@@ -1831,6 +1881,9 @@ async function load(){err="";try{
  if(view==="staff"&&staffTab==="bookings"&&historicalBookingResult&&historicalBookingTenant===slug)
    void searchHistoricalBookings(historicalBookingPage);
  if(view==="staff"&&staffTab==="calendar"&&staff)void loadBookingCalendar(calendarPage);
+ if(view==="customer"&&customerTab==="reserve"&&lineLinkStatus==="linked"){
+   void refreshServiceSlots();
+ }
  if(view==="customer"&&customerTab==="progress"&&lineLinkStatus==="linked"&&(progressTicketId||crossCurrentStore)){
    stopCrossQueueRealtime();
    void refreshQueueProgress();
@@ -1871,18 +1924,19 @@ document.addEventListener("click",async ev=>{
   if(["reserve","queue"].includes(tab)&&!customer?.tenant.modules[tab==="reserve"?"reservation":"queue"])customerTab="home";
   stopQueueRealtime();
   if(customerTab==="progress"){queueLive=null;queueLiveShop="";void refreshCrossStoreOverview();}
+  if(customerTab==="reserve")void refreshServiceSlots();
   else stopCrossQueueRealtime();
   /* Customer subviews change in-place on the same page. */
  }
  if(v==="staff"){
    staffTab=tab;
-   if(["analytics","branches","settings"].includes(tab)){void load();return;}
+   if(["analytics","branches","menu","settings"].includes(tab)){void load();return;}
     if(tab==="bookings"){err="";flash="";render();void searchHistoricalBookings(1);return;}
     if(tab==="calendar"){err="";flash="";render();void loadBookingCalendar(1);return;}
  }
  if(v==="platform")platformTab=tab;err="";flash="";render();return}
  if(b.dataset.slot){
-  const option=(customer?.slots||[]).find(x=>x.time===b.dataset.slot);
+  const option=currentBookingSlots().find(x=>x.time===b.dataset.slot);
   if(!availableForParty(option)){
     showActionFeedback("此時段剩餘名額不足，請更換時間或人數。","warning");return;
   }
@@ -1985,6 +2039,7 @@ document.addEventListener("click",async ev=>{
  if(a==="save-directory"){await act(async()=>{const enabled=!!$("directory-enabled")?.checked;await rpc("so_set_directory_listing",{p_slug:slug,p_enabled:enabled,p_oa_mode:"PLATFORM"});return enabled?"門市已開放在總公司 LINE 平台搜尋":"門市已取消公開搜尋（原有專屬連結仍可使用）";});return;}
  if(a==="menu-edit"){editingMenuItemId=id;render();return;}
  if(a==="menu-edit-clear"){editingMenuItemId="";render();return;}
+ if(a==="refresh-service-slots"){void refreshServiceSlots();return;}
  if(a==="menu-save"){
    await act(async()=>{
      const priceText=val("menu-price"),price=priceText===""?null:Number(priceText);
@@ -2030,7 +2085,33 @@ document.addEventListener("click",async ev=>{
      return label+"編號已重置，新資料將從 "+(result.prefix||"")+"1 開始；既有資料未更動。";
    });return;
   }
-  if(a==="save-menu-modes"){
+  if(a==="resource-save"){
+   await act(async()=>{
+     const name=val("resource-name"),kind=val("resource-kind");
+     if(!name||!["STAFF","ROOM","EQUIPMENT"].includes(kind))throw Error("請輸入員工／房間／設備名稱與類型");
+     await rpc("so_resource_upsert",{p_slug:slug,p_name:name,p_kind:kind,p_active:true,p_resource_id:null});
+     return "已新增本店資源："+name;
+   });return;
+ }
+ if(a==="resource-toggle"){
+   const item=(staff?.resourceContext?.resources||[]).find(x=>x.id===id);
+   if(!item){showActionFeedback("找不到本店資源","error");return;}
+   await act(async()=>{
+     await rpc("so_resource_upsert",{p_slug:slug,p_name:item.name,p_kind:item.kind,p_active:!item.active,p_resource_id:item.id});
+     return "資源「"+item.name+"」已"+(item.active?"停用":"重新啟用");
+   });return;
+ }
+ if(a==="service-rule-save"){
+   await act(async()=>{
+     const item=val("rule-service"),duration=Number(val("rule-duration")),buffer=Number(val("rule-buffer")),resource=val("rule-resource");
+     if(!item||!Number.isInteger(duration)||duration<5||duration>480||!Number.isInteger(buffer)||buffer<0||buffer>120)
+       throw Error("服務時間應為 5～480 分鐘，緩衝 0～120 分鐘");
+     await rpc("so_service_rule_save",{p_slug:slug,p_item_id:item,p_duration:duration,p_buffer:buffer,
+       p_resource_id:resource||null,p_show_duration:!!$("rule-show-duration")?.checked});
+     return "服務時長、緩衝與指定資源已儲存；既有預約保留原本的時間快照";
+   });return;
+ }
+ if(a==="save-menu-modes"){
    await act(async()=>{
      const value=await rpc("so_menu_set_modes",{p_slug:slug,
        p_booking_mode:val("menu-book-mode"),p_queue_mode:val("menu-queue-mode")});
@@ -2223,7 +2304,7 @@ document.addEventListener("click",async ev=>{
   if(!chosenSlot)throw Error("請先選擇時段");
   const party=Number(val("customer-party")),time=chosenSlot;
   if(!Number.isInteger(party)||party<1||party>20)throw Error("請輸入 1～20 位的有效預約人數。");
-  const selected=(customer?.slots||[]).find(x=>x.time===time);
+  const selected=currentBookingSlots().find(x=>x.time===time);
   if(!availableForParty(selected,party))throw Error("此時段已沒有足夠名額，請重新選擇時間。");
   const items=bookingChosenItems.slice();
   const requestId=customerBookingRequestId({merchant:slug,date:day,time,party,items});
@@ -2435,7 +2516,16 @@ document.addEventListener("change",async ev=>{
    const id=el.value;
    if(el.checked&&!list.includes(id))list.push(id);
    if(!el.checked){const index=list.indexOf(id);if(index>=0)list.splice(index,1);}
+   if(flow==="booking"){chosenSlot="";serviceSlotPreview=null;void refreshServiceSlots();}
    render();return;
+ }
+ if(el.id==="rule-service"){
+   const rule=(staff?.resourceContext?.service_rules||[]).find(x=>x.item_id===el.value);
+   if($("rule-duration"))$("rule-duration").value=String(rule?.duration_minutes??staff?.tenant?.slot_minutes??30);
+   if($("rule-buffer"))$("rule-buffer").value=String(rule?.buffer_minutes??0);
+   if($("rule-resource"))$("rule-resource").value=rule?.resource_id||"";
+   if($("rule-show-duration"))$("rule-show-duration").checked=rule?.show_duration_to_customer!==false;
+   return;
  }
  if(el.id==="staff-history-days"){staffHistoryDays=Number(el.value);await load();return;}
  if(el.id==="analytics-days"){analyticsDays=Number(el.value);await load();return;}
@@ -2444,7 +2534,7 @@ document.addEventListener("change",async ev=>{
    calendarStatus=el.value;calendarPage=1;void loadBookingCalendar(1);return;
  }
  if(el.id==="customer-flag-picker"){customerFlagSelected=el.value;render();return;}
- if(el.id==="customer-day"){day=el.value;chosenSlot="";await load();return;}
+ if(el.id==="customer-day"){day=el.value;chosenSlot="";serviceSlotPreview=null;await load();return;}
  if(el.id==="customer-party"){syncBookingPartyInput(el.value);return;}
  if(el.id==="customer-queue-party"){
   const n=Number(el.value);queuePartySize=Number.isInteger(n)&&n>=1&&n<=20?n:0;
