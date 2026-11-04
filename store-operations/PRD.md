@@ -3879,3 +3879,64 @@ Payment 的核心原則：
 - 店家後台已有的地址欄位若為有效實體地址，LINE 通知內「地址」文字可點擊，地址下方提供「開啟 Google Maps 導航」連結，使用 Google Maps Directions URL（`api=1`，不需 Google Maps API Key）；以店家地址當目的地，出發地由使用者裝置處理。
 - 地址缺漏，或明確標示測試用途、無實體地址、虛擬／示範地址等情況，不出現地圖連結；通知原地址及其他資訊不受影響。
 - 測試標準：有效地址可正確 URL 編碼與開啟導航；假地址無連結；編輯與取消預約按鈕保留；不動既有預約或客戶資料。
+
+---
+
+## 104. 開源 GitHub 專案整合：優化既有、補齊舊需求、新增 5 項（2026-11-04）
+
+**本章僅增補，絕不可刪除或覆寫原本 0–103 章、C01–C58、K01–K32、FR／UX／NR 要求。** 所有「已有」是發現原始碼或 PR，與真實 LINE E2E 完成是兩件事。保留預約與叫號獨立、商家／分店隔離、預設空白編號前綴、手動重置與永久 UUID、TEST-HQ／TEST-STAFF、手機電腦同網址與自動更新。
+
+### 104.1 可參考來源、授權
+
+| 開源原始碼 | 借鏡重點 | 授權限制 |
+| --- | --- | --- |
+| https://github.com/Shudesu/line-harness-oss | LINE OA 多帳號、LIFF、通知、CRM 標籤、自動化、對話收件匣、追蹤連結 | MIT，保留必要授權，原 Cloudflare/D1 架構須改造 |
+| https://github.com/aekiratli/appointment-engine | 預約資源排程、PostgreSQL 排他鎖、冪等、outbox | Apache-2.0，保留授權/NOTICE |
+| https://github.com/FabianWesner/librenexus | 防雙訂、緩衝時長、時區、測試 | MIT，原系統為 PHP |
+| https://github.com/qtrcipher/queue-management-system | 分店／櫃檯／轉號／看板／統計 | Apache-2.0，仍屬早期 MVP |
+| https://github.com/Wasiqml/Virtual-Q | 顧客提醒偏好、順位、ETA UX | LICENSE 需複核，瀏覽器提醒不是 LINE 推播 |
+| https://github.com/nguyentrungnghia1802/LINE_Smart_Queue_Assistant | 商家申請、分店 QR、角色、多語 LIFF | 根目錄未見 LICENSE，先參考設計，不複製 |
+| https://github.com/NickKhunapoj/openQueue | Supabase Realtime、過號回隊、看板 | README 與根目錄 LICENSE 不一致，釐清前不複製 |
+| https://github.com/line/line-api-use-case-reservation-Restaurant | LINE 官方 LIFF／Messaging 示範 | 已封存，以現行官方 API 為準 |
+| https://github.com/ZiChien/ahyaOrderSystem | 台灣門市 LINE 訂餐與店員介面 | 原始碼授權另查 |
+
+### 104.2 已存在功能，**原位優化，不重複建置**
+
+| ID | 我方已有／初版 | 參考及待優化 |
+| --- | --- | --- |
+| OSS-O01 | LINE LIFF 身分、暱稱、自動連結 | L Harness：不同 Provider 隔離、token 過期／跨裝置恢復、零輸入顧客 |
+| OSS-O02 | 預約／取號／叫號 LINE 通知、outbox 初版 | L Harness、Appointment Engine：交易式通知、429/5xx 重試、去重、配額與送達可觀測 |
+| OSS-O03 | 預約時段、人數容量、request-id 冪等 | Appointment Engine、LibreNexus：多資源防超賣／時間重疊 E2E |
+| OSS-O04 | QR 取號、保留／恢復、過號與即時頁 | openQueue、Virtual-Q：順位演算、斷線／重連、ETA 估算 |
+| OSS-O05 | 多租戶、店家審核、員工角色 | Smart Queue、QMS：多分店並發、權限、稽核 |
+| OSS-O06 | TV 叫號看板及 A4 立牌 | openQueue、Smart Queue：設備重連、多窗口安全配對 |
+| OSS-O07 | 顧客跨店進度與最後同步時間 | Virtual-Q：依實際服務時間校準 ETA、不誤顯假即時 |
+| OSS-O08 | 預約歷史／CSV／日週月曆／單筆 ICS | LibreNexus：大量資料性能與權限、日曆一致性 |
+| OSS-O09 | PWA 安裝、靜態離線提示 | openQueue：員工 Web Push／撤權；不可快取即時號碼或他人個資 |
+
+**先驗收而非重寫**：PR #24 HOLD/RESUME、#25 到場/入場、#26 指定號碼叫號、#27 早午晚休、LINE 地址 Google Maps 導航、流水號與永久參考碼。
+
+### 104.3 已列原 PRD、尚未完整交付（使用既有需求 ID）
+
+- FR-101／NR-05／C04–05：員工／房間／設備的服務時長、緩衝、不可重疊，以 Appointment Engine 交易與排他限制為參考。
+- FR-201～204／NR-06～07／C21–31：固定場次、座位制、每日名額、包場、排班與休假，以 LibreNexus 資源引擎為參考。
+- FR-106／NR-17／C43–46：使用總公司 OA 或商家自有 OA、各自 Provider／Secrets、自助設定及撤權，以 L Harness 為參考。
+- FR-104／NR-14／C12–13：提醒前 24h／2h、通知 outbox、取消改期刪除後撤回過期提醒，以 L Harness＋Appointment Engine 為參考。
+- K23–27、K29–31、NR-08/15/24：多隊列、多櫃台、數位看板、轉號與設備 API，以 QMS 為參考；不可讓預約報到自動產號。
+- FR-107～109、FR-205、C32–36、C47–52、C58、NR-18/19/21/23：客戶簿、黑名單、Calendar、Web Push、營運統計與正式金流，照原 PRD 全部完成；不得以 mock 支付宣稱完成。
+
+### 104.4 **新增功能，全部納入正式 PRD**
+
+**OSS-N01 LINE 對話收件匣（P1）**：在店家現有後台查看其授權 OA 顧客訊息、未回覆狀態、指派店員與真人回覆。Webhook 驗證與去重、商家隔離、權限、資料保存期限、撤權停止同步必備；使用 LINE 真實帳號驗證實際收發。參考 L Harness。
+
+**OSS-N02 顧客標籤與自動回訪（P1）**：各店獨立標籤、未到／長期未回訪條件、指定提醒時段、同意與退訂、頻率限制、重複事件去重、通知配額及結果追蹤；不靠姓名跨店合併。參考 L Harness。
+
+**OSS-N03 顧客自選接近到號 LINE 提醒（P1；第一個開發切片）**：每張本人 WAITING 票券可選「關閉（預設）／前方 3 組／前方 5 組」，以已驗證 LINE 身分和 Supabase 保存；採有效候位的日期、加入隊列時間、票號與 UUID 排序，不能以流水號相減。每票至多推一次，由既有 LINE outbox 非同步送店名、號碼、當下組數、即時叫號頁連結；HOLD／已取消／已叫號／已刪／已關閉均不得發；訊息失敗重試、不重複送。驗收涵蓋別人無權修改、併發、不同商家、門檻邊界、LINE 額度不足與關閉偏好。
+
+**OSS-N04 活動追蹤連結與轉換漏斗（P2）**：本店產生可撤銷追蹤連結，去重統計點擊→進入預約→成立；依匿名化／最小必要原則，保護跨租戶歸因及個資。參考 L Harness。
+
+**OSS-N05 顧客多語言 UI（P2）**：繁中預設，增加英文／日文並預留越文，使用同一 RWD 網址；系統狀態值不變、翻譯缺漏回退繁中，涵蓋錯誤與 LINE 模板。參考 Smart Queue。
+
+### 104.5 開發次序、禁止破壞性操作
+
+第一波先 OSS-N03（設定 RPC、資料庫欄位、排程/outbox、LINE handler、顧客 UI、合約測試），再 OSS-O02／FR-104 通知可靠度與提醒，接著 OSS-O03／FR-101 資源排程；第二波 OSS-N01/N02 與多 OA 及 CRM；第三波 OSS-N04/N05 與其他既存未完成的 Cxx/Kxx/FR/NR。**僅調整優先序，不刪任何需求。**每個切片都先比對最新 main、建立獨立 branch/PR、非破壞式 migration、保留原始測試店家／歷史資料；LINE API 接受不等於收件人已收到，未做真實 E2E 不得宣稱正式完成。

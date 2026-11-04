@@ -354,7 +354,7 @@ async function pushNotice(
   db: ReturnType<typeof service>,
   tenant: { id: string; name: string },
   recipient: string,
-  eventKind: "CALLED" | "RESERVED" | "TICKET_CREATED" | "TICKET_CANCELLED" | "RESERVATION_CANCELLED" | "RESERVATION_UPDATED" | "RESERVATION_RESTORED",
+  eventKind: "CALLED" | "RESERVED" | "TICKET_CREATED" | "TICKET_CANCELLED" | "RESERVATION_CANCELLED" | "RESERVATION_UPDATED" | "RESERVATION_RESTORED" | "QUEUE_NEAR",
   referenceId: string,
   message: string | Record<string, unknown>,
   origin: string | null,
@@ -409,7 +409,7 @@ type NoticeJob = {
   id: number;
   tenant_id: string;
   event_kind: "CALLED" | "RESERVED" | "TICKET_CREATED" | "TICKET_CANCELLED" |
-    "RESERVATION_CANCELLED" | "RESERVATION_UPDATED" | "RESERVATION_RESTORED";
+    "RESERVATION_CANCELLED" | "RESERVATION_UPDATED" | "RESERVATION_RESTORED" | "QUEUE_NEAR";
   reference_id: string;
   attempts: number;
   status: string;
@@ -422,7 +422,37 @@ async function dispatchOutboxItem(
   if (tenantErr) throw tenantErr;
   if (!tenant || tenant.status !== "ACTIVE") return { status: "SKIPPED", reason: "TENANT_INACTIVE" };
   let result: Response;
-  if (job.event_kind === "CALLED" || job.event_kind.startsWith("TICKET_")) {
+  if (job.event_kind === "QUEUE_NEAR") {
+    const { data: ticket, error } = await db.from("so_tickets")
+      .select("id,tenant_id,user_id,status,ticket_no,number_prefix,queue_near_alert_threshold")
+      .eq("tenant_id", tenant.id).eq("id", job.reference_id)
+      .is("deleted_at", null).maybeSingle();
+    if (error) throw error;
+    if (!ticket || ticket.status !== "WAITING" ||
+        ![3, 5].includes(Number(ticket.queue_near_alert_threshold))) {
+      return { status: "SKIPPED", reason: "QUEUE_NEAR_NOT_WAITING_OR_DISABLED" };
+    }
+    // The minute-based scheduler is not authoritative: customer actions and
+    // queue state may have changed while the notice waited in the outbox.
+    const { data: readiness, error: readyError } = await db.rpc(
+      "so_queue_near_alert_eligibility", { p_ticket_id: ticket.id },
+    );
+    if (readyError) throw readyError;
+    if (!readiness?.eligible || !Number.isInteger(readiness.ahead)) {
+      return { status: "SKIPPED", reason: "QUEUE_NEAR_NO_LONGER_ELIGIBLE" };
+    }
+    const ahead = Number(readiness.ahead);
+    result = await pushNotice(db, tenant, ticket.user_id, "QUEUE_NEAR", ticket.id,
+      flexNotice("快輪到您了", [
+        "店家：" + tenant.name,
+        "您的號碼：" + ticketNumber(ticket),
+        "目前前方還有 " + ahead + " 組",
+        "實際叫號順序請以門市即時進度為準。",
+      ], [{
+        label: "查看即時叫號網頁",
+        uri: liffQueueProgressLink(await shopLinkContext(db, tenant), ticket.id),
+      }]), origin);
+  } else if (job.event_kind === "CALLED" || job.event_kind.startsWith("TICKET_")) {
     const isCreated = job.event_kind === "TICKET_CREATED";
     const { data: ticket, error } = await db.from("so_tickets")
       .select("id,tenant_id,user_id,status,ticket_no,number_prefix,created_at,business_date,selected_items,line_call_event_id,line_cancel_event_id")
