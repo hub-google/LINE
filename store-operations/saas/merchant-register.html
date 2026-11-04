@@ -153,4 +153,4 @@ document.addEventListener("click",ev=>{
  act(async()=>{const v=await rpc(qaVerified?"so_test_review_merchant_request":"so_review_merchant_request",{p_id:b.dataset.review,p_approve:approving});return (qaVerified?"QA 測試｜":"")+"已處理："+status(v.status)});
 });
 refresh().catch(err=>message(err.message||String(err),true));
-</script><footer style="text-align:center;margin:24px auto;padding:15px"><a href="privacy.html">隱私權說明</a> ・ <a href="terms.html">使用條款</a></footer><footer style="text-align:center;padding:14px;font-size:13px"><a href="privacy.html">隱私權說明</a> ・ <a href="terms.html">使用條款</a></footer></body></html>
+</script><footer style="text-align:center;margin:24px auto;padding:15px"><a href="privacy.html">隱私權說明</a> ・ <a href="terms.html">使用條款</a></footer></body></html>
