@@ -512,8 +512,21 @@ async function dispatchPendingNotices(req: Request, origin: string | null): Prom
   return reply(200, { ok: true, inspected: due?.length || 0, sent, deferred, skipped }, origin);
 }
 
-async function webhook(req: Request, origin: string | null) {
-  const secret = Deno.env.get("LINE_MESSAGING_CHANNEL_SECRET");
+async function webhook(req: Request, origin: string | null, merchantSlug = "") {
+  let merchantTenantId: string | null = null;
+  let ownOa: MerchantLineConfig | null = null;
+  if (merchantSlug) {
+    if (!/^[a-z0-9][a-z0-9-]{2,39}$/.test(merchantSlug))
+      return reply(400, {error:"INVALID_MERCHANT"}, origin);
+    const db = service();
+    const { data: tenant } = await db.from("so_tenants")
+      .select("id").eq("slug", merchantSlug).eq("status", "ACTIVE").maybeSingle();
+    if (!tenant) return reply(404, {error:"TENANT_NOT_FOUND"}, origin);
+    merchantTenantId = tenant.id;
+    ownOa = await merchantLineConfig(db, tenant.id);
+    if (!ownOa) return reply(404, {error:"MERCHANT_OA_NOT_CONNECTED"}, origin);
+  }
+  const secret = ownOa?.channelSecret || Deno.env.get("LINE_MESSAGING_CHANNEL_SECRET");
   if (!secret) return reply(503, { error: "LINE_WEBHOOK_NOT_CONFIGURED" }, origin);
   const original = await req.text();
   const signature = req.headers.get("x-line-signature") || "";
@@ -562,7 +575,7 @@ async function webhook(req: Request, origin: string | null) {
         let notice: Record<string, unknown> = {
           type: "text", text: "這張號碼目前無法查詢，請返回門市叫號網頁查看。",
         };
-        if (ticket) {
+        if (ticket && (!merchantTenantId || ticket.tenant_id === merchantTenantId)) {
           // A signed LINE event identifies the person, but a ticket ID is
           // never authority: match both tenant and linked ticket owner.
           const [linkResult, tenantResult] = await Promise.all([
@@ -578,7 +591,7 @@ async function webhook(req: Request, origin: string | null) {
             notice = await ticketProgressNotice(db, tenantResult.data, ticket);
           }
         }
-        const token = Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
+        const token = ownOa?.token || Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
         if (!token) throw new Error("LINE_MESSAGING_NOT_CONFIGURED");
         const response = await fetch("https://api.line.me/v2/bot/message/reply", {
           method: "POST",
@@ -602,12 +615,15 @@ async function webhook(req: Request, origin: string | null) {
       const occurredAt = new Date(time).toISOString();
       // PostgreSQL atomically records this ID AND updates friendship state.
       // A crash cannot leave a claimed but unprocessed event.
-      const { data: outcome, error: applyError } = await db.rpc("so_apply_line_webhook_friend_event", {
-        p_event_id: eventId,
-        p_event_type: String(event.type),
-        p_line_sub: source.userId,
-        p_occurred_at: occurredAt,
-      });
+      const { data: outcome, error: applyError } = merchantTenantId
+        ? await db.rpc("so_apply_merchant_oa_friend_event", {
+          p_tenant_id:merchantTenantId, p_event_id:eventId,
+          p_event_type:String(event.type),p_line_sub:source.userId,p_occurred_at:occurredAt,
+        })
+        : await db.rpc("so_apply_line_webhook_friend_event", {
+          p_event_id:eventId,p_event_type:String(event.type),
+          p_line_sub:source.userId,p_occurred_at:occurredAt,
+        });
       if (applyError) throw applyError;
       if (outcome === "DUPLICATE") duplicates++;
       else if (outcome === "PROCESSED") processed++;
@@ -625,7 +641,7 @@ Deno.serve(async (req: Request) => {
   const url = new URL(req.url);
   if (url.searchParams.get("action") === "webhook") {
     if (req.method !== "POST") return reply(405, { error: "METHOD_NOT_ALLOWED" }, origin);
-    return webhook(req, origin);
+    return webhook(req, origin, url.searchParams.get("merchant") || "");
   }
   if (url.searchParams.get("action") === "dispatch-pending") {
     if (req.method !== "POST") return reply(405, { error: "METHOD_NOT_ALLOWED" }, origin);
