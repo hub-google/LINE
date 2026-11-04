@@ -1,0 +1,47 @@
+name: LINE Workforce GitHub Pages
+on:
+  push:
+    branches: [main]
+    paths:
+      - "workforce-management/**"
+      - ".github/workflows/line-workforce-pages.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: line-saas-gh-pages
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate workforce front-end
+        run: |
+          set -euo pipefail
+          node --check workforce-management/app.js
+          test -s workforce-management/index.html
+          test -s workforce-management/style.css
+          grep -q 'app.js' workforce-management/index.html
+      - name: Deploy only workforce to existing gh-pages branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin gh-pages
+          pubdir="$RUNNER_TEMP/line-workforce-pages"
+          git worktree add --detach "$pubdir" origin/gh-pages
+          mkdir -p "$pubdir/workforce"
+          cp workforce-management/index.html workforce-management/app.js workforce-management/style.css "$pubdir/workforce/"
+          printf '%s\n' "$GITHUB_SHA" > "$pubdir/workforce/build.txt"
+          git -C "$pubdir" add -- workforce/
+          if git -C "$pubdir" diff --cached --quiet; then
+            echo "No workforce changes to deploy."
+            exit 0
+          fi
+          git -C "$pubdir" -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "deploy: workforce $GITHUB_SHA"
+          git -C "$pubdir" push origin HEAD:gh-pages
+          echo "Deployment target: https://hub-google.github.io/LINE/workforce/"
