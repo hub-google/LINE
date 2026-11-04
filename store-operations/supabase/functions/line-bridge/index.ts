@@ -209,6 +209,10 @@ function shopDetails(shop: ShopInfo): string[] {
     ...(shop.phone?.trim() ? ["電話：" + shop.phone.trim()] : []),
   ];
 }
+function ticketNumber(ticket: { ticket_no: number; number_prefix?: string | null }): string {
+  // The prefix saved with the ticket remains stable when a merchant edits the default.
+  return String(ticket.number_prefix ?? "") + String(ticket.ticket_no);
+}
 function selectedServicesText(items: unknown): string[] {
   if (!Array.isArray(items) || !items.length) return [];
   const names=items.map(x=>typeof x?.name==="string"?x.name.trim():"").filter(Boolean);
@@ -219,7 +223,7 @@ async function ticketProgressNotice(
   db: ReturnType<typeof service>,
   tenant: ShopInfo,
   ticket: {
-    id: string; status: string; ticket_no: number; created_at: string;
+    id: string; status: string; ticket_no: number; number_prefix?: string | null; created_at: string;
     business_date: string; selected_items: unknown;
   },
 ): Promise<Record<string, unknown>> {
@@ -229,10 +233,10 @@ async function ticketProgressNotice(
       .lt("created_at", ticket.created_at),
     db.from("so_tickets").select("id", { count: "exact", head: true })
       .eq("tenant_id", tenant.id).in("status", ["CALLED", "SERVING"]).is("deleted_at", null),
-    db.from("so_tickets").select("ticket_no,business_date")
+    db.from("so_tickets").select("ticket_no,number_prefix,business_date")
       .eq("tenant_id", tenant.id).in("status", ["CALLED", "SERVING"]).is("deleted_at", null)
       .order("updated_at", { ascending: false }).limit(1).maybeSingle(),
-    db.from("so_tickets").select("ticket_no,last_called_at")
+    db.from("so_tickets").select("ticket_no,number_prefix,last_called_at")
       .eq("tenant_id", tenant.id).eq("business_date", ticket.business_date).is("deleted_at", null)
       .not("last_called_at", "is", null)
       .order("last_called_at", { ascending: false }).limit(1).maybeSingle(),
@@ -244,11 +248,11 @@ async function ticketProgressNotice(
   const at = new Intl.DateTimeFormat("zh-TW", {
     timeZone: "Asia/Taipei", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
   }).format(new Date());
-  const number = "A" + String(ticket.ticket_no).padStart(3, "0");
+  const number = ticketNumber(ticket);
   const calling = activeTicket.data
-    ? "目前叫到：A" + String(activeTicket.data.ticket_no).padStart(3, "0")
+    ? "目前叫到：" + ticketNumber(activeTicket.data)
     : lastCalled.data
-      ? "最近叫到：A" + String(lastCalled.data.ticket_no).padStart(3, "0")
+      ? "最近叫到：" + ticketNumber(lastCalled.data)
       : "目前尚未開始叫號";
   const statuses: Record<string, string> = {
     WAITING: "等候中", CALLED: "已叫號", SERVING: "服務中",
@@ -406,7 +410,7 @@ async function webhook(req: Request, origin: string | null) {
         if (!validUUID(ticketId) || typeof replyToken !== "string" ||
             !replyToken || replyToken.length > 512) continue;
         const { data: ticket, error: ticketError } = await db.from("so_tickets")
-          .select("id,tenant_id,user_id,status,ticket_no,created_at,business_date,selected_items")
+          .select("id,tenant_id,user_id,status,ticket_no,number_prefix,created_at,business_date,selected_items")
           .eq("id", ticketId).is("deleted_at", null).maybeSingle();
         if (ticketError) throw ticketError;
         let notice: Record<string, unknown> = {
@@ -588,7 +592,7 @@ Deno.serve(async (req: Request) => {
     if (payload.action === "notify") {
       const slug = String(payload.slug || "");
       const number = String(payload.number || "");
-      if (!/^A\d{3,}$/.test(number) || !slug) return reply(400, { error: "BAD_REQUEST" }, origin);
+      if (number.length > 40 || !slug) return reply(400, { error: "BAD_REQUEST" }, origin);
       const { data: tenant } = await db.from("so_tenants").select("id,name,status").eq("slug", slug).single();
       if (!tenant || tenant.status !== "ACTIVE") return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
       const { data: member } = await db.from("so_members").select("role")
@@ -601,15 +605,14 @@ Deno.serve(async (req: Request) => {
       const eventId = String(payload.eventId || "");
       if (!validUUID(ticketId) || !validUUID(eventId))
         return reply(400, { error: "CALL_EVENT_ID_REQUIRED" }, origin);
-      const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
       const { data: ticket } = await db.from("so_tickets")
-        .select("id,user_id,status,updated_at,ticket_no,line_call_event_id")
+        .select("id,user_id,status,updated_at,ticket_no,number_prefix,line_call_event_id")
         .eq("tenant_id", tenant.id).eq("id", ticketId).is("deleted_at", null).maybeSingle();
       if (!ticket || ticket.status !== "CALLED" || ticket.line_call_event_id !== eventId ||
           !recently(ticket.updated_at, 90_000))
         return reply(409, { error: "CALL_EVENT_EXPIRED_OR_SUPERSEDED" }, origin);
-      const actualNumber = "A" + String(ticket.ticket_no).padStart(3, "0");
-      if (number !== actualNumber) return reply(409, { error: "TICKET_NUMBER_MISMATCH" }, origin);
+      const actualNumber = ticketNumber(ticket);
+      // Read the display number from the verified ticket UUID and event, not the browser.
       return pushNotice(db, tenant, ticket.user_id, "CALLED", eventId,
         tenant.name + "：現在叫到 " + actualNumber + "，請至櫃檯報到。", origin);
     }
@@ -643,7 +646,7 @@ Deno.serve(async (req: Request) => {
       const { data: tenant } = await db.from("so_tenants").select("id,slug,name,status,address,phone").eq("slug", slug).maybeSingle();
       if (!tenant || tenant.status !== "ACTIVE") return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
       const { data: ticket } = await db.from("so_tickets")
-        .select("id,user_id,status,created_at,ticket_no,business_date,selected_items")
+        .select("id,user_id,status,created_at,ticket_no,number_prefix,business_date,selected_items")
         .eq("id", payload.ticketId).eq("tenant_id", tenant.id).eq("user_id", user.id).is("deleted_at", null).maybeSingle();
       if (!ticket || ticket.status !== "WAITING" || !recently(ticket.created_at, 300_000))
         return reply(409, { error: "TICKET_NOT_RECENT" }, origin);
@@ -661,7 +664,7 @@ Deno.serve(async (req: Request) => {
       if (!tenant || tenant.status !== "ACTIVE") return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
       if (isTicket) {
         const { data: ticket } = await db.from("so_tickets")
-          .select("id,user_id,status,ticket_no,line_cancel_event_id")
+          .select("id,user_id,status,ticket_no,number_prefix,line_cancel_event_id")
           .eq("id", refId).eq("tenant_id", tenant.id).is("deleted_at", null).maybeSingle();
         if (!ticket || ticket.status !== "CANCELLED" || !ticket.line_cancel_event_id)
           return reply(409, { error: "TICKET_NOT_CANCELLED" }, origin);
@@ -670,7 +673,7 @@ Deno.serve(async (req: Request) => {
         return pushNotice(db, tenant, ticket.user_id, "TICKET_CANCELLED", ticket.line_cancel_event_id,
           flexNotice("已取消排隊", [
             "店家：" + tenant.name,
-            "取消號碼：A" + String(ticket.ticket_no).padStart(3, "0"),
+            "取消號碼：" + ticketNumber(ticket),
             "此號碼已不在候位名單中。",
             ...shopDetails(tenant),
           ], [{ label: "查看我的紀錄", uri: liffManageLink(tenant, "ticket", ticket.id, "view") }]), origin);
