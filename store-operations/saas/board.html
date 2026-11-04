@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="line-saas-build" content="__LINE_SAAS_BUILD__">
+  <script defer src="./version-watch.js?build=__LINE_SAAS_BUILD__"></script>
+  <meta name="theme-color" content="#113d38">
+  <title>LINE 預約｜門市即時叫號看板</title>
+  <meta name="description" content="門市電視與平板專用叫號看板，顯示目前叫號及候位組數。">
+  <style>
+    :root{color-scheme:dark;--bg:#0b2625;--panel:#143c39;--text:#f5fff9;--muted:#b7d2ca;--accent:#c9f6b7;--border:#37615b}
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif;background:var(--bg);color:var(--text)}
+    body{min-height:100svh;display:flex;flex-direction:column}
+    header{padding:clamp(18px,3vw,42px) clamp(18px,4vw,60px);display:flex;justify-content:space-between;align-items:center;gap:20px;border-bottom:1px solid var(--border)}
+    header h1{font-size:clamp(25px,4vw,56px);font-weight:800;margin:0;overflow-wrap:anywhere}
+    .eyebrow{font-size:clamp(13px,1.4vw,21px);letter-spacing:.12em;color:var(--accent);font-weight:700}
+    .header-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end}
+    button,a.button{font:inherit;font-weight:700;background:transparent;border:1px solid #679b8e;border-radius:12px;color:var(--text);padding:12px 18px;cursor:pointer;text-decoration:none;min-height:44px;display:inline-flex;align-items:center}
+    button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+    main{flex:1;display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:clamp(14px,2vw,30px);padding:clamp(18px,3vw,40px)}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:clamp(20px,2vw,30px);padding:clamp(24px,4vw,64px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+    .label{color:var(--muted);font-size:clamp(22px,3vw,44px);font-weight:650}
+    #current{font-size:clamp(90px,19vw,310px);font-weight:850;letter-spacing:-.04em;line-height:1.25;color:var(--accent);max-width:100%;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+    .summary{display:grid;gap:clamp(14px,2vw,30px)}
+    .summary .panel{padding:clamp(24px,3vw,40px)}
+    .value{font-size:clamp(64px,8vw,140px);font-weight:800;line-height:1.35;font-variant-numeric:tabular-nums}
+    footer{padding:18px clamp(18px,4vw,60px) 24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;font-size:clamp(14px,1.4vw,20px);color:var(--muted)}
+    #health[data-state="ok"]{color:var(--accent)}#health[data-state="error"]{color:#ffb5aa}
+    #notice{max-width:66ch;line-height:1.6}
+    @media (max-width:750px){main{grid-template-columns:1fr}.summary{grid-template-columns:1fr 1fr}.value{font-size:clamp(52px,12vw,96px)}#current{font-size:clamp(90px,22vw,170px)}}
+    @media (max-width:450px){header{align-items:flex-start;flex-direction:column}.header-actions{justify-content:flex-start;width:100%}.summary{gap:12px}.panel{padding:20px}.label{font-size:20px}}
+    @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+  </style>
+</head>
+<body>
+  <header>
+    <div><div class="eyebrow">LINE 門市即時叫號</div><h1 id="shop">正在讀取門市資料</h1></div>
+    <div class="header-actions">
+      <button type="button" id="refresh">重新整理</button>
+      <button type="button" id="fullscreen">全螢幕</button>
+      <a class="button" href="./directory.html?mode=queue">返回找店家</a>
+    </div>
+  </header>
+  <main aria-label="公開叫號資訊">
+    <section class="panel">
+      <div class="label">目前叫號</div>
+      <div id="current" aria-live="polite" aria-atomic="true">—</div>
+    </section>
+    <div class="summary">
+      <section class="panel"><div class="label">候位組數</div><div class="value" id="waiting">—</div></section>
+      <section class="panel"><div class="label">最近更新</div><div class="value" style="font-size:clamp(32px,4.8vw,80px)" id="clock">—</div></section>
+    </div>
+  </main>
+  <footer>
+    <span id="health" data-state="loading" role="status" aria-live="polite">正在連線</span>
+    <span id="notice">僅顯示公開叫號與候位組數，不顯示姓名、電話或預約資料。</span>
+    <span>資訊以門市系統最新同步結果為準</span>
+  </footer>
+  <script type="module">
+    import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+    const SUPABASE_URL="https://unapiwajmgqqtdkixaab.supabase.co";
+    const SUPABASE_ANON_KEY="sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy";
+    // Independent browser session: opening a TV board never signs out a customer or staff.
+    const client=createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{
+      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"line-saas-board-session-v1"}
+    });
+    const params=new URLSearchParams(location.search);
+    const slug=params.get("merchant")||"";
+    const $=id=>document.getElementById(id);
+    const localTime=date=>new Intl.DateTimeFormat("zh-TW",{timeZone:"Asia/Taipei",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(date);
+    const validSlug=/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug);
+    let lastSuccess=null,loading=false,refreshQueued=false,subscription=null,subscribedTenant="",realtimeAvailable=false;
+    let lastData=null,staleFromFailure=false,disabled=false;
+    function health(label,state){
+      $("health").textContent=label;$("health").dataset.state=state;
+    }
+    function updateConnectionStatus(){
+      if(!validSlug||disabled)return;
+      if(!lastSuccess){health("正在取得最新叫號資料","loading");return;}
+      const elapsed=Date.now()-lastSuccess.getTime();
+      if(staleFromFailure||!navigator.onLine||elapsed>45000){
+        health("連線中斷｜畫面為上次成功同步資料","error");
+        $("notice").textContent="最後成功同步："+localTime(lastSuccess)+"。請檢查網路，勿將此畫面視為即時叫號。";
+        return;
+      }
+      health(realtimeAvailable?"即時同步正常":"定期更新正常","ok");
+      $("notice").textContent="最後成功同步："+localTime(lastSuccess)+"；資料每 12 秒自動核對，網路斷線會提示。";
+    }
+    async function authenticate(){
+      const {data,error}=await client.auth.getSession();
+      if(error)throw error;
+      if(!data.session){
+        const result=await client.auth.signInAnonymously();
+        if(result.error)throw result.error;
+      }
+    }
+    async function subscribeToSafeDisplay(){
+      if(subscription||!validSlug)return;
+      // so_queue_live is used only to identify the tenant for the privacy-safe
+      // Realtime table. Do NOT display its legacy A001 number formatting.
+      try{
+        const {data,error}=await client.rpc("so_queue_live",{p_slug:slug,p_ticket_id:null});
+        if(error||!data?.tenant_id)return;
+        const tenantId=String(data.tenant_id);
+        if(!/^[0-9a-f-]{36}$/i.test(tenantId)||subscribedTenant===tenantId)return;
+        subscribedTenant=tenantId;
+        subscription=client.channel("public-tv-board-"+tenantId)
+          .on("postgres_changes",{event:"UPDATE",schema:"public",table:"so_queue_displays",
+            filter:"tenant_id=eq."+tenantId},()=>{void refresh();})
+          .subscribe(status=>{
+            realtimeAvailable=status==="SUBSCRIBED";
+            updateConnectionStatus();
+          });
+      }catch(_error){
+        // A periodic read remains available even when Realtime is disabled.
+      }
+    }
+    async function refresh(){
+      if(!validSlug)return;
+      if(loading){refreshQueued=true;return;}
+      loading=true;
+      try{
+        await authenticate();
+        // The server's public_state derives current with the persisted, editable
+        // prefix and does not apply the old A001 / zero-padding convention.
+        const {data,error}=await client.rpc("so_public_state",{p_slug:slug});
+        if(error)throw error;
+        if(!data||!data.tenant)throw Error("找不到門市叫號資訊");
+        if(data.tenant.modules?.calling===false||data.tenant.modules?.queue===false){
+          disabled=true;
+          $("shop").textContent=String(data.tenant.name||slug);
+          $("current").textContent="—";$("waiting").textContent="—";
+          $("clock").textContent="—";
+          health("此門市未啟用叫號服務","error");
+          $("notice").textContent="此門市未開放叫號看板，請洽門市確認。";
+          return;
+        }
+        const count=Number(data.waiting);
+        const now=new Date();
+        disabled=false;
+        staleFromFailure=false;
+        lastData=data;
+        lastSuccess=now;
+        $("shop").textContent=String(data.tenant.name||slug);
+        $("current").textContent=data.current==null||data.current===""?"—":String(data.current);
+        $("waiting").textContent=Number.isSafeInteger(count)&&count>=0?String(count):"—";
+        $("clock").textContent=localTime(now);
+        updateConnectionStatus();
+        if(!subscription)void subscribeToSafeDisplay();
+      }catch(error){
+        if(lastData){
+          staleFromFailure=true; // retain the real last success time, but mark the snapshot stale
+          updateConnectionStatus();
+        }else{
+          health("叫號資料暫時無法取得","error");
+          $("shop").textContent="無法讀取門市";
+          $("notice").textContent="請確認網路、門市網址及系統是否開放匿名存取。請勿以顯示的空白數字判斷叫號。";
+        }
+        console.warn("Queue board update failed:",String(error?.message||error));
+      }finally{
+        loading=false;
+        if(refreshQueued){refreshQueued=false;void refresh();}
+      }
+    }
+    $("refresh").addEventListener("click",()=>{void refresh();});
+    $("fullscreen").addEventListener("click",async()=>{
+      try{
+        if(document.fullscreenElement)await document.exitFullscreen();
+        else await document.documentElement.requestFullscreen();
+      }catch(_error){$("notice").textContent="此瀏覽器不支援全螢幕，仍可直接使用看板。";}
+    });
+    document.addEventListener("fullscreenchange",()=>{
+      $("fullscreen").textContent=document.fullscreenElement?"結束全螢幕":"全螢幕";
+    });
+    document.addEventListener("visibilitychange",()=>{
+      if(!document.hidden)void refresh();
+    });
+    window.addEventListener("online",()=>{void refresh();});
+    window.addEventListener("offline",updateConnectionStatus);
+    window.addEventListener("beforeunload",()=>{if(subscription)void client.removeChannel(subscription);});
+    if(!validSlug){
+      $("shop").textContent="未指定有效門市";
+      health("請先選擇門市","error");
+      $("notice").textContent="網址需包含正確的 merchant 門市代碼，例如 board.html?merchant=your-shop。";
+    }else{
+      void refresh();
+      setInterval(()=>{if(!document.hidden)void refresh();},12000);
+      setInterval(updateConnectionStatus,5000);
+    }
+  </script>
+</body>
+</html>
