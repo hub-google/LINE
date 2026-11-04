@@ -53,9 +53,10 @@ async function reload(silent=false){
  app.busy=true;if(!silent)$('appContent').innerHTML='<div class="loading">資料更新中，請稍後...</div>';
  try{
   if(app.mode==='demo'){
-   const [snapshot,leaveSnapshot]=await Promise.all([
-    demo(),call('/rest/v1/rpc/wm_demo_leave_api','POST',{p_action:'snapshot',p_data:{}})]);
-   app.data={...snapshot,...leaveSnapshot};
+   const [snapshot,leaveSnapshot,anomalySnapshot]=await Promise.all([
+    demo(),call('/rest/v1/rpc/wm_demo_leave_api','POST',{p_action:'snapshot',p_data:{}}),
+    call('/rest/v1/rpc/wm_demo_attendance_api','POST',{p_action:'snapshot',p_data:{}})]);
+   app.data={...snapshot,...leaveSnapshot,...anomalySnapshot};
   }
   else if(!app.token){app.data=null;}
   else{
@@ -63,7 +64,7 @@ async function reload(silent=false){
    if(!app.tenants.find(t=>t.id===app.tenantId))app.tenantId=app.tenants[0]?.id||'';
    if(!app.tenantId){app.data=null;}else{
     const p='tenant_id=eq.'+encodeURIComponent(app.tenantId);
-    const [branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections,leavePolicies]=await Promise.all([
+    const [branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections,leavePolicies,attendanceCases,attendanceRuleRows]=await Promise.all([
      query('wm_branches','select=*&'+p+'&order=name'),query('wm_members','select=id,tenant_id,branch_id,user_id,display_name,employee_code,role,employment_type,status,created_at,department_id,hired_on,left_on,skills&'+p+'&order=employee_code'),
      query('wm_shifts','select=*&'+p+'&order=starts_at.desc&limit=600'),query('wm_punches','select=*&'+p+'&order=punched_at.desc&limit=600'),
      query('wm_requests','select=*&'+p+'&order=created_at.desc&limit=300'),query('wm_leave_entitlements','select=*&'+p),
@@ -71,7 +72,9 @@ async function reload(silent=false){
      query('wm_departments','select=*&'+p),query('wm_shift_templates','select=*&'+p),query('wm_staffing_requirements','select=*&'+p),
      query('wm_notifications','select=*&'+p+'&order=created_at.desc&limit=200'),
      query('wm_period_closures','select=*&'+p+'&order=closed_at.desc&limit=36'),query('wm_period_adjustments','select=*&'+p+'&limit=300'),
-     query('wm_attendance_adjustments','select=*&'+p+'&limit=300'),query('wm_leave_policies','select=*&'+p+'&order=effective_from.desc')]);
+     query('wm_attendance_adjustments','select=*&'+p+'&limit=300'),query('wm_leave_policies','select=*&'+p+'&order=effective_from.desc'),
+     query('wm_attendance_anomalies','select=*&'+p+'&order=created_at.desc&limit=300'),
+     query('wm_attendance_rules','select=*&'+p+'&limit=1')]);
     if(members.some(m=>m.user_id===app.user?.id&&['owner','hr'].includes(m.role))){
       const wages=await call('/rest/v1/rpc/wm_staff_wages','POST',{p_tenant:app.tenantId},app.token);
       const lookup=new Map((wages||[]).map(w=>[w.member_id,w.hourly_rate]));
@@ -79,7 +82,8 @@ async function reload(silent=false){
     }
     app.data={tenant:app.tenants.find(t=>t.id===app.tenantId),branches,members,shifts,punches,requests,
       entitlements,availability,departments,templates,requirements,notifications,closures,
-      adjustments,corrections,leavePolicies,leaveBalances:{},requestStages:[],server_at:new Date().toISOString()};
+      adjustments,corrections,leavePolicies,attendanceCases,attendanceRules:attendanceRuleRows[0]||null,
+      leaveBalances:{},requestStages:[],server_at:new Date().toISOString()};
     const selected=getSelected();
     if(selected){
       const [balances,steps]=await Promise.all([
@@ -502,6 +506,9 @@ action=async function(name,data){
     if(name==='leave_policy'||name==='leave_grant')
       result=await call('/rest/v1/rpc/wm_demo_leave_api','POST',{
        p_action:name==='leave_policy'?'policy':'grant',p_data:data});
+    else if(name==='attendance_scan'||name==='attendance_resolve')
+      result=await call('/rest/v1/rpc/wm_demo_attendance_api','POST',{
+       p_action:name==='attendance_scan'?'scan':'resolve',p_data:data});
     else result=await demo(name,data);
    }
   else{
@@ -532,6 +539,13 @@ action=async function(name,data){
    else if(name==='leave_grant')result=await rpc('wm_grant_leave_hours',{
     p_tenant:tenant_id,p_member:data.member_id,p_year:Number(data.year),
     p_kind:data.leave_kind,p_hours:Number(data.hours)});
+   else if(name==='attendance_scan')result=await rpc('wm_scan_attendance',{
+    p_tenant:tenant_id,p_from:data.from,p_to:data.through});
+   else if(name==='attendance_resolve')result=await rpc('wm_resolve_attendance_anomaly',{
+    p_id:data.id,p_note:data.note});
+   else if(name==='attendance_rule')result=await rpc('wm_save_attendance_rule',{
+    p_tenant:tenant_id,p_grace:Number(data.grace_minutes),p_sla:Number(data.anomaly_sla_hours),
+    p_quiet_from:data.quiet_from,p_quiet_until:data.quiet_until});
    else if(name==='leave_stage')result=await rpc('wm_review_request_step',{
     p_request:data.id,p_approved:data.approved===true,p_note:data.note||''});
    else if(name==='swap_create')result=await rpc('wm_create_swap',{p_source:data.source_shift_id,p_target:data.target_shift_id,p_reason:data.reason||''});
@@ -1050,3 +1064,86 @@ kind=function(v){
    .sort((a,b)=>b.effective_from.localeCompare(a.effective_from))[0];
  return current?.label||oldLeaveKind(v);
 };
+
+
+
+/* PRD HR-ATT-05/08: server-produced anomalies, resolution SLA and rules. */
+TABS.anomalies=['出勤異常','檢查已完成班別的遲到、早退與缺卡；主管追蹤異常與補卡原因。'];
+document.querySelector('#nav').insertAdjacentHTML('beforeend',
+ '<button type="button" data-tab="anomalies"><span>!</span> 出勤異常</button>');
+extraNames.add('attendance_scan');extraNames.add('attendance_resolve');extraNames.add('attendance_rule');
+app.anomalyFrom=dayAdd(today(),-7);
+app.anomalyThrough=today();
+const anomalyTitles={missing_in:'缺上班卡',missing_out:'缺下班卡',late:'遲到',early:'早退'};
+function renderAttendanceCases(){
+ heading(manager()?'<button class="btn primary" data-extra="scanAttendance">重新掃描異常</button>':'');
+ const d=app.data||{},items=d.attendanceCases||[],rule=d.attendanceRules||{};
+ const me=app.mode==='real'&&!manager()?
+   items.filter(x=>person(x.member_id)?.user_id===app.user?.id):items;
+ const opened=me.filter(x=>x.status==='open');
+ const rows=me.map(x=>tr([
+  personLabel(x.member_id),esc(branch(person(x.member_id)?.branch_id)?.name||'—'),
+  esc(anomalyTitles[x.kind]||x.kind),taiStamp(x.expected_at),
+  x.observed_at?taiStamp(x.observed_at):'未找到有效打卡',
+  x.deviation_minutes?esc(x.deviation_minutes)+' 分鐘':'—',
+  x.status==='open'?'<span class="chip pending">待確認</span>':'<span class="chip approved">已結案</span>',
+  x.status==='open'&&manager()?'<button type="button" class="btn small" data-extra="anomalyResolve" data-id="'+esc(x.id)+'">結案</button>':
+   '<span class="muted">'+esc(x.resolution_note||'—')+'</span>'
+ ]));
+ const controls=manager()?'<div class="toolbar"><div class="field"><label>掃描起日</label>'+
+  '<input type="date" id="anomalyFrom" class="filter" value="'+esc(app.anomalyFrom)+'"></div>'+
+  '<div class="field"><label>掃描迄日</label><input type="date" id="anomalyThrough" class="filter" value="'+esc(app.anomalyThrough)+'"></div>'+
+  '<button class="btn" data-extra="scanAttendance">掃描已完成班次</button></div>':'';
+ $('appContent').innerHTML='<div class="cards">'+stat('待處理異常',opened.length,'僅列出可存取範圍')+
+  stat('已結案',me.filter(x=>x.status==='resolved').length,'處理歷史保留')+
+  stat('逾期未處理',opened.filter(x=>new Date(x.due_at)<new Date()).length,'以設定 SLA 計算')+
+  '</div>'+panel('出勤異常清單',controls+table(
+  ['員工','分店','種類','應到時間','觀察時間','偏差','狀態','處理'],rows))+
+  panel('企業異常判定設定',
+   '<p>容許時間：'+esc(rule.grace_minutes??5)+' 分鐘；處理期限：'+esc(rule.anomaly_sla_hours??48)+
+   ' 小時；提醒靜音時段：'+esc(rule.quiet_from||'22:00')+'–'+esc(rule.quiet_until||'08:00')+'</p>'+
+   '<div class="notice">異常只比對原始打卡與已發布班表，不會修改打卡、判定法定加班或自動扣薪。已核准且涵蓋整班的請假不列缺卡。</div>',
+   app.mode==='real'&&['owner','hr'].includes(role())?'<button class="btn small" data-extra="anomalyRule">設定出勤規則</button>':'')+
+  (manager()?'<p class="muted">掃描以伺服器時間判斷已結束的班次，單次最多 31 天。重掃不會重複建立同一異常。</p>':'');
+}
+const prevRenderForAnomalies=render;
+render=function(){
+ prevRenderForAnomalies();
+ if(app.data&&app.tab==='anomalies')renderAttendanceCases();
+};
+function showAnomalyResolve(id){
+ const item=(app.data?.attendanceCases||[]).find(x=>x.id===id);
+ if(!item)throw Error('找不到異常案件');
+ showExtraForm('結案：'+(anomalyTitles[item.kind]||item.kind),'attendance_resolve',[
+  {name:'id',label:'異常識別碼',html:'<input id="id" name="id" value="'+esc(id)+'" readonly>'},
+  {name:'note',label:'結案理由／補卡處理結果',wide:true,
+   html:'<textarea id="note" name="note" minlength="3" maxlength="500" required></textarea>'}
+ ],'確認結案');
+}
+function showAnomalyRule(){
+ if(app.mode!=='real'||!['owner','hr'].includes(role()))throw Error('僅企業負責人或人資可以設定');
+ const a=app.data.attendanceRules||{};
+ showExtraForm('出勤異常偵測規則','attendance_rule',[
+  {name:'grace_minutes',label:'遲到／早退容許分鐘',html:input('grace_minutes','number',a.grace_minutes??5,'min="0" max="120"')},
+  {name:'anomaly_sla_hours',label:'案件處理期限（小時）',html:input('anomaly_sla_hours','number',a.anomaly_sla_hours??48,'min="1" max="720"')},
+  {name:'quiet_from',label:'通知靜音開始',html:input('quiet_from','time',a.quiet_from||'22:00')},
+  {name:'quiet_until',label:'通知靜音結束',html:input('quiet_until','time',a.quiet_until||'08:00')}
+ ],'儲存出勤規則');
+}
+$('appContent').addEventListener('change',e=>{
+ if(e.target.id==='anomalyFrom')app.anomalyFrom=e.target.value;
+ if(e.target.id==='anomalyThrough')app.anomalyThrough=e.target.value;
+});
+$('appContent').addEventListener('click',async e=>{
+ const b=e.target.closest('[data-extra]');if(!b)return;
+ try{
+  if(b.dataset.extra==='scanAttendance'){
+   if(!manager())throw Error('只有主管可掃描出勤異常');
+   if(!app.anomalyFrom||!app.anomalyThrough)throw Error('請選擇日期');
+   const result=await action('attendance_scan',{from:app.anomalyFrom,through:app.anomalyThrough});
+   banner('已完成 '+(result?.checked_shifts??0)+' 個班別檢查，新增 '+(result?.created_anomalies??0)+' 件異常');
+  }
+  else if(b.dataset.extra==='anomalyResolve')showAnomalyResolve(b.dataset.id);
+  else if(b.dataset.extra==='anomalyRule')showAnomalyRule();
+ }catch(error){banner(error.message,true);}
+});
