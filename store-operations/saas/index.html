@@ -267,12 +267,15 @@ async function connectLineSession(force=false){
   lineLinkStatus="connecting";
   lineConnectError="";
   try {
-    // A previously verified Supabase browser session does not need LINE
-    // OAuth again on each visit, even after the short-lived LIFF token expires.
-    if(!force&&await resumeVerifiedLineSession())return;
+    // External browsers may resume a previously verified session without an
+    // interactive LINE prompt. In LINE's own in-app browser, silently verify
+    // the currently active LINE account before reusing that identity.
     if(!window.liff){
       for(let attempt=0;attempt<40&&!window.liff;attempt++)await new Promise(resolve=>setTimeout(resolve,100));
     }
+    let inLineClient=false;
+    try{inLineClient=window.liff?.isInClient?.()===true}catch(e){}
+    if(!force&&!inLineClient&&await resumeVerifiedLineSession())return;
     if(!window.liff)throw Error("LINE 登入元件未能載入。");
     await window.liff.init({liffId:config.liffId});
     // Resolve final merchant after LIFF init completes its secondary redirect.
