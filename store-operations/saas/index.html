@@ -1447,7 +1447,7 @@ document.addEventListener("change",async ev=>{
     (staff?.reservations||[]).find(x=>x.id===id)?.name;
    if(result.changed)lastStaffChange={kind,id,label:label||(kind==="ticket"?"號碼牌":"預約"),before:previous,after:desired,slug,day};
    let msg=(kind==="ticket"?"號碼牌 ":"預約 ")+(label||"")+"：已改為「"+jsStatus(desired)+"」";
-   if(kind==="reservation"&&desired==="CHECKED_IN")msg+="，已加入候位名單";
+   if(kind==="reservation"&&desired==="CHECKED_IN")msg+="，已完成預約報到（不會自動取號）";
    if(kind==="ticket"&&desired==="CALLED"&&result.changed)
      msg+="；"+await notifyLineCalled(result.number,result.ticket_id,result.line_call_event_id);
    if(result.changed&&desired==="CANCELLED"){
