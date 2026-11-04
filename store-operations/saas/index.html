@@ -831,7 +831,19 @@ function staffRender(){
     (visibleDone.length?visibleDone.map(card).join(""):'<p class="muted">選定範圍內還沒有已處理預約。</p>'))+
    box("已刪除預約（最近 "+staffHistoryDays+" 天，"+visibleDeleted.length+" / "+deletedBookings.length+" 筆）",
     '<p class="staff-help">顧客不會看到這些預約，也不會收到刪除通知。取消勾選即可恢復。</p>'+
-    (visibleDeleted.length?visibleDeleted.map(card).join(""):'<p class="muted">目前沒有已刪除預約。</p>'));
+    (visibleDeleted.length?visibleDeleted.map(card).join(""):'<p class="muted">目前沒有已刪除預約。</p>'))+
+   box("完整預約歷史｜後端搜尋與分頁",'<p class="small">查詢本店資料庫全部歷史預約，不受工作清單「最近 7～90 天／每類最多 500 筆」限制。本區僅提供查閱，不修改狀態，也不發送 LINE 通知。</p>'+
+    '<div class="grid3"><div>'+field("姓名、編號、參考碼、服務","historical-booking-search",historicalBookingQuery,"search",'maxlength="100"')+'</div>'+
+    '<div>'+field("預約日期起","historical-booking-from",historicalBookingStart,"date")+'</div>'+
+    '<div>'+field("預約日期迄","historical-booking-to",historicalBookingEnd,"date")+'</div></div>'+
+    '<div class="grid"><div><label for="historical-booking-status">預約狀態</label><select id="historical-booking-status" class="field">'+
+      [["ALL","全部狀態"],["CONFIRMED","已預約"],["CHECKED_IN","已報到"],["COMPLETED","已完成"],["NO_SHOW","未到"],["CANCELLED","已取消"]].map(([v,label])=>
+       '<option value="'+v+'" '+(historicalBookingStatus===v?"selected":"")+'>'+label+'</option>').join("")+'</select></div>'+
+    '<div><label for="historical-booking-deleted">顧客端隱藏狀態</label><select id="historical-booking-deleted" class="field">'+
+     [["active","未刪除"],["deleted","已刪除"],["all","全部（含已刪除）"]].map(([v,label])=>
+      '<option value="'+v+'" '+(historicalBookingDeleted===v?"selected":"")+'>'+label+'</option>').join("")+'</select></div></div>'+
+    '<div class="staff-actionbar">'+btn("查詢完整歷史","historical-search","primary")+
+      btn("重設歷史篩選","historical-reset","outline")+'</div>'+historyBookingResultHtml());
  }else if(staffTab==="queue"){
   
   const card=x=>'<article class="staff-record '+(x.deleted_at?'staff-deleted-record':'')+'"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.number)+'　'+esc(x.name)+'</div>'+
