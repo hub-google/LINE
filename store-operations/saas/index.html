@@ -476,7 +476,7 @@ let calendarMode="month",calendarAnchor=taipei(),calendarStatus="ALL";
 let calendarPage=1,calendarResult=null,calendarLoading=false,calendarError="";
 let calendarRequestToken=0,calendarTenant="",calendarDataKey="";
 let editingMenuItemId="",bookingChosenItems=[],queueChosenItems=[],editChosenItems=[];
-let day=taipei(),bookingParty=1,customerTab=["home","reserve","queue","mine","progress"].includes(incomingParam("tab"))?incomingParam("tab"):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
+let day=taipei(),bookingParty=1,queuePartySize=2,customerTab=["home","reserve","queue","mine","progress"].includes(incomingParam("tab"))?incomingParam("tab"):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
 let manageKind=["reservation","ticket"].includes(incomingParam("manage"))?incomingParam("manage"):"";
 let manageItem=/^[0-9a-f-]{36}$/i.test(incomingParam("item")||"")?incomingParam("item"):"";
 let manageMode=["edit","cancel","view"].includes(incomingParam("mode"))?incomingParam("mode"):"view";
@@ -1056,9 +1056,9 @@ function staffRender(){
   }else if(staffTab==="queue"){
   
   const card=x=>'<article class="staff-record '+(x.deleted_at?'staff-deleted-record':'')+'"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.number)+'　'+esc(x.name)+'</div>'+
-   '<div class="small">'+esc(x.day)+' ・ '+esc(x.source==="RESERVATION"?"預約報到":"現場取號")+
+   '<div class="small">'+esc(x.day)+' ・ '+esc(x.party||1)+' 人／組 ・ '+esc(x.source==="RESERVATION"?"預約報到":"現場取號")+
    (x.reservation_id?" ・ 已連動預約":"")+'</div>'+
-   '<div class="small">取號時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
+   '<div class="small">取號時間：'+esc(formatTaipeiCreated(x.created_at))+' ・ '+esc(x.party||1)+' 人／組</div>'+
    selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+(x.deleted_at?'<p class="staff-help">此號碼已從顧客端隱藏；取消勾選刪除即可恢復。</p>':staffStatusPicker("ticket",x,true))+
    staffDeletePicker("ticket",x)+'</article>';
   html+=numberSettingsPanel("queue",t,isManager)+'<div class="grid4" style="margin-bottom:16px">'+stat("正在叫號",active?.number||"—")+stat("候位中",waiting.length)+
@@ -1256,6 +1256,7 @@ function queueProgressBoard(){
    (customer?.my_tickets||[]).find(x=>["WAITING","CALLED","SERVING"].includes(x.status));
  const ownNumber=own?.number||fallbackTicket?.number||"—";
  const ownStatus=own?.status||fallbackTicket?.status||"";
+ const ownParty=own?.party||fallbackTicket?.party||1;
  let note="號碼與候位組數會隨店員叫號自動更新。";
  if(ownStatus==="CALLED")note="已叫到您的號碼，請依現場人員指示報到。";
  else if(ownStatus==="SERVING")note="您的號碼目前服務中。";
@@ -1263,7 +1264,8 @@ function queueProgressBoard(){
  else if(ownStatus==="CANCELLED")note="這張號碼已取消，不再參與候位。";
  else if(ownStatus==="PASSED")note="您的號碼已過號，如需協助請洽門市。";
  return '<div class="queue-board" aria-live="polite">'+
-   '<div class="queue-board-lead">現在叫到</div>'+
+   '<div class="queue-board-lead">現在叫到</div>'+ 
+    '<p class="small">我的候位人數：'+esc(ownParty)+' 人／組</p>'+
    '<div class="queue-board-current">'+esc(fresh?.current||"—")+'</div>'+
    '<div class="queue-board-sub">'+esc(fresh?.current?"請依現場叫號進度為準":"目前尚未開始叫號")+'</div>'+
    '<div class="queue-board-grid">'+
@@ -1338,7 +1340,7 @@ function crossTicketCards(){
      const ahead=x.ahead===null||x.ahead===undefined?"—":x.ahead+" 組";
      return '<article class="cross-ticket">'+
        '<div class="cross-ticket-head"><strong>'+esc(x.shop_name)+'</strong>'+tag(x.status)+'</div>'+
-       '<div class="cross-ticket-meta">取號時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
+       '<div class="cross-ticket-meta">取號時間：'+esc(formatTaipeiCreated(x.created_at))+' ・ '+esc(x.party||1)+' 人／組</div>'+
        '<div class="cross-ticket-stats">'+
          '<div class="cross-ticket-stat"><span>我的號碼</span><strong>'+esc(x.number||"—")+'</strong></div>'+
          '<div class="cross-ticket-stat"><span>目前叫號</span><strong>'+esc(x.current||"—")+'</strong></div>'+
@@ -1366,8 +1368,8 @@ function crossRecords(){
  ).join(""):'<p class="muted">目前沒有預約紀錄。</p>';
  const ticketHtml=tickets.length?tickets.slice(0,80).map(x=>
    '<article class="cross-record"><div class="cross-ticket-head"><strong>'+esc(x.shop_name)+'</strong>'+tag(x.status)+'</div>'+
-   '<strong>我的號碼：'+esc(x.number)+'</strong>'+
-   '<div class="small">取號時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
+   '<strong>我的號碼：'+esc(x.number)+'</strong><div class="small">候位人數：'+esc(x.party||1)+' 人／組</div>'+
+   '<div class="small">取號時間：'+esc(formatTaipeiCreated(x.created_at))+' ・ '+esc(x.party||1)+' 人／組</div>'+
    selectedItemsHtml(x.selected_items)+
    '<div class="staff-actionbar">'+btn("查看該店進度","open-cross-ticket","secondary",
      'data-merchant="'+esc(x.slug)+'" data-ticket="'+esc(x.id)+'"')+'</div></article>'
@@ -1425,14 +1427,16 @@ function customerRender(){
   if(!m.queue)html=box("尚未開放取號",'<p>本企業只提供線上預約。</p>');
   else html='<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",customer.current||"—")+stat("等候組數",customer.waiting)+stat("我的號碼",live?.number||"—")+'</div>'+
    box("我的現場號碼",live?'<div class="ticket">'+esc(live.number)+'</div><p>'+tag(live.status)+'</p>'+
-    '<p class="small">取號時間：'+esc(formatTaipeiCreated(live.created_at))+'</p>'+
+    '<p class="small">取號時間：'+esc(formatTaipeiCreated(live.created_at))+' ・ '+esc(live.party||1)+' 人／組</p>'+
     selectedItemsHtml(live.selected_items)+
     (live.status==="WAITING"?btn("取消取號","cancel-my-number","danger",'data-id="'+esc(live.id)+'"'):""):
     '<p class="muted">現在可在網站上取得號碼。</p>'+
-    '<p>取號者：<strong>'+esc(lineDisplayName)+'</strong>（由 LINE 自動帶入）</p>'+
+    '<p>取號者：<strong>'+esc(lineDisplayName)+'</strong>（由 LINE 自動帶入）</p>'+ 
+    '<div>'+field("本次候位人數（1～20 人）","customer-queue-party",queuePartySize,"number",'min="1" max="20" step="1" inputmode="numeric"')+'</div>'+ 
+    '<p class="small">一張號碼牌代表一組。前方等待仍以「組數」計算，人數用於門市安排桌位／服務。</p>'+
     menuSelectSection(t.menu_queue_mode||"DISABLED",catalogue,queueChosenItems,"queue")+
     '<div style="margin-top:14px">'+btn("立即線上取號","take","primary",
-    !menuChoiceReady(t.menu_queue_mode,queueChosenItems,catalogue)?"disabled":"")+'</div>');
+    (!Number.isInteger(queuePartySize)||queuePartySize<1||queuePartySize>20||!menuChoiceReady(t.menu_queue_mode,queueChosenItems,catalogue))?"disabled":"")+'</div>');
  }else if(customerTab==="progress"){
   if(progressTicketId||crossCurrentStore)html=box("即時叫號進度",'<p class="muted">以下為 <strong>'+esc(t.name)+'</strong> 的即時候位資訊。</p>'+
     '<div class="staff-actionbar">'+btn("返回我的取號","cross-back","outline")+'</div>'+queueProgressBoard());
@@ -2056,11 +2060,14 @@ document.addEventListener("click",async ev=>{
 }
  if(a==="take"){await act(async()=>{
   if(lineLinkStatus!=="linked")throw Error("請先完成 LINE 授權");
-  const result=await rpc("so_take_number_with_items",{p_slug:slug,p_name:lineDisplayName,p_items:queueChosenItems.slice()});
+  const party=Number(val("customer-queue-party"));
+  if(!Number.isInteger(party)||party<1||party>20)throw Error("請輸入 1～20 人的有效候位人數。");
+  queuePartySize=party;
+  const result=await rpc("so_take_number_with_party",{p_slug:slug,p_name:lineDisplayName,p_items:queueChosenItems.slice(),p_party_size:party});
   queueChosenItems=[];
   progressTicketId=result.id;crossCurrentStore=false;customerTab="progress";queueLive=null;queueLiveShop="";
   const notice=await sendLineNotice("notify-ticket",{ticketId:result.id});
-  return "取號成功！您的號碼是 "+result.number+customerNoticeSuffix(notice);
+  return "取號成功！您的號碼是 "+result.number+"（"+party+" 人／組）"+customerNoticeSuffix(notice);
  });return}
  if(a==="cross-filter"){
    crossFilter=b.dataset.filter||"active";crossPageSize=12;render();return;
@@ -2188,6 +2195,12 @@ document.addEventListener("change",async ev=>{
  }
  if(el.id==="customer-day"){day=el.value;chosenSlot="";await load();return;}
  if(el.id==="customer-party"){syncBookingPartyInput(el.value);return;}
+ if(el.id==="customer-queue-party"){
+  const n=Number(el.value);queuePartySize=Number.isInteger(n)&&n>=1&&n<=20?n:0;
+  const button=document.querySelector('button[data-act="take"]');
+  if(button)button.disabled=!queuePartySize||!menuChoiceReady(customer?.tenant?.menu_queue_mode||"DISABLED",queueChosenItems,customer?.menu_items||[]);
+  return;
+ }
  if(el.id==="edit-book-date"){editDate=el.value;editTime="";await fetchBookingEditSlots();return;}
  if(el.id==="edit-book-time"){editTime=el.value;render();return;}
  if(el.id==="edit-book-party"){editParty=Number(el.value);render();return;}
