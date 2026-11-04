@@ -773,7 +773,22 @@ function staffRender(){
       field("最晚提前預約分鐘數","policy-notice",policy.min_notice_minutes??0,"number",'min="0" max="10080"')+'</div>'+
       '<div>'+field("每日休息結束（可留空）","policy-break-end",policy.break_end||"","time")+'</div></div>'+
       '<div style="margin-top:14px">'+btn("儲存預約營業規則","save-booking-policy","primary")+'</div>'):"")+
-  box("LINE 官方帳號串接",'<p>平台測試 OA／企業自有 OA：'+esc(lineIndicator(t))+'</p><div class="alert">目前使用同一組測試 LINE 官方帳號，預約／取號／叫號會嘗試發送真實通知。請先授權 LINE 身分及加入好友；不同商家獨立 OA 綁定尚未開放。</div>')+
+  box("LINE 官方帳號串接",
+    '<p>目前通知來源：<strong>'+(lineConfig?.merchantOaConnected?"商家自己的 LINE OA":"總公司 LINE OA")+'</strong></p>'+
+    '<p class="small">自有 OA 必須使用同一 LINE Provider 下的 LINE Login／LIFF 頻道與 Messaging API 頻道。沒有自有 OA 的店家可繼續使用總公司 OA。</p>'+
+    (lineConfig?.merchantOaConnected?
+     '<p>已連接 LINE OA：<strong>'+esc(lineConfig.botBasicId||"")+'</strong></p>':"")+
+    (isManager?
+     '<div class="grid"><div>'+field("商家 LIFF ID","own-oa-liff",lineConfig?.merchantOaConnected?lineConfig.liffId:"")+
+      field("Messaging API Channel Access Token","own-oa-token","","password",'autocomplete="new-password"')+
+     '</div><div>'+field("Messaging API Channel Secret","own-oa-secret","","password",'autocomplete="new-password"')+
+     '<p class="small">Channel Secret 需為 32 位十六進位字元。Token 經後端向 LINE 驗證，成功後加密保存在 Supabase Vault，瀏覽器不會再次收到原始值。</p></div></div>'+
+     '<div class="staff-actionbar">'+btn("驗證並連接自有 LINE OA","connect-own-oa","primary")+
+       (lineConfig?.merchantOaConnected?btn("解除自有 OA 綁定","disconnect-own-oa","outline"):"")+'</div>'+
+     '<p class="small">將下列 Webhook URL 貼入你自己的 LINE Messaging API 頻道並啟用 Webhook：</p>'+
+     '<p class="small" style="overflow-wrap:anywhere">'+esc(LINE_BRIDGE_URL+"?action=webhook&merchant="+encodeURIComponent(slug))+'</p>'+
+     btn("複製自有 OA Webhook URL","copy-own-oa-webhook","outline")
+     :'<p class="small">僅企業管理者可設定自己的 LINE OA。</p>'))+
   (isManager?box("總公司 LINE 平台店家搜尋",'<p>無論店家有沒有自己的 LINE OA，都可以使用總公司共用 LINE OA 的預約及通知服務。開放公開搜尋後，顧客可從總公司選單「搜尋店家／現場取號」找到本店。</p>'+
     '<label class="checklist"><input id="directory-enabled" type="checkbox" '+(t.directory_enabled?'checked ':'')+'>允許在總公司 LINE 預約平台公開搜尋我的門市</label>'+
     '<p class="small">預設不公開；未勾選時，專屬顧客預約網址仍可分享使用。</p>'+
@@ -1240,6 +1255,30 @@ document.addEventListener("click",async ev=>{
   try{await navigator.clipboard.writeText(u);return "已複製網址："+u;}
   catch(e){window.prompt("複製網址",u);return "請複製顯示的網址";}
  });return;}
+ if(a==="copy-own-oa-webhook"){
+  const webhook=LINE_BRIDGE_URL+"?action=webhook&merchant="+encodeURIComponent(slug);
+  try{await navigator.clipboard.writeText(webhook);showActionFeedback("已複製 Webhook URL","success");}
+  catch(e){window.prompt("複製 Webhook URL",webhook);}
+  return;
+ }
+ if(a==="connect-own-oa"||a==="disconnect-own-oa"){
+  if(a==="disconnect-own-oa"&&!confirm("確定改回總公司 LINE OA？商家自己的 LIFF 與通知將停止；原預約和取號不會刪除。"))return;
+  await act(async()=>{
+   const payload=a==="connect-own-oa"
+    ?{action:"connect-merchant-oa",slug,liffId:val("own-oa-liff"),botToken:val("own-oa-token"),channelSecret:val("own-oa-secret")}
+    :{action:"disconnect-merchant-oa",slug};
+   if(!session?.access_token)throw Error("請先登入企業管理者帳號");
+   const res=await fetch(LINE_BRIDGE_URL,{
+    method:"POST",
+    headers:{"content-type":"application/json","authorization":"Bearer "+session.access_token},
+    body:JSON.stringify(payload)
+   });
+   const data=await res.json().catch(()=>({}));
+   if(!res.ok||!data.ok)throw Error(data.error||"LINE OA 串接失敗");
+   lineConfig=null;lineConfigSlug="";
+   return a==="connect-own-oa"?"LINE OA 已驗證並連接，請設定上方 Webhook URL，並確認 Login 與 Messaging API 同屬 Provider":"已解除自有 LINE OA，恢復總公司服務";
+  });return;
+ }
  if(a==="save-directory"){await act(async()=>{const enabled=!!$("directory-enabled")?.checked;await rpc("so_set_directory_listing",{p_slug:slug,p_enabled:enabled,p_oa_mode:"PLATFORM"});return enabled?"門市已開放在總公司 LINE 平台搜尋":"門市已取消公開搜尋（原有專屬連結仍可使用）";});return;}
  if(a==="menu-edit"){editingMenuItemId=id;render();return;}
  if(a==="menu-edit-clear"){editingMenuItemId="";render();return;}
