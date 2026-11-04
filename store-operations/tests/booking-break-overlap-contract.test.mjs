@@ -16,7 +16,7 @@ test("actual interval overlap is enforced on both reservation writes and slot re
  assert.match(sql,/gs::time >= v_policy\.break_end/);
  assert.match(sql,/Concurrent change to so_public_state/);
  assert.match(sql,/Concurrent change to so_validate_booking_policy/);
- assert.equal((sql.match(/\\$function\\$;/g)||[]).length,2,"Both PostgreSQL functions must end with a semicolon");
+ assert.equal((sql.match(/\$function\$;/g)||[]).length,2,"Both PostgreSQL functions must end with a semicolon");
  assert.doesNotMatch(sql,/drop table|truncate|delete from|update public\.so_reservations/i);
 });
 
