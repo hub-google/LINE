@@ -52,14 +52,18 @@ async function reload(silent=false){
  if(app.busy)return;
  app.busy=true;if(!silent)$('appContent').innerHTML='<div class="loading">資料更新中，請稍後...</div>';
  try{
-  if(app.mode==='demo'){app.data=await demo();}
+  if(app.mode==='demo'){
+   const [snapshot,leaveSnapshot]=await Promise.all([
+    demo(),call('/rest/v1/rpc/wm_demo_leave_api','POST',{p_action:'snapshot',p_data:{}})]);
+   app.data={...snapshot,...leaveSnapshot};
+  }
   else if(!app.token){app.data=null;}
   else{
    app.tenants=await query('wm_tenants','select=id,name,is_demo&order=name');
    if(!app.tenants.find(t=>t.id===app.tenantId))app.tenantId=app.tenants[0]?.id||'';
    if(!app.tenantId){app.data=null;}else{
     const p='tenant_id=eq.'+encodeURIComponent(app.tenantId);
-    const [branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections]=await Promise.all([
+    const [branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections,leavePolicies]=await Promise.all([
      query('wm_branches','select=*&'+p+'&order=name'),query('wm_members','select=id,tenant_id,branch_id,user_id,display_name,employee_code,role,employment_type,status,created_at,department_id,hired_on,left_on,skills&'+p+'&order=employee_code'),
      query('wm_shifts','select=*&'+p+'&order=starts_at.desc&limit=600'),query('wm_punches','select=*&'+p+'&order=punched_at.desc&limit=600'),
      query('wm_requests','select=*&'+p+'&order=created_at.desc&limit=300'),query('wm_leave_entitlements','select=*&'+p),
@@ -67,13 +71,23 @@ async function reload(silent=false){
      query('wm_departments','select=*&'+p),query('wm_shift_templates','select=*&'+p),query('wm_staffing_requirements','select=*&'+p),
      query('wm_notifications','select=*&'+p+'&order=created_at.desc&limit=200'),
      query('wm_period_closures','select=*&'+p+'&order=closed_at.desc&limit=36'),query('wm_period_adjustments','select=*&'+p+'&limit=300'),
-     query('wm_attendance_adjustments','select=*&'+p+'&limit=300')]);
+     query('wm_attendance_adjustments','select=*&'+p+'&limit=300'),query('wm_leave_policies','select=*&'+p+'&order=effective_from.desc')]);
     if(members.some(m=>m.user_id===app.user?.id&&['owner','hr'].includes(m.role))){
       const wages=await call('/rest/v1/rpc/wm_staff_wages','POST',{p_tenant:app.tenantId},app.token);
       const lookup=new Map((wages||[]).map(w=>[w.member_id,w.hourly_rate]));
       members.forEach(m=>{m.hourly_rate=lookup.has(m.id)?lookup.get(m.id):null;});
     }
-    app.data={tenant:app.tenants.find(t=>t.id===app.tenantId),branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections,server_at:new Date().toISOString()};
+    app.data={tenant:app.tenants.find(t=>t.id===app.tenantId),branches,members,shifts,punches,requests,
+      entitlements,availability,departments,templates,requirements,notifications,closures,
+      adjustments,corrections,leavePolicies,leaveBalances:{},requestStages:[],server_at:new Date().toISOString()};
+    const selected=getSelected();
+    if(selected){
+      const [balances,steps]=await Promise.all([
+       call('/rest/v1/rpc/wm_leave_balances','POST',{p_tenant:app.tenantId,p_member:selected},app.token),
+       call('/rest/v1/rpc/wm_request_step_status','POST',{p_tenant:app.tenantId},app.token)]);
+      app.data.leaveBalances[selected]=balances;
+      app.data.requestStages=steps;
+    }
    }
   }
   $('connectionLabel').textContent=app.data?'已連線 Supabase 資料庫':'尚未登入';
@@ -150,10 +164,16 @@ function requests(){
  heading('<button class="btn primary" data-action="newRequest">＋ 新增申請</button>');
  const rows=req.map(x=>tr([personLabel(x.member_id),esc(kind(x.kind))+(x.kind==='leave'?' · '+esc(kind(x.leave_kind)):''),
  taiStamp(x.starts_at),taiStamp(x.ends_at),status(x.status),esc(x.reason||'—')]));
- const balances=(app.data.entitlements||[]).filter(x=>x.member_id===sel).map(x=>{
-  const used=(app.data.requests||[]).filter(r=>r.member_id===sel&&r.kind==='leave'&&r.leave_kind===x.leave_kind&&r.status==='approved'&&Number(r.starts_at.slice(0,4))===x.year).reduce((a,r)=>a+(new Date(r.ends_at)-new Date(r.starts_at))/3600000,0);
-  return '<div class="bar-row"><span>'+esc(kind(x.leave_kind))+' · '+x.year+'</span><strong>剩餘 '+Math.max(0,Number(x.hours)-used).toFixed(1)+' / '+Number(x.hours).toFixed(1)+' 小時</strong></div>';
- }).join('');
+ const verifiedBalances=(app.data.leaveBalances||{})[sel]||[];
+ const balances=verifiedBalances.length?verifiedBalances.map(b=>
+   '<div class="bar-row"><span>'+esc(b.label)+' · '+esc(b.year)+'</span>'+
+   '<strong>可用 '+Number(b.remaining_hours).toFixed(1)+' 小時</strong></div>'+
+   '<p class="muted">'+esc(b.yearly_basis==='anniversary'?'週年制':'曆年制')+
+   '；核定 '+Number(b.granted_hours).toFixed(1)+
+   '、結轉 '+Number(b.carryover_hours).toFixed(1)+
+   '、已核准 '+Number(b.approved_hours).toFixed(1)+
+   '、待審占用 '+Number(b.pending_hours).toFixed(1)+' 小時</p>').join(''):
+   '<p class="muted">尚未為這位員工設定生效中的假別政策。</p>';;
  $('appContent').innerHTML=panel('申請紀錄',table(['員工','項目','開始','結束','結果','說明'],rows))+'<div class="split">'+panel('假期額度','<div class="field"><label>查詢員工</label><select id="balanceMember">'+options(app.data.members,x=>x.display_name,sel)+'</select></div>'+balances)+panel('申請注意事項','<div class="notice">核准後會記錄審核時間與結果。原始出勤紀錄不會因申請或補卡被覆寫。</div><p class="muted">目前的額度是示範資料，不代表法定特休、病假給付的自動法令計算。</p>')+'</div>';
 }
 function approvals(){
@@ -232,10 +252,17 @@ function showShift(){
 }
 function showRequest(){
  const day=today();
+ const policies=[...(app.data?.leavePolicies||[])].filter(x=>x.effective_from<=day)
+  .sort((a,b)=>b.effective_from.localeCompare(a.effective_from));
+ const latest=[...new Map(policies.map(x=>[x.leave_kind,x])).values()].filter(x=>x.is_active);
+ const leaveKindOptions=latest.length?
+  latest.map(x=>'<option value="'+esc(x.leave_kind)+'">'+esc(x.label)+'</option>').join(''):
+  '<option value="annual">特休</option><option value="sick">病假</option>'+
+  '<option value="personal">事假</option><option value="other">其他假</option>';
  const body=modalForm('request',[
  {name:'member_id',label:'申請員工',html:memberFilter(getSelected())},
  {name:'kind',label:'申請項目',html:selectField('kind','<option value="leave">請假</option><option value="overtime">加班</option><option value="correction">補卡／出勤更正</option>')},
- {name:'leave_kind',label:'假別（請假時）',html:selectField('leave_kind','<option value="annual">特休</option><option value="sick">病假</option><option value="personal">事假</option><option value="other">其他假</option>')},
+ {name:'leave_kind',label:'假別（請假時）',html:selectField('leave_kind',leaveKindOptions)},
  {name:'starts_at',label:'開始時間',html:input('starts_at','datetime-local',day+'T09:00')},
  {name:'ends_at',label:'結束時間',html:input('ends_at','datetime-local',day+'T18:00')},
  {name:'reason',label:'原因／說明',wide:true,html:'<textarea id="reason" name="reason" maxlength="500" placeholder="請填寫申請原因"></textarea>'}
@@ -470,7 +497,12 @@ action=async function(name,data){
  app.busy=true;
  try{
   let result;
-  if(app.mode==='demo')result=await demo(name,data);
+  if(app.mode==='demo'){
+    if(name==='leave_policy'||name==='leave_grant')
+      result=await call('/rest/v1/rpc/wm_demo_leave_api','POST',{
+       p_action:name==='leave_policy'?'policy':'grant',p_data:data});
+    else result=await demo(name,data);
+   }
   else{
    if(!app.token||!app.tenantId)throw Error('請先完成企業登入');
    const tenant_id=app.tenantId;
@@ -491,6 +523,16 @@ action=async function(name,data){
    else if(name==='copy_week')result=await rpc('wm_copy_week',{p_tenant:tenant_id,p_week_start:data.week_start});
    else if(name==='employee_import')result=await rpc('wm_import_employees',{p_tenant:tenant_id,p_rows:data.rows});
    else if(name==='auto_draft')result=await rpc('wm_insert_draft_schedule',{p_tenant:tenant_id,p_assignments:data.assignments});
+   else if(name==='leave_policy')result=await rpc('wm_save_leave_policy',{
+    p_tenant:tenant_id,p_kind:data.leave_kind,p_label:data.label,p_effective:data.effective_from,
+    p_basis:data.yearly_basis,p_needs_balance:data.balance_required==='true',
+    p_carryover:Number(data.carryover_hours),p_levels:Number(data.approval_levels),
+    p_document:data.requires_document==='true',p_active:data.is_active==='true'});
+   else if(name==='leave_grant')result=await rpc('wm_grant_leave_hours',{
+    p_tenant:tenant_id,p_member:data.member_id,p_year:Number(data.year),
+    p_kind:data.leave_kind,p_hours:Number(data.hours)});
+   else if(name==='leave_stage')result=await rpc('wm_review_request_step',{
+    p_request:data.id,p_approved:data.approved===true,p_note:data.note||''});
    else if(name==='swap_create')result=await rpc('wm_create_swap',{p_source:data.source_shift_id,p_target:data.target_shift_id,p_reason:data.reason||''});
    else if(name==='swap_accept')result=await rpc('wm_consent_swap',{p_request:data.id,p_accepted:data.accepted===true});
    else if(name==='swap_review')result=await rpc('wm_review_swap',{p_request:data.id,p_approved:data.approved===true});
@@ -889,4 +931,108 @@ $('overlay').addEventListener('change',e=>{
   target.innerHTML=(app.data?.shifts||[]).filter(s=>s.status==='published'&&s.member_id!==selected.member_id)
     .map(s=>'<option value="'+esc(s.id)+'">'+personLabel(s.member_id)+' · '+taiDay(s.starts_at)+' '+taiTime(s.starts_at)+'</option>').join('');
  }
+});
+
+
+
+/* HR-LVE policies: tenant-scoped rule versions, entitlement grants and staged approvals. */
+extraNames.add('leave_policy');extraNames.add('leave_grant');extraNames.add('leave_stage');
+function currentLeavePolicies(){
+ const data=[...(app.data?.leavePolicies||[])].filter(x=>x.effective_from<=today())
+  .sort((a,b)=>b.effective_from.localeCompare(a.effective_from));
+ return [...new Map(data.map(x=>[x.leave_kind,x])).values()];
+}
+const priorLeaveRequests=requests;
+requests=function(){
+ priorLeaveRequests();
+ const policies=currentLeavePolicies();
+ const canEdit=app.mode==='demo'||['owner','hr'].includes(role());
+ const rows=policies.map(p=>tr([
+  esc(p.label),esc(p.leave_kind),esc(p.yearly_basis==='anniversary'?'週年制':'曆年制'),
+  p.balance_required?'需要核定額度':'依假別規則',
+  esc(p.approval_levels)+' 層',status(p.is_active?'active':'inactive'),
+  esc(p.effective_from)
+ ]));
+ $('appContent').insertAdjacentHTML('beforeend',
+  panel('假別政策與生效版本',table(['假別','代碼','年度制','額度','簽核','狀態','生效日'],rows),
+    canEdit?'<div class="flex"><button class="btn small" data-extra="newLeavePolicy">設定假別政策</button>'+
+     '<button class="btn small" data-extra="newLeaveGrant">核定員工假期時數</button></div>':'')+
+  '<div class="notice">假別時數由企業配置；待審申請會預先占用額度。這不是自動核發的法定特休，也不代表已完成勞動法令檢核。</div>');
+};
+function showLeavePolicyForm(){
+ if(!(app.mode==='demo'||['owner','hr'].includes(role())))throw Error('只有企業負責人或人資可以設定假別');
+ const rules=currentLeavePolicies();
+ showExtraForm('假別與生效規則','leave_policy',[
+  {name:'leave_kind',label:'假別代碼（英文小寫、底線）',html:input('leave_kind','text','annual','pattern="[a-z_]{2,40}" maxlength="40"')},
+  {name:'label',label:'假別名稱',html:input('label','text','特別休假','maxlength="80"')},
+  {name:'effective_from',label:'生效日期',html:input('effective_from','date',today())},
+  {name:'yearly_basis',label:'年度規則',html:selectField('yearly_basis',
+    '<option value="calendar">曆年制</option><option value="anniversary">到職週年制</option>')},
+  {name:'balance_required',label:'是否須有核定額度',html:selectField('balance_required',
+    '<option value="true">須有額度並扣除待審</option><option value="false">不強制核定額度</option>')},
+  {name:'carryover_hours',label:'企業核定結轉時數',html:input('carryover_hours','number','0','min="0" max="4000" step="0.5"')},
+  {name:'approval_levels',label:'簽核層數',html:selectField('approval_levels',
+    '<option value="1">單層</option>'+(app.mode==='demo'?'':'<option value="2">兩層（不同主管）</option><option value="3">三層（不同主管）</option>'))},
+  {name:'requires_document',label:'證明文件',html:selectField('requires_document',
+    '<option value="false">不要求</option><option value="true">須提供證明文件（尚需附件開通）</option>')},
+  {name:'is_active',label:'規則狀態',html:selectField('is_active',
+    '<option value="true">啟用</option><option value="false">停用</option>')}
+ ],'儲存規則版本');
+}
+function showLeaveGrantForm(){
+ if(!(app.mode==='demo'||['owner','hr'].includes(role())))throw Error('只有企業負責人或人資可以核定額度');
+ const policies=currentLeavePolicies();
+ const select=policies.map(p=>'<option value="'+esc(p.leave_kind)+'">'+esc(p.label)+'</option>').join('')
+  ||'<option value="annual">特別休假</option>';
+ showExtraForm('核定員工假期時數','leave_grant',[
+  {name:'member_id',label:'員工',html:memberFilter(getSelected())},
+  {name:'leave_kind',label:'假別',html:selectField('leave_kind',select)},
+  {name:'year',label:'所屬年度／週年期起始年度',html:input('year','number',today().slice(0,4),'min="2000" max="2150"')},
+  {name:'hours',label:'核定時數',html:input('hours','number','8','min="0" max="4000" step="0.5"')}
+ ],'儲存員工額度');
+}
+async function refreshLeaveMemberBalance(id){
+ if(app.mode==='demo')return;
+ if(!id||!app.token||!app.tenantId)return;
+ try{
+  const balances=await call('/rest/v1/rpc/wm_leave_balances','POST',
+   {p_tenant:app.tenantId,p_member:id},app.token);
+  if(app.data){app.data.leaveBalances[id]=balances;render();}
+ }catch(error){banner(error.message,true);}
+}
+$('appContent').addEventListener('change',e=>{
+ if(e.target.id==='balanceMember')void refreshLeaveMemberBalance(e.target.value);
+});
+const oldLeaveApprove=approve;
+approve=async function(id,approved){
+ const item=(app.data?.requests||[]).find(r=>r.id===id);
+ if(app.mode==='real'&&item?.kind==='leave'){
+  if(!confirm(approved?'確認執行這一層請假簽核？':'確定駁回這筆請假申請？'))return;
+  const result=await action('leave_stage',{id,approved,note:approved?'主管簽核同意':'主管駁回'});
+  if(result?.status==='pending')banner('已完成本層簽核，待下一位主管核准');
+  return;
+ }
+ return oldLeaveApprove(id,approved);
+};
+const previousStageApprovals=approvals;
+approvals=function(){
+ previousStageApprovals();
+ const steps=app.data?.requestStages||[];
+ const list=(app.data?.requests||[]).filter(x=>x.status==='pending'&&x.kind==='leave');
+ const rows=list.map(r=>{
+  const version=(app.data.leavePolicies||[]).find(p=>p.id===r.leave_policy_id);
+  const required=Number(version?.approval_levels||1);
+  const completed=steps.filter(x=>x.request_id===r.id).length;
+  return tr([personLabel(r.member_id),esc(kind(r.leave_kind)),
+   esc(completed)+' / '+esc(required),esc(r.id.slice(-8))]);
+ });
+ if(list.length)$('appContent').insertAdjacentHTML('beforeend',
+  panel('多層請假簽核進度',table(['申請員工','假別','已完成／需要','單號末八碼'],rows)));
+};
+$('appContent').addEventListener('click',e=>{
+ const b=e.target.closest('[data-extra]');if(!b)return;
+ try{
+  if(b.dataset.extra==='newLeavePolicy')showLeavePolicyForm();
+  else if(b.dataset.extra==='newLeaveGrant')showLeaveGrantForm();
+ }catch(err){banner(err.message,true);}
 });
