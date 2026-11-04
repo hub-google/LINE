@@ -10,7 +10,7 @@ const index=readFileSync(path.join(root,"saas/index.html"),"utf8");
 const home=readFileSync(path.join(root,"saas/home.html"),"utf8");
 const offline=readFileSync(path.join(root,"saas/offline.html"),"utf8");
 const manifest=JSON.parse(readFileSync(path.join(root,"saas/manifest.webmanifest"),"utf8"));
-const build=readFileSync(path.join(root,"../../.github/scripts/build-line-saas.mjs"),"utf8");
+const build=readFileSync(path.join(root,"../.github/scripts/build-line-saas.mjs"),"utf8");
 
 test("manifest is installable, scoped to booking only and uses icon sizes",()=>{
  assert.equal(manifest.display,"standalone");
