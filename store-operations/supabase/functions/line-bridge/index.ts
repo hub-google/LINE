@@ -366,6 +366,141 @@ async function pushNotice(
   return reply(200, { ok: true, sent: true, note: "ACCEPTED_BY_LINE_NOT_DELIVERY_PROOF" }, origin);
 }
 
+type NoticeJob = {
+  id: number;
+  tenant_id: string;
+  event_kind: "CALLED" | "RESERVED" | "TICKET_CREATED" | "TICKET_CANCELLED" |
+    "RESERVATION_CANCELLED" | "RESERVATION_UPDATED" | "RESERVATION_RESTORED";
+  reference_id: string;
+  attempts: number;
+  status: string;
+};
+async function dispatchOutboxItem(
+  db: ReturnType<typeof service>, job: NoticeJob, origin: string | null,
+): Promise<{ status: "SENT" | "SKIPPED" | "RETRY"; reason?: string }> {
+  const { data: tenant, error: tenantErr } = await db.from("so_tenants")
+    .select("id,slug,name,status,address,phone").eq("id", job.tenant_id).maybeSingle();
+  if (tenantErr) throw tenantErr;
+  if (!tenant || tenant.status !== "ACTIVE") return { status: "SKIPPED", reason: "TENANT_INACTIVE" };
+  let result: Response;
+  if (job.event_kind === "CALLED" || job.event_kind.startsWith("TICKET_")) {
+    const isCreated = job.event_kind === "TICKET_CREATED";
+    const { data: ticket, error } = await db.from("so_tickets")
+      .select("id,tenant_id,user_id,status,ticket_no,number_prefix,created_at,business_date,selected_items,line_call_event_id,line_cancel_event_id")
+      .eq("tenant_id", tenant.id).is("deleted_at", null)
+      .eq(isCreated ? "id" : job.event_kind === "CALLED" ? "line_call_event_id" : "line_cancel_event_id", job.reference_id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!ticket) return { status: "SKIPPED", reason: "TICKET_MISSING" };
+    if (job.event_kind === "CALLED") {
+      if (ticket.status !== "CALLED") return { status: "SKIPPED", reason: "CALL_SUPERSEDED" };
+      result = await pushNotice(db, tenant, ticket.user_id, "CALLED", job.reference_id,
+        tenant.name + "：現在叫到 " + ticketNumber(ticket) + "，請至櫃檯報到。", origin);
+    } else if (isCreated) {
+      if (ticket.status !== "WAITING") return { status: "SKIPPED", reason: "TICKET_NO_LONGER_WAITING" };
+      result = await pushNotice(db, tenant, ticket.user_id, "TICKET_CREATED", job.reference_id,
+        await ticketProgressNotice(db, tenant, ticket), origin);
+    } else {
+      if (ticket.status !== "CANCELLED") return { status: "SKIPPED", reason: "TICKET_NOT_CANCELLED" };
+      result = await pushNotice(db, tenant, ticket.user_id, "TICKET_CANCELLED", job.reference_id,
+        flexNotice("已取消排隊", [
+          "店家：" + tenant.name,
+          "取消號碼：" + ticketNumber(ticket),
+          "此號碼已不在候位名單中。",
+          ...shopDetails(tenant),
+        ], [{ label: "查看我的紀錄", uri: liffManageLink(tenant, "ticket", ticket.id, "view") }]), origin);
+    }
+  } else {
+    const field = job.event_kind === "RESERVED" ? "id"
+      : job.event_kind === "RESERVATION_RESTORED" ? "line_restore_event_id"
+      : job.event_kind === "RESERVATION_CANCELLED" ? "line_cancel_event_id"
+      : "line_update_event_id";
+    const { data: booking, error } = await db.from("so_reservations")
+      .select("id,user_id,status,booking_date,booking_time,party_size,selected_items,line_restore_event_id,line_cancel_event_id,line_update_event_id")
+      .eq("tenant_id", tenant.id).is("deleted_at", null).eq(field, job.reference_id).maybeSingle();
+    if (error) throw error;
+    if (!booking) return { status: "SKIPPED", reason: "BOOKING_MISSING" };
+    if (job.event_kind === "RESERVATION_CANCELLED") {
+      if (booking.status !== "CANCELLED") return { status: "SKIPPED", reason: "BOOKING_RESTORED" };
+      result = await pushNotice(db, tenant, booking.user_id, "RESERVATION_CANCELLED", job.reference_id,
+        flexNotice("預約已取消", [
+          "店家：" + tenant.name, "日期：" + booking.booking_date,
+          "時間：" + String(booking.booking_time).slice(0, 5),
+          "人數：" + booking.party_size + " 位",
+          ...selectedServicesText(booking.selected_items), ...shopDetails(tenant),
+        ], [{ label: "查看我的紀錄", uri: liffManageLink(tenant, "reservation", booking.id, "view") }]), origin);
+    } else {
+      if (booking.status !== "CONFIRMED") return { status: "SKIPPED", reason: "BOOKING_NOT_CONFIRMED" };
+      const isNew = job.event_kind === "RESERVED" || job.event_kind === "RESERVATION_RESTORED";
+      result = await pushNotice(db, tenant, booking.user_id, job.event_kind, job.reference_id,
+        isNew ? reservationConfirmationNotice(tenant, booking)
+          : flexNotice("預約已更新", [
+              "店家：" + tenant.name, "日期：" + booking.booking_date,
+              "時間：" + String(booking.booking_time).slice(0, 5),
+              "人數：" + booking.party_size + " 位",
+              ...selectedServicesText(booking.selected_items), ...shopDetails(tenant),
+            ], [
+              { label: "編輯預約", uri: liffManageLink(tenant, "reservation", booking.id, "edit") },
+              { label: "取消預約", uri: liffManageLink(tenant, "reservation", booking.id, "cancel") },
+            ]), origin);
+    }
+  }
+  const data = await result.json().catch(() => ({}));
+  if (result.ok && (data.sent === true || data.reason === "ALREADY_SENT")) return { status: "SENT" };
+  return { status: "RETRY", reason: String(data.reason || data.error || "DELIVERY_FAILED").slice(0, 150) };
+}
+async function dispatchPendingNotices(req: Request, origin: string | null): Promise<Response> {
+  const db = service();
+  const { data: secret, error: secretError } = await db.from("so_line_worker_keys")
+    .select("secret").eq("name", "notices").maybeSingle();
+  if (secretError || !secret?.secret) return reply(503, { error: "WORKER_KEY_UNAVAILABLE" }, origin);
+  const sentKey = req.headers.get("x-line-worker-key") || "";
+  // Constant-time comparison for credentials of the expected length.
+  const expected = new TextEncoder().encode(secret.secret);
+  const actual = new TextEncoder().encode(sentKey);
+  let mismatch = expected.length ^ actual.length;
+  for (let i = 0; i < expected.length; i++) mismatch |= expected[i] ^ (actual[i] ?? 0);
+  if (mismatch !== 0) return reply(403, { error: "WORKER_UNAUTHORIZED" }, origin);
+  const { data: due, error: dueError } = await db.from("so_line_notice_outbox")
+    .select("id,tenant_id,event_kind,reference_id,status,attempts")
+    .in("status", ["PENDING", "RETRY"])
+    .lte("next_attempt_at", new Date().toISOString()).order("created_at", { ascending: true }).limit(20);
+  if (dueError) throw dueError;
+  let sent = 0, deferred = 0, skipped = 0;
+  for (const candidate of due || []) {
+    const { data: claimed, error: claimError } = await db.from("so_line_notice_outbox")
+      .update({ status: "PROCESSING", processing_at: new Date().toISOString(), attempts: candidate.attempts + 1 })
+      .eq("id", candidate.id).eq("status", candidate.status)
+      .select("id,tenant_id,event_kind,reference_id,attempts,status").maybeSingle();
+    if (claimError) throw claimError;
+    if (!claimed) continue;
+    let status: "SENT" | "SKIPPED" | "RETRY" = "RETRY";
+    let reason = "";
+    try {
+      const result = await dispatchOutboxItem(db, claimed as NoticeJob, origin);
+      status = result.status;
+      reason = result.reason || "";
+    } catch (error) {
+      // Do not write tokens or payload bodies into a log.
+      reason = error instanceof Error ? error.name : "DELIVERY_EXCEPTION";
+    }
+    const retryMinutes = Math.min(360, Math.max(1, 2 ** Math.min(claimed.attempts, 8)));
+    const expired = claimed.attempts >= 14;
+    const next = status === "RETRY" && expired ? "FAILED" : status === "RETRY" ? "RETRY" : status;
+    const { error: finishedError } = await db.from("so_line_notice_outbox").update({
+      status: next, processing_at: null,
+      last_error: reason || null,
+      sent_at: next === "SENT" ? new Date().toISOString() : null,
+      next_attempt_at: next === "RETRY" ? new Date(Date.now() + retryMinutes * 60000).toISOString() : new Date().toISOString(),
+    }).eq("id", candidate.id).eq("status", "PROCESSING");
+    if (finishedError) throw finishedError;
+    if (next === "SENT") sent++;
+    else if (next === "SKIPPED") skipped++;
+    else deferred++;
+  }
+  return reply(200, { ok: true, inspected: due?.length || 0, sent, deferred, skipped }, origin);
+}
+
 async function webhook(req: Request, origin: string | null) {
   const secret = Deno.env.get("LINE_MESSAGING_CHANNEL_SECRET");
   if (!secret) return reply(503, { error: "LINE_WEBHOOK_NOT_CONFIGURED" }, origin);
@@ -480,6 +615,14 @@ Deno.serve(async (req: Request) => {
   if (url.searchParams.get("action") === "webhook") {
     if (req.method !== "POST") return reply(405, { error: "METHOD_NOT_ALLOWED" }, origin);
     return webhook(req, origin);
+  }
+  if (url.searchParams.get("action") === "dispatch-pending") {
+    if (req.method !== "POST") return reply(405, { error: "METHOD_NOT_ALLOWED" }, origin);
+    try { return await dispatchPendingNotices(req, origin); }
+    catch (error) {
+      console.error("LINE outbox dispatcher failed", error instanceof Error ? error.name : "unknown");
+      return reply(503, { error: "DISPATCH_UNAVAILABLE" }, origin);
+    }
   }
   if (req.method === "GET" && url.searchParams.get("action") === "config") {
     const liffId = Deno.env.get("LINE_LIFF_ID") || "";
