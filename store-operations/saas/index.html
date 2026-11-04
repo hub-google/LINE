@@ -477,6 +477,7 @@ let calendarPage=1,calendarResult=null,calendarLoading=false,calendarError="";
 let calendarRequestToken=0,calendarTenant="",calendarDataKey="";
 let editingMenuItemId="",bookingChosenItems=[],queueChosenItems=[],editChosenItems=[];
 let bookingConfirmationKey="";
+let announcementEditId="",staffAnnouncements=[],customerAnnouncements=[];
 let day=taipei(),bookingParty=1,queuePartySize=2,customerTab=["home","reserve","queue","mine","progress"].includes(incomingParam("tab"))?incomingParam("tab"):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
 let manageKind=["reservation","ticket"].includes(incomingParam("manage"))?incomingParam("manage"):"";
 let manageItem=/^[0-9a-f-]{36}$/i.test(incomingParam("item")||"")?incomingParam("item"):"";
@@ -1160,6 +1161,18 @@ function staffRender(){
     '<p class="small">預設開啟。顧客會先看到預約內容，再決定是否真正送出。</p>'+
     '<label class="checklist"><input id="policy-confirm-required" type="checkbox" '+(policy.require_confirmation!==false?"checked":"")+'>送出前顯示確認卡</label>'+
     '<div style="margin-top:14px">'+btn("儲存二次確認設定","save-booking-confirmation","primary")+'</div>'):"")+
+  (isManager?box("門市公告與照片",
+    '<p class="small">可以發布公告、價目表連結及最多 8 張可橫向滑動的照片。請使用可公開瀏覽的 HTTPS 圖片網址，勿貼個資或私密連結。</p>'+
+    (staffAnnouncements.length?staffAnnouncements.map(a=>
+      '<div class="listline"><span><strong>'+esc(a.title)+'</strong>　'+tag(a.active?"公開":"未公開")+'</span>'+
+      '<span>'+btn("編輯","announcement-edit","outline",'data-id="'+esc(a.id)+'"')+
+      btn(a.active?"暫停公開":"重新公開","announcement-toggle","outline",'data-id="'+esc(a.id)+'" data-active="'+esc(a.active)+'"')+'</span></div>').join(""):'<p class="muted">目前沒有公告。</p>')+
+    '<div style="margin-top:12px">'+field("公告標題","announcement-title",(staffAnnouncements.find(a=>a.id===announcementEditId)?.title)||"")+
+    '<label for="announcement-body">公告內容</label><textarea class="field" id="announcement-body" rows="4" maxlength="2000">'+esc(staffAnnouncements.find(a=>a.id===announcementEditId)?.body||"")+'</textarea>'+
+    '<label for="announcement-images">照片網址（每行一張，最多 8 張）</label><textarea class="field" id="announcement-images" rows="4">'+esc((staffAnnouncements.find(a=>a.id===announcementEditId)?.images||[]).join("\n"))+'</textarea>'+
+    '<label class="checklist"><input type="checkbox" id="announcement-active" '+(staffAnnouncements.find(a=>a.id===announcementEditId)?.active===false?"":"checked")+'>發布至顧客首頁</label>'+
+    '<div class="staff-actionbar">'+btn(announcementEditId?"儲存修改":"發布公告","announcement-save","primary")+
+       (announcementEditId?btn("取消編輯","announcement-edit-cancel","outline"):"")+'</div></div>'):"")+
   box("LINE 官方帳號串接",
     '<p>目前通知來源：<strong>'+(lineConfig?.merchantOaConnected?"商家自己的 LINE OA":"總公司 LINE OA")+'</strong></p>'+
     '<p class="small">自有 OA 必須使用同一 LINE Provider 下的 LINE Login／LIFF 頻道與 Messaging API 頻道。沒有自有 OA 的店家可繼續使用總公司 OA。</p>'+
@@ -1531,6 +1544,14 @@ function customerRender(){
  }else html=(manageKind&&manageItem?
     box("我的預約紀錄",renderBookings(items,true))+box("我的號碼紀錄",renderMyTickets(tickets)):
     crossRecords());
+ if(customerTab==="home"&&customerAnnouncements.length){
+   html+=box("門市最新公告",customerAnnouncements.map(a=>
+      '<article class="inset" style="margin-bottom:15px"><h3>'+esc(a.title)+'</h3>'+
+      '<p style="white-space:pre-wrap">'+esc(a.body||"")+'</p>'+
+      ((a.images||[]).length?'<div class="announcement-gallery" style="display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:8px 0">'+
+         a.images.map(u=>'<img loading="lazy" alt="'+esc(a.title)+' 門市照片" src="'+esc(u)+'" style="width:220px;height:150px;flex:none;object-fit:cover;border-radius:9px;scroll-snap-align:start">').join("")+
+        '</div>':"")+'</article>').join(""));
+ }
  return layout(t.name,"LINE 預約與取號・Supabase 即時資料",menu,lineStatusBadge()+html);
 }
 
@@ -1738,7 +1759,10 @@ async function load(){err="";try{
   }
  if(view==="customer"){
    customer=lineLinkStatus==="linked"?await rpc("so_public_state",{p_slug:slug,p_date:day}):null;
+   customerAnnouncements=[];
    if(customer){
+     try{customerAnnouncements=await rpc("so_public_announcements",{p_slug:slug})||[];}
+     catch(_e){customerAnnouncements=[];}
      try{const setting=await rpc("so_customer_booking_confirmation",{p_slug:slug});
        customer.booking_confirmation_required=setting?.require_confirmation!==false;
      }catch(_e){customer.booking_confirmation_required=true;}
@@ -1780,6 +1804,10 @@ async function load(){err="";try{
    catch(e){console.warn("LINE notification diagnostics unavailable")}
  }
  if(staffTab==="branches")businessGroups=await rpc("so_my_business_groups");
+  if(staffTab==="settings"){
+    try{staffAnnouncements=await rpc("so_staff_announcements",{p_slug:slug})||[];}
+    catch(_e){staffAnnouncements=[];}
+  }
 }
  else if(view==="staff")staff=null;
  }catch(e){err=e.message||String(e)}render();
@@ -2104,6 +2132,26 @@ document.addEventListener("click",async ev=>{
      await rpc("so_set_queue_hold_policy",{p_slug:slug,p_hold_minutes:minutes,p_max_holds:max,p_return_mode:mode});
      return "候位保留規則已儲存";
    });return;
+  }
+  if(a==="announcement-edit"){announcementEditId=id;render();return;}
+  if(a==="announcement-edit-cancel"){announcementEditId="";render();return;}
+  if(a==="announcement-save"){
+    await act(async()=>{
+      const title=val("announcement-title"),body=val("announcement-body");
+      const images=val("announcement-images").split(/[\r\n]+/).map(x=>x.trim()).filter(Boolean);
+      if(!title||title.length>80||images.length>8)throw Error("請輸入公告標題；照片最多八張");
+      await rpc("so_save_announcement",{p_slug:slug,p_id:announcementEditId||null,
+        p_title:title,p_body:body,p_images:images,p_active:!!$("announcement-active")?.checked});
+      announcementEditId="";
+      return "公告已儲存至資料庫";
+    });return;
+  }
+  if(a==="announcement-toggle"){
+    if(!confirm("確定變更這篇公告的公開狀態？"))return;
+    await act(async()=>{
+      await rpc("so_set_announcement_active",{p_slug:slug,p_id:id,p_active:b.dataset.active!=="true"});
+      return "公告公開狀態已更新";
+    });return;
   }
   if(a==="save-booking-confirmation"){
    await act(async()=>{
