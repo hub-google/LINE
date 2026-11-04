@@ -65,3 +65,41 @@ test('all critical database RPCs and tenant RLS guards are versioned',()=>{
  assert.match(importSql,/on conflict\(tenant_id,employee_code\) do nothing/);
  assert.match(swap,/private\.can_manage|wm_private\.can_manage/);
 });
+
+
+test('HR-LVE policy version and reserved balances cannot be approved without required stages',()=>{
+ const policy=migration('20261104_workforce_prd_leave_policy_versions.sql');
+ const ledger=migration('20261104_workforce_prd_leave_pending_ledger.sql');
+ const stages=migration('20261104_workforce_prd_request_approval_stages.sql');
+ const decision=migration('20261104_workforce_prd_approval_policy_balances.sql');
+ const demo=migration('20261104_workforce_prd_demo_leave_api.sql');
+ for(const term of ['wm_leave_policies','effective_from','yearly_basis','balance_required',
+ 'approval_levels','wm_save_leave_policy','wm_grant_leave_hours'])assert.ok(policy.includes(term),term);
+ for(const term of ['wm_private.leave_balance_core','pending_hours','remaining_hours',
+ 'wm_leave_request_guard','wm_leave_balances'])assert.ok(ledger.includes(term),term);
+ for(const term of ['wm_request_approval_steps','wm_review_request_step','wm_leave_final_approval_guard',
+ 'wm_request_step_status','leave_policy_id','不同主管'])assert.ok(stages.includes(term),term);
+ assert.match(decision,/wm_private\.leave_balance_core/);
+ assert.match(demo,/98d3505c-cbe6-46ed-a95a-13672e6d98f4/);
+ assert.match(src,/wm_demo_leave_api/);
+ assert.match(src,/wm_save_leave_policy/);
+ assert.match(src,/wm_review_request_step/);
+ assert.match(src,/showLeavePolicyForm/);
+ assert.match(src,/showLeaveGrantForm/);
+ assert.match(src,/pending_hours/);
+});
+test('HR-ORG sensitive wage columns are isolated from ordinary employee REST reads',()=>{
+ const sql=migration('20261104_workforce_prd_private_wages.sql');
+ assert.match(sql,/REVOKE SELECT ON TABLE public\.wm_members FROM authenticated/);
+ assert.match(sql,/GRANT SELECT \(id,tenant_id,branch_id,user_id/);
+ assert.doesNotMatch(sql,/GRANT SELECT \([^)]*hourly_rate/);
+ assert.match(sql,/wm_staff_wages/);
+ assert.match(src,/wm_staff_wages/);
+ assert.match(src,/x\.tenant_id===app\.tenantId&&x\.user_id===app\.user\?\.id/);
+});
+test('leave UI selects latest effective policy and rejects stale version shadowing',()=>{
+ assert.match(src,/const seen=new Set\(\)/);
+ assert.match(src,/if\(!seen\.has\(p\.leave_kind\)\)/);
+ assert.match(src,/p_on:today\(\)/);
+ assert.match(src,/leaveKindOptions/);
+});
