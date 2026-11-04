@@ -1110,7 +1110,7 @@ function customerRender(){
   if(!m.reservation)html=box("未開放預約",'<p>企業目前沒有啟用此功能。</p>');
   else html=box("選擇預約日期與時間",'<div class="grid"><div>'+field("預約日期","customer-day",day,"date",'min="'+taipei()+'"')+'</div><div>'+field("預約人數","customer-party",bookingParty||"","number",'min="1" max="20" required')+'</div></div><label>可預約時段</label>'+
     '<p class="small" id="booking-capacity-hint" role="status">'+(bookingParty?"已依 "+bookingParty+" 位篩選時段；名額不足的時間不能選擇。":"請輸入 1～20 位的有效預約人數。")+'</p>'+
-    '<div class="slots">'+(customer.slots||[]).map(s=>'<button class="slot '+(chosenSlot===s.time&&availableForParty(s)?"active":"")+'" data-slot="'+esc(s.time)+'" '+(!availableForParty(s)?"disabled aria-disabled=\"true\"":"")+'>'+esc(s.time)+'<small>'+(!availableForParty(s)?"名額不足・":"")+"剩 "+esc(s.available)+" 位</small></button>').join("")+'</div>'+
+    '<div class="slots">'+(customer.slots||[]).map(s=>'<button class="slot '+(chosenSlot===s.time&&availableForParty(s)?"active":"")+'" data-slot="'+esc(s.time)+'" '+(!availableForParty(s)?"disabled aria-disabled=\"true\"":"")+'>'+esc(s.time)+'<small>'+(!availableForParty(s)?"名額不足・":"")+'剩 '+esc(s.available)+' 位</small></button>').join("")+'</div>'+
     menuSelectSection(t.menu_booking_mode||"DISABLED",catalogue,bookingChosenItems,"booking")+
     '<p class="small">預約者：<strong>'+esc(lineDisplayName)+'</strong>（由 LINE 自動帶入）</p>'+
     '<div style="margin-top:15px">'+btn("確定送出預約","book","primary full",
