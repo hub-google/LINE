@@ -26,7 +26,7 @@ test("NR-06: capacity is based on overlapping actual intervals, not summed daily
  assert.match(sql,/select begins from spans where begins>p_start and begins<p_end/);
  assert.match(sql,/where s\.begins<=p\.ts and s\.ends>p\.ts/);
  assert.match(sql,/v_finish>\(new\.booking_date\+t\.close_time\)/);
- assert.match(sql,/v_finish>\(new\.booking_date\+bp\.break_start\)/);
+ assert.match(sql,/v_finish\s*>\s*\(new\.booking_date\+bp\.break_start\)/);
 });
 test("NR-05: client uses server-verified service-specific available slots",()=>{
  assert.match(ui,/so_service_slot_availability/);
