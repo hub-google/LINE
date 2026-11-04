@@ -148,7 +148,7 @@ jobs:
           client_id = os.environ["LINE_LOGIN_CHANNEL_ID"]
           client_secret = os.environ.get("LINE_LOGIN_CHANNEL_SECRET", "")
           liff_id = os.environ["LINE_LIFF_ID"]
-          target = "https://hub-google.github.io/LINE/saas/?view=customer&merchant=greenfield-salon&tab=queue"
+          target = "https://hub-google.github.io/LINE/booking/?view=customer&merchant=greenfield-salon&tab=queue"
           if not client_secret:
             print("::warning title=LIFF read-back unavailable::LINE_LOGIN_CHANNEL_SECRET not configured; check LIFF endpoint and openid scope manually.")
             raise SystemExit(0)
