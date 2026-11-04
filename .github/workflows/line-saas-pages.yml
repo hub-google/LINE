@@ -47,10 +47,10 @@ jobs:
           pubdir="$RUNNER_TEMP/line-gh-pages"
           git worktree add --detach "$pubdir" origin/gh-pages
           mkdir -p "$pubdir/saas"
-          for f in index.html directory.html merchant-register.html merchant-center.html version-watch.js release.json; do
+          for f in index.html directory.html merchant-register.html merchant-center.html privacy.html terms.html version-watch.js release.json; do
             cp "$RUNNER_TEMP/line-saas-dist/$f" "$pubdir/saas/$f"
           done
-          git -C "$pubdir" add -- saas/index.html saas/directory.html saas/merchant-register.html saas/merchant-center.html saas/version-watch.js saas/release.json
+          git -C "$pubdir" add -- saas/index.html saas/directory.html saas/merchant-register.html saas/merchant-center.html saas/privacy.html saas/terms.html saas/version-watch.js saas/release.json
           if git -C "$pubdir" diff --cached --quiet; then
             echo "LINE SaaS pages already current."
             exit 0
