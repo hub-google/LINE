@@ -205,6 +205,28 @@ body[data-portal="customer"] .stat strong{font-variant-numeric:tabular-nums}
  .ticket{font-size:clamp(37px,10vw,60px)}
  .btn{min-height:46px}
 }
+
+/* Verified customer booking receipt: print/screenshot friendly, never an authority on current status. */
+.receipt-backdrop{position:fixed;inset:0;z-index:11000;background:rgba(12,40,28,.64);display:flex;align-items:center;justify-content:center;padding:22px;overflow-y:auto}
+.receipt-card{width:min(100%,490px);max-height:calc(100vh - 44px);overflow-y:auto;background:#fff;border:1px solid #e0e9e0;border-radius:24px;padding:29px;box-shadow:0 25px 95px rgba(0,0,0,.2)}
+.receipt-eyebrow{color:#3d8058;font-size:12px;letter-spacing:.1em;font-weight:850}
+.receipt-card h2{font-size:28px;margin:12px 0 0}
+.receipt-number{font-size:clamp(40px,8vw,59px);font-weight:950;color:#173e34;margin:0 0 13px}
+.receipt-field{display:flex;justify-content:space-between;gap:15px;padding:11px 0;border-bottom:1px solid #e6ede6;font-size:14px}
+.receipt-field span{color:#687c6d;flex-shrink:0}
+.receipt-field strong{text-align:right;overflow-wrap:anywhere}
+.receipt-warning{margin:19px 0 17px;color:#6b6250;background:#fff7e9;border:1px solid #f1ddbb;padding:12px;border-radius:12px;font-size:12px;line-height:1.7}
+.receipt-actions{display:flex;gap:10px;flex-wrap:wrap}
+@media(max-width:620px){.receipt-backdrop{padding:10px}.receipt-card{padding:21px;max-height:calc(100vh - 20px)}.receipt-card h2{font-size:24px}}
+@media print{
+ @page{size:A4 portrait;margin:16mm}
+ body{background:white!important}
+ body>header,body>#root,body>#action-feedback{display:none!important}
+ #booking-receipt-overlay{display:block!important;position:static!important;background:white!important;padding:0!important;overflow:visible!important}
+ .receipt-card{width:100%!important;max-height:none!important;overflow:visible!important;border:none!important;border-radius:0!important;box-shadow:none!important;padding:0!important}
+ .receipt-actions{display:none!important}
+ .receipt-warning{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+}
 @media(prefers-reduced-motion:reduce){
  *,*::before,*::after{transition:none!important;scroll-behavior:auto!important}
 }
