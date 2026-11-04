@@ -264,7 +264,7 @@ $('authBtn').onclick=()=>app.token?logout():showAuth();
 $('switchReal').onclick=()=>{app.mode='real';app.data=null;app.tab='overview';render();showAuth();};
 $('tenantPicker').onchange=async e=>{app.tenantId=e.target.value;await reload(true);};
 $('appContent').addEventListener('change',e=>{
- if(e.target.id==='weekPicker'){app.date=e.target.value;render();}
+ if(e.target.id==='weekPicker'){app.date=e.target.value;app.autoSuggestions=null;render();}
  if(e.target.id==='reportDate'){app.date=e.target.value;render();}
  if(e.target.id==='punchMember'){app.focusMember=e.target.value;render();}
  if(e.target.id==='balanceMember'){app.focusMember=e.target.value;render();}
@@ -275,9 +275,9 @@ $('appContent').addEventListener('click',async e=>{
  try{
  if(a==='gotoSchedule')setTab('schedule');else if(a==='gotoApprovals')setTab('approvals');
  else if(a==='newShift')showShift();else if(a==='newRequest')showRequest();else if(a==='newEmployee')showEmployee();else if(a==='newBranch')showBranch();
- else if(a==='prevWeek'){app.date=dayAdd(app.date,-7);render();}
- else if(a==='nextWeek'){app.date=dayAdd(app.date,7);render();}
- else if(a==='todayWeek'){app.date=today();render();}
+ else if(a==='prevWeek'){app.date=dayAdd(app.date,-7);app.autoSuggestions=null;render();}
+ else if(a==='nextWeek'){app.date=dayAdd(app.date,7);app.autoSuggestions=null;render();}
+ else if(a==='todayWeek'){app.date=today();app.autoSuggestions=null;render();}
  else if(a==='refreshReport')render();else if(a==='exportCsv')csvSave();
  else if(a==='clock')await clockPunch(b.dataset.kind);
  else if(a==='approve')await approve(id,true);else if(a==='reject')await approve(id,false);
@@ -478,6 +478,7 @@ action=async function(name,data){
    else if(name==='availability')result=await insert('wm_availability',{member_id:data.member_id,starts_at:data.starts_at,ends_at:data.ends_at,available:data.available===true||data.available==='true',note:data.note||''});
   }
   app.busy=false;closeModal();
+  if(name!=='month_report'&&name!=='notify_read')app.autoSuggestions=null;
   if(name==='month_report'){app.monthPreview=result;render();banner('已取得資料庫月度試算');}
   else {if(name==='month_close')app.monthPreview=null;await reload(true);banner('已儲存到資料庫');}
   return result;
@@ -660,7 +661,7 @@ function showSwapDialog(){
  if(app.mode!=='demo'){
   sourceShifts=sourceShifts.filter(s=>person(s.member_id)?.user_id===app.user?.id);
  }
- const other=(app.data?.shifts||[]).filter(s=>s.status==='published');
+ const other=(app.data?.shifts||[]).filter(s=>s.status==='published'&&s.member_id!==sourceShifts[0].member_id);
  if(!sourceShifts.length||other.length<2)throw Error('目前沒有可供交換的已發布班表');
  const choice=(all,filtered=false)=>all.map(s=>'<option value="'+esc(s.id)+'">'+
   personLabel(s.member_id)+' · '+taiDay(s.starts_at)+' '+taiTime(s.starts_at)+'—'+taiTime(s.ends_at)+
@@ -803,7 +804,7 @@ function proposeWorkforceWeek(){
       return (en<=startMs&&startMs-en<11*3600000)||(st>=endMs&&st-endMs<11*3600000);
      });
      const weekMs=ms.filter(s=>taiDay(s.starts_at)>=monday&&taiDay(s.starts_at)<=dayAdd(monday,6))
-       .reduce((sum,s)=>sum+new Date(s.ends_at)-new Date(s.starts_at),0);
+       .reduce((sum,s)=>sum+(new Date(s.ends_at).getTime()-new Date(s.starts_at).getTime()),0);
      const conflicts=(d.requests||[]).some(r=>r.member_id===m.id&&r.kind==='leave'&&r.status==='approved'
        &&new Date(r.starts_at)<endMs&&new Date(r.ends_at)>startMs);
      const availability=(d.availability||[]).filter(x=>x.member_id===m.id&&new Date(x.starts_at)<endMs&&new Date(x.ends_at)>startMs);
@@ -858,4 +859,15 @@ $('appContent').addEventListener('click',async e=>{
 $('overlay').addEventListener('click',async e=>{
  const b=e.target.closest('[data-extra]');if(!b)return;
  if(b.dataset.extra==='runImport')try{await runCsvImport();}catch(err){banner(err.message,true);}
+});
+
+
+/* Prevent a shift-swap form from defaulting to the same worker. */
+$('overlay').addEventListener('change',e=>{
+ if(e.target?.id==='source_shift_id'){
+  const selected=(app.data?.shifts||[]).find(s=>s.id===e.target.value);
+  const target=$('target_shift_id');if(!selected||!target)return;
+  target.innerHTML=(app.data?.shifts||[]).filter(s=>s.status==='published'&&s.member_id!==selected.member_id)
+    .map(s=>'<option value="'+esc(s.id)+'">'+personLabel(s.member_id)+' · '+taiDay(s.starts_at)+' '+taiTime(s.starts_at)+'</option>').join('');
+ }
 });
