@@ -215,7 +215,7 @@ function showRequest(){
  const day=today();
  const body=modalForm('request',[
  {name:'member_id',label:'申請員工',html:memberFilter(getSelected())},
- {name:'kind',label:'申請項目',html:selectField('kind','<option value="leave">請假</option><option value="overtime">加班</option><option value="correction">補卡／出勤更正</option><option value="swap">換班</option>')},
+ {name:'kind',label:'申請項目',html:selectField('kind','<option value="leave">請假</option><option value="overtime">加班</option><option value="correction">補卡／出勤更正</option>')},
  {name:'leave_kind',label:'假別（請假時）',html:selectField('leave_kind','<option value="annual">特休</option><option value="sick">病假</option><option value="personal">事假</option><option value="other">其他假</option>')},
  {name:'starts_at',label:'開始時間',html:input('starts_at','datetime-local',day+'T09:00')},
  {name:'ends_at',label:'結束時間',html:input('ends_at','datetime-local',day+'T18:00')},
@@ -470,11 +470,14 @@ action=async function(name,data){
    else if(name==='month_close')result=await rpc('wm_close_month',{p_tenant:tenant_id,p_year:Number(data.year),p_month:Number(data.month)});
    else if(name==='period_adjustment')result=await rpc('wm_adjust_closed_month',{p_close_id:data.closure_id,p_member_id:data.member_id,p_minutes:Number(data.minutes_delta),p_reason:data.reason});
    else if(name==='copy_week')result=await rpc('wm_copy_week',{p_tenant:tenant_id,p_week_start:data.week_start});
+   else if(name==='swap_create')result=await rpc('wm_create_swap',{p_source:data.source_shift_id,p_target:data.target_shift_id,p_reason:data.reason||''});
+   else if(name==='swap_accept')result=await rpc('wm_consent_swap',{p_request:data.id,p_accepted:data.accepted===true});
+   else if(name==='swap_review')result=await rpc('wm_review_swap',{p_request:data.id,p_approved:data.approved===true});
    else if(name==='availability')result=await insert('wm_availability',{member_id:data.member_id,starts_at:data.starts_at,ends_at:data.ends_at,available:data.available===true||data.available==='true',note:data.note||''});
   }
   app.busy=false;closeModal();
   if(name==='month_report'){app.monthPreview=result;render();banner('已取得資料庫月度試算');}
-  else {await reload(true);banner('已儲存到資料庫');}
+  else {if(name==='month_close')app.monthPreview=null;await reload(true);banner('已儲存到資料庫');}
   return result;
  }catch(e){app.busy=false;banner(e.message,true);throw e;}
 };
@@ -539,9 +542,11 @@ function showPeriodAdjustment(id){
  ],'確認新增更正');
 }
 function monthCsvExport(){
- if(!app.monthPreview)return banner('請先試算月份',true);
+ const closed=(app.data?.closures||[]).find(x=>x.year===Number(app.monthSelected.slice(0,4))&&x.month===Number(app.monthSelected.slice(5,7)));
+ const source=app.monthPreview||closed?.snapshot;
+ if(!source)return banner('請先試算月份',true);
  const rows=[['員工','員工編號','排班分鐘','出勤分鐘','請假分鐘','未完成事件','成本預估'],
-  ...(app.monthPreview.rows||[]).map(r=>[r.name,r.employee_code,r.scheduled_minutes,r.observed_minutes,r.leave_minutes,r.incomplete_count,r.estimated_cost])];
+  ...(source.rows||[]).map(r=>[r.name,r.employee_code,r.scheduled_minutes,r.observed_minutes,r.leave_minutes,r.incomplete_count,r.estimated_cost])];
  const cell=v=>{let text=String(v??'');if(/^[\s]*[=+@\-]/.test(text))text="'"+text;return '"'+text.replaceAll('"','""')+'"';};
  const blob=new Blob(['\uFEFF'+rows.map(r=>r.map(cell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});
  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='LINE-Workforce-'+app.monthSelected+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
@@ -618,4 +623,79 @@ $('overlay').addEventListener('click',async e=>{
   try{await navigator.clipboard.writeText($('inviteUrl').value);banner('邀請網址已複製');}
   catch{banner('無法存取剪貼簿，請手動複製',true);}
  }
+});
+
+
+
+/* HR-SCH-06: two-party shift exchange; manager review cannot bypass target consent. */
+extraNames.add('swap_create');
+extraNames.add('swap_accept');
+extraNames.add('swap_review');
+const priorScheduleForSwap=schedule;
+schedule=function(){
+ priorScheduleForSwap();
+ $('appContent').insertAdjacentHTML('beforeend',
+  panel('換班／代班申請',
+    '<p class="muted">申請人選自己的已發布班別，再指定同企業另一位員工的班別。對方同意後仍須主管核准；核准前兩個班別都不會改變。</p>'+
+    '<button class="btn" data-extra="newSwap">提出換班申請</button>'));
+};
+const priorRequestsForSwap=requests;
+requests=function(){
+ priorRequestsForSwap();
+ const all=(app.data?.requests||[]).filter(r=>r.kind==='swap'&&r.status==='pending');
+ const actionable=all.filter(r=>app.mode==='demo'||person(r.target_member_id)?.user_id===app.user?.id);
+ const rows=actionable.map(r=>tr([
+  personLabel(r.member_id),personLabel(r.target_member_id),
+  taiStamp(r.starts_at),r.target_accepted_at?'<span class="chip approved">對方已同意</span>':
+   '<div class="flex"><button class="btn small primary" data-extra="swapConsent" data-id="'+esc(r.id)+'">同意</button>'+
+   '<button class="btn small danger" data-extra="swapDecline" data-id="'+esc(r.id)+'">拒絕</button></div>'
+ ]));
+ if(actionable.length)$('appContent').insertAdjacentHTML('beforeend',
+  panel('等待我確認的換班',table(['提出人','被交換人','原班別','操作／狀態'],rows)));
+};
+function showSwapDialog(){
+ let sourceShifts=(app.data?.shifts||[]).filter(s=>s.status==='published');
+ if(app.mode!=='demo'){
+  sourceShifts=sourceShifts.filter(s=>person(s.member_id)?.user_id===app.user?.id);
+ }
+ const other=(app.data?.shifts||[]).filter(s=>s.status==='published');
+ if(!sourceShifts.length||other.length<2)throw Error('目前沒有可供交換的已發布班表');
+ const choice=(all,filtered=false)=>all.map(s=>'<option value="'+esc(s.id)+'">'+
+  personLabel(s.member_id)+' · '+taiDay(s.starts_at)+' '+taiTime(s.starts_at)+'—'+taiTime(s.ends_at)+
+  '</option>').join('');
+ showExtraForm('提出換班申請','swap_create',[
+  {name:'source_shift_id',label:'我原本的班次',wide:true,html:selectField('source_shift_id',choice(sourceShifts))},
+  {name:'target_shift_id',label:'想交換的班次（另一位員工）',wide:true,html:selectField('target_shift_id',choice(other))},
+  {name:'reason',label:'原因',wide:true,html:'<textarea id="reason" name="reason" maxlength="500"></textarea>'}
+ ],'送出換班申請');
+}
+const priorApprove=approve;
+approve=async function(id,approved){
+ const req=(app.data?.requests||[]).find(r=>r.id===id);
+ if(req?.kind==='swap'){
+  if(!confirm(approved?'對方已同意且班表沒有衝突才會核准。確認嗎？':'確定駁回換班嗎？'))return;
+  await action('swap_review',{id,approved});
+  return;
+ }
+ return priorApprove(id,approved);
+};
+const priorRenderWithInvite=render;
+render=function(){
+ priorRenderWithInvite();
+ if(app.token&&location.hash.includes('invite=')&&!$('appContent').querySelector('[data-extra="acceptInvite"]')){
+  $('appContent').insertAdjacentHTML('afterbegin',
+    '<div class="notice">你收到一份尚未接受的員工邀請。</div>'+
+    '<button class="btn primary" data-extra="acceptInvite">接受邀請加入企業</button>');
+ }
+};
+$('appContent').addEventListener('click',async e=>{
+ const b=e.target.closest('[data-extra]');if(!b)return;
+ try{
+  if(b.dataset.extra==='newSwap')showSwapDialog();
+  else if(b.dataset.extra==='swapConsent'||b.dataset.extra==='swapDecline'){
+   const accepted=b.dataset.extra==='swapConsent';
+   if(confirm(accepted?'同意交換這個班別？':'拒絕換班申請？'))
+    await action('swap_accept',{id:b.dataset.id,accepted});
+  }
+ }catch(err){banner(err.message,true);}
 });
