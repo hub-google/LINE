@@ -148,3 +148,5 @@
 - NR-05/06 服務與資源時段防撞、容量重複利用：另有既存開發 PR #30，應驗收其最終合併結果，不並行覆寫。
 - C01–58／K01–32／其餘 NR、FR、UX：尚需逐項依本文件前述表格補齊，特別是 LINE 多 OA 實機、資源排程、OTP、完整 CRM、Calendar、Web Push、多窗口、看板、金流及第三方 POS/設備。
 - 本輪有前端語法檢查、DB transaction 操作及資料庫/Pages 檔案核查，**尚無所有既有合約測試在本輪完整 PASS 的證據**。正式 LIFF、消費者與兩店員端到端操作、企業真實金流仍須經各自帳號/授權及實機驗證。
+
+**2026-11-04 本輪補充驗收證據：** FR-112、FR-110、FR-108/109 三份針對性程式契約測試共 10 項，在讀取最新 GitHub 檔案後逐一執行相同 JavaScript assertion，**10/10 通過**（非全專案 Node CI 或實機 E2E）。再查 Supabase 權限：匿名角色對公告、顧客標籤表及寫入 RPC 均無權限；建立公告／標籤／核准的 QA 驗收修改均 rollback。部署檔案 `gh-pages/booking/index.html`、`gh-pages/saas/index.html` 同時含本輪三項功能，`booking/release.json` build `ec9f6fc06e5f1c2b8628faa867afca288f1203ae`（2026-11-04 19:24 臺灣時間）。
