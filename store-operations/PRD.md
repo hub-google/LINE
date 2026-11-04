@@ -2393,7 +2393,7 @@ DECIMAL
 │   └── migrations/
 │
 ├── docs/
-│   ├── 系統需求書.md
+│   ├── PRD.md
 │   ├── api.md
 │   ├── architecture.md
 │   └── adr/

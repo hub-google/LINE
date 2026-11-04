@@ -1,6 +1,6 @@
 # LINE OA 門市預約／現場取號／叫號／點餐與 LINE Pay 整合系統
 
-> 依據 [`系統需求書v2.md`](file:///c:/Users/ET/%E6%88%91%E7%9A%84%E9%9B%B2%E7%AB%AF%E7%A1%AC%E7%A2%9F/%E4%BD%9C%E5%93%81/LINE%E7%BE%A4%E7%B5%84%E7%AE%A1%E7%90%86/%E7%B3%BB%E7%B5%B1%E9%9C%80%E6%B1%82%E6%9B%B8v2.md) 完整實作之企業級門市營運系統。
+> 依據 [PRD.md](./PRD.md) 規劃之企業級門市營運系統。
 
 ---
 
