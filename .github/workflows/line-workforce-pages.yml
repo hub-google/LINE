@@ -27,6 +27,9 @@ jobs:
           test -s workforce-management/index.html
           test -s workforce-management/style.css
           grep -q 'app.js' workforce-management/index.html
+      - name: Verify workforce PRD contracts
+        run: |
+          node --test workforce-management/tests/workforce-prd.test.mjs
       - name: Deploy only workforce to existing gh-pages branch
         shell: bash
         run: |
