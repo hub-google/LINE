@@ -946,7 +946,7 @@ function staffRender(){
  const active=openTickets.find(x=>["CALLED","SERVING"].includes(x.status)),waiting=openTickets.filter(x=>x.status==="WAITING"),passed=openTickets.filter(x=>x.status==="PASSED");
  const pendingBookings=openBookings.filter(x=>x.status==="CONFIRMED"), finishedBookings=doneBookings.filter(x=>x.status==="COMPLETED");
  const role=staff.role,isManager=["OWNER","MANAGER","PLATFORM"].includes(role);
- const menu=nav("營運工作台","dashboard",staffTab,"staff")+nav("營運分析","analytics",staffTab,"staff")+nav("預約管理","bookings",staffTab,"staff")+
+ const menu=nav("營運工作台","dashboard",staffTab,"staff")+nav("營運分析","analytics",staffTab,"staff")+nav("預約管理","bookings",staffTab,"staff")+nav("預約日曆","calendar",staffTab,"staff")+
  nav("叫號管理","queue",staffTab,"staff")+nav("菜單及服務設定","menu",staffTab,"staff")+nav("員工管理","members",staffTab,"staff")+nav("多分店管理","branches",staffTab,"staff")+nav("企業設定","settings",staffTab,"staff");
  let html='<div class="toolbar"><div class="small">管理範圍：<strong>'+esc(t.name)+'</strong>・'+esc(role)+'</div>'+
   '<div class="flex"><span class="small">按狀態管理，跨天未結案仍會保留</span>'+
@@ -1044,7 +1044,9 @@ function staffRender(){
       btn("重設歷史篩選","historical-reset","outline")+
       (isManager&&historicalBookingResult?btn("匯出完整搜尋結果 CSV","historical-export","secondary"):"")+
       '</div><p class="small">CSV 依目前搜尋條件從資料庫逐頁讀取，單次最多匯出 20,000 筆；超過限制須分日期區間下載，絕不默默截斷。</p>'+historyBookingResultHtml());
- }else if(staffTab==="queue"){
+ }else if(staffTab==="calendar"){
+   html+=bookingCalendarPanel();
+  }else if(staffTab==="queue"){
   
   const card=x=>'<article class="staff-record '+(x.deleted_at?'staff-deleted-record':'')+'"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.number)+'　'+esc(x.name)+'</div>'+
    '<div class="small">'+esc(x.day)+' ・ '+esc(x.source==="RESERVATION"?"預約報到":"現場取號")+
@@ -1609,6 +1611,7 @@ async function load(){err="";try{
  }catch(e){err=e.message||String(e)}render();
  if(view==="staff"&&staffTab==="bookings"&&historicalBookingResult&&historicalBookingTenant===slug)
    void searchHistoricalBookings(historicalBookingPage);
+ if(view==="staff"&&staffTab==="calendar"&&staff)void loadBookingCalendar(calendarPage);
  if(view==="customer"&&customerTab==="progress"&&lineLinkStatus==="linked"&&(progressTicketId||crossCurrentStore)){
    stopCrossQueueRealtime();
    void refreshQueueProgress();
@@ -1656,6 +1659,7 @@ document.addEventListener("click",async ev=>{
    staffTab=tab;
    if(["analytics","branches"].includes(tab)){void load();return;}
     if(tab==="bookings"){err="";flash="";render();void searchHistoricalBookings(1);return;}
+    if(tab==="calendar"){err="";flash="";render();void loadBookingCalendar(1);return;}
  }
  if(v==="platform")platformTab=tab;err="";flash="";render();return}
  if(b.dataset.slot){
@@ -1814,7 +1818,37 @@ document.addEventListener("click",async ev=>{
      return "菜單及服務規則已儲存：預約「"+menuModeLabel(value.booking)+"」，現場取號「"+menuModeLabel(value.queue)+"」";
    });return;
  }
- if(a==="historical-search"){
+ if(a==="calendar-mode"){
+   const mode=b.dataset.mode;
+   if(!["day","week","month"].includes(mode))return;
+   calendarMode=mode;calendarPage=1;void loadBookingCalendar(1);return;
+  }
+  if(a==="calendar-prev"||a==="calendar-next"){
+   calendarAnchor=calendarShiftAnchor(calendarMode,calendarAnchor,a==="calendar-prev"?-1:1);
+   calendarPage=1;void loadBookingCalendar(1);return;
+  }
+  if(a==="calendar-today"){
+   calendarAnchor=taipei();calendarPage=1;void loadBookingCalendar(1);return;
+  }
+  if(a==="calendar-day"){
+   const date=b.dataset.date;
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(date||""))return;
+   calendarAnchor=date;calendarMode="day";calendarPage=1;void loadBookingCalendar(1);return;
+  }
+  if(a==="calendar-jump"){
+   const date=val("calendar-jump-date");
+   try{calendarPeriod(calendarMode,date);}catch(e){showActionFeedback("請選擇正確日期。","error");return;}
+   calendarAnchor=date;calendarPage=1;void loadBookingCalendar(1);return;
+  }
+  if(a==="calendar-refresh"){void loadBookingCalendar(calendarPage);return;}
+  if(a==="calendar-page-prev"||a==="calendar-page-next"){
+   if(!calendarResult||calendarLoading)return;
+   const target=calendarPage+(a==="calendar-page-prev"?-1:1);
+   const last=Math.max(1,Math.ceil(Number(calendarResult.total||0)/100));
+   if(target<1||target>last)return;
+   void loadBookingCalendar(target);return;
+  }
+  if(a==="historical-search"){
     const search=val("historical-booking-search").trim();
     const from=val("historical-booking-from"),to=val("historical-booking-to");
     if(search.length>100){showActionFeedback("搜尋最多 100 字","error");return;}
@@ -2071,6 +2105,10 @@ document.addEventListener("change",async ev=>{
  }
  if(el.id==="staff-history-days"){staffHistoryDays=Number(el.value);await load();return;}
  if(el.id==="analytics-days"){analyticsDays=Number(el.value);await load();return;}
+ if(el.id==="calendar-status"){
+   if(!["ALL","CONFIRMED","CHECKED_IN","COMPLETED","CANCELLED","NO_SHOW"].includes(el.value))return;
+   calendarStatus=el.value;calendarPage=1;void loadBookingCalendar(1);return;
+ }
  if(el.id==="customer-day"){day=el.value;chosenSlot="";await load();return;}
  if(el.id==="customer-party"){syncBookingPartyInput(el.value);return;}
  if(el.id==="edit-book-date"){editDate=el.value;editTime="";await fetchBookingEditSlots();return;}
