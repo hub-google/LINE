@@ -250,7 +250,7 @@ async function clockPunch(kindValue){
  const member=$('punchMember')?.value||getSelected();if(!member)return banner('請先選擇員工',true);
  const key='wm-'+crypto.randomUUID();const payload={member_id:member,kind:kindValue,key};
  // Location is optional for demo unless a branch has gps_required; production validation lives in wm_clock.
- if(navigator.geolocation&&app.mode==='real'){
+ if(navigator.geolocation&&(app.mode==='real'||branch(person(member)?.branch_id)?.gps_required)){
   try{const pos=await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,timeout:5000,maximumAge:0}));payload.latitude=pos.coords.latitude;payload.longitude=pos.coords.longitude;payload.accuracy=pos.coords.accuracy;}
   catch{ /* Server will reject if the relevant branch requires GPS. */ }
  }
