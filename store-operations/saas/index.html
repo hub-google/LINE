@@ -483,6 +483,8 @@ let manageMode=["edit","cancel","view"].includes(incomingParam("mode"))?incoming
 let editingBookingId="",editDate="",editTime="",editParty=1,editSlots=null,editLoading=false;
 let progressTicketId=/^[0-9a-f-]{36}$/i.test(incomingParam("ticket")||"")?incomingParam("ticket"):"";
 let queueLive=null,queueLiveShop="",queueLiveLoading=false,queueLiveError="";
+// Ticket-scoped, verified LINE reminder preference; never localStorage or a mock.
+const queueNearAlertSettings=Object.create(null);
 let queueLastSuccessAt="",queueLastSuccessShop="";
 let queueRealtimeChannel=null,queueRealtimeTenant="";
 let customerActivity={tickets:[],reservations:[]},customerActivityError="";
@@ -1251,6 +1253,15 @@ async function refreshQueueProgress(){
   const data=await rpc("so_queue_live",{p_slug:shop,p_ticket_id:queueTicketToDisplay()});
   if(view!=="customer"||customerTab!=="progress"||slug!==shop)return;
   queueLive=data;queueLiveShop=shop;queueLiveError="";
+  const alertTicketId=data?.mine?.id||queueTicketToDisplay();
+  if(alertTicketId&&!Object.prototype.hasOwnProperty.call(queueNearAlertSettings,alertTicketId)){
+    try{
+      const pref=await rpc("so_customer_get_queue_near_alert",{p_ticket_id:alertTicketId});
+      queueNearAlertSettings[alertTicketId]=[0,3,5].includes(pref.threshold)?pref.threshold:null;
+    }catch(e){
+      queueNearAlertSettings[alertTicketId]=null;
+    }
+  }
   queueLastSuccessAt=new Date().toISOString();queueLastSuccessShop=shop;
   render();
   if(data?.tenant_id&&queueRealtimeTenant!==data.tenant_id){
@@ -1267,6 +1278,20 @@ async function refreshQueueProgress(){
     render();
   }
  }finally{queueLiveLoading=false;}
+}
+function queueNearAlertControls(ticket,status){
+ if(status!=="WAITING"||!ticket?.id)return "";
+ const found=Object.prototype.hasOwnProperty.call(queueNearAlertSettings,ticket.id);
+ if(!found)return '<p class="small">正在讀取 LINE 接近到號提醒設定…</p>';
+ const current=queueNearAlertSettings[ticket.id];
+ if(current===null)return '<p class="small">提醒設定暫時無法讀取，請重新整理進度。</p>';
+ const options=[[0,"關閉提醒（預設）"],[3,"前方剩 3 組提醒"],[5,"前方剩 5 組提醒"]];
+ return '<div class="staff-record" style="text-align:left;margin-top:12px;background:#f8fafc">'+
+  '<label for="queue-near-alert-threshold">LINE 接近到號提醒</label>'+
+  '<div class="flex"><select id="queue-near-alert-threshold" class="field" style="max-width:230px">'+
+  options.map(x=>'<option value="'+x[0]+'" '+(current===x[0]?'selected':'')+'>'+esc(x[1])+'</option>').join("")+
+  '</select>'+btn("儲存提醒設定","save-queue-near-alert","secondary",'data-id="'+esc(ticket.id)+'"')+'</div>'+
+  '<p class="small">每張號碼最多提醒一次；送達取決於是否加入店家 LINE OA 好友及 LINE 訊息額度。此功能不會持續推播每次叫號變化。</p></div>';
 }
 function queueProgressBoard(){
  const fresh=queueLiveShop===slug?queueLive:null;
@@ -1305,6 +1330,7 @@ function queueProgressBoard(){
         "已連線；進度在畫面開啟期間自動更新。")+
       " 最後成功更新："+(lastSync?esc(formatTaipeiCreated(lastSync)):"尚未成功同步")+
       "（台灣時間）。"+'</p>'+
+   queueNearAlertControls(own||fallbackTicket,ownStatus)+
    '<div class="staff-actionbar">'+btn("重新整理進度","queue-refresh","outline")+
       btn("查看我的紀錄","queue-records","secondary")+
       (ownStatus==="WAITING"&&own?.id?btn("保留候位","hold-my-number","secondary",'data-id="'+esc(own.id)+'"'):"")+
@@ -2165,7 +2191,25 @@ document.addEventListener("click",async ev=>{
    location.assign(route("customer",merchant,"mine")+"&manage=reservation&item="+encodeURIComponent(booking)+"&mode=view");
    return;
  }
- if(a==="queue-refresh"){void refreshQueueProgress();return;}
+ if(a==="save-queue-near-alert"){
+  if(!id||!Object.prototype.hasOwnProperty.call(queueNearAlertSettings,id))return;
+  const threshold=Number(val("queue-near-alert-threshold"));
+  if(![0,3,5].includes(threshold)){
+    showActionFeedback("提醒設定只能選擇關閉、前方 3 組或前方 5 組。","error");return;
+  }
+  await act(async()=>{
+    const result=await rpc("so_customer_set_queue_near_alert",{p_ticket_id:id,p_threshold:threshold});
+    queueNearAlertSettings[id]=result.threshold;
+    return threshold===0?"已關閉這張號碼的接近到號 LINE 提醒。":
+      "已設定前方剩 "+threshold+" 組時提醒；每張票最多提醒一次。";
+  });
+  void refreshQueueProgress();return;
+ }
+ if(a==="queue-refresh"){
+  const ticketId=queueLive?.mine?.id||queueTicketToDisplay();
+  if(ticketId)delete queueNearAlertSettings[ticketId];
+  void refreshQueueProgress();return;
+ }
  if(a==="queue-records"){customerTab="mine";stopQueueRealtime();render();return;}
  if(a==="line-check-friendship"){await act(async()=>{
   await connectLineSession(true);
