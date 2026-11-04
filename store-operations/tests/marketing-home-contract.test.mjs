@@ -1,0 +1,73 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {fileURLToPath} from "node:url";
+import path from "node:path";
+import {runInNewContext} from "node:vm";
+import {spawnSync} from "node:child_process";
+
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
+const read=(relative)=>readFileSync(path.join(root,relative),"utf8");
+const landing=read("saas/home.html");
+const app=read("saas/index.html");
+const build=read("../.github/scripts/build-line-saas.mjs");
+const publish=read("../.github/workflows/line-saas-pages.yml");
+const deployPr=read("../.github/workflows/line-saas-pr-validation.yml");
+
+test("independent homepage is versioned and included in non-destructive Pages deployment",()=>{
+ assert.match(landing,/<meta name="line-saas-build" content="__LINE_SAAS_BUILD__">/);
+ assert.match(landing,/version-watch\.js\?build=__LINE_SAAS_BUILD__/);
+ assert.match(build,/"home\.html"/);
+ assert.match(publish,/saas\/home\.html/);
+ assert.match(publish,/marketing-home-contract\.test\.mjs/);
+ assert.match(deployPr,/marketing-home-contract\.test\.mjs/);
+ assert.match(landing,/<meta name="viewport"/);
+ assert.match(landing,/@media\(max-width:620px\)/);
+ assert.match(landing,/prefers-reduced-motion/);
+});
+
+test("homepage routes to real customer and merchant workflows without altering identifiers",()=>{
+ const targets=[
+  "./merchant-register.html","./directory.html?mode=search",
+  "./directory.html?mode=queue","./?view=staff",
+  "./?view=platform","./?view=customer&merchant=greenfield-salon",
+  "./privacy.html","./terms.html"
+ ];
+ for(const href of targets) assert.ok(landing.includes('href="'+href+'"'),"Missing existing workflow link: "+href);
+ assert.match(landing,/預約報到不會自動/);
+ assert.match(landing,/已發送的 LINE 訊息是當時的資訊快照/);
+ assert.match(landing,/非 LINE 官方產品/);
+ assert.doesNotMatch(landing,/NT\$\s*0|NT\$\s*299|無限免費/);
+});
+
+test("bare /saas/ resolves to marketing home while all LIFF / merchant / staff routes remain untouched",()=>{
+ const m=app.match(/<!-- Keep every existing view\/merchant\/LIFF callback URL working; route only the bare storefront entry\. -->\s*<script>([\s\S]*?)<\/script>/);
+ assert.ok(m,"missing isolated safe entry route");
+ const syntax=spawnSync(process.execPath,["--check"],{input:m[1],encoding:"utf8"});
+ assert.equal(syntax.status,0,syntax.stderr);
+ function redirected(url){
+  const original=new URL(url);
+  let destination=null;
+  const location={
+   search:original.search,pathname:original.pathname,hash:original.hash,
+   href:original.href,
+   replace(next){destination=next;}
+  };
+  runInNewContext(m[1],{location,URL,URLSearchParams,Set});
+  return destination;
+ }
+ const base="https://hub-google.github.io/LINE/saas/";
+ assert.equal(redirected(base),base+"home.html");
+ assert.equal(redirected(base+"index.html"),base+"home.html");
+ assert.equal(redirected(base+"?utm_source=LINE"),base+"home.html?utm_source=LINE");
+ for(const suffix of [
+  "?view=customer&merchant=greenfield-salon",
+  "?view=staff&merchant=qa-test",
+  "?view=platform","?merchant=greenfield-salon",
+  "?tab=progress","?liff.state=abc&code=xyz",
+  "?code=test&state=test","?ticket=deadbeef",
+  "#state"
+ ]){
+  assert.equal(redirected(base+suffix),null,"unexpected redirect for "+suffix);
+ }
+});
