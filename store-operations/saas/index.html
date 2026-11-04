@@ -267,9 +267,11 @@ async function connectLineSession(force=false){
   lineLinkStatus="connecting";
   lineConnectError="";
   try {
-    // External browsers may resume a previously verified session without an
-    // interactive LINE prompt. In LINE's own in-app browser, silently verify
-    // the currently active LINE account before reusing that identity.
+    // External browsers resume immediately without waiting for an SDK download.
+    // The LINE in-app browser silently re-verifies the active user to avoid
+    // accepting a cached session from a different LINE account.
+    const likelyLineApp=/\bLine\/[0-9.]+/i.test(navigator.userAgent||"");
+    if(!force&&!likelyLineApp&&await resumeVerifiedLineSession())return;
     if(!window.liff){
       for(let attempt=0;attempt<40&&!window.liff;attempt++)await new Promise(resolve=>setTimeout(resolve,100));
     }
