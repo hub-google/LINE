@@ -810,7 +810,7 @@ function staffRender(){
    ''+'</article>';
   };
   html+=numberSettingsPanel("booking",t,isManager)+
-   box("搜尋與篩選預約",'<p class="small">此處僅篩選目前已載入的資料：跨日未結案預約，以及最近 '+staffHistoryDays+' 天已處理紀錄；完整歷史、後端分頁及日／週／月曆仍待開發。</p>'+
+   box("搜尋與篩選預約",'<p class="small">此處僅篩選目前已載入的資料：跨日未結案預約，以及最近 '+staffHistoryDays+' 天已處理紀錄；完整歷史請使用下方後端搜尋；日／週／月曆仍待開發。</p>'+
     '<div class="grid3"><div>'+field("搜尋預約編號、姓名或服務","staff-booking-search",staffBookingSearch,"search",'placeholder="輸入關鍵字"')+'</div>'+
     '<div><label for="staff-booking-date">預約日期</label><select id="staff-booking-date" class="field">'+
      [["all","全部日期"],["today","今天"],["tomorrow","明天"],["next7","未來 7 天"]].map(([id,label])=>'<option value="'+id+'" '+(staffBookingDateFilter===id?"selected":"")+'>'+label+'</option>').join("")+'</select></div>'+
