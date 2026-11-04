@@ -72,15 +72,15 @@
     const localTime=date=>new Intl.DateTimeFormat("zh-TW",{timeZone:"Asia/Taipei",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(date);
     const validSlug=/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug);
     let lastSuccess=null,loading=false,refreshQueued=false,subscription=null,subscribedTenant="",realtimeAvailable=false;
-    let lastData=null;
+    let lastData=null,staleFromFailure=false,disabled=false;
     function health(label,state){
       $("health").textContent=label;$("health").dataset.state=state;
     }
     function updateConnectionStatus(){
-      if(!validSlug)return;
+      if(!validSlug||disabled)return;
       if(!lastSuccess){health("正在取得最新叫號資料","loading");return;}
       const elapsed=Date.now()-lastSuccess.getTime();
-      if(!navigator.onLine||elapsed>45000){
+      if(staleFromFailure||!navigator.onLine||elapsed>45000){
         health("連線中斷｜畫面為上次成功同步資料","error");
         $("notice").textContent="最後成功同步："+localTime(lastSuccess)+"。請檢查網路，勿將此畫面視為即時叫號。";
         return;
@@ -129,6 +129,7 @@
         if(error)throw error;
         if(!data||!data.tenant)throw Error("找不到門市叫號資訊");
         if(data.tenant.modules?.calling===false||data.tenant.modules?.queue===false){
+          disabled=true;
           $("shop").textContent=String(data.tenant.name||slug);
           $("current").textContent="—";$("waiting").textContent="—";
           $("clock").textContent="—";
@@ -138,6 +139,8 @@
         }
         const count=Number(data.waiting);
         const now=new Date();
+        disabled=false;
+        staleFromFailure=false;
         lastData=data;
         lastSuccess=now;
         $("shop").textContent=String(data.tenant.name||slug);
@@ -148,7 +151,7 @@
         if(!subscription)void subscribeToSafeDisplay();
       }catch(error){
         if(lastData){
-          lastSuccess=new Date(0); // force visible stale state until a successful read
+          staleFromFailure=true; // retain the real last success time, but mark the snapshot stale
           updateConnectionStatus();
         }else{
           health("叫號資料暫時無法取得","error");
