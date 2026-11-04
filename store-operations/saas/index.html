@@ -170,31 +170,85 @@ function lineLoginUrl(){
     (manageKind&&manageItem?"&manage="+encodeURIComponent(manageKind)+"&item="+encodeURIComponent(manageItem)+"&mode="+encodeURIComponent(manageMode):"")+
     (customerTab==="progress"&&progressTicketId?"&ticket="+encodeURIComponent(progressTicketId):"");
 }
+// Never pass LINE's one-time authorization code, PKCE state, or cache-busting
+// parameters into a subsequent OAuth redirect.
+function cleanLineRedirectUri(){
+ const url=new URL(location.origin+location.pathname);
+ url.searchParams.set("view",view);
+ if(isSafeMerchant(slug))url.searchParams.set("merchant",slug);
+ if(view==="staff"&&recoveryMode)url.searchParams.set("recover","1");
+ if(view==="customer"){
+  if(customerTab)url.searchParams.set("tab",customerTab);
+  if(customerTab==="progress"&&progressTicketId)url.searchParams.set("ticket",progressTicketId);
+  if(manageKind&&manageItem){
+   url.searchParams.set("manage",manageKind);
+   url.searchParams.set("item",manageItem);
+   url.searchParams.set("mode",manageMode);
+  }
+ }
+ return url.href;
+}
+function acceptVerifiedLineIdentity(result){
+ if(!result?.linked||!result.displayName)throw Error("LINE 身分驗證未完成");
+ lineDisplayName=result.displayName;
+ lineLinkStatus="linked";
+ sessionStorage.removeItem(authRecoveryKey());
+ lineFriendStatus=result.isFollowing===true?true:result.isFollowing===false?false:null;
+ lineOaRecipient=["REACHABLE","NOT_REACHABLE","UNKNOWN"].includes(result.recipientReachability)?result.recipientReachability:"UNKNOWN";
+ lineFriendCheck=String(result.friendCheckStatus||"UNAVAILABLE");
+ lineOaAddFriendUrl=typeof result.oaAddFriendUrl==="string"&&
+  /^https:\/\/line\.me\/R\/ti\/p\/@[a-zA-Z0-9_.-]{2,100}$/.test(result.oaAddFriendUrl)?result.oaAddFriendUrl:"";
+ lineProviderMismatch=result.providerMismatchSuspected===true;
+}
+async function resumeVerifiedLineSession(){
+ if(view!=="customer"||!session?.access_token)return false;
+ try{
+  const res=await fetch(LINE_BRIDGE_URL,{
+   method:"POST",
+   headers:{"content-type":"application/json","authorization":"Bearer "+session.access_token},
+   body:JSON.stringify({action:"resume",slug})
+  });
+  if(!res.ok)return false;
+  const result=await res.json();
+  if(!result.linked||!result.displayName)return false;
+  acceptVerifiedLineIdentity(result);
+  // Stale LINE OAuth callback parameters must never be replayed.
+  refreshLiffRoute();
+  const clean=new URL(cleanLineRedirectUri());
+  if(location.pathname+location.search!==clean.pathname+clean.search)
+   history.replaceState(null,"",clean.pathname+clean.search+location.hash);
+  return true;
+ }catch(e){
+  console.warn("Existing LINE session could not be resumed; attempting LIFF");
+  return false;
+ }
+}
 function authRecoveryKey(){return "line-saas-reauth-v2:"+slug}
 function recoverLineLogin(manual=false){
-  const key=authRecoveryKey(),last=Number(sessionStorage.getItem(key)||0);
-  if(!manual&&last>0&&Date.now()-last<120000){
-    lineLinkStatus="failed";
-    lineConnectError="LINE 憑證重新驗證仍失敗，請按「重新登入 LINE」再次授權。";
-    return false;
-  }
-  sessionStorage.setItem(key,String(Date.now()));
-  lineLinkStatus="connecting";
-  lineConnectError="正在重新取得 LINE 登入憑證…";
-  // The LIFF browser logs in automatically on initialization. External
-  // browsers, including desktop Chrome, use LINE Login via liff.login().
-  if(window.liff?.isLoggedIn())window.liff.logout();
-  if(window.liff?.isInClient()){
-    location.replace(lineLoginUrl());
-  }else{
-    const redirectUri=location.origin+location.pathname+
-      (view==="staff"&&recoveryMode?
-        "?view=staff&merchant="+encodeURIComponent(ORIGINAL_QA_STORE)+"&recover=1":
-        "?view=customer&merchant="+encodeURIComponent(slug)+(customerTab?"&tab="+encodeURIComponent(customerTab):"")+
-        (customerTab==="progress"&&progressTicketId?"&ticket="+encodeURIComponent(progressTicketId):""));
-    window.liff.login({redirectUri});
-  }
+ const key=authRecoveryKey(),last=Number(sessionStorage.getItem(key)||0);
+ if(!manual&&last>0&&Date.now()-last<120000){
+  lineLinkStatus="failed";
+  lineConnectError="LINE 登入驗證未完成，請按「重新登入 LINE」再試一次。";
+  return false;
+ }
+ sessionStorage.setItem(key,String(Date.now()));
+ lineLinkStatus="connecting";
+ lineConnectError="資料更新中，請稍後";
+ let inClient=false;
+ try{inClient=window.liff?.isInClient?.()===true}catch(e){}
+ if(inClient||!window.liff){
+  location.replace(lineLoginUrl());
   return true;
+ }
+ try{
+  // Only explicitly restart LINE auth when a fresh session cannot be
+  // recovered. Do not sign out returning customers on each page load.
+  if(window.liff.isLoggedIn?.())window.liff.logout();
+  window.liff.login({redirectUri:cleanLineRedirectUri()});
+ }catch(e){
+  location.replace(lineLoginUrl());
+ }
+ return true;
 }
 async function connectLineSession(force=false){
   if(!(view==="customer"||(view==="staff"&&recoveryMode))||!session?.access_token)return;
@@ -202,20 +256,23 @@ async function connectLineSession(force=false){
   if(lineLinkAttempted)return;
   const config=await bridgeConfig();
   if(!config.liffId){lineLinkStatus="not-ready";lineConnectError="尚未設定 LINE LIFF，請通知店家。";return;}
-  if(!window.liff){
-    for(let attempt=0;attempt<40&&!window.liff;attempt++)await new Promise(resolve=>setTimeout(resolve,100));
-  }
-  if(!window.liff){lineLinkStatus="sdk-missing";lineConnectError="LINE 登入元件未能載入。";return;}
   lineLinkAttempted=true;
   lineLinkStatus="connecting";
   lineConnectError="";
   try {
+    // A previously verified Supabase browser session does not need LINE
+    // OAuth again on each visit, even after the short-lived LIFF token expires.
+    if(!force&&await resumeVerifiedLineSession())return;
+    if(!window.liff){
+      for(let attempt=0;attempt<40&&!window.liff;attempt++)await new Promise(resolve=>setTimeout(resolve,100));
+    }
+    if(!window.liff)throw Error("LINE 登入元件未能載入。");
     await window.liff.init({liffId:config.liffId});
     // Resolve final merchant after LIFF init completes its secondary redirect.
     refreshLiffRoute();
     if(!window.liff.isLoggedIn()){
       lineLinkStatus="not-logged-in";
-      if(!window.liff.isInClient())window.liff.login({redirectUri:location.origin+location.pathname+location.search});
+      if(!window.liff.isInClient())window.liff.login({redirectUri:cleanLineRedirectUri()});
       return;
     }
     const idToken=window.liff.getIDToken()||"";
@@ -254,19 +311,16 @@ async function connectLineSession(force=false){
       };
       throw Error(reasons[result.error]||result.error||"LINE 身分驗證失敗");
     }
-    if(!result.displayName)throw Error("LINE 未提供使用者名稱，請開啟 LIFF 的 profile 權限。");
-    lineDisplayName=result.displayName;
-    lineLinkStatus="linked";
-    sessionStorage.removeItem(authRecoveryKey());
-    lineFriendStatus=result.isFollowing===true?true:result.isFollowing===false?false:null;
-    lineOaRecipient=["REACHABLE","NOT_REACHABLE","UNKNOWN"].includes(result.recipientReachability)?result.recipientReachability:"UNKNOWN";
-    lineFriendCheck=String(result.friendCheckStatus||"UNAVAILABLE");
-    lineOaAddFriendUrl=typeof result.oaAddFriendUrl==="string"&&
-      /^https:\/\/line\.me\/R\/ti\/p\/@[a-zA-Z0-9_.-]{2,100}$/.test(result.oaAddFriendUrl)?result.oaAddFriendUrl:"";
-    lineProviderMismatch=result.providerMismatchSuspected===true;
+    acceptVerifiedLineIdentity(result);
   }catch(e){
+    const message=e instanceof Error?e.message:String(e);
+    // Stale PKCE verifier/state from a previous callback is recoverable.
+    // Restart once from a clean LIFF URL; never loop indefinitely.
+    if(!force&&/code_verifier|pkce|invalid.*state|state.*mismatch/i.test(message)
+       &&recoverLineLogin(false))return;
     lineLinkStatus="failed";
-    lineConnectError=e instanceof Error?e.message:String(e);
+    lineConnectError=/code_verifier|pkce/i.test(message)?
+      "LINE 登入驗證已失效，請重新登入 LINE。":message;
     console.warn("LINE 身分連接失敗",lineConnectError);
   }
 }
@@ -1267,9 +1321,7 @@ document.addEventListener("click",async ev=>{
    await act(async()=>{
      const cfg=await bridgeConfig();
      if(!cfg.liffId)throw Error("LINE LIFF 尚未配置");
-     if(!window.liff)throw Error("LINE 登入元件未載入，請重新整理網站");
-     await window.liff.init({liffId:cfg.liffId});
-     refreshLiffRoute();
+     // A failed OAuth callback must not be processed twice.
      recoverLineLogin(true);
      return "正在開啟 LINE 登入…";
    });return;
