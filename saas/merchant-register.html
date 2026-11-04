@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="72130803b63568ed775037fd8cf6d77a494bb790">
-<script defer src="./version-watch.js?build=72130803b63568ed775037fd8cf6d77a494bb790"></script>
+<meta name="line-saas-build" content="b51a843764e44ee5d368ccd57cf137361e2e6ba0">
+<script defer src="./version-watch.js?build=b51a843764e44ee5d368ccd57cf137361e2e6ba0"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>商家開通申請｜LINE 預約系統</title><meta name="description" content="沒有自己的 LINE OA，也可以申請使用總公司 LINE 預約服務。">
 <style>
@@ -153,4 +153,4 @@ document.addEventListener("click",ev=>{
  act(async()=>{const v=await rpc(qaVerified?"so_test_review_merchant_request":"so_review_merchant_request",{p_id:b.dataset.review,p_approve:approving});return (qaVerified?"QA 測試｜":"")+"已處理："+status(v.status)});
 });
 refresh().catch(err=>message(err.message||String(err),true));
-</script><footer style="text-align:center;margin:24px auto;padding:15px"><a href="privacy.html">隱私權說明</a> ・ <a href="terms.html">使用條款</a></footer></body></html>
+</script><footer style="text-align:center;margin:24px auto;padding:15px"><a href="privacy.html">隱私權說明</a> ・ <a href="terms.html">使用條款</a></footer><footer style="text-align:center;padding:14px;font-size:13px"><a href="privacy.html">隱私權說明</a> ・ <a href="terms.html">使用條款</a></footer></body></html>
