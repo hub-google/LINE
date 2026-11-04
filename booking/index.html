@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="ae80fd2259a2e4dd88df1713c9841d5c367353a1">
+<meta name="line-saas-build" content="7041124740776419da4312d0bab8624e8dede691">
 <meta name="theme-color" content="#173e34">
 <link rel="manifest" href="./manifest.webmanifest">
 <script>
@@ -32,7 +32,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   }
 })();
 </script>
-<script defer src="./version-watch.js?build=ae80fd2259a2e4dd88df1713c9841d5c367353a1"></script>
+<script defer src="./version-watch.js?build=7041124740776419da4312d0bab8624e8dede691"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 門市營運｜企業開通、員工後台與顧客預約</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -164,7 +164,7 @@ body{overflow-x:hidden}
 .cross-record .staff-actionbar{margin-top:9px}
 @media(max-width:540px){.cross-ticket{padding:13px 11px}.cross-ticket-stats{gap:6px}.cross-ticket-stat{padding:9px 4px}.cross-ticket-stat strong{font-size:clamp(20px,6vw,30px)}}
 </style>
-<link rel="stylesheet" href="./booking-theme.css?build=ae80fd2259a2e4dd88df1713c9841d5c367353a1">
+<link rel="stylesheet" href="./booking-theme.css?build=7041124740776419da4312d0bab8624e8dede691">
 </head>
 <body>
 <header><div class="top">
@@ -501,8 +501,8 @@ function lineIndicator(tenant){
 }
 function taipei(){return new Intl.DateTimeFormat("sv-SE",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date())}
 function esc(x){return String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function jsStatus(s){return ({CONFIRMED:"已預約",CHECKED_IN:"已報到",COMPLETED:"已完成",CANCELLED:"已取消",NO_SHOW:"未到",WAITING:"等候中",CALLED:"已叫號",SERVING:"服務中",PASSED:"已過號",ACTIVE:"啟用中",SUSPENDED:"已停用"})[s]||s}
-function tag(s){return '<span class="tag '+(["ACTIVE","COMPLETED","CONFIRMED","CONNECTED"].includes(s)?"ok":(["SUSPENDED","PASSED","CANCELLED"].includes(s)?"warn":""))+'">'+esc(jsStatus(s))+'</span>'}
+function jsStatus(s){return ({CONFIRMED:"已預約",CHECKED_IN:"已報到",COMPLETED:"已完成",CANCELLED:"已取消",NO_SHOW:"未到",WAITING:"等候中",CALLED:"已叫號",SERVING:"服務中",HOLD:"保留候位",PASSED:"已過號",ACTIVE:"啟用中",SUSPENDED:"已停用"})[s]||s}
+function tag(s){return '<span class="tag '+(["ACTIVE","COMPLETED","CONFIRMED","CONNECTED"].includes(s)?"ok":(["SUSPENDED","PASSED","CANCELLED","HOLD"].includes(s)?"warn":""))+'">'+esc(jsStatus(s))+'</span>'}
 function btn(label,action,style="",extra=""){return '<button class="btn '+style+'" data-act="'+action+'" '+extra+'>'+label+'</button>'}
 function stat(label,n){return '<div class="stat"><span>'+esc(label)+'</span><strong>'+esc(n)+'</strong></div>'}
 function field(label,id,val="",type="text",attrs=""){return '<label for="'+id+'">'+esc(label)+'</label><input class="field" id="'+id+'" type="'+type+'" '+attrs+' value="'+esc(val)+'">'}
@@ -550,7 +550,7 @@ let lastStaffChange=null;
 function staffStatusPicker(kind,item,editable){
  const choices=kind==="reservation"?
   [["CONFIRMED","已預約"],["CHECKED_IN","已報到"],["COMPLETED","已完成"],["NO_SHOW","未到"],["CANCELLED","已取消"]]:
-  [["WAITING","候位中"],["CALLED","已叫號"],["SERVING","服務中"],["COMPLETED","已完成"],["PASSED","已過號"],["CANCELLED","已取消"]];
+  [["WAITING","候位中"],["HOLD","保留中"],["CALLED","已叫號"],["SERVING","服務中"],["COMPLETED","已完成"],["PASSED","已過號"],["CANCELLED","已取消"]];
  const label=kind==="reservation"?"預約":"號碼牌";
  return '<fieldset class="staff-picker"><legend>點選狀態即儲存（可重新選擇修正）</legend>'+
   choices.map(([value,title])=>'<label class="staff-choice"><input type="radio" name="'+kind+'-'+esc(item.id)+'" data-status-kind="'+kind+'" data-id="'+esc(item.id)+'" data-previous="'+esc(item.status)+'" value="'+value+'" '+(value===item.status?'checked ':'')+((Array.isArray(editable)?editable.includes(value):editable)?'':'disabled ')+'><span>'+title+'</span></label>').join("")+
@@ -952,7 +952,7 @@ function staffRender(){
     (context?.invitations||[]).map(i=>'<div class="listline"><div>'+esc(i.tenant)+'－'+esc(i.role)+'</div>'+btn("接受邀請","accept-invite","primary",'data-id="'+esc(i.id)+'"')+'</div>').join("")); }
  const t=staff.tenant,openBookings=staff.pending_reservations||[],doneBookings=staff.processed_reservations||[],openTickets=staff.active_tickets||[],doneTickets=staff.processed_tickets||[],deletedBookings=staff.deleted_reservations||[],deletedTickets=staff.deleted_tickets||[];
  const r=openBookings.concat(doneBookings),q=openTickets.concat(doneTickets);
- const active=openTickets.find(x=>["CALLED","SERVING"].includes(x.status)),waiting=openTickets.filter(x=>x.status==="WAITING"),passed=openTickets.filter(x=>x.status==="PASSED");
+ const active=openTickets.find(x=>["CALLED","SERVING"].includes(x.status)),waiting=openTickets.filter(x=>x.status==="WAITING"),passed=openTickets.filter(x=>x.status==="PASSED"),held=openTickets.filter(x=>x.status==="HOLD");
  const pendingBookings=openBookings.filter(x=>x.status==="CONFIRMED"), finishedBookings=doneBookings.filter(x=>x.status==="COMPLETED");
  const role=staff.role,isManager=["OWNER","MANAGER","PLATFORM"].includes(role);
  const menu=nav("營運工作台","dashboard",staffTab,"staff")+nav("營運分析","analytics",staffTab,"staff")+nav("預約管理","bookings",staffTab,"staff")+nav("預約日曆","calendar",staffTab,"staff")+
@@ -1064,7 +1064,7 @@ function staffRender(){
    selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+(x.deleted_at?'<p class="staff-help">此號碼已從顧客端隱藏；取消勾選刪除即可恢復。</p>':staffStatusPicker("ticket",x,true))+
    staffDeletePicker("ticket",x)+'</article>';
   html+=numberSettingsPanel("queue",t,isManager)+'<div class="grid4" style="margin-bottom:16px">'+stat("正在叫號",active?.number||"—")+stat("候位中",waiting.length)+
-   stat("已過號",passed.length)+stat("已結束",doneTickets.length)+'</div>'+
+   stat("已過號",passed.length)+stat("保留中",held.length)+stat("已結束",doneTickets.length)+'</div>'+
    box("叫號操作",'<p class="muted">仍在候位的跨日號碼會繼續排隊。號碼狀態可直接勾選與更正。</p>'+
     '<div class="staff-actionbar">'+btn("叫下一位","call","primary",(!waiting.length||!!active||!t.modules.calling?"disabled":""))+
     btn("再叫一次","recall","outline",(!active||active.status!=="CALLED"?"disabled":"")+' data-id="'+esc(active?.id||"")+'"')+
@@ -1129,7 +1129,14 @@ function staffRender(){
   html+=box("企業基本設定",!isManager?'<p class="muted">只有管理者可以修改設定。</p>':
    '<div class="grid"><div>'+field("企業名稱","set-name",t.name)+field("電話","set-phone",t.phone)+field("地址","set-address",t.address)+field("品牌色（#RRGGBB）","set-accent",t.accent)+'</div><div>'+field("網站簡介","set-description",t.description)+field("LOGO 圖片網址","set-logo",t.logo_url)+field("開始營業","set-open",t.open_time,"time")+field("結束營業","set-close",t.close_time,"time")+'</div></div>'+
    '<div class="grid"><div>'+field("每個時段可預約人數","set-capacity",t.slot_capacity,"number",'min="1" max="100"')+'</div><div><label>預約時段間隔</label><select class="field" id="set-minutes"><option value="15" '+(t.slot_minutes===15?"selected":"")+'>15 分鐘</option><option value="30" '+(t.slot_minutes===30?"selected":"")+'>30 分鐘</option><option value="60" '+(t.slot_minutes===60?"selected":"")+'>60 分鐘</option></select></div></div><div style="margin-top:15px">'+btn("儲存企業設定","update-settings","primary")+'</div>')+
-  (isManager?box("預約營業日與休息設定",
+  (isManager?box("候位保留規則",
+     '<p class="small">保留期間不會叫號；到期後下一次叫號時自動恢復。可設定回原順位或隊尾，原票券號碼不變。</p>'+
+     '<div class="grid3"><div>'+field("每次保留分鐘數","hold-minutes",staff.queue_hold_policy?.hold_minutes??20,"number",'min="1" max="120"')+
+     '</div><div>'+field("最多保留次數","hold-limit",staff.queue_hold_policy?.max_holds??2,"number",'min="0" max="10"')+
+     '</div><div><label for="hold-return-mode">恢復後順位</label><select id="hold-return-mode" class="field">'+
+     [["END","返回隊尾"],["ORIGINAL","返回原順位"]].map(([v,name])=>'<option value="'+v+'" '+((staff.queue_hold_policy?.return_mode||"END")===v?"selected":"")+'>'+name+'</option>').join("")+
+     '</select></div></div><div class="staff-actionbar">'+btn("儲存候位保留規則","save-hold-policy","primary")+'</div>'):"")+
+   (isManager?box("預約營業日與休息設定",
       '<p class="small">選擇每週固定公休日；特殊日期用西元日期，例如 2026-11-15,2026-11-22。既有預約不會被自動取消。</p>'+
       '<label>每週固定公休日</label><div class="grid">'+weekdayChecks+'</div>'+
       field("特殊休假日期（逗號分隔）","policy-closed-dates",(policy.closed_dates||[]).join(","))+
@@ -1224,7 +1231,7 @@ function stopQueueRealtime(){
 function queueTicketToDisplay(){
  const all=customer?.my_tickets||[];
  return progressTicketId||
-   all.find(x=>["WAITING","CALLED","SERVING"].includes(x.status))?.id||
+   all.find(x=>["WAITING","HOLD","CALLED","SERVING"].includes(x.status))?.id||
    all.find(x=>x.status==="PASSED")?.id||null;
 }
 async function refreshQueueProgress(){
@@ -1258,7 +1265,7 @@ function queueProgressBoard(){
  const notLive=!!queueLiveError||navigator.onLine===false;
  const own=fresh?.mine||null;
  const fallbackTicket=(customer?.my_tickets||[]).find(x=>x.id===progressTicketId)||
-   (customer?.my_tickets||[]).find(x=>["WAITING","CALLED","SERVING"].includes(x.status));
+   (customer?.my_tickets||[]).find(x=>["WAITING","HOLD","CALLED","SERVING"].includes(x.status));
  const ownNumber=own?.number||fallbackTicket?.number||"—";
  const ownStatus=own?.status||fallbackTicket?.status||"";
  const ownParty=own?.party||fallbackTicket?.party||1;
@@ -1268,6 +1275,7 @@ function queueProgressBoard(){
  else if(ownStatus==="COMPLETED")note="您的服務已完成。";
  else if(ownStatus==="CANCELLED")note="這張號碼已取消，不再參與候位。";
  else if(ownStatus==="PASSED")note="您的號碼已過號，如需協助請洽門市。";
+  else if(ownStatus==="HOLD")note="您的候位已暫時保留，不會在保留期間被叫號；恢復後會依門市規則重新排序。";
  return '<div class="queue-board" aria-live="polite">'+
    '<div class="queue-board-lead">現在叫到</div>'+ 
     '<p class="small">我的候位人數：'+esc(ownParty)+' 人／組</p>'+
@@ -1288,7 +1296,9 @@ function queueProgressBoard(){
       "（台灣時間）。"+'</p>'+
    '<div class="staff-actionbar">'+btn("重新整理進度","queue-refresh","outline")+
       btn("查看我的紀錄","queue-records","secondary")+
-      (ownStatus==="WAITING"&&own?.id?btn("取消排隊","cancel-my-number","outline",'data-id="'+esc(own.id)+'"'):"")+
+      (ownStatus==="WAITING"&&own?.id?btn("保留候位","hold-my-number","secondary",'data-id="'+esc(own.id)+'"'):"")+
+      (ownStatus==="HOLD"&&own?.id?btn("恢復候位","resume-my-number","primary",'data-id="'+esc(own.id)+'"'):"")+
+      (["WAITING","HOLD"].includes(ownStatus)&&own?.id?btn("取消排隊","cancel-my-number","outline",'data-id="'+esc(own.id)+'"'):"")+
    '</div></div>';
 }
 
@@ -1303,7 +1313,7 @@ function syncCrossQueueRealtime(){
    stopCrossQueueRealtime();return;
  }
  const ids=[...new Set((customerActivity?.tickets||[])
-   .filter(x=>["WAITING","CALLED","SERVING"].includes(x.status))
+   .filter(x=>["WAITING","HOLD","CALLED","SERVING"].includes(x.status))
    .map(x=>x.tenant_id).filter(x=>/^[0-9a-f-]{36}$/i.test(x||"")))].sort().slice(0,20);
  const nextKey=ids.join(",");
  if(nextKey===crossRealtimeKey)return;
@@ -1338,8 +1348,8 @@ function crossTicketCards(){
  const all=customerActivity?.tickets||[];
  const lastCrossSync=crossLastSuccessShop===slug?crossLastSuccessAt:"";
  const crossStale=!!customerActivityError||navigator.onLine===false;
- const active=all.filter(x=>["WAITING","CALLED","SERVING"].includes(x.status));
- const history=all.filter(x=>!["WAITING","CALLED","SERVING"].includes(x.status));
+ const active=all.filter(x=>["WAITING","HOLD","CALLED","SERVING"].includes(x.status));
+ const history=all.filter(x=>!["WAITING","HOLD","CALLED","SERVING"].includes(x.status));
  const shown=crossFilter==="active"?active:crossFilter==="history"?history:all;
  const tabs=[["active","進行中",active.length],["history","已完成／過號",history.length],["all","全部紀錄",all.length]];
  return '<p class="muted">同一個 LINE 帳號在不同門市取得的號碼，統一顯示於此。各門市叫號進度互不影響。</p>'+
@@ -1349,7 +1359,7 @@ function crossTicketCards(){
    tabs.map(x=>'<button type="button" data-act="cross-filter" data-filter="'+x[0]+'" class="'+(crossFilter===x[0]?'active':'')+'">'+x[1]+'（'+x[2]+'）</button>').join("")+'</div>'+
    (customerActivityError?'<p class="alert">'+esc(customerActivityError)+'</p>':"")+
    (shown.length?shown.slice(0,crossPageSize).map(x=>{
-     const live=["WAITING","CALLED","SERVING"].includes(x.status);
+     const live=["WAITING","HOLD","CALLED","SERVING"].includes(x.status);
      const ahead=x.ahead===null||x.ahead===undefined?"—":x.ahead+" 組";
      return '<article class="cross-ticket">'+
        '<div class="cross-ticket-head"><strong>'+esc(x.shop_name)+'</strong>'+tag(x.status)+'</div>'+
@@ -1418,7 +1428,7 @@ function syncBookingPartyInput(raw){
 function customerRender(){
   if(lineLinkStatus!=="linked")return box("LINE 身分授權",'<p class="muted">使用 LINE 帳號登入後即可預約與取號，不需另填姓名或帳密。</p><p class="small">目前指定門市：<strong>'+esc(slug)+'</strong></p>'+lineStatusBadge());
   if(!customer)return box("正在讀取顧客網站",'<p class="muted">正在確認企業設定與登入狀態...</p>');
-  const t=customer.tenant,m=t.modules||{},items=customer.my_reservations||[],tickets=customer.my_tickets||[],live=tickets.find(x=>["WAITING","CALLED","SERVING"].includes(x.status));
+  const t=customer.tenant,m=t.modules||{},items=customer.my_reservations||[],tickets=customer.my_tickets||[],live=tickets.find(x=>["WAITING","HOLD","CALLED","SERVING"].includes(x.status));
   const catalogue=customer.menu_items||[];
  document.documentElement.style.setProperty("--primary",/^#[a-fA-F0-9]{6}$/.test(t.accent)?t.accent:"#147e68");
  const menu=nav("首頁","home",customerTab,"customer")+(m.reservation?nav("線上預約","reserve",customerTab,"customer"):"")+(m.queue?nav("現場取號","queue",customerTab,"customer"):"")+nav("我的取號","progress",customerTab,"customer")+nav("我的紀錄","mine",customerTab,"customer");
@@ -1557,7 +1567,8 @@ function renderMyTickets(tickets){
     '<div class="small">取號時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
     (x.reference_code?'<div class="small">查核參考碼：'+esc(x.reference_code)+'</div>':"")+
     selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+
-    (x.status==="WAITING"?(focused&&manageMode==="cancel"?'<p class="staff-help">確認不再候位後，點下方取消按鈕。</p>':'')+
+    (["WAITING","HOLD"].includes(x.status)?(focused&&manageMode==="cancel"?'<p class="staff-help">確認不再候位後，點下方取消按鈕。</p>':'')+
+      btn(x.status==="HOLD"?"恢復候位":"保留候位",x.status==="HOLD"?"resume-my-number":"hold-my-number","secondary",'data-id="'+esc(x.id)+'"')+
       btn(focused&&manageMode==="cancel"?"確認取消排隊":"取消排隊","cancel-my-number","outline",'data-id="'+esc(x.id)+'"'):"")+'</article>';
  }).join("");
 }
@@ -2008,7 +2019,15 @@ document.addEventListener("click",async ev=>{
    document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
    return;
  }
- if(a==="save-booking-policy"){
+ if(a==="save-hold-policy"){
+   await act(async()=>{
+     const minutes=Number(val("hold-minutes")),max=Number(val("hold-limit")),mode=val("hold-return-mode");
+     if(!Number.isInteger(minutes)||minutes<1||minutes>120||!Number.isInteger(max)||max<0||max>10||!["END","ORIGINAL"].includes(mode))throw Error("請設定有效的保留時間、次數與恢復順位");
+     await rpc("so_set_queue_hold_policy",{p_slug:slug,p_hold_minutes:minutes,p_max_holds:max,p_return_mode:mode});
+     return "候位保留規則已儲存";
+   });return;
+  }
+  if(a==="save-booking-policy"){
    await act(async()=>{
      const dates=val("policy-closed-dates").split(/[,，;；\s]+/).filter(Boolean);
      if(dates.some(x=>!/^\d{4}-\d{2}-\d{2}$/.test(x)))throw Error("請使用 YYYY-MM-DD 格式填寫特殊休假日期");
@@ -2143,7 +2162,16 @@ document.addEventListener("click",async ev=>{
      return "正在開啟 LINE 登入…";
    });return;
   }
- if(a==="cancel-my-number"){
+ if(a==="hold-my-number"||a==="resume-my-number"){
+   const resume=a==="resume-my-number";
+   if(!id||!confirm(resume?"確定恢復候位？順位會依門市設定重新計算。":"確定保留候位？保留期間不會被叫號，且恢復可能返回隊尾。"))return;
+   await act(async()=>{
+     await rpc("so_customer_hold_ticket",{p_ticket_id:id,p_resume:resume});
+     return resume?"已恢復候位；最新前方組數請以即時進度為準。":"號碼已保留，請在期限內恢復候位。";
+   });
+   queueLive=null;queueLiveShop="";void refreshQueueProgress();return;
+  }
+  if(a==="cancel-my-number"){
   if(!confirm("確定取消排隊號碼嗎？"))return;
   await act(async()=>{
     const ticket=(customer?.my_tickets||[]).find(x=>x.id===id);
