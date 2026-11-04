@@ -166,9 +166,13 @@ async function oaAddFriendUrl(overrideToken?: string): Promise<string | null> {
   } catch { return null; }
 }
 
-type ShopInfo = { id: string; slug: string; name: string; address?: string | null; phone?: string | null };
+type ShopInfo = { id: string; slug: string; name: string; address?: string | null; phone?: string | null; liffId?: string | null };
+async function shopLinkContext(db: ReturnType<typeof service>, shop: ShopInfo): Promise<ShopInfo> {
+  const own = await merchantLineConfig(db, shop.id);
+  return own ? { ...shop, liffId: own.liffId } : shop;
+}
 function liffManageLink(shop: ShopInfo, kind: "reservation" | "ticket", refId: string, mode: string): string | null {
-  const id = Deno.env.get("LINE_LIFF_ID") || "";
+  const id = shop.liffId || Deno.env.get("LINE_LIFF_ID") || "";
   if (!/^\d{8,}-[A-Za-z0-9]+$/.test(id)) return null;
   const query = new URLSearchParams({
     view: "customer", merchant: shop.slug, tab: "mine",
@@ -177,7 +181,7 @@ function liffManageLink(shop: ShopInfo, kind: "reservation" | "ticket", refId: s
   return "https://liff.line.me/" + id + "/?" + query.toString();
 }
 function liffQueueProgressLink(shop: ShopInfo, ticketId: string): string | null {
-  const id=Deno.env.get("LINE_LIFF_ID") || "";
+  const id=shop.liffId || Deno.env.get("LINE_LIFF_ID") || "";
   if (!/^\d{8,}-[A-Za-z0-9]+$/.test(id)) return null;
   const query=new URLSearchParams({
     view:"customer",merchant:shop.slug,tab:"progress",ticket:ticketId,
@@ -280,18 +284,18 @@ async function ticketProgressNotice(
     ...shopDetails(tenant),
     "叫號進度可能變動，請以最新資訊為準。",
   ], [
-    { label: "查看即時叫號網頁", uri: liffQueueProgressLink(tenant, ticket.id) },
+    { label: "查看即時叫號網頁", uri: liffQueueProgressLink(await shopLinkContext(db, tenant), ticket.id) },
     { label: "叫號進度", postback: "queue_progress:" + ticket.id },
     ...(ticket.status === "WAITING"
-      ? [{ label: "取消排隊", uri: liffManageLink(tenant, "ticket", ticket.id, "cancel") }]
+      ? [{ label: "取消排隊", uri: liffManageLink(await shopLinkContext(db, tenant), "ticket", ticket.id, "cancel") }]
       : []),
   ]);
 }
 
 // Both a new booking and a restored booking use this one, maintained LINE card.
-function reservationConfirmationNotice(tenant: ShopInfo, booking: {
+async function reservationConfirmationNotice(db: ReturnType<typeof service>, tenant: ShopInfo, booking: {
   id: string; booking_date: string; booking_time: string; party_size: number; selected_items: unknown;
-}): Record<string, unknown> {
+}): Promise<Record<string, unknown>> {
   return flexNotice("預約已成立", [
     "店家：" + tenant.name,
     "日期：" + String(booking.booking_date),
@@ -301,8 +305,8 @@ function reservationConfirmationNotice(tenant: ShopInfo, booking: {
     ...shopDetails(tenant),
     "如需調整，可使用下方按鈕。",
   ], [
-    { label: "編輯預約", uri: liffManageLink(tenant, "reservation", booking.id, "edit") },
-    { label: "取消預約", uri: liffManageLink(tenant, "reservation", booking.id, "cancel") },
+    { label: "編輯預約", uri: liffManageLink(await shopLinkContext(db, tenant), "reservation", booking.id, "edit") },
+    { label: "取消預約", uri: liffManageLink(await shopLinkContext(db, tenant), "reservation", booking.id, "cancel") },
   ]);
 }
 
@@ -419,7 +423,7 @@ async function dispatchOutboxItem(
           "取消號碼：" + ticketNumber(ticket),
           "此號碼已不在候位名單中。",
           ...shopDetails(tenant),
-        ], [{ label: "查看我的紀錄", uri: liffManageLink(tenant, "ticket", ticket.id, "view") }]), origin);
+        ], [{ label: "查看我的紀錄", uri: liffManageLink(await shopLinkContext(db, tenant), "ticket", ticket.id, "view") }]), origin);
     }
   } else {
     const field = job.event_kind === "RESERVED" ? "id"
@@ -439,20 +443,20 @@ async function dispatchOutboxItem(
           "時間：" + String(booking.booking_time).slice(0, 5),
           "人數：" + booking.party_size + " 位",
           ...selectedServicesText(booking.selected_items), ...shopDetails(tenant),
-        ], [{ label: "查看我的紀錄", uri: liffManageLink(tenant, "reservation", booking.id, "view") }]), origin);
+        ], [{ label: "查看我的紀錄", uri: liffManageLink(await shopLinkContext(db, tenant), "reservation", booking.id, "view") }]), origin);
     } else {
       if (booking.status !== "CONFIRMED") return { status: "SKIPPED", reason: "BOOKING_NOT_CONFIRMED" };
       const isNew = job.event_kind === "RESERVED" || job.event_kind === "RESERVATION_RESTORED";
       result = await pushNotice(db, tenant, booking.user_id, job.event_kind, job.reference_id,
-        isNew ? reservationConfirmationNotice(tenant, booking)
+        isNew ? await reservationConfirmationNotice(db, tenant, booking)
           : flexNotice("預約已更新", [
               "店家：" + tenant.name, "日期：" + booking.booking_date,
               "時間：" + String(booking.booking_time).slice(0, 5),
               "人數：" + booking.party_size + " 位",
               ...selectedServicesText(booking.selected_items), ...shopDetails(tenant),
             ], [
-              { label: "編輯預約", uri: liffManageLink(tenant, "reservation", booking.id, "edit") },
-              { label: "取消預約", uri: liffManageLink(tenant, "reservation", booking.id, "cancel") },
+              { label: "編輯預約", uri: liffManageLink(await shopLinkContext(db, tenant), "reservation", booking.id, "edit") },
+              { label: "取消預約", uri: liffManageLink(await shopLinkContext(db, tenant), "reservation", booking.id, "cancel") },
             ]), origin);
     }
   }
@@ -878,7 +882,7 @@ Deno.serve(async (req: Request) => {
       return pushNotice(db, tenant, booking.user_id,
         restored ? "RESERVATION_RESTORED" : "RESERVED",
         restored ? booking.line_restore_event_id! : booking.id,
-        reservationConfirmationNotice(tenant, booking), origin);
+        await reservationConfirmationNotice(db, tenant, booking), origin);
     }
     if (payload.action === "notify-ticket") {
       const slug = String(payload.slug || "");
@@ -916,7 +920,7 @@ Deno.serve(async (req: Request) => {
             "取消號碼：" + ticketNumber(ticket),
             "此號碼已不在候位名單中。",
             ...shopDetails(tenant),
-          ], [{ label: "查看我的紀錄", uri: liffManageLink(tenant, "ticket", ticket.id, "view") }]), origin);
+          ], [{ label: "查看我的紀錄", uri: liffManageLink(await shopLinkContext(db, tenant), "ticket", ticket.id, "view") }]), origin);
       }
       const { data: booking } = await db.from("so_reservations")
         .select("id,user_id,status,booking_date,booking_time,party_size,line_cancel_event_id,line_update_event_id,selected_items")
@@ -936,15 +940,15 @@ Deno.serve(async (req: Request) => {
           return reply(409, { error: "RESERVATION_NOT_CANCELLED" }, origin);
         return pushNotice(db, tenant, booking.user_id, "RESERVATION_CANCELLED", booking.line_cancel_event_id,
           flexNotice("預約已取消", detail, [
-            { label: "查看我的紀錄", uri: liffManageLink(tenant, "reservation", booking.id, "view") },
+            { label: "查看我的紀錄", uri: liffManageLink(await shopLinkContext(db, tenant), "reservation", booking.id, "view") },
           ]), origin);
       }
       if (booking.status !== "CONFIRMED" || !booking.line_update_event_id)
         return reply(409, { error: "RESERVATION_NOT_UPDATED" }, origin);
       return pushNotice(db, tenant, booking.user_id, "RESERVATION_UPDATED", booking.line_update_event_id,
         flexNotice("預約已更新", [...detail, "以下為目前最新的預約資訊。"], [
-          { label: "編輯預約", uri: liffManageLink(tenant, "reservation", booking.id, "edit") },
-          { label: "取消預約", uri: liffManageLink(tenant, "reservation", booking.id, "cancel") },
+          { label: "編輯預約", uri: liffManageLink(await shopLinkContext(db, tenant), "reservation", booking.id, "edit") },
+          { label: "取消預約", uri: liffManageLink(await shopLinkContext(db, tenant), "reservation", booking.id, "cancel") },
         ]), origin);
     }
     return reply(400, { error: "UNKNOWN_ACTION" }, origin);
