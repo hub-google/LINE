@@ -711,7 +711,8 @@ function staffRender(){
    box("預約管理方式",'<p class="muted">只要沒有標記完成、未到或取消，預約就不因跨過午夜而消失。店員可直接勾選狀態，也可重新選擇修正手誤。</p>'+
     '<p class="staff-help">預約獨立管理：「已報到」不會產生叫號號碼，也不需前往叫號管理。未來的預約僅可取消或恢復。</p>'+
     '<div class="staff-actionbar">'+
-    (lastStaffChange&&lastStaffChange.slug===slug?btn("還原上一步","undo-staff","outline"):"")+'</div>')+
+    (lastStaffChange&&lastStaffChange.slug===slug?btn("還原上一步","undo-staff","outline"):"")+
+    '<a class="btn outline" href="./poster.html?merchant='+encodeURIComponent(slug)+'&type=reserve" target="_blank" rel="noopener noreferrer">製作預約 QR 立牌</a></div>')+
    box("待處理預約（"+openBookings.length+" 筆）",openBookings.length?openBookings.map(card).join(""):'<p class="muted">目前沒有未結案預約。</p>')+
    box("已處理預約（最近 "+staffHistoryDays+" 天，"+doneBookings.length+" 筆）",'<p class="staff-help">包含已完成、未到、已取消。此區仍可修正狀態，資料依處理時間排序。</p>'+
     (doneBookings.length?doneBookings.map(card).join(""):'<p class="muted">選定範圍內還沒有已處理預約。</p>'))+
@@ -731,7 +732,9 @@ function staffRender(){
    box("叫號操作",'<p class="muted">仍在候位的跨日號碼會繼續排隊。號碼狀態可直接勾選與更正。</p>'+
     '<div class="staff-actionbar">'+btn("叫下一位","call","primary",(!waiting.length||!!active||!t.modules.calling?"disabled":""))+
     btn("再叫一次","recall","outline",(!active||active.status!=="CALLED"?"disabled":"")+' data-id="'+esc(active?.id||"")+'"')+
-    (lastStaffChange&&lastStaffChange.slug===slug?btn("還原上一步","undo-staff","secondary"):"")+'</div>'+
+    (lastStaffChange&&lastStaffChange.slug===slug?btn("還原上一步","undo-staff","secondary"):"")+
+    '<a class="btn outline" href="./board.html?merchant='+encodeURIComponent(slug)+'" target="_blank" rel="noopener noreferrer">電視即時叫號看板</a>'+
+    '<a class="btn outline" href="./poster.html?merchant='+encodeURIComponent(slug)+'&type=queue" target="_blank" rel="noopener noreferrer">製作現場取號 QR 立牌</a></div>'+
     '<p class="staff-help">叫號通知使用票券識別碼，避免跨天同號誤通知。已發出的 LINE 訊息無法撤回。</p>')+
    box("未結案號碼牌（"+openTickets.length+" 筆）",openTickets.length?openTickets.map(card).join(""):'<p class="muted">目前沒有未結案號碼牌。</p>')+
    box("已結束號碼牌（最近 "+staffHistoryDays+" 天，"+doneTickets.length+" 筆）",doneTickets.length?doneTickets.map(card).join(""):'<p class="muted">沒有已結束的號碼牌。</p>')+
