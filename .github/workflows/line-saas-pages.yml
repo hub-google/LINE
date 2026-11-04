@@ -31,7 +31,7 @@ jobs:
           node --check store-operations/saas/version-watch.js
           node --check .github/scripts/build-line-saas.mjs
       - name: Verify LINE customer and notification contracts
-        run: node --test store-operations/tests/saas-contract.test.mjs store-operations/tests/queue-board-contract.test.mjs store-operations/tests/qr-poster-contract.test.mjs store-operations/tests/marketing-home-contract.test.mjs store-operations/tests/booking-idempotency-contract.test.mjs
+        run: node --test store-operations/tests/saas-contract.test.mjs store-operations/tests/queue-board-contract.test.mjs store-operations/tests/qr-poster-contract.test.mjs store-operations/tests/marketing-home-contract.test.mjs store-operations/tests/booking-idempotency-contract.test.mjs store-operations/tests/booking-break-overlap-contract.test.mjs
       - name: Build versioned LINE Pages files
         shell: bash
         run: |
