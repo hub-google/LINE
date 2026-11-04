@@ -23,13 +23,14 @@ jobs:
         with:
           node-version: "22"
       - name: Verify existing SaaS and TV board contracts
-        run: node --test store-operations/tests/saas-contract.test.mjs store-operations/tests/queue-board-contract.test.mjs
+        run: node --test store-operations/tests/saas-contract.test.mjs store-operations/tests/queue-board-contract.test.mjs store-operations/tests/qr-poster-contract.test.mjs
       - name: Verify versioned build without deploying
         env:
           GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           node .github/scripts/build-line-saas.mjs /tmp/line-saas-pr-dist
           test -f /tmp/line-saas-pr-dist/board.html
+          test -f /tmp/line-saas-pr-dist/poster.html
           grep -q "$GITHUB_SHA" /tmp/line-saas-pr-dist/board.html
           test -f /tmp/line-saas-pr-dist/index.html
           test -f /tmp/line-saas-pr-dist/release.json
