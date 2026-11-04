@@ -1859,7 +1859,7 @@ document.addEventListener("click",async ev=>{
  }
  if(v==="staff"){
    staffTab=tab;
-   if(["analytics","branches"].includes(tab)){void load();return;}
+   if(["analytics","branches","settings"].includes(tab)){void load();return;}
     if(tab==="bookings"){err="";flash="";render();void searchHistoricalBookings(1);return;}
     if(tab==="calendar"){err="";flash="";render();void loadBookingCalendar(1);return;}
  }
