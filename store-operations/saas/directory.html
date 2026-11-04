@@ -67,6 +67,31 @@ function render(){
  }).join("");
 }
 els.keyword.addEventListener("input",render);
+// Resolve a merchant's own LIFF app at click time instead of sending everyone
+// through the headquarters LINE Login provider.
+document.addEventListener("click",async event=>{
+ const anchor=event.target.closest('a[href*="merchant="]');
+ if(!anchor)return;
+ const original=new URL(anchor.href,location.href);
+ const merchant=original.searchParams.get("merchant")||"";
+ if(!/^[a-z0-9][a-z0-9-]{2,39}$/.test(merchant))return;
+ event.preventDefault();
+ const query=new URLSearchParams();
+ query.set("view","customer");query.set("merchant",merchant);
+ const tab=original.searchParams.get("tab")||"home";
+ if(["home","reserve","queue","mine","progress"].includes(tab))query.set("tab",tab);
+ try{
+  const response=await fetch(bridge+"&merchant="+encodeURIComponent(merchant),{cache:"no-store"});
+  if(!response.ok)throw Error("LINE_CHANNEL_UNAVAILABLE");
+  const config=await response.json();
+  if(!/^\d{8,}-[A-Za-z0-9]+$/.test(String(config.liffId||"")))
+    throw Error("LIFF_NOT_AVAILABLE");
+  location.assign("https://liff.line.me/"+encodeURIComponent(config.liffId)+"/?"+query.toString());
+ }catch(error){
+  // The canonical web page will still look up the correct merchant channel.
+  location.assign("./?"+query.toString());
+ }
+});
 async function load(){
  try{
   const conf=await fetch(bridge,{cache:"no-store"}).then(r=>r.ok?r.json():{}).catch(()=>({}));
