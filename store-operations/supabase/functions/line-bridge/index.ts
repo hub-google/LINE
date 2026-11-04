@@ -493,6 +493,32 @@ Deno.serve(async (req: Request) => {
     const payload = await req.json();
     const db = service();
     const user = await identity(req, db);
+    // Returning customers keep their browser's refreshable Supabase session.
+    // A previously LINE-verified identity may be resumed for 30 days without
+    // re-running LIFF/OAuth. The browser never supplies a LINE user ID.
+    if (payload.action === "resume") {
+      const slug = String(payload.slug || "");
+      if (!/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug)) return reply(400, { error: "BAD_REQUEST" }, origin);
+      const { data: tenant, error: tenantError } = await db.from("so_tenants")
+        .select("id").eq("slug", slug).eq("status", "ACTIVE").maybeSingle();
+      if (tenantError) throw tenantError;
+      if (!tenant) return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
+      const { data: linked, error: linkError } = await db.from("so_line_links")
+        .select("display_name,is_following,updated_at")
+        .eq("tenant_id", tenant.id).eq("user_id", user.id).maybeSingle();
+      if (linkError) throw linkError;
+      const verifiedAt = Date.parse(String(linked?.updated_at || ""));
+      const maxAge = 30 * 24 * 60 * 60 * 1000;
+      if (!linked?.display_name?.trim() || !Number.isFinite(verifiedAt) ||
+          verifiedAt > Date.now() + 60000 || Date.now() - verifiedAt > maxAge) {
+        return reply(401, { error: "LINE_REAUTH_REQUIRED" }, origin);
+      }
+      return reply(200, {
+        ok: true, linked: true, displayName: linked.display_name,
+        isFollowing: linked.is_following, recipientReachability: "UNKNOWN",
+        friendCheckStatus: "CACHED_SESSION",
+      }, origin);
+    }
     if (payload.action === "link") {
       const slug = String(payload.slug || "");
       const idToken = String(payload.idToken || "");
