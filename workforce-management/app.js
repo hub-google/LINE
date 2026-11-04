@@ -45,12 +45,16 @@ async function reload(silent=false){
    if(!app.tenants.find(t=>t.id===app.tenantId))app.tenantId=app.tenants[0]?.id||'';
    if(!app.tenantId){app.data=null;}else{
     const p='tenant_id=eq.'+encodeURIComponent(app.tenantId);
-    const [branches,members,shifts,punches,requests,entitlements,availability]=await Promise.all([
+    const [branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections]=await Promise.all([
      query('wm_branches','select=*&'+p+'&order=name'),query('wm_members','select=*&'+p+'&order=employee_code'),
      query('wm_shifts','select=*&'+p+'&order=starts_at.desc&limit=600'),query('wm_punches','select=*&'+p+'&order=punched_at.desc&limit=600'),
      query('wm_requests','select=*&'+p+'&order=created_at.desc&limit=300'),query('wm_leave_entitlements','select=*&'+p),
-     query('wm_availability','select=*&'+p+'&limit=200')]);
-    app.data={tenant:app.tenants.find(t=>t.id===app.tenantId),branches,members,shifts,punches,requests,entitlements,availability,server_at:new Date().toISOString()};
+     query('wm_availability','select=*&'+p+'&limit=200'),
+     query('wm_departments','select=*&'+p),query('wm_shift_templates','select=*&'+p),query('wm_staffing_requirements','select=*&'+p),
+     query('wm_notifications','select=*&'+p+'&order=created_at.desc&limit=200'),
+     query('wm_period_closures','select=*&'+p+'&order=closed_at.desc&limit=36'),query('wm_period_adjustments','select=*&'+p+'&limit=300'),
+     query('wm_attendance_adjustments','select=*&'+p+'&limit=300')]);
+    app.data={tenant:app.tenants.find(t=>t.id===app.tenantId),branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections,server_at:new Date().toISOString()};
    }
   }
   $('connectionLabel').textContent=app.data?'已連線 Supabase 資料庫':'尚未登入';
@@ -295,8 +299,15 @@ $('overlay').addEventListener('submit',async e=>{
    const token=result.access_token||result.session?.access_token,user=result.user||result.session?.user;
    if(!token||!user)throw Error('登入未取得有效工作階段，請確認信箱驗證');
    app.token=token;app.user=user;app.mode='real';app.tenantId='';
-   sessionStorage.setItem('wm_auth',JSON.stringify({token,user}));
-   closeModal();await reload(true);banner('企業帳號登入成功');
+   sessionStorage.setItem('wm_auth',JSON.stringify({token,user,refresh_token:result.refresh_token||result.session?.refresh_token||null,expires_at:result.expires_at||result.session?.expires_at||0}));
+   closeModal();
+   const invited=new URLSearchParams(location.hash.slice(1)).get('invite');
+   if(invited){
+    const accepted=await call('/rest/v1/rpc/wm_accept_invite','POST',{p_token:invited},app.token);
+    history.replaceState(null,'',location.pathname+location.search);
+    app.tenantId=accepted.tenant_id;
+   }
+   await reload(true);banner('企業帳號登入成功');
   }else if(form.dataset.form==='tenant'){
    const result=await call('/rest/v1/wm_tenants','POST',{name:f.name,created_by:app.user.id},app.token);
    app.tenantId=result[0]?.id||'';closeModal();await reload(true);banner('企業建立完成');
@@ -311,3 +322,300 @@ $('overlay').addEventListener('submit',async e=>{
 function logout(){app.token=null;app.user=null;app.data=null;app.tenants=[];app.mode='demo';app.tenantId=DEMO_ID;sessionStorage.removeItem('wm_auth');reload(true);banner('已登出企業模式');}
 try{const saved=JSON.parse(sessionStorage.getItem('wm_auth')||'null');if(saved?.token&&saved?.user){app.token=saved.token;app.user=saved.user;app.mode='real';app.tenantId='';}}catch{}
 reload(true);
+
+
+
+/* Workforce PRD extension: uses existing modules, original tables, and real Supabase RPCs.
+   The publicly accessible controls below only operate the isolated fictional demo tenant. */
+TABS.inbox=['通知收件匣','班表變更及假勤審核通知統一由資料庫事件產生。'];
+TABS.periods=['月度工時與月結','查看實際打卡片段、月結快照與後續調整單。'];
+document.querySelector('#nav').insertAdjacentHTML('beforeend',
+ '<button type="button" data-tab="inbox"><span>✉</span> 通知收件匣</button>'+
+ '<button type="button" data-tab="periods"><span>▤</span> 月度工時與月結</button>');
+const originalRender=render;
+render=function(){
+ if(app.data&&app.tab==='inbox'){showInbox();return;}
+ if(app.data&&app.tab==='periods'){showPeriods();return;}
+ originalRender();
+};
+const originalSchedule=schedule;
+schedule=function(){
+ originalSchedule();
+ const d=app.data||{};
+ const availability=(d.availability||[]).slice(0,50).map(a=>tr([
+  personLabel(a.member_id),taiStamp(a.starts_at),taiStamp(a.ends_at),
+  a.available?'可上班':'不可上班',esc(a.note||'—')]));
+ const templates=(d.templates||[]).map(t=>tr([
+  esc(t.name),esc(String(t.starts_local).slice(0,5))+'—'+esc(String(t.ends_local).slice(0,5)),
+  esc(t.break_minutes||0)+' 分鐘']));
+ const requirements=(d.requirements||[]).map(x=>tr([
+  esc(branch(x.branch_id)?.name||'—'),
+  esc(['日','一','二','三','四','五','六'][x.weekday]),
+  esc(String(x.starts_local).slice(0,5))+'—'+esc(String(x.ends_local).slice(0,5)),
+  String(x.needed)+' 人']));
+ $('appContent').insertAdjacentHTML('beforeend',
+  panel('可上班／不可上班時段',table(['員工','開始','結束','偏好','備註'],availability),
+   '<button class="btn small" data-action="newAvailability">＋ 提供可上班時段</button>')+
+  panel('班型範本',table(['名稱','時間','休息'],templates),
+   manager()?'<div class="flex"><button class="btn small" data-action="newTemplate">＋ 新增班型</button><button class="btn small" data-action="copyWeek">複製本週至下週（草稿）</button></div>':'')+
+  panel('門市最低人力需求',table(['門市','星期','班段','最低需求'],requirements),
+   manager()?'<button class="btn small" data-action="newRequirement">＋ 設定人力需求</button>':''));
+};
+const originalEmployees=employees;
+employees=function(){
+ originalEmployees();
+ const d=app.data||{},departments=(d.departments||[]),owner=app.mode==='real'&&role()==='owner';
+ let rows=(d.members||[]).map(m=>tr([
+  personLabel(m.id),esc(m.employee_code),esc(departments.find(x=>x.id===m.department_id)?.name||'—'),
+  m.user_id?'<span class="chip active">已連結</span>':'<span class="chip pending">未連結</span>',
+  (manager()?'<button class="btn small" data-action="employeeEdit" data-id="'+esc(m.id)+'">設定</button>':'')+
+  (owner&&!m.user_id?'<button class="btn small" data-action="inviteMember" data-id="'+esc(m.id)+'">產生邀請</button>':'')
+ ]));
+ let deptRows=departments.map(x=>tr([esc(x.name),esc(branch(x.branch_id)?.name||'—')]));
+ $('appContent').insertAdjacentHTML('beforeend',
+ panel('部門設定',table(['部門','分店'],deptRows),manager()?'<button class="btn small" data-action="newDepartment">＋ 新增部門</button>':'')+
+ panel('員工隸屬與正式帳號邀請',table(['員工','編號','部門','登入綁定','操作'],rows))+
+ '<div class="notice">正式企業擁有者可產生七日有效的一次性邀請連結；使用者必須登入自己的帳號才可加入，僅分享連結不授予管理權限。</div>');
+};
+const originalRequests=requests;
+requests=function(){
+ originalRequests();
+ const pending=(app.data?.requests||[]).filter(x=>x.status==='pending'
+  &&(app.mode==='demo'||person(x.member_id)?.user_id===app.user?.id));
+ if(pending.length)$('appContent').insertAdjacentHTML('beforeend',
+ panel('撤回待審申請',table(['員工','類型','時間','操作'],
+ pending.map(x=>tr([personLabel(x.member_id),esc(kind(x.kind)),taiStamp(x.starts_at),
+ '<button class="btn small danger" data-action="withdrawReq" data-id="'+esc(x.id)+'">撤回</button>'])))));
+};
+const originalSettings=settings;
+settings=function(){
+ originalSettings();
+ const d=app.data||{};
+ const rows=(d.branches||[]).map(b=>tr([
+  esc(b.name),b.gps_required?'必須定位':'非必要',
+  b.latitude===null?'—':esc(b.latitude)+' / '+esc(b.longitude),
+  esc(b.radius_m)+' 公尺',manager()?'<button class="btn small" data-action="gpsEdit" data-id="'+esc(b.id)+'">設定</button>':''
+ ]));
+ $('appContent').insertAdjacentHTML('beforeend',
+ panel('GPS 定位打卡據點',table(['門市','政策','座標','容許半徑','操作'],rows))+
+ '<div class="notice warning">正式 LINE LIFF／Messaging API 仍需自己的 Channel 設定及伺服器憑證；目前沒有用未授權帳號假冒 LINE 發送訊息。</div>');
+};
+function showInbox(){
+ heading();
+ const all=(app.data.notifications||[]),sel=getSelected();
+ const visible=app.mode==='demo'?all.filter(n=>n.recipient_member_id===sel):
+  all.filter(n=>person(n.recipient_member_id)?.user_id===app.user?.id);
+ const rows=visible.map(n=>tr([
+  esc(n.title),esc(n.body||''),taiStamp(n.created_at),
+  n.read_at?'<span class="chip active">已讀</span>':'<span class="chip pending">未讀</span>',
+  n.read_at?'':'<button class="btn small" data-action="readNotice" data-id="'+esc(n.id)+'">標記已讀</button>'
+ ]));
+ $('appContent').innerHTML=
+ (app.mode==='demo'?'<div class="toolbar"><div class="field"><label>測試員工</label><select id="notificationMember">'+options(app.data.members||[],x=>x.display_name,sel)+'</select></div></div>':'')+
+ panel('站內通知',table(['通知','內容','產生時間','狀態','操作'],rows))+
+ '<div class="notice">所有通知來自排班與簽核資料庫事件。LINE OA 未完成授權時，仍可在這裡查詢，不會宣稱已送達 LINE。</div>';
+}
+app.monthSelected=dayAdd(today().slice(0,7)+'-01',-1).slice(0,7);
+app.monthPreview=null;
+function showPeriods(){
+ heading();
+ const d=app.data,month=app.monthSelected,year=Number(month.slice(0,4)),mo=Number(month.slice(5,7));
+ const closure=(d.closures||[]).find(x=>x.year===year&&x.month===mo);
+ const r=app.monthPreview&&app.monthPreview.year===year&&app.monthPreview.month===mo?app.monthPreview:closure?.snapshot||null;
+ let rows=(r?.rows||[]).map(x=>tr([
+  esc(x.name),esc(x.employee_code),Number(x.scheduled_minutes/60).toFixed(2),
+  Number(x.observed_minutes/60).toFixed(2),Number(x.leave_minutes/60).toFixed(2),
+  esc(x.incomplete_count),x.hourly_rate===null?'—':'NT$ '+Number(x.estimated_cost).toLocaleString('zh-TW')
+ ]));
+ let adjust=(d.adjustments||[]).filter(x=>x.closure_id===closure?.id).map(x=>tr([
+  personLabel(x.member_id),String(x.minutes_delta)+' 分',esc(x.reason),taiStamp(x.created_at)]));
+ let tool='<div class="toolbar"><div class="field"><label>選擇月份</label><input id="monthPicker" type="month" class="filter" value="'+esc(month)+'"></div>'+
+ '<button class="btn" data-action="monthPreview">試算本月工時</button>'+
+ (manager()&&closure?'':'')+
+ (manager()&&!closure?'<button class="btn primary" data-action="monthClose">確認鎖定月結</button>':'')+
+ '<button class="btn" data-action="monthExport" '+(!r?'disabled':'')+'>匯出 CSV</button></div>';
+ $('appContent').innerHTML=panel('月度工時與假勤彙整',tool+
+ '<div class="notice warning">這是以打卡事件配對和班表計算的行政試算；未涵蓋全部法定工時、補休及薪資規則，不可直接用來發放薪資。</div>'+
+ (closure?'<p><span class="chip approved">已鎖定</span>　'+esc(taiStamp(closure.closed_at))+'，歷史快照不會被覆寫。</p>':'<p class="muted">目前未月結；請先試算並處理異常。</p>')+
+ table(['員工','編號','排定時數','觀察工時','核准請假','未完成事件','預估成本'],rows))+
+ (closure?panel('月結追溯更正',table(['員工','調整','原因','時間'],adjust),
+ manager()?'<button class="btn small" data-action="newAdjustment" data-id="'+esc(closure.id)+'">＋ 新增調整單</button>':''):'');
+}
+const extraNames=new Set(['department','template','requirement','availability','branch_gps',
+ 'assign_department','employee_status','withdraw','notify_read','month_report',
+ 'month_close','period_adjustment','copy_week']);
+const baseAction=action;
+action=async function(name,data){
+ if(!extraNames.has(name))return baseAction(name,data);
+ if(app.busy)return;
+ app.busy=true;
+ try{
+  let result;
+  if(app.mode==='demo')result=await demo(name,data);
+  else{
+   if(!app.token||!app.tenantId)throw Error('請先完成企業登入');
+   const tenant_id=app.tenantId;
+   const rpc=(fn,values)=>call('/rest/v1/rpc/'+fn,'POST',values,app.token);
+   const insert=(table,values)=>call('/rest/v1/'+table,'POST',{tenant_id,...values},app.token);
+   const patch=(table,id,values)=>call('/rest/v1/'+table+'?tenant_id=eq.'+encodeURIComponent(tenant_id)+'&id=eq.'+encodeURIComponent(id),'PATCH',values,app.token);
+   if(name==='department')result=await insert('wm_departments',{branch_id:data.branch_id,name:data.name});
+   else if(name==='template')result=await insert('wm_shift_templates',{name:data.name,starts_local:data.starts_local,ends_local:data.ends_local,break_minutes:Number(data.break_minutes||0)});
+   else if(name==='requirement')result=await insert('wm_staffing_requirements',{branch_id:data.branch_id,weekday:Number(data.weekday),starts_local:data.starts_local,ends_local:data.ends_local,needed:Number(data.needed)});
+   else if(name==='assign_department')result=await patch('wm_members',data.member_id,{department_id:data.department_id||null});
+   else if(name==='employee_status')result=await patch('wm_members',data.member_id,{status:data.status});
+   else if(name==='branch_gps')result=await patch('wm_branches',data.branch_id,{gps_required:data.gps_required===true||data.gps_required==='true',latitude:data.latitude===''?null:Number(data.latitude),longitude:data.longitude===''?null:Number(data.longitude),radius_m:Number(data.radius_m)});
+   else if(name==='withdraw')result=await rpc('wm_withdraw_request',{p_request:data.id});
+   else if(name==='notify_read')result=await rpc('wm_mark_notification_read',{p_id:data.id});
+   else if(name==='month_report')result=await rpc('wm_month_report',{p_tenant:tenant_id,p_year:Number(data.year),p_month:Number(data.month)});
+   else if(name==='month_close')result=await rpc('wm_close_month',{p_tenant:tenant_id,p_year:Number(data.year),p_month:Number(data.month)});
+   else if(name==='period_adjustment')result=await rpc('wm_adjust_closed_month',{p_close_id:data.closure_id,p_member_id:data.member_id,p_minutes:Number(data.minutes_delta),p_reason:data.reason});
+   else if(name==='copy_week')result=await rpc('wm_copy_week',{p_tenant:tenant_id,p_week_start:data.week_start});
+   else if(name==='availability')result=await insert('wm_availability',{member_id:data.member_id,starts_at:data.starts_at,ends_at:data.ends_at,available:data.available===true||data.available==='true',note:data.note||''});
+  }
+  app.busy=false;closeModal();
+  if(name==='month_report'){app.monthPreview=result;render();banner('已取得資料庫月度試算');}
+  else {await reload(true);banner('已儲存到資料庫');}
+  return result;
+ }catch(e){app.busy=false;banner(e.message,true);throw e;}
+};
+function showExtraForm(title,name,fields,submit){openModal(title,modalForm(name,fields,submit));}
+function showAvailability(){
+ showExtraForm('提供可排班時段','availability',[
+  {name:'member_id',label:'員工',html:memberFilter(getSelected())},
+  {name:'available',label:'狀態',html:selectField('available','<option value="true">可上班</option><option value="false">不可上班／排休</option>')},
+  {name:'starts_at',label:'開始',html:input('starts_at','datetime-local',today()+'T09:00')},
+  {name:'ends_at',label:'結束',html:input('ends_at','datetime-local',today()+'T18:00')},
+  {name:'note',label:'備註',wide:true,html:'<input id="note" name="note" maxlength="200">'}
+ ],'送出時段');
+}
+function showTemplate(){
+ showExtraForm('建立班型範本','template',[
+  {name:'name',label:'班型名稱',html:input('name','text','','maxlength="80"')},
+  {name:'break_minutes',label:'休息分鐘',html:input('break_minutes','number','60','min="0" max="240"')},
+  {name:'starts_local',label:'開始時間',html:input('starts_local','time','09:00')},
+  {name:'ends_local',label:'結束時間',html:input('ends_local','time','18:00')}
+ ],'儲存班型');
+}
+function showRequirement(){
+ showExtraForm('設定分店最低人力需求','requirement',[
+  {name:'branch_id',label:'門市',html:branchFilter()},
+  {name:'weekday',label:'星期',html:selectField('weekday',Array.from({length:7},(_,i)=>'<option value="'+i+'">週'+['日','一','二','三','四','五','六'][i]+'</option>').join(''))},
+  {name:'starts_local',label:'開始時間',html:input('starts_local','time','09:00')},
+  {name:'ends_local',label:'結束時間',html:input('ends_local','time','18:00')},
+  {name:'needed',label:'最低人數',html:input('needed','number','2','min="1" max="100"'),wide:true}
+ ],'儲存人力需求');
+}
+function showDepartment(){
+ showExtraForm('新增部門','department',[
+  {name:'name',label:'部門名稱',html:input('name','text','','maxlength="80"')},
+  {name:'branch_id',label:'所屬分店',html:branchFilter()}
+ ],'新增部門');
+}
+function showEmployeeSettings(id){
+ const m=person(id);
+ if(!m)return;
+ showExtraForm('員工設定：'+m.display_name,'assign_department',[
+  {name:'member_id',label:'員工識別碼',html:'<input id="member_id" name="member_id" value="'+esc(m.id)+'" readonly>'},
+  {name:'department_id',label:'部門',html:'<select id="department_id" name="department_id"><option value="">不指定</option>'+
+    options(app.data.departments||[],d=>d.name,m.department_id)+'</select>'}
+ ],'儲存部門');
+}
+function showGpsSettings(id){
+ const b=branch(id);if(!b)return;
+ showExtraForm('定位打卡規則：'+b.name,'branch_gps',[
+  {name:'branch_id',label:'分店',html:'<input id="branch_id" name="branch_id" value="'+esc(b.id)+'" readonly>'},
+  {name:'gps_required',label:'強制定位',html:selectField('gps_required','<option value="false" '+(!b.gps_required?'selected':'')+'>否</option><option value="true" '+(b.gps_required?'selected':'')+'>是</option>')},
+  {name:'latitude',label:'緯度',html:'<input id="latitude" name="latitude" type="number" step="any" value="'+esc(b.latitude??'')+'">'},
+  {name:'longitude',label:'經度',html:'<input id="longitude" name="longitude" type="number" step="any" value="'+esc(b.longitude??'')+'">'},
+  {name:'radius_m',label:'半徑（公尺）',html:input('radius_m','number',b.radius_m||200,'min="30" max="5000"'),wide:true}
+ ],'儲存打卡規則');
+}
+function showPeriodAdjustment(id){
+ showExtraForm('月結更正單','period_adjustment',[
+  {name:'closure_id',label:'月結 ID',html:'<input id="closure_id" name="closure_id" value="'+esc(id)+'" readonly>'},
+  {name:'member_id',label:'員工',html:memberFilter(getSelected())},
+  {name:'minutes_delta',label:'調整分鐘（可為負數）',html:input('minutes_delta','number','30','min="-43200" max="43200"')},
+  {name:'reason',label:'更正原因',wide:true,html:'<textarea id="reason" name="reason" minlength="3" maxlength="500" required></textarea>'}
+ ],'確認新增更正');
+}
+function monthCsvExport(){
+ if(!app.monthPreview)return banner('請先試算月份',true);
+ const rows=[['員工','員工編號','排班分鐘','出勤分鐘','請假分鐘','未完成事件','成本預估'],
+  ...(app.monthPreview.rows||[]).map(r=>[r.name,r.employee_code,r.scheduled_minutes,r.observed_minutes,r.leave_minutes,r.incomplete_count,r.estimated_cost])];
+ const cell=v=>{let text=String(v??'');if(/^[\s]*[=+@\-]/.test(text))text="'"+text;return '"'+text.replaceAll('"','""')+'"';};
+ const blob=new Blob(['\uFEFF'+rows.map(r=>r.map(cell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});
+ const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='LINE-Workforce-'+app.monthSelected+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+async function showInvite(memberId){
+ if(app.mode==='demo')throw Error('邀請正式員工需使用企業帳號，Demo 不能綁定真人身分');
+ if(role()!=='owner')throw Error('只有企業擁有者可以邀請');
+ const token=await call('/rest/v1/rpc/wm_create_invite','POST',
+  {p_tenant:app.tenantId,p_member:memberId},app.token);
+ const href=location.origin+location.pathname+'#invite='+encodeURIComponent(token);
+ openModal('員工一次性邀請','<p>此邀請七日內有效，且只能使用一次。請將連結交給指定員工，他登入自己的帳號後才可加入企業。</p>'+
+ '<div class="field"><label>邀請網址</label><textarea readonly id="inviteUrl" rows="4">'+esc(href)+'</textarea></div>'+
+ '<div class="modal-actions"><button class="btn primary" data-extra="copyInvite">複製邀請連結</button></div>');
+}
+async function acceptPendingInvite(){
+ const token=new URLSearchParams(location.hash.slice(1)).get('invite');
+ if(!token)throw Error('網址沒有邀請憑證');
+ if(!app.token){showAuth();return;}
+ const accepted=await call('/rest/v1/rpc/wm_accept_invite','POST',{p_token:token},app.token);
+ history.replaceState(null,'',location.pathname+location.search);
+ app.mode='real';app.tenantId=accepted.tenant_id;
+ await reload(true);banner('已加入企業：'+accepted.name);
+}
+const originalNoTenant=noTenant;
+noTenant=function(){
+ originalNoTenant();
+ if(location.hash.includes('invite=')){
+  $('appContent').insertAdjacentHTML('beforeend','<div class="notice">偵測到員工邀請。登入或註冊後可接受邀請。</div>'+
+   '<button class="btn primary" data-extra="acceptInvite">接受員工邀請</button>');
+ }
+};
+const olderRender=render;
+render=function(){olderRender();if(app.tab==='overview'&&app.data&&(app.data.notifications||[]).some(x=>!x.read_at)){
+ $('appContent').insertAdjacentHTML('beforeend',panel('通知提醒',
+  '<p>你有尚未閱讀的班表或審核通知。</p><button class="btn" data-extra="openInbox">前往通知收件匣</button>'));
+}};
+$('appContent').addEventListener('change',e=>{
+ if(e.target.id==='notificationMember'){app.focusMember=e.target.value;render();}
+ if(e.target.id==='monthPicker'){app.monthSelected=e.target.value;app.monthPreview=null;render();}
+});
+$('appContent').addEventListener('click',async e=>{
+ const b=e.target.closest('[data-action],[data-extra]');if(!b)return;
+ const a=b.dataset.action||b.dataset.extra;
+ try{
+  if(a==='newAvailability')showAvailability();
+  else if(a==='newTemplate')showTemplate();
+  else if(a==='newRequirement')showRequirement();
+  else if(a==='newDepartment')showDepartment();
+  else if(a==='employeeEdit')showEmployeeSettings(b.dataset.id);
+  else if(a==='gpsEdit')showGpsSettings(b.dataset.id);
+  else if(a==='newAdjustment')showPeriodAdjustment(b.dataset.id);
+  else if(a==='inviteMember')await showInvite(b.dataset.id);
+  else if(a==='withdrawReq'){if(confirm('撤回後不得恢復，確定嗎？'))await action('withdraw',{id:b.dataset.id});}
+  else if(a==='readNotice')await action('notify_read',{id:b.dataset.id});
+  else if(a==='monthPreview')await action('month_report',{year:Number(app.monthSelected.slice(0,4)),month:Number(app.monthSelected.slice(5,7))});
+  else if(a==='monthClose'){
+   if(confirm('確認鎖定此月份？鎖定後只能用更正單調整，不能覆寫快照。'))
+    await action('month_close',{year:Number(app.monthSelected.slice(0,4)),month:Number(app.monthSelected.slice(5,7))});
+  }
+  else if(a==='monthExport')monthCsvExport();
+  else if(a==='copyWeek'){
+   const date=app.date;const d=new Date(date+'T12:00:00Z');
+   const mon=dayAdd(date,-((d.getUTCDay()+6)%7));
+   if(confirm('將這週班表複製成下週草稿？有衝突的班別會保留原資料。'))
+    await action('copy_week',{week_start:mon+'T00:00:00+08:00'});
+  }
+  else if(a==='openInbox')setTab('inbox');
+  else if(a==='acceptInvite')await acceptPendingInvite();
+ }catch(e){banner(e.message,true);}
+});
+$('overlay').addEventListener('click',async e=>{
+ const b=e.target.closest('[data-extra]');if(!b)return;
+ if(b.dataset.extra==='copyInvite'){
+  try{await navigator.clipboard.writeText($('inviteUrl').value);banner('邀請網址已複製');}
+  catch{banner('無法存取剪貼簿，請手動複製',true);}
+ }
+});
