@@ -30,9 +30,10 @@ jobs:
         run: |
           node --check store-operations/saas/version-watch.js
           node --check .github/scripts/build-line-saas.mjs
+          node --check store-operations/saas/pwa-sw.js
           test -s store-operations/saas/booking-theme.css
       - name: Verify LINE customer and notification contracts
-        run: node --test store-operations/tests/saas-contract.test.mjs store-operations/tests/queue-board-contract.test.mjs store-operations/tests/qr-poster-contract.test.mjs store-operations/tests/marketing-home-contract.test.mjs store-operations/tests/booking-branding-contract.test.mjs store-operations/tests/booking-capacity-receipt.test.mjs store-operations/tests/booking-staff-filter-csv.test.mjs store-operations/tests/booking-timestamp-seconds.test.mjs store-operations/tests/staff-reservation-history-contract.test.mjs store-operations/tests/booking-full-history-csv.test.mjs store-operations/tests/staff-booking-calendar-contract.test.mjs store-operations/tests/customer-reservation-ics.test.mjs store-operations/tests/booking-idempotency-contract.test.mjs store-operations/tests/booking-break-overlap-contract.test.mjs
+        run: node --test store-operations/tests/saas-contract.test.mjs store-operations/tests/queue-board-contract.test.mjs store-operations/tests/qr-poster-contract.test.mjs store-operations/tests/marketing-home-contract.test.mjs store-operations/tests/booking-branding-contract.test.mjs store-operations/tests/booking-capacity-receipt.test.mjs store-operations/tests/booking-staff-filter-csv.test.mjs store-operations/tests/booking-timestamp-seconds.test.mjs store-operations/tests/staff-reservation-history-contract.test.mjs store-operations/tests/booking-full-history-csv.test.mjs store-operations/tests/staff-booking-calendar-contract.test.mjs store-operations/tests/customer-reservation-ics.test.mjs store-operations/tests/booking-pwa-contract.test.mjs store-operations/tests/booking-idempotency-contract.test.mjs store-operations/tests/booking-break-overlap-contract.test.mjs
       - name: Build versioned LINE Pages files
         shell: bash
         run: |
@@ -45,6 +46,11 @@ jobs:
           grep -q "$GITHUB_SHA" "$RUNNER_TEMP/line-saas-dist/release.json"
           grep -q "booking-theme.css" "$RUNNER_TEMP/line-saas-dist/index.html"
           test -s "$RUNNER_TEMP/line-saas-dist/booking-theme.css"
+          grep -q "$GITHUB_SHA" "$RUNNER_TEMP/line-saas-dist/pwa-sw.js"
+          test -s "$RUNNER_TEMP/line-saas-dist/manifest.webmanifest"
+          test -s "$RUNNER_TEMP/line-saas-dist/offline.html"
+          test -s "$RUNNER_TEMP/line-saas-dist/pwa-icon-192.png"
+          test -s "$RUNNER_TEMP/line-saas-dist/pwa-icon-512.png"
       - name: Publish /booking/ and keep legacy /saas/ compatible
         shell: bash
         run: |
@@ -54,7 +60,7 @@ jobs:
           git worktree add --detach "$pubdir" origin/gh-pages
           for product in booking saas; do
             mkdir -p "$pubdir/$product"
-            for f in index.html home.html board.html poster.html directory.html merchant-register.html merchant-center.html privacy.html terms.html version-watch.js release.json booking-theme.css; do
+            for f in index.html home.html board.html poster.html directory.html merchant-register.html merchant-center.html privacy.html terms.html version-watch.js release.json booking-theme.css manifest.webmanifest pwa-sw.js offline.html pwa-icon-192.png pwa-icon-512.png; do
               cp "$RUNNER_TEMP/line-saas-dist/$f" "$pubdir/$product/$f"
             done
           done
