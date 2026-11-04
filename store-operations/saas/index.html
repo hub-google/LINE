@@ -72,6 +72,7 @@ body{overflow-x:hidden}
 .action-feedback.warning{background:#fffbeb;border-color:#f59e0b;color:#92400e}
 .action-feedback button{background:transparent;border:0;color:inherit;font-size:23px;cursor:pointer;line-height:1;min-width:28px;min-height:28px}
 .staff-guide{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+.serial-value{font-size:28px;font-weight:850;color:var(--primary);padding:5px 0;overflow-wrap:anywhere}
 .staff-guide span{flex:1 1 155px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:10px;padding:10px 12px;font-size:13px}
 .staff-record{border:1px solid var(--line);border-radius:13px;padding:16px;margin:12px 0;background:#fff}
 .staff-record-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
@@ -610,6 +611,18 @@ function platformRender(){
    '<p class="small">顧客須完成 LINE 授權並加官方帳號好友，通知才可能實際送達。</p>')+html;
  return layout("公司總後台","企業開通與模組管理",menu,html);
 }
+function numberSettingsPanel(kind,t,isManager){
+ const booking=kind==="booking",label=booking?"預約":"叫號";
+ const prefix=booking?(t.booking_prefix||""):(t.queue_prefix||"");
+ const last=booking?Number(t.booking_last_number||0):Number(t.queue_last_number||0);
+ return box(label+"編號設定",
+  '<p class="muted">預約與叫號各自獨立編號，流水號 1～9999999，不補零。僅管理員手動重置後從 1 開始。</p>'+
+  '<div class="grid"><div>'+field("編號前綴（最多 3 字，可留空）","prefix-"+kind,prefix,"text",'maxlength="3" autocomplete="off"'+(isManager?"":' readonly'))+
+  '</div><div><label>目前流水號</label><div class="serial-value">'+esc(prefix)+esc(last)+'</div><p class="small">重置後新資料從 '+esc(prefix)+'1 開始，歷史紀錄與原號碼不變。</p></div></div>'+
+  (isManager?'<div class="staff-actionbar">'+btn("儲存"+label+"前綴","save-number-prefix","primary",'data-kind="'+kind+'"')+
+   btn("重置"+label+"編號","reset-serial","outline",'data-kind="'+kind+'"')+'</div>':
+   '<p class="small">僅企業管理員可修改編號設定。</p>'));
+}
 function staffRender(){
  if(recoveryMode||!authReady())return requireAuth();
  const memberships=context?.memberships||[];
@@ -638,7 +651,7 @@ function staffRender(){
    stat("候位中",waiting.length)+stat("正在叫號",active?.number||"—")+'</div>'+
    box("營運流程",'<p class="muted">預約沒有午夜自動結案。跨天仍未完成的預約與號碼牌會持續出現在工作清單。</p>'+
     '<div class="staff-guide"><span><strong>① 查看待處理預約</strong><div>依預約日期、時間排序</div></span>'+
-    '<span><strong>② 到店報到</strong><div>勾選「已報到」，加入候位</div></span>'+
+    '<span><strong>② 到店報到</strong><div>在預約管理勾選已報到，不自動產生號碼牌</div></span>'+
     '<span><strong>③ 叫號服務</strong><div>叫下一位、服務中、已完成</div></span>'+
     '<span><strong>④ 已結案與更正</strong><div>已完成／未到／取消統一放在已處理區，仍能修正</div></span></div>'+
     '<div class="staff-actionbar">'+btn("處理未結案預約（"+openBookings.length+"）","open-bookings","primary")+
@@ -648,19 +661,19 @@ function staffRender(){
     '<div class="staff-actionbar">'+btn("查看與修正已處理預約","open-bookings","outline")+'</div>':'<p class="muted">選定範圍內尚無已處理預約。</p>');
  }else if(staffTab==="bookings"){
   const card=x=>{
-   const linked=q.find(k=>k.reservation_id===x.id);
-   return '<article class="staff-record '+(x.deleted_at?'staff-deleted-record':'')+'"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.day)+'　'+esc(x.time)+'　'+esc(x.name)+'</div>'+
-   '<div class="small">預約人數 '+esc(x.party)+' 位'+(linked?' ・ 號碼 '+esc(linked.number)+'（'+esc(linked.day)+'）':'')+'</div>'+
+   
+   return '<article class="staff-record '+(x.deleted_at?'staff-deleted-record':'')+'"><div class="staff-record-head"><div><div class="staff-record-title">'+'預約 '+esc(x.number||'—')+'　'+esc(x.day)+'　'+esc(x.time)+'　'+esc(x.name)+'</div>'+
+   '<div class="small">預約人數 '+esc(x.party)+' 位</div>'+
    '<div class="small">送出預約時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
    selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+
    (x.deleted_at?'<p class="staff-help">此預約已從顧客端隱藏；取消勾選刪除即可恢復。</p>':staffStatusPicker("reservation",x,x.day>taipei()?["CONFIRMED","CANCELLED"]:true))+staffDeletePicker("reservation",x)+
-   (x.status==="CHECKED_IN"&&linked?'<p class="staff-help">已報到，可到叫號管理處理 '+esc(linked.number)+'</p>':'')+'</article>';
+   ''+'</article>';
   };
-  html+='<div class="grid4" style="margin-bottom:16px">'+stat("待處理預約",openBookings.length)+stat("待報到",pendingBookings.length)+
+  html+=numberSettingsPanel("booking",t,isManager)+'<div class="grid4" style="margin-bottom:16px">'+stat("待處理預約",openBookings.length)+stat("待報到",pendingBookings.length)+
     stat("已報到未結案",openBookings.filter(x=>x.status==="CHECKED_IN").length)+stat("已處理預約",doneBookings.length)+'</div>'+
    box("預約管理方式",'<p class="muted">只要沒有標記完成、未到或取消，預約就不因跨過午夜而消失。店員可直接勾選狀態，也可重新選擇修正手誤。</p>'+
-    '<p class="staff-help">「已報到」會產生或恢復候位號碼；同一顧客有其他號碼也能由店員操作。未來的預約僅可取消或恢復。</p>'+
-    '<div class="staff-actionbar">'+btn("前往叫號管理","open-queue","secondary")+
+    '<p class="staff-help">預約獨立管理：「已報到」不會產生叫號號碼，也不需前往叫號管理。未來的預約僅可取消或恢復。</p>'+
+    '<div class="staff-actionbar">'+
     (lastStaffChange&&lastStaffChange.slug===slug?btn("還原上一步","undo-staff","outline"):"")+'</div>')+
    box("待處理預約（"+openBookings.length+" 筆）",openBookings.length?openBookings.map(card).join(""):'<p class="muted">目前沒有未結案預約。</p>')+
    box("已處理預約（最近 "+staffHistoryDays+" 天，"+doneBookings.length+" 筆）",'<p class="staff-help">包含已完成、未到、已取消。此區仍可修正狀態，資料依處理時間排序。</p>'+
@@ -669,14 +682,14 @@ function staffRender(){
     '<p class="staff-help">顧客不會看到這些預約，也不會收到刪除通知。取消勾選即可恢復。</p>'+
     (deletedBookings.length?deletedBookings.map(card).join(""):'<p class="muted">目前沒有已刪除預約。</p>'));
  }else if(staffTab==="queue"){
-  const deletedBookingIds=new Set(deletedBookings.map(x=>x.id));
+  
   const card=x=>'<article class="staff-record '+(x.deleted_at?'staff-deleted-record':'')+'"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.number)+'　'+esc(x.name)+'</div>'+
    '<div class="small">'+esc(x.day)+' ・ '+esc(x.source==="RESERVATION"?"預約報到":"現場取號")+
    (x.reservation_id?" ・ 已連動預約":"")+'</div>'+
    '<div class="small">取號時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
    selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+(x.deleted_at?'<p class="staff-help">此號碼已從顧客端隱藏；取消勾選刪除即可恢復。</p>':staffStatusPicker("ticket",x,true))+
-   staffDeletePicker("ticket",x,deletedBookingIds.has(x.reservation_id))+'</article>';
-  html+='<div class="grid4" style="margin-bottom:16px">'+stat("正在叫號",active?.number||"—")+stat("候位中",waiting.length)+
+   staffDeletePicker("ticket",x)+'</article>';
+  html+=numberSettingsPanel("queue",t,isManager)+'<div class="grid4" style="margin-bottom:16px">'+stat("正在叫號",active?.number||"—")+stat("候位中",waiting.length)+
    stat("已過號",passed.length)+stat("已結束",doneTickets.length)+'</div>'+
    box("叫號操作",'<p class="muted">仍在候位的跨日號碼會繼續排隊。號碼狀態可直接勾選與更正。</p>'+
     '<div class="staff-actionbar">'+btn("叫下一位","call","primary",(!waiting.length||!!active||!t.modules.calling?"disabled":""))+
@@ -930,7 +943,7 @@ function crossRecords(){
  const errMessage=customerActivityError?'<p class="alert">'+esc(customerActivityError)+'</p>':"";
  const bookingHtml=bookings.length?bookings.slice(0,80).map(x=>
    '<article class="cross-record"><div class="cross-ticket-head"><strong>'+esc(x.shop_name)+'</strong>'+tag(x.status)+'</div>'+
-   '<div>'+esc(x.day)+' '+esc(x.time)+' ・ '+esc(x.party)+' 位</div>'+
+   '<div>預約 '+esc(x.number||"—")+' ・ '+esc(x.day)+' '+esc(x.time)+' ・ '+esc(x.party)+' 位</div>'+
    '<div class="small">送出預約時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
    selectedItemsHtml(x.selected_items)+
    '<div class="staff-actionbar">'+btn("查看／管理預約","open-cross-booking","secondary",
@@ -999,7 +1012,7 @@ function renderBookings(items,allowCancel){
    btn("編輯預約","edit-book","secondary",'data-id="'+esc(x.id)+'"')+
    btn(focused&&manageMode==="cancel"?"確認取消預約":"取消預約","cancel-my-book","outline",'data-id="'+esc(x.id)+'"')+'</div>':"";
   return '<article class="staff-record" style="'+(focused?'border:2px solid #0d9488;':'')+'">'+
-   '<div class="staff-record-head"><div><strong>'+esc(x.day)+' '+esc(x.time)+'</strong>'+
+   '<div class="staff-record-head"><div><strong>'+'預約 '+esc(x.number||"—")+' '+esc(x.day)+' '+esc(x.time)+'</strong>'+
    '<div class="small">'+esc(x.name)+' ・ '+esc(x.party)+' 位</div>'+
    '<div class="small">送出預約時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
    selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+
@@ -1214,7 +1227,27 @@ document.addEventListener("click",async ev=>{
      return "「"+item.name+"」已"+(item.active?"停用":"上架");
    });return;
  }
- if(a==="save-menu-modes"){
+ if(a==="save-number-prefix"){
+   const kind=b.dataset.kind;
+   if(!["booking","queue"].includes(kind))return;
+   const prefix=document.getElementById("prefix-"+kind)?.value??"";
+   if(Array.from(prefix).length>3||/[\u0000-\u001f\u007f]/.test(prefix)){showActionFeedback("前綴最多 3 字，不能包含控制字元","error");return;}
+   await act(async()=>{
+     const result=await rpc(kind==="booking"?"so_set_booking_prefix":"so_set_queue_prefix",{p_slug:slug,p_prefix:prefix});
+     return (kind==="booking"?"預約":"叫號")+"前綴已設為："+(result.prefix||"（無前綴）")+"，不影響既有編號";
+   });return;
+  }
+  if(a==="reset-serial"){
+   const kind=b.dataset.kind;
+   if(!["booking","queue"].includes(kind))return;
+   const label=kind==="booking"?"預約":"叫號";
+   if(!confirm("確定重置「"+label+"」編號嗎？\n\n下一筆新"+(kind==="booking"?"預約":"取號")+"會從 1 開始。既有資料與原編號保留。\n\n未結案資料也將保留，可能與新號碼顯示相同編號。"))return;
+   await act(async()=>{
+     const result=await rpc(kind==="booking"?"so_reset_booking_number":"so_reset_queue_number",{p_slug:slug});
+     return label+"編號已重置，新資料將從 "+(result.prefix||"")+"1 開始；既有資料未更動。";
+   });return;
+  }
+  if(a==="save-menu-modes"){
    await act(async()=>{
      const value=await rpc("so_menu_set_modes",{p_slug:slug,
        p_booking_mode:val("menu-book-mode"),p_queue_mode:val("menu-queue-mode")});
