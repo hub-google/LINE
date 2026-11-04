@@ -31,7 +31,21 @@ function options(items,labelFn,selected=''){return items.map(x=>'<option value="
 function role(){if(app.mode==='demo')return 'owner';return (app.data?.members||[]).find(x=>x.user_id===app.user?.id)?.role||'employee';}
 function manager(){return app.mode==='demo'||['owner','hr','manager'].includes(role());}
 function banner(m,err=false){$('toast').insertAdjacentHTML('beforeend','<div class="toast '+(err?'error':'')+'">'+esc(m)+'</div>');setTimeout(()=>{const e=$('toast').firstElementChild;if(e)e.remove();},4800);}
-async function call(url,method='GET',data=null,token=KEY){const headers={apikey:KEY};if(token!==KEY)headers.Authorization='Bearer '+token;if(data!==null)headers['Content-Type']='application/json';if(method==='POST'||method==='PATCH')headers.Prefer='return=representation';const res=await fetch(API+url,{method,headers,body:data===null?undefined:JSON.stringify(data),cache:'no-store'});const text=await res.text();let j;try{j=text?JSON.parse(text):null;}catch{j={message:text.slice(0,200)};}if(!res.ok)throw Error(j?.message||j?.error_description||j?.error||'連線失敗 ('+res.status+')');return j;}
+async function call(url,method='GET',data=null,token=KEY,retry=true){const headers={apikey:KEY};if(token!==KEY)headers.Authorization='Bearer '+token;if(data!==null)headers['Content-Type']='application/json';if(method==='POST'||method==='PATCH')headers.Prefer='return=representation';const res=await fetch(API+url,{method,headers,body:data===null?undefined:JSON.stringify(data),cache:'no-store'});const text=await res.text();let j;try{j=text?JSON.parse(text):null;}catch{j={message:text.slice(0,200)};}if(!res.ok&&res.status===401&&retry&&token!==KEY){const renewed=await renewSession();return call(url,method,data,renewed,false);}if(!res.ok)throw Error(j?.message||j?.error_description||j?.error||'連線失敗 ('+res.status+')');return j;}
+async function renewSession(){
+ let saved={};try{saved=JSON.parse(sessionStorage.getItem('wm_auth')||'{}')}catch{}
+ if(!saved.refresh_token)throw Error('登入已過期，請重新登入企業帳號');
+ const response=await fetch(API+'/auth/v1/token?grant_type=refresh_token',{
+  method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},
+  body:JSON.stringify({refresh_token:saved.refresh_token}),cache:'no-store'
+ });
+ const value=await response.json();
+ if(!response.ok||!value.access_token)throw Error('登入有效期已結束，請重新登入');
+ app.token=value.access_token;app.user=value.user||saved.user;
+ sessionStorage.setItem('wm_auth',JSON.stringify({token:app.token,user:app.user,
+  refresh_token:value.refresh_token||saved.refresh_token,expires_at:value.expires_at||0}));
+ return app.token;
+}
 async function demo(action='snapshot',data={}){return call('/rest/v1/rpc/wm_demo_api','POST',{p_action:action,p_data:data});}
 async function query(table,params=''){return call('/rest/v1/'+table+'?'+params,'GET',null,app.token);}
 async function reload(silent=false){
