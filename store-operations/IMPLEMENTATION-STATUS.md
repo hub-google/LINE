@@ -1,6 +1,6 @@
 # LINE 預約 SaaS：最新版 PRD 交付現況與未完成清單
 
-> 更新基準：2026-11-04，主 PRD `store-operations/PRD.md` 第 0–102 章，及 `saas/PRD-20261104-DoYouBook-benchmark-and-solutions.md`。程式比對至 main commit `62a5c01c6c0150bdb99345341fb25a0fadc049d3`。本文件是**實作狀態盤點**，**不得當作功能已驗收或刪除原 PRD 的依據**。
+> 更新基準：2026-11-04，主 PRD `store-operations/PRD.md` 第 0–103 章，及 `saas/PRD-20261104-DoYouBook-benchmark-and-solutions.md`。程式比對至 main commit `36c35a1ce803dabdb7fb42201d1793f76094dac6`。本文件是**實作狀態盤點**，**不得當作功能已驗收或刪除原 PRD 的依據**。
 >
 > 總結：**尚未完成全部 PRD**。第 102 章規定 DoYouBook C01–C58 與 CallMeBack K01–K32 均須納入，且 A/B/C 波次全部必做。現有 GitHub Pages + Supabase SaaS 主要完成現行核心預約／取號／叫號，完整資源排程、CRM、商業化、PWA、Calendar、多窗口、設備合作等沒有達到 PRD 全範圍。另有未部署／未逐一 E2E 驗收的 Next.js 程式骨架，不可算正式可用功能。
 
@@ -22,8 +22,13 @@
 | #10 | 預約人數與可選時段名額連動、空 merchant 先找店、顧客可查看／列印當下預約憑證 | [#10](https://github.com/hub-google/LINE/pull/10) | 完整離線核對／資源排程 |
 | #11 | 店員已載入工作清單的關鍵字／日期／狀態篩選與管理者 CSV | [#11](https://github.com/hub-google/LINE/pull/11) | 僅限工作清單資料範圍 |
 | #12 | 預約及取號顯示建立時間精確到秒，台灣時區 | [#12](https://github.com/hub-google/LINE/pull/12) | 跨多時區的完整營業日政策測試 |
-| #14 | 新增 Supabase `so_staff_reservation_search`：全歷史查詢、門市權限、狀態／日期／軟刪除條件、25 筆分頁，舊工作清單不變 | [#14](https://github.com/hub-google/LINE/pull/14) | 日／週／月曆、萬筆資料效能與多裝置 E2E 尚缺 |
+| #14 | 新增 Supabase `so_staff_reservation_search`：全歷史查詢、門市權限、狀態／日期／軟刪除條件、25 筆分頁，舊工作清單不變 | [#14](https://github.com/hub-google/LINE/pull/14) | 萬筆資料效能與多裝置 E2E 尚缺 |
 | #15 | 管理者可批次匯出完整搜尋結果 CSV（每批 100 筆，單次最多 20,000 筆），公式防護與筆數一致性檢查 | [#15](https://github.com/hub-google/LINE/pull/15) | 超過 20,000 筆須分日期區間下載，非全量非同步備份服務 |
+| #17 | 店家預約日／週／月曆，伺服器日期聚合與分頁 | [#17](https://github.com/hub-google/LINE/pull/17) | 資源排程、改期拖曳、真實大量壓測未完成 |
+| #18 | 顧客驗證後可匯出單筆 ICS 行事曆事件 | [#18](https://github.com/hub-google/LINE/pull/18) | 訂閱及 Google Calendar OAuth／同步未完成 |
+| #19 | 網頁安裝用 PWA manifest、圖示、安全離線提示與僅靜態快取 | [#19](https://github.com/hub-google/LINE/pull/19) | Web Push、裝置撤權、實機驗收未完成 |
+| #20 | K03 候位票券記錄並顯示每組人數，保留舊 UUID／序號／資料 | [#20](https://github.com/hub-google/LINE/pull/20) | 自訂人數選項、桌型適配、多窗口未完成 |
+| #21 | UX-11 單店／跨店叫號最後成功同步時間、失聯警示與手動更新 | [#21](https://github.com/hub-google/LINE/pull/21) | 多裝置與斷線情境實機 E2E 未完成 |
 
 正式網站：https://hub-google.github.io/LINE/booking/ 。實際已執行的 GitHub Actions CI/Pages 部署，**不等於**已完成 LINE 手機、真實收款、裝置／商家實測。
 
@@ -38,18 +43,18 @@
 | NR-05 | 尚未完成 | 90 分鐘服務＋30 分緩衝、指定員工／房間／設備的交易級不可重疊引擎 |
 | NR-06 | 尚未完成 | 座位與容量隨時間釋放／再利用，按服務或時段計算 |
 | NR-07 | 尚未完成 | 固定場次、每日名額、不限時至打烊、包場與取消恢復 |
-| NR-08 | 尚未完成 | Ticket 人數、桌型適配、多窗口分流與按組數的公平排序 |
+| NR-08 | 部分完成 | Ticket.party_size 已可由顧客輸入並於後台／本人紀錄顯示；桌型適配、多窗口分流、商家自訂人數與公平排序仍缺 |
 | NR-09 | 尚未完成 | HOLD/RESUME、期限、保留次數、恢復順位及相關稽核 |
 | NR-10 | 尚未完成 | 早午晚休場次切換（不中斷舊候位、不連動重置） |
 | NR-11 | 尚未完成 | CALLED、ARRIVED、ADMITTED、SERVING、COMPLETED 各自可見且可稽核 |
 | NR-12 | 部分完成 | Tenant/員工權限與部分原子操作已做；多分店多窗口併發、跨商家滲透測試仍缺 |
-| NR-13 | 部分完成 | 顧客進度、單店看板、Realtime／輪詢、LINE 主動查詢有程式；多裝置斷線／跨店 E2E 尚缺 |
+| NR-13 | 部分完成 | 顧客進度、單店看板、Realtime／輪詢、最後成功同步時間及斷線非即時警示已做；多裝置斷線／跨店 E2E 尚缺 |
 | NR-14 | 部分完成 | LINE 通知、Outbox/重試/健康度有基礎；交易原子入列、取消改期提醒、API 429/5xx、重送／死信全流程仍需驗證 |
 | NR-15 | 部分完成 | 全螢幕單店看板已提供；多窗口多號、促銷同框、看板配對碼與可撤銷 device token 未做完 |
 | NR-16 | 核心可操作，待 E2E | QR/A4/PNG/瀏覽器列印有程式；不同店、不同 LINE/桌面瀏覽器及印表機實測未齊 |
 | NR-17 | 部分完成 | 商家申請、審核及 OA 串接介面存在；完整一步步精靈、自有 Provider 實體 E2E、切換/撤權仍缺 |
-| NR-18 | 尚未完成 | ICS 訂閱、GCal 單向與安全雙向提案／衝突審核 |
-| NR-19 | 尚未完成 | 可安裝 PWA、Web Push、員工撤權取消訂閱、降級規則 |
+| NR-18 | 部分完成 | 顧客單筆 ICS 匯出已做；ICS 訂閱、GCal 單向及安全雙向提案／衝突審核未完成 |
+| NR-19 | 部分完成 | PWA 安裝與靜態離線提示已部署；Web Push、員工撤權、訂閱／取消訂閱、實機驗收仍缺 |
 | NR-20 | 部分完成 | 顧客改期／取消與店員狀態修正存在；店員直接改時段服務、提醒重排、已付款差額和退款未完整 |
 | NR-21 | 部分完成 | 本店完整歷史查詢與管理者批次 CSV 已上線（單次 20,000 筆上限）；完整客戶簿、黑名單／申訴、OTP 身分關聯、超量報表服務仍缺 |
 | NR-22 | 部分完成 | 公開 opt-in 店家目錄可搜尋；縣市地理／距離／地圖與 2D 像素風商店街未交付 |
@@ -62,15 +67,15 @@
 
 **A 波：正確性與共用底座優先**
 1. 正規化 service/resource/slot 的 duration、buffer、staff、room、座位、固定場次與每日容量；伺服器端交易鎖／防超賣。
-2. Ticket party size、窗口／桌型隊列、HOLD/RESUME、場次、入場/服務狀態、可撤銷看板裝置授權。
+2. Ticket party size 已實作基本收集／顯示，仍缺自訂人數、窗口／桌型隊列、HOLD/RESUME、場次、入場／服務狀態、可撤銷看板裝置授權。
 3. 完整歷史搜尋與後端分頁已上線，待真實萬筆資料性能驗收；仍缺預約憑證核對／離線備援、通知完整交易保證及多店員併發。
 4. 所有 P0：Unicode 3 字前綴、跨日、LIFF 多裝置、LINE OA 失敗與通知、資安/QA 資料保全的端到端驗收。
 
 **B 波：完整店家營運**
 1. 店員代客預約、編輯/改期、可設定二次確認；每服務時長顯示控制、價量快照、加購、自訂問題、取消期限和提醒。
-2. 店家開通精靈、自有 LINE OA 多 Provider、訊息額度/事件設定、品牌公告多圖、日週月曆／員工資源排班。
+2. 店家開通精靈、自有 LINE OA 多 Provider、訊息額度／事件設定、品牌公告多圖、員工資源排班；日週月預約日曆已做基礎查詢與顯示。
 3. 客戶簿、No-show 記錄與申訴／黑名單、20,000 筆以上的全量報表服務、非 LINE 訪客 OTP。
-4. PWA/Web Push、ICS、Google Calendar 單向、看板多號碼與促銷、開放合作 API 初版。
+4. PWA 安裝與單筆 ICS 匯出已有基礎；仍缺 Web Push、ICS 訂閱、Google Calendar 單向、看板多號碼與促銷、開放合作 API 初版。
 
 **C 波：商業化與加值**
 1. 店家公開搜尋的完整分類、附近位置、地圖與 2D 像素風探店。
