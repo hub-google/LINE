@@ -31,7 +31,7 @@ function options(items,labelFn,selected=''){return items.map(x=>'<option value="
 function role(){if(app.mode==='demo')return 'owner';return (app.data?.members||[]).find(x=>x.user_id===app.user?.id)?.role||'employee';}
 function manager(){return app.mode==='demo'||['owner','hr','manager'].includes(role());}
 function banner(m,err=false){$('toast').insertAdjacentHTML('beforeend','<div class="toast '+(err?'error':'')+'">'+esc(m)+'</div>');setTimeout(()=>{const e=$('toast').firstElementChild;if(e)e.remove();},4800);}
-async function call(url,method='GET',data=null,token=KEY){const headers={apikey:KEY,Authorization:'Bearer '+token};if(data!==null)headers['Content-Type']='application/json';if(method==='POST'||method==='PATCH')headers.Prefer='return=representation';const res=await fetch(API+url,{method,headers,body:data===null?undefined:JSON.stringify(data),cache:'no-store'});const text=await res.text();let j;try{j=text?JSON.parse(text):null;}catch{j={message:text.slice(0,200)};}if(!res.ok)throw Error(j?.message||j?.error_description||j?.error||'連線失敗 ('+res.status+')');return j;}
+async function call(url,method='GET',data=null,token=KEY){const headers={apikey:KEY};if(token!==KEY)headers.Authorization='Bearer '+token;if(data!==null)headers['Content-Type']='application/json';if(method==='POST'||method==='PATCH')headers.Prefer='return=representation';const res=await fetch(API+url,{method,headers,body:data===null?undefined:JSON.stringify(data),cache:'no-store'});const text=await res.text();let j;try{j=text?JSON.parse(text):null;}catch{j={message:text.slice(0,200)};}if(!res.ok)throw Error(j?.message||j?.error_description||j?.error||'連線失敗 ('+res.status+')');return j;}
 async function demo(action='snapshot',data={}){return call('/rest/v1/rpc/wm_demo_api','POST',{p_action:action,p_data:data});}
 async function query(table,params=''){return call('/rest/v1/'+table+'?'+params,'GET',null,app.token);}
 async function reload(silent=false){
@@ -193,7 +193,7 @@ function openModal(title,body){
 function closeModal(){$('overlay').hidden=true;$('overlay').innerHTML='';}
 function formFields(items){return items.map(i=>'<div class="field '+(i.wide?'wide':'')+'"><label for="'+esc(i.name)+'">'+esc(i.label)+'</label>'+i.html+'</div>').join('');}
 function modalForm(name,fields,submit='儲存'){return '<form data-form="'+name+'"><div class="form-grid">'+formFields(fields)+'</div><div class="modal-actions"><button type="button" class="btn" data-action="closeModal">取消</button><button type="submit" class="btn primary">'+esc(submit)+'</button></div></form>';}
-function input(name,type='text',value='',extras=''){return '<input id="'+name+'" name="'+name+'" type="'+type+'" value="'+esc(value)+'" '+extras+' required>';}
+function input(name,type='text',value='',extras=''){return '<input id="'+name+'" name="'+name+'" type="'+type+'" value="'+esc(value)+'" '+extras+(name==='notes'?'':' required')+'>';}
 function selectField(name,html){return '<select id="'+name+'" name="'+name+'" required>'+html+'</select>';}
 function showShift(){
  const day=app.date;
