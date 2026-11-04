@@ -31,13 +31,14 @@ jobs:
           node --check store-operations/saas/version-watch.js
           node --check .github/scripts/build-line-saas.mjs
       - name: Verify LINE customer and notification contracts
-        run: node --test store-operations/tests/saas-contract.test.mjs store-operations/tests/queue-board-contract.test.mjs store-operations/tests/qr-poster-contract.test.mjs
+        run: node --test store-operations/tests/saas-contract.test.mjs store-operations/tests/queue-board-contract.test.mjs store-operations/tests/qr-poster-contract.test.mjs store-operations/tests/marketing-home-contract.test.mjs
       - name: Build versioned LINE Pages files
         shell: bash
         run: |
           set -euo pipefail
           node .github/scripts/build-line-saas.mjs "$RUNNER_TEMP/line-saas-dist"
           grep -q "$GITHUB_SHA" "$RUNNER_TEMP/line-saas-dist/index.html"
+          grep -q "$GITHUB_SHA" "$RUNNER_TEMP/line-saas-dist/home.html"
           grep -q "$GITHUB_SHA" "$RUNNER_TEMP/line-saas-dist/board.html"
           grep -q "$GITHUB_SHA" "$RUNNER_TEMP/line-saas-dist/poster.html"
           grep -q "$GITHUB_SHA" "$RUNNER_TEMP/line-saas-dist/release.json"
@@ -49,10 +50,10 @@ jobs:
           pubdir="$RUNNER_TEMP/line-gh-pages"
           git worktree add --detach "$pubdir" origin/gh-pages
           mkdir -p "$pubdir/saas"
-          for f in index.html board.html poster.html directory.html merchant-register.html merchant-center.html privacy.html terms.html version-watch.js release.json; do
+          for f in index.html home.html board.html poster.html directory.html merchant-register.html merchant-center.html privacy.html terms.html version-watch.js release.json; do
             cp "$RUNNER_TEMP/line-saas-dist/$f" "$pubdir/saas/$f"
           done
-          git -C "$pubdir" add -- saas/index.html saas/board.html saas/poster.html saas/directory.html saas/merchant-register.html saas/merchant-center.html saas/privacy.html saas/terms.html saas/version-watch.js saas/release.json
+          git -C "$pubdir" add -- saas/index.html saas/home.html saas/board.html saas/poster.html saas/directory.html saas/merchant-register.html saas/merchant-center.html saas/privacy.html saas/terms.html saas/version-watch.js saas/release.json
           if git -C "$pubdir" diff --cached --quiet; then
             echo "LINE SaaS pages already current."
             exit 0
