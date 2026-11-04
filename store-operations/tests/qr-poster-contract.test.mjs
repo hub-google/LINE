@@ -48,3 +48,14 @@ test("QR can be printed on A4 or exported to real PNG",()=>{
   assert.match(poster,/qrcode-generator@2\.0\.4/);
   assert.match(poster,/navigator\.clipboard\.writeText\(target\)/);
 });
+
+test("staff management links only to real QR and TV tools, not queue conversion",()=>{
+ const staff=read("saas/index.html");
+ assert.match(staff,/href="\.\/poster\.html\?merchant='\+encodeURIComponent\(slug\)\+'\&type=reserve"/);
+ assert.match(staff,/href="\.\/poster\.html\?merchant='\+encodeURIComponent\(slug\)\+'\&type=queue"/);
+ assert.match(staff,/href="\.\/board\.html\?merchant='\+encodeURIComponent\(slug\)/);
+ assert.match(staff,/製作預約 QR 立牌/);
+ assert.match(staff,/電視即時叫號看板/);
+ assert.match(staff,/製作現場取號 QR 立牌/);
+ assert.match(staff,/已報到.*不會產生叫號號碼/);
+});
