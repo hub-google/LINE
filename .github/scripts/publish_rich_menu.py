@@ -15,7 +15,7 @@ from PIL import Image, ImageDraw, ImageFont
 WIDTH, HEIGHT = 2500, 1686
 SPLITS_X = [0, 833, 1666, WIDTH]
 SPLITS_Y = [0, 843, HEIGHT]
-BASE = "https://hub-google.github.io/LINE/saas/"
+BASE = "https://hub-google.github.io/LINE/booking/"
 CENTER = BASE + "merchant-center.html"
 ITEMS = [
     ("搜尋店家", "找店家並預約", "search", {"type": "uri", "label": "搜尋店家", "uri": BASE + "directory.html?mode=search"}),
