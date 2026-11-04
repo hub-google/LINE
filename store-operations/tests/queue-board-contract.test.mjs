@@ -19,7 +19,8 @@ test("TV board browser module parses and supports automatic deployment versionin
   const syntax=spawnSync(process.execPath,["--input-type=module","--check"],{input:scripts[0][1],encoding:"utf8"});
   assert.equal(syntax.status,0,syntax.stderr);
   assert.match(build,/"board\.html"/);
-  assert.match(deploy,/saas\/board\.html/);
+  assert.match(deploy,/for product in booking saas/);
+  assert.match(deploy,/for f in index\.html home\.html board\.html/);
 });
 
 test("TV board uses persisted queue display number and does not expose personal data",()=>{

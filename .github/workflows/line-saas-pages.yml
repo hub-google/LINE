@@ -30,8 +30,9 @@ jobs:
         run: |
           node --check store-operations/saas/version-watch.js
           node --check .github/scripts/build-line-saas.mjs
+          test -s store-operations/saas/booking-theme.css
       - name: Verify LINE customer and notification contracts
-        run: node --test store-operations/tests/saas-contract.test.mjs store-operations/tests/queue-board-contract.test.mjs store-operations/tests/qr-poster-contract.test.mjs store-operations/tests/marketing-home-contract.test.mjs store-operations/tests/booking-idempotency-contract.test.mjs store-operations/tests/booking-break-overlap-contract.test.mjs
+        run: node --test store-operations/tests/saas-contract.test.mjs store-operations/tests/queue-board-contract.test.mjs store-operations/tests/qr-poster-contract.test.mjs store-operations/tests/marketing-home-contract.test.mjs store-operations/tests/booking-branding-contract.test.mjs store-operations/tests/booking-idempotency-contract.test.mjs store-operations/tests/booking-break-overlap-contract.test.mjs
       - name: Build versioned LINE Pages files
         shell: bash
         run: |
@@ -42,22 +43,27 @@ jobs:
           grep -q "$GITHUB_SHA" "$RUNNER_TEMP/line-saas-dist/board.html"
           grep -q "$GITHUB_SHA" "$RUNNER_TEMP/line-saas-dist/poster.html"
           grep -q "$GITHUB_SHA" "$RUNNER_TEMP/line-saas-dist/release.json"
-      - name: Publish only LINE SaaS pages, preserving other products
+          grep -q "booking-theme.css" "$RUNNER_TEMP/line-saas-dist/index.html"
+          test -s "$RUNNER_TEMP/line-saas-dist/booking-theme.css"
+      - name: Publish /booking/ and keep legacy /saas/ compatible
         shell: bash
         run: |
           set -euo pipefail
           git fetch origin refs/heads/gh-pages:refs/remotes/origin/gh-pages
           pubdir="$RUNNER_TEMP/line-gh-pages"
           git worktree add --detach "$pubdir" origin/gh-pages
-          mkdir -p "$pubdir/saas"
-          for f in index.html home.html board.html poster.html directory.html merchant-register.html merchant-center.html privacy.html terms.html version-watch.js release.json; do
-            cp "$RUNNER_TEMP/line-saas-dist/$f" "$pubdir/saas/$f"
+          for product in booking saas; do
+            mkdir -p "$pubdir/$product"
+            for f in index.html home.html board.html poster.html directory.html merchant-register.html merchant-center.html privacy.html terms.html version-watch.js release.json booking-theme.css; do
+              cp "$RUNNER_TEMP/line-saas-dist/$f" "$pubdir/$product/$f"
+            done
           done
-          git -C "$pubdir" add -- saas/index.html saas/home.html saas/board.html saas/poster.html saas/directory.html saas/merchant-register.html saas/merchant-center.html saas/privacy.html saas/terms.html saas/version-watch.js saas/release.json
+          # Only touch booking/ and legacy saas/; all other LINE projects are preserved.
+          git -C "$pubdir" add -- booking/ saas/
           if git -C "$pubdir" diff --cached --quiet; then
             echo "LINE SaaS pages already current."
             exit 0
           fi
           git -C "$pubdir" -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "deploy: LINE booking website $GITHUB_SHA"
           git -C "$pubdir" push origin HEAD:gh-pages
-          echo "Published /LINE/saas/ and release.json (CDN propagation may take several minutes)."
+          echo "Published /LINE/booking/ and preserved /LINE/saas/ for existing LIFF callbacks and links."

@@ -1,5 +1,5 @@
 # LINE 多企業預約、叫號 SaaS
-實際網站：https://hub-google.github.io/LINE/saas/
+實際網站：https://hub-google.github.io/LINE/booking/
 
 ## 三個入口
 - 平台總後台：?view=platform
@@ -8,7 +8,7 @@
 - 第二個租戶：?view=customer&merchant=demo-clinic（僅預約）
 
 ## 架構
-- 前端：GitHub Pages，gh-pages 分支 saas/index.html（同版原始碼在 main/store-operations/saas/index.html）。
+- 前端：GitHub Pages，gh-pages 分支 booking/index.html（過渡期同步保留 saas/index.html；同版原始碼在 main/store-operations/saas/index.html）。
 - 後端資料：現有 Supabase 專案 unapiwajmgqqtdkixaab。只使用 `so_` 前綴資料表與 RPC，不修改其他產品資料。
 - 所有寫入經 Supabase Auth + SECURITY DEFINER RPC 驗證權限後執行。公開讀取資料經 `so_public_state` 過濾，顧客只能看到自己的預約與取號紀錄。
 - 企業開通及設定：`so_create_tenant`、`so_update_tenant`。
@@ -54,10 +54,10 @@
 
 ## 2026-11-03 LINE 通知／實測版本
 
-- 正式 SaaS 網頁：https://hub-google.github.io/LINE/saas/
-- 顧客取號：https://hub-google.github.io/LINE/saas/?view=customer&merchant=greenfield-salon&tab=queue
-- 顧客預約：https://hub-google.github.io/LINE/saas/?view=customer&merchant=greenfield-salon&tab=reserve
-- 店員入口：https://hub-google.github.io/LINE/saas/?view=staff&merchant=greenfield-salon
+- 正式 SaaS 網頁：https://hub-google.github.io/LINE/booking/
+- 顧客取號：https://hub-google.github.io/LINE/booking/?view=customer&merchant=greenfield-salon&tab=queue
+- 顧客預約：https://hub-google.github.io/LINE/booking/?view=customer&merchant=greenfield-salon&tab=reserve
+- 店員入口：https://hub-google.github.io/LINE/booking/?view=staff&merchant=greenfield-salon
 - LIFF URL：https://liff.line.me/2012346974-bmC3fZuf
 - LINE Developers LIFF Endpoint URL 應設為顧客取號網址，並啟用 openid scope。
 - Messaging API Webhook：https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/line-bridge?action=webhook；verify_jwt=false 且需 LINE 原始 request body HMAC 驗證。

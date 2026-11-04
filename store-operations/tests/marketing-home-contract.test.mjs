@@ -18,7 +18,8 @@ test("independent homepage is versioned and included in non-destructive Pages de
  assert.match(landing,/<meta name="line-saas-build" content="__LINE_SAAS_BUILD__">/);
  assert.match(landing,/version-watch\.js\?build=__LINE_SAAS_BUILD__/);
  assert.match(build,/"home\.html"/);
- assert.match(publish,/saas\/home\.html/);
+ assert.match(publish,/for product in booking saas/);
+ assert.match(publish,/git -C "\$pubdir" add -- booking\/ saas\//);
  assert.match(publish,/marketing-home-contract\.test\.mjs/);
  assert.match(deployPr,/marketing-home-contract\.test\.mjs/);
  assert.match(landing,/<meta name="viewport"/);
@@ -40,8 +41,8 @@ test("homepage routes to real customer and merchant workflows without altering i
  assert.doesNotMatch(landing,/NT\$\s*0|NT\$\s*299|無限免費/);
 });
 
-test("bare /saas/ resolves to marketing home while all LIFF / merchant / staff routes remain untouched",()=>{
- const m=app.match(/<!-- Keep every existing view\/merchant\/LIFF callback URL working; route only the bare storefront entry\. -->\s*<script>([\s\S]*?)<\/script>/);
+test("bare booking or legacy SaaS roots open the dedicated booking homepage without touching LIFF routes",()=>{
+ const m=app.match(/<!-- Preserve existing view\/merchant\/LIFF callbacks; only bare legacy\/booking roots enter marketing home\. -->\s*<script>([\s\S]*?)<\/script>/);
  assert.ok(m,"missing isolated safe entry route");
  const syntax=spawnSync(process.execPath,["--check"],{input:m[1],encoding:"utf8"});
  assert.equal(syntax.status,0,syntax.stderr);
@@ -56,10 +57,14 @@ test("bare /saas/ resolves to marketing home while all LIFF / merchant / staff r
   runInNewContext(m[1],{location,URL,URLSearchParams,Set});
   return destination;
  }
- const base="https://hub-google.github.io/LINE/saas/";
+ const base="https://hub-google.github.io/LINE/booking/";
+ const legacy="https://hub-google.github.io/LINE/saas/";
  assert.equal(redirected(base),base+"home.html");
  assert.equal(redirected(base+"index.html"),base+"home.html");
  assert.equal(redirected(base+"?utm_source=LINE"),base+"home.html?utm_source=LINE");
+ assert.equal(redirected(legacy),base+"home.html");
+ assert.equal(redirected(legacy+"index.html"),base+"home.html");
+ assert.equal(redirected(legacy+"?utm_source=LINE"),base+"home.html?utm_source=LINE");
  for(const suffix of [
   "?view=customer&merchant=greenfield-salon",
   "?view=staff&merchant=qa-test",
@@ -69,5 +74,6 @@ test("bare /saas/ resolves to marketing home while all LIFF / merchant / staff r
   "#state"
  ]){
   assert.equal(redirected(base+suffix),null,"unexpected redirect for "+suffix);
+  assert.equal(redirected(legacy+suffix),null,"unexpected legacy redirect for "+suffix);
  }
 });
