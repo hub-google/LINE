@@ -483,8 +483,10 @@ let manageMode=["edit","cancel","view"].includes(incomingParam("mode"))?incoming
 let editingBookingId="",editDate="",editTime="",editParty=1,editSlots=null,editLoading=false;
 let progressTicketId=/^[0-9a-f-]{36}$/i.test(incomingParam("ticket")||"")?incomingParam("ticket"):"";
 let queueLive=null,queueLiveShop="",queueLiveLoading=false,queueLiveError="";
+let queueLastSuccessAt="",queueLastSuccessShop="";
 let queueRealtimeChannel=null,queueRealtimeTenant="";
 let customerActivity={tickets:[],reservations:[]},customerActivityError="";
+let crossLastSuccessAt="",crossLastSuccessShop="";
 let crossFilter="active",crossPageSize=12,crossCurrentStore=false,crossRealtimeChannel=null,crossRealtimeKey="",crossRefreshBusy=false;
 
 const features=[["reservation","線上預約"],["queue","線上取號"],["calling","現場叫號"]];
@@ -1233,6 +1235,7 @@ async function refreshQueueProgress(){
   const data=await rpc("so_queue_live",{p_slug:shop,p_ticket_id:queueTicketToDisplay()});
   if(view!=="customer"||customerTab!=="progress"||slug!==shop)return;
   queueLive=data;queueLiveShop=shop;queueLiveError="";
+  queueLastSuccessAt=new Date().toISOString();queueLastSuccessShop=shop;
   render();
   if(data?.tenant_id&&queueRealtimeTenant!==data.tenant_id){
     stopQueueRealtime();
@@ -1251,6 +1254,8 @@ async function refreshQueueProgress(){
 }
 function queueProgressBoard(){
  const fresh=queueLiveShop===slug?queueLive:null;
+ const lastSync=queueLastSuccessShop===slug?queueLastSuccessAt:"";
+ const notLive=!!queueLiveError||navigator.onLine===false;
  const own=fresh?.mine||null;
  const fallbackTicket=(customer?.my_tickets||[]).find(x=>x.id===progressTicketId)||
    (customer?.my_tickets||[]).find(x=>["WAITING","CALLED","SERVING"].includes(x.status));
@@ -1276,8 +1281,11 @@ function queueProgressBoard(){
        '</strong><small>依實際候位與服務中計算</small></div>'+
    '</div>'+
    '<p class="queue-board-note">'+esc(note)+'</p>'+
-   '<p class="small">'+(queueLiveError?esc(queueLiveError):
-      "即時更新中・若 LINE 切換背景，重新開啟將自動同步最新號碼")+'</p>'+
+   '<p class="small" role="status">'+
+      (notLive?"<strong>最新進度無法確認：</strong>"+(navigator.onLine===false?"目前離線。":esc(queueLiveError))+"以下為最後取得的資料，請重新連線再確認。":
+        "已連線；進度在畫面開啟期間自動更新。")+
+      " 最後成功更新："+(lastSync?esc(formatTaipeiCreated(lastSync)):"尚未成功同步")+
+      "（台灣時間）。"+'</p>'+
    '<div class="staff-actionbar">'+btn("重新整理進度","queue-refresh","outline")+
       btn("查看我的紀錄","queue-records","secondary")+
       (ownStatus==="WAITING"&&own?.id?btn("取消排隊","cancel-my-number","outline",'data-id="'+esc(own.id)+'"'):"")+
@@ -1317,6 +1325,7 @@ async function refreshCrossStoreOverview(){
    const activity=await rpc("so_customer_cross_store_overview",{p_slug:currentSlug});
    if(view!=="customer"||slug!==currentSlug)return;
    customerActivity=activity||{tickets:[],reservations:[]};customerActivityError="";
+   crossLastSuccessAt=new Date().toISOString();crossLastSuccessShop=currentSlug;
    render();syncCrossQueueRealtime();
  }catch(e){
    if(view==="customer"&&slug===currentSlug){
@@ -1327,11 +1336,15 @@ async function refreshCrossStoreOverview(){
 }
 function crossTicketCards(){
  const all=customerActivity?.tickets||[];
+ const lastCrossSync=crossLastSuccessShop===slug?crossLastSuccessAt:"";
+ const crossStale=!!customerActivityError||navigator.onLine===false;
  const active=all.filter(x=>["WAITING","CALLED","SERVING"].includes(x.status));
  const history=all.filter(x=>!["WAITING","CALLED","SERVING"].includes(x.status));
  const shown=crossFilter==="active"?active:crossFilter==="history"?history:all;
  const tabs=[["active","進行中",active.length],["history","已完成／過號",history.length],["all","全部紀錄",all.length]];
  return '<p class="muted">同一個 LINE 帳號在不同門市取得的號碼，統一顯示於此。各門市叫號進度互不影響。</p>'+
+   '<p class="small" role="status">'+(crossStale?"跨店進度未即時同步，以下紀錄可能不是最新狀態。":"跨店紀錄已同步。")+
+    " 最後成功更新："+(lastCrossSync?esc(formatTaipeiCreated(lastCrossSync)):"尚未成功同步")+"（台灣時間）。"+'</p>'+
    '<div class="cross-tabs" role="group" aria-label="取號狀態">'+
    tabs.map(x=>'<button type="button" data-act="cross-filter" data-filter="'+x[0]+'" class="'+(crossFilter===x[0]?'active':'')+'">'+x[1]+'（'+x[2]+'）</button>').join("")+'</div>'+
    (customerActivityError?'<p class="alert">'+esc(customerActivityError)+'</p>':"")+
@@ -1351,7 +1364,8 @@ function crossTicketCards(){
        '</div></article>';
    }).join(""):'<p class="muted">'+(crossFilter==="active"?"目前沒有進行中的取號。":"此分類目前沒有紀錄。")+'</p>')+
    (shown.length>crossPageSize?'<div class="staff-actionbar">'+btn("顯示更多（剩餘 "+(shown.length-crossPageSize)+" 筆）","cross-more","outline")+'</div>':"")+
-   '<div class="staff-actionbar">'+btn("查看目前門市叫號","cross-current-store","outline")+'</div>'+
+   '<div class="staff-actionbar">'+btn("手動更新跨店進度","cross-refresh","outline")+
+    btn("查看目前門市叫號","cross-current-store","outline")+'</div>'+
    '<p class="small">進度會在頁面開啟期間更新；進入單店後可查看該店的即時叫號。</p>';
 }
 function crossRecords(){
@@ -1653,7 +1667,7 @@ async function load(){err="";try{
    if(lineLinkStatus==="linked"){
      try{
        customerActivity=await rpc("so_customer_cross_store_overview",{p_slug:slug});
-       customerActivityError="";
+       customerActivityError="";crossLastSuccessAt=new Date().toISOString();crossLastSuccessShop=slug;
      }catch(e){
        customerActivityError="跨店資料暫時無法同步，請重新整理。";
      }
@@ -2073,6 +2087,7 @@ document.addEventListener("click",async ev=>{
    crossFilter=b.dataset.filter||"active";crossPageSize=12;render();return;
  }
  if(a==="cross-more"){crossPageSize+=12;render();return;}
+ if(a==="cross-refresh"){void refreshCrossStoreOverview();return;}
  if(a==="cross-current-store"){
    crossCurrentStore=true;queueLive=null;queueLiveShop="";
    stopCrossQueueRealtime();render();void refreshQueueProgress();return;
