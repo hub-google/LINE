@@ -1,7 +1,21 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="a8b0ea100b0936776cedfd52c46eb3b6f5586b23">
-<script defer src="./version-watch.js?build=a8b0ea100b0936776cedfd52c46eb3b6f5586b23"></script>
+<meta name="line-saas-build" content="4b1f3da1e4de9c5c8b3269c63ca24475079a95ac">
+<!-- Keep every existing view/merchant/LIFF callback URL working; route only the bare storefront entry. -->
+<script>
+(() => {
+  const qs=new URLSearchParams(location.search);
+  const marketingKeys=new Set(["utm_source","utm_medium","utm_campaign","utm_content","utm_term","gclid","fbclid"]);
+  const hasOnlyMarketingParameters=[...qs.keys()].every(key=>marketingKeys.has(key));
+  const atSaasRoot=/\/saas\/(?:index\.html)?$/.test(location.pathname);
+  if(atSaasRoot && hasOnlyMarketingParameters && !location.hash){
+    const landing=new URL("./home.html",location.href);
+    landing.search=location.search;
+    location.replace(landing.href);
+  }
+})();
+</script>
+<script defer src="./version-watch.js?build=4b1f3da1e4de9c5c8b3269c63ca24475079a95ac"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 門市營運｜企業開通、員工後台與顧客預約</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
