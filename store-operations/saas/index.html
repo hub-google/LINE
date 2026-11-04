@@ -1,6 +1,20 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
 <meta name="line-saas-build" content="__LINE_SAAS_BUILD__">
+<!-- Keep every existing view/merchant/LIFF callback URL working; route only the bare storefront entry. -->
+<script>
+(() => {
+  const qs=new URLSearchParams(location.search);
+  const marketingKeys=new Set(["utm_source","utm_medium","utm_campaign","utm_content","utm_term","gclid","fbclid"]);
+  const hasOnlyMarketingParameters=[...qs.keys()].every(key=>marketingKeys.has(key));
+  const atSaasRoot=/\/saas\/(?:index\.html)?$/.test(location.pathname);
+  if(atSaasRoot && hasOnlyMarketingParameters && !location.hash){
+    const landing=new URL("./home.html",location.href);
+    landing.search=location.search;
+    location.replace(landing.href);
+  }
+})();
+</script>
 <script defer src="./version-watch.js?build=__LINE_SAAS_BUILD__"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 門市營運｜企業開通、員工後台與顧客預約</title>
