@@ -94,6 +94,30 @@ end $$;
 revoke all on function public.so_customer_set_queue_near_alert(uuid,integer) from public,anon;
 grant execute on function public.so_customer_set_queue_near_alert(uuid,integer) to authenticated;
 
+
+-- Server-only final eligibility check performed immediately before LINE push.
+-- The cron scan is just a hint; this check protects against HOLD, cancellation,
+-- deletion, earlier call and preference changes after the job was queued.
+create or replace function public.so_queue_near_alert_eligibility(p_ticket_id uuid)
+returns jsonb language plpgsql stable security definer set search_path='' as $
+declare k public.so_tickets;v_ahead integer;
+begin
+  select * into k from public.so_tickets where id=p_ticket_id;
+  if not found or k.deleted_at is not null or k.status<>'WAITING'
+    or k.queue_near_alert_threshold not in (3,5)
+    or not exists(select 1 from public.so_tenants tenant
+      where tenant.id=k.tenant_id and tenant.status='ACTIVE') then
+    return jsonb_build_object('eligible',false);
+  end if;
+  select count(*) into v_ahead from public.so_tickets ahead
+  where ahead.tenant_id=k.tenant_id and ahead.status='WAITING'
+    and ahead.deleted_at is null
+    and (ahead.business_date,ahead.queue_joined_at,ahead.ticket_no,ahead.id)
+      < (k.business_date,k.queue_joined_at,k.ticket_no,k.id);
+  return jsonb_build_object('eligible',v_ahead<=k.queue_near_alert_threshold,'ahead',v_ahead);
+end $;
+revoke all on function public.so_queue_near_alert_eligibility(uuid) from public,anon,authenticated;
+
 -- A tiny per-minute scan of opted-in WAITING tickets, not one API call per
 -- queue change. Only rows reaching the selected threshold are queued.
 create or replace function public.so_queue_enqueue_near_alerts()
@@ -106,6 +130,12 @@ begin
     join public.so_tenants t on t.id=k.tenant_id and t.status='ACTIVE'
     where k.deleted_at is null and k.status='WAITING'
       and k.queue_near_alert_threshold in (3,5)
+      -- Do not starve new tickets when older alerts were already SENT.
+      and not exists (
+        select 1 from public.so_line_notice_outbox sent
+        where sent.tenant_id=k.tenant_id and sent.event_kind='QUEUE_NEAR'
+          and sent.reference_id=k.id and sent.status<>'SKIPPED'
+      )
       and (
         select count(*)
         from public.so_tickets ahead
