@@ -17,6 +17,7 @@ for (const name of pages) {
   await writeFile(path.join(dest, name), html.replaceAll(placeholder, sha), "utf8");
 }
 await copyFile(path.join(src, "version-watch.js"), path.join(dest, "version-watch.js"));
+await copyFile(path.join(src, "booking-theme.css"), path.join(dest, "booking-theme.css"));
 await writeFile(path.join(dest, "release.json"), JSON.stringify({
   build:sha, deployedAt:new Date().toISOString(), project:"line-booking"
 }, null, 2)+"\n", "utf8");
