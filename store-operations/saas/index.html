@@ -1253,16 +1253,19 @@ async function refreshQueueProgress(){
   const data=await rpc("so_queue_live",{p_slug:shop,p_ticket_id:queueTicketToDisplay()});
   if(view!=="customer"||customerTab!=="progress"||slug!==shop)return;
   queueLive=data;queueLiveShop=shop;queueLiveError="";
+  queueLastSuccessAt=new Date().toISOString();queueLastSuccessShop=shop;
   const alertTicketId=data?.mine?.id||queueTicketToDisplay();
-  if(alertTicketId&&!Object.prototype.hasOwnProperty.call(queueNearAlertSettings,alertTicketId)){
+  if(alertTicketId){
     try{
+      // Refresh with every explicit reload or realtime update, including
+      // preference changes made on the customer's other device.
       const pref=await rpc("so_customer_get_queue_near_alert",{p_ticket_id:alertTicketId});
       queueNearAlertSettings[alertTicketId]=[0,3,5].includes(pref.threshold)?pref.threshold:null;
     }catch(e){
-      queueNearAlertSettings[alertTicketId]=null;
+      if(!Object.prototype.hasOwnProperty.call(queueNearAlertSettings,alertTicketId))
+        queueNearAlertSettings[alertTicketId]=null;
     }
   }
-  queueLastSuccessAt=new Date().toISOString();queueLastSuccessShop=shop;
   render();
   if(data?.tenant_id&&queueRealtimeTenant!==data.tenant_id){
     stopQueueRealtime();
@@ -2205,11 +2208,7 @@ document.addEventListener("click",async ev=>{
   });
   void refreshQueueProgress();return;
  }
- if(a==="queue-refresh"){
-  const ticketId=queueLive?.mine?.id||queueTicketToDisplay();
-  if(ticketId)delete queueNearAlertSettings[ticketId];
-  void refreshQueueProgress();return;
- }
+ if(a==="queue-refresh"){void refreshQueueProgress();return;}
  if(a==="queue-records"){customerTab="mine";stopQueueRealtime();render();return;}
  if(a==="line-check-friendship"){await act(async()=>{
   await connectLineSession(true);
