@@ -686,7 +686,7 @@ Deno.serve(async (req: Request) => {
       const liffId = typeof payload.liffId === "string" ? payload.liffId.trim() : "";
       const botToken = typeof payload.botToken === "string" ? payload.botToken.trim() : "";
       const channelSecret = typeof payload.channelSecret === "string" ? payload.channelSecret.trim() : "";
-      if (!/^\\d{8,}-[A-Za-z0-9]+$/.test(liffId) ||
+      if (!/^\d{8,}-[A-Za-z0-9]+$/.test(liffId) ||
           botToken.length<32 || botToken.length>4096 ||
           !/^[0-9a-f]{32}$/i.test(channelSecret))
         return reply(400,{error:"LINE_CHANNEL_FIELDS_INVALID"},origin);
