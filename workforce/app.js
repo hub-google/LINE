@@ -28,7 +28,7 @@ function person(id){return (app.data?.members||[]).find(x=>x.id===id);}
 function branch(id){return (app.data?.branches||[]).find(x=>x.id===id);}
 function personLabel(id){return esc(person(id)?.display_name||'未知員工');}
 function options(items,labelFn,selected=''){return items.map(x=>'<option value="'+esc(x.id)+'" '+(x.id===selected?'selected':'')+'>'+esc(labelFn(x))+'</option>').join('');}
-function role(){if(app.mode==='demo')return 'owner';return (app.data?.members||[]).find(x=>x.user_id===app.user?.id)?.role||'employee';}
+function role(){if(app.mode==='demo')return 'owner';return (app.data?.members||[]).find(x=>x.tenant_id===app.tenantId&&x.user_id===app.user?.id)?.role||'employee';}
 function manager(){return app.mode==='demo'||['owner','hr','manager'].includes(role());}
 function banner(m,err=false){$('toast').insertAdjacentHTML('beforeend','<div class="toast '+(err?'error':'')+'">'+esc(m)+'</div>');setTimeout(()=>{const e=$('toast').firstElementChild;if(e)e.remove();},4800);}
 async function call(url,method='GET',data=null,token=KEY,retry=true){const headers={apikey:KEY};if(token!==KEY)headers.Authorization='Bearer '+token;if(data!==null)headers['Content-Type']='application/json';if(method==='POST'||method==='PATCH')headers.Prefer='return=representation';const res=await fetch(API+url,{method,headers,body:data===null?undefined:JSON.stringify(data),cache:'no-store'});const text=await res.text();let j;try{j=text?JSON.parse(text):null;}catch{j={message:text.slice(0,200)};}if(!res.ok&&res.status===401&&retry&&token!==KEY){const renewed=await renewSession();return call(url,method,data,renewed,false);}if(!res.ok)throw Error(j?.message||j?.error_description||j?.error||'連線失敗 ('+res.status+')');return j;}
@@ -60,7 +60,7 @@ async function reload(silent=false){
    if(!app.tenantId){app.data=null;}else{
     const p='tenant_id=eq.'+encodeURIComponent(app.tenantId);
     const [branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections]=await Promise.all([
-     query('wm_branches','select=*&'+p+'&order=name'),query('wm_members','select=*&'+p+'&order=employee_code'),
+     query('wm_branches','select=*&'+p+'&order=name'),query('wm_members','select=id,tenant_id,branch_id,user_id,display_name,employee_code,role,employment_type,status,created_at,department_id,hired_on,left_on,skills&'+p+'&order=employee_code'),
      query('wm_shifts','select=*&'+p+'&order=starts_at.desc&limit=600'),query('wm_punches','select=*&'+p+'&order=punched_at.desc&limit=600'),
      query('wm_requests','select=*&'+p+'&order=created_at.desc&limit=300'),query('wm_leave_entitlements','select=*&'+p),
      query('wm_availability','select=*&'+p+'&limit=200'),
@@ -68,6 +68,11 @@ async function reload(silent=false){
      query('wm_notifications','select=*&'+p+'&order=created_at.desc&limit=200'),
      query('wm_period_closures','select=*&'+p+'&order=closed_at.desc&limit=36'),query('wm_period_adjustments','select=*&'+p+'&limit=300'),
      query('wm_attendance_adjustments','select=*&'+p+'&limit=300')]);
+    if(members.some(m=>m.user_id===app.user?.id&&['owner','hr'].includes(m.role))){
+      const wages=await call('/rest/v1/rpc/wm_staff_wages','POST',{p_tenant:app.tenantId},app.token);
+      const lookup=new Map((wages||[]).map(w=>[w.member_id,w.hourly_rate]));
+      members.forEach(m=>{m.hourly_rate=lookup.has(m.id)?lookup.get(m.id):null;});
+    }
     app.data={tenant:app.tenants.find(t=>t.id===app.tenantId),branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections,server_at:new Date().toISOString()};
    }
   }
