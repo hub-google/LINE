@@ -1129,6 +1129,37 @@ function renderMyTickets(tickets){
  }).join("");
 }
 function render(){head();$("root").innerHTML=message()+(view==="platform"?platformRender():view==="staff"?staffRender():view==="customer"?customerRender():renderHome())+'<footer>Supabase 即時儲存・真實店員權限・LINE Messaging API 通知 ・ <a href="privacy.html">隱私權說明</a> ・ <a href="terms.html">使用條款</a></footer>'}
+const CUSTOMER_BOOKING_REQUEST_KEY="line-saas-customer-booking-submission-v1";
+let pendingCustomerBookingRequest=null;
+// Preserve a request ID after a network timeout: retrying the identical booking
+// calls the server with the SAME UUID and cannot create a second reservation.
+function customerBookingRequestId(details){
+ const fingerprint=JSON.stringify(details);
+ const now=Date.now();
+ let previous=pendingCustomerBookingRequest;
+ try{
+  const saved=sessionStorage.getItem(CUSTOMER_BOOKING_REQUEST_KEY);
+  if(saved)previous=JSON.parse(saved);
+ }catch(_error){/* Private browsing may block sessionStorage. */}
+ if(previous&&previous.fingerprint===fingerprint
+    &&/^[0-9a-f-]{36}$/i.test(previous.id||"")
+    &&now-previous.createdAt>=0&&now-previous.createdAt<24*60*60*1000){
+   pendingCustomerBookingRequest=previous;
+   return previous.id;
+ }
+ if(!globalThis.crypto?.randomUUID)throw Error("瀏覽器不支援安全預約識別，請更新瀏覽器");
+ const next={id:crypto.randomUUID(),fingerprint,createdAt:now};
+ pendingCustomerBookingRequest=next;
+ try{sessionStorage.setItem(CUSTOMER_BOOKING_REQUEST_KEY,JSON.stringify(next));}catch(_error){}
+ return next.id;
+}
+function clearCustomerBookingRequest(id){
+ if(pendingCustomerBookingRequest?.id===id)pendingCustomerBookingRequest=null;
+ try{
+  const saved=JSON.parse(sessionStorage.getItem(CUSTOMER_BOOKING_REQUEST_KEY)||"null");
+  if(saved?.id===id)sessionStorage.removeItem(CUSTOMER_BOOKING_REQUEST_KEY);
+ }catch(_error){}
+}
 async function rpc(name,arg={}){const r=await supa.rpc(name,arg);if(r.error)throw Error(r.error.message);return r.data}
 async function loadContext(){if(authReady())context=await rpc("so_my_context");else context=null}
 async function load(){err="";try{
@@ -1434,8 +1465,14 @@ document.addEventListener("click",async ev=>{
   if(!chosenSlot)throw Error("請先選擇時段");
   const party=Number(val("customer-party")),time=chosenSlot;
   const items=bookingChosenItems.slice();
-  const result=await rpc("so_book_with_items",{p_slug:slug,p_date:day,p_time:time,p_name:lineDisplayName,p_party:party,p_items:items});
+  const requestId=customerBookingRequestId({merchant:slug,date:day,time,party,items});
+  const result=await rpc("so_book_with_items_once",{p_slug:slug,p_date:day,p_time:time,p_name:lineDisplayName,p_party:party,p_items:items,p_request_id:requestId});
+  // Clear only AFTER the database has acknowledged this ID. A lost response
+  // leaves the same ID ready for a safe retry.
+  clearCustomerBookingRequest(requestId);
   chosenSlot="";bookingChosenItems=[];customerTab="mine";
+  if(result.status!=="CONFIRMED")return "先前送出的預約已找到，最新狀態："+jsStatus(result.status)+"。請到我的預約確認。";
+  if(result.replayed)return "已查到先前成立的預約："+day+" "+time+"，"+party+" 位；系統沒有重複建立第二筆。";
   const notice=await sendLineNotice("notify-reservation",{reservationId:result.id});
   return "預約已成立："+day+" "+time+"，"+party+" 位"+customerNoticeSuffix(notice);
  });return}
