@@ -31,11 +31,21 @@ async function identity(req: Request, db: ReturnType<typeof service>) {
   if (error || !data.user) throw new Error("INVALID_SUPABASE_SESSION");
   return data.user;
 }
-async function lineVerify(idToken: string, accessToken?: string) {
+type MerchantLineConfig = {
+  liffId: string; channelId: string; token: string; channelSecret: string;
+  botUserId: string; basicId: string; displayName: string;
+};
+async function merchantLineConfig(db: ReturnType<typeof service>, tenantId: string): Promise<MerchantLineConfig | null> {
+  const { data, error } = await db.rpc("so_merchant_oa_read_secret", { p_tenant_id: tenantId });
+  if (error) throw error;
+  return data && typeof data.token === "string" && typeof data.channelId === "string"
+    ? data as MerchantLineConfig : null;
+}
+async function lineVerify(idToken: string, accessToken?: string, options?: { channelId?: string; botToken?: string }) {
   // LINE Login ID tokens last one hour. A separate valid access token is
   // an official alternative to securely look up the same LINE user's profile.
   const liffId = Deno.env.get("LINE_LIFF_ID") || "";
-  const channelId = /^([0-9]{8,})-[A-Za-z0-9]+$/.exec(liffId)?.[1];
+  const channelId = options?.channelId || /^([0-9]{8,})-[A-Za-z0-9]+$/.exec(liffId)?.[1];
   if (!channelId) throw new Error("LINE_LOGIN_NOT_CONFIGURED");
 
   let idTokenFailure = "INVALID_LINE_ID_TOKEN";
@@ -104,7 +114,7 @@ async function lineVerify(idToken: string, accessToken?: string) {
   // If profile scope was not granted, try retrieving the display name from
   // the official account only when this LINE user is accessible to the OA.
   if (!displayName) {
-    const botToken = Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
+    const botToken = options?.botToken || Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
     if (botToken) {
       const response = await fetch(
         "https://api.line.me/v2/bot/profile/" + encodeURIComponent(subject),
@@ -130,8 +140,8 @@ function recently(timestamp: string | null | undefined, maxMs: number): boolean 
 }
 
 type OaReachability = "REACHABLE" | "NOT_REACHABLE" | "UNKNOWN";
-async function oaRecipientReachability(userId: string): Promise<OaReachability> {
-  const token = Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
+async function oaRecipientReachability(userId: string, overrideToken?: string): Promise<OaReachability> {
+  const token = overrideToken || Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
   if (!token) return "UNKNOWN";
   try {
     const res = await fetch("https://api.line.me/v2/bot/profile/" + encodeURIComponent(userId), {
@@ -142,8 +152,8 @@ async function oaRecipientReachability(userId: string): Promise<OaReachability> 
   } catch { /* Network error; never infer user is blocked. */ }
   return "UNKNOWN";
 }
-async function oaAddFriendUrl(): Promise<string | null> {
-  const token = Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
+async function oaAddFriendUrl(overrideToken?: string): Promise<string | null> {
+  const token = overrideToken || Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
   if (!token) return null;
   try {
     const res = await fetch("https://api.line.me/v2/bot/info", {
@@ -321,7 +331,8 @@ async function pushNotice(
   message: string | Record<string, unknown>,
   origin: string | null,
 ) {
-  const token = Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
+  const merchantOa = await merchantLineConfig(db, tenant.id);
+  const token = merchantOa?.token || Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
   if (!token) return reply(503, { error: "LINE_MESSAGING_NOT_CONFIGURED" }, origin);
   const { data: linked, error: linkError } = await db.from("so_line_links")
     .select("line_sub,is_following").eq("tenant_id", tenant.id).eq("user_id", recipient).maybeSingle();
@@ -329,7 +340,7 @@ async function pushNotice(
   if (!linked) return reply(200, { ok: true, sent: false, reason: "CUSTOMER_NOT_LINKED" }, origin);
   // Messaging API can accept a push without delivering it. Verify that this
   // exact OA can resolve the recipient's user ID before claiming the push.
-  const reachability = await oaRecipientReachability(linked.line_sub);
+  const reachability = await oaRecipientReachability(linked.line_sub, token);
   if (reachability === "NOT_REACHABLE") {
     return reply(200, { ok: true, sent: false, reason: "OA_CANNOT_REACH_CUSTOMER" }, origin);
   }
@@ -625,13 +636,26 @@ Deno.serve(async (req: Request) => {
     }
   }
   if (req.method === "GET" && url.searchParams.get("action") === "config") {
-    const liffId = Deno.env.get("LINE_LIFF_ID") || "";
+    const merchant = url.searchParams.get("merchant") || "";
+    let own: { liff_id: string; bot_basic_id: string | null } | null = null;
+    if (/^[a-z0-9][a-z0-9-]{2,39}$/.test(merchant)) {
+      const db = service();
+      const { data: tenant } = await db.from("so_tenants").select("id").eq("slug", merchant).eq("status", "ACTIVE").maybeSingle();
+      if (tenant) {
+        const { data: config } = await db.from("so_line_merchant_oas")
+          .select("liff_id,bot_basic_id").eq("tenant_id", tenant.id).eq("status", "ACTIVE").maybeSingle();
+        own = config;
+      }
+    }
+    const liffId = own?.liff_id || Deno.env.get("LINE_LIFF_ID") || "";
     const expectedChannelId = /^([0-9]{8,})-[A-Za-z0-9]+$/.exec(liffId)?.[1] || null;
     return reply(200, {
-      liffId: liffId || null,
+      liffId: liffId || null, merchantOaConnected: !!own,
+      botBasicId: own?.bot_basic_id || null,
       loginReady: !!expectedChannelId,
-      messagingReady: !!Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN"),
-      loginChannelMatchesLiff: !!expectedChannelId && expectedChannelId === Deno.env.get("LINE_LOGIN_CHANNEL_ID"),
+      messagingReady: !!own || !!Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN"),
+      loginChannelMatchesLiff: !!expectedChannelId &&
+        (!!own || expectedChannelId === Deno.env.get("LINE_LOGIN_CHANNEL_ID")),
     }, origin);
   }
   if (req.method !== "POST") return reply(405, { error: "METHOD_NOT_ALLOWED" }, origin);
@@ -640,6 +664,53 @@ Deno.serve(async (req: Request) => {
     const payload = await req.json();
     const db = service();
     const user = await identity(req, db);
+    if (payload.action === "connect-merchant-oa" || payload.action === "disconnect-merchant-oa") {
+      const slug = String(payload.slug || "");
+      if (!/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug)) return reply(400, { error: "BAD_REQUEST" }, origin);
+      const { data: tenant } = await db.from("so_tenants")
+        .select("id,slug,status").eq("slug",slug).eq("status","ACTIVE").maybeSingle();
+      if (!tenant) return reply(404, { error:"TENANT_NOT_FOUND" }, origin);
+      const { data: member } = await db.from("so_members")
+        .select("role").eq("tenant_id",tenant.id).eq("user_id",user.id).maybeSingle();
+      const { data: platform } = await db.from("so_platform_admins")
+        .select("user_id").eq("user_id",user.id).maybeSingle();
+      if (!["OWNER","MANAGER"].includes(member?.role || "") && !platform)
+        return reply(403,{error:"MANAGER_REQUIRED"},origin);
+      if (payload.action === "disconnect-merchant-oa") {
+        const { error } = await db.rpc("so_merchant_oa_disconnect", {
+          p_tenant_id:tenant.id,p_actor:user.id
+        });
+        if (error) throw error;
+        return reply(200,{ok:true,disconnected:true},origin);
+      }
+      const liffId = typeof payload.liffId === "string" ? payload.liffId.trim() : "";
+      const botToken = typeof payload.botToken === "string" ? payload.botToken.trim() : "";
+      const channelSecret = typeof payload.channelSecret === "string" ? payload.channelSecret.trim() : "";
+      if (!/^\\d{8,}-[A-Za-z0-9]+$/.test(liffId) ||
+          botToken.length<32 || botToken.length>4096 ||
+          !/^[0-9a-f]{32}$/i.test(channelSecret))
+        return reply(400,{error:"LINE_CHANNEL_FIELDS_INVALID"},origin);
+      const verified = await fetch("https://api.line.me/v2/bot/info", {
+        headers:{authorization:"Bearer "+botToken}
+      });
+      if (!verified.ok) return reply(400,{error:"LINE_BOT_TOKEN_INVALID"},origin);
+      const bot = await verified.json();
+      if (!/^U[0-9a-f]{32}$/i.test(String(bot.userId||"")))
+        return reply(400,{error:"LINE_BOT_PROFILE_INVALID"},origin);
+      const { error } = await db.rpc("so_merchant_oa_save_secret",{
+        p_tenant_id:tenant.id,p_liff_id:liffId,
+        p_bot_user_id:bot.userId,p_basic_id:String(bot.basicId||""),
+        p_display_name:String(bot.displayName||""),
+        p_token:botToken,p_channel_secret:channelSecret,p_actor:user.id,
+      });
+      if (error) throw error;
+      return reply(200,{
+        ok:true, connected:true, displayName:String(bot.displayName||""),
+        basicId:String(bot.basicId||""), liffId,
+        webhookUrl:"https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/line-bridge?action=webhook&merchant="+encodeURIComponent(slug),
+        note:"LINE Login and Messaging API channels must share a Provider",
+      },origin);
+    }
     // Returning customers keep their browser's refreshable Supabase session.
     // A previously LINE-verified identity may be resumed for 30 days without
     // re-running LIFF/OAuth. The browser never supplies a LINE user ID.
