@@ -546,5 +546,4 @@ begin
  return jsonb_build_object('merchant',t.name,'days',v_days,'start',v_start,'end',v_end,
    'reservations',v_booking,'queue',v_queue,'daily',v_daily);
 end;
-$function$
-
+$function$;
