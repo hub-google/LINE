@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="b5deda10ecc55e1ced47cdcc14892bc3cf0b1944">
-<script defer src="./version-watch.js?build=b5deda10ecc55e1ced47cdcc14892bc3cf0b1944"></script>
+<meta name="line-saas-build" content="57c047693833582d59f5f8b6e4f56e922565d79d">
+<script defer src="./version-watch.js?build=57c047693833582d59f5f8b6e4f56e922565d79d"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 門市營運｜企業開通、員工後台與顧客預約</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -1101,7 +1101,7 @@ function renderMyTickets(tickets){
       btn(focused&&manageMode==="cancel"?"確認取消排隊":"取消排隊","cancel-my-number","outline",'data-id="'+esc(x.id)+'"'):"")+'</article>';
  }).join("");
 }
-function render(){head();$("root").innerHTML=message()+(view==="platform"?platformRender():view==="staff"?staffRender():view==="customer"?customerRender():renderHome())+'<footer>Supabase 即時儲存・真實店員權限・LINE Messaging API 通知</footer>'}
+function render(){head();$("root").innerHTML=message()+(view==="platform"?platformRender():view==="staff"?staffRender():view==="customer"?customerRender():renderHome())+'<footer>Supabase 即時儲存・真實店員權限・LINE Messaging API 通知 ・ <a href="privacy.html">隱私權說明</a> ・ <a href="terms.html">使用條款</a></footer>'}
 async function rpc(name,arg={}){const r=await supa.rpc(name,arg);if(r.error)throw Error(r.error.message);return r.data}
 async function loadContext(){if(authReady())context=await rpc("so_my_context");else context=null}
 async function load(){err="";try{
