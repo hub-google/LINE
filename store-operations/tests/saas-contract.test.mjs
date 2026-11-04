@@ -76,3 +76,23 @@ test("merchant booking policy and analytics are wired end to end",()=>{
  assert.match(read("supabase/migrations/20261104_line_store_booking_policy.sql"),/so_validate_booking_policy/);
  assert.match(read("supabase/migrations/20261104_line_store_analytics.sql"),/so_staff_analytics/);
 });
+
+test("LINE address text links to Google Maps and filters placeholders",()=>{
+ const match=bridge.match(/function googleMapsDirectionsUrl\(address: string\): string \| null \{[\s\S]*?\n\}/);
+ assert.ok(match,"shared navigation URL builder missing");
+ const js=match[0].replace("address: string): string | null","address)");
+ const directions=new Function(js+"\nreturn googleMapsDirectionsUrl;")();
+ for(const address of ["台北市信義區市府路1號","高雄市前鎮區中華五路789號"]){
+  const uri=directions(address);
+  assert.ok(uri?.startsWith("https://www.google.com/maps/dir/?api=1&destination="));
+  assert.equal(new URL(uri).searchParams.get("destination"),address);
+ }
+ for(const address of ["","  ","測試用途，無實體地址","僅供測試","示範地址","暫無地址"]){
+  assert.equal(directions(address),null,"must not navigate to placeholder: "+address);
+ }
+ assert.match(bridge,/rows\.flatMap\(\(text\) => \{/);
+ assert.match(bridge,/action: \{ type: "uri", label: "Google Maps 導航", uri: mapUrl \}/);
+ assert.match(bridge,/text: "開啟 Google Maps 導航"/);
+ assert.match(bridge,/label: "編輯預約"/);
+ assert.match(bridge,/label: "取消預約"/);
+});
