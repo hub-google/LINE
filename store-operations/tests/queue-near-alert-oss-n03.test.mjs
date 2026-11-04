@@ -14,7 +14,7 @@ test("OSS-N03: only authenticated LINE-linked ticket owners set 0/3/5",()=>{
   assert.match(sql,/linked\.line_sub=viewer\.line_sub/);
   assert.match(sql,/linked\.user_id=k\.user_id/);
   assert.match(sql,/k\.status <> 'WAITING'/);
-  assert.match(sql,/k\.deleted_at is null for update/);
+  assert.match(sql,/where id=p_ticket_id and tenant_id=t\.id and deleted_at is null for update/);
   assert.match(sql,/revoke all on function public\.so_customer_set_queue_near_alert/);
   assert.match(sql,/grant execute on function public\.so_customer_set_queue_near_alert.*to authenticated/);
 });
