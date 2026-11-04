@@ -104,3 +104,23 @@
 
 - 這份狀態為**保守的程式與部署證據盤點**，不是正式資安稽核，也不是聲稱任何特定用戶資料已暴露／遺失。
 - 既有 Next.js `store-operations/src` API 框架、schema/README 文件與 GitHub Pages 上的 Supabase SaaS 可能有重疊，但未經實際可用的正式部署驗收不得互相算作完成。
+
+
+## 2026-11-04 補交付：FR-112「預約送出前二次確認」（現有需求，不是新增任務）
+
+> 本節以最新實作與實際 Supabase SQL 驗證為準；其餘 NR-01～NR-26、FR／UX／OSS 未完成需求仍應持續執行，**不因這項功能完成而視為整體 PRD 已交付**。
+
+| 項目 | 交付與證據 |
+| --- | --- |
+| 管理端 | `store-operations/saas/index.html` 原設定頁增加「送出前顯示確認卡」開關，獨立儲存 |
+| 顧客端 | 原預約步驟在送出前顯示門市、日期、時段、臺灣時區、人數、LINE 暱稱、服務與估價，支援返回修改或最終確認 |
+| API／資料 | `so_booking_policy.require_confirmation` 預設 true；`so_get_booking_policy`、`so_customer_booking_confirmation`、`so_set_booking_confirmation`；OWNER／MANAGER 才可修改，寫入稽核 |
+| 一致性 | 沿用 `so_book_with_items_once` 和 `customerBookingRequestId`，不另建預約資料、UUID、容量扣減或提醒管道 |
+| Migration | `store-operations/supabase/migrations/20261104_booking_confirmation_fr112.sql` 已套用到原有 Supabase；非破壞式 migration |
+| 合約測試 | `store-operations/tests/booking-confirmation-fr112.test.mjs`，已加入既有 PR 與正式部署 CI 測試清單 |
+| 資料庫測試 | 以 QA OWNER 身分在 rollback transaction 中先讀預設 true、切換 false，再讀到 false；交易回滾後沒有更改既有店家設定 |
+| 前端測試 | 單一內嵌 module 語法通過；確認卡、返回／確認、設定與冪等 API 契約檢查通過 |
+| 佈署驗證 | 2026-11-04 已從 `gh-pages/booking/index.html` 與 `gh-pages/saas/index.html` 讀到新版程式；`booking/release.json` 顯示 build `335c4fb876cad3f1e74897527e3575d4a6e7e3f3` |
+| 尚缺 | 尚無真實 iOS／Android LINE LIFF、多人競爭最後一個名額、取消返回的瀏覽器實機 E2E 記錄；FR-112 的全面正式驗收須補足 |
+
+**相容與回滾：** 關閉確認只影響 UI 層，不改變後端容量驗證或冪等。若需回滾 UI，還原單次變更的 `saas/index.html`；保留可向前相容的 `require_confirmation` 欄位與 RPC，不得刪除表或既有資料。無外部商家 OA 或付款憑證時，仍可在既有測試店的預約入口驗證基本操作。
