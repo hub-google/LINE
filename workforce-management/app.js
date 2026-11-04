@@ -83,7 +83,7 @@ async function reload(silent=false){
     const selected=getSelected();
     if(selected){
       const [balances,steps]=await Promise.all([
-       call('/rest/v1/rpc/wm_leave_balances','POST',{p_tenant:app.tenantId,p_member:selected},app.token),
+       call('/rest/v1/rpc/wm_leave_balances','POST',{p_tenant:app.tenantId,p_member:selected,p_on:today()},app.token),
        call('/rest/v1/rpc/wm_request_step_status','POST',{p_tenant:app.tenantId},app.token)]);
       app.data.leaveBalances[selected]=balances;
       app.data.requestStages=steps;
@@ -254,7 +254,8 @@ function showRequest(){
  const day=today();
  const policies=[...(app.data?.leavePolicies||[])].filter(x=>x.effective_from<=day)
   .sort((a,b)=>b.effective_from.localeCompare(a.effective_from));
- const latest=[...new Map(policies.map(x=>[x.leave_kind,x])).values()].filter(x=>x.is_active);
+ const latest=[];const seen=new Set();
+ for(const p of policies){if(!seen.has(p.leave_kind)){seen.add(p.leave_kind);if(p.is_active)latest.push(p);}}
  const leaveKindOptions=latest.length?
   latest.map(x=>'<option value="'+esc(x.leave_kind)+'">'+esc(x.label)+'</option>').join(''):
   '<option value="annual">特休</option><option value="sick">病假</option>'+
@@ -722,8 +723,9 @@ function showSwapDialog(){
  if(app.mode!=='demo'){
   sourceShifts=sourceShifts.filter(s=>person(s.member_id)?.user_id===app.user?.id);
  }
+ if(!sourceShifts.length)throw Error('你目前沒有可供交換的已發布班表');
  const other=(app.data?.shifts||[]).filter(s=>s.status==='published'&&s.member_id!==sourceShifts[0].member_id);
- if(!sourceShifts.length||other.length<2)throw Error('目前沒有可供交換的已發布班表');
+ if(!other.length)throw Error('目前沒有其他員工可供交換的已發布班表');
  const choice=(all,filtered=false)=>all.map(s=>'<option value="'+esc(s.id)+'">'+
   personLabel(s.member_id)+' · '+taiDay(s.starts_at)+' '+taiTime(s.starts_at)+'—'+taiTime(s.ends_at)+
   '</option>').join('');
@@ -940,7 +942,9 @@ extraNames.add('leave_policy');extraNames.add('leave_grant');extraNames.add('lea
 function currentLeavePolicies(){
  const data=[...(app.data?.leavePolicies||[])].filter(x=>x.effective_from<=today())
   .sort((a,b)=>b.effective_from.localeCompare(a.effective_from));
- return [...new Map(data.map(x=>[x.leave_kind,x])).values()];
+ const latest=[];const seen=new Set();
+ for(const p of data){if(!seen.has(p.leave_kind)){seen.add(p.leave_kind);latest.push(p);}}
+ return latest;
 }
 const priorLeaveRequests=requests;
 requests=function(){
@@ -996,7 +1000,7 @@ async function refreshLeaveMemberBalance(id){
  if(!id||!app.token||!app.tenantId)return;
  try{
   const balances=await call('/rest/v1/rpc/wm_leave_balances','POST',
-   {p_tenant:app.tenantId,p_member:id},app.token);
+   {p_tenant:app.tenantId,p_member:id,p_on:today()},app.token);
   if(app.data){app.data.leaveBalances[id]=balances;render();}
  }catch(error){banner(error.message,true);}
 }
@@ -1036,3 +1040,13 @@ $('appContent').addEventListener('click',e=>{
   else if(b.dataset.extra==='newLeaveGrant')showLeaveGrantForm();
  }catch(err){banner(err.message,true);}
 });
+
+
+/* PRD HR-LVE: display configured custom leave names without changing statuses. */
+const oldLeaveKind=kind;
+kind=function(v){
+ if(typeof v!=='string')return oldLeaveKind(v);
+ const current=(app.data?.leavePolicies||[]).filter(p=>p.leave_kind===v)
+   .sort((a,b)=>b.effective_from.localeCompare(a.effective_from))[0];
+ return current?.label||oldLeaveKind(v);
+};
