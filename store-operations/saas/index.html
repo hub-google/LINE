@@ -1407,6 +1407,8 @@ async function load(){err="";try{
 }
  else if(view==="staff")staff=null;
  }catch(e){err=e.message||String(e)}render();
+ if(view==="staff"&&staffTab==="bookings"&&historicalBookingResult&&historicalBookingTenant===slug)
+   void searchHistoricalBookings(historicalBookingPage);
  if(view==="customer"&&customerTab==="progress"&&lineLinkStatus==="linked"&&(progressTicketId||crossCurrentStore)){
    stopCrossQueueRealtime();
    void refreshQueueProgress();
@@ -1437,7 +1439,11 @@ async function urlFor(v,s){
 document.addEventListener("click",async ev=>{
  const b=ev.target.closest("button");if(!b||busy)return;
  if(b.dataset.act==="dismiss-feedback"){dismissActionFeedback();flash="";err="";render();return;}
- if(b.dataset.act==="open-bookings"||b.dataset.act==="open-queue"){staffTab=b.dataset.act==="open-bookings"?"bookings":"queue";err="";render();return;}
+ if(b.dataset.act==="open-bookings"||b.dataset.act==="open-queue"){
+ staffTab=b.dataset.act==="open-bookings"?"bookings":"queue";err="";render();
+ if(staffTab==="bookings")void searchHistoricalBookings(1);
+ return;
+}
  if(b.dataset.nav){const v=b.dataset.nav;const tab=b.dataset.tab;if(v==="customer"){
   customerTab=tab;progressTicketId="";crossCurrentStore=false;
   if(["reserve","queue"].includes(tab)&&!customer?.tenant.modules[tab==="reserve"?"reservation":"queue"])customerTab="home";
@@ -1449,6 +1455,7 @@ document.addEventListener("click",async ev=>{
  if(v==="staff"){
    staffTab=tab;
    if(["analytics","branches"].includes(tab)){void load();return;}
+    if(tab==="bookings"){err="";flash="";render();void searchHistoricalBookings(1);return;}
  }
  if(v==="platform")platformTab=tab;err="";flash="";render();return}
  if(b.dataset.slot){
@@ -1607,7 +1614,29 @@ document.addEventListener("click",async ev=>{
      return "菜單及服務規則已儲存：預約「"+menuModeLabel(value.booking)+"」，現場取號「"+menuModeLabel(value.queue)+"」";
    });return;
  }
- if(a==="apply-booking-filter"){
+ if(a==="historical-search"){
+    const search=val("historical-booking-search").trim();
+    const from=val("historical-booking-from"),to=val("historical-booking-to");
+    if(search.length>100){showActionFeedback("搜尋最多 100 字","error");return;}
+    if(from&&to&&from>to){showActionFeedback("結束日期不能早於開始日期","error");return;}
+    historicalBookingQuery=search;historicalBookingStart=from;historicalBookingEnd=to;
+    historicalBookingStatus=val("historical-booking-status");
+    historicalBookingDeleted=val("historical-booking-deleted");
+    historicalBookingPage=1;void searchHistoricalBookings(1);return;
+  }
+  if(a==="historical-reset"){
+    historicalBookingQuery="";historicalBookingStart="";historicalBookingEnd="";
+    historicalBookingStatus="ALL";historicalBookingDeleted="active";historicalBookingPage=1;
+    void searchHistoricalBookings(1);return;
+  }
+  if(a==="historical-prev"||a==="historical-next"){
+    if(historicalBookingLoading||!historicalBookingResult)return;
+    const candidate=historicalBookingPage+(a==="historical-prev"?-1:1);
+    const max=Math.max(1,Math.ceil(Number(historicalBookingResult.total||0)/25));
+    if(candidate<1||candidate>max)return;
+    void searchHistoricalBookings(candidate);return;
+  }
+  if(a==="apply-booking-filter"){
    staffBookingSearch=val("staff-booking-search").trim().slice(0,100);
    staffBookingDateFilter=["all","today","tomorrow","next7"].includes(val("staff-booking-date"))?val("staff-booking-date"):"all";
    staffBookingStatusFilter=["all","CONFIRMED","CHECKED_IN","COMPLETED","NO_SHOW","CANCELLED"].includes(val("staff-booking-status"))?val("staff-booking-status"):"all";
