@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="59c31b694876609d9724c69ad98512c5d6b6b09c">
-<script defer src="./version-watch.js?build=59c31b694876609d9724c69ad98512c5d6b6b09c"></script>
+<meta name="line-saas-build" content="9af6f573f3a1893f25e4d191dea7c4fb13895614">
+<script defer src="./version-watch.js?build=9af6f573f3a1893f25e4d191dea7c4fb13895614"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 門市營運｜企業開通、員工後台與顧客預約</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -418,7 +418,7 @@ let testMode=!!(testInfo?.slug&&/^qa-[a-z0-9-]{3,36}$/.test(testInfo.slug));
 let recoveryMode=incomingParam("recover")==="1";
 let view=incomingParam("view")||"customer",slug=(isSafeMerchant(incomingParam("merchant"))?incomingParam("merchant"):null)||(testMode?testInfo.slug:"greenfield-salon");
 let session=null,context=null,overview=[],customer=null,staff=null,busy=false,flash="",err="";
-let staffHistoryDays=14;
+let staffHistoryDays=14,analyticsDays=30,staffAnalytics=null;
 let editingMenuItemId="",bookingChosenItems=[],queueChosenItems=[],editChosenItems=[];
 let day=taipei(),customerTab=["home","reserve","queue","mine","progress"].includes(incomingParam("tab"))?incomingParam("tab"):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
 let manageKind=["reservation","ticket"].includes(incomingParam("manage"))?incomingParam("manage"):"";
@@ -633,7 +633,7 @@ function staffRender(){
  const active=openTickets.find(x=>["CALLED","SERVING"].includes(x.status)),waiting=openTickets.filter(x=>x.status==="WAITING"),passed=openTickets.filter(x=>x.status==="PASSED");
  const pendingBookings=openBookings.filter(x=>x.status==="CONFIRMED"), finishedBookings=doneBookings.filter(x=>x.status==="COMPLETED");
  const role=staff.role,isManager=["OWNER","MANAGER","PLATFORM"].includes(role);
- const menu=nav("營運工作台","dashboard",staffTab,"staff")+nav("預約管理","bookings",staffTab,"staff")+
+ const menu=nav("營運工作台","dashboard",staffTab,"staff")+nav("營運分析","analytics",staffTab,"staff")+nav("預約管理","bookings",staffTab,"staff")+
  nav("叫號管理","queue",staffTab,"staff")+nav("菜單及服務設定","menu",staffTab,"staff")+nav("員工管理","members",staffTab,"staff")+nav("企業設定","settings",staffTab,"staff");
  let html='<div class="toolbar"><div class="small">管理範圍：<strong>'+esc(t.name)+'</strong>・'+esc(role)+'</div>'+
   '<div class="flex"><span class="small">按狀態管理，跨天未結案仍會保留</span>'+
@@ -659,6 +659,23 @@ function staffRender(){
    box("待處理預約",openBookings.length?openBookings.slice(0,6).map(x=>'<div class="listline"><div><strong>'+esc(x.day)+' '+esc(x.time)+'　'+esc(x.name)+'</strong><div class="small">'+esc(jsStatus(x.status))+'</div></div></div>').join(""):'<p class="muted">沒有待處理預約。</p>')+
    box("已處理預約（最近 "+staffHistoryDays+" 天）",doneBookings.length?doneBookings.slice(0,6).map(x=>'<div class="listline"><div><strong>'+esc(x.day)+' '+esc(x.time)+'　'+esc(x.name)+'</strong><div class="small">'+esc(jsStatus(x.status))+'</div></div></div>').join("")+
     '<div class="staff-actionbar">'+btn("查看與修正已處理預約","open-bookings","outline")+'</div>':'<p class="muted">選定範圍內尚無已處理預約。</p>');
+ }else if(staffTab==="analytics"){
+  if(!isManager)html+=box("營運分析",'<p class="muted">僅企業管理者可查看跨日營運報表。</p>');
+  else {
+   const a=staffAnalytics||{},r=a.reservations||{},q=a.queue||{},days=a.daily||[];
+   const ratio=(num,total)=>total?((Number(num||0)/Number(total))*100).toFixed(1)+"%":"—";
+   html+=box("營運統計區間",
+     '<div class="flex"><label for="analytics-days">最近天數</label><select id="analytics-days" class="field">'+
+     [7,30,90].map(x=>'<option value="'+x+'" '+(x===analyticsDays?"selected":"")+'>'+x+' 天</option>').join("")+
+     '</select>'+btn("下載 Excel 相容 CSV","export-analytics","outline")+'</div>')+
+     '<div class="grid4">'+stat("預約筆數",r.total||0)+stat("預約取消率",ratio(r.cancelled,r.total))+
+      stat("預約未到率",ratio(r.no_show,r.total))+stat("取號筆數",q.total||0)+
+      stat("取號完成率",ratio(q.completed,q.total))+stat("平均取號等待",q.avg_wait_minutes==null?"尚無資料":q.avg_wait_minutes+" 分鐘")+'</div>'+
+     box("每日預約與取號量",'<p class="small">依門市營業日期統計。取消率、未到率按目前狀態計算；平均等待只計已實際叫號的紀錄。</p>'+
+       '<div class="scroll"><table class="rows"><thead><tr><th>日期</th><th>預約筆數</th><th>取號筆數</th></tr></thead><tbody>'+
+       days.slice().reverse().map(x=>'<tr><td>'+esc(x.date).slice(0,10)+'</td><td>'+esc(x.reservations)+'</td><td>'+esc(x.tickets)+'</td></tr>').join("")+
+       '</tbody></table></div>');
+  }
  }else if(staffTab==="bookings"){
   const card=x=>{
    
@@ -1117,6 +1134,8 @@ async function load(){err="";try{
  ]);
  staff={...meta,...work,bookingPolicy:policy,reservations:(work.pending_reservations||[]).concat(work.processed_reservations||[]),
    tickets:(work.active_tickets||[]).concat(work.processed_tickets||[])};
+ if(staffTab==="analytics"&&["OWNER","MANAGER","PLATFORM"].includes(staff.role))
+   staffAnalytics=await rpc("so_staff_analytics",{p_slug:slug,p_days:analyticsDays});
 }
  else if(view==="staff")staff=null;
  }catch(e){err=e.message||String(e)}render();
@@ -1265,6 +1284,15 @@ document.addEventListener("click",async ev=>{
        p_booking_mode:val("menu-book-mode"),p_queue_mode:val("menu-queue-mode")});
      return "菜單及服務規則已儲存：預約「"+menuModeLabel(value.booking)+"」，現場取號「"+menuModeLabel(value.queue)+"」";
    });return;
+ }
+ if(a==="export-analytics"){
+   const a=staffAnalytics;
+   if(!a||!Array.isArray(a.daily)){showActionFeedback("統計資料尚未載入","error");return;}
+   const csv="\uFEFF日期,預約筆數,取號筆數\r\n"+a.daily.map(d=>[String(d.date).slice(0,10),Number(d.reservations||0),Number(d.tickets||0)].join(",")).join("\r\n");
+   const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+   const link=document.createElement("a");link.href=url;link.download="LINE_"+slug+"_"+analyticsDays+"days.csv";
+   document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+   return;
  }
  if(a==="save-booking-policy"){
    await act(async()=>{
@@ -1441,6 +1469,7 @@ document.addEventListener("change",async ev=>{
    render();return;
  }
  if(el.id==="staff-history-days"){staffHistoryDays=Number(el.value);await load();return;}
+ if(el.id==="analytics-days"){analyticsDays=Number(el.value);await load();return;}
  if(el.id==="customer-day"){day=el.value;chosenSlot="";await load();return;}
  if(el.id==="edit-book-date"){editDate=el.value;editTime="";await fetchBookingEditSlots();return;}
  if(el.id==="edit-book-time"){editTime=el.value;render();return;}
