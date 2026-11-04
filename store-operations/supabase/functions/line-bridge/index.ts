@@ -243,12 +243,15 @@ async function ticketProgressNotice(
 ): Promise<Record<string, unknown>> {
   const [waitingBefore, activeCount, activeTicket, lastCalled] = await Promise.all([
     db.from("so_tickets").select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenant.id).eq("status", "WAITING").is("deleted_at", null)
+      .eq("tenant_id", tenant.id).eq("business_date", ticket.business_date)
+      .eq("status", "WAITING").is("deleted_at", null)
       .lt("created_at", ticket.created_at),
     db.from("so_tickets").select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenant.id).in("status", ["CALLED", "SERVING"]).is("deleted_at", null),
+      .eq("tenant_id", tenant.id).eq("business_date", ticket.business_date)
+      .in("status", ["CALLED", "SERVING"]).is("deleted_at", null),
     db.from("so_tickets").select("ticket_no,number_prefix,business_date")
-      .eq("tenant_id", tenant.id).in("status", ["CALLED", "SERVING"]).is("deleted_at", null)
+      .eq("tenant_id", tenant.id).eq("business_date", ticket.business_date)
+      .in("status", ["CALLED", "SERVING"]).is("deleted_at", null)
       .order("updated_at", { ascending: false }).limit(1).maybeSingle(),
     db.from("so_tickets").select("ticket_no,number_prefix,last_called_at")
       .eq("tenant_id", tenant.id).eq("business_date", ticket.business_date).is("deleted_at", null)
