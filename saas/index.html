@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="102f6e91c19389846eb828fcf09e13c90e4d1774">
-<script defer src="./version-watch.js?build=102f6e91c19389846eb828fcf09e13c90e4d1774"></script>
+<meta name="line-saas-build" content="04c81c3971889436bd79764157472e22d56fefdc">
+<script defer src="./version-watch.js?build=04c81c3971889436bd79764157472e22d56fefdc"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 門市營運｜企業開通、員工後台與顧客預約</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -151,17 +151,23 @@ const authOptions={persistSession:true,autoRefreshToken:true,detectSessionInUrl:
 if(initialView==="customer")authOptions.storageKey="line-saas-customer-session-v2";
 const supa=createClient(SB_URL,SB_KEY,{auth:authOptions});
 const LINE_BRIDGE_URL=SB_URL+"/functions/v1/line-bridge";
-let lineConfig=null,lineLinkStatus="not-ready",lineLinkAttempted=false,lineFriendStatus=null,lineDisplayName="",lineConnectError="";
+let lineConfig=null,lineConfigSlug="",lineLinkStatus="not-ready",lineLinkAttempted=false,lineFriendStatus=null,lineDisplayName="",lineConnectError="";
 let lineOaRecipient="UNKNOWN",lineFriendCheck="UNAVAILABLE",lineOaAddFriendUrl="",lineProviderMismatch=false;
 async function bridgeConfig(){
-  if(lineConfig!==null)return lineConfig;
-  try{const res=await fetch(LINE_BRIDGE_URL+"?action=config");if(res.ok)lineConfig=await res.json();}
-  catch(e){console.warn("LINE 設定尚不可用");}
+  const merchant=isSafeMerchant(slug)?slug:"";
+  if(lineConfig!==null&&lineConfigSlug===merchant)return lineConfig;
+  try{
+    const res=await fetch(LINE_BRIDGE_URL+"?action=config&merchant="+encodeURIComponent(merchant),{cache:"no-store"});
+    if(res.ok){lineConfig=await res.json();lineConfigSlug=merchant;}
+  }catch(e){console.warn("LINE 設定尚不可用");}
   return lineConfig||{};
 }
 function customerUrl(merchant){
+ const canonical=location.origin+location.pathname+"?view=customer&merchant="+encodeURIComponent(merchant);
+ // Other shops may use a different LINE provider. Never reuse this shop's LIFF ID.
+ if(merchant!==slug)return canonical;
  const id=lineConfig?.liffId;
- return id?"https://liff.line.me/"+encodeURIComponent(id)+"/?view=customer&merchant="+encodeURIComponent(merchant):null;
+ return id?"https://liff.line.me/"+encodeURIComponent(id)+"/?view=customer&merchant="+encodeURIComponent(merchant):canonical;
 }
 function lineLoginUrl(){
   if(view==="staff"&&recoveryMode)
@@ -271,6 +277,10 @@ async function connectLineSession(force=false){
     await window.liff.init({liffId:config.liffId});
     // Resolve final merchant after LIFF init completes its secondary redirect.
     refreshLiffRoute();
+    if(lineConfigSlug!==slug){
+      // A LIFF redirect can restore merchant from liff.state.
+      lineConfig=null;lineConfigSlug="";
+    }
     if(!window.liff.isLoggedIn()){
       lineLinkStatus="not-logged-in";
       if(!window.liff.isInClient())window.liff.login({redirectUri:cleanLineRedirectUri()});
