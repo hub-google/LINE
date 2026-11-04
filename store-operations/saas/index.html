@@ -1062,6 +1062,7 @@ function staffRender(){
    (x.reservation_id?" ・ 已連動預約":"")+'</div>'+
    '<div class="small">取號時間：'+esc(formatTaipeiCreated(x.created_at))+' ・ '+esc(x.party||1)+' 人／組</div>'+
    selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+(x.deleted_at?'<p class="staff-help">此號碼已從顧客端隱藏；取消勾選刪除即可恢復。</p>':staffStatusPicker("ticket",x,true))+
+   (isManager&&!x.deleted_at&&x.status==="WAITING"?'<div class="staff-actionbar">'+btn("指定叫號","call-selected","secondary",'data-id="'+esc(x.id)+'"')+'</div>':"")+
    staffDeletePicker("ticket",x)+'</article>';
   html+=numberSettingsPanel("queue",t,isManager)+'<div class="grid4" style="margin-bottom:16px">'+stat("正在叫號",active?.number||"—")+stat("候位中",waiting.length)+
    stat("已過號",passed.length)+stat("保留中",held.length)+stat("已結束",doneTickets.length)+'</div>'+
@@ -2201,6 +2202,21 @@ document.addEventListener("click",async ev=>{
   });return;
  }
 
+ if(a==="call-selected"){
+  if(!id||!staff||!["OWNER","MANAGER","PLATFORM"].includes(staff.role))return;
+  const reason=window.prompt("指定叫號原因（必填，2～200 字，將保留操作紀錄）：","");
+  if(reason===null)return;
+  const why=reason.trim();
+  if(why.length<2||why.length>200||/[\u0000-\u001f\u007f]/.test(why)){
+    showActionFeedback("請輸入 2～200 字的指定叫號原因，不可包含控制字元。","error");return;
+  }
+  await act(async()=>{
+    const result=await rpc("so_staff_call_selected",{p_slug:slug,p_ticket_id:id,p_reason:why});
+    if(result.ticket_id&&result.number)lastStaffChange={kind:"ticket",id:result.ticket_id,label:result.number,before:"WAITING",after:"CALLED",slug,day};
+    const notice=await notifyLineCalled(result.number,result.ticket_id,result.line_call_event_id);
+    return "已指定叫號 "+result.number+"；"+notice;
+  });return;
+ }
  if(["call","recall","start","complete","pass","return","cancel","checkin","no-show","cancel-book-staff"].includes(a)){
  if(["cancel","no-show","cancel-book-staff"].includes(a)&&!confirm("確定執行此操作？"))return;
  const x=a==="no-show"?"no_show":a==="cancel-book-staff"?"cancel_booking":a;
