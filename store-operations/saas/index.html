@@ -2207,7 +2207,7 @@ document.addEventListener("click",async ev=>{
   const reason=window.prompt("指定叫號原因（必填，2～200 字，將保留操作紀錄）：","");
   if(reason===null)return;
   const why=reason.trim();
-  if(why.length<2||why.length>200||/[\\u0000-\\u001f\\u007f]/.test(why)){
+  if(why.length<2||why.length>200||/[\u0000-\u001f\u007f]/.test(why)){
     showActionFeedback("請輸入 2～200 字的指定叫號原因，不可包含控制字元。","error");return;
   }
   await act(async()=>{
