@@ -693,6 +693,63 @@ function staffBookingMatches(record,term=staffBookingSearch,dateFilter=staffBook
  }
  return true;
 }
+// CSV cells are quoted and neutralize leading spreadsheet formula expressions.
+function safeHistoryCsvCell(value){
+ let v=String(value??"").replace(/[\u0000-\u001f\u007f\u2028\u2029]/g," ");
+ if(/^[\s\uFEFF]*[=+@-]/u.test(v))v="'"+v;
+ return '"'+v.replace(/"/g,'""')+'"';
+}
+function historyCsvContent(items){
+ const columns=["預約日期","預約時間","預約編號","永久參考碼","編號批次","顧客暱稱","人數","狀態","服務項目","送出預約時間","最後更新時間","顧客端已隱藏"];
+ const rows=items.map(x=>[
+  x.day,x.time,x.number,x.reference_code,x.round,x.name,x.party,jsStatus(x.status),
+  Array.isArray(x.selected_items)?x.selected_items.map(i=>i?.name||"").filter(Boolean).join("、"):"",
+  formatTaipeiCreated(x.created_at),formatTaipeiCreated(x.updated_at),x.deleted_at?"是":"否"
+ ]);
+ return "\uFEFF"+[columns,...rows].map(row=>row.map(safeHistoryCsvCell).join(",")).join("\r\n");
+}
+async function exportHistoricalBookings(){
+ if(view!=="staff"||staffTab!=="bookings"||!["OWNER","MANAGER","PLATFORM"].includes(staff?.role)){
+  showActionFeedback("僅企業管理者可匯出預約資料。","error");return;
+ }
+ if(historicalBookingLoading||!historicalBookingResult){
+  showActionFeedback("請先完成完整歷史搜尋，再匯出符合條件的結果。","error");return;
+ }
+ const total=Number(historicalBookingResult.total||0);
+ if(!Number.isInteger(total)||total<0||total>20000){
+  showActionFeedback("最多一次匯出 20,000 筆；請縮小日期或搜尋條件後重試。","error");return;
+ }
+ if(total===0){showActionFeedback("沒有符合條件的預約可匯出。","warning");return;}
+ if(historicalBookingDeleted!=="active"&&!confirm("匯出內容包含已隱藏於顧客端的預約，確定繼續嗎？"))return;
+ const merchant=slug;
+ const query={p_slug:merchant,p_search:historicalBookingQuery,
+  p_date_from:historicalBookingStart||null,p_date_to:historicalBookingEnd||null,
+  p_status:historicalBookingStatus,p_deleted:historicalBookingDeleted};
+ busy=true;showActionFeedback("正在從資料庫分批匯出預約歷史…","pending");
+ try{
+  const records=[],ids=new Set();
+  const pages=Math.ceil(total/100);
+  for(let page=1;page<=pages;page++){
+   const data=await rpc("so_staff_reservation_search",{...query,p_page:page,p_page_size:100});
+   if(merchant!==slug||Number(data?.total)!==total)
+    throw Error("搜尋結果在匯出期間發生變動；請重新查詢後匯出，避免資料缺漏。");
+   for(const record of data.items||[]){
+    if(ids.has(record.id))throw Error("預約排序在匯出期間發生變動，請重新查詢後重試。");
+    ids.add(record.id);records.push(record);
+   }
+  }
+  if(records.length!==total)throw Error("匯出筆數不一致，已取消下載；請重新查詢後重試。");
+  const csv=historyCsvContent(records);
+  const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  const link=document.createElement("a");link.href=url;
+  link.download="LINE_booking_history_"+merchant+"_"+taipei()+".csv";
+  document.body.append(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+  showActionFeedback("已匯出符合條件的 "+total+" 筆預約，請保管好顧客資料。","success");
+ }catch(e){
+  showActionFeedback("預約匯出失敗："+(e.message||String(e)),"error");
+ }finally{busy=false;render();}
+}
 function historyBookingResultHtml(){
  const data=historicalBookingResult;
  if(historicalBookingLoading)return '<p class="muted" role="status">正在查詢資料，請稍後…</p>';
@@ -843,7 +900,9 @@ function staffRender(){
      [["active","未刪除"],["deleted","已刪除"],["all","全部（含已刪除）"]].map(([v,label])=>
       '<option value="'+v+'" '+(historicalBookingDeleted===v?"selected":"")+'>'+label+'</option>').join("")+'</select></div></div>'+
     '<div class="staff-actionbar">'+btn("查詢完整歷史","historical-search","primary")+
-      btn("重設歷史篩選","historical-reset","outline")+'</div>'+historyBookingResultHtml());
+      btn("重設歷史篩選","historical-reset","outline")+
+      (isManager&&historicalBookingResult?btn("匯出完整搜尋結果 CSV","historical-export","secondary"):"")+
+      '</div><p class="small">CSV 依目前搜尋條件從資料庫逐頁讀取，單次最多匯出 20,000 筆；超過限制須分日期區間下載，絕不默默截斷。</p>'+historyBookingResultHtml());
  }else if(staffTab==="queue"){
   
   const card=x=>'<article class="staff-record '+(x.deleted_at?'staff-deleted-record':'')+'"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.number)+'　'+esc(x.name)+'</div>'+
@@ -1624,6 +1683,7 @@ document.addEventListener("click",async ev=>{
     historicalBookingDeleted=val("historical-booking-deleted");
     historicalBookingPage=1;void searchHistoricalBookings(1);return;
   }
+  if(a==="historical-export"){void exportHistoricalBookings();return;}
   if(a==="historical-reset"){
     historicalBookingQuery="";historicalBookingStart="";historicalBookingEnd="";
     historicalBookingStatus="ALL";historicalBookingDeleted="active";historicalBookingPage=1;
