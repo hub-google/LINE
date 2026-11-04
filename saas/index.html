@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="0f790fc6f3788aba304cfbaae848482d7b9a7f4b">
+<meta name="line-saas-build" content="0448668edacc64d6891d8e41e4d254795646b7e4">
 <!-- Preserve existing view/merchant/LIFF callbacks; only bare legacy/booking roots enter marketing home. -->
 <script>
 (() => {
@@ -25,7 +25,7 @@
   }
 })();
 </script>
-<script defer src="./version-watch.js?build=0f790fc6f3788aba304cfbaae848482d7b9a7f4b"></script>
+<script defer src="./version-watch.js?build=0448668edacc64d6891d8e41e4d254795646b7e4"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 門市營運｜企業開通、員工後台與顧客預約</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -157,7 +157,7 @@ body{overflow-x:hidden}
 .cross-record .staff-actionbar{margin-top:9px}
 @media(max-width:540px){.cross-ticket{padding:13px 11px}.cross-ticket-stats{gap:6px}.cross-ticket-stat{padding:9px 4px}.cross-ticket-stat strong{font-size:clamp(20px,6vw,30px)}}
 </style>
-<link rel="stylesheet" href="./booking-theme.css?build=0f790fc6f3788aba304cfbaae848482d7b9a7f4b">
+<link rel="stylesheet" href="./booking-theme.css?build=0448668edacc64d6891d8e41e4d254795646b7e4">
 </head>
 <body>
 <header><div class="top">
@@ -461,6 +461,10 @@ let view=incomingParam("view")||"customer",slug=(isSafeMerchant(incomingParam("m
 let session=null,context=null,overview=[],customer=null,staff=null,busy=false,flash="",err="";
 let staffHistoryDays=14,analyticsDays=30,staffAnalytics=null,businessGroups=[],staffNoticeHealth=null;
 let staffBookingSearch="",staffBookingDateFilter="all",staffBookingStatusFilter="all";
+let historicalBookingQuery="",historicalBookingStart="",historicalBookingEnd="";
+let historicalBookingStatus="ALL",historicalBookingDeleted="active",historicalBookingPage=1;
+let historicalBookingResult=null,historicalBookingLoading=false,historicalBookingError="";
+let historicalBookingToken=0,historicalBookingTenant="";
 let editingMenuItemId="",bookingChosenItems=[],queueChosenItems=[],editChosenItems=[];
 let day=taipei(),bookingParty=1,customerTab=["home","reserve","queue","mine","progress"].includes(incomingParam("tab"))?incomingParam("tab"):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
 let manageKind=["reservation","ticket"].includes(incomingParam("manage"))?incomingParam("manage"):"";
@@ -689,6 +693,51 @@ function staffBookingMatches(record,term=staffBookingSearch,dateFilter=staffBook
  }
  return true;
 }
+function historyBookingResultHtml(){
+ const data=historicalBookingResult;
+ if(historicalBookingLoading)return '<p class="muted" role="status">正在查詢資料，請稍後…</p>';
+ if(historicalBookingError)return '<p class="alert" role="alert">'+esc(historicalBookingError)+'</p>';
+ if(!data)return '<p class="muted">按「查詢完整歷史」開始搜尋。</p>';
+ const items=Array.isArray(data.items)?data.items:[];
+ const total=Math.max(0,Number(data.total||0)),size=Math.max(1,Number(data.page_size||25));
+ const page=Math.max(1,Number(data.page||1)),pages=Math.max(1,Math.ceil(total/size));
+ const count='<p class="small" role="status">共找到 <strong>'+esc(total)+'</strong> 筆；第 '+esc(page)+' / '+esc(pages)+' 頁（每頁最多 '+esc(size)+' 筆）。</p>';
+ const cards=items.map(x=>'<article class="staff-record'+(x.deleted_at?' staff-deleted-record':'')+'">'+
+  '<div class="staff-record-head"><div><div class="staff-record-title">預約 '+esc(x.number||"—")+'　'+esc(x.day||"")+'　'+esc(x.time||"")+'</div>'+
+  '<div class="small">'+esc(x.name||"")+" ・ "+esc(x.party||0)+' 位</div>'+
+  '<div class="small">建立時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
+  '<div class="small">永久參考碼：'+esc(x.reference_code||"—")+' ・ 編號批次：'+esc(x.round??"—")+'</div>'+
+  selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+
+  (x.deleted_at?'<p class="small">此筆已由店員隱藏於顧客端，未從資料庫刪除。</p>':"")+'</article>').join("");
+ return count+(cards||'<p class="muted">沒有符合條件的預約。</p>')+
+  '<div class="staff-actionbar">'+btn("上一頁","historical-prev","outline",page<=1?"disabled":"")+
+  btn("下一頁","historical-next","outline",!data.has_more?"disabled":"")+'</div>';
+}
+async function searchHistoricalBookings(page=historicalBookingPage){
+ const request=++historicalBookingToken,merchant=slug;
+ if(view!=="staff"||!staff?.tenant||!authReady()){
+  historicalBookingResult=null;historicalBookingError="請先完成店員登入並選擇可管理的門市";render();return;
+ }
+ historicalBookingLoading=true;historicalBookingError="";render();
+ try{
+  const result=await rpc("so_staff_reservation_search",{
+   p_slug:merchant,p_search:historicalBookingQuery,
+   p_date_from:historicalBookingStart||null,p_date_to:historicalBookingEnd||null,
+   p_status:historicalBookingStatus,p_deleted:historicalBookingDeleted,
+   p_page:page,p_page_size:25
+  });
+  if(request!==historicalBookingToken||merchant!==slug||view!=="staff")return;
+  historicalBookingResult=result;historicalBookingPage=page;historicalBookingTenant=merchant;
+ }catch(e){
+  if(request!==historicalBookingToken||merchant!==slug)return;
+  historicalBookingResult=null;historicalBookingError=e?.message||"無法取得完整預約歷史";
+ }finally{
+  if(request===historicalBookingToken&&merchant===slug){
+   historicalBookingLoading=false;
+   if(view==="staff"&&staffTab==="bookings")render();
+  }
+ }
+}
 function staffRender(){
  if(recoveryMode||!authReady())return requireAuth();
  const memberships=context?.memberships||[];
@@ -761,7 +810,7 @@ function staffRender(){
    ''+'</article>';
   };
   html+=numberSettingsPanel("booking",t,isManager)+
-   box("搜尋與篩選預約",'<p class="small">此處僅篩選目前已載入的資料：跨日未結案預約，以及最近 '+staffHistoryDays+' 天已處理紀錄；完整歷史、後端分頁及日／週／月曆仍待開發。</p>'+
+   box("搜尋與篩選預約",'<p class="small">此處僅篩選目前已載入的資料：跨日未結案預約，以及最近 '+staffHistoryDays+' 天已處理紀錄；完整歷史請使用下方後端搜尋；日／週／月曆仍待開發。</p>'+
     '<div class="grid3"><div>'+field("搜尋預約編號、姓名或服務","staff-booking-search",staffBookingSearch,"search",'placeholder="輸入關鍵字"')+'</div>'+
     '<div><label for="staff-booking-date">預約日期</label><select id="staff-booking-date" class="field">'+
      [["all","全部日期"],["today","今天"],["tomorrow","明天"],["next7","未來 7 天"]].map(([id,label])=>'<option value="'+id+'" '+(staffBookingDateFilter===id?"selected":"")+'>'+label+'</option>').join("")+'</select></div>'+
@@ -782,7 +831,19 @@ function staffRender(){
     (visibleDone.length?visibleDone.map(card).join(""):'<p class="muted">選定範圍內還沒有已處理預約。</p>'))+
    box("已刪除預約（最近 "+staffHistoryDays+" 天，"+visibleDeleted.length+" / "+deletedBookings.length+" 筆）",
     '<p class="staff-help">顧客不會看到這些預約，也不會收到刪除通知。取消勾選即可恢復。</p>'+
-    (visibleDeleted.length?visibleDeleted.map(card).join(""):'<p class="muted">目前沒有已刪除預約。</p>'));
+    (visibleDeleted.length?visibleDeleted.map(card).join(""):'<p class="muted">目前沒有已刪除預約。</p>'))+
+   box("完整預約歷史｜後端搜尋與分頁",'<p class="small">查詢本店資料庫全部歷史預約，不受工作清單「最近 7～90 天／每類最多 500 筆」限制。本區僅提供查閱，不修改狀態，也不發送 LINE 通知。</p>'+
+    '<div class="grid3"><div>'+field("姓名、編號、參考碼、服務","historical-booking-search",historicalBookingQuery,"search",'maxlength="100"')+'</div>'+
+    '<div>'+field("預約日期起","historical-booking-from",historicalBookingStart,"date")+'</div>'+
+    '<div>'+field("預約日期迄","historical-booking-to",historicalBookingEnd,"date")+'</div></div>'+
+    '<div class="grid"><div><label for="historical-booking-status">預約狀態</label><select id="historical-booking-status" class="field">'+
+      [["ALL","全部狀態"],["CONFIRMED","已預約"],["CHECKED_IN","已報到"],["COMPLETED","已完成"],["NO_SHOW","未到"],["CANCELLED","已取消"]].map(([v,label])=>
+       '<option value="'+v+'" '+(historicalBookingStatus===v?"selected":"")+'>'+label+'</option>').join("")+'</select></div>'+
+    '<div><label for="historical-booking-deleted">顧客端隱藏狀態</label><select id="historical-booking-deleted" class="field">'+
+     [["active","未刪除"],["deleted","已刪除"],["all","全部（含已刪除）"]].map(([v,label])=>
+      '<option value="'+v+'" '+(historicalBookingDeleted===v?"selected":"")+'>'+label+'</option>').join("")+'</select></div></div>'+
+    '<div class="staff-actionbar">'+btn("查詢完整歷史","historical-search","primary")+
+      btn("重設歷史篩選","historical-reset","outline")+'</div>'+historyBookingResultHtml());
  }else if(staffTab==="queue"){
   
   const card=x=>'<article class="staff-record '+(x.deleted_at?'staff-deleted-record':'')+'"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.number)+'　'+esc(x.name)+'</div>'+
@@ -1346,6 +1407,8 @@ async function load(){err="";try{
 }
  else if(view==="staff")staff=null;
  }catch(e){err=e.message||String(e)}render();
+ if(view==="staff"&&staffTab==="bookings"&&historicalBookingResult&&historicalBookingTenant===slug)
+   void searchHistoricalBookings(historicalBookingPage);
  if(view==="customer"&&customerTab==="progress"&&lineLinkStatus==="linked"&&(progressTicketId||crossCurrentStore)){
    stopCrossQueueRealtime();
    void refreshQueueProgress();
@@ -1376,7 +1439,11 @@ async function urlFor(v,s){
 document.addEventListener("click",async ev=>{
  const b=ev.target.closest("button");if(!b||busy)return;
  if(b.dataset.act==="dismiss-feedback"){dismissActionFeedback();flash="";err="";render();return;}
- if(b.dataset.act==="open-bookings"||b.dataset.act==="open-queue"){staffTab=b.dataset.act==="open-bookings"?"bookings":"queue";err="";render();return;}
+ if(b.dataset.act==="open-bookings"||b.dataset.act==="open-queue"){
+ staffTab=b.dataset.act==="open-bookings"?"bookings":"queue";err="";render();
+ if(staffTab==="bookings")void searchHistoricalBookings(1);
+ return;
+}
  if(b.dataset.nav){const v=b.dataset.nav;const tab=b.dataset.tab;if(v==="customer"){
   customerTab=tab;progressTicketId="";crossCurrentStore=false;
   if(["reserve","queue"].includes(tab)&&!customer?.tenant.modules[tab==="reserve"?"reservation":"queue"])customerTab="home";
@@ -1388,6 +1455,7 @@ document.addEventListener("click",async ev=>{
  if(v==="staff"){
    staffTab=tab;
    if(["analytics","branches"].includes(tab)){void load();return;}
+    if(tab==="bookings"){err="";flash="";render();void searchHistoricalBookings(1);return;}
  }
  if(v==="platform")platformTab=tab;err="";flash="";render();return}
  if(b.dataset.slot){
@@ -1546,7 +1614,29 @@ document.addEventListener("click",async ev=>{
      return "菜單及服務規則已儲存：預約「"+menuModeLabel(value.booking)+"」，現場取號「"+menuModeLabel(value.queue)+"」";
    });return;
  }
- if(a==="apply-booking-filter"){
+ if(a==="historical-search"){
+    const search=val("historical-booking-search").trim();
+    const from=val("historical-booking-from"),to=val("historical-booking-to");
+    if(search.length>100){showActionFeedback("搜尋最多 100 字","error");return;}
+    if(from&&to&&from>to){showActionFeedback("結束日期不能早於開始日期","error");return;}
+    historicalBookingQuery=search;historicalBookingStart=from;historicalBookingEnd=to;
+    historicalBookingStatus=val("historical-booking-status");
+    historicalBookingDeleted=val("historical-booking-deleted");
+    historicalBookingPage=1;void searchHistoricalBookings(1);return;
+  }
+  if(a==="historical-reset"){
+    historicalBookingQuery="";historicalBookingStart="";historicalBookingEnd="";
+    historicalBookingStatus="ALL";historicalBookingDeleted="active";historicalBookingPage=1;
+    void searchHistoricalBookings(1);return;
+  }
+  if(a==="historical-prev"||a==="historical-next"){
+    if(historicalBookingLoading||!historicalBookingResult)return;
+    const candidate=historicalBookingPage+(a==="historical-prev"?-1:1);
+    const max=Math.max(1,Math.ceil(Number(historicalBookingResult.total||0)/25));
+    if(candidate<1||candidate>max)return;
+    void searchHistoricalBookings(candidate);return;
+  }
+  if(a==="apply-booking-filter"){
    staffBookingSearch=val("staff-booking-search").trim().slice(0,100);
    staffBookingDateFilter=["all","today","tomorrow","next7"].includes(val("staff-booking-date"))?val("staff-booking-date"):"all";
    staffBookingStatusFilter=["all","CONFIRMED","CHECKED_IN","COMPLETED","NO_SHOW","CANCELLED"].includes(val("staff-booking-status"))?val("staff-booking-status"):"all";
