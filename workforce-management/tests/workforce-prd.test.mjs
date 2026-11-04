@@ -103,3 +103,42 @@ test('leave UI selects latest effective policy and rejects stale version shadowi
  assert.match(src,/p_on:today\(\)/);
  assert.match(src,/leaveKindOptions/);
 });
+
+
+test('HR-ATT-05 missing punch, late and early cases are tenant-scoped and immutable',()=>{
+ const sql=migration('20261104_workforce_prd_attendance_anomalies.sql');
+ for(const term of ['wm_attendance_anomalies','wm_private.scan_attendance_core',
+  "missing_in","missing_out","late","early","wm_demo_attendance_api",
+  "status='approved'","UNIQUE(tenant_id,shift_id,kind)"])assert.ok(sql.includes(term),term);
+ assert.match(sql,/wm_private\.member_visible\(tenant_id,member_id\)/);
+ assert.match(src,/TABS\.anomalies/);
+ assert.match(src,/wm_demo_attendance_api/);
+ assert.match(src,/wm_resolve_attendance_anomaly/);
+ assert.match(src,/renderAttendanceCases/);
+});
+
+test('HR-LVE-07 private evidence requires per-request authorization, verified storage object and approval gate',()=>{
+ const sql=migration('20261104_workforce_prd_private_evidence_bucket.sql');
+ const guards=migration('20261104_workforce_prd_evidence_approval_guard.sql');
+ for(const term of ['wm-private-evidence','5242880','image/jpeg','image/png','application/pdf',
+   'wm_request_documents','wm_private.can_access_evidence','wm_request_evidence_storage_download',
+   'wm_request_evidence_storage_upload','wm_request_evidence_guard'])assert.ok(sql.includes(term),term);
+ assert.match(sql,/FOR INSERT TO authenticated/);
+ assert.match(sql,/FOR SELECT TO authenticated/);
+ assert.match(sql,/r.status='pending'/);
+ assert.match(sql,/wm_private\.can_manage\(r\.tenant_id\)/);
+ assert.match(guards,/JOIN storage\.objects o/);
+ assert.match(guards,/此假別需要上傳證明附件後才能核准/);
+ assert.match(src,/wm_request_documents/);
+ assert.match(src,/\/storage\/v1\/object\/wm-private-evidence\//);
+ assert.match(src,/\/storage\/v1\/object\/authenticated\/wm-private-evidence\//);
+ assert.match(src,/app\.mode!=='real'/);
+});
+
+test('all employee app enhancements preserve the same static Github Pages app and backend',()=>{
+ assert.match(src,/const API='https:\/\/unapiwajmgqqtdkixaab\.supabase\.co'/);
+ assert.match(src,/const DEMO_ID='98d3505c-cbe6-46ed-a95a-13672e6d98f4'/);
+ const open=src.match(/function openModal\(/g)||[];
+ assert.equal(open.length,1);
+ assert.doesNotThrow(()=>new vm.Script(src));
+});
