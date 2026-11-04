@@ -218,6 +218,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
         <div class="hero-cta">
           <a class="btn btn-solid" href="./merchant-register.html">我是店家・開始使用 <span class="arrow" aria-hidden="true">›</span></a>
           <a class="btn btn-white" href="./directory.html?mode=search">我是顧客・找店家 <span class="arrow" aria-hidden="true">›</span></a>
+          <button id="install-booking-app" class="btn btn-outline" type="button" hidden>安裝到桌面</button>
         </div>
         <div class="proof"><b aria-hidden="true">✓</b> 手機與電腦同一網站 <span aria-hidden="true">·</span> <b aria-hidden="true">✓</b> 保留原有店家與測試帳號</div>
       </div>
@@ -330,5 +331,22 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
     <div class="footer-note">LINE 預約為獨立開發之服務，非 LINE 官方產品。介面預覽是示意圖；實際功能依門市設定、LINE 授權及系統版本而定。</div>
   </div>
 </footer>
+<script>
+(() => {
+ let promptEvent=null;
+ const button=document.getElementById("install-booking-app");
+ window.addEventListener("beforeinstallprompt",event=>{
+  event.preventDefault();promptEvent=event;
+  if(button)button.hidden=false;
+ });
+ window.addEventListener("appinstalled",()=>{promptEvent=null;if(button)button.hidden=true;});
+ button?.addEventListener("click",async()=>{
+  if(!promptEvent)return;
+  const current=promptEvent;promptEvent=null;
+  if(button)button.hidden=true;
+  await current.prompt();
+ });
+})();
+</script>
 </body>
 </html>
