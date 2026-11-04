@@ -28,8 +28,8 @@ begin
    'completed',count(*) filter (where status='COMPLETED'),
    'cancelled',count(*) filter (where status='CANCELLED'),
    'passed',count(*) filter (where status='PASSED'),
-   'avg_wait_minutes',round(avg(extract(epoch from (last_called_at-created_at))/60)::numeric
-     filter (where last_called_at is not null and last_called_at>=created_at),1)
+   'avg_wait_minutes',round((avg(extract(epoch from (last_called_at-created_at))/60)
+     filter (where last_called_at is not null and last_called_at>=created_at))::numeric,1)
  ) into v_queue from public.so_tickets where tenant_id=t.id and deleted_at is null and business_date between v_start and v_end;
  select coalesce(jsonb_agg(jsonb_build_object('date',series.day,'reservations',
    (select count(*) from public.so_reservations r where r.tenant_id=t.id and r.deleted_at is null and r.booking_date=series.day),
