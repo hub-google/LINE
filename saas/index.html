@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="ffaaa29405a0af374eab2551052cfaea75710341">
+<meta name="line-saas-build" content="7a9dd0d979210ccb017d4737b644c4570a30bbb6">
 <!-- Preserve existing view/merchant/LIFF callbacks; only bare legacy/booking roots enter marketing home. -->
 <script>
 (() => {
@@ -25,7 +25,7 @@
   }
 })();
 </script>
-<script defer src="./version-watch.js?build=ffaaa29405a0af374eab2551052cfaea75710341"></script>
+<script defer src="./version-watch.js?build=7a9dd0d979210ccb017d4737b644c4570a30bbb6"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 門市營運｜企業開通、員工後台與顧客預約</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -157,7 +157,7 @@ body{overflow-x:hidden}
 .cross-record .staff-actionbar{margin-top:9px}
 @media(max-width:540px){.cross-ticket{padding:13px 11px}.cross-ticket-stats{gap:6px}.cross-ticket-stat{padding:9px 4px}.cross-ticket-stat strong{font-size:clamp(20px,6vw,30px)}}
 </style>
-<link rel="stylesheet" href="./booking-theme.css?build=ffaaa29405a0af374eab2551052cfaea75710341">
+<link rel="stylesheet" href="./booking-theme.css?build=7a9dd0d979210ccb017d4737b644c4570a30bbb6">
 </head>
 <body>
 <header><div class="top">
@@ -460,6 +460,7 @@ let recoveryMode=incomingParam("recover")==="1";
 let view=incomingParam("view")||"customer",slug=(isSafeMerchant(incomingParam("merchant"))?incomingParam("merchant"):null)||(testMode?testInfo.slug:"greenfield-salon");
 let session=null,context=null,overview=[],customer=null,staff=null,busy=false,flash="",err="";
 let staffHistoryDays=14,analyticsDays=30,staffAnalytics=null,businessGroups=[],staffNoticeHealth=null;
+let staffBookingSearch="",staffBookingDateFilter="all",staffBookingStatusFilter="all";
 let editingMenuItemId="",bookingChosenItems=[],queueChosenItems=[],editChosenItems=[];
 let day=taipei(),bookingParty=1,customerTab=["home","reserve","queue","mine","progress"].includes(incomingParam("tab"))?incomingParam("tab"):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
 let manageKind=["reservation","ticket"].includes(incomingParam("manage"))?incomingParam("manage"):"";
@@ -667,6 +668,27 @@ function numberSettingsPanel(kind,t,isManager){
    btn("重置"+label+"編號","reset-serial","outline",'data-kind="'+kind+'"')+'</div>':
    '<p class="small">僅企業管理員可修改編號設定。</p>'));
 }
+function staffBookingMatches(record,term=staffBookingSearch,dateFilter=staffBookingDateFilter,statusFilter=staffBookingStatusFilter,now=taipei()){
+ const date=String(record.day||"").slice(0,10);
+ const keyword=String(term||"").trim().toLocaleLowerCase("zh-Hant");
+ const searchable=[record.name,record.number,record.day,record.time,
+   ...(Array.isArray(record.selected_items)?record.selected_items.map(x=>x?.name||""):[])
+ ].join(" ").toLocaleLowerCase("zh-Hant");
+ if(keyword&&!searchable.includes(keyword))return false;
+ if(statusFilter!=="all"&&record.status!==statusFilter)return false;
+ if(dateFilter==="today"&&date!==now)return false;
+ if(dateFilter==="tomorrow"){
+   const dt=new Date(now+"T00:00:00Z");
+   dt.setUTCDate(dt.getUTCDate()+1);
+   if(date!==dt.toISOString().slice(0,10))return false;
+ }
+ if(dateFilter==="next7"){
+   const dt=new Date(now+"T00:00:00Z");
+   dt.setUTCDate(dt.getUTCDate()+6);
+   if(date<now||date>dt.toISOString().slice(0,10))return false;
+ }
+ return true;
+}
 function staffRender(){
  if(recoveryMode||!authReady())return requireAuth();
  const memberships=context?.memberships||[];
@@ -726,6 +748,9 @@ function staffRender(){
        '</tbody></table></div>');
   }
  }else if(staffTab==="bookings"){
+  const visibleOpen=openBookings.filter(x=>staffBookingMatches(x));
+  const visibleDone=doneBookings.filter(x=>staffBookingMatches(x));
+  const visibleDeleted=deletedBookings.filter(x=>staffBookingMatches(x));
   const card=x=>{
    
    return '<article class="staff-record '+(x.deleted_at?'staff-deleted-record':'')+'"><div class="staff-record-head"><div><div class="staff-record-title">'+'預約 '+esc(x.number||'—')+'　'+esc(x.day)+'　'+esc(x.time)+'　'+esc(x.name)+'</div>'+
@@ -735,19 +760,29 @@ function staffRender(){
    (x.deleted_at?'<p class="staff-help">此預約已從顧客端隱藏；取消勾選刪除即可恢復。</p>':staffStatusPicker("reservation",x,x.day>taipei()?["CONFIRMED","CANCELLED"]:true))+staffDeletePicker("reservation",x)+
    ''+'</article>';
   };
-  html+=numberSettingsPanel("booking",t,isManager)+'<div class="grid4" style="margin-bottom:16px">'+stat("待處理預約",openBookings.length)+stat("待報到",pendingBookings.length)+
+  html+=numberSettingsPanel("booking",t,isManager)+
+   box("搜尋與篩選預約",'<p class="small">此處僅篩選目前已載入的資料：跨日未結案預約，以及最近 '+staffHistoryDays+' 天已處理紀錄；完整歷史、後端分頁及日／週／月曆仍待開發。</p>'+
+    '<div class="grid3"><div>'+field("搜尋預約編號、姓名或服務","staff-booking-search",staffBookingSearch,"search",'placeholder="輸入關鍵字"')+'</div>'+
+    '<div><label for="staff-booking-date">預約日期</label><select id="staff-booking-date" class="field">'+
+     [["all","全部日期"],["today","今天"],["tomorrow","明天"],["next7","未來 7 天"]].map(([id,label])=>'<option value="'+id+'" '+(staffBookingDateFilter===id?"selected":"")+'>'+label+'</option>').join("")+'</select></div>'+
+    '<div><label for="staff-booking-status">預約狀態</label><select id="staff-booking-status" class="field">'+
+     [["all","全部狀態"],["CONFIRMED","已預約"],["CHECKED_IN","已報到"],["COMPLETED","已完成"],["NO_SHOW","未到"],["CANCELLED","已取消"]].map(([id,label])=>'<option value="'+id+'" '+(staffBookingStatusFilter===id?"selected":"")+'>'+label+'</option>').join("")+'</select></div></div>'+
+    '<div class="staff-actionbar">'+btn("套用篩選","apply-booking-filter","primary")+
+    btn("清除篩選","clear-booking-filter","outline")+
+    (isManager?btn("匯出篩選結果 CSV","export-bookings","secondary"):"")+'</div>')+
+   '<div class="grid4" style="margin-bottom:16px">'+stat("待處理預約",openBookings.length)+stat("待報到",pendingBookings.length)+
     stat("已報到未結案",openBookings.filter(x=>x.status==="CHECKED_IN").length)+stat("已處理預約",doneBookings.length)+'</div>'+
    box("預約管理方式",'<p class="muted">只要沒有標記完成、未到或取消，預約就不因跨過午夜而消失。店員可直接勾選狀態，也可重新選擇修正手誤。</p>'+
     '<p class="staff-help">預約獨立管理：「已報到」不會產生叫號號碼，也不需前往叫號管理。未來的預約僅可取消或恢復。</p>'+
     '<div class="staff-actionbar">'+
     (lastStaffChange&&lastStaffChange.slug===slug?btn("還原上一步","undo-staff","outline"):"")+
     '<a class="btn outline" href="./poster.html?merchant='+encodeURIComponent(slug)+'&type=reserve" target="_blank" rel="noopener noreferrer">製作預約 QR 立牌</a></div>')+
-   box("待處理預約（"+openBookings.length+" 筆）",openBookings.length?openBookings.map(card).join(""):'<p class="muted">目前沒有未結案預約。</p>')+
-   box("已處理預約（最近 "+staffHistoryDays+" 天，"+doneBookings.length+" 筆）",'<p class="staff-help">包含已完成、未到、已取消。此區仍可修正狀態，資料依處理時間排序。</p>'+
-    (doneBookings.length?doneBookings.map(card).join(""):'<p class="muted">選定範圍內還沒有已處理預約。</p>'))+
-   box("已刪除預約（最近 "+staffHistoryDays+" 天，"+deletedBookings.length+" 筆）",
+   box("待處理預約（"+visibleOpen.length+" / "+openBookings.length+" 筆）",visibleOpen.length?visibleOpen.map(card).join(""):'<p class="muted">目前沒有未結案預約。</p>')+
+   box("已處理預約（最近 "+staffHistoryDays+" 天，"+visibleDone.length+" / "+doneBookings.length+" 筆）",'<p class="staff-help">包含已完成、未到、已取消。此區仍可修正狀態，資料依處理時間排序。</p>'+
+    (visibleDone.length?visibleDone.map(card).join(""):'<p class="muted">選定範圍內還沒有已處理預約。</p>'))+
+   box("已刪除預約（最近 "+staffHistoryDays+" 天，"+visibleDeleted.length+" / "+deletedBookings.length+" 筆）",
     '<p class="staff-help">顧客不會看到這些預約，也不會收到刪除通知。取消勾選即可恢復。</p>'+
-    (deletedBookings.length?deletedBookings.map(card).join(""):'<p class="muted">目前沒有已刪除預約。</p>'));
+    (visibleDeleted.length?visibleDeleted.map(card).join(""):'<p class="muted">目前沒有已刪除預約。</p>'));
  }else if(staffTab==="queue"){
   
   const card=x=>'<article class="staff-record '+(x.deleted_at?'staff-deleted-record':'')+'"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.number)+'　'+esc(x.name)+'</div>'+
@@ -1510,6 +1545,39 @@ document.addEventListener("click",async ev=>{
        p_booking_mode:val("menu-book-mode"),p_queue_mode:val("menu-queue-mode")});
      return "菜單及服務規則已儲存：預約「"+menuModeLabel(value.booking)+"」，現場取號「"+menuModeLabel(value.queue)+"」";
    });return;
+ }
+ if(a==="apply-booking-filter"){
+   staffBookingSearch=val("staff-booking-search").trim().slice(0,100);
+   staffBookingDateFilter=["all","today","tomorrow","next7"].includes(val("staff-booking-date"))?val("staff-booking-date"):"all";
+   staffBookingStatusFilter=["all","CONFIRMED","CHECKED_IN","COMPLETED","NO_SHOW","CANCELLED"].includes(val("staff-booking-status"))?val("staff-booking-status"):"all";
+   render();return;
+ }
+ if(a==="clear-booking-filter"){
+   staffBookingSearch="";staffBookingDateFilter="all";staffBookingStatusFilter="all";
+   render();return;
+ }
+ if(a==="export-bookings"){
+   if(view!=="staff"||staffTab!=="bookings"||!["OWNER","MANAGER","PLATFORM"].includes(staff?.role)){
+     showActionFeedback("僅企業管理者可匯出預約資料。","error");return;
+   }
+   const records=(staff?.pending_reservations||[]).concat(staff?.processed_reservations||[],staff?.deleted_reservations||[])
+     .filter(x=>staffBookingMatches(x));
+   // Leading formula characters must never be interpreted as spreadsheet formulas.
+   const csvCell=value=>{
+     let v=String(value??"").replace(/\r?\n/g," ");
+     if(/^[\s]*[=+@-]/.test(v))v="'"+v;
+     return '"'+v.replace(/"/g,'""')+'"';
+   };
+   const columns=["預約日期","時間","預約編號","顧客暱稱","人數","目前狀態","送出預約時間","顧客端已隱藏"];
+   const rows=records.map(x=>[x.day,x.time,x.number,x.name,x.party,jsStatus(x.status),
+     formatTaipeiCreated(x.created_at),x.deleted_at?"是":"否"]);
+   const csv="\uFEFF"+[columns,...rows].map(row=>row.map(csvCell).join(",")).join("\r\n");
+   const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+   const link=document.createElement("a");link.href=url;
+   link.download="LINE_booking_"+slug+"_"+taipei()+".csv";
+   document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+   showActionFeedback("已匯出目前篩選中的 "+records.length+" 筆預約資料，請妥善保護顧客資訊。","success");
+   return;
  }
  if(a==="export-analytics"){
    const a=staffAnalytics;
