@@ -1831,7 +1831,7 @@ async function load(){err="";try{
        customer.booking_confirmation_required=setting?.require_confirmation!==false;
      }catch(_e){customer.booking_confirmation_required=true;}
    }
-   if(customer&&chosenSlot&&!(customer.slots||[]).some(x=>x.time===chosenSlot&&availableForParty(x)))chosenSlot="";
+   if(customer&&chosenSlot&&!currentBookingSlots().some(x=>x.time===chosenSlot&&availableForParty(x)))chosenSlot="";
    if(lineLinkStatus==="linked"){
      try{
        customerActivity=await rpc("so_customer_cross_store_overview",{p_slug:slug});
@@ -2288,7 +2288,7 @@ document.addEventListener("click",async ev=>{
  if(a==="book-back"){bookingConfirmationKey="";render();return;}
  if(a==="book"&&customer?.booking_confirmation_required!==false){
   const party=Number(val("customer-party"));
-  const slot=(customer?.slots||[]).find(x=>x.time===chosenSlot);
+  const slot=currentBookingSlots().find(x=>x.time===chosenSlot);
   if(!Number.isInteger(party)||party<1||party>20||!chosenSlot||!availableForParty(slot,party)||
      !menuChoiceReady(customer?.tenant?.menu_booking_mode||"DISABLED",bookingChosenItems,customer?.menu_items||[])){
     showActionFeedback("請先選擇有效人數、時段與服務項目。","warning");return;
