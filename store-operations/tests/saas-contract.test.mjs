@@ -32,7 +32,29 @@ test("ticket notifications format the persisted number",()=>{
 test("verified LINE session resumes without repeating OAuth",()=>{
  assert.match(client,/resumeVerifiedLineSession/);
  assert.match(client,/cleanLineRedirectUri/);
+ assert.match(client,/likelyLineApp/);
+ assert.match(client,/inLineClient/);
+ assert.match(client,/!force&&!inLineClient&&await resumeVerifiedLineSession\(\)/);
  assert.match(bridge,/payload\.action === "resume"/);
+ assert.match(bridge,/linked\.login_channel_id !== expectedChannelId/);
+});
+test("queue progress and call notification share same-day number semantics",()=>{
+ assert.match(bridge,/function ticketNumber\(/);
+ assert.match(bridge,/number_prefix/);
+ assert.match(bridge,/\.eq\("business_date", ticket\.business_date\)/);
+ assert.doesNotMatch(bridge,/"目前叫到：A"/);
+});
+test("P0 notification status is manager-scoped and avoids client-side secrets",()=>{
+ const sql=read("supabase/migrations/20261104_line_notice_health_dashboard.sql");
+ assert.match(sql,/private\.so_role\(t\.id\)/);
+ assert.match(sql,/so_line_notice_health/);
+ assert.match(client,/LINE 通知異常｜需管理者處理/);
+ assert.match(bridge,/WORKER_UNAUTHORIZED/);
+});
+test("production admin setup demands verified owner and one-time code",()=>{
+ assert.match(client,/so_claim_platform_admin/);
+ assert.match(client,/bootstrap-token/);
+ assert.match(client,/需要使用已驗證電子郵件/);
 });
 test("outbox is independently scheduled and authenticated",()=>{
  const sql=read("supabase/migrations/20261104_line_notification_outbox_retries.sql");
