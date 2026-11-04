@@ -239,7 +239,7 @@ function authTab(v){register=v;$('registerTab').classList.toggle('active',v);$('
 function showTenant(){openModal('建立企業',modalForm('tenant',[{name:'name',label:'企業名稱',html:input('name','text','','maxlength="120"'),wide:true}],'建立企業')); }
 function csvSave(){
  const data=[['員工編號','姓名','分店','打卡筆數','配對工時(小時)'],...(app.reportRows||[]).map(x=>[x.m.employee_code,x.m.display_name,branch(x.m.branch_id)?.name||'',x.entries.length,x.hours.toFixed(2)])];
- const csv='\uFEFF'+data.map(row=>row.map(c=>'"'+String(c).replaceAll('"','""')+'"').join(',')).join('\r\n');
+ const csv='\uFEFF'+data.map(row=>row.map(c=>{let text=String(c);if(/^[=+@\-\t\r]/.test(text))text="'"+text;return '"'+text.replaceAll('"','""')+'"';}).join(',')).join('\r\n');
  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='LINE-Workforce-'+app.date+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);banner('CSV 已產生');
 }
 async function clockPunch(kindValue){
