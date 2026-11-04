@@ -29,6 +29,7 @@
 | #19 | 網頁安裝用 PWA manifest、圖示、安全離線提示與僅靜態快取 | [#19](https://github.com/hub-google/LINE/pull/19) | Web Push、裝置撤權、實機驗收未完成 |
 | #20 | K03 候位票券記錄並顯示每組人數，保留舊 UUID／序號／資料 | [#20](https://github.com/hub-google/LINE/pull/20) | 自訂人數選項、桌型適配、多窗口未完成 |
 | #21 | UX-11 單店／跨店叫號最後成功同步時間、失聯警示與手動更新 | [#21](https://github.com/hub-google/LINE/pull/21) | 多裝置與斷線情境實機 E2E 未完成 |
+| #23 | PRD §103 預約憑證與個人取號歷史改用資料庫永久 21 碼 `reference_code`；既有 LINE-linked 顧客資料查詢保持相同權限範圍 | [#23](https://github.com/hub-google/LINE/pull/23)、[CI PASS](https://github.com/hub-google/LINE/actions/runs/41799705278)；Supabase 函式已套用，現存短碼格式查核 0 筆異常 | 尚缺手機／電腦顧客實機 E2E；不得據此宣稱整份 §103 或全 PRD 已驗收 |
 
 正式網站：https://hub-google.github.io/LINE/booking/ 。實際已執行的 GitHub Actions CI/Pages 部署，**不等於**已完成 LINE 手機、真實收款、裝置／商家實測。
 
