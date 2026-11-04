@@ -64,7 +64,7 @@ async function reload(silent=false){
    if(!app.tenants.find(t=>t.id===app.tenantId))app.tenantId=app.tenants[0]?.id||'';
    if(!app.tenantId){app.data=null;}else{
     const p='tenant_id=eq.'+encodeURIComponent(app.tenantId);
-    const [branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections,leavePolicies,attendanceCases,attendanceRuleRows]=await Promise.all([
+    const [branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections,leavePolicies,attendanceCases,attendanceRuleRows,requestDocs]=await Promise.all([
      query('wm_branches','select=*&'+p+'&order=name'),query('wm_members','select=id,tenant_id,branch_id,user_id,display_name,employee_code,role,employment_type,status,created_at,department_id,hired_on,left_on,skills&'+p+'&order=employee_code'),
      query('wm_shifts','select=*&'+p+'&order=starts_at.desc&limit=600'),query('wm_punches','select=*&'+p+'&order=punched_at.desc&limit=600'),
      query('wm_requests','select=*&'+p+'&order=created_at.desc&limit=300'),query('wm_leave_entitlements','select=*&'+p),
@@ -74,7 +74,7 @@ async function reload(silent=false){
      query('wm_period_closures','select=*&'+p+'&order=closed_at.desc&limit=36'),query('wm_period_adjustments','select=*&'+p+'&limit=300'),
      query('wm_attendance_adjustments','select=*&'+p+'&limit=300'),query('wm_leave_policies','select=*&'+p+'&order=effective_from.desc'),
      query('wm_attendance_anomalies','select=*&'+p+'&order=created_at.desc&limit=300'),
-     query('wm_attendance_rules','select=*&'+p+'&limit=1')]);
+     query('wm_attendance_rules','select=*&'+p+'&limit=1'),query('wm_request_documents','select=*&'+p+'&order=created_at.desc&limit=300')]);
     if(members.some(m=>m.user_id===app.user?.id&&['owner','hr'].includes(m.role))){
       const wages=await call('/rest/v1/rpc/wm_staff_wages','POST',{p_tenant:app.tenantId},app.token);
       const lookup=new Map((wages||[]).map(w=>[w.member_id,w.hourly_rate]));
@@ -82,7 +82,7 @@ async function reload(silent=false){
     }
     app.data={tenant:app.tenants.find(t=>t.id===app.tenantId),branches,members,shifts,punches,requests,
       entitlements,availability,departments,templates,requirements,notifications,closures,
-      adjustments,corrections,leavePolicies,attendanceCases,attendanceRules:attendanceRuleRows[0]||null,
+      adjustments,corrections,leavePolicies,attendanceCases,attendanceRules:attendanceRuleRows[0]||null,requestDocs,
       leaveBalances:{},requestStages:[],server_at:new Date().toISOString()};
     const selected=getSelected();
     if(selected){
@@ -1146,4 +1146,101 @@ $('appContent').addEventListener('click',async e=>{
   else if(b.dataset.extra==='anomalyResolve')showAnomalyResolve(b.dataset.id);
   else if(b.dataset.extra==='anomalyRule')showAnomalyRule();
  }catch(error){banner(error.message,true);}
+});
+
+
+
+/* HR-LVE-07: verified-identity private evidence files for formally authenticated companies only. */
+const beforeRequestDocs=requests;
+requests=function(){
+ beforeRequestDocs();
+ const d=app.data||{},canUpload=app.mode==='real'&&!!app.token;
+ let rows=(d.requests||[]).filter(x=>['leave','correction','overtime'].includes(x.kind)).slice(0,50).map(r=>{
+  const docs=(d.requestDocs||[]).filter(x=>x.request_id===r.id);
+  const isOwn=person(r.member_id)?.user_id===app.user?.id;
+  const pending=r.status==='pending';
+  const current=(d.leavePolicies||[]).find(p=>p.id===r.leave_policy_id);
+  const proofRequired=r.kind==='leave'&&current?.requires_document;
+  return tr([
+   personLabel(r.member_id),esc(kind(r.kind))+(r.kind==='leave'?' · '+esc(kind(r.leave_kind)):''),
+   status(r.status)+(proofRequired?'<span class="chip pending">須證明</span>':''),
+   esc(docs.length)+' 件',
+   '<div class="flex">'+
+    (canUpload&&pending&&(isOwn||manager())?'<button type="button" class="btn small" data-extra="evidenceUpload" data-id="'+esc(r.id)+'">新增附件</button>':'')+
+    docs.map(x=>'<button type="button" class="btn small" data-extra="evidenceDownload" data-id="'+esc(x.id)+'">'+esc(x.filename)+'</button>').join('')+
+   '</div>'
+  ]);
+ });
+ $('appContent').insertAdjacentHTML('beforeend',
+  panel('申請證明附件（私人檔案）',
+   '<div class="notice">僅正式企業模式可上傳，PDF／PNG／JPEG，單一檔案最多 5 MB，每份待審申請最多 5 份。附件限本人及有權限的主管查看；原始檔案不會公開到 Demo 或 GitHub。</div>'+
+   table(['員工','申請項目','狀態','附件數','操作'],rows)));
+};
+function showEvidenceUploader(id){
+ if(app.mode!=='real'||!app.token)throw Error('上傳證明請先登入正式企業');
+ const item=(app.data?.requests||[]).find(x=>x.id===id);
+ if(!item||item.status!=='pending')throw Error('只有待審申請可以上傳文件');
+ const owner=person(item.member_id)?.user_id===app.user?.id;
+ if(!owner&&!manager())throw Error('沒有權限存取此申請');
+ openModal('新增請假／補卡證明附件',
+  '<div class="notice">證明文件可能包含健康或個人資訊，僅限申請者及具備審核權限的人員查看。請勿上傳不必要的個資。</div>'+
+  '<input type="hidden" id="evidenceRequestId" value="'+esc(id)+'">'+
+  '<div class="field"><label for="evidenceFile">選擇 PDF／PNG／JPG（最大 5 MB）</label>'+
+  '<input id="evidenceFile" type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"></div>'+
+  '<div class="modal-actions"><button type="button" class="btn primary" data-extra="evidenceUploadSubmit">上傳到企業私人空間</button></div>');
+}
+async function uploadEvidence(){
+ if(app.mode!=='real'||!app.token)throw Error('需要企業登入');
+ if(app.busy)throw Error('正在執行其他操作，請重新嘗試');
+ const file=$('evidenceFile')?.files?.[0],requestId=$('evidenceRequestId')?.value;
+ if(!file||!requestId)throw Error('請選擇證明檔案');
+ const types={'application/pdf':'.pdf','image/png':'.png','image/jpeg':'.jpg'};
+ const ext=types[file.type];
+ if(!ext||file.size<1||file.size>5242880)throw Error('檔案必須是 PDF、PNG 或 JPG，大小不超過 5 MB');
+ const r=(app.data?.requests||[]).find(x=>x.id===requestId);
+ if(!r||r.status!=='pending')throw Error('這份申請已不接受新增附件');
+ const existing=(app.data?.requestDocs||[]).filter(x=>x.request_id===requestId).length;
+ if(existing>=5)throw Error('這份申請已達 5 份附件上限');
+ const storagePath=app.tenantId+'/'+requestId+'/'+crypto.randomUUID()+ext;
+ app.busy=true;
+ try{
+  const response=await fetch(API+'/storage/v1/object/wm-private-evidence/'+storagePath,{
+   method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+app.token,
+    'Content-Type':file.type,'x-upsert':'false'},body:file,cache:'no-store'});
+  if(!response.ok){
+   const detail=await response.json().catch(()=>null);
+   throw Error(detail?.message||detail?.error||'私人附件上傳失敗 ('+response.status+')');
+  }
+  await call('/rest/v1/wm_request_documents','POST',{
+   tenant_id:app.tenantId,request_id:requestId,storage_path:storagePath,
+   filename:file.name.slice(0,180),mime_type:file.type,byte_size:file.size,
+   uploaded_by:app.user.id},app.token);
+  app.busy=false;closeModal();await reload(true);banner('已儲存私人附件並綁定申請單');
+ }catch(error){app.busy=false;throw error;}
+}
+async function downloadEvidence(id){
+ if(app.mode!=='real'||!app.token)throw Error('需要企業登入');
+ const record=(app.data?.requestDocs||[]).find(x=>x.id===id);
+ if(!record)throw Error('找不到本企業授權的文件');
+ const response=await fetch(API+'/storage/v1/object/authenticated/wm-private-evidence/'+record.storage_path,{
+  method:'GET',headers:{apikey:KEY,Authorization:'Bearer '+app.token},cache:'no-store'});
+ if(!response.ok)throw Error('沒有檔案權限或文件已不存在 ('+response.status+')');
+ const blob=await response.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=record.filename;a.rel='noopener';document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),5000);
+}
+$('appContent').addEventListener('click',async e=>{
+ const b=e.target.closest('[data-extra]');if(!b)return;
+ try{
+  if(b.dataset.extra==='evidenceUpload')showEvidenceUploader(b.dataset.id);
+  if(b.dataset.extra==='evidenceDownload')await downloadEvidence(b.dataset.id);
+ }catch(error){banner(error.message,true);}
+});
+$('overlay').addEventListener('click',async e=>{
+ const b=e.target.closest('[data-extra]');if(!b)return;
+ if(b.dataset.extra==='evidenceUploadSubmit'){
+  b.disabled=true;
+  try{await uploadEvidence();}catch(error){banner(error.message,true);}
+  finally{b.disabled=false;}
+ }
 });
