@@ -501,6 +501,7 @@ function lineIndicator(tenant){
 }
 function taipei(){return new Intl.DateTimeFormat("sv-SE",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date())}
 function esc(x){return String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function queueSessionName(code){return ({MORNING:"早場",AFTERNOON:"午場",EVENING:"晚場",REST:"休場"})[code]||"早場"}
 function jsStatus(s){return ({CONFIRMED:"已預約",CHECKED_IN:"已報到",COMPLETED:"已完成",CANCELLED:"已取消",NO_SHOW:"未到",WAITING:"等候中",CALLED:"已叫號",ARRIVED:"已到場",ADMITTED:"已進場",SERVING:"服務中",HOLD:"保留候位",PASSED:"已過號",ACTIVE:"啟用中",SUSPENDED:"已停用"})[s]||s}
 function tag(s){return '<span class="tag '+(["ACTIVE","COMPLETED","CONFIRMED","CONNECTED"].includes(s)?"ok":(["SUSPENDED","PASSED","CANCELLED","HOLD"].includes(s)?"warn":""))+'">'+esc(jsStatus(s))+'</span>'}
 function btn(label,action,style="",extra=""){return '<button class="btn '+style+'" data-act="'+action+'" '+extra+'>'+label+'</button>'}
@@ -1066,6 +1067,13 @@ function staffRender(){
    staffDeletePicker("ticket",x)+'</article>';
   html+=numberSettingsPanel("queue",t,isManager)+'<div class="grid4" style="margin-bottom:16px">'+stat("正在叫號",active?.number||"—")+stat("候位中",waiting.length)+
    stat("已過號",passed.length)+stat("保留中",held.length)+stat("已結束",doneTickets.length)+'</div>'+
+   box("取號場次管理",
+     '<p class="small">目前：<strong>'+esc(queueSessionName(staff.queue_session?.code||"MORNING"))+'</strong>。休場只暫停新的取號，先前的號碼仍可繼續叫號；切場不會重設流水號。</p>'+
+     '<div class="staff-actionbar">'+
+     [["MORNING","早場"],["AFTERNOON","午場"],["EVENING","晚場"],["REST","休場"]].map(([code,name])=>
+       btn(name,(staff.queue_session?.code||"MORNING")===code?"noop-queue-session":"set-queue-session",
+         (staff.queue_session?.code||"MORNING")===code?"primary":"outline",
+         'data-session-code="'+code+'"')).join("")+'</div>')+
    box("叫號操作",'<p class="muted">仍在候位的跨日號碼會繼續排隊。號碼狀態可直接勾選與更正；已叫號後可分別標記「已到場」及「已進場」，不代表服務已完成。</p>'+
     '<div class="staff-actionbar">'+btn("叫下一位","call","primary",(!waiting.length||!!active||!t.modules.calling?"disabled":""))+
     btn("再叫一次","recall","outline",(!active||active.status!=="CALLED"?"disabled":"")+' data-id="'+esc(active?.id||"")+'"')+
@@ -1452,7 +1460,8 @@ function customerRender(){
     box("我的近期預約",renderBookings(items,true));
  }else if(customerTab==="queue"){
   if(!m.queue)html=box("尚未開放取號",'<p>本企業只提供線上預約。</p>');
-  else html='<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",customer.current||"—")+stat("等候組數",customer.waiting)+stat("我的號碼",live?.number||"—")+'</div>'+
+  else html=(customer.queue_session?.code==="REST"?'<p class="alert">門市目前休場，暫停新取號。已取得的號碼仍保留，現場人員可繼續處理。</p>':"")+
+  '<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",customer.current||"—")+stat("等候組數",customer.waiting)+stat("我的號碼",live?.number||"—")+'</div>'+
    box("我的現場號碼",live?'<div class="ticket">'+esc(live.number)+'</div><p>'+tag(live.status)+'</p>'+
     '<p class="small">取號時間：'+esc(formatTaipeiCreated(live.created_at))+' ・ '+esc(live.party||1)+' 人／組</p>'+
     selectedItemsHtml(live.selected_items)+
@@ -1463,7 +1472,7 @@ function customerRender(){
     '<p class="small">一張號碼牌代表一組。前方等待仍以「組數」計算，人數用於門市安排桌位／服務。</p>'+
     menuSelectSection(t.menu_queue_mode||"DISABLED",catalogue,queueChosenItems,"queue")+
     '<div style="margin-top:14px">'+btn("立即線上取號","take","primary",
-    (!Number.isInteger(queuePartySize)||queuePartySize<1||queuePartySize>20||!menuChoiceReady(t.menu_queue_mode,queueChosenItems,catalogue))?"disabled":"")+'</div>');
+    (customer.queue_session?.code==="REST"||!Number.isInteger(queuePartySize)||queuePartySize<1||queuePartySize>20||!menuChoiceReady(t.menu_queue_mode,queueChosenItems,catalogue))?"disabled":"")+'</div>');
  }else if(customerTab==="progress"){
   if(progressTicketId||crossCurrentStore)html=box("即時叫號進度",'<p class="muted">以下為 <strong>'+esc(t.name)+'</strong> 的即時候位資訊。</p>'+
     '<div class="staff-actionbar">'+btn("返回我的取號","cross-back","outline")+'</div>'+queueProgressBoard());
@@ -2022,6 +2031,16 @@ document.addEventListener("click",async ev=>{
    document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
    return;
  }
+ if(a==="noop-queue-session"){return;}
+ if(a==="set-queue-session"){
+   const session=b.dataset.sessionCode;
+   if(!["MORNING","AFTERNOON","EVENING","REST"].includes(session))return;
+   if(!confirm("切換至「"+queueSessionName(session)+"」？只影響新取號，不會重設既有號碼。"))return;
+   await act(async()=>{
+     await rpc("so_set_queue_session",{p_slug:slug,p_session:session});
+     return "已切換為「"+queueSessionName(session)+"」，現有號碼及順序不變";
+   });return;
+ }
  if(a==="save-hold-policy"){
    await act(async()=>{
      const minutes=Number(val("hold-minutes")),max=Number(val("hold-limit")),mode=val("hold-return-mode");
@@ -2096,6 +2115,7 @@ document.addEventListener("click",async ev=>{
   });return;
 }
  if(a==="take"){await act(async()=>{
+  if(customer?.queue_session?.code==="REST")throw Error("門市目前休場，暫停新取號");
   if(lineLinkStatus!=="linked")throw Error("請先完成 LINE 授權");
   const party=Number(val("customer-queue-party"));
   if(!Number.isInteger(party)||party<1||party>20)throw Error("請輸入 1～20 人的有效候位人數。");
