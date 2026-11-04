@@ -30,7 +30,7 @@ test("QR contains correct shop, service, and merchant-specific LIFF URL",()=>{
   assert.match(poster,/\/\^\[a-z0-9\]\[a-z0-9-\]\{2,39\}\$\//);
   assert.match(poster,/rpc\("so_public_state",\{p_slug:slug\}\)/);
   assert.match(poster,/line-bridge\?action=config&merchant=/);
-  assert.match(poster,/config\.liffId/);
+  assert.match(poster,/config\?\.liffId/);
   assert.match(poster,/new URLSearchParams\(\{view:"customer",merchant:slug,tab:mode\}\)/);
   assert.match(poster,/modules\.reservation/);
   assert.match(poster,/modules\.queue/);
