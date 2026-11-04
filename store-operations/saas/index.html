@@ -461,6 +461,10 @@ let view=incomingParam("view")||"customer",slug=(isSafeMerchant(incomingParam("m
 let session=null,context=null,overview=[],customer=null,staff=null,busy=false,flash="",err="";
 let staffHistoryDays=14,analyticsDays=30,staffAnalytics=null,businessGroups=[],staffNoticeHealth=null;
 let staffBookingSearch="",staffBookingDateFilter="all",staffBookingStatusFilter="all";
+let historicalBookingQuery="",historicalBookingStart="",historicalBookingEnd="";
+let historicalBookingStatus="ALL",historicalBookingDeleted="active",historicalBookingPage=1;
+let historicalBookingResult=null,historicalBookingLoading=false,historicalBookingError="";
+let historicalBookingToken=0,historicalBookingTenant="";
 let editingMenuItemId="",bookingChosenItems=[],queueChosenItems=[],editChosenItems=[];
 let day=taipei(),bookingParty=1,customerTab=["home","reserve","queue","mine","progress"].includes(incomingParam("tab"))?incomingParam("tab"):"home",staffTab="dashboard",platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
 let manageKind=["reservation","ticket"].includes(incomingParam("manage"))?incomingParam("manage"):"";
@@ -688,6 +692,51 @@ function staffBookingMatches(record,term=staffBookingSearch,dateFilter=staffBook
    if(date<now||date>dt.toISOString().slice(0,10))return false;
  }
  return true;
+}
+function historyBookingResultHtml(){
+ const data=historicalBookingResult;
+ if(historicalBookingLoading)return '<p class="muted" role="status">正在查詢資料，請稍後…</p>';
+ if(historicalBookingError)return '<p class="alert" role="alert">'+esc(historicalBookingError)+'</p>';
+ if(!data)return '<p class="muted">按「查詢完整歷史」開始搜尋。</p>';
+ const items=Array.isArray(data.items)?data.items:[];
+ const total=Math.max(0,Number(data.total||0)),size=Math.max(1,Number(data.page_size||25));
+ const page=Math.max(1,Number(data.page||1)),pages=Math.max(1,Math.ceil(total/size));
+ const count='<p class="small" role="status">共找到 <strong>'+esc(total)+'</strong> 筆；第 '+esc(page)+' / '+esc(pages)+' 頁（每頁最多 '+esc(size)+' 筆）。</p>';
+ const cards=items.map(x=>'<article class="staff-record'+(x.deleted_at?' staff-deleted-record':'')+'">'+
+  '<div class="staff-record-head"><div><div class="staff-record-title">預約 '+esc(x.number||"—")+'　'+esc(x.day||"")+'　'+esc(x.time||"")+'</div>'+
+  '<div class="small">'+esc(x.name||"")+" ・ "+esc(x.party||0)+' 位</div>'+
+  '<div class="small">建立時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
+  '<div class="small">永久參考碼：'+esc(x.reference_code||"—")+' ・ 編號批次：'+esc(x.round??"—")+'</div>'+
+  selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+
+  (x.deleted_at?'<p class="small">此筆已由店員隱藏於顧客端，未從資料庫刪除。</p>':"")+'</article>').join("");
+ return count+(cards||'<p class="muted">沒有符合條件的預約。</p>')+
+  '<div class="staff-actionbar">'+btn("上一頁","historical-prev","outline",page<=1?"disabled":"")+
+  btn("下一頁","historical-next","outline",!data.has_more?"disabled":"")+'</div>';
+}
+async function searchHistoricalBookings(page=historicalBookingPage){
+ const request=++historicalBookingToken,merchant=slug;
+ if(view!=="staff"||!staff?.tenant||!authReady()){
+  historicalBookingResult=null;historicalBookingError="請先完成店員登入並選擇可管理的門市";render();return;
+ }
+ historicalBookingLoading=true;historicalBookingError="";render();
+ try{
+  const result=await rpc("so_staff_reservation_search",{
+   p_slug:merchant,p_search:historicalBookingQuery,
+   p_date_from:historicalBookingStart||null,p_date_to:historicalBookingEnd||null,
+   p_status:historicalBookingStatus,p_deleted:historicalBookingDeleted,
+   p_page:page,p_page_size:25
+  });
+  if(request!==historicalBookingToken||merchant!==slug||view!=="staff")return;
+  historicalBookingResult=result;historicalBookingPage=page;historicalBookingTenant=merchant;
+ }catch(e){
+  if(request!==historicalBookingToken||merchant!==slug)return;
+  historicalBookingResult=null;historicalBookingError=e?.message||"無法取得完整預約歷史";
+ }finally{
+  if(request===historicalBookingToken&&merchant===slug){
+   historicalBookingLoading=false;
+   if(view==="staff"&&staffTab==="bookings")render();
+  }
+ }
 }
 function staffRender(){
  if(recoveryMode||!authReady())return requireAuth();
