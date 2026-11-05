@@ -71,3 +71,13 @@ body{margin:0;font-size:14px;line-height:1.55}button,select,input,textarea{font:
  .modal .modal-actions{position:sticky;bottom:-18px;margin:16px -18px -18px;padding:14px 18px 18px;background:#fff;border-top:1px solid #edf1f2}
  .modal .modal-actions .btn{min-height:44px}
 }
+
+/* Request history filtering. */
+.request-filters{display:flex;gap:6px;flex-wrap:wrap;padding:0 0 16px}
+.request-filter{border:1px solid #e0e9e9;border-radius:8px;padding:8px 13px;background:#fff;color:#526e75;font-size:13px;font-weight:700}
+.request-filter:hover{background:#f1faf7}
+.request-filter.active{background:#e8f6f0;color:#126e5c;border-color:#9cd7c2}
+.request-filter span{margin-left:4px;opacity:.76;font-variant-numeric:tabular-nums}
+.request-filter:focus-visible{outline:3px solid #9be0ce;outline-offset:2px}
+@media(max-width:460px){.request-filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+ .request-filter{font-size:12px;padding:9px 3px;white-space:nowrap}}
