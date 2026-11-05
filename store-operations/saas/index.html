@@ -632,7 +632,8 @@ function renderHome(){
  return '<div class="hero"><div class="eyebrow" style="color:#d9fff2">MULTI-TENANT SAAS</div><h1>一套系統，服務每一家企業</h1><p class="muted">公司開站 → 員工管理預約與叫號 → 顧客透過專屬連結完成預約。資料實際儲存於 Supabase。</p></div><div class="grid3">'+
  '<a class="routecard" href="'+esc(route("platform",""))+'"><h2>01 公司總後台</h2><p class="muted">開通新企業、選功能、設定品牌與員工邀請。</p><strong>進入平台管理 →</strong></a>'+
  '<a class="routecard" href="'+esc(route("staff","greenfield-salon"))+'"><h2>02 企業員工後台</h2><p class="muted">查看預約名單、報到、叫號、員工管理。</p><strong>進入企業後台 →</strong></a>'+
- '<a class="routecard" href="'+esc((customerUrl("greenfield-salon")||route("customer","greenfield-salon")))+'"><h2>03 顧客使用網頁</h2><p class="muted">線上預約、取號、查看自己目前的排隊狀態。</p><strong>試用顧客入口 →</strong></a></div>'+
+ '<a class="routecard" href="'+esc((customerUrl("greenfield-salon")||route("customer","greenfield-salon")))+'"><h2>03 顧客使用網頁</h2><p class="muted">線上預約、取號、查看自己目前的排隊狀態。</p><strong>試用顧客入口 →</strong></a>'+
+'<a class="routecard" href="./board.html?merchant=qa-84b3ef9297eb470685a91a527ca499ca"><h2>04 公開即時叫號看板</h2><p class="muted">任何人免登入即可看到目前叫號與接下來的等候排序。</p><strong>查看公開看板 →</strong></a></div>'+
  box("兩家測試企業",'<div class="listline"><div><strong>青禾風格美髮（測試門市）</strong><div class="small">預約、取號、叫號</div></div><a href="'+esc((customerUrl("greenfield-salon")||route("customer","greenfield-salon")))+'">顧客入口 →</a></div><div class="listline"><div><strong>澄心健康服務中心（測試門市）</strong><div class="small">僅開放預約</div></div><a href="'+esc((customerUrl("demo-clinic")||route("customer","demo-clinic")))+'">顧客入口 →</a></div>');
 }
 function featureChecks(data={},prefix="feature"){
@@ -1546,7 +1547,9 @@ function normalizeBookingPhone(v){let raw=String(v||"").replace(/[\s()-]/g,"");i
 function validBookingContact(){return !!bookingContactName.trim()&&bookingContactName.trim().length<=80&&!/[\r\n\u0000-\u001f]/.test(bookingContactName)&&/^09\d{8}$/.test(normalizeBookingPhone(bookingContactPhone))}
 function bookingConfirmationFingerprint(){return JSON.stringify({merchant:slug,date:day,time:chosenSlot,party:bookingParty,name:bookingContactName.trim(),phone:normalizeBookingPhone(bookingContactPhone),items:[...bookingChosenItems].sort()});}
 function customerRender(){
-  if(lineLinkStatus!=="linked")return box("LINE 身分授權",'<p class="muted">為避免機器人或惡意假預約，預約前需綁定 LINE 身分。預約姓名及聯絡電話另行填寫，供現場核對與店家聯繫。</p><p class="small">目前指定門市：<strong>'+esc(slug)+'</strong></p>'+lineStatusBadge());
+  if(lineLinkStatus!=="linked")return box("門市公開即時叫號",
+'<p class="muted">查看現在叫到幾號、後面等候順序，不必登入、不必綁定 LINE。</p><p><a class="btn primary" href="./board.html?merchant='+encodeURIComponent(slug)+'">公開即時叫號看板（免登入）</a></p>')+
+box("LINE 身分授權",'<p class="muted">為避免機器人或惡意假預約，預約前需綁定 LINE 身分。預約姓名及聯絡電話另行填寫，供現場核對與店家聯繫。</p><p class="small">目前指定門市：<strong>'+esc(slug)+'</strong></p>'+lineStatusBadge());
   if(!customer)return box("正在讀取顧客網站",'<p class="muted">正在確認企業設定與登入狀態...</p>');
   const t=customer.tenant,m=t.modules||{},items=customer.my_reservations||[],tickets=customer.my_tickets||[],live=tickets.find(x=>["WAITING","HOLD","CALLED","ARRIVED","ADMITTED","SERVING"].includes(x.status));
   const catalogue=customer.menu_items||[];
@@ -1556,7 +1559,8 @@ function customerRender(){
  if(customerTab==="home") html='<div class="hero"><div class="eyebrow">LINE 門市線上服務</div><h1>'+esc(t.name)+'</h1><p class="muted">'+esc(t.description||"線上預約與現場候位，從這裡開始")+'</p><p class="muted">'+esc(t.address||"")+'</p></div>'+
  '<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",customer.current||"—")+stat("現場候位",customer.waiting+" 組")+stat("我的有效預約",items.filter(x=>x.status==="CONFIRMED").length)+'</div>'+
  '<div class="grid">'+(m.reservation?'<button class="routecard" data-nav="customer" data-tab="reserve"><h2>線上預約</h2><p class="muted">選日期與時段，確定後儲存到資料庫</p><strong>立即預約 →</strong></button>':"")+
- (m.queue?'<button class="routecard" data-nav="customer" data-tab="queue"><h2>現場取號</h2><p class="muted">直接取得候位號碼與查看進度</p><strong>立即取號 →</strong></button>':"")+'</div>';
+ (m.queue?'<button class="routecard" data-nav="customer" data-tab="queue"><h2>現場取號</h2><p class="muted">直接取得候位號碼與查看進度</p><strong>立即取號 →</strong></button>':"")+
+(m.queue&&m.calling?'<a class="routecard" href="./board.html?merchant='+encodeURIComponent(slug)+'"><h2>公開即時叫號看板</h2><p class="muted">免登入查看目前叫號及接下來的順序。</p><strong>查看公開看板 →</strong></a>':"")+'</div>';
  else if(customerTab==="reserve"){
   if(!m.reservation)html=box("未開放預約",'<p>企業目前沒有啟用此功能。</p>');
   else {
