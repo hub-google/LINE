@@ -79,27 +79,29 @@ function startLineLogin(){
  location.assign(start.href);
 }
 async function getIdentity(){
- const c=await customer.auth.getSession();
- if(c.error)throw c.error;
- if(c.data.session?.access_token){
+ const preferOperator=/^(?:staff|platform)$/.test(new URLSearchParams(location.search).get("view")||"")||
+   /\/merchant-register\.html$/.test(location.pathname);
+ const [customerResult,operatorResult]=await Promise.all([
+   customer.auth.getSession(),operator.auth.getSession()
+ ]);
+ const customerSession=customerResult?.data?.session;
+ const operatorSession=operatorResult?.data?.session;
+ let lineIdentity=null,operatorIdentity=null;
+ if(customerSession?.access_token){
   const response=await customer.rpc("so_site_header_identity");
   if(!response.error && typeof response.data?.display_name==="string"&&response.data.display_name.trim()){
-   return {type:"customer",displayName:response.data.display_name.trim(),client:customer};
+   lineIdentity={type:"customer",displayName:response.data.display_name.trim(),client:customer};
   }
  }
- const staff=await operator.auth.getSession();
- if(staff.error)throw staff.error;
- const staffUser=staff.data.session?.user;
+ const staffUser=operatorSession?.user;
  if(staffUser&&!staffUser.is_anonymous){
-  return {type:"operator",displayName:staffUser.email||"商家使用者",client:operator};
- }
- // Existing isolated QA staff sessions remain distinct from LINE customer identity.
- if(staffUser?.is_anonymous){
+  operatorIdentity={type:"operator",displayName:staffUser.email||"商家使用者",client:operator};
+ }else if(staffUser?.is_anonymous){
   const context=await operator.rpc("so_my_context");
   if(!context.error && context.data?.memberships?.some(x=>x.slug?.startsWith("qa-")))
-   return {type:"operator",displayName:"測試門市管理員",client:operator};
+   operatorIdentity={type:"operator",displayName:"測試門市管理員",client:operator};
  }
- return null;
+ return preferOperator?(operatorIdentity||lineIdentity):(lineIdentity||operatorIdentity);
 }
 async function refresh(){
  if(busy)return;
@@ -117,6 +119,7 @@ async function logOut(){
  try{
   const result=await currentIdentity.client.auth.signOut();
   if(result.error)throw result.error;
+  if(currentIdentity.type==="operator"){try{localStorage.removeItem("line_saas_real_qa_v1")}catch(_){}}
   try{sessionStorage.removeItem(RETURN_KEY)}catch(_){}
   currentIdentity=null;
   busy=false;
