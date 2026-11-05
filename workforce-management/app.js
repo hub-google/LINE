@@ -1795,7 +1795,7 @@ async function runAttendanceDetail(){
   (!memberId||m.id===memberId)&&
   (app.mode==='demo'||manager()||m.user_id===app.user?.id)).map(x=>x.id));
  events=events.filter(x=>permitted.has(x.member_id));
- app.attendanceDetail={from,to,rows:attendanceRows(events,from,to),eventCount:events.length};
+ app.attendanceDetail={from,to,branchId,departmentId,memberId,rows:attendanceRows(events,from,to),eventCount:events.length};
  render();
 }
 const beforeAttendanceReport=reports;
@@ -1807,12 +1807,12 @@ reports=function(){
  const dates='<div class="toolbar">'+
   '<div class="field"><label>起日</label><input type="date" id="detailFrom" value="'+esc(d?.from||dayAdd(today(),-7))+'"></div>'+
   '<div class="field"><label>迄日</label><input type="date" id="detailTo" value="'+esc(d?.to||today())+'"></div>'+
-  '<div class="field"><label>分店</label><select id="detailBranch"><option value="">全部</option>'+
-  options(app.data.branches||[],x=>x.name)+'</select></div>'+
-  '<div class="field"><label>部門</label><select id="detailDepartment"><option value="">全部</option>'+
-  options(app.data.departments||[],x=>x.name)+'</select></div>'+
-  '<div class="field"><label>員工</label><select id="detailMember"><option value="">全部</option>'+
-  options(me,x=>x.display_name)+'</select></div></div>'+
+  '<div class="field"><label>分店</label><select id="detailBranch"><option value="" '+(!d?.branchId?'selected':'')+'>全部</option>'+
+  options(app.data.branches||[],x=>x.name,d?.branchId)+'</select></div>'+
+  '<div class="field"><label>部門</label><select id="detailDepartment"><option value="" '+(!d?.departmentId?'selected':'')+'>全部</option>'+
+  options(app.data.departments||[],x=>x.name,d?.departmentId)+'</select></div>'+
+  '<div class="field"><label>員工</label><select id="detailMember"><option value="" '+(!d?.memberId?'selected':'')+'>全部</option>'+
+  options(me,x=>x.display_name,d?.memberId)+'</select></div></div>'+
   '<div class="flex"><button class="btn primary" data-extra="runAttendanceDetail">查詢出勤明細</button>'+
   '<button class="btn" data-extra="exportAttendanceDetail" '+(!d?'disabled':'')+'>下載明細 CSV</button></div>';
  const tableRows=rows.map(r=>tr([
