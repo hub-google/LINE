@@ -169,8 +169,14 @@ function punch(){
  $('appContent').innerHTML='<div class="split">'+panel('快速打卡',roleDemo+'<div class="field"><label>員工</label><select id="punchMember">'+options((app.mode==='real'&&!manager()?app.data.members.filter(x=>x.user_id===app.user?.id):app.data.members),x=>x.display_name,sel)+'</select></div><p class="muted">定位資訊由使用者授權後才會讀取。沒有 GPS 的測試門市仍可打卡。</p><div class="flex">'+buttons+'</div><div class="inset" style="margin-top:18px"><strong>當前伺服器時間</strong><p id="serverTime">'+esc(taiStamp(new Date()))+'</p></div>')+panel('最近打卡紀錄',history)+'</div>';
 }
 function requests(){
- const sel=getSelected(),req=(app.data.requests||[]).slice(0,50);
- heading('<div class="request-shortcuts"><button class="btn primary" data-action="newLeaveRequest">＋ 申請請假</button><button class="btn" data-action="newOvertimeRequest">＋ 申請加班</button><button class="btn" data-action="newCorrectionRequest">＋ 申請補卡</button></div>');
+ const sel=getSelected(),allReq=(app.data.requests||[]).slice(0,50);
+ const filter=app.requestFilter||'all',req=filter==='all'?allReq:allReq.filter(x=>x.kind===filter);
+ const counts={all:allReq.length,leave:0,overtime:0,correction:0};
+ for(const item of allReq){if(Object.prototype.hasOwnProperty.call(counts,item.kind))counts[item.kind]++;}
+ const filterBar='<div class="request-filters" role="group" aria-label="篩選申請項目">'+
+  [['all','全部'],['leave','請假'],['overtime','加班'],['correction','補卡']].map(([k,label])=>
+  '<button type="button" class="request-filter '+(filter===k?'active':'')+'" aria-pressed="'+(filter===k)+'" data-action="filterRequests" data-kind="'+k+'">'+label+' <span>'+counts[k]+'</span></button>').join('')+'</div>';
+ heading('<div class="request-shortcuts"><button class="btn primary" data-action="newLeaveRequest">＋ 請假</button><button class="btn" data-action="newOvertimeRequest">＋ 加班</button><button class="btn" data-action="newCorrectionRequest">＋ 補卡</button></div>');
  const rows=req.map(x=>tr([personLabel(x.member_id),esc(kind(x.kind))+(x.kind==='leave'?' · '+esc(kind(x.leave_kind)):''),
  taiStamp(x.starts_at),taiStamp(x.ends_at),status(x.status),esc(x.reason||'—')]));
  const verifiedBalances=(app.data.leaveBalances||{})[sel]||[];
@@ -183,7 +189,7 @@ function requests(){
    '、已核准 '+Number(b.approved_hours).toFixed(1)+
    '、待審占用 '+Number(b.pending_hours).toFixed(1)+' 小時</p>').join(''):
    '<p class="muted">尚未為這位員工設定生效中的假別政策。</p>';;
- $('appContent').innerHTML=panel('申請紀錄',table(['員工','項目','開始','結束','結果','說明'],rows))+'<div class="split">'+panel('假期額度','<div class="field"><label>查詢員工</label><select id="balanceMember">'+options(app.data.members,x=>x.display_name,sel)+'</select></div>'+balances)+panel('申請注意事項','<div class="notice">核准後會記錄審核時間與結果。原始出勤紀錄不會因申請或補卡被覆寫。</div><p class="muted">目前的額度是示範資料，不代表法定特休、病假給付的自動法令計算。</p>')+'</div>';
+ $('appContent').innerHTML=panel('申請紀錄',filterBar+table(['員工','項目','開始','結束','結果','說明'],rows))+'<div class="split">'+panel('假期額度','<div class="field"><label>查詢員工</label><select id="balanceMember">'+options(app.data.members,x=>x.display_name,sel)+'</select></div>'+balances)+panel('申請注意事項','<div class="notice">核准後會記錄審核時間與結果。原始出勤紀錄不會因申請或補卡被覆寫。</div><p class="muted">目前的額度是示範資料，不代表法定特休、病假給付的自動法令計算。</p>')+'</div>';
 }
 function approvals(){
  heading();
@@ -359,6 +365,7 @@ document.addEventListener('click',async e=>{
  const a=b.dataset.action,id=b.dataset.id;
  try{
  if(a==='gotoSchedule')setTab('schedule');else if(a==='gotoApprovals')setTab('approvals');
+  else if(a==='filterRequests'){if(!['all','leave','overtime','correction'].includes(b.dataset.kind))return;app.requestFilter=b.dataset.kind;render();}
  else if(a==='newShift')showShift();else if(a==='newLeaveRequest')showRequest('leave');else if(a==='newOvertimeRequest')showRequest('overtime');else if(a==='newCorrectionRequest')showRequest('correction');else if(a==='newEmployee')showEmployee();else if(a==='newBranch')showBranch();
  else if(a==='prevWeek'){app.date=dayAdd(app.date,-7);app.autoSuggestions=null;render();}
  else if(a==='nextWeek'){app.date=dayAdd(app.date,7);app.autoSuggestions=null;render();}
@@ -1032,13 +1039,13 @@ requests=function(){
  const policies=currentLeavePolicies();
  const canEdit=app.mode==='demo'||['owner','hr'].includes(role());
  const rows=policies.map(p=>tr([
-  esc(p.label),esc(p.leave_kind),esc(p.yearly_basis==='anniversary'?'週年制':'曆年制'),
+  esc(p.label),esc(p.yearly_basis==='anniversary'?'週年制':'曆年制'),
   p.balance_required?'需要核定額度':'依假別規則',
   esc(p.approval_levels)+' 層',status(p.is_active?'active':'inactive'),
   esc(p.effective_from)
  ]));
  $('appContent').insertAdjacentHTML('beforeend',
-  panel('假別政策與生效版本',table(['假別','代碼','年度制','額度','簽核','狀態','生效日'],rows),
+  panel('假別政策與生效版本',table(['假別','年度制','額度','簽核','狀態','生效日'],rows),
     canEdit?'<div class="flex"><button class="btn small" data-extra="newLeavePolicy">設定假別政策</button>'+
      '<button class="btn small" data-extra="newLeaveGrant">核定員工假期時數</button></div>':'')+
   '<div class="notice">假別時數由企業配置；待審申請會預先占用額度。這不是自動核發的法定特休，也不代表已完成勞動法令檢核。</div>');
