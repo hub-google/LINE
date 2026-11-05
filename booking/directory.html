@@ -1,27 +1,165 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="1e66620014b5a3921fd6420f9924a67ed5d01486">
-<script defer src="./version-watch.js?build=1e66620014b5a3921fd6420f9924a67ed5d01486"></script>
+<meta name="line-saas-build" content="203daa90e922254750a4bb500954e8073e399463">
+<script defer src="./version-watch.js?build=203daa90e922254750a4bb500954e8073e399463"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 預約｜搜尋店家與我的預約</title><meta name="description" content="使用 LINE 預約平台搜尋合作店家、預約服務、現場取號及查詢個人紀錄。">
 <style>
-:root{--brand:#096955;--dark:#103e35;--light:#e1f4ea;--ink:#173c33;--muted:#5a756a;--border:#d8e8de}
-*{box-sizing:border-box}body{margin:0;background:#f7faf8;font:15px/1.55 system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif;color:var(--ink)}
-header{background:var(--dark);color:white;padding:22px 16px}header .inner{max-width:960px;margin:auto}h1{font-size:27px;margin:0}h2{font-size:19px;margin:0 0 6px}p{margin:4px 0 12px;color:var(--muted)}main{max-width:960px;margin:0 auto;padding:20px 15px 50px}
-.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:19px}.tabs a{text-align:center;text-decoration:none;border-radius:12px;border:1px solid var(--border);background:white;color:var(--ink);font-weight:700;padding:12px 8px}.tabs a.active{background:var(--brand);color:white;border-color:var(--brand}
-.search{width:100%;border:1px solid #a5c5b4;background:#fff;padding:15px;border-radius:12px;font:inherit;outline-color:#4b9e85;margin:12px 0 18px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.card,.notice{background:white;border:1px solid var(--border);border-radius:16px;padding:19px}.card{min-height:160px}.notice{margin-bottom:17px}.badge{display:inline-block;background:var(--light);color:var(--dark);font-size:12px;border-radius:20px;padding:3px 8px;margin-right:6px;margin-bottom:7px}
-.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}a.btn{display:inline-flex;align-items:center;justify-content:center;background:var(--brand);color:white;text-decoration:none;padding:10px 13px;font-weight:700;border-radius:10px;min-height:44px}a.btn.secondary{background:#ecf8f0;color:#165c49;border:1px solid #bbdccc}
-.empty{background:white;text-align:center;border:1px solid var(--border);padding:40px 18px;border-radius:15px}.empty strong{display:block;font-size:18px;margin-bottom:8px}.hidden{display:none}
-.test{margin-top:20px;border:1px dashed #bdd5c9;background:#f0f6f2;border-radius:13px;padding:16px}footer{text-align:center;color:#688075;font-size:12px;padding:22px}@media(max-width:680px){.grid{grid-template-columns:1fr}h1{font-size:23px}main{padding-top:14px}}
+
+:root{
+ --forest:#123d33;--forest-deep:#092c26;--green:#08785c;--green-dark:#08654f;
+ --mint:#e5f6ef;--ink:#18382e;--muted:#687f75;--border:#dceae3;
+ --canvas:#f6f9f7;--shadow:0 15px 44px rgba(15,59,44,.07);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--canvas);color:var(--ink);font:15px/1.65 system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif;-webkit-font-smoothing:antialiased}
+button,input,a{font:inherit}
+button,a{-webkit-tap-highlight-color:transparent}
+a:focus-visible,input:focus-visible{outline:3px solid #69bc9b;outline-offset:3px}
+.page-header{background:radial-gradient(circle at 86% 12%,rgba(91,191,151,.18),transparent 32%),linear-gradient(118deg,#133f34,#0c332b);color:#fff;padding:24px 0 42px}
+.container{width:min(1050px,calc(100% - 40px));margin-inline:auto}
+.header-row{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:inline-flex;align-items:center;gap:12px;color:#fff;text-decoration:none;font-size:19px;font-weight:800;letter-spacing:.01em}
+.brand-mark{width:42px;height:42px;border-radius:13px;background:#e0f9eb;color:#0c684e;display:grid;place-items:center;font-size:22px;font-weight:900;flex:none}
+.header-links{display:flex;gap:12px;align-items:center}
+.header-links a{color:#e2f6ed;text-decoration:none;font-size:13px;padding:9px 12px;border:1px solid rgba(255,255,255,.24);border-radius:11px}
+.header-links a:hover{background:rgba(255,255,255,.1)}
+.hero-heading{margin-top:31px;max-width:700px}
+.eyebrow{color:#a9e6ce;font-size:12px;font-weight:800;letter-spacing:.14em;margin:0 0 7px}
+.hero-heading h1{font-size:clamp(27px,4.5vw,37px);line-height:1.28;letter-spacing:-.035em;margin:0 0 9px}
+.hero-heading p{color:#d5ece3;margin:0;line-height:1.75;font-size:14px}
+main{position:relative;margin-top:-18px;padding-bottom:48px}
+.main-panel{background:#fff;border:1px solid #e0ebe6;border-radius:20px;box-shadow:var(--shadow);padding:24px 26px 28px}
+.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;background:#f0f5f2;border-radius:14px;padding:5px;margin-bottom:27px}
+.tabs a{text-align:center;text-decoration:none;border-radius:10px;color:#506e62;font-weight:700;min-height:46px;display:flex;align-items:center;justify-content:center;padding:9px 7px;transition:background .2s,box-shadow .2s}
+.tabs a:hover{background:#e2eee8;color:#19533f}
+.tabs a.active{background:#fff;color:#0b674e;box-shadow:0 3px 12px rgba(25,88,62,.12)}
+.intro-row{display:flex;gap:12px;align-items:start;justify-content:space-between}
+.intro-copy strong{font-size:19px;letter-spacing:-.015em;display:block;margin-bottom:4px}
+.intro-copy p{color:var(--muted);margin:0;font-size:13px;line-height:1.8}
+.public-note{display:inline-flex;align-items:center;gap:7px;background:#eaf8f0;color:#147051;font-weight:700;font-size:12px;padding:8px 11px;border-radius:999px;white-space:nowrap}
+.public-note:before{content:"";width:7px;height:7px;border-radius:50%;background:#17a76e;display:block}
+.search-wrap{margin-top:25px}
+.search-wrap label{display:block;font-size:13px;font-weight:750;margin-bottom:8px}
+.search-field{position:relative}
+.search-field svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);pointer-events:none;color:#7b9b8c}
+.search{width:100%;background:#fafdfb;border:1.5px solid #cfe0d5;border-radius:12px;padding:14px 15px 14px 46px;color:var(--ink);font-size:15px;min-height:54px;outline:none;transition:border-color .15s,box-shadow .15s}
+.search:focus{border-color:#138361;box-shadow:0 0 0 4px rgba(21,145,100,.10)}
+.search::placeholder{color:#91a89c}
+.results-header{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:26px 0 13px}
+.results-header h2{font-size:17px;letter-spacing:-.02em;margin:0}
+.result-count{color:#6a8678;font-size:12px;font-weight:600}
+.merchant-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.merchant-card{position:relative;background:#fff;border:1px solid #dbe8e0;border-radius:17px;min-height:232px;box-shadow:0 5px 18px rgba(15,54,43,.045);transition:transform .17s,border-color .17s,box-shadow .17s;overflow:hidden}
+.merchant-card:hover,.merchant-card:focus-within{transform:translateY(-2px);border-color:#9acbb4;box-shadow:0 12px 30px rgba(13,68,49,.11)}
+.merchant-card.qa{background:linear-gradient(154deg,#fff 72%,#f3faf6)}
+.card-cover{position:absolute;inset:0;z-index:1;border-radius:17px}
+.card-content{position:relative;pointer-events:none;display:flex;flex-direction:column;min-height:232px;padding:22px}
+.card-top{display:flex;align-items:start;gap:12px}
+.shop-icon{background:linear-gradient(140deg,#e9f7ee,#d8efe3);color:#087154;border-radius:13px;width:47px;height:47px;display:grid;place-items:center;font-size:21px;font-weight:900;flex:none}
+.shop-details{min-width:0;flex:1}
+.shop-name{font-size:20px;font-weight:850;line-height:1.4;margin:0 0 7px;letter-spacing:-.03em;overflow-wrap:anywhere}
+.badges{display:flex;gap:6px;flex-wrap:wrap}
+.badge{background:#edf6f0;border:1px solid #daeade;color:#246e50;border-radius:99px;font-size:11px;font-weight:750;padding:3px 9px;line-height:1.6}
+.badge.qa-badge{background:#fff3df;border-color:#f4e1b4;color:#8e6722}
+.shop-desc{font-size:13px;line-height:1.65;color:#6d8277;margin:17px 0 8px}
+.shop-address{color:#71897d;font-size:12px;margin:0 0 10px}
+.card-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:auto;padding-top:16px;pointer-events:auto;position:relative;z-index:2}
+a.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;background:#0b7258;color:#fff;text-decoration:none;min-height:43px;padding:10px 15px;border-radius:10px;font-weight:750;font-size:13px;transition:background .15s,transform .15s;border-color .15s;white-space:normal;text-align:center}
+a.btn:hover{background:#075c47}
+a.btn.secondary{background:#f1f8f4;border:1px solid #c9e5d4;color:#11664c}
+a.btn.secondary:hover{background:#e1f3e9}
+.btn-arrow{font-weight:900;margin-left:2px}
+.empty{grid-column:1/-1;background:#fbfdfb;border:1px dashed #bfd7c8;border-radius:16px;text-align:center;padding:32px 20px}
+.empty strong{display:block;font-size:17px;margin-bottom:7px}
+.empty p{margin:0;color:var(--muted);font-size:13px}
+.bottom-panels{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:23px}
+.support-panel{background:#f8fbf9;border:1px solid #e3eee7;border-radius:15px;padding:19px 20px}
+.support-panel h3{font-size:15px;margin:0 0 5px}
+.support-panel p{color:var(--muted);font-size:12px;line-height:1.75;margin:0}
+.support-panel .card-actions{padding-top:13px}
+.hidden{display:none!important}
+.footer{padding:22px 0 30px;text-align:center;color:#73887e;font-size:12px}
+.footer a{color:#497969;text-decoration:none}
+.footer a:hover{text-decoration:underline}
+@media(max-width:760px){
+ .container{width:calc(100% - 28px)}
+ .page-header{padding:16px 0 36px}
+ .hero-heading{margin-top:23px}
+ main{margin-top:-17px}
+ .main-panel{padding:17px 14px 22px;border-radius:17px}
+ .intro-row{display:block}
+ .public-note{margin-top:11px}
+ .merchant-grid,.bottom-panels{grid-template-columns:1fr}
+ .merchant-card,.card-content{min-height:210px}
+ .card-content{padding:19px}
+ .header-links a{font-size:12px;padding:7px 9px}
+ .search-wrap{margin-top:18px}
+}
+@media(max-width:410px){
+ .brand{font-size:16px}.brand-mark{width:36px;height:36px;font-size:19px}
+ .header-links a:first-child{display:none}
+ .tabs{gap:3px}.tabs a{font-size:13px;padding:8px 3px}
+ .shop-name{font-size:18px}
+ .card-actions{flex-direction:column;align-items:stretch}
+ .card-actions .btn{width:100%}
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto;transition:none!important}}
+
 </style></head>
-<body><header><div class="inner"><h1>LINE 預約服務平台</h1><div>搜尋店家 · 預約服務 · 現場取號</div></div></header>
-<main><nav class="tabs" aria-label="顧客功能"><a id="tab-search" href="?mode=search">搜尋店家</a><a id="tab-mine" href="?mode=mine">我的預約</a><a id="tab-queue" href="?mode=queue">現場取號</a></nav>
-<div id="intro" class="notice">正在載入...</div><p class="small" style="color:#52776a;margin:10px 0 16px">查看公開叫號看板不必綁定 LINE，也不用登入；只有預約、取號與個人紀錄需要驗證身分。</p><input id="keyword" class="search" type="search" placeholder="輸入店家名稱或地點來搜尋" aria-label="搜尋店家">
-<div class="grid" id="results" aria-live="polite"></div>
-<div id="test" class="test hidden"><strong>測試功能（非正式合作店家）</strong><p>若要先體驗預約、取號與叫號，可以進入示範門市。示範店家不會混入正式店家搜尋結果。</p><div class="actions"><a class="btn secondary" href="./?view=customer&merchant=greenfield-salon" id="demo-link">前往示範門市</a><a class="btn secondary" href="./board.html?merchant=qa-84b3ef9297eb470685a91a527ca499ca">體驗公開叫號看板（免登入）</a></div></div>
-<div class="notice" style="margin-top:22px"><strong>你是店家嗎？</strong><p>沒有 LINE OA 的店家也能使用平台總公司 LINE OA 作為顧客預約入口。</p><div class="actions"><a class="btn secondary" href="merchant-center.html#activate">了解開通方式</a><a class="btn secondary" href="./?view=staff">商家管理後台</a></div></div>
-</main><footer>預約與取號直接讀取實際資料庫，不顯示模擬店家。</footer>
+<body>
+<header class="page-header">
+ <div class="container">
+  <div class="header-row">
+   <a class="brand" href="./home.html"><span class="brand-mark">L</span><span>LINE 預約</span></a>
+   <nav class="header-links" aria-label="相關入口"><a href="./home.html">平台首頁</a><a href="./?view=staff">店家後台</a></nav>
+  </div>
+  <div class="hero-heading">
+   <p class="eyebrow">FIND YOUR STORE</p>
+   <h1>搜尋店家，立即使用服務</h1>
+   <p>預約、現場取號、即時叫號看板，都能從這裡找到。</p>
+  </div>
+ </div>
+</header>
+<main class="container">
+ <section class="main-panel">
+  <nav class="tabs" aria-label="顧客功能">
+   <a id="tab-search" href="?mode=search">搜尋店家</a>
+   <a id="tab-mine" href="?mode=mine">我的預約</a>
+   <a id="tab-queue" href="?mode=queue">現場取號</a>
+  </nav>
+  <div class="intro-row">
+   <div id="intro" class="intro-copy" role="status"><strong>正在載入店家</strong><p>資料更新中，請稍後。</p></div>
+   <span class="public-note">公開看板免登入</span>
+  </div>
+  <div class="search-wrap">
+   <label for="keyword">搜尋店家名稱或地點</label>
+   <div class="search-field">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+    <input id="keyword" class="search" type="search" placeholder="例如：餐廳名稱、地區、測試門市" aria-label="輸入店家名稱或地點" autocomplete="off">
+   </div>
+  </div>
+  <div class="results-header"><h2>搜尋結果</h2><span id="result-count" class="result-count" aria-live="polite">載入中</span></div>
+  <div class="merchant-grid" id="results" aria-live="polite"></div>
+  <div class="bottom-panels">
+   <section id="test" class="support-panel hidden">
+    <h3>想先體驗？</h3>
+    <p>示範門市與正式合作店家分開管理，不會混入一般搜尋結果。</p>
+    <div class="card-actions">
+     <a class="btn secondary" href="./?view=customer&merchant=greenfield-salon" id="demo-link">示範預約／取號</a>
+     <a class="btn secondary" href="./board.html?merchant=qa-84b3ef9297eb470685a91a527ca499ca">測試叫號看板</a>
+    </div>
+   </section>
+   <section class="support-panel">
+    <h3>你是店家嗎？</h3>
+    <p>無論是否擁有 LINE OA，都可以了解平台的預約與叫號服務。</p>
+    <div class="card-actions"><a class="btn secondary" href="merchant-center.html#activate">了解商家開通</a><a class="btn secondary" href="./?view=staff">店家管理後台</a></div>
+   </section>
+  </div>
+ </section>
+</main>
+<footer class="footer"><div class="container">預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。　<a href="privacy.html">隱私權說明</a>　·　<a href="terms.html">服務條款</a></div></footer>
 <script type="module">
 import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 const SB_URL="https://unapiwajmgqqtdkixaab.supabase.co";
