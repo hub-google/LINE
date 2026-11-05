@@ -1,30 +1,468 @@
 <!doctype html>
-<html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="2a2765914a109bfbb181afeb7a1447ade6fe33e4">
-<script defer src="./version-watch.js?build=2a2765914a109bfbb181afeb7a1447ade6fe33e4"></script>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LINE 預約系統｜商家服務中心</title><meta name="description" content="LINE OA 門市預約、取號與叫號：體驗、功能介紹、導入教學與客服。">
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="line-saas-build" content="7d945147be279ddf29d2c47ca776caa8693e0c09">
+<script defer src="./version-watch.js?build=7d945147be279ddf29d2c47ca776caa8693e0c09"></script>
+<meta name="description" content="LINE 預約店家操作指南：從申請開通、LINE 官方帳號模式、預約與取號設定，到店員叫號、顧客通知及異常處理，搭配畫面逐步教學。">
+<title>商家操作指南｜LINE 預約平台</title>
 <style>
-:root{font-family:system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif;color:#163d36;background:#f5f9f7}
-*{box-sizing:border-box}body{margin:0;line-height:1.7}a{color:#086655}nav{background:#073d35;color:white;padding:18px 22px}nav div{max-width:960px;margin:auto;font-weight:800;font-size:19px}main{max-width:960px;margin:auto;padding:26px 18px 65px}h1{font-size:clamp(26px,5vw,38px);line-height:1.25;margin:0 0 12px}h2{margin:0 0 14px;font-size:23px}h3{margin:8px 0}p{margin:8px 0 15px;color:#45665f}.hero{background:#e0f4e9;border:1px solid #badccc;border-radius:22px;padding:30px;margin-bottom:22px}.section{background:white;border:1px solid #dce9e2;border-radius:18px;padding:25px;margin:18px 0;scroll-margin-top:16px}.links{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.btn{display:inline-block;text-decoration:none;border-radius:10px;background:#097761;color:white;font-weight:750;padding:11px 18px;min-height:43px}.btn.secondary{color:#095748;background:white;border:1px solid #8cbbaa}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.feature{background:#f3faf6;border:1px solid #dcece1;border-radius:12px;padding:16px}.feature p{margin:4px 0;font-size:14px}.muted{color:#63756e;font-size:13px}ol{padding-left:22px}li{margin:9px 0}footer{text-align:center;color:#657e75;font-size:13px;padding:24px}html{scroll-behavior:smooth}@media(max-width:600px){.grid{grid-template-columns:1fr}.section,.hero{padding:19px}}
-</style></head>
-<body><nav><div>LINE 預約系統｜商家服務中心</div></nav><main>
-<section class="hero" id="trial"><h1>一個網站，管理預約、取號與叫號</h1><p>商家使用同一套網頁管理，手機與電腦皆可操作。消費者可以透過總公司 LINE OA 搜尋店家、預約與取號；已有自己的 LINE OA 的店家，可在企業管理後台設定獨立 LINE LIFF 與 Messaging API 頻道。</p><div class="links">
-<a class="btn" href="./?view=platform">免費體驗總公司測試後台</a><a class="btn secondary" href="./?view=staff">體驗店員操作</a>
-</div><p class="muted">目前體驗會建立真實但獨立的 QA 測試門市；不是正式商家帳號，無須使用正式顧客資料。</p></section>
-<section class="section" id="activate"><h2>商家免費開通</h2><p><strong>沒有 LINE OA 的店家可以直接申請。</strong>通過總公司審核後，會取得獨立門市預約網址；顧客可從總公司 OA 的搜尋店家或專屬連結進來預約，通知由平台 LINE OA 發送。</p><p>已有 LINE OA 的店家也能先使用總公司 OA；自有 LINE OA 可在企業後台的「LINE 官方帳號串接」設定；需提供同一 Provider 的 LIFF ID、Messaging API Token 與 Channel Secret，並設定商家專屬 Webhook。</p><p class="muted">需要使用已驗證 Email 的商家帳號申請。申請不需提供 Channel Secret 或 Access Token；正式公開搜尋須經店家管理者另行啟用。</p><div class="links"><a class="btn" href="merchant-register.html">立即申請開通</a><a class="btn secondary" href="merchant-register.html?admin=1">總公司審核申請</a></div></section>
-<section class="section" id="features"><h2>系統功能</h2><div class="grid">
-<div class="feature"><h3>線上預約</h3><p>選擇日期與時段，後端儲存預約狀態。</p></div>
-<div class="feature"><h3>現場取號</h3><p>顧客領取號碼並查看即時叫號進度。</p></div>
-<div class="feature"><h3>店員叫號</h3><p>現場叫號、重新叫號、過號與狀態修正。</p></div>
-<div class="feature"><h3>LINE 訊息通知</h3><p>現有測試 OA 支援預約、取號及叫號通知；需完成真實 LINE 授權與加好友。</p></div>
-</div><p class="muted">商家自有 LINE OA 的串接介面已提供；正式啟用前仍需由商家完成真實頻道設定與 LINE 推播驗收。</p></section>
-<section class="section" id="guide"><h2>使用教學</h2><ol>
-<li>想了解系統：先按上方「免費體驗」，使用測試帳號進入真正的 QA 資料庫。</li>
-<li>門市店員：開啟「店家後台」，登入有授權的門市帳號；測試階段可用一鍵測試登入。</li>
-<li>預約與取號：店員後台可複製該測試門市的 LINE 顧客網址，顧客授權 LINE 帳號後操作。</li>
-<li>叫號與更正：在「現場叫號」管理名單；操作錯誤可依頁面提供的狀態選擇或還原功能修正。</li>
-<li>正式開通：從「商家免費開通」註冊正式帳號、提出申請，總公司核准後即可取得門市專屬網址，並可自行決定是否公開在總公司搜尋。</li>
-</ol><div class="links"><a class="btn" href="./?view=staff">前往店家後台</a><a class="btn secondary" href="./?view=home">查看產品入口</a></div></section>
-<section class="section" id="support"><h2>聯絡客服</h2><p>請回到總公司 LINE OA 聊天視窗直接傳送問題，並簡述使用的頁面與遇到的錯誤訊息。請勿在聊天中傳送密碼、Channel Secret 或 Access Token。</p></section>
-</main><footer>LINE 預約系統｜商家服務中心 ・ <a href="privacy.html">隱私權說明</a> ・ <a href="terms.html">使用條款</a></footer></body></html>
+:root{--ink:#1d3533;--green:#176c58;--deep:#133e35;--line:#dde8e3;--bg:#f8faf8;--surface:#fff;--muted:#647771;--mint:#eaf4ee;--orange:#ce8054;--gold:#f7e6c6;--shadow:0 18px 50px rgba(28,58,47,.07);font-family:Inter,"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;color:var(--ink);background:var(--bg)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:92px}
+body{margin:0;line-height:1.65}
+a{color:var(--green)}
+button{font:inherit}
+a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #e5ac64;outline-offset:3px}
+.top{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.top-inner{max-width:1220px;margin:auto;padding:13px 25px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--ink);font-weight:840;letter-spacing:-.4px;font-size:16px}
+.brand-icon{background:var(--deep);color:#fff;border-radius:13px;width:38px;height:38px;display:grid;place-items:center;font-size:17px;flex-shrink:0}
+.brand small{font-weight:500;color:var(--muted);font-size:11px;display:block;letter-spacing:0}
+.top-links{display:flex;align-items:center;gap:10px}
+.top-link{text-decoration:none;color:var(--ink);font-size:13px;font-weight:750;padding:10px 13px;border-radius:9px}
+.top-link:hover{background:#f1f5f2}
+.top-link.primary{background:var(--deep);color:#fff}
+.container{max-width:1220px;margin:auto;padding:0 25px}
+.hero{margin-top:24px;border-radius:24px;position:relative;background:#133e35;color:white;overflow:hidden;padding:43px 48px 34px}
+.hero:after{content:"";position:absolute;width:350px;height:350px;border:62px solid rgba(183,220,196,.07);border-radius:50%;right:-110px;top:-120px;pointer-events:none}
+.eyebrow{font-size:11px;letter-spacing:2px;font-weight:800;color:#c0dfcd;display:flex;align-items:center;gap:10px}
+.eyebrow:before{content:"";width:20px;height:1px;background:#c0dfcd}
+.hero h1{font-size:clamp(30px,4.2vw,51px);line-height:1.18;letter-spacing:-1.8px;max-width:690px;margin:16px 0}
+.hero p{font-size:15px;color:#d3e7da;max-width:670px;margin:0}
+.hero-bottom{border-top:1px solid rgba(255,255,255,.18);margin-top:31px;padding-top:22px;display:flex;gap:20px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.hero-steps{display:flex;gap:9px;align-items:center;flex-wrap:wrap;color:#e3f0e6;font-size:13px;font-weight:700}
+.hero-steps b{font-size:11px;color:#a6cfb5}
+.hero-actions{display:flex;gap:9px;flex-wrap:wrap}
+.action{display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:10px 15px;border-radius:10px;text-decoration:none;font-size:13px;font-weight:800;min-height:42px;transition:transform .18s,background .18s}
+.action:hover{transform:translateY(-1px)}
+.action.light{background:white;color:var(--deep)}
+.action.outline-light{color:#fff;border:1px solid #83a99b}
+.action.green{background:var(--deep);color:#fff}
+.action.outline{border:1px solid #c5d6cd;background:white;color:var(--deep)}
+.layout{display:grid;grid-template-columns:228px minmax(0,1fr);column-gap:37px;align-items:start;padding-top:35px}
+.side{position:sticky;top:91px;align-self:start;border-right:1px solid var(--line);padding:9px 23px 25px 0}
+.side-title{font-size:11px;font-weight:840;color:#91a29b;letter-spacing:1.5px;margin-bottom:12px}
+.side a{display:flex;align-items:center;gap:11px;text-decoration:none;color:#4e665d;padding:11px 12px;border-radius:10px;font-size:13px;font-weight:680;margin:3px 0}
+.side a:hover,.side a.active{background:#e7f1e9;color:var(--deep);font-weight:810}
+.side a span{color:#8ca49a;font-size:11px;font-variant-numeric:tabular-nums}
+.side-foot{margin-top:20px;border-top:1px solid var(--line);padding:20px 10px;color:var(--muted);font-size:12px}
+.main{min-width:0;padding-bottom:90px}
+.content-section{scroll-margin-top:100px;margin-bottom:62px}
+.section-head{display:flex;gap:16px;align-items:start;margin:0 0 19px}
+.section-index{flex:0 0 auto;color:var(--green);font-weight:850;font-size:13px;background:var(--mint);padding:8px 11px;border-radius:9px;margin-top:5px}
+.section-head h2{margin:0 0 7px;font-size:clamp(23px,2.8vw,30px);line-height:1.25;letter-spacing:-.7px}
+.section-head p{margin:0;color:var(--muted);font-size:14px}
+.panel{border:1px solid var(--line);border-radius:18px;background:white;box-shadow:0 5px 25px rgba(32,61,45,.035);overflow:hidden}
+.panel-pad{padding:24px}
+.section-intro{font-size:14px;color:#53685f;margin:0 0 16px}
+.checkpoints{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 19px}
+.check{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px}
+.check .num{font-size:11px;color:var(--green);font-weight:850;letter-spacing:.8px}
+.check h3{font-size:15px;margin:5px 0 3px}
+.check p{font-size:12px;margin:0;color:var(--muted)}
+.example{display:grid;grid-template-columns:1.28fr 1fr;gap:0}
+.screen{background:#f1f5f1;border-right:1px solid var(--line);padding:24px;min-width:0;display:flex;align-items:center}
+.screen.full{border-right:0}
+.screen-inner{width:100%;background:white;border:1px solid #d5e3db;border-radius:15px;box-shadow:0 12px 30px rgba(37,64,49,.09);overflow:hidden;font-size:12px;color:#243e36}
+.screen-header{display:flex;align-items:center;justify-content:space-between;gap:7px;padding:13px 16px;border-bottom:1px solid #e4eee6;background:#fff;font-weight:850}
+.screen-title{display:flex;align-items:center;gap:8px}
+.app-mark{width:21px;height:21px;border-radius:7px;display:inline-grid;place-items:center;background:var(--deep);color:white;font-size:11px}
+.dot-group{display:flex;gap:4px}
+.dot-group i{width:6px;height:6px;background:#d1dbd5;border-radius:50%}
+.screen-body{padding:16px}
+.screen-body .mini-note{font-size:10px;color:#73847c;margin:0}
+.demo-field{border:1px solid #dbe7de;background:#fbfdfb;border-radius:8px;padding:9px 11px;margin:8px 0;color:#315147;font-size:11px}
+.demo-label{font-size:10px;color:#748a7d;font-weight:700;margin:10px 0 5px}
+.demo-btn{background:#166e58;color:#fff;font-weight:830;border-radius:8px;padding:9px 12px;display:inline-block;font-size:11px}
+.demo-btn.soft{background:#e7f2eb;color:#176c58}
+.demo-btn.line{background:white;border:1px solid #cadbd0;color:#1c5547}
+.demo-pill{display:inline-block;background:#e6f3eb;color:#217056;border-radius:30px;padding:4px 9px;font-weight:780;font-size:10px}
+.demo-pill.amber{background:#fff2e3;color:#a76732}
+.demo-muted{color:#81918a;font-size:10px}
+.demo-line{border-top:1px solid #eaf0ec;margin:12px 0}
+.demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.demo-stat{border:1px solid #e4ece6;border-radius:9px;padding:10px;background:#fbfdfb}
+.demo-stat strong{font-size:19px;display:block;color:#194c3c}
+.demo-stat small{font-size:10px;color:#6c8577}
+.demo-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0;font-size:11px}
+.demo-row>span:first-child{min-width:0}
+.demo-side{display:grid;grid-template-columns:82px 1fr;min-height:240px}
+.demo-menu{background:#153d33;color:#eaf6ef;padding:16px 7px}
+.demo-menu div{font-size:10px;margin:7px 0;padding:5px 6px;border-radius:5px}
+.demo-menu .picked{background:#2c6754;font-weight:750}
+.demo-content{padding:14px;min-width:0}
+.howto{padding:24px;display:flex;flex-direction:column;justify-content:center}
+.howto .tagline{font-size:10px;font-weight:850;color:var(--green);letter-spacing:1.3px}
+.howto h3{font-size:19px;margin:7px 0 11px;line-height:1.4}
+.howto ol{margin:0 0 20px;padding-left:21px;font-size:13px}
+.howto li{margin:0 0 9px;padding-left:3px}
+.howto li::marker{color:#278166;font-weight:850}
+.howto .action{align-self:flex-start}
+.caption{color:#7d8f85;font-size:11px;margin:9px 2px 0}
+.section-tip{background:#edf5ee;border-left:3px solid #378769;border-radius:0 10px 10px 0;padding:13px 16px;color:#355748;font-size:13px;margin-top:13px}
+.section-tip.warm{background:#fff7ec;border-color:#d99755;color:#78553a}
+.mode-tabs{display:flex;gap:8px;padding:5px;background:#eef4ef;border-radius:13px;margin-bottom:18px;max-width:530px}
+.mode-tabs button{border:0;flex:1;text-align:center;background:transparent;border-radius:10px;padding:12px 10px;font-weight:800;color:#4d7062;cursor:pointer;font-size:13px}
+.mode-tabs button[aria-selected=true]{background:#fff;box-shadow:0 3px 12px rgba(41,76,56,.08);color:#185640}
+.mode-panel[hidden]{display:none}
+.flow-card{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;margin:15px 0}
+.flow-card-title{padding:15px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center}
+.flow-card-title h3{margin:0;font-size:15px}
+.flow-card-title p{margin:3px 0 0;font-size:12px;color:var(--muted)}
+.flow-strip{display:flex;align-items:stretch;justify-content:space-between;gap:8px;padding:18px}
+.flow-step{flex:1;min-width:0;text-align:center;background:#f6faf7;border:1px solid #e5eee7;padding:15px 8px;border-radius:10px}
+.flow-step .flow-icon{width:37px;height:37px;border-radius:11px;background:#e0efe6;color:#256a53;font-weight:900;display:grid;place-items:center;margin:0 auto 8px;font-size:16px}
+.flow-step b{font-size:12px;display:block;line-height:1.35}
+.flow-step small{font-size:10px;display:block;color:#6b8276;margin-top:5px}
+.flow-arrow{flex:0 0 11px;align-self:center;color:#90a69b}
+.two-phone{display:grid;grid-template-columns:1fr 1fr;gap:17px;align-items:start;padding:17px;background:#f4f8f3}
+.phone{border:5px solid #24382f;border-radius:24px;padding:7px;background:white;box-shadow:0 8px 24px rgba(26,58,39,.1);max-width:210px;margin:auto;width:100%;min-height:232px;position:relative}
+.phone:before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:61px;height:9px;border-radius:0 0 9px 9px;background:#24382f}
+.phone-content{padding:15px 8px 9px}
+.phone-banner{background:#e4f4e9;color:#246349;border-radius:9px;padding:11px 8px;font-size:12px;font-weight:850}
+.phone-row{display:flex;justify-content:space-between;gap:3px;border-bottom:1px solid #eff3ef;padding:8px 2px;font-size:10px}
+.phone-mini-btn{display:block;background:#1a7256;color:#fff;text-align:center;padding:7px;border-radius:7px;font-size:10px;font-weight:800;margin-top:11px}
+.phone-caption{text-align:center;font-size:11px;color:#617b6e;font-weight:750;margin:8px 0 0}
+.split-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.mini-info{border:1px solid var(--line);border-radius:14px;padding:19px;background:#fff}
+.mini-info h3{margin:0 0 7px;font-size:15px}
+.mini-info p{font-size:13px;color:#5f786a;margin:0}
+.mini-info .small-label{font-size:11px;color:var(--green);font-weight:850}
+.number-banner{background:#173f35;border-radius:12px;padding:17px;color:#fff;text-align:center;margin:10px 0}
+.number-banner small{display:block;color:#b9d8c9;font-size:10px}
+.number-banner strong{display:block;font-size:43px;line-height:1.35;letter-spacing:1px}
+.number-next{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.number-next span{background:#e5efe8;color:#28604a;padding:5px 10px;border-radius:8px;font-size:11px;font-weight:850}
+.accordion{border:1px solid var(--line);border-radius:15px;background:white;overflow:hidden}
+.accordion details+details{border-top:1px solid var(--line)}
+.accordion summary{list-style:none;cursor:pointer;padding:18px 21px;font-weight:780;font-size:14px;position:relative;padding-right:52px}
+.accordion summary::-webkit-details-marker{display:none}
+.accordion summary:after{content:"+";position:absolute;right:23px;top:14px;font-size:22px;color:var(--green);font-weight:400}
+.accordion details[open] summary:after{content:"−"}
+.accordion details p{margin:0;padding:0 21px 19px;font-size:13px;color:#587467}
+.bottom-call{background:#e8f1e8;border:1px solid #d4e5d8;border-radius:20px;padding:27px;margin-top:18px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.bottom-call h3{font-size:21px;margin:0 0 6px}
+.bottom-call p{margin:0;color:#5e766c;font-size:13px}
+.footer{border-top:1px solid var(--line);padding:28px 25px;color:#7b8a83;font-size:12px;text-align:center}
+.footer a{margin:0 8px;text-decoration:none}
+.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:1050px){.layout{grid-template-columns:196px minmax(0,1fr);gap:22px}.example{grid-template-columns:1fr}.screen{border-right:0;border-bottom:1px solid var(--line)}.howto{padding:20px 24px}.side{padding-right:12px}}
+@media(max-width:760px){html{scroll-padding-top:115px}.container{padding:0 15px}.top-inner{padding:10px 15px}.top-link:not(.primary){display:none}.brand{font-size:14px}.brand small{font-size:10px}.hero{margin-top:14px;padding:28px 22px 24px;border-radius:18px}.hero h1{letter-spacing:-.8px}.hero p{font-size:13px}.hero-bottom{margin-top:22px}.hero-steps{font-size:11px}.layout{display:block;padding-top:16px}.side{position:sticky;top:58px;z-index:11;display:flex;align-items:center;gap:5px;overflow-x:auto;border:1px solid #dbe7dd;border-radius:13px;background:rgba(255,255,255,.97);padding:5px;margin:0 0 28px;scrollbar-width:thin}.side-title,.side-foot{display:none}.side a{flex:0 0 auto;margin:0;padding:10px 11px;white-space:nowrap;font-size:12px}.side a span{display:none}.content-section{margin-bottom:48px;scroll-margin-top:122px}.section-head{gap:11px}.checkpoints{grid-template-columns:1fr;gap:9px}.check{padding:13px 15px}.panel-pad{padding:18px}.screen{padding:17px}.howto{padding:19px}.flow-strip{gap:5px;padding:12px}.flow-step{padding:10px 5px}.flow-step b{font-size:10px}.flow-step small{font-size:9px}.flow-icon{width:29px!important;height:29px!important}.split-grid{grid-template-columns:1fr}.bottom-call{display:block;padding:20px}.bottom-call .action{margin-top:13px}.two-phone{gap:8px;padding:12px}.phone{border-width:4px;border-radius:19px}.phone-content{padding:13px 4px 6px}.top-links .top-link.primary{padding:8px 9px;font-size:11px}}
+@media(max-width:390px){.brand{font-size:12px}.top-link.primary{font-size:10px!important}.hero-actions .action{font-size:11px}.flow-arrow{flex-basis:7px}.flow-step{padding:8px 3px}.flow-step small{font-size:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.action{transition:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <a class="brand" href="./home.html"><span class="brand-icon" aria-hidden="true">L</span><span>LINE 預約平台<small>商家操作指南 / HELP CENTER</small></span></a>
+    <nav class="top-links" aria-label="網站連結">
+      <a class="top-link" href="./home.html">平台首頁</a>
+      <a class="top-link" href="./merchant-register.html">申請開通</a>
+      <a class="top-link primary" href="./?view=staff">進入商家後台</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+  <section class="hero" id="guide" aria-labelledby="hero-title">
+    <div class="eyebrow">給店主與門市人員的使用指南</div>
+    <h1 id="hero-title">第一次使用，也能<br>照著畫面完成。</h1>
+    <p>不必懂技術。從商家申請、LINE 顧客入口、預約與取號設定，到店員每天怎麼操作，依照實際商家流程逐步說明。下方畫面為依現有介面製作的操作示意，不含顧客個資。</p>
+    <div class="hero-bottom">
+      <div class="hero-steps"><span>01 申請開通</span><b>→</b><span>02 完成設定</span><b>→</b><span>03 分享給顧客</span><b>→</b><span>04 每日營運</span></div>
+      <div class="hero-actions">
+        <a class="action light" href="#apply">從第一步開始 →</a>
+        <a class="action outline-light" href="#booking">直接看店員操作</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="layout">
+    <nav class="side" aria-label="操作教學目錄">
+      <div class="side-title">操作目錄</div>
+      <a href="#apply"><span>01</span>申請與開通</a>
+      <a href="#setup"><span>02</span>門市設定</a>
+      <a href="#mode"><span>03</span>LINE 顧客入口</a>
+      <a href="#publish"><span>04</span>發佈連結與 QR</a>
+      <a href="#booking"><span>05</span>管理預約</a>
+      <a href="#queue"><span>06</span>取號與叫號</a>
+      <a href="#display"><span>07</span>現場看板與通知</a>
+      <a href="#faq"><span>08</span>常見問題</a>
+      <div class="side-foot">不需要一次讀完。依照要操作的功能，直接點選對應章節。</div>
+    </nav>
+
+    <main class="main">
+      <section class="content-section" id="apply">
+        <div class="section-head"><span class="section-index">01</span><div><h2>先申請開通商家</h2><p>商家負責人申請；平台審核後，才有專屬門市及管理後台。</p></div></div>
+        <div class="panel example">
+          <div class="screen"><div style="width:100%">
+            <div class="screen-inner">
+              <div class="screen-header"><span class="screen-title"><span class="app-mark">L</span> 商家合作 / 申請開通</span><span class="demo-pill">商家負責人</span></div>
+              <div class="screen-body">
+                <div class="demo-label">商家帳號</div>
+                <div class="demo-grid"><div class="demo-field">Email</div><div class="demo-field">密碼</div></div>
+                <div class="demo-line"></div>
+                <div class="demo-label">填寫門市申請</div>
+                <div class="demo-grid"><div class="demo-field">門市名稱</div><div class="demo-field">網址代碼</div></div>
+                <div class="demo-label">店家是否已有 LINE OA</div>
+                <div class="demo-field">沒有，使用平台 LINE OA 接待顧客　⌄</div>
+                <div class="demo-row"><span class="demo-muted">申請後等待平台審核</span><span class="demo-btn">送出開通申請</span></div>
+              </div>
+            </div>
+            <p class="caption">畫面示意｜商家申請表</p>
+          </div></div>
+          <div class="howto">
+            <div class="tagline">商家負責人操作</div>
+            <h3>申請只需提供門市基本資料</h3>
+            <ol>
+              <li>點「申請開通」，註冊並驗證商家 Email。</li>
+              <li>填寫門市名稱、網址代碼與聯絡資料。</li>
+              <li>選擇是否已有 LINE 官方帳號，送出申請。</li>
+              <li>平台審核通過後，再登入商家後台設定。</li>
+            </ol>
+            <a class="action green" href="./merchant-register.html">前往商家申請頁 →</a>
+          </div>
+        </div>
+        <div class="section-tip">沒有 LINE OA 也能申請；顧客以 LINE 身分操作，但商家／店員使用有權限的後台帳號。申請通過不代表門市會自動公開出現在搜尋清單。</div>
+      </section>
+
+      <section class="content-section" id="setup">
+        <div class="section-head"><span class="section-index">02</span><div><h2>設定門市如何接待顧客</h2><p>先決定要開放「線上預約」、「現場取號」，或兩個都開放。</p></div></div>
+        <div class="checkpoints">
+          <div class="check"><div class="num">先做 01</div><h3>企業設定</h3><p>門市名稱、地址、電話、營業時間、預約人數與時段間隔。</p></div>
+          <div class="check"><div class="num">接著 02</div><h3>菜單及服務設定</h3><p>設定服務項目，並決定預約／取號時必填、選填或不顯示。</p></div>
+          <div class="check"><div class="num">最後 03</div><h3>預約營業規則</h3><p>公休日、休息時段、預約資源及是否開放搜尋。</p></div>
+        </div>
+        <div class="panel example">
+          <div class="screen"><div style="width:100%">
+            <div class="screen-inner">
+              <div class="screen-header"><span class="screen-title"><span class="app-mark">L</span> 門市營運後台</span><div class="dot-group"><i></i><i></i><i></i></div></div>
+              <div class="demo-side">
+                <div class="demo-menu">
+                  <div>工作台</div><div>預約管理</div><div>叫號管理</div><div>菜單及服務</div><div class="picked">企業設定</div>
+                </div>
+                <div class="demo-content">
+                  <div style="font-weight:850;font-size:13px;margin-bottom:10px">企業基本設定</div>
+                  <div class="demo-grid"><div><div class="demo-label">開始營業</div><div class="demo-field">10:00</div></div><div><div class="demo-label">結束營業</div><div class="demo-field">20:00</div></div></div>
+                  <div class="demo-grid"><div><div class="demo-label">每時段可約人數</div><div class="demo-field">4 人</div></div><div><div class="demo-label">預約時段間隔</div><div class="demo-field">30 分鐘</div></div></div>
+                  <div style="text-align:right;margin-top:10px"><span class="demo-btn">儲存企業設定</span></div>
+                </div>
+              </div>
+            </div>
+            <p class="caption">畫面示意｜商家後台「企業設定」</p>
+          </div></div>
+          <div class="howto">
+            <div class="tagline">管理者操作</div>
+            <h3>先完成設定，再開始分享</h3>
+            <ol>
+              <li>登入後台，開啟「企業設定」，儲存營業資訊及預約容量。</li>
+              <li>在「預約營業日與休息設定」填入公休日、午休等。</li>
+              <li>需要餐點、服務或指定資源時，至「菜單及服務設定」新增。</li>
+              <li>確認預約、取號等功能依門市需要啟用。</li>
+            </ol>
+            <a class="action green" href="./?view=staff">開啟店家後台 →</a>
+          </div>
+        </div>
+        <div class="section-tip warm">預約與取號是兩套獨立的資料和編號：預約報到不會自動發號碼牌。診所等需要「先約時段、到場後再候診」的業態，應分別設定及操作，不能把兩者當成同一個流程。</div>
+      </section>
+
+      <section class="content-section" id="mode">
+        <div class="section-head"><span class="section-index">03</span><div><h2>顧客從哪裡進入？</h2><p>依商家有沒有自己的 LINE 官方帳號，使用對應的顧客入口。</p></div></div>
+        <div class="mode-tabs" role="tablist" aria-label="LINE 官方帳號模式">
+          <button type="button" id="tab-platform" role="tab" aria-controls="mode-platform" aria-selected="true" data-mode="platform">沒有自己的 LINE OA</button>
+          <button type="button" id="tab-own" role="tab" aria-controls="mode-own" aria-selected="false" data-mode="own">已有自己的 LINE OA</button>
+        </div>
+        <div class="mode-panel" id="mode-platform" role="tabpanel" aria-labelledby="tab-platform">
+          <p class="section-intro"><strong>平台共用 OA 模式：</strong>一家平台 LINE OA 可以同時服務很多家店。每家店仍有自己的網址、預約紀錄、號碼與店員權限。</p>
+          <div class="flow-card">
+            <div class="flow-card-title"><div><h3>入口 A｜從平台 LINE OA 搜尋店家</h3><p>顧客不知道店家網址，也能先找店再預約。</p></div><span class="demo-pill">共用 OA</span></div>
+            <div class="flow-strip">
+              <div class="flow-step"><span class="flow-icon">1</span><b>平台 LINE OA</b><small>點「搜尋店家」</small></div><span class="flow-arrow">→</span>
+              <div class="flow-step"><span class="flow-icon">2</span><b>找到想去的店</b><small>選預約或取號</small></div><span class="flow-arrow">→</span>
+              <div class="flow-step"><span class="flow-icon">3</span><b>店家專屬網頁</b><small>必要時驗證 LINE</small></div><span class="flow-arrow">→</span>
+              <div class="flow-step"><span class="flow-icon">4</span><b>完成操作</b><small>由平台 OA 通知</small></div>
+            </div>
+          </div>
+          <div class="flow-card">
+            <div class="flow-card-title"><div><h3>入口 B｜店家自己的 QR Code 或連結</h3><p>貼在櫃台、門口、社群或任何店家對外管道。</p></div><span class="demo-pill">店家專屬網址</span></div>
+            <div class="flow-strip">
+              <div class="flow-step"><span class="flow-icon">1</span><b>掃店家的 QR</b><small>或點分享連結</small></div><span class="flow-arrow">→</span>
+              <div class="flow-step"><span class="flow-icon">2</span><b>直接看到該店</b><small>不先跳去聊天頁</small></div><span class="flow-arrow">→</span>
+              <div class="flow-step"><span class="flow-icon">3</span><b>驗證 LINE 身分</b><small>完成返回原門市</small></div><span class="flow-arrow">→</span>
+              <div class="flow-step"><span class="flow-icon">4</span><b>預約或取號</b><small>後台同步紀錄</small></div>
+            </div>
+          </div>
+          <div class="two-phone">
+            <div><div class="phone"><div class="phone-content"><div class="phone-banner">選擇你的店家</div><div class="demo-field">搜尋店名或地區　⌕</div><div class="phone-row"><b>示範餐廳 A</b><span>台北市</span></div><div class="phone-mini-btn">立即預約</div><div class="phone-row"><b>示範餐廳 B</b><span>台中市</span></div><div class="phone-mini-btn">現場取號</div></div></div><p class="phone-caption">A. 平台搜尋店家</p></div>
+            <div><div class="phone"><div class="phone-content"><div class="phone-banner">示範餐廳 A<br><span style="font-size:10px;font-weight:500">店家專屬預約頁</span></div><div class="demo-label">選擇日期與時段</div><div class="demo-grid"><div class="demo-field">11 / 12</div><div class="demo-field">18:30</div></div><div class="demo-label">預約姓名／聯絡電話</div><div class="demo-field">請填入聯絡資料</div><div class="phone-mini-btn">確認預約</div></div></div><p class="phone-caption">B. 進店家網頁完成預約</p></div>
+          </div>
+          <p class="caption">顧客手機畫面示意｜從搜尋或 QR 進入相同的門市資料流程</p>
+          <div class="section-tip">LINE 身分驗證與「加入平台 OA 好友」不是同一件事。系統只在需要時要求 LINE 驗證；要收到 LINE 訊息，仍需符合平台 OA 的好友與訊息發送條件。</div>
+          <div style="margin-top:16px"><a class="action outline" href="./directory.html?mode=search">查看店家搜尋入口 →</a></div>
+        </div>
+        <div class="mode-panel" id="mode-own" role="tabpanel" aria-labelledby="tab-own" hidden>
+          <p class="section-intro"><strong>商家自有 OA 模式：</strong>顧客由商家自己的官方帳號圖文選單或專屬入口進店家頁面，對應通知由該商家 OA 發送。這個模式需要商家管理者完成 LINE 頻道設定與實際測試。</p>
+          <div class="flow-card">
+            <div class="flow-card-title"><div><h3>自有 OA 串接步驟</h3><p>只有管理者能設定；不能把 Channel Secret 貼在公開網頁或文件。</p></div><span class="demo-pill amber">需完成驗證</span></div>
+            <div class="flow-strip">
+              <div class="flow-step"><span class="flow-icon">1</span><b>自有 LINE OA</b><small>準備官方頻道</small></div><span class="flow-arrow">→</span>
+              <div class="flow-step"><span class="flow-icon">2</span><b>企業設定</b><small>LINE 官方帳號串接</small></div><span class="flow-arrow">→</span>
+              <div class="flow-step"><span class="flow-icon">3</span><b>連接並設 Webhook</b><small>同一 Provider</small></div><span class="flow-arrow">→</span>
+              <div class="flow-step"><span class="flow-icon">4</span><b>實機驗收</b><small>預約與訊息通知</small></div>
+            </div>
+          </div>
+          <div class="panel example">
+            <div class="screen"><div style="width:100%">
+              <div class="screen-inner"><div class="screen-header"><span class="screen-title"><span class="app-mark">L</span> 企業設定</span><span class="demo-pill amber">管理者</span></div>
+                <div class="screen-body"><div style="font-weight:850;margin-bottom:10px">LINE 官方帳號串接</div><div class="demo-row"><span>目前通知來源</span><b>平台 LINE OA</b></div><div class="demo-label">商家 LIFF ID</div><div class="demo-field">請輸入 LINE LIFF ID</div><div class="demo-label">Messaging API 憑證</div><div class="demo-field">••••••••••••••</div><span class="demo-btn">驗證並連接自有 LINE OA</span><p class="demo-muted" style="margin-top:10px">連接後設定該門市專屬 Webhook</p></div>
+              </div><p class="caption">畫面示意｜企業設定／LINE 官方帳號串接</p>
+            </div></div>
+            <div class="howto"><div class="tagline">管理者操作</div><h3>串接前先確認這些項目</h3><ol><li>商家的 LINE Login／LIFF 與 Messaging API 頻道須符合 Provider 對應規則。</li><li>在企業設定頁進行自有 OA 驗證與連接。</li><li>將後台顯示的門市專屬 Webhook 設到 LINE Developers。</li><li>使用真實 LINE 帳號測試登入、預約、取號及通知接收。</li></ol><a class="action outline" href="./?view=staff">前往串接設定 →</a></div>
+          </div>
+          <div class="section-tip warm">自有 OA 串接畫面不等於已正式通過驗收。完成頻道設定、Webhook 與真實手機的收訊測試後，才能對商家宣稱已可由自有 OA 發送通知；尚未完成前可以先使用平台 OA 模式。</div>
+        </div>
+      </section>
+
+      <section class="content-section" id="publish">
+        <div class="section-head"><span class="section-index">04</span><div><h2>把預約或取號入口分享出去</h2><p>不需要顧客記住網址。後台已有對應的顧客連結與 QR 立牌入口。</p></div></div>
+        <div class="split-grid">
+          <div class="mini-info"><div class="small-label">線上預約</div><h3>分享「預約 QR 立牌」</h3><p>在後台「預約管理」點選「製作預約 QR 立牌」，讓顧客直接進這家店的預約頁。</p><div style="margin-top:13px"><a class="action outline" href="./?view=staff">前往預約管理 →</a></div></div>
+          <div class="mini-info"><div class="small-label">現場取號</div><h3>分享「取號 QR 立牌」</h3><p>在後台「叫號管理」點選「製作現場取號 QR 立牌」，讓現場顧客直接領取號碼。</p><div style="margin-top:13px"><a class="action outline" href="./?view=staff">前往叫號管理 →</a></div></div>
+        </div>
+        <div class="panel" style="margin-top:16px;padding:20px">
+          <div style="display:flex;align-items:center;gap:15px;flex-wrap:wrap">
+            <div aria-hidden="true" style="width:83px;height:83px;background:#fff;border:9px solid #e8f0e9;border-radius:12px;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:8px">
+              <span style="background:#173e34;grid-row:span 2;grid-column:span 2"></span><span style="background:#173e34"></span><span style="background:#173e34;grid-row:span 2;grid-column:span 2"></span><span style="background:#173e34"></span><span style="background:#173e34"></span><span style="background:#173e34;grid-row:span 2"></span><span style="background:#173e34"></span><span style="background:#173e34;grid-column:span 2"></span>
+            </div>
+            <div style="flex:1;min-width:205px"><strong style="font-size:16px">一店一組專屬入口</strong><p style="margin:4px 0 0;font-size:12px;color:var(--muted)">預約 QR 與取號 QR 分開。顧客掃描後應保留原本商家與操作用途，必要時完成 LINE 身分驗證，再回到同一個店家頁面。</p></div>
+          </div>
+        </div>
+        <div class="section-tip">要出現在平台 OA 的「搜尋店家」中，管理者還需在「企業設定」開啟公開搜尋並儲存。沒公開的門市仍可分享自己的連結。QR 上方只是位置示意圖，不是可供掃描的實際 QR Code。</div>
+      </section>
+
+      <section class="content-section" id="booking">
+        <div class="section-head"><span class="section-index">05</span><div><h2>店員每天怎麼管理預約？</h2><p>從「預約管理」查看當日與跨日待處理預約，依實際情況修改狀態。</p></div></div>
+        <div class="panel example">
+          <div class="screen"><div style="width:100%">
+            <div class="screen-inner"><div class="screen-header"><span class="screen-title"><span class="app-mark">L</span> 預約管理</span><span class="demo-pill">今日</span></div>
+              <div class="screen-body">
+                <div class="demo-grid"><div class="demo-stat"><small>待處理預約</small><strong>05</strong></div><div class="demo-stat"><small>已報到未結案</small><strong>02</strong></div></div>
+                <div class="demo-label">篩選預約</div><div class="demo-field">搜尋編號、姓名或服務　⌕</div>
+                <div class="demo-line"></div>
+                <div class="demo-row"><span><b>預約 12</b><br><span class="demo-muted">11 / 12　18:30 · 2 人</span></span><span class="demo-pill">已預約</span></div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;margin:12px 0"><span class="demo-btn">已報到</span><span class="demo-btn line">未到</span><span class="demo-btn line">取消</span></div>
+                <div class="demo-row"><span class="demo-muted">操作後可修改狀態或還原上一步</span><span class="demo-pill amber">示範資料</span></div>
+              </div>
+            </div><p class="caption">畫面示意｜預約管理／預約狀態</p>
+          </div></div>
+          <div class="howto">
+            <div class="tagline">每日店員操作</div>
+            <h3>預約就是預約，狀態由店員管理</h3>
+            <ol><li>從側邊選單進入「預約管理」，查看待處理預約。</li><li>顧客到店，選擇「已報到」；完成服務、未到或取消時選擇對應狀態。</li><li>按錯可以重新選狀態，必要時用「還原上一步」。</li><li>可篩選、查看歷史，管理者可匯出 CSV。</li></ol>
+            <a class="action green" href="./?view=staff">開啟預約管理 →</a>
+          </div>
+        </div>
+        <div class="section-tip warm"><strong>重要：</strong>「已報到」不會跳到叫號管理，也不會自動產生號碼。預約編號和取號編號互不影響，各自可設定前綴、獨立重置；重置只影響新號碼，不會改舊紀錄。</div>
+      </section>
+
+      <section class="content-section" id="queue">
+        <div class="section-head"><span class="section-index">06</span><div><h2>現場取號與叫號怎麼操作？</h2><p>取號是顧客領取候位號碼；叫號是店員依現場情況推進隊列。</p></div></div>
+        <div class="panel example">
+          <div class="screen"><div style="width:100%">
+            <div class="screen-inner"><div class="screen-header"><span class="screen-title"><span class="app-mark">L</span> 叫號管理</span><span class="demo-pill">午場</span></div>
+              <div class="screen-body">
+                <div class="demo-grid"><div class="demo-stat"><small>候位中</small><strong>04</strong></div><div class="demo-stat"><small>已叫號</small><strong>01</strong></div></div>
+                <div class="number-banner"><small>目前叫號</small><strong>12</strong><small>下一位依實際候位順序</small></div>
+                <div style="display:flex;gap:7px;flex-wrap:wrap"><span class="demo-btn">叫下一位</span><span class="demo-btn line">再叫一次</span><span class="demo-btn line">還原上一步</span></div>
+                <div class="demo-line"></div><div class="demo-label">未結案號碼牌</div>
+                <div class="demo-row"><span><b>13 號</b> · 候位中</span><span class="demo-pill">可更正狀態</span></div>
+                <div class="demo-row"><span><b>14 號</b> · 候位中</span><span class="demo-pill">可更正狀態</span></div>
+              </div>
+            </div><p class="caption">畫面示意｜叫號管理／候位與叫號按鈕</p>
+          </div></div>
+          <div class="howto"><div class="tagline">每日店員操作</div><h3>叫號不等於完成服務</h3><ol><li>顧客從取號 QR 或網頁領取號碼，出現在候位名單。</li><li>店員按「叫下一位」，需要時「再叫一次」。</li><li>過號、保留、回到候位或操作錯誤，可依號碼牌狀態做更正。</li><li>叫到號後，可另外標記到場、進場及完成，不把叫號直接當作結案。</li></ol><a class="action green" href="./?view=staff">進入叫號管理 →</a></div>
+        </div>
+        <div class="split-grid" style="margin-top:16px">
+          <div class="mini-info"><div class="small-label">場次切換</div><h3>早場／午場／晚場／休場</h3><p>切換場次不會重設流水號；「休場」暫停新增取號，原本候位的號碼仍可以處理。</p></div>
+          <div class="mini-info"><div class="small-label">重置編號</div><h3>預約、叫號各有獨立設定</h3><p>管理者在對應管理頁設定 0～3 字前綴或手動重置。重置後新號從 1 開始，歷史紀錄保留。</p></div>
+        </div>
+      </section>
+
+      <section class="content-section" id="display">
+        <div class="section-head"><span class="section-index">07</span><div><h2>用螢幕顯示叫號進度</h2><p>店家可以把即時叫號看板放在電視、平板或櫃台螢幕上。</p></div></div>
+        <div class="panel">
+          <div class="screen full" style="padding:20px"><div style="width:100%">
+            <div style="border-radius:13px;overflow:hidden;background:#132f2b;color:white;padding:20px 22px 24px">
+              <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid #405c51;padding-bottom:14px"><strong style="font-size:16px">示範餐廳 A</strong><span style="font-size:11px;color:#a6c6b8">即時叫號看板</span></div>
+              <div style="display:grid;grid-template-columns:1.05fr 1fr;gap:15px;padding-top:16px">
+                <div style="background:#d9f1dc;color:#183b31;padding:19px 12px;border-radius:12px;text-align:center"><small>目前叫號</small><div style="font-size:clamp(40px,6vw,67px);font-weight:900;line-height:1.25">12</div></div>
+                <div style="padding:9px 0"><div style="font-size:12px;color:#bad2c4;margin-bottom:13px">接下來候位順序</div><div class="number-next"><span>13</span><span>15</span><span>14</span></div><p style="font-size:10px;color:#b1c9bc;margin-top:14px">順序會依保留、過號及店員調整更新</p></div>
+              </div>
+            </div>
+            <p class="caption">畫面示意｜公開叫號看板；實際號碼由門市系統同步，示意數字僅用於教學</p>
+          </div></div>
+          <div class="panel-pad" style="border-top:1px solid var(--line)"><p style="margin:0 0 13px;font-size:13px;color:#526f61">在「叫號管理」開啟「電視即時叫號看板」，將它顯示在店內螢幕。店員於後台叫號；顧客也能查看自己的叫號進度，不用全部擠到櫃檯。</p><a class="action green" href="./directory.html?mode=queue">查看公開叫號清單 →</a></div>
+        </div>
+        <div class="section-tip">LINE 通知和即時看板是不同功能。通知內容包含對應門市及預約或號碼資訊，但須符合 LINE 發送資格；即使 API 已接受，也不應直接當成顧客已讀。需要最新進度時，以叫號網頁與店員後台狀態為準。</div>
+      </section>
+
+      <section class="content-section" id="faq">
+        <div class="section-head"><span class="section-index">08</span><div><h2>店家最常遇到的問題</h2><p>不用翻技術文件；依實際操作情境查找。</p></div></div>
+        <div class="accordion">
+          <details><summary>我沒有自己的 LINE 官方帳號，也能讓顧客預約嗎？</summary><p>可以。申請開通並通過平台審核後，使用平台共用 LINE OA 接待顧客。顧客可從平台的店家搜尋入口，或直接掃店家專屬 QR／點分享網址進行預約或取號。</p></details>
+          <details><summary>預約已報到，為什麼沒有自動進入叫號？</summary><p>因為預約和現場取號目前是獨立流程。預約報到只更新預約狀態，不會產生取號票券。需要現場叫號時，另外使用取號與叫號管理，不應拿預約流水號當候位號。</p></details>
+          <details><summary>客人過號、按錯，或要恢復候位怎麼辦？</summary><p>到「叫號管理」找到該號碼牌，依目前允許的狀態做更正；叫號操作若有提供「還原上一步」，可用來修正上一個動作。保留候位會依店家的保留規則恢復原順位或放到隊尾，號碼本身不變。</p></details>
+          <details><summary>重置預約號碼或叫號號碼，舊資料會消失嗎？</summary><p>不會。兩套流水號各自重置，新的一筆從 1 開始，已建立的預約／號碼牌及永久識別碼仍保留。重置與更改前綴需具管理權限。</p></details>
+          <details><summary>為什麼搜尋店家找不到我的門市？</summary><p>請確認平台已核准、門市為啟用狀態，並在商家後台「企業設定」勾選允許公開搜尋後儲存。沒有公開搜尋時，已開通門市仍可用自己的專屬網址分享。</p></details>
+          <details><summary>顧客已經登入 LINE，為什麼沒收到通知？</summary><p>LINE 身分驗證與加入 OA 好友不同。請先確認顧客是否加入對應官方帳號、未封鎖，以及平台訊息通知的發送資格／狀態。若是自有 OA 模式，還要確認頻道與 Webhook 設定並實機驗收。</p></details>
+          <details><summary>可以用手機操作後台嗎？</summary><p>可以。商家管理後台支援手機和電腦瀏覽器；預約管理、叫號管理與狀態修正都可在手機開啟。建議將店家後台網址加入手機書籤，以便現場使用。</p></details>
+          <details><summary>忘記怎麼設定，或操作發生問題，要找誰？</summary><p>先查看本頁對應章節，再將遇到問題的功能名稱、操作時間及錯誤畫面告知平台客服。不要提供密碼、LINE Channel Secret、Access Token 或其他機密憑證。</p></details>
+        </div>
+        <div class="bottom-call"><div><h3>準備開始操作？</h3><p>已開通的店家直接進後台；新商家先提出開通申請。</p></div><div style="display:flex;flex-wrap:wrap;gap:10px"><a class="action green" href="./?view=staff">進入店家後台</a><a class="action outline" href="./merchant-register.html">申請開通</a></div></div>
+      </section>
+    </main>
+  </div>
+</div>
+<footer class="footer">LINE 預約平台 · 商家操作指南 <a href="./home.html">平台首頁</a> <a href="./privacy.html">隱私權說明</a> <a href="./terms.html">使用條款</a></footer>
+<script>
+(function(){
+  var tabs=Array.prototype.slice.call(document.querySelectorAll("[data-mode]"));
+  function setMode(mode,focus){
+    tabs.forEach(function(tab){
+      var selected=tab.getAttribute("data-mode")===mode;
+      tab.setAttribute("aria-selected",String(selected));
+      tab.tabIndex=selected?0:-1;
+      if(focus&&selected)tab.focus();
+    });
+    document.querySelectorAll(".mode-panel").forEach(function(panel){
+      panel.hidden=panel.id!=="mode-"+mode;
+    });
+  }
+  tabs.forEach(function(tab,index){
+    tab.addEventListener("click",function(){setMode(tab.getAttribute("data-mode"),false)});
+    tab.addEventListener("keydown",function(e){
+      if(e.key!=="ArrowRight"&&e.key!=="ArrowLeft")return;
+      e.preventDefault();
+      var n=(index+(e.key==="ArrowRight"?1:tabs.length-1))%tabs.length;
+      setMode(tabs[n].getAttribute("data-mode"),true);
+    });
+  });
+  var links=Array.prototype.slice.call(document.querySelectorAll(".side a"));
+  if("IntersectionObserver" in window){
+    var observer=new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){
+          links.forEach(function(a){a.classList.toggle("active",a.getAttribute("href")==="#"+entry.target.id)});
+        }
+      });
+    },{rootMargin:"-20% 0px -65% 0px"});
+    document.querySelectorAll(".content-section").forEach(function(section){observer.observe(section)});
+  }
+  if(location.hash==="#mode-own"){setMode("own",false);document.getElementById("mode").scrollIntoView()}
+})();
+</script>
+</body>
+</html>
