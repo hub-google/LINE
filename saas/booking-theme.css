@@ -531,3 +531,14 @@ body[data-portal="staff"] .staff-mobile-nav{display:none}
   font-size:16px
  }
 }
+
+/* Page-size controls for long staff records. */
+body[data-portal="staff"] .staff-list-more{
+ display:flex;justify-content:center;align-items:center;gap:12px;
+ flex-wrap:wrap;padding:15px 8px 4px;color:#748378;font-size:12px
+}
+body[data-portal="staff"] .staff-list-more .btn{min-height:44px;font-weight:800}
+@media(max-width:580px){
+ body[data-portal="staff"] .staff-list-more{flex-direction:column;align-items:stretch}
+ body[data-portal="staff"] .staff-list-more .btn{width:100%}
+}
