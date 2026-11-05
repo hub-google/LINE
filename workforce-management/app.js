@@ -1708,3 +1708,127 @@ $('appContent').addEventListener('click',async e=>{
  }catch(err){banner(err.message,true);}
  finally{b.disabled=false;}
 });
+
+
+
+/* HR-RPT-02/03/05: privacy-preserving date/employee/department filtering and personal CSV. */
+app.attendanceDetail=null;
+function reportCell(v){
+ const x=String(v??'');return '"'+(/^\s*[=+\-@]/.test(x)?"'"+x:x).replaceAll('"','""')+'"';
+}
+function reportDownload(){
+ if(!app.attendanceDetail)throw Error('請先查詢明細');
+ const data=app.attendanceDetail;
+ const rows=[['員工編號','員工姓名','班次開始日','上班時間','下班時間','實際工作分鐘','資料狀態'],
+ ...data.rows.map(r=>[r.code,r.name,r.day,r.inAt,r.outAt||'',r.workMinutes,r.incomplete?'未完成':'完整'])];
+ const blob=new Blob(['\uFEFF'+rows.map(r=>r.map(reportCell).join(',')).join('\r\n')],
+ {type:'text/csv;charset=utf-8'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='workforce-attendance-'+data.from+'-'+data.to+'.csv';
+ document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+function attendanceRows(events,from,to){
+ const rows=[];
+ const byMember=new Map();
+ for(const p of events){
+  if(!byMember.has(p.member_id))byMember.set(p.member_id,[]);
+  byMember.get(p.member_id).push(p);
+ }
+ for(const [memberId,items] of byMember){
+  const member=person(memberId);if(!member)continue;
+  items.sort((a,b)=>a.punched_at.localeCompare(b.punched_at));
+  let started=null,segment=null,minutes=0;
+  const finish=(last,incomplete)=>{
+   if(!started)return;
+   if(!incomplete&&segment&&last){
+    minutes+=Math.max(0,(Date.parse(last)-Date.parse(segment))/60000);
+   }
+   const day=taiDay(started);
+   if(day>=from&&day<=to)rows.push({
+    member_id:memberId,code:member.employee_code,name:member.display_name,
+    branch_id:member.branch_id,department_id:member.department_id,
+    day,inAt:taiStamp(started),outAt:last?taiStamp(last):'',
+    workMinutes:Math.round(minutes),incomplete
+   });
+   started=null;segment=null;minutes=0;
+  };
+  for(const p of items){
+   if(p.kind==='IN'){
+    if(started)finish(null,true);
+    started=p.punched_at;segment=p.punched_at;minutes=0;
+   }else if(p.kind==='BREAK_START'&&started&&segment){
+    minutes+=Math.max(0,(Date.parse(p.punched_at)-Date.parse(segment))/60000);
+    segment=null;
+   }else if(p.kind==='BREAK_END'&&started&&!segment){
+    segment=p.punched_at;
+   }else if(p.kind==='OUT'&&started){
+    finish(p.punched_at,false);
+   }
+  }
+  if(started)finish(null,true);
+ }
+ return rows.sort((a,b)=>a.day.localeCompare(b.day)||a.code.localeCompare(b.code));
+}
+async function runAttendanceDetail(){
+ const from=$('detailFrom')?.value,to=$('detailTo')?.value;
+ if(!from||!to||to<from||dayAdd(from,31)<to)throw Error('查詢日期必須在連續 31 日內');
+ const branchId=$('detailBranch')?.value||'',departmentId=$('detailDepartment')?.value||'',
+  memberId=$('detailMember')?.value||'';
+ let events=[];
+ if(app.mode==='demo'){
+  events=[...(app.data?.punches||[])];
+ }else{
+  const begin=new Date(dayAdd(from,-1)+'T00:00:00+08:00').toISOString();
+  const end=new Date(dayAdd(to,2)+'T00:00:00+08:00').toISOString();
+  for(let offset=0;offset<5000;offset+=1000){
+   const params='select=member_id,kind,punched_at,id,source&tenant_id=eq.'+encodeURIComponent(app.tenantId)+
+    '&punched_at=gte.'+encodeURIComponent(begin)+'&punched_at=lt.'+encodeURIComponent(end)+
+    '&order=punched_at.asc&limit=1000&offset='+offset;
+   const chunk=await query('wm_punches',params);
+   events.push(...chunk);
+   if(chunk.length<1000)break;
+  }
+  if(events.length>=5000)throw Error('本期間記錄超過 5,000 筆，請縮短日期區間');
+ }
+ const permitted=new Set((app.data?.members||[]).filter(m=>
+  (!branchId||m.branch_id===branchId)&&(!departmentId||m.department_id===departmentId)&&
+  (!memberId||m.id===memberId)&&
+  (app.mode==='demo'||manager()||m.user_id===app.user?.id)).map(x=>x.id));
+ events=events.filter(x=>permitted.has(x.member_id));
+ app.attendanceDetail={from,to,rows:attendanceRows(events,from,to),eventCount:events.length};
+ render();
+}
+const beforeAttendanceReport=reports;
+reports=function(){
+ beforeAttendanceReport();
+ const me=app.mode==='demo'||manager()?app.data.members||[]:
+  (app.data.members||[]).filter(m=>m.user_id===app.user?.id);
+ const d=app.attendanceDetail,rows=d?.rows||[];
+ const dates='<div class="toolbar">'+
+  '<div class="field"><label>起日</label><input type="date" id="detailFrom" value="'+esc(d?.from||dayAdd(today(),-7))+'"></div>'+
+  '<div class="field"><label>迄日</label><input type="date" id="detailTo" value="'+esc(d?.to||today())+'"></div>'+
+  '<div class="field"><label>分店</label><select id="detailBranch"><option value="">全部</option>'+
+  options(app.data.branches||[],x=>x.name)+'</select></div>'+
+  '<div class="field"><label>部門</label><select id="detailDepartment"><option value="">全部</option>'+
+  options(app.data.departments||[],x=>x.name)+'</select></div>'+
+  '<div class="field"><label>員工</label><select id="detailMember"><option value="">全部</option>'+
+  options(me,x=>x.display_name)+'</select></div></div>'+
+  '<div class="flex"><button class="btn primary" data-extra="runAttendanceDetail">查詢出勤明細</button>'+
+  '<button class="btn" data-extra="exportAttendanceDetail" '+(!d?'disabled':'')+'>下載明細 CSV</button></div>';
+ const tableRows=rows.map(r=>tr([
+  esc(r.code),esc(r.name),esc(r.day),esc(r.inAt),esc(r.outAt||'—'),
+  esc(r.workMinutes)+' 分鐘',r.incomplete?'<span class="chip pending">未完成</span>':'已配對']));
+ $('appContent').insertAdjacentHTML('beforeend',
+  panel('可篩選的出勤原始明細',dates+
+  (d?'<p class="muted">範圍內打卡事件 '+d.eventCount+' 筆，配對 '+rows.length+' 筆。休息時段從工作分鐘扣除；不代表正式法定薪資工時。</p>':'')+
+  table(['員工編號','員工','上班日期','上班打卡','下班打卡','工作分鐘','狀態'],tableRows)+
+  '<p class="muted">跨日班依實際上班打卡日期歸類；跨店打卡的分店須另與班表核對。正式員工僅可下載 RLS 授權的本人資料。</p>'));
+};
+$('appContent').addEventListener('click',async e=>{
+ const b=e.target.closest('[data-extra]');if(!b||b.disabled)return;
+ try{
+  if(b.dataset.extra==='runAttendanceDetail'){b.disabled=true;await runAttendanceDetail();}
+  else if(b.dataset.extra==='exportAttendanceDetail')reportDownload();
+ }catch(error){banner(error.message,true);}
+ finally{b.disabled=false;}
+});
