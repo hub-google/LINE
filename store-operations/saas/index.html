@@ -575,7 +575,7 @@ function unitQueuePanel(){
    field("本次候位人數","customer-queue-party",queuePartySize||1,"number",'min="1" max="20"')+
    menuSelectSection(customer?.tenant?.menu_queue_mode||"DISABLED",customer?.menu_items||[],queueChosenItems,"queue")+
    '<div class="staff-actionbar">'+btn("立即取號","unit-take","primary full",
-      (!s||!queuePartySize||s.date&&s.date!==taipei()?'disabled':''))+'</div>');
+      (!s||!queuePartySize||s.date&&s.date!==taipei()||!menuChoiceReady(customer?.tenant?.menu_queue_mode||"DISABLED",queueChosenItems,customer?.menu_items||[])?'disabled':''))+'</div>');
 }
 function unitSettingsPanel(isManager){
  const units=unitConfig?.units||[],chosen=units.find(x=>x.id===unitEditingId);
@@ -2127,7 +2127,7 @@ async function load(){err="";try{
  else if(view==="staff")staff=null;
   if((view==="customer"&&customer)||(view==="staff"&&staff)){
     try{
-      unitConfig=await rpc("so_unit_config",{p_slug:slug,p_date:view==="customer"?day:unitAdminDate});
+      unitConfig=await rpc("so_unit_config",{p_slug:slug,p_date:view==="customer"?(customerTab==="queue"?taipei():day):unitAdminDate});
       unitRecords=await rpc("so_unit_records",{p_slug:slug});
       const active=unitList();
       if(!active.some(u=>u.id===unitChoice))unitChoice=active[0]?.id||"";
@@ -2206,6 +2206,10 @@ document.addEventListener("click",async ev=>{
   customerTab=tab;progressTicketId="";crossCurrentStore=false;
   if(["reserve","queue"].includes(tab)&&!customer?.tenant.modules[tab==="reserve"?"reservation":"queue"])customerTab="home";
   stopQueueRealtime();
+  if(unitEnabled()&&["queue","reserve"].includes(customerTab)){
+    if(customerTab==="queue")day=taipei();
+    void load();return;
+  }
   if(customerTab==="progress"){queueLive=null;queueLiveShop="";void refreshCrossStoreOverview();}
   if(customerTab==="reserve"&&!unitEnabled())void refreshServiceSlots();
   else stopCrossQueueRealtime();
@@ -2975,7 +2979,7 @@ document.addEventListener("change",async ev=>{
  if(el.id==="customer-party"){syncBookingPartyInput(el.value);unitConfirmKey="";return;}
  if(el.id==="customer-queue-party"){
   const n=Number(el.value);queuePartySize=Number.isInteger(n)&&n>=1&&n<=20?n:0;
-  const button=document.querySelector('button[data-act="take"]');
+  const button=document.querySelector('button[data-act="take"],button[data-act="unit-take"]');
   if(button)button.disabled=!queuePartySize||!menuChoiceReady(customer?.tenant?.menu_queue_mode||"DISABLED",queueChosenItems,customer?.menu_items||[]);
   return;
  }
