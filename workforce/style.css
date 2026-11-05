@@ -84,3 +84,6 @@ body{margin:0;font-size:14px;line-height:1.55}button,select,input,textarea{font:
 
 /* E2E 2026-11-05: mobile dialogs must sit above the drawer, and confirmations cannot cover form controls. */
 @media(max-width:760px){.overlay{z-index:60;max-height:100dvh}.modal{max-height:calc(100dvh - 24px)}#toast{z-index:70;left:12px;right:12px;bottom:12px;max-width:none;pointer-events:none}.toast{padding:10px 12px;font-size:12px}}
+
+/* Only the latest transient status message should be visible; earlier pending timers may expire normally. */
+#toast .toast:not(:last-child){display:none}
