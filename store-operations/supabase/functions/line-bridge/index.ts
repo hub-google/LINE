@@ -608,6 +608,69 @@ async function dispatchPendingNotices(req: Request, origin: string | null): Prom
   return reply(200, { ok: true, inspected: due?.length || 0, sent, deferred, skipped }, origin);
 }
 
+// Platform-wide OA replies are navigation only. All private operations still
+// require verified LINE identity and tenant-scoped RPCs on the website.
+const PLATFORM_ENTRY = "https://hub-google.github.io/LINE/booking/";
+function platformBotMessage(command: string, welcome = false): Record<string, unknown> {
+  const input = command.trim().toLowerCase().slice(0, 120);
+  let title = "請選擇要使用的服務";
+  let link = PLATFORM_ENTRY+"directory.html?mode=search";
+  let label = "找店家預約";
+  if (welcome) {
+    title = "歡迎加入 LINE 預約服務平台！可以搜尋不同店家、線上預約、現場取號，也能查看自己的預約和號碼。需要操作時再驗證 LINE 身分，不用另外註冊網站帳密。";
+  } else if (!/客服|協助|幫助|問題|聯絡|人工/.test(input) && /商家|店家開通|申請開通|店員|管理後台|後台/.test(input)) {
+    title = "商家可申請開通門市，已有帳號的店員請進入管理後台。";
+    link = PLATFORM_ENTRY+"merchant-register.html";
+    label = "申請商家開通";
+  } else if (/客服|協助|幫助|問題|聯絡|人工/.test(input)) {
+    title = "需要協助嗎？請先查看操作說明。若需要人工協助，請在此聊天室留言問題、操作時間與畫面；勿傳送密碼、Channel Secret 或 Access Token。是否能即時人工回覆依平台客服服務時間為準。";
+    link = PLATFORM_ENTRY+"merchant-center.html#guide";
+    label = "操作教學";
+  } else if (/遊戲|逛街|探索/.test(input)) {
+    title = "開啟遊戲逛街模式，探索公開店家。";
+    link = PLATFORM_ENTRY+"directory.html?mode=game";
+    label = "遊戲逛街";
+  } else if (/我的|紀錄|紀錄查詢|歷史|取消|修改/.test(input)) {
+    title = "個人紀錄需完成 LINE 身分驗證，才能查看跨店預約與取號。";
+    link = PLATFORM_ENTRY+"directory.html?mode=mine";
+    label = "我的紀錄";
+  } else if (/叫號|看板|進度|輪到|排到/.test(input)) {
+    title = "先找到你的店家，再查看所屬門市的叫號看板；個人進度以自己的號碼紀錄為準。";
+    link = PLATFORM_ENTRY+"directory.html?mode=queue";
+    label = "尋找叫號看板";
+  } else if (/取號|抽號|排隊|候位|領號/.test(input)) {
+    title = "選擇店家後即可進行現場取號，取號前會驗證 LINE 身分。";
+    link = PLATFORM_ENTRY+"directory.html?mode=queue";
+    label = "現場取號";
+  } else if (/預約|找店|訂位|掛號/.test(input)) {
+    title = "先搜尋店家，選擇服務或場次後即可進行預約。";
+  }
+  return {
+    type: "text",
+    text: title+"\n"+link,
+    quickReply: {
+      items: [
+        {type:"action",action:{type:"uri",label,uri:link}},
+        {type:"action",action:{type:"uri",label:"我的紀錄",uri:PLATFORM_ENTRY+"directory.html?mode=mine"}},
+        {type:"action",action:{type:"uri",label:"現場取號",uri:PLATFORM_ENTRY+"directory.html?mode=queue"}},
+      ],
+    },
+  };
+}
+async function replyToLine(token: string, replyToken: string,
+                           message: Record<string, unknown>, redelivery = false): Promise<boolean> {
+  const response = await fetch("https://api.line.me/v2/bot/message/reply", {
+    method:"POST",
+    headers:{authorization:"Bearer "+token,"content-type":"application/json"},
+    body:JSON.stringify({replyToken,messages:[message]}),
+  });
+  if (response.ok) return true;
+  // LINE reply tokens are one-use. A redelivery after a valid first reply
+  // can return 400; never create a new push message in this case.
+  if (response.status===400 && redelivery) return false;
+  throw new Error("LINE_REPLY_FAILED_"+response.status);
+}
+
 async function webhook(req: Request, origin: string | null, merchantSlug = "") {
   let merchantTenantId: string | null = null;
   let ownOa: MerchantLineConfig | null = null;
@@ -640,7 +703,7 @@ async function webhook(req: Request, origin: string | null, merchantSlug = "") {
   const events = payload.events.filter((item): item is Record<string, unknown> =>
     item !== null && typeof item === "object" &&
     (item as { type?: unknown }).type !== undefined &&
-    ["follow", "unfollow", "postback"].includes(String((item as { type: unknown }).type)));
+    ["follow", "unfollow", "postback", "message"].includes(String((item as { type: unknown }).type)));
   if (!events.length) return reply(200, { ok: true }, origin);
   try {
     const db = service();
@@ -655,6 +718,20 @@ async function webhook(req: Request, origin: string | null, merchantSlug = "") {
           !/^U[a-f0-9]{32}$/i.test(source.userId) ||
           typeof time !== "number" || !Number.isFinite(time) || !Number.isFinite(new Date(time).getTime())) {
         console.warn("LINE follow event missing valid identifier or timestamp");
+        continue;
+      }
+      if (event.type === "message") {
+        // Do not take over a connected merchant's own OA conversation.
+        if (merchantTenantId) continue;
+        const message = event.message as { type?: unknown; text?: unknown } | undefined;
+        const replyToken = event.replyToken;
+        if (message?.type !== "text" || typeof message.text !== "string" ||
+            typeof replyToken !== "string" || !replyToken || replyToken.length>512) continue;
+        const token = Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
+        if (!token) throw new Error("LINE_MESSAGING_NOT_CONFIGURED");
+        const redelivery=(event.deliveryContext as {isRedelivery?:unknown}|undefined)?.isRedelivery===true;
+        const sent=await replyToLine(token,replyToken,platformBotMessage(message.text),redelivery);
+        if (sent) processed++; else duplicates++;
         continue;
       }
       if (event.type === "postback") {
@@ -722,8 +799,27 @@ async function webhook(req: Request, origin: string | null, merchantSlug = "") {
         });
       if (applyError) throw applyError;
       if (outcome === "DUPLICATE") duplicates++;
-      else if (outcome === "PROCESSED") processed++;
-      else throw new Error("UNEXPECTED_LINE_EVENT_RESULT");
+      else if (outcome === "PROCESSED") {
+        processed++;
+        // Never send platform branding to a merchant-owned OA.
+        // Avoid duplicate greetings: only reply on the first processed follow.
+        if (event.type === "follow" && !merchantTenantId &&
+            Deno.env.get("LINE_PLATFORM_WELCOME_REPLY")==="true") {
+          const token=Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
+          const replyToken=event.replyToken;
+          if (token && typeof replyToken==="string" && replyToken.length<=512) {
+            try {
+              await replyToLine(token,replyToken,platformBotMessage("",true),
+                (event.deliveryContext as {isRedelivery?:unknown}|undefined)?.isRedelivery===true);
+            } catch (cause) {
+              // The friendship event has been recorded; a failed greeting must
+              // not reset friend state or make LINE retry the whole event.
+              console.warn("Platform OA welcome reply failed",
+                cause instanceof Error ? cause.name : "unknown");
+            }
+          }
+        }
+      } else throw new Error("UNEXPECTED_LINE_EVENT_RESULT");
     }
     return reply(200, { ok: true, processed, duplicates }, origin);
   } catch (error) {
