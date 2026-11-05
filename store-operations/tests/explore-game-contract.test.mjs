@@ -29,7 +29,7 @@ test("explore lists real published stores with category/area/service filters",()
  assert.match(directory,/function areaOf\(shop\)/);
  assert.match(directory,/function serviceMatches\(shop,service\)/);
  assert.match(directory,/so_public_directory/);
- assert.match(directory,/const filtered=\[\.\.\.official,\.\.\.testMatches\]/);
+ assert.match(directory,/filtered=\[\.\.\.searchResults,\.\.\.testMatches\]/);
 });
 
 test("game mode has map to street to storefront flow and works on mobile",()=>{
@@ -85,4 +85,30 @@ test("game shop links reuse existing OA-specific booking routes",()=>{
  assert.match(js,/shop\.test_board_only\)/);
  assert.match(directory,/selected\?\.oa_mode==="PLATFORM"/);
  assert.match(directory,/if\(original\.searchParams\.get\("view"\)!=="customer"\)return/);
+});
+
+test("default merchant list is server-ranked Top 50; search uses separate paginated real results",()=>{
+ const ranking=read("supabase/migrations/20261105171000_public_store_popularity_rank.sql");
+ assert.match(directory,/id="results-heading">熱門店家排行/);
+ assert.match(directory,/so_public_popular_stores/);
+ assert.match(directory,/so_public_store_search/);
+ assert.match(directory,/p_limit:50/);
+ assert.match(directory,/p_page:searchPage/);
+ assert.match(directory,/searchCriteria\(\)/);
+ assert.match(directory,/filtered=popular\.slice\(0,50\)/);
+ assert.match(directory,/filtered=\[\.\.\.searchResults,\.\.\.testMatches\]/);
+ assert.match(directory,/searchPage\*50>=searchTotal/);
+ assert.match(directory,/searchLoading/);
+ assert.match(directory,/人氣|近30天|近 30 天/);
+ assert.match(ranking,/private\.so_store_activity_daily/);
+ assert.match(ranking,/so_reservation_activity_daily/);
+ assert.match(ranking,/so_ticket_activity_daily/);
+ assert.match(ranking,/old\.status <> 'CANCELLED'/);
+ assert.match(ranking,/old\.reservation_id is null/);
+ assert.match(ranking,/t\.slug not like 'qa-%'/);
+ assert.match(ranking,/t\.directory_enabled=true/);
+ assert.match(ranking,/limit least\(greatest\(coalesce\(p_limit,50\),1\),50\)/);
+ assert.match(ranking,/and a\.activity_date between/);
+ assert.match(ranking,/grant execute on function public\.so_public_store_search/);
+ assert.doesNotMatch(directory,/service_role/);
 });
