@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {readFileSync} from "node:fs";
+import {readFileSync,readdirSync} from "node:fs";
 import {fileURLToPath} from "node:url";
 import path from "node:path";
 import {spawnSync} from "node:child_process";
@@ -47,4 +47,13 @@ test("directory cards are styled and fully clickable on mobile and desktop",()=>
  assert.match(directory,/primaryHref=boardHref/);
  assert.match(directory,/els\.test\.classList\.toggle\("hidden",mode==="mine"\|\|Boolean\(keyword\)\)/);
  assert.doesNotMatch(style,/border-color:var\(--brand\}/);
+});
+
+
+test("public pages avoid redundant login-status labels on links and buttons",()=>{
+ const pages=readdirSync(path.join(base,"saas")).filter(x=>x.endsWith(".html"));
+ for(const name of pages){
+  const markup=readFileSync(path.join(base,"saas",name),"utf8");
+  assert.doesNotMatch(markup,/\u514d\u767b\u5165/,name+" should use concise public board naming");
+ }
 });
