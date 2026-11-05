@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-Hant"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="line-saas-build" content="f345946bb5573d816c4d329c4f765dc27e000ef4">
+<script defer src="./version-watch.js?build=f345946bb5573d816c4d329c4f765dc27e000ef4"></script>
+<meta name="theme-color" content="#183d32">
+<title>LINE 預約｜通用公版互動預覽</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif;color:#213d32;background:#f5f8f3}
+*{box-sizing:border-box}body{margin:0;min-height:100vh}
+header{background:#fff;border-bottom:1px solid #e6ece7;padding:14px clamp(18px,4vw,52px);display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{font-size:19px;font-weight:800;display:flex;align-items:center;gap:10px}.logo{display:grid;place-items:center;background:#173e34;color:#fff;width:33px;height:33px;border-radius:9px}
+a{color:inherit;text-decoration:none}.link{font-size:13px;border:1px solid #cfded4;border-radius:12px;padding:11px 16px;font-weight:700;background:#fff}
+.wrap{max-width:1250px;margin:auto;padding:38px 20px 50px}.intro{margin-bottom:24px;display:flex;gap:15px;align-items:end;justify-content:space-between}
+.eyebrow{font-size:12px;letter-spacing:.12em;font-weight:800;color:#287454}h1{font-size:clamp(25px,3vw,39px);margin:8px 0 12px;letter-spacing:-.04em}
+.intro p{font-size:15px;color:#6a7f73;line-height:1.7;margin:0}
+.layout{display:grid;grid-template-columns:minmax(260px,320px) minmax(0,1fr);gap:22px;align-items:start}
+.config,.surface{background:#fff;border-radius:22px;border:1px solid #e2eae2;box-shadow:0 15px 44px rgba(18,62,42,.04);overflow:hidden}
+.config{padding:25px;position:sticky;top:20px}
+h2{font-size:18px;margin:0 0 8px}.desc{font-size:13px;color:#77877c;line-height:1.6;margin:0 0 24px}
+label.label{font-size:12px;font-weight:800;display:block;margin-bottom:8px}
+select{width:100%;border:1px solid #cbdcd0;border-radius:12px;font:inherit;color:#234a37;padding:13px;background:#fff;margin-bottom:20px;cursor:pointer}
+.control{display:flex;align-items:start;gap:11px;padding:17px 0;border-bottom:1px solid #f0f2ef;cursor:pointer}
+.control input{accent-color:#228559;width:18px;height:18px;flex:none;margin:2px 0}.control strong{font-size:14px;display:block}.control small{color:#809085;display:block;margin-top:6px;line-height:1.55}
+.note{margin-top:24px;background:#eff7f0;border:1px solid #ddecdf;padding:15px;border-radius:12px;font-size:12px;line-height:1.65;color:#456d51}
+.surface-head{background:#eef6ee;padding:24px;display:flex;align-items:center;gap:14px}
+.shop-icon{width:52px;height:52px;border-radius:15px;background:#244d37;color:#fff;display:grid;place-items:center;font-weight:900;font-size:24px}
+.surface-head h2{margin:0 0 4px;font-size:21px}.surface-head p{margin:0;color:#678473;font-size:13px}
+.surface-content{padding:24px}
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.action{border:1px solid #e4ebe5;background:#fbfdfb;padding:17px;border-radius:15px;min-width:0;text-align:left;display:flex;align-items:center;gap:13px;cursor:pointer;font:inherit}
+.action.active{border-color:#24805a;background:#eaf6ed;box-shadow:inset 0 0 0 1px #24805a}
+.action-icon{width:39px;height:39px;border-radius:12px;display:grid;place-items:center;background:#e5f0e6;font-size:21px}
+.action strong,.action small{display:block}.action strong{font-size:15px}.action small{font-size:12px;color:#748779;margin-top:5px}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:25px 0 14px}.section-head h3{font-size:18px;margin:0}.section-head span{font-size:12px;color:#7a8d7d}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.chips button{background:#f4f7f2;border:1px solid #e3eae2;color:#425d4a;font:inherit;padding:9px 16px;border-radius:999px;font-size:13px;cursor:pointer}
+.chips button.selected{background:#184d37;color:#fff;border-color:#184d37}
+.units{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.unit{width:100%;border-radius:15px;border:1px solid #e2eae3;background:#fff;text-align:left;padding:16px;display:flex;justify-content:space-between;gap:10px;align-items:center;font:inherit;color:#234b38;cursor:pointer}
+.unit.selected{border:2px solid #188556;background:#f0f9f1;padding:15px}
+.unit .group{font-size:11px;color:#74907b}.unit strong,.unit small{display:block}.unit strong{font-size:16px;margin:5px 0}.unit small{font-size:12px;color:#738575;line-height:1.6}
+.unit-num{flex:none;text-align:center}.unit-num strong{font-size:28px;color:#155d40}.unit-num small{font-size:10px}
+.queue{margin-top:18px;border-radius:17px;background:#f4f8f4;padding:20px}
+.queue-header{display:flex;justify-content:space-between;align-items:center;gap:10px}.queue-header strong{font-size:16px}.queue-header span{font-size:12px;color:#6e8574}
+.numbers{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:15px}
+.metric{text-align:center;border-radius:14px;background:#fff;padding:16px}.metric small{display:block;color:#729078;font-size:12px}.metric b{display:block;font-size:40px;margin:8px 0 1px;font-variant-numeric:tabular-nums}
+.queue p{color:#6c7f72;line-height:1.7;font-size:13px}
+.cta{background:#176c48;color:#fff;padding:14px;border-radius:12px;text-align:center;font-size:15px;font-weight:800}
+.feedback{margin-top:12px;font-size:12px;color:#51735d;min-height:19px}
+.footer{font-size:12px;color:#77917f;margin-top:20px;text-align:center}
+@media(max-width:950px){.layout{grid-template-columns:1fr}.config{position:static}.surface-content{padding:18px}}
+@media(max-width:580px){.wrap{padding:20px 12px}.intro{align-items:start;flex-direction:column}.units{grid-template-columns:1fr}.surface-head{padding:19px}.surface-head h2{font-size:19px}.action{padding:13px;gap:9px}.action-icon{width:32px;height:32px;font-size:17px}.action strong{font-size:14px}.queue{padding:15px}.numbers{gap:8px}}
+</style></head><body>
+<header><div class="brand"><span class="logo">L</span>LINE 預約 <span style="font-size:12px;color:#799083;font-weight:500">通用服務公版</span></div><a class="link" href="./?view=staff">返回商家後台</a></header>
+<main class="wrap"><div class="intro"><div><div class="eyebrow">同一套介面 · 自動適配不同商家</div><h1>通用預約與叫號版型</h1><p>切換醫院、餐飲、美髮及服務櫃台，再勾選功能，右側顧客網頁會即時改變。</p></div></div>
+<div class="layout">
+<aside class="config"><h2>商家後台設定預覽</h2><p class="desc">正式設定會儲存在商家的 Supabase 資料中。</p>
+<label class="label" for="kind">選擇示範產業</label>
+<select id="kind"><option value="hospital">醫院／診所</option><option value="restaurant">餐飲店</option><option value="salon">美髮店</option><option value="counter">服務櫃台</option></select>
+<label class="control"><input id="multi" type="checkbox" checked><span><strong>啟用多服務單位</strong><small>可選擇不同醫師、設計師、服務區或櫃台</small></span></label>
+<label class="control"><input id="groups" type="checkbox" checked><span><strong>顯示服務分類</strong><small>有多個單位時，可再依科別、類型篩選</small></span></label>
+<label class="control"><input id="linked" type="checkbox" checked><span><strong>預約報到後加入叫號</strong><small>預約與叫號連動，仍沿用同一套模組</small></span></label>
+<div class="note"><strong>此頁是實際部署的可操作公版預覽。</strong> 範例名稱、號碼與名額均為示意，不會產生任何真實預約或發送 LINE 通知。正式商家可使用同樣的設定邏輯。</div>
+</aside><section class="surface">
+<div class="surface-head"><div class="shop-icon" id="icon">+</div><div><h2 id="shop"></h2><p id="subtitle"></p></div></div>
+<div class="surface-content"><div class="action-grid">
+<button type="button" class="action active" id="reserve"><span class="action-icon">▦</span><span><strong>線上預約</strong><small>選擇日期與時段</small></span></button>
+<button type="button" class="action" id="queue"><span class="action-icon">≡</span><span><strong>即時叫號</strong><small>查看服務進度</small></span></button></div>
+<div id="selection"></div>
+<div class="queue"><div class="queue-header"><strong id="selected-unit">今日服務</strong><span id="session"></span></div>
+<div class="numbers"><div class="metric"><small>目前叫號</small><b id="current">—</b></div><div class="metric"><small>前方候位</small><b id="waiting">—</b></div></div>
+<p id="explain"></p><div class="cta" id="cta"></div><div class="feedback" id="feedback" role="status"></div></div>
+</div></section></div>
+<p class="footer">範例資料為互動展示；正式營運版位於同一 LINE 預約專案，使用真實 Supabase 資料與既有 LINE 身分流程。</p>
+</main>
+<script>
+const presets={
+hospital:{name:"仁和綜合醫院",subtitle:"門診預約與候診進度",icon:"＋",units:[
+ {id:"h1",group:"內科",name:"王醫師",session:"上午診 09:00–12:00",room:"診間 301",number:21,wait:6},
+ {id:"h2",group:"內科",name:"李醫師",session:"下午診 14:00–17:00",room:"診間 302",number:14,wait:4},
+ {id:"h3",group:"兒科",name:"陳醫師",session:"上午診 09:00–12:00",room:"診間 201",number:37,wait:8},
+ {id:"h4",group:"骨科",name:"林醫師",session:"晚上診 18:00–21:00",room:"診間 305",number:9,wait:5}]},
+restaurant:{name:"青禾餐館",subtitle:"用餐預約與現場取號",icon:"食",units:[
+ {id:"r1",group:"內用",name:"內用候位",session:"午餐 11:00–14:00",room:"用餐區",number:18,wait:3},
+ {id:"r2",group:"外帶",name:"外帶取餐",session:"全天 11:00–20:00",room:"外帶櫃台",number:42,wait:5}]},
+salon:{name:"日禾造型",subtitle:"設計師預約及到店服務",icon:"髮",units:[
+ {id:"s1",group:"設計師",name:"小安設計師",session:"10:00–13:00",room:"剪髮／燙髮",number:2,wait:1},
+ {id:"s2",group:"設計師",name:"沐沐設計師",session:"14:00–18:00",room:"美髮／護髮",number:4,wait:2}]},
+counter:{name:"市民服務中心",subtitle:"辦事預約與即時叫號",icon:"服",units:[
+ {id:"c1",group:"證件服務",name:"證件櫃台 A",session:"09:00–12:00",room:"一樓",number:25,wait:7},
+ {id:"c2",group:"申辦服務",name:"申辦櫃台 B",session:"13:00–17:00",room:"二樓",number:11,wait:3}]}};
+const el=id=>document.getElementById(id);
+const state={group:"全部",unit:"",intent:"reserve"};
+const clean=s=>String(s??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+function render(){
+ const kind=el("kind").value,multi=el("multi").checked,grouped=multi&&el("groups").checked,linked=el("linked").checked;
+ el("groups").disabled=!multi;
+ const sample=presets[kind],all=multi?sample.units:[{...sample.units[0],id:"single",group:"",name:"今日服務",session:"今日開放場次"}];
+ const cats=["全部",...new Set(all.map(x=>x.group||"一般服務"))];
+ if(!cats.includes(state.group))state.group="全部";
+ const list=grouped&&state.group!=="全部"?all.filter(x=>(x.group||"一般服務")===state.group):all;
+ const unit=list.find(x=>x.id===state.unit)||list[0]||all[0];state.unit=unit.id;
+ el("shop").textContent=sample.name;el("subtitle").textContent=sample.subtitle;el("icon").textContent=sample.icon;
+ el("reserve").classList.toggle("active",state.intent==="reserve");
+ el("queue").classList.toggle("active",state.intent==="queue");
+ el("selection").innerHTML=!multi?"":'<div class="section-head"><h3>選擇服務單位</h3><span>'+list.length+' 個選項</span></div>'+
+   (grouped?'<div class="chips">'+cats.map(g=>'<button type="button" data-group="'+clean(g)+'" class="'+(state.group===g?"selected":"")+'">'+clean(g)+'</button>').join("")+'</div>':'')+
+   '<div class="units">'+list.map(u=>'<button type="button" class="unit '+(state.unit===u.id?"selected":"")+'" data-unit="'+clean(u.id)+'"><span><span class="group">'+clean(u.group)+'</span><strong>'+clean(u.name)+'</strong><small>'+clean(u.session)+' · '+clean(u.room)+'</small></span><span class="unit-num"><strong>'+u.number+'</strong><small>目前叫號</small></span></button>').join("")+'</div>';
+ el("selected-unit").textContent=unit.name;el("session").textContent=unit.session;
+ el("current").textContent=unit.number;el("waiting").textContent=unit.wait;
+ el("explain").textContent=linked?"預約完成後，現場報到才加入本服務單位的候位隊列。":"預約與取號獨立運作，不會因報到自動發號。";
+ el("cta").textContent=state.intent==="reserve"?"選擇預約日期與時段（預覽）":"查看此單位叫號進度（預覽）";
+ el("feedback").textContent="";
+}
+el("kind").addEventListener("change",()=>{state.unit="";state.group="全部";render()});
+for(const key of ["multi","groups","linked"])el(key).addEventListener("change",()=>{state.unit="";state.group="全部";render()});
+for(const intent of ["reserve","queue"])el(intent).addEventListener("click",()=>{state.intent=intent;render()});
+el("selection").addEventListener("click",ev=>{
+ const chip=ev.target.closest("button[data-group]"),unit=ev.target.closest("button[data-unit]");
+ if(chip){state.group=chip.dataset.group;state.unit="";render()}
+ if(unit){state.unit=unit.dataset.unit;render()}
+});
+el("cta").addEventListener("click",()=>{el("feedback").textContent="這是版型預覽；真正送出預約或取號請至商家顧客網站。"});
+render();
+</script></body></html>
