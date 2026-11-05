@@ -150,8 +150,12 @@ try{
   assert.match(await page.locator('#appContent').innerText(),/通知|收件匣/);
   await tab('anomalies');
   assert.match(await page.locator('#appContent').innerText(),/出勤異常|待處理異常/);
+  await page.locator('#anomalyFrom').fill('2026-11-04');
+  await page.locator('#anomalyThrough').fill('2026-11-04');
+  await page.locator('#appContent [data-extra="scanAttendance"]').first().click();
+  await page.locator('#toast').getByText(/已完成.*個班別檢查/).first().waitFor({state:'visible',timeout:25000});
   await shot('15-attendance-anomalies');
-  return 'tabs visible';
+  return 'notification inbox visible and attendance scan triggered by real browser click';
  });
 }catch(e){
  process.exitCode=1;
