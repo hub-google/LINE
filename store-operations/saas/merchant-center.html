@@ -6,7 +6,7 @@
 <meta name="line-saas-build" content="__LINE_SAAS_BUILD__">
 <script defer src="./version-watch.js?build=__LINE_SAAS_BUILD__"></script>
 <meta name="description" content="LINE 預約店家操作指南：從申請開通、LINE 官方帳號模式、預約與取號設定，到店員叫號、顧客通知及異常處理，搭配畫面逐步教學。">
-<title>商家操作指南｜LINE 預約平台</title>
+<title>排隊怪獸｜商家操作指南</title>
 <style>
 :root{--ink:#1d3533;--green:#176c58;--deep:#133e35;--line:#dde8e3;--bg:#f8faf8;--surface:#fff;--muted:#647771;--mint:#eaf4ee;--orange:#ce8054;--gold:#f7e6c6;--shadow:0 18px 50px rgba(28,58,47,.07);font-family:Inter,"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;color:var(--ink);background:var(--bg)}
 *{box-sizing:border-box}
@@ -153,11 +153,11 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #e5
 @media(max-width:390px){.brand{font-size:12px}.top-link.primary{font-size:10px!important}.hero-actions .action{font-size:11px}.flow-arrow{flex-basis:7px}.flow-step{padding:8px 3px}.flow-step small{font-size:8px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.action{transition:none}}
 </style>
-<link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script></head>
+<link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=__LINE_SAAS_BUILD__"></head>
 <body>
 <header class="top">
   <div class="top-inner">
-    <a class="brand" href="./home.html"><span class="brand-icon" aria-hidden="true">L</span><span>LINE 預約平台<small>商家操作指南 / HELP CENTER</small></span></a>
+    <a class="brand" href="./home.html"><span class="brand-icon" aria-hidden="true"></span><span>排隊怪獸<small>商家操作指南 / HELP CENTER</small></span></a>
     <div class="site-auth-slot" id="site-auth-root" aria-label="使用者登入狀態"><a class="site-auth-button site-auth-login" href="./?view=customer&amp;merchant=greenfield-salon&amp;tab=home">使用 LINE 登入</a></div><nav class="top-links" aria-label="網站連結">
       <a class="top-link" href="./home.html">平台首頁</a>
       <a class="top-link" href="./merchant-register.html">申請開通</a>
@@ -200,7 +200,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #e5
         <div class="panel example">
           <div class="screen"><div style="width:100%">
             <div class="screen-inner">
-              <div class="screen-header"><span class="screen-title"><span class="app-mark">L</span> 商家合作 / 申請開通</span><span class="demo-pill">商家負責人</span></div>
+              <div class="screen-header"><span class="screen-title"><span class="app-mark" aria-hidden="true"></span> 商家合作 / 申請開通</span><span class="demo-pill">商家負責人</span></div>
               <div class="screen-body">
                 <div class="demo-label">商家帳號</div>
                 <div class="demo-grid"><div class="demo-field">Email</div><div class="demo-field">密碼</div></div>
@@ -239,7 +239,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #e5
         <div class="panel example">
           <div class="screen"><div style="width:100%">
             <div class="screen-inner">
-              <div class="screen-header"><span class="screen-title"><span class="app-mark">L</span> 門市營運後台</span><div class="dot-group"><i></i><i></i><i></i></div></div>
+              <div class="screen-header"><span class="screen-title"><span class="app-mark" aria-hidden="true"></span> 門市營運後台</span><div class="dot-group"><i></i><i></i><i></i></div></div>
               <div class="demo-side">
                 <div class="demo-menu">
                   <div>工作台</div><div>預約管理</div><div>叫號管理</div><div>菜單及服務</div><div class="picked">企業設定</div>
@@ -316,7 +316,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #e5
           </div>
           <div class="panel example">
             <div class="screen"><div style="width:100%">
-              <div class="screen-inner"><div class="screen-header"><span class="screen-title"><span class="app-mark">L</span> 企業設定</span><span class="demo-pill amber">管理者</span></div>
+              <div class="screen-inner"><div class="screen-header"><span class="screen-title"><span class="app-mark" aria-hidden="true"></span> 企業設定</span><span class="demo-pill amber">管理者</span></div>
                 <div class="screen-body"><div style="font-weight:850;margin-bottom:10px">LINE 官方帳號串接</div><div class="demo-row"><span>目前通知來源</span><b>平台 LINE OA</b></div><div class="demo-label">商家 LIFF ID</div><div class="demo-field">請輸入 LINE LIFF ID</div><div class="demo-label">Messaging API 憑證</div><div class="demo-field">••••••••••••••</div><span class="demo-btn">驗證並連接自有 LINE OA</span><p class="demo-muted" style="margin-top:10px">連接後設定該門市專屬 Webhook</p></div>
               </div><p class="caption">畫面示意｜企業設定／LINE 官方帳號串接</p>
             </div></div>
@@ -347,7 +347,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #e5
         <div class="section-head"><span class="section-index">05</span><div><h2>店員每天怎麼管理預約？</h2><p>從「預約管理」查看當日與跨日待處理預約，依實際情況修改狀態。</p></div></div>
         <div class="panel example">
           <div class="screen"><div style="width:100%">
-            <div class="screen-inner"><div class="screen-header"><span class="screen-title"><span class="app-mark">L</span> 預約管理</span><span class="demo-pill">今日</span></div>
+            <div class="screen-inner"><div class="screen-header"><span class="screen-title"><span class="app-mark" aria-hidden="true"></span> 預約管理</span><span class="demo-pill">今日</span></div>
               <div class="screen-body">
                 <div class="demo-grid"><div class="demo-stat"><small>待處理預約</small><strong>05</strong></div><div class="demo-stat"><small>已報到未結案</small><strong>02</strong></div></div>
                 <div class="demo-label">篩選預約</div><div class="demo-field">搜尋編號、姓名或服務　⌕</div>
@@ -372,7 +372,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #e5
         <div class="section-head"><span class="section-index">06</span><div><h2>現場取號與叫號怎麼操作？</h2><p>取號是顧客領取候位號碼；叫號是店員依現場情況推進隊列。</p></div></div>
         <div class="panel example">
           <div class="screen"><div style="width:100%">
-            <div class="screen-inner"><div class="screen-header"><span class="screen-title"><span class="app-mark">L</span> 叫號管理</span><span class="demo-pill">午場</span></div>
+            <div class="screen-inner"><div class="screen-header"><span class="screen-title"><span class="app-mark" aria-hidden="true"></span> 叫號管理</span><span class="demo-pill">午場</span></div>
               <div class="screen-body">
                 <div class="demo-grid"><div class="demo-stat"><small>候位中</small><strong>04</strong></div><div class="demo-stat"><small>已叫號</small><strong>01</strong></div></div>
                 <div class="number-banner"><small>目前叫號</small><strong>12</strong><small>下一位依實際候位順序</small></div>
