@@ -65,8 +65,8 @@ begin
      order by max(created_at) desc limit 250
    ), flags_by_identity as (
      select x.identity_key,
-       coalesce((array_agg(f.tags order by f.updated_at desc nulls last)
-         filter(where f.user_id is not null))[1], '{}'::text[]) as tags,
+       coalesce((array_agg(to_jsonb(f.tags) order by f.updated_at desc nulls last)
+         filter(where f.user_id is not null))[1], '[]'::jsonb) as tags,
        coalesce((array_agg(f.notes order by f.updated_at desc nulls last)
          filter(where f.user_id is not null))[1], '') as notes,
        bool_or(coalesce(f.blacklisted,false)) as blacklisted,
@@ -79,7 +79,7 @@ begin
    select jsonb_agg(to_jsonb(output) order by output.last_booking desc)
    from (
      select g.id,g.name,g.bookings,g.no_shows,g.last_booking,
-       coalesce(f.tags,'{}'::text[]) as tags,
+       coalesce(f.tags,'[]'::jsonb) as tags,
        coalesce(f.notes,'') as notes,
        coalesce(f.blacklisted,false) as blacklisted,
        coalesce(f.block_new_bookings,false) as block_new_bookings
@@ -153,6 +153,8 @@ begin
 end;
 $fn$;
 
+revoke all on function public.so_review_merchant_request(uuid,boolean) from public,anon;
+grant execute on function public.so_review_merchant_request(uuid,boolean) to authenticated;
 revoke all on function public.so_staff_customer_book(text) from public,anon;
 grant execute on function public.so_staff_customer_book(text) to authenticated;
 revoke all on function public.so_staff_customer_reservation_history(text,uuid,integer,integer) from public,anon;
