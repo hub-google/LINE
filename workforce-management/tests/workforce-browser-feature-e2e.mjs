@@ -72,9 +72,9 @@ try{
  });
  let lin,zhang,beforeLinMember,beforeZhangMember;
  const d=await getData();
- const latest=d.shifts.reduce((max,x)=>Math.max(max,Date.parse(x.starts_at)||0),Date.now());
- const shiftDayLin=new Date(latest+4*86400000).toISOString().slice(0,10);
- const shiftDayZhang=new Date(latest+5*86400000).toISOString().slice(0,10);
+ const latestShiftStart=d.shifts.reduce((max,x)=>Math.max(max,Date.parse(x.starts_at)||0),Date.now());
+ const shiftDayLin=new Date(latestShiftStart+4*86400000).toISOString().slice(0,10);
+ const shiftDayZhang=new Date(latestShiftStart+5*86400000).toISOString().slice(0,10);
  await run('UI creates draft shift then publishes it',async()=>{
   lin=await shift('林小美',shiftDayLin,'draft');
   assert.equal(lin.status,'draft');
