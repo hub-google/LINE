@@ -29,3 +29,35 @@
  .site-auth-name .site-auth-label{max-width:68px}
  .site-auth-button{padding:6px 9px;font-size:11px}
 }
+
+
+/* Reserve real header space rather than overlaying or blocking navigation. */
+.site-head .nav{flex-wrap:wrap;row-gap:10px}
+.site-head .site-auth-slot{margin-left:auto}
+.page-header .header-row{flex-wrap:wrap}
+.page-header .header-links{flex-wrap:wrap;justify-content:flex-end}
+.page-header .site-auth-slot{color:#fff}
+body:has(.shop-title) > header:has(.site-auth-slot){flex-wrap:wrap}
+body:has(.shop-title) > header .site-auth-slot{margin-left:auto}
+body:has(.shop-title) > header time{margin-left:auto}
+body:has(.top) > header .top:has(.site-auth-slot){flex-wrap:wrap}
+body:has(.top) > header .top > .site-auth-slot{margin-left:auto}
+header:has(.site-auth-slot) > .wrap:has(.site-auth-slot){display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+header.top .top-inner:has(.site-auth-slot){flex-wrap:wrap;gap:10px}
+header.top .top-inner > .site-auth-slot{margin-left:auto}
+body:has(#qa-login-panel) > header:has(.site-auth-slot),
+body:has(>main>h1) > header:has(.site-auth-slot){display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+body:has(#qa-login-panel) > header .site-auth-slot{margin-left:auto}
+body:has(#qa-login-panel) > header > div:first-child{margin:0}
+@media(max-width:820px){
+ .site-head .site-auth-slot{margin-left:auto}
+ .site-head .nav-actions{display:none}
+ .page-header .header-row .header-links{width:100%;justify-content:space-between}
+ .page-header .header-row .site-auth-slot{margin-left:auto}
+ .site-auth-slot{justify-content:flex-end}
+}
+@media(max-width:480px){
+ .page-header .header-links a{font-size:12px;padding:6px}
+ body:has(.shop-title)>header .site-auth-slot{order:3;width:100%}
+ header.top .top-inner > .site-auth-slot{margin-left:0}
+}
