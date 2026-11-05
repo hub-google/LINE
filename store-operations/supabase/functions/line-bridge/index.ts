@@ -354,7 +354,7 @@ async function pushNotice(
   db: ReturnType<typeof service>,
   tenant: { id: string; name: string },
   recipient: string,
-  eventKind: "CALLED" | "RESERVED" | "TICKET_CREATED" | "TICKET_CANCELLED" | "RESERVATION_CANCELLED" | "RESERVATION_UPDATED" | "RESERVATION_RESTORED" | "QUEUE_NEAR",
+  eventKind: "CALLED" | "RESERVED" | "TICKET_CREATED" | "TICKET_CANCELLED" | "RESERVATION_CANCELLED" | "RESERVATION_UPDATED" | "RESERVATION_RESTORED" | "QUEUE_NEAR" | "RESERVATION_REMINDER_24H" | "RESERVATION_REMINDER_2H",
   referenceId: string,
   message: string | Record<string, unknown>,
   origin: string | null,
@@ -409,7 +409,7 @@ type NoticeJob = {
   id: number;
   tenant_id: string;
   event_kind: "CALLED" | "RESERVED" | "TICKET_CREATED" | "TICKET_CANCELLED" |
-    "RESERVATION_CANCELLED" | "RESERVATION_UPDATED" | "RESERVATION_RESTORED" | "QUEUE_NEAR";
+    "RESERVATION_CANCELLED" | "RESERVATION_UPDATED" | "RESERVATION_RESTORED" | "QUEUE_NEAR" | "RESERVATION_REMINDER_24H" | "RESERVATION_REMINDER_2H";
   reference_id: string;
   attempts: number;
   status: string;
@@ -422,7 +422,42 @@ async function dispatchOutboxItem(
   if (tenantErr) throw tenantErr;
   if (!tenant || tenant.status !== "ACTIVE") return { status: "SKIPPED", reason: "TENANT_INACTIVE" };
   let result: Response;
-  if (job.event_kind === "QUEUE_NEAR") {
+  if (job.event_kind === "RESERVATION_REMINDER_24H" ||
+      job.event_kind === "RESERVATION_REMINDER_2H") {
+    const { data: reminder, error: reminderError } = await db.from("so_booking_reminder_jobs")
+      .select("id,tenant_id,booking_id,reminder_kind,due_at,booking_start_at,status")
+      .eq("id", job.reference_id).eq("tenant_id", tenant.id).maybeSingle();
+    if (reminderError) throw reminderError;
+    const expected = job.event_kind === "RESERVATION_REMINDER_24H" ? "24H" : "2H";
+    if (!reminder || reminder.status !== "QUEUED" || reminder.reminder_kind !== expected)
+      return { status: "SKIPPED", reason: "REMINDER_NO_LONGER_CURRENT" };
+    const { data: booking, error: bookingError } = await db.from("so_reservations")
+      .select("id,tenant_id,user_id,status,booking_date,booking_time,party_size,selected_items")
+      .eq("tenant_id", tenant.id).eq("id", reminder.booking_id)
+      .is("deleted_at", null).maybeSingle();
+    if (bookingError) throw bookingError;
+    if (!booking || booking.status !== "CONFIRMED")
+      return { status: "SKIPPED", reason: "REMINDER_BOOKING_CANCELLED_OR_CHANGED" };
+    const now = Date.now();
+    const startsAt = Date.parse(booking.booking_date + "T" + booking.booking_time + "+08:00");
+    if (!Number.isFinite(startsAt) ||
+        startsAt !== Date.parse(reminder.booking_start_at) ||
+        now >= startsAt || now < Date.parse(reminder.due_at))
+      return { status: "SKIPPED", reason: "REMINDER_BOOKING_TIME_NOT_CURRENT" };
+    const when = expected === "24H" ? "24 小時" : "2 小時";
+    result = await pushNotice(db, tenant, booking.user_id, job.event_kind, job.reference_id,
+      flexNotice("預約提醒", [
+        "店家：" + tenant.name,
+        "您的預約將在 " + when + "後開始",
+        "預約日期：" + booking.booking_date,
+        "預約時間：" + String(booking.booking_time).slice(0, 5),
+        "預約人數：" + booking.party_size + " 位",
+        ...selectedServicesText(booking.selected_items), ...shopDetails(tenant),
+      ], [{
+        label: "查看我的預約",
+        uri: liffManageLink(await shopLinkContext(db, tenant), "reservation", booking.id, "view"),
+      }]), origin);
+  } else if (job.event_kind === "QUEUE_NEAR") {
     const { data: ticket, error } = await db.from("so_tickets")
       .select("id,tenant_id,user_id,status,ticket_no,number_prefix,queue_near_alert_threshold")
       .eq("tenant_id", tenant.id).eq("id", job.reference_id)
