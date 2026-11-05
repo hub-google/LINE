@@ -3,7 +3,7 @@
 <meta name="line-saas-build" content="__LINE_SAAS_BUILD__">
 <script defer src="./version-watch.js?build=__LINE_SAAS_BUILD__"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>排隊怪獸｜找店家、預約與取號</title><meta name="description" content="使用 排隊怪獸搜尋合作店家、預約服務、現場取號及查詢個人紀錄。">
+<title>排隊怪獸｜找店家、預約與取號</title><meta name="description" content="使用排隊怪獸搜尋合作店家、預約服務、現場取號及查詢個人紀錄。">
 <style>
 
 :root{
@@ -314,7 +314,7 @@ function render(){
  if(!filtered.length){
    const msg=mode==="mine"?"還沒有找到你的預約紀錄":searching?"找不到符合條件的店家":"目前沒有已公開的店家";
    els.results.innerHTML='<div class="empty"><strong>'+e(msg)+'</strong><p>'+
-    (mode==="mine"?"可從店家提供的 排隊怪獸連結登入同一帳號查看。":searching?"試試其他店名、地點或篩選條件。":"正式店家公開後，這裡會自動出現近 30 天最熱門的前 50 名；下方仍可先體驗示範服務。")+
+    (mode==="mine"?"可從店家提供的排隊怪獸預約連結登入同一帳號查看。":searching?"試試其他店名、地點或篩選條件。":"正式店家公開後，這裡會自動出現近 30 天最熱門的前 50 名；下方仍可先體驗示範服務。")+
     '</p></div>';
    return;
  }
