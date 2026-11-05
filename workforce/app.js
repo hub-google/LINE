@@ -7,7 +7,7 @@ const TABS={
  overview:['工作總覽','掌握團隊今天的排班、打卡及待審事項。'],
  schedule:['排班管理','查看、建立與發布班表，避免排班時間重疊。'],
  punch:['出勤打卡','打卡使用資料庫伺服器時間，並保留每次原始紀錄。'],
- requests:['請假與加班','建立請假、加班及補卡申請並追蹤審核結果。'],
+ requests:['差勤申請','分別提出請假、加班及補卡申請，查看審核進度。'],
  approvals:['審核中心','主管審核請假、補卡與加班申請，紀錄不可重複核准。'],
  employees:['員工與分店','管理企業員工、部門分店與聘僱型態。'],
  reports:['工時報表','查詢員工出勤與假期額度，匯出 CSV。'],
@@ -101,7 +101,7 @@ async function reload(silent=false){
   }
   $('connectionLabel').textContent=app.data?'已連線 Supabase 資料庫':'尚未登入';
   if(!silent)banner(app.data?'已取得最新資料':'請先登入或建立企業');
- }catch(e){$('connectionLabel').textContent='資料庫連線異常';if(!silent)banner(e.message,true);$('appContent').innerHTML='<div class="error">'+esc(e.message)+'<p><button class="btn" id="retryLoad">重新載入</button></p></div>';app.busy=false;return;}
+ }catch(e){$('connectionLabel').textContent='資料庫連線異常';if(!silent)banner(e.message,true);$('appContent').innerHTML='<div class="error">'+esc(e.message)+'<p><button class="btn" id="retryLoad" data-action="retryLoad">重新載入</button></p></div>';app.busy=false;return;}
  app.busy=false;render();
 }
 async function action(name,data){
@@ -134,7 +134,7 @@ function table(head,rows){return '<div class="table-wrap"><table class="data-tab
 function tr(cells){return '<tr>'+cells.map(x=>'<td>'+x+'</td>').join('')+'</tr>';}
 function panel(title,content,actions=''){return '<div class="panel"><div class="section-title"><h2>'+title+'</h2>'+actions+'</div>'+content+'</div>';}
 function rowButtons(id,mode){if(!manager())return '';if(mode==='shift')return '<button class="btn small danger" data-action="cancelShift" data-id="'+id+'">取消班次</button>';if(mode==='draft')return '<button class="btn small" data-action="publishShift" data-id="'+id+'">發布</button>';return '';}
-function memberFilter(selected='',name='member_id'){let arr=app.data?.members||[];if(app.mode==='real'&&!manager())arr=arr.filter(m=>m.user_id===app.user?.id);return '<select name="'+name+'" required>'+options(arr,m=>m.display_name+' · '+m.employee_code,selected)+'</select>';}
+function memberFilter(selected='',name='member_id'){let arr=app.data?.members||[];if(app.mode==='real'&&!manager())arr=arr.filter(m=>m.user_id===app.user?.id);return '<select name="'+name+'" required>'+options(arr,m=>m.display_name,selected)+'</select>';}
 function branchFilter(selected='',name='branch_id'){return '<select name="'+name+'" required>'+options(app.data?.branches||[],b=>b.name,selected)+'</select>';}
 function getSelected(){const arr=app.data?.members||[];if(!arr.some(m=>m.id===app.focusMember)){app.focusMember=(app.mode==='real'&&!manager()?arr.find(x=>x.user_id===app.user?.id):arr.find(x=>x.role==='employee')||arr[0])?.id||'';}return app.focusMember;}
 function overview(){
@@ -166,11 +166,17 @@ function punch(){
  const history=table(['時間（台灣）','類型','來源'],punches.map(x=>tr([taiStamp(x.punched_at),esc(kind(x.kind)),esc(x.source||'web')])));
  const buttons=['IN','OUT','BREAK_START','BREAK_END'].map(k=>'<button type="button" data-action="clock" data-kind="'+k+'" class="btn '+(k==='IN'?'primary':'')+'">'+esc(kind(k))+'打卡</button>').join('');
  const roleDemo=app.mode==='demo'?'<div class="notice warning">DEMO 可切換虛構員工模擬操作；正式模式會由資料庫確認打卡者身分，不允許替其他員工打卡。</div>':'';
- $('appContent').innerHTML='<div class="split">'+panel('快速打卡',roleDemo+'<div class="field"><label>員工</label><select id="punchMember">'+options((app.mode==='real'&&!manager()?app.data.members.filter(x=>x.user_id===app.user?.id):app.data.members),x=>x.display_name+' · '+x.employee_code,sel)+'</select></div><p class="muted">定位資訊由使用者授權後才會讀取。沒有 GPS 的測試門市仍可打卡。</p><div class="flex">'+buttons+'</div><div class="inset" style="margin-top:18px"><strong>當前伺服器時間</strong><p id="serverTime">'+esc(taiStamp(new Date()))+'</p></div>')+panel('最近打卡紀錄',history)+'</div>';
+ $('appContent').innerHTML='<div class="split">'+panel('快速打卡',roleDemo+'<div class="field"><label>員工</label><select id="punchMember">'+options((app.mode==='real'&&!manager()?app.data.members.filter(x=>x.user_id===app.user?.id):app.data.members),x=>x.display_name,sel)+'</select></div><p class="muted">定位資訊由使用者授權後才會讀取。沒有 GPS 的測試門市仍可打卡。</p><div class="flex">'+buttons+'</div><div class="inset" style="margin-top:18px"><strong>當前伺服器時間</strong><p id="serverTime">'+esc(taiStamp(new Date()))+'</p></div>')+panel('最近打卡紀錄',history)+'</div>';
 }
 function requests(){
- const sel=getSelected(),req=(app.data.requests||[]).slice(0,50);
- heading('<button class="btn primary" data-action="newRequest">＋ 新增申請</button>');
+ const sel=getSelected(),allReq=(app.data.requests||[]).slice(0,50);
+ const filter=app.requestFilter||'all',req=filter==='all'?allReq:allReq.filter(x=>x.kind===filter);
+ const counts={all:allReq.length,leave:0,overtime:0,correction:0};
+ for(const item of allReq){if(Object.prototype.hasOwnProperty.call(counts,item.kind))counts[item.kind]++;}
+ const filterBar='<div class="request-filters" role="group" aria-label="篩選申請項目">'+
+  [['all','全部'],['leave','請假'],['overtime','加班'],['correction','補卡']].map(([k,label])=>
+  '<button type="button" class="request-filter '+(filter===k?'active':'')+'" aria-pressed="'+(filter===k)+'" data-action="filterRequests" data-kind="'+k+'">'+label+' <span>'+counts[k]+'</span></button>').join('')+'</div>';
+ heading('<div class="request-shortcuts"><button class="btn primary" data-action="newLeaveRequest">＋ 請假</button><button class="btn" data-action="newOvertimeRequest">＋ 加班</button><button class="btn" data-action="newCorrectionRequest">＋ 補卡</button></div>');
  const rows=req.map(x=>tr([personLabel(x.member_id),esc(kind(x.kind))+(x.kind==='leave'?' · '+esc(kind(x.leave_kind)):''),
  taiStamp(x.starts_at),taiStamp(x.ends_at),status(x.status),esc(x.reason||'—')]));
  const verifiedBalances=(app.data.leaveBalances||{})[sel]||[];
@@ -183,7 +189,7 @@ function requests(){
    '、已核准 '+Number(b.approved_hours).toFixed(1)+
    '、待審占用 '+Number(b.pending_hours).toFixed(1)+' 小時</p>').join(''):
    '<p class="muted">尚未為這位員工設定生效中的假別政策。</p>';;
- $('appContent').innerHTML=panel('申請紀錄',table(['員工','項目','開始','結束','結果','說明'],rows))+'<div class="split">'+panel('假期額度','<div class="field"><label>查詢員工</label><select id="balanceMember">'+options(app.data.members,x=>x.display_name,sel)+'</select></div>'+balances)+panel('申請注意事項','<div class="notice">核准後會記錄審核時間與結果。原始出勤紀錄不會因申請或補卡被覆寫。</div><p class="muted">目前的額度是示範資料，不代表法定特休、病假給付的自動法令計算。</p>')+'</div>';
+ $('appContent').innerHTML=panel('申請紀錄',filterBar+table(['員工','項目','開始','結束','結果','說明'],rows))+'<div class="split">'+panel('假期額度','<div class="field"><label>查詢員工</label><select id="balanceMember">'+options(app.data.members,x=>x.display_name,sel)+'</select></div>'+balances)+panel('申請注意事項','<div class="notice">核准後會記錄審核時間與結果。原始出勤紀錄不會因申請或補卡被覆寫。</div><p class="muted">目前的額度是示範資料，不代表法定特休、病假給付的自動法令計算。</p>')+'</div>';
 }
 function approvals(){
  heading();
@@ -259,26 +265,54 @@ function showShift(){
  ],'建立班次');
  openModal('新增排班',body);
 }
-function showRequest(){
- const day=today();
+
+const REQUEST_KINDS={
+ leave:{title:'請假申請',action:'送出請假申請',start:'請假開始時間',end:'請假結束時間',reason:'請假原因'},
+ overtime:{title:'加班申請',action:'送出加班申請',start:'加班開始時間',end:'加班結束時間',reason:'加班事由'},
+ correction:{title:'補卡申請',action:'送出補卡申請',start:'出勤區間開始時間',end:'出勤區間結束時間',reason:'補卡原因'}
+};
+function showRequest(requestKind='leave'){
+ if(!REQUEST_KINDS[requestKind])throw Error('不支援的申請項目');
+ const config=REQUEST_KINDS[requestKind],day=today();
  const policies=[...(app.data?.leavePolicies||[])].filter(x=>x.effective_from<=day)
   .sort((a,b)=>b.effective_from.localeCompare(a.effective_from));
- const latest=[];const seen=new Set();
+ const seen=new Set(),latest=[];
  for(const p of policies){if(!seen.has(p.leave_kind)){seen.add(p.leave_kind);if(p.is_active)latest.push(p);}}
- const leaveKindOptions=latest.length?
-  latest.map(x=>'<option value="'+esc(x.leave_kind)+'">'+esc(x.label)+'</option>').join(''):
-  '<option value="annual">特休</option><option value="sick">病假</option>'+
-  '<option value="personal">事假</option><option value="other">其他假</option>';
- const body=modalForm('request',[
- {name:'member_id',label:'申請員工',html:memberFilter(getSelected())},
- {name:'kind',label:'申請項目',html:selectField('kind','<option value="leave">請假</option><option value="overtime">加班</option><option value="correction">補卡／出勤更正</option>')},
- {name:'leave_kind',label:'假別（請假時）',html:selectField('leave_kind',leaveKindOptions)},
- {name:'starts_at',label:'開始時間',html:input('starts_at','datetime-local',day+'T09:00')},
- {name:'ends_at',label:'結束時間',html:input('ends_at','datetime-local',day+'T18:00')},
- {name:'reason',label:'原因／說明',wide:true,html:'<textarea id="reason" name="reason" maxlength="500" placeholder="請填寫申請原因"></textarea>'}
- ],'送出申請');
- openModal('新增請假／加班／補卡申請',body);
+ const leaveOptions=latest.length?latest.map(x=>'<option value="'+esc(x.leave_kind)+'">'+esc(x.label)+'</option>').join(''):
+  '<option value="annual">特休</option><option value="sick">病假</option><option value="personal">事假</option><option value="other">其他假</option>';
+ const fields=[{name:'member_id',label:'申請員工',html:memberFilter(getSelected())}];
+ if(requestKind==='leave')fields.push({name:'leave_kind',label:'請假假別',html:selectField('leave_kind',leaveOptions)});
+ if(requestKind==='correction')fields.push({name:'correction_type',label:'補卡類型',html:selectField('correction_type',
+  '<option value="漏上班卡">漏上班卡</option><option value="漏下班卡">漏下班卡</option><option value="上下班皆漏卡">上下班皆漏卡</option><option value="出勤時間更正">出勤時間更正</option>')});
+ fields.push(
+  {name:'starts_at',label:config.start,html:input('starts_at','datetime-local',day+'T'+(requestKind==='overtime'?'18:00':'09:00'))},
+  {name:'ends_at',label:config.end,html:input('ends_at','datetime-local',day+'T'+(requestKind==='overtime'?'20:00':'18:00'))},
+  {name:'reason',label:config.reason,wide:true,html:'<textarea id="reason" name="reason" required maxlength="500" rows="3" placeholder="'+esc(requestKind==='overtime'?'請說明加班工作內容':requestKind==='correction'?'請說明漏卡或更正原因':'請填寫請假原因')+'"></textarea>'}
+ );
+ const tip=requestKind==='overtime'?'<p class="request-hint">請填寫預計加班的起訖時間。核准加班申請不等於完成出勤打卡或薪資結算。</p><p id="requestDuration" class="request-duration" aria-live="polite"></p>':
+  requestKind==='correction'?'<p class="request-hint">填寫要補正的班次時間與原因。核准後仍保留原始打卡紀錄。</p>':
+  '<p class="request-hint">請依實際請假時段填寫，額度以公司規則和審核結果為準。</p>';
+ const body='<form data-form="request" data-request-kind="'+esc(requestKind)+'"><input type="hidden" name="kind" value="'+esc(requestKind)+'">'+
+  '<div class="form-grid">'+formFields(fields)+'</div>'+tip+
+  '<div class="modal-actions"><button type="button" class="btn" data-action="closeModal">取消</button><button type="submit" class="btn primary">'+esc(config.action)+'</button></div></form>';
+ openModal(config.title,body);updateRequestDuration();
 }
+function updateRequestDuration(){
+ const form=$('overlay')?.querySelector('form[data-request-kind="overtime"]');if(!form)return;
+ const box=form.querySelector('#requestDuration');
+ const a=form.elements.starts_at?.value,b=form.elements.ends_at?.value;
+ if(!a||!b){box.textContent='請選擇加班開始及結束時間';box.classList.remove('invalid');return;}
+ const m=(new Date(b).getTime()-new Date(a).getTime())/60000;
+ if(!Number.isFinite(m)||m<=0||m>1440){box.textContent='結束時間須晚於開始時間，單次申請不得超過 24 小時';box.classList.add('invalid');return;}
+ box.classList.remove('invalid');
+ const h=m/60;box.textContent='預計加班：'+(Number.isInteger(h)?h:h.toFixed(2).replace(/0+$/,'').replace(/\.$/,''))+' 小時（未扣除休息）';
+}
+$('overlay').addEventListener('input',e=>{
+ if(e.target?.matches('form[data-request-kind="overtime"] [name="starts_at"],form[data-request-kind="overtime"] [name="ends_at"]'))updateRequestDuration();
+});
+$('overlay').addEventListener('change',e=>{
+ if(e.target?.matches('form[data-request-kind="overtime"] [name="starts_at"],form[data-request-kind="overtime"] [name="ends_at"]'))updateRequestDuration();
+});
 function showEmployee(){openModal('新增員工',modalForm('employee',[
 {name:'name',label:'員工姓名',html:input('name','text','','maxlength="40"')},
 {name:'code',label:'員工編號',html:input('code','text','','maxlength="20"')},
@@ -331,7 +365,8 @@ document.addEventListener('click',async e=>{
  const a=b.dataset.action,id=b.dataset.id;
  try{
  if(a==='gotoSchedule')setTab('schedule');else if(a==='gotoApprovals')setTab('approvals');
- else if(a==='newShift')showShift();else if(a==='newRequest')showRequest();else if(a==='newEmployee')showEmployee();else if(a==='newBranch')showBranch();
+  else if(a==='filterRequests'){if(!['all','leave','overtime','correction'].includes(b.dataset.kind))return;app.requestFilter=b.dataset.kind;render();}
+ else if(a==='newShift')showShift();else if(a==='newLeaveRequest')showRequest('leave');else if(a==='newOvertimeRequest')showRequest('overtime');else if(a==='newCorrectionRequest')showRequest('correction');else if(a==='newEmployee')showEmployee();else if(a==='newBranch')showBranch();
  else if(a==='prevWeek'){app.date=dayAdd(app.date,-7);app.autoSuggestions=null;render();}
  else if(a==='nextWeek'){app.date=dayAdd(app.date,7);app.autoSuggestions=null;render();}
  else if(a==='todayWeek'){app.date=today();app.autoSuggestions=null;render();}
@@ -371,7 +406,21 @@ $('overlay').addEventListener('submit',async e=>{
   }else{
    if(f.starts_at)f.starts_at=tzIso(f.starts_at);
    if(f.ends_at)f.ends_at=tzIso(f.ends_at);
-   if(form.dataset.form==='request'&&f.kind!=='leave')f.leave_kind=null;
+   if(form.dataset.form==='request'){
+     const kindValue=form.dataset.requestKind;
+     if(!REQUEST_KINDS[kindValue]||f.kind!==kindValue)throw Error('申請類型不正確，請重新開啟表單');
+     const minutes=(Date.parse(f.ends_at)-Date.parse(f.starts_at))/60000;
+     if(!Number.isFinite(minutes)||minutes<=0)throw Error('結束時間必須晚於開始時間');
+     if(kindValue==='overtime'&&minutes>1440)throw Error('單次加班申請不得超過 24 小時');
+     f.reason=String(f.reason||'').trim();
+     if(!f.reason)throw Error('請填寫'+REQUEST_KINDS[kindValue].reason);
+     if(kindValue==='correction'){
+      if(!['漏上班卡','漏下班卡','上下班皆漏卡','出勤時間更正'].includes(f.correction_type))throw Error('請選擇補卡類型');
+      f.reason='【'+f.correction_type+'】'+f.reason;
+     }
+     if(kindValue!=='leave')f.leave_kind=null;
+     delete f.correction_type;
+    }
    await action(form.dataset.form,f);
   }
  }catch(err){banner(err.message,true);submit.disabled=false;}
@@ -990,13 +1039,13 @@ requests=function(){
  const policies=currentLeavePolicies();
  const canEdit=app.mode==='demo'||['owner','hr'].includes(role());
  const rows=policies.map(p=>tr([
-  esc(p.label),esc(p.leave_kind),esc(p.yearly_basis==='anniversary'?'週年制':'曆年制'),
+  esc(p.label),esc(p.yearly_basis==='anniversary'?'週年制':'曆年制'),
   p.balance_required?'需要核定額度':'依假別規則',
   esc(p.approval_levels)+' 層',status(p.is_active?'active':'inactive'),
   esc(p.effective_from)
  ]));
  $('appContent').insertAdjacentHTML('beforeend',
-  panel('假別政策與生效版本',table(['假別','代碼','年度制','額度','簽核','狀態','生效日'],rows),
+  panel('假別政策與生效版本',table(['假別','年度制','額度','簽核','狀態','生效日'],rows),
     canEdit?'<div class="flex"><button class="btn small" data-extra="newLeavePolicy">設定假別政策</button>'+
      '<button class="btn small" data-extra="newLeaveGrant">核定員工假期時數</button></div>':'')+
   '<div class="notice">假別時數由企業配置；待審申請會預先占用額度。這不是自動核發的法定特休，也不代表已完成勞動法令檢核。</div>');
@@ -1066,10 +1115,10 @@ approvals=function(){
   const required=Number(version?.approval_levels||1);
   const completed=steps.filter(x=>x.request_id===r.id).length;
   return tr([personLabel(r.member_id),esc(kind(r.leave_kind)),
-   esc(completed)+' / '+esc(required),esc(r.id.slice(-8))]);
+   esc(completed)+' / '+esc(required)]);
  });
  if(list.length)$('appContent').insertAdjacentHTML('beforeend',
-  panel('多層請假簽核進度',table(['申請員工','假別','已完成／需要','單號末八碼'],rows)));
+  panel('多層請假簽核進度',table(['申請員工','假別','已完成／需要'],rows)));
 };
 document.addEventListener('click',e=>{
  if(!e.target.closest('#appContent, #pageActions'))return;
