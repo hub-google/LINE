@@ -4071,3 +4071,17 @@ Payment 的核心原則：
 ### 驗收與限制
 - 自動化檢查：腳本語法、部署資產、資料投影、店家分類、頁面切換、商圈選擇、店面移動、連結與測試商圈分離；Supabase 以未登入角色檢查公開資料函式。
 - 功能交付不等於真實 LINE 推播或到店服務全面驗收。若目前無正式公開店家，清單應如實顯示 0 家，仍可用測試商圈操作體驗，不得填假商家佔位。
+
+
+---
+
+## 2026-11-05 全站登入識別與 LINE 登出（已實作）
+
+- `/booking/` 的 `home.html`、`directory.html`（含遊戲模式）、`board.html`、`index.html`、`poster.html`、`merchant-center.html`、`merchant-register.html`、`privacy.html`、`terms.html` 在頁首右側共用登入元件。相容路徑 `/saas/` 亦同。
+- **顧客未完成 LINE 綁定**：顯示實際可點的「使用 LINE 登入」，前往既有的 LINE LIFF 授權程序。匿名 Supabase session 不能被視為已綁 LINE。
+- **LINE 已驗證**：由 `so_site_header_identity()` 僅取得本人 30 日內伺服器驗證的 LINE 顯示名稱，呈現名稱與「登出」。不能僅信任瀏覽器快取字串、LINE UID 或可偽造的前端旗標。
+- **店員／管理員**：管理頁優先呈現正式登入帳號，測試管理員需已有授權 membership。顧客與管理員 Supabase 工作階段分離，不以顧客 LINE 登入冒充店員權限。
+- **登出**：操作對應工作階段的 Supabase `auth.signOut()`，對於原有測試管理員一併清除本機測試識別，重新載入以停止顯示已授權資料。登出不刪除預約與叫號紀錄。
+- **原頁返回**：公開頁觸發 LINE 登入後，只有當實際 LINE 綁定驗證通過才返回原 `home/directory/board/poster/merchant-center/merchant-register/privacy/terms` 頁面；回跳僅允許相同網域與指定檔案，防止任意網址重導。
+- **相容性**：保留既有預約流程、LIFF callback、公開看板與多企業 OA 模式。共用腳本採用 `site-auth.js` 和 `site-auth.css`，由原本 Pages Action 同時發布正式與舊版路徑；原始 JS 自動測試覆蓋登入按鈕、顯示名稱、登出動作及跨頁整合。
+- **E2E 限制**：目前以資料庫權限、DOM 互動測試及 GitHub Pages 部署檢查驗收；真實 LINE 帳號授權與跨裝置登出須另做實機測試，不得僅以 CI 成功聲稱已確認真人 LINE OAuth 送達／登入結果。
