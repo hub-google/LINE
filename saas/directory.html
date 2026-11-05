@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="9a5829dc1c259d1c0a08de86c460f0ba85c1fb1c">
-<script defer src="./version-watch.js?build=9a5829dc1c259d1c0a08de86c460f0ba85c1fb1c"></script>
+<meta name="line-saas-build" content="0de64370628492873370d1224b5e7eabd4245153">
+<script defer src="./version-watch.js?build=0de64370628492873370d1224b5e7eabd4245153"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 預約｜搜尋店家與我的預約</title><meta name="description" content="使用 LINE 預約平台搜尋合作店家、預約服務、現場取號及查詢個人紀錄。">
 <style>
@@ -57,6 +57,7 @@ main{position:relative;margin-top:-18px;padding-bottom:48px}
 .card-cover{position:absolute;inset:0;z-index:1;border-radius:17px}
 .card-content{position:relative;pointer-events:none;display:flex;flex-direction:column;min-height:232px;padding:22px}
 .card-top{display:flex;align-items:start;gap:12px}
+.shop-icon img{width:100%;height:100%;object-fit:cover;border-radius:13px;display:block}
 .shop-icon{background:linear-gradient(140deg,#e9f7ee,#d8efe3);color:#087154;border-radius:13px;width:47px;height:47px;display:grid;place-items:center;font-size:21px;font-weight:900;flex:none}
 .shop-details{min-width:0;flex:1}
 .shop-name{font-size:20px;font-weight:850;line-height:1.4;margin:0 0 7px;letter-spacing:-.03em;overflow-wrap:anywhere}
@@ -236,7 +237,8 @@ function customerUrl(slug,tab,oaMode="PLATFORM"){
 }
 function badges(t){
  const m=t.modules||{};
- return (m.reservation?'<span class="badge">線上預約</span>':"")+(m.queue?'<span class="badge">現場取號</span>':"")+
+ return '<span class="badge">'+e(t.category||"其他")+'</span>'+
+ (m.reservation?'<span class="badge">線上預約</span>':"")+(m.queue?'<span class="badge">現場取號</span>':"")+
  (t.oa_mode==="PLATFORM"?'<span class="badge">平台 LINE 服務</span>':"");
 }
 function render(){
@@ -270,6 +272,7 @@ function render(){
  }
  els.results.innerHTML=filtered.map(t=>{
   const name=e(t.name),desc=e(t.description||""),address=e(t.address||"");
+  const logo=safeLogo(t.logo_url);
   const services=t.modules||{};
   const boardHref="./board.html?merchant="+encodeURIComponent(t.slug);
   const reserveHref=customerUrl(t.slug,"reserve",t.oa_mode);
@@ -293,15 +296,21 @@ function render(){
   const badges=t.test_board_only?'<span class="badge qa-badge">測試門市・非正式合作店家</span>':badgesForStore(t);
   const cover=primaryHref?'<a class="card-cover" href="'+e(primaryHref)+'" aria-label="開啟 '+name+'"></a>':"";
   return '<article class="merchant-card'+(t.test_board_only?" qa":"")+'">'+cover+
-   '<div class="card-content"><div class="card-top"><span class="shop-icon" aria-hidden="true">▤</span>'+
+   '<div class="card-content"><div class="card-top"><span class="shop-icon" aria-hidden="true">'+
+   (logo?'<img src="'+e(logo)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'▤')+'</span>'+
    '<div class="shop-details"><h3 class="shop-name">'+name+'</h3><div class="badges">'+badges+'</div></div></div>'+
    (desc?'<p class="shop-desc">'+desc+'</p>':"")+
    (address?'<p class="shop-address">地點：'+address+'</p>':"")+
    (mode==="mine"?'<p class="shop-desc">最近預約 '+Number(t.booking_count||0)+' 筆 · 取號 '+Number(t.ticket_count||0)+' 筆</p>':"")+
-   '<div class="card-actions">'+actions+'</div></div></article>';
+   '<div class="card-actions">'+actions+
+   (address&&!t.test_board_only?'<a class="btn secondary" href="https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(t.address)+'" target="_blank" rel="noopener noreferrer">地圖位置</a>':"")+
+   '</div></div></article>';
  }).join("");
 }
 function badgesForStore(t){return badges(t);}
+function safeLogo(src){
+ try{const u=new URL(String(src||""));return u.protocol==="https:"?u.href:""}catch(_){return ""}
+}
 els.keyword.addEventListener("input",render);
 for(const id of ["explore-category","explore-area","explore-service","explore-sort"]){
  document.getElementById(id).addEventListener("change",render);
