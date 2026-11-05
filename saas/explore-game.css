@@ -53,6 +53,12 @@
 .street-shop .pixel-door:after{content:"";position:absolute;right:3px;top:27px;background:#ead2a1;width:5px;height:5px}
 .street-shop .pixel-window{position:absolute;left:9px;bottom:13px;background:#9cc6ca;border:3px solid #597f82;width:35px;height:36px}
 .street-shop .pixel-window.right{left:auto;right:9px}
+.street-shop .pixel-keeper{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);display:block;width:18px;height:27px;z-index:2;pointer-events:none}
+.street-shop .keeper-hair{position:absolute;top:0;left:3px;width:12px;height:8px;background:#544c47;border-radius:2px 2px 0 0}
+.street-shop .keeper-face{position:absolute;top:7px;left:5px;width:9px;height:9px;background:#ebbe99}
+.street-shop .keeper-apron{position:absolute;top:17px;left:2px;width:15px;height:10px;background:#72a69c;box-shadow:0 4px #5b8b8b}
+.street-shop:nth-child(3n+2) .keeper-apron{background:#cf899f;box-shadow:0 4px #b77a92}
+.street-shop:nth-child(3n+3) .keeper-apron{background:#ba965e;box-shadow:0 4px #947949}
 .street-shop .shop-name-bubble{display:block;margin:12px auto 0;background:#fffef7;border:2px solid #d4dfc4;border-radius:8px;max-width:166px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;padding:4px 6px;font-size:12px;font-weight:850}
 .street-shop:hover .pixel-body,.street-shop:focus-visible .pixel-body{outline:4px solid #fce56c;outline-offset:2px}
 .street-shop[data-selected="true"] .pixel-body{outline:5px solid #f9dc63;outline-offset:2px}
