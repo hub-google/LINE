@@ -37,7 +37,7 @@ test("verified LINE session resumes without repeating OAuth",()=>{
  assert.match(client,/!force&&!likelyLineApp&&!pendingLiffCallback&&await resumeVerifiedLineSession\(\)/);
  assert.match(client,/!force&&!inLineClient&&!pendingLiffCallback&&await resumeVerifiedLineSession\(\)/);
  assert.match(client,/inLineClient/);
- assert.match(client,/!force&&!inLineClient&&await resumeVerifiedLineSession\(\)/);
+ // A pending LIFF callback must be initialized before the old session is resumed.
  assert.match(bridge,/payload\.action === "resume"/);
  assert.match(bridge,/linked\.login_channel_id !== expectedChannelId/);
 });
