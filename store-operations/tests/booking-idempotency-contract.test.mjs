@@ -35,7 +35,7 @@ test("LINE first customer UI retries the same request without repeating side eff
  assert.match(ui,/CUSTOMER_BOOKING_REQUEST_KEY/);
  assert.match(ui,/customerBookingRequestId\(/);
  assert.match(ui,/sessionStorage\.setItem\(CUSTOMER_BOOKING_REQUEST_KEY/);
- assert.match(ui,/rpc\("so_book_with_items_once"/);
+ assert.match(ui,/rpc\("so_book_with_contact_once"/);
  assert.match(ui,/p_request_id:requestId/);
  assert.match(ui,/clearCustomerBookingRequest\(requestId\)/);
  assert.match(ui,/if\(result\.replayed\)return/);
