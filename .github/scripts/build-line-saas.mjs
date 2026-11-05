@@ -21,6 +21,8 @@ await copyFile(path.join(src, "version-watch.js"), path.join(dest, "version-watc
 await copyFile(path.join(src, "booking-theme.css"), path.join(dest, "booking-theme.css"));
 await copyFile(path.join(src, "explore-game.css"), path.join(dest, "explore-game.css"));
 await copyFile(path.join(src, "explore-game.js"), path.join(dest, "explore-game.js"));
+await copyFile(path.join(src, "site-auth.css"), path.join(dest, "site-auth.css"));
+await copyFile(path.join(src, "site-auth.js"), path.join(dest, "site-auth.js"));
 
 await copyFile(path.join(src, "manifest.webmanifest"), path.join(dest, "manifest.webmanifest"));
 await copyFile(path.join(src, "offline.html"), path.join(dest, "offline.html"));
