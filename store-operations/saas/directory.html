@@ -207,7 +207,7 @@ const sb=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:
 const params=new URLSearchParams(location.search),mode=["search","queue","mine","game"].includes(params.get("mode"))?params.get("mode"):"search";
 const els={intro:document.getElementById("intro"),results:document.getElementById("results"),keyword:document.getElementById("keyword"),test:document.getElementById("test")};
 document.getElementById("tab-"+(mode==="game"?"search":mode)).classList.add("active");
-let all=[],liffId="",testBoardShop=null;
+let all=[],liffId="",testBoardShop=null,demoShops=[];
 const cityNames=["基隆市","臺北市","台北市","新北市","桃園市","新竹市","新竹縣","苗栗縣","臺中市","台中市","彰化縣","南投縣","雲林縣","嘉義市","嘉義縣","臺南市","台南市","高雄市","屏東縣","宜蘭縣","花蓮縣","臺東縣","台東縣","澎湖縣","金門縣","連江縣"];
 function areaOf(shop){return (cityNames.find(x=>String(shop.address||"").includes(x))||"線上商圈").replace(/^臺/,"台")}
 function serviceMatches(shop,service){
@@ -355,6 +355,8 @@ async function load(){
     const {data,error}=await sb.rpc("so_public_directory",{p_query:null,p_mode:mode==="queue"?"queue":"all"});
     if(error)throw error;
     all=Array.isArray(data)?data:[];
+    const samples=await sb.rpc("so_public_explore_demo");
+    demoShops=!samples.error&&Array.isArray(samples.data)?samples.data:[];
     // The public board RPC returns a store name and non-personal queue data
     // with no sign-in. Do not add any test merchant to the official directory.
     const qaSlug="qa-84b3ef9297eb470685a91a527ca499ca";
@@ -374,7 +376,12 @@ async function load(){
       board_href:"./board.html?merchant="+encodeURIComponent(shop.slug)
     })),
     testBoardShop:testBoardShop?{...testBoardShop,
-      board_href:"./board.html?merchant="+encodeURIComponent(testBoardShop.slug)}:null
+      board_href:"./board.html?merchant="+encodeURIComponent(testBoardShop.slug)}:null,
+    demoShops:demoShops.map(shop=>({...shop,
+      reserve_href:customerUrl(shop.slug,"reserve",shop.oa_mode),
+      queue_href:customerUrl(shop.slug,"queue",shop.oa_mode),
+      board_href:"./board.html?merchant="+encodeURIComponent(shop.slug)
+    }))
   });
   render();
  }catch(error){
