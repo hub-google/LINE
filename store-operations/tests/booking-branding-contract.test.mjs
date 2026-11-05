@@ -57,3 +57,43 @@ test("staff backoffice keeps compact mobile controls and progressive records",()
  assert.match(css,/@media\(max-width:950px\)/);
  assert.match(css,/min-height:44px/);
 });
+
+
+test("pastel directory header keeps WCAG AA contrast on mobile",()=>{
+ const monster=read("saas/monster-world.css");
+ const directory=read("saas/directory.html");
+ const rule=(selector)=>{
+   const at=monster.indexOf(selector+"{");
+   assert.ok(at>=0, "missing explicit contrast rule for "+selector);
+   return monster.slice(at,monster.indexOf("}",at)+1);
+ };
+ const hex=(css,key)=>{
+   const match=css.match(new RegExp("(?:^|[;{\\\\s])"+key+":(#[0-9a-fA-F]{6})"));
+   assert.ok(match,"missing "+key+" color: "+css);
+   return match[1];
+ };
+ const lightness=(h)=>{
+   const rgb=h.slice(1).match(/.{2}/g).map(part=>parseInt(part,16)/255);
+   const c=rgb.map(x=>x<=0.04045?x/12.92:Math.pow((x+0.055)/1.055,2.4));
+   return c[0]*0.2126+c[1]*0.7152+c[2]*0.0722;
+ };
+ const ratio=(a,b)=>{const v=[lightness(a),lightness(b)].sort((x,y)=>y-x);return (v[0]+0.05)/(v[1]+0.05)};
+ const pairs=[
+   [".page-header .header-links > a","#E5C3F6"],
+   [".page-header .hero-heading .eyebrow","#E5C3F6"],
+   [".page-header .hero-heading > p:not(.eyebrow)","#E5C3F6"],
+   [".page-header .site-auth-slot.site-auth-dark .site-auth-button:not(.site-auth-login)","#E5C3F6"],
+   [".main-panel .intro-copy p","#FFFFFF"],
+   [".main-panel .search::placeholder","#FFFCFF"]
+ ];
+ for(const [selector,background] of pairs){
+   const foreground=hex(rule(selector),"color");
+   assert.ok(ratio(foreground,background)>=4.5,selector+" contrast is too low");
+ }
+ const login=rule(".site-auth-button.site-auth-login");
+ assert.ok(ratio(hex(login,"background"),"#FFFFFF")>=4.5,"LINE login needs readable white type");
+ assert.match(directory,/<header class="page-header">/);
+ assert.match(directory,/class="site-auth-slot site-auth-dark"/);
+ assert.match(directory,/monster-world\.css\?build=__LINE_SAAS_BUILD__/);
+ assert.ok(directory.indexOf("monster-world.css")>directory.indexOf("site-auth.css"),"contrast layer must load last");
+});
