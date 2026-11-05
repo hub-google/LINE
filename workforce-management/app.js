@@ -6,7 +6,7 @@ const DEMO_ID='98d3505c-cbe6-46ed-a95a-13672e6d98f4';
 const TABS={
  overview:['工作總覽','掌握團隊今天的排班、打卡及待審事項。'],
  schedule:['排班管理','查看、建立與發布班表，避免排班時間重疊。'],
- punch:['出勤打卡','打卡使用資料庫伺服器時間，並保留每次原始紀錄。'],
+ punch:['出勤打卡','上下班打卡並查看自己的出勤紀錄。'],
  requests:['差勤申請','分別提出請假、加班及補卡申請，查看審核進度。'],
  approvals:['審核中心','主管審核請假、補卡與加班申請，紀錄不可重複核准。'],
  employees:['員工與分店','管理企業員工、部門分店與聘僱型態。'],
@@ -99,7 +99,7 @@ async function reload(silent=false){
     }
    }
   }
-  $('connectionLabel').textContent=app.data?'已連線 Supabase 資料庫':'尚未登入';
+  $('connectionLabel').textContent=app.data?'資料已同步':'尚未登入';
   if(!silent)banner(app.data?'已取得最新資料':'請先登入或建立企業');
  }catch(e){$('connectionLabel').textContent='資料庫連線異常';if(!silent)banner(e.message,true);$('appContent').innerHTML='<div class="error">'+esc(e.message)+'<p><button class="btn" id="retryLoad" data-action="retryLoad">重新載入</button></p></div>';app.busy=false;return;}
  app.busy=false;render();
@@ -123,7 +123,7 @@ async function action(name,data){
    else if(name==='availability')result=await call('/rest/v1/wm_availability','POST',{tenant_id,member_id:data.member_id,starts_at:data.starts_at,ends_at:data.ends_at,available:data.available,note:data.note||''},app.token);
    else throw Error('尚未支援此操作');
   }
-  closeModal();app.busy=false;await reload(true);banner('已儲存到 Supabase 資料庫');
+  closeModal();app.busy=false;await reload(true);banner(name==='request'?'申請已送出，等待審核':name==='clock'?'打卡已完成':'操作已完成');
   return result;
  }catch(e){app.busy=false;banner(e.message,true);throw e;}
 }
@@ -196,7 +196,7 @@ function approvals(){
  const req=(app.data.requests||[]);const pending=req.filter(x=>x.status==='pending');
  const rows=req.map(x=>tr([personLabel(x.member_id),esc(kind(x.kind)),esc(kind(x.leave_kind||'')),taiStamp(x.starts_at),taiStamp(x.ends_at),status(x.status),
  x.status==='pending'&&manager()?'<div class="flex"><button class="btn small primary" data-action="approve" data-id="'+x.id+'">核准</button><button class="btn small danger" data-action="reject" data-id="'+x.id+'">駁回</button></div>':'<span class="muted">'+esc(x.decision_note||'已處理')+'</span>']));
- $('appContent').innerHTML='<div class="cards">'+stat('待審件數',pending.length,'待處理的全部申請')+stat('已核准',req.filter(x=>x.status==='approved').length,'累計件數')+stat('已駁回',req.filter(x=>x.status==='rejected').length,'累計件數')+stat('申請總量',req.length,'資料庫申請紀錄')+'</div>'+panel('簽核工作清單',table(['員工','申請','假別','開始','結束','狀態','操作'],rows))+
+ $('appContent').innerHTML='<div class="cards">'+stat('待審件數',pending.length,'待處理的全部申請')+stat('已核准',req.filter(x=>x.status==='approved').length,'累計件數')+stat('已駁回',req.filter(x=>x.status==='rejected').length,'累計件數')+stat('申請總量',req.length,'全部申請')+'</div>'+panel('簽核工作清單',table(['員工','申請','假別','開始','結束','狀態','操作'],rows))+
  (!manager()?'<div class="notice warning">只有主管或人資可以執行審核。</div>':'');
 }
 function employees(){
