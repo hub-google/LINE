@@ -51,6 +51,8 @@ async function enter(user){
  await f.locator('button[type="submit"]').click();
  try{await page.waitForFunction(()=>document.querySelector('#connectionLabel')?.textContent==='資料已同步'&&document.querySelector('#modePill')?.classList.contains('real-pill'),null,{timeout:30000});}
  catch(e){await screenshot(page,'FAIL-login-'+user.role);throw Error('Login screen did not finish: '+(await page.locator('#connectionLabel').textContent())+'; '+(await page.locator('#appContent').innerText()).slice(0,220));}
+ await page.locator('#nav [data-tab="employees"]').click();
+ await page.getByText('E2E 測試員工',{exact:true}).first().waitFor({state:'visible',timeout:25000});
  return page;
 }
 async function apply(kind,tag,day){
