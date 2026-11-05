@@ -76,14 +76,22 @@ function createHarness(){
  return {registered,els,node,context,app,dispatch};
 }
 
-test('global header new request actually opens the leave application dialog',async()=>{
+test('all three global request shortcuts open their correct application forms',async()=>{
  const h=createHarness();
- assert.match(h.node('pageActions').innerHTML,/data-action="newRequest"/);
- await h.dispatch('data-action','newRequest');
- assert.equal(h.node('overlay').hidden,false);
- assert.match(h.node('overlay').innerHTML,/data-form="request"/);
- assert.match(h.node('overlay').innerHTML,/請假/);
- assert.match(h.node('overlay').innerHTML,/送出申請/);
+ const actions=h.node('pageActions').innerHTML;
+ for(const [name,kind] of [
+  ['newLeaveRequest','leave'],
+  ['newOvertimeRequest','overtime'],
+  ['newCorrectionRequest','correction']
+ ]){
+  assert.match(actions,new RegExp('data-action="'+name+'"'));
+  h.node('overlay').innerHTML='';
+  await h.dispatch('data-action',name);
+  assert.equal(h.node('overlay').hidden,false,name+' did not open dialog');
+  assert.match(h.node('overlay').innerHTML,/data-form="request"/);
+  assert.match(h.node('overlay').innerHTML,new RegExp('data-request-kind="'+kind+'"'));
+  assert.match(h.node('overlay').innerHTML,new RegExp('name="kind" value="'+kind+'"'));
+ }
 });
 
 test('every other create button opens a form',async()=>{
