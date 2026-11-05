@@ -33,8 +33,11 @@ const els={intro:document.getElementById("intro"),results:document.getElementByI
 document.getElementById("tab-"+mode).classList.add("active");
 let all=[],liffId="",testBoardShop=null;
 function e(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function customerUrl(slug,tab){
+function customerUrl(slug,tab,oaMode="PLATFORM"){
  const qs="?view=customer&merchant="+encodeURIComponent(slug)+"&tab="+encodeURIComponent(tab);
+ // Platform OA shops enter the merchant-specific website first.
+ if(oaMode==="PLATFORM")return "./"+qs;
+ // Keep existing own-OA LIFF routing for merchants that use their own OA.
  return liffId?"https://liff.line.me/"+encodeURIComponent(liffId)+"/"+qs:"./"+qs;
 }
 function badges(t){
@@ -61,12 +64,12 @@ function render(){
   if(t.test_board_only){
     actions='<a class="btn" href="./board.html?merchant='+encodeURIComponent(t.slug)+'">查看即時叫號看板（免登入）</a>';
   }else if(mode==="mine"){
-    actions='<a class="btn" href="'+e(customerUrl(t.slug,"mine"))+'">查看我的紀錄</a>'+
-    ((t.modules||{}).queue?'<a class="btn secondary" href="'+e(customerUrl(t.slug,"queue"))+'">查看號碼</a>':"")+
+    actions='<a class="btn" href="'+e(customerUrl(t.slug,"mine",t.oa_mode))+'">查看我的紀錄</a>'+
+    ((t.modules||{}).queue?'<a class="btn secondary" href="'+e(customerUrl(t.slug,"queue",t.oa_mode))+'">查看號碼</a>':"")+
     ((t.modules||{}).queue&&(t.modules||{}).calling?'<a class="btn secondary" href="./board.html?merchant='+encodeURIComponent(t.slug)+'">公開叫號看板（免登入）</a>':"");
   }else{
-    actions=((t.modules||{}).reservation?'<a class="btn" href="'+e(customerUrl(t.slug,"reserve"))+'">立即預約</a>':"")+
-    ((t.modules||{}).queue?'<a class="btn secondary" href="'+e(customerUrl(t.slug,"queue"))+'">現場取號</a>':"")+
+    actions=((t.modules||{}).reservation?'<a class="btn" href="'+e(customerUrl(t.slug,"reserve",t.oa_mode))+'">立即預約</a>':"")+
+    ((t.modules||{}).queue?'<a class="btn secondary" href="'+e(customerUrl(t.slug,"queue",t.oa_mode))+'">現場取號</a>':"")+
     ((t.modules||{}).queue&&(t.modules||{}).calling?'<a class="btn secondary" href="./board.html?merchant='+encodeURIComponent(t.slug)+'">公開叫號看板（免登入）</a>':"");
   }
   return '<article class="card"><h2>'+name+'</h2><div>'+
@@ -86,6 +89,9 @@ document.addEventListener("click",async event=>{
  const merchant=original.searchParams.get("merchant")||"";
  if(original.searchParams.get("view")!=="customer")return; // A public board link must NOT be redirected to LINE login.
  if(!/^[a-z0-9][a-z0-9-]{2,39}$/.test(merchant))return;
+ // No second LIFF redirect for merchants sharing the headquarters OA.
+ const selected=all.find(shop=>shop.slug===merchant);
+ if(selected?.oa_mode==="PLATFORM" || merchant==="greenfield-salon")return;
  event.preventDefault();
  const query=new URLSearchParams();
  query.set("view","customer");query.set("merchant",merchant);
@@ -131,7 +137,7 @@ async function load(){
         description:"專屬測試門市的即時叫號看板",address:"",test_board_only:true};
     }
     els.test.classList.remove("hidden");
-    document.getElementById("demo-link").href=customerUrl("greenfield-salon",mode==="queue"?"queue":"reserve");
+    document.getElementById("demo-link").href=customerUrl("greenfield-salon",mode==="queue"?"queue":"reserve","PLATFORM");
   }
   render();
  }catch(error){

@@ -33,8 +33,11 @@ test("verified LINE session resumes without repeating OAuth",()=>{
  assert.match(client,/resumeVerifiedLineSession/);
  assert.match(client,/cleanLineRedirectUri/);
  assert.match(client,/likelyLineApp/);
+ assert.match(client,/pendingLiffCallback/);
+ assert.match(client,/!force&&!likelyLineApp&&!pendingLiffCallback&&await resumeVerifiedLineSession\(\)/);
+ assert.match(client,/!force&&!inLineClient&&!pendingLiffCallback&&await resumeVerifiedLineSession\(\)/);
  assert.match(client,/inLineClient/);
- assert.match(client,/!force&&!inLineClient&&await resumeVerifiedLineSession\(\)/);
+ // A pending LIFF callback must be initialized before the old session is resumed.
  assert.match(bridge,/payload\.action === "resume"/);
  assert.match(bridge,/linked\.login_channel_id !== expectedChannelId/);
 });
@@ -95,4 +98,10 @@ test("LINE address text links to Google Maps and filters placeholders",()=>{
  assert.match(bridge,/text: "開啟 Google Maps 導航"/);
  assert.match(bridge,/label: "編輯預約"/);
  assert.match(bridge,/label: "取消預約"/);
+});
+
+test("HQ LIFF endpoint is neutral to all merchant slugs",()=>{
+ const workflow=read("../.github/workflows/line-oa-deploy.yml");
+ assert.match(workflow,/target = "https:\/\/hub-google\.github\.io\/LINE\/booking\/"/);
+ assert.doesNotMatch(workflow,/target = ".*greenfield-salon/);
 });

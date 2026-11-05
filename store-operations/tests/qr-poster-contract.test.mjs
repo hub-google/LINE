@@ -27,12 +27,16 @@ test("printable poster has parseable browser JS and version-safe packaging",()=>
   assert.match(pr,/qr-poster-contract\.test\.mjs/);
 });
 
-test("QR contains correct shop, service, and merchant-specific LIFF URL",()=>{
+test("QR contains correct shop and service and supports platform web URL with own-OA LIFF",()=>{
   assert.match(poster,/\/\^\[a-z0-9\]\[a-z0-9-\]\{2,39\}\$\//);
   assert.match(poster,/rpc\("so_public_state",\{p_slug:slug\}\)/);
   assert.match(poster,/line-bridge\?action=config&merchant=/);
   assert.match(poster,/config\?\.liffId/);
   assert.match(poster,/new URLSearchParams\(\{view:"customer",merchant:slug,tab:mode\}\)/);
+  assert.match(poster,/merchantUsesPlatformOa=config\?\.merchantOaConnected!==true/);
+  assert.match(poster,/if\(!merchantUsesPlatformOa&&liffId\)return/);
+  assert.match(poster,/new URL\("\.\/",location\.href\)/);
+  assert.match(poster,/首次預約或取號前才要求 LINE 身分驗證/);
   assert.match(poster,/modules\.reservation/);
   assert.match(poster,/modules\.queue/);
   assert.match(poster,/line-saas-poster-session-v1/);
