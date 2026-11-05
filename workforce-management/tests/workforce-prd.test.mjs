@@ -221,3 +221,14 @@ test('real Auth onboarding uses safe minimal-response inserts without exposing p
  assert.match(src,/return=minimal/);
  assert.match(src,/newTenantId=crypto\.randomUUID\(\)/);
 });
+
+test('real login reloads tenant data after switching from an unfinished public demo load',()=>{
+ assert.match(src,/if\(app\.busy\)\{app\.reloadQueued=true;return;\}/);
+ assert.match(src,/loadingMode!==app\.mode\|\|loadingToken!==app\.token/);
+});
+test('evidence RLS invokes only a granted, identity-checked private predicate',()=>{
+ const sql=migration('20261105102630_workforce_evidence_rls_authenticated_execute.sql');
+ assert.match(sql,/GRANT EXECUTE ON FUNCTION wm_private\.can_access_evidence\(text, boolean\)/);
+ assert.match(sql,/TO authenticated/);
+ assert.doesNotMatch(sql,/TO anon\b|TO PUBLIC\b/i);
+});
