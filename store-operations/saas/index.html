@@ -254,6 +254,7 @@ function acceptVerifiedLineIdentity(result){
  if(!result?.linked||!result.displayName)throw Error("LINE 身分驗證未完成");
  lineDisplayName=result.displayName;
  lineLinkStatus="linked";
+ window.dispatchEvent(new Event("line-site-auth-changed"));
  sessionStorage.removeItem(authRecoveryKey());
  lineFriendStatus=result.isFollowing===true?true:result.isFollowing===false?false:null;
  lineOaRecipient=["REACHABLE","NOT_REACHABLE","UNKNOWN"].includes(result.recipientReachability)?result.recipientReachability:"UNKNOWN";
