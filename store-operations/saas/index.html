@@ -2069,7 +2069,10 @@ document.addEventListener("click",async ev=>{
    const kind=b.dataset.kind;
    if(!["booking","queue"].includes(kind))return;
    const prefix=document.getElementById("prefix-"+kind)?.value??"";
-   if(Array.from(prefix).length>3||/[\u0000-\u001f\u007f]/.test(prefix)){showActionFeedback("前綴最多 3 字，不能包含控制字元","error");return;}
+   const visibleLength=typeof Intl.Segmenter==="function"
+     ?Array.from(new Intl.Segmenter("zh-Hant",{granularity:"grapheme"}).segment(prefix)).length
+     :Array.from(prefix).length;
+   if(visibleLength>3||/[\u0000-\u001f\u007f]/.test(prefix)){showActionFeedback("前綴最多 3 個可見字元，不能包含控制字元","error");return;}
    await act(async()=>{
      const result=await rpc(kind==="booking"?"so_set_booking_prefix":"so_set_queue_prefix",{p_slug:slug,p_prefix:prefix});
      return (kind==="booking"?"預約":"叫號")+"前綴已設為："+(result.prefix||"（無前綴）")+"，不影響既有編號";
