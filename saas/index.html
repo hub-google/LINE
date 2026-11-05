@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="38bc80b64b7ccf56f03f1c4b438e034feb83afaf">
+<meta name="line-saas-build" content="2a9c520dbd6d89919f0c158fbf041238804e59e1">
 <meta name="theme-color" content="#173e34">
 <link rel="manifest" href="./manifest.webmanifest">
 <script>
@@ -32,7 +32,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   }
 })();
 </script>
-<script defer src="./version-watch.js?build=38bc80b64b7ccf56f03f1c4b438e034feb83afaf"></script>
+<script defer src="./version-watch.js?build=2a9c520dbd6d89919f0c158fbf041238804e59e1"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 門市營運｜企業開通、員工後台與顧客預約</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -166,7 +166,7 @@ body{overflow-x:hidden}
 .guide-link{text-decoration:none;color:var(--primary);border:1px solid var(--line);background:#f2f8f4;min-height:42px;display:flex;align-items:center;white-space:nowrap}
 .guide-link:hover{background:#e5f3ea}
 </style>
-<link rel="stylesheet" href="./booking-theme.css?build=38bc80b64b7ccf56f03f1c4b438e034feb83afaf">
+<link rel="stylesheet" href="./booking-theme.css?build=2a9c520dbd6d89919f0c158fbf041238804e59e1">
 </head>
 <body>
 <header><div class="top">
@@ -505,14 +505,24 @@ let crossFilter="active",crossPageSize=12,crossCurrentStore=false,crossRealtimeC
 /* Unified service units: industry-neutral opt-in over existing booking and queue modules. */
 let unitConfig=null,unitRecords={reservations:[],tickets:[]};
 let unitChoice="",unitSessionChoice="",unitCategory="",unitStaffSession="",unitAdminDate=taipei();
-let unitEditingId="",unitEditingSession="",unitAdminUnit="";
+let unitEditingId="",unitEditingSession="",unitAdminUnit="",bookingUnitFilter="",unitConfirmKey="";
 const unitEnabled=()=>unitConfig?.multi===true;
 function unitList(){
  let data=(unitConfig?.units||[]).filter(x=>x.active);
- if(unitCategory&&unitConfig?.grouped)data=data.filter(x=>(x.group||"")===unitCategory);
+ if(unitCategory&&unitConfig?.grouped)data=data.filter(x=>(x.group||"其他")===unitCategory);
  return data;
 }
 function sessionsOf(unitId=unitChoice){return (unitConfig?.sessions||[]).filter(x=>x.active&&x.unit_id===unitId);}
+function selectedUnitSession(){
+ const ss=sessionsOf();
+ return ss.find(x=>x.id===unitSessionChoice)||
+   ss.find(x=>Number(x.booked||0)<Number(x.capacity))||ss[0];
+}
+function unitBookingFingerprint(s,party){
+ return JSON.stringify({shop:slug,day,session:s?.id||"",party,
+  name:bookingContactName.trim(),phone:normalizeBookingPhone(bookingContactPhone),
+  items:[...bookingChosenItems].sort()});
+}
 function unitNameForSession(sid){
  const s=(unitConfig?.sessions||[]).find(x=>x.id===sid),u=(unitConfig?.units||[]).find(x=>x.id===s?.unit_id);
  return u?.name||"服務單位";
@@ -521,7 +531,7 @@ function unitChooseHtml(){
  const units=unitList(),groups=[...new Set((unitConfig?.units||[]).filter(x=>x.active).map(x=>x.group||"其他"))];
  const actual=units.find(x=>x.id===unitChoice)||units[0];
  const sessions=sessionsOf(actual?.id);
- const selected=sessions.find(x=>x.id===unitSessionChoice)||sessions[0];
+ const selected=selectedUnitSession();
  return (unitConfig?.grouped?
    '<label for="unit-category">服務分類</label><select id="unit-category" class="field"><option value="">全部分類</option>'+
      groups.map(g=>'<option value="'+esc(g)+'" '+(unitCategory===g?'selected':'')+'>'+esc(g)+'</option>').join("")+
@@ -535,8 +545,9 @@ function unitChooseHtml(){
    '</select>';
 }
 function unitBookingPanel(){
- const s=sessionsOf().find(x=>x.id===unitSessionChoice)||sessionsOf()[0];
+ const s=selectedUnitSession();
  const available=s&&Number(s.booked||0)+Number(bookingParty)<=s.capacity;
+ const confirming=customer?.booking_confirmation_required!==false&&unitConfirmKey===unitBookingFingerprint(s,Number(bookingParty));
  return box("選擇服務單位與預約場次",
    '<p class="small">所有服務單位共用這個網站，僅顯示目前有開放的場次。</p>'+
    field("預約日期","customer-day",day,"date",'min="'+taipei()+'" max="'+dateInThirtyDays()+'"')+
@@ -546,12 +557,18 @@ function unitBookingPanel(){
    '<div class="grid"><div>'+field("預約姓名","customer-book-name",bookingContactName,"text",'maxlength="60" required autocomplete="name"')+'</div>'+
    '<div>'+field("聯絡手機","customer-book-phone",bookingContactPhone,"tel",'required inputmode="tel" autocomplete="tel"')+'</div></div>'+
    '<p class="small">預約場次代表可報到的時段，實際開始服務時間依現場叫號與人員安排。</p>'+
-   '<div class="staff-actionbar">'+btn("確認預約","unit-book","primary full",
-     (!available||!validBookingContact()||!menuChoiceReady(customer?.tenant?.menu_booking_mode||"DISABLED",bookingChosenItems,customer?.menu_items||[])?'disabled':''))+'</div>')+
+   (confirming?'<div class="notice"><strong>確認預約資訊</strong><p>'+esc(unitNameForSession(s?.id))+' · '+esc(s?.name||"")+
+    '</p><p>日期：'+esc(day)+' '+esc(s?.start||"")+'–'+esc(s?.end||"")+'</p>'+
+    '<p>姓名：'+esc(bookingContactName.trim())+'，'+esc(bookingParty)+' 位</p></div>':'')+
+   '<div class="staff-actionbar">'+btn(confirming?"確認送出預約":"下一步：確認預約",
+    confirming?"unit-book-final":customer?.booking_confirmation_required===false?"unit-book-final":"unit-book-review",
+    "primary full",(!available||!validBookingContact()||
+    !menuChoiceReady(customer?.tenant?.menu_booking_mode||"DISABLED",bookingChosenItems,customer?.menu_items||[])?'disabled':''))+
+    (confirming?btn("返回修改","unit-book-back","outline"):"")+'</div>')+
    box("我的近期預約",renderBookings(customer?.my_reservations||[],true));
 }
 function unitQueuePanel(){
- const s=sessionsOf().find(x=>x.id===unitSessionChoice)||sessionsOf()[0];
+ const s=selectedUnitSession();
  return box("選擇服務單位與取號場次",
    '<p class="small">每個場次獨立叫號，取號後可從「我的取號」查看實際順序。</p>'+
    unitChooseHtml()+
@@ -1154,12 +1171,14 @@ function staffRender(){
        '</tbody></table></div>');
   }
  }else if(staffTab==="bookings"){
-  const visibleOpen=openBookings.filter(x=>staffBookingMatches(x));
-  const visibleDone=doneBookings.filter(x=>staffBookingMatches(x));
-  const visibleDeleted=deletedBookings.filter(x=>staffBookingMatches(x));
+  const unitMatch=x=>!unitEnabled()||!bookingUnitFilter||x.service_unit_id===bookingUnitFilter;
+  const visibleOpen=openBookings.filter(x=>staffBookingMatches(x)&&unitMatch(x));
+  const visibleDone=doneBookings.filter(x=>staffBookingMatches(x)&&unitMatch(x));
+  const visibleDeleted=deletedBookings.filter(x=>staffBookingMatches(x)&&unitMatch(x));
   const card=x=>{
    
    return '<article class="staff-record '+(x.deleted_at?'staff-deleted-record':'')+'"><div class="staff-record-head"><div><div class="staff-record-title">'+'預約 '+esc(x.number||'—')+'　'+esc(x.day)+'　'+esc(x.time)+'　'+esc(x.name)+'</div>'+
+   (x.unit?'<div class="small">'+esc(x.group||"")+' '+esc(x.unit)+' · '+esc(x.session||"")+'</div>':'')+
    '<div class="small">預約人數 '+esc(x.party)+' 位</div><div class="small">聯絡電話：'+(x.phone?'<a href="tel:'+esc(x.phone)+'">'+esc(x.phone)+'</a>':'尚未提供')+'</div>'+
    '<div class="small">送出預約時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
    selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+
@@ -1167,6 +1186,10 @@ function staffRender(){
    ''+'</article>';
   };
   html+=
+   (unitEnabled()?box("服務單位篩選",'<label for="staff-booking-unit-filter">顯示哪個服務單位</label>'+
+      '<select id="staff-booking-unit-filter" class="field"><option value="">全部服務單位</option>'+
+      (unitConfig.units||[]).map(u=>'<option value="'+esc(u.id)+'" '+(bookingUnitFilter===u.id?'selected':'')+'>'+esc(u.name)+'</option>').join("")+
+      '</select>'):"")+
    box("搜尋與篩選預約",'<p class="small">此處僅篩選目前已載入的資料：跨日未結案預約，以及最近 '+staffHistoryDays+' 天已處理紀錄；完整歷史請使用下方後端搜尋；日／週／月曆仍待開發。</p>'+
     '<div class="grid3"><div>'+field("搜尋預約編號、姓名或服務","staff-booking-search",staffBookingSearch,"search",'placeholder="輸入關鍵字"')+'</div>'+
     '<div><label for="staff-booking-date">預約日期</label><select id="staff-booking-date" class="field">'+
@@ -1179,7 +1202,9 @@ function staffRender(){
    '<div class="grid4" style="margin-bottom:16px">'+stat("待處理預約",openBookings.length)+stat("待報到",pendingBookings.length)+
     stat("已報到未結案",openBookings.filter(x=>x.status==="CHECKED_IN").length)+stat("已處理預約",doneBookings.length)+'</div>'+
    box("預約管理方式",'<p class="muted">只要沒有標記完成、未到或取消，預約就不因跨過午夜而消失。店員可直接勾選狀態，也可重新選擇修正手誤。</p>'+
-    '<p class="staff-help">預約獨立管理：「已報到」不會產生叫號號碼，也不需前往叫號管理。未來的預約僅可取消或恢復。</p>'+
+    '<p class="staff-help">'+(unitConfig?.linked?
+     '已啟用連動：報到後會為此場次建立一張候診票券，重複報到不會重複發號。':
+     '預約獨立管理：報到不會產生叫號號碼。')+'未來預約僅可取消或恢復。</p>'+
     '<div class="staff-actionbar">'+
     (lastStaffChange&&lastStaffChange.slug===slug?btn("還原上一步","undo-staff","outline"):"")+
     '<a class="btn outline" href="./poster.html?merchant='+encodeURIComponent(slug)+'&type=reserve" target="_blank" rel="noopener noreferrer">製作預約 QR 立牌</a></div>')+
@@ -1860,7 +1885,7 @@ function renderBookings(items,allowCancel){
   const buttons='<div class="staff-actionbar">'+
    btn("查看／列印預約憑證","booking-receipt","outline",'data-id="'+esc(x.id)+'"')+
    (["CONFIRMED","CHECKED_IN"].includes(x.status)?btn("加入行事曆（ICS）","booking-ics","outline",'data-id="'+esc(x.id)+'"'):"")+
-   (editable?btn("修改姓名／電話","edit-book-contact","secondary",'data-id="'+esc(x.id)+'"')+btn("編輯預約","edit-book","secondary",'data-id="'+esc(x.id)+'"')+
+   (editable?btn("修改姓名／電話","edit-book-contact","secondary",'data-id="'+esc(x.id)+'"')+(x.session_id?'':btn("編輯預約","edit-book","secondary",'data-id="'+esc(x.id)+'"'))+
    btn(focused&&manageMode==="cancel"?"確認取消預約":"取消預約","cancel-my-book","outline",'data-id="'+esc(x.id)+'"'):"")+'</div>';
   return '<article class="staff-record" style="'+(focused?'border:2px solid #0d9488;':'')+'">'+
    '<div class="staff-record-head"><div><strong>'+'預約 '+esc(x.number||"—")+' '+esc(x.day)+' '+esc(x.time)+'</strong>'+
@@ -2607,10 +2632,19 @@ document.addEventListener("click",async ev=>{
     return "已叫號 "+res.number+"；"+notice;
    });return;
  }
- if(a==="unit-book"){
+ if(a==="unit-book-review"){
+    const s=selectedUnitSession();
+    if(!s||!validBookingContact())return;
+    unitConfirmKey=unitBookingFingerprint(s,Number(bookingParty));render();return;
+ }
+ if(a==="unit-book-back"){unitConfirmKey="";render();return;}
+ if(a==="unit-book-final"){
+   if(customer?.booking_confirmation_required!==false&&unitConfirmKey!==unitBookingFingerprint(selectedUnitSession(),Number(bookingParty))){
+      showActionFeedback("預約資料已變動，請重新確認。","warning");unitConfirmKey="";render();return;
+   }
    await act(async()=>{
     if(lineLinkStatus!=="linked")throw Error("請先完成 LINE 身分驗證");
-    const s=sessionsOf().find(x=>x.id===unitSessionChoice)||sessionsOf()[0];
+    const s=selectedUnitSession();
     if(!s)throw Error("請選擇有效場次");
     if(!validBookingContact())throw Error("請填寫姓名及有效手機號碼");
     const party=Number(val("customer-party")),items=bookingChosenItems.slice();
@@ -2621,7 +2655,7 @@ document.addEventListener("click",async ev=>{
       p_name:bookingContactName.trim(),p_phone:normalizeBookingPhone(bookingContactPhone),
       p_party:party,p_items:items,p_request_id:requestId});
     clearCustomerBookingRequest(requestId);
-    customerTab="mine";unitSessionChoice="";bookingChosenItems=[];
+    customerTab="mine";unitSessionChoice="";bookingChosenItems=[];unitConfirmKey="";
     const notice=result.replayed?"":await sendLineNotice("notify-reservation",{reservationId:result.id});
     return (result.replayed?"已找到先前的預約":"預約已成立")+"；"+unitNameForSession(s.id)+" "+s.name+
       (notice?customerNoticeSuffix(notice):"");
@@ -2630,7 +2664,7 @@ document.addEventListener("click",async ev=>{
  if(a==="unit-take"){
    await act(async()=>{
     if(lineLinkStatus!=="linked")throw Error("請先完成 LINE 身分驗證");
-    const s=sessionsOf().find(x=>x.id===unitSessionChoice)||sessionsOf()[0];
+    const s=selectedUnitSession();
     if(!s)throw Error("請選擇有效場次");
     const result=await rpc("so_unit_take_number",{p_slug:slug,p_session_id:s.id,
       p_party:Number(val("customer-queue-party")),p_items:queueChosenItems.slice()});
@@ -2898,7 +2932,7 @@ document.addEventListener("input",ev=>{
  if(el?.id==="customer-book-name"||el?.id==="customer-book-phone"){
    if(el.id==="customer-book-name")bookingContactName=el.value;
    else bookingContactPhone=el.value;
-   bookingContactDirty=true;bookingConfirmationKey="";
+   bookingContactDirty=true;bookingConfirmationKey="";unitConfirmKey="";
    const submit=document.querySelector('button[data-act="book"]');
    if(submit)submit.disabled=!chosenSlot||!bookingParty||!validBookingContact()||
      !menuChoiceReady(customer?.tenant?.menu_booking_mode||"DISABLED",bookingChosenItems,customer?.menu_items||[]);
@@ -2912,7 +2946,7 @@ document.addEventListener("change",async ev=>{
    const id=el.value;
    if(el.checked&&!list.includes(id))list.push(id);
    if(!el.checked){const index=list.indexOf(id);if(index>=0)list.splice(index,1);}
-   if(flow==="booking"){chosenSlot="";serviceSlotPreview=null;void refreshServiceSlots();}
+   if(flow==="booking"){chosenSlot="";serviceSlotPreview=null;unitConfirmKey="";if(!unitEnabled())void refreshServiceSlots();}
    render();return;
  }
  if(el.id==="rule-service"){
@@ -2930,14 +2964,15 @@ document.addEventListener("change",async ev=>{
    calendarStatus=el.value;calendarPage=1;void loadBookingCalendar(1);return;
  }
  if(el.id==="customer-flag-picker"){customerFlagSelected=el.value;render();return;}
- if(el.id==="customer-day"){day=el.value;chosenSlot="";serviceSlotPreview=null;await load();return;}
+ if(el.id==="customer-day"){day=el.value;chosenSlot="";serviceSlotPreview=null;unitConfirmKey="";await load();return;}
  if(el.id==="unit-admin-date"){unitAdminDate=el.value;unitEditingSession="";await load();return;}
- if(el.id==="customer-unit"){unitChoice=el.value;unitSessionChoice="";render();return;}
- if(el.id==="unit-category"){unitCategory=el.value==="其他"?"":el.value;unitChoice="";unitSessionChoice="";render();return;}
- if(el.id==="unit-session"){unitSessionChoice=el.value;render();return;}
+ if(el.id==="customer-unit"){unitChoice=el.value;unitSessionChoice="";unitConfirmKey="";render();return;}
+ if(el.id==="unit-category"){unitCategory=el.value;unitChoice=unitList()[0]?.id||"";unitSessionChoice="";unitConfirmKey="";render();return;}
+ if(el.id==="unit-session"){unitSessionChoice=el.value;unitConfirmKey="";render();return;}
  if(el.id==="staff-unit-session"){unitStaffSession=el.value;render();return;}
+ if(el.id==="staff-booking-unit-filter"){bookingUnitFilter=el.value;render();return;}
  if(el.id==="unit-admin-unit"){unitAdminUnit=el.value;return;}
- if(el.id==="customer-party"){syncBookingPartyInput(el.value);return;}
+ if(el.id==="customer-party"){syncBookingPartyInput(el.value);unitConfirmKey="";return;}
  if(el.id==="customer-queue-party"){
   const n=Number(el.value);queuePartySize=Number.isInteger(n)&&n>=1&&n<=20?n:0;
   const button=document.querySelector('button[data-act="take"]');
