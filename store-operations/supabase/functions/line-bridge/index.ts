@@ -613,11 +613,11 @@ async function dispatchPendingNotices(req: Request, origin: string | null): Prom
 const PLATFORM_ENTRY = "https://hub-google.github.io/LINE/booking/";
 function platformBotMessage(command: string, welcome = false): Record<string, unknown> {
   const input = command.trim().toLowerCase().slice(0, 120);
-  let title = "請選擇要使用的服務";
+  let title = "排隊怪獸｜請選擇要使用的服務";
   let link = PLATFORM_ENTRY+"directory.html?mode=search";
   let label = "找店家預約";
   if (welcome) {
-    title = "歡迎加入 LINE 預約服務平台！可以搜尋不同店家、線上預約、現場取號，也能查看自己的預約和號碼。需要操作時再驗證 LINE 身分，不用另外註冊網站帳密。";
+    title = "歡迎加入排隊怪獸！可以搜尋不同店家、線上預約、現場取號，也能查看自己的預約和號碼。需要操作時再驗證 LINE 身分，不用另外註冊網站帳密。";
   } else if (!/客服|協助|幫助|問題|聯絡|人工/.test(input) && /商家|店家開通|申請開通|店員|管理後台|後台/.test(input)) {
     title = "商家可申請開通門市，已有帳號的店員請進入管理後台。";
     link = PLATFORM_ENTRY+"merchant-register.html";
