@@ -126,3 +126,45 @@ test("HQ LIFF endpoint is neutral to all merchant slugs",()=>{
  assert.match(workflow,/target = "https:\/\/hub-google\.github\.io\/LINE\/booking\/"/);
  assert.doesNotMatch(workflow,/target = ".*greenfield-salon/);
 });
+
+
+test("new stores default to discoverable without overriding existing opt-outs",()=>{
+ const migration=read("supabase/migrations/20261105154500_line_directory_default_and_customer_identity_history.sql");
+ const registration=read("saas/merchant-register.html");
+ assert.match(migration,/alter table public\.so_tenants alter column directory_enabled set default true;/);
+ assert.match(migration,/r\.user_id,'PLATFORM',true/);
+ assert.match(client,/允許在 LINE 預約平台公開搜尋我的門市/);
+ assert.match(client,/t\.directory_enabled\?'checked '/); // actual saved value drives the checkbox
+ assert.match(registration,/門市開通後預設公開/);
+ assert.doesNotMatch(client,/總公司 LINE 平台店家搜尋/);
+ assert.doesNotMatch(registration,/總公司 LINE OA/);
+});
+
+test("customer history links use scoped verified LINE identity, never names",()=>{
+ const migration=read("supabase/migrations/20261105154500_line_directory_default_and_customer_identity_history.sql");
+ assert.match(client,/data-customer-history-id/);
+ assert.match(client,/customer-history-link/);
+ assert.match(client,/function customerHistoryDialog\(\)/);
+ assert.match(client,/rpc\("so_staff_customer_reservation_history"/);
+ assert.match(migration,/ll\.tenant_id=r\.tenant_id and ll\.user_id=r\.user_id/);
+ assert.match(migration,/ll\.login_channel_id is not distinct from v_channel/);
+ assert.match(migration,/r\.user_id=p_customer_user_id/);
+ assert.match(migration,/private\.so_role\(v_tenant\) is null and not private\.so_platform\(\)/);
+ assert.match(migration,/revoke all on function public\.so_staff_customer_reservation_history\(text,uuid,integer,integer\) from public,anon/);
+ assert.doesNotMatch(migration,/where\s+r\.customer_name\s*=/i);
+});
+
+test("customer history popup renders link-specific records and pages",()=>{
+ const block=client.match(/function customerHistoryDialog\(\)\{[\s\S]*?\n\}/)?.[0];
+ assert.ok(block,"missing history dialog");
+ const fn=new Function("view","staffTab","staff","customerHistoryUserId","customerHistoryName","customerHistoryData",
+  "customerHistoryLoading","customerHistoryError","customerHistoryPage","esc","tag","formatTaipeiCreated","selectedItemsHtml","btn",
+  block+"\nreturn customerHistoryDialog();");
+ const html=fn("staff","settings",{},"11111111-1111-4111-8111-111111111111","同名測試顧客",
+  {total:26,page:1,has_more:true,items:[{name:"同名測試顧客",number:"10",day:"2026-11-05",time:"12:30",status:"CONFIRMED",party:2,reference_code:"demo",selected_items:[]}]},
+  false,"",1,(x)=>String(x??""),s=>s,x=>x,()=>"", (label,action)=>"[button:"+action+"]");
+ assert.match(html,/同名測試顧客｜歷史預約/);
+ assert.match(html,/共 26 筆預約/);
+ assert.match(html,/\[button:customer-history-next\]/);
+ assert.match(html,/預約 10/);
+});
