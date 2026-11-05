@@ -5,7 +5,7 @@ const $=id=>document.getElementById(id);
 const panel=$("explore-game"), world=$("explore-world"), street=$("explore-street");
 const list=$("explore-list"), listSwitch=$("explore-switch-list"),gameSwitch=$("explore-switch-game");
 if(!panel||!world||!street||!listSwitch||!gameSwitch)return;
-let shops=[],qaStore=null,area=null,visible=[],selectedIndex=0,activeView=false,category="全部";
+let shops=[],qaStore=null,demoShops=[],area=null,visible=[],selectedIndex=0,activeView=false,category="全部";
 const escapeHtml=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const cities=["基隆市","臺北市","台北市","新北市","桃園市","新竹市","新竹縣","苗栗縣","臺中市","台中市","彰化縣","南投縣","雲林縣","嘉義市","嘉義縣","臺南市","台南市","高雄市","屏東縣","宜蘭縣","花蓮縣","臺東縣","台東縣","澎湖縣","金門縣","連江縣"];
 const cityOf=store=>{
@@ -14,7 +14,7 @@ const cityOf=store=>{
  return found?.replace(/^臺/,"台")||"線上商圈";
 };
 function shopCategory(shop){return String(shop.category||"其他").trim()||"其他"}
-function groupOf(shop){return shop.test_board_only?"測試商圈":cityOf(shop)}
+function groupOf(shop){return shop.demo||shop.test_board_only?"測試商圈":cityOf(shop)}
 function destination(shop){
  if(shop.test_board_only)return shop.board_href;
  if(shop.modules?.reservation)return shop.reserve_href;
@@ -22,9 +22,10 @@ function destination(shop){
  return shop.board_href||"";
 }
 function gameList(){
- const all=[...shops];
- // Explicitly identify and isolate a test merchant from the public production feed.
- if(qaStore)all.push(qaStore);
+ const all=[...shops,...demoShops];
+ // Existing tests are never placed in the official directory. Keep the
+ // original QA board fallback if the dedicated sample endpoint fails.
+ if(qaStore&&!all.some(x=>x.slug===qaStore.slug))all.push(qaStore);
  return all.filter(s=>category==="全部"||shopCategory(s)===category);
 }
 function setView(view){
@@ -110,7 +111,7 @@ function selectShop(index,scroll=true){
   (shop.modules?.queue&&shop.modules?.calling?'<a class="btn secondary" href="'+escapeHtml(shop.board_href)+'">查看叫號看板</a>':"");
  $("arcade-shop-info").innerHTML='<div><strong>'+escapeHtml(shop.name)+'</strong><p>'+
   escapeHtml(shopSummary(shop))+(shop.address?" · "+escapeHtml(shop.address):"")+
-  (shop.test_board_only?" · 非正式合作店家":"")+'</p></div>'+
+  (shop.demo||shop.test_board_only?" · 示範門市（非正式合作店家）":"")+'</p></div>'+
   '<div class="arcade-panel-actions">'+links+'</div>';
  $("arcade-open-shop").disabled=!target;
  $("arcade-open-shop").dataset.href=target||"";
@@ -148,11 +149,12 @@ document.addEventListener("keydown",event=>{
  if(event.key==="Enter"&&event.target===document.body){event.preventDefault();$("arcade-open-shop").click()}
 });
 window.LineExploreGame={
- setData({shops:publicShops=[],testBoardShop=null}={}){
+ setData({shops:publicShops=[],testBoardShop=null,demoShops:sampleShops=[]}={}){
   shops=Array.isArray(publicShops)?publicShops.filter(s=>s?.slug&&!s.slug.startsWith("qa-")&&!["greenfield-salon","demo-clinic"].includes(s.slug)):[];
   qaStore=testBoardShop;
+  demoShops=Array.isArray(sampleShops)?sampleShops.filter(s=>s?.demo&&s?.slug):[];
   const current=$("arcade-game-categories").value||"全部";
-  const values=["全部",...new Set([...shops,...(qaStore?[qaStore]:[])].map(shopCategory))];
+  const values=["全部",...new Set(gameList().map(shopCategory))];
   $("arcade-game-categories").innerHTML=values.map(v=>'<option value="'+escapeHtml(v)+'">'+escapeHtml(v==="全部"?"全部類別":v)+'</option>').join("");
   category=values.includes(current)?current:"全部";
   $("arcade-game-categories").value=category;
