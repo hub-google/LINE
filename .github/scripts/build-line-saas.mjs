@@ -19,6 +19,8 @@ for (const name of pages) {
 }
 await copyFile(path.join(src, "version-watch.js"), path.join(dest, "version-watch.js"));
 await copyFile(path.join(src, "booking-theme.css"), path.join(dest, "booking-theme.css"));
+await copyFile(path.join(src, "monster-world.css"), path.join(dest, "monster-world.css"));
+await copyFile(path.join(src, "monster-mascot.svg"), path.join(dest, "monster-mascot.svg"));
 await copyFile(path.join(src, "explore-game.css"), path.join(dest, "explore-game.css"));
 await copyFile(path.join(src, "explore-game.js"), path.join(dest, "explore-game.js"));
 await copyFile(path.join(src, "site-auth.css"), path.join(dest, "site-auth.css"));
@@ -57,17 +59,17 @@ function pwaIcon(size) {
     const nx=(x+.5)/size,ny=(y+.5)/size;
     const p=y*stride+1+x*4;
     if(!roundRect(nx,ny,0,0,1,1,.19))continue;
-    let c=[23,62,52,255]; // forest green background
+    let c=[70,43,82,255]; // monster-purple background
     const paper=roundRect(nx,ny,.18,.19,.82,.84,.065);
-    if(paper)c=[250,253,246,255];
-    if(paper&&ny>=.31&&ny<=.43)c=[206,232,209,255];
+    if(paper)c=[246,221,251,255];
+    if(paper&&ny>=.31&&ny<=.43)c=[237,198,245,255];
     if(roundRect(nx,ny,.30,.14,.40,.32,.025)||
-       roundRect(nx,ny,.60,.14,.70,.32,.025))c=[255,255,255,255];
+       roundRect(nx,ny,.60,.14,.70,.32,.025))c=[254,198,90,255];
     // Three rows of calendar appointments.
     for(const yy of [.54,.65,.76]){
       for(const xx of [.32,.46,.60,.74]){
         if(Math.abs(nx-xx)<.035&&Math.abs(ny-yy)<.032&&paper)
-          c=xx===.60&&yy===.65?[235,165,127,255]:[65,133,100,255];
+          c=xx===.60&&yy===.65?[252,165,199,255]:[107,57,137,255];
       }
     }
     pixels[p]=c[0];pixels[p+1]=c[1];pixels[p+2]=c[2];pixels[p+3]=c[3];
