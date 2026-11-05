@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="line-saas-build" content="__LINE_SAAS_BUILD__">
 <script defer src="./version-watch.js?build=__LINE_SAAS_BUILD__"></script>
-<title>LINE 預約｜門市 QR 立牌製作</title>
+<title>排隊怪獸｜門市 QR 立牌製作</title>
 <meta name="description" content="依正式門市資料製作線上預約與現場取號 QR Code，支援 A4 列印、PDF 與 PNG。">
 <style>
 :root{--ink:#173b32;--brand:#14674e;--muted:#58746a;--line:#dbe9e1}
@@ -48,7 +48,7 @@ p,small{line-height:1.65;color:var(--muted)}
  .poster{width:210mm;min-width:210mm;height:297mm;box-shadow:none;border:0;border-radius:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}
 }
 </style>
-<link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script></head>
+<link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=__LINE_SAAS_BUILD__"></head>
 <body>
 <header><div class="wrap"><div><h1>門市 QR 立牌製作</h1><div>同一套 LINE 預約與叫號系統，分別產出專屬 QR</div></div><div class="site-auth-slot site-auth-dark" id="site-auth-root" aria-label="使用者登入狀態"><a class="site-auth-button site-auth-login" href="./?view=customer&amp;merchant=greenfield-salon&amp;tab=home">使用 LINE 登入</a></div></div></header>
 <main>
@@ -155,7 +155,7 @@ function drawPosterPng(){
  const center=w/2;
  ctx.fillStyle="#fff";ctx.fillRect(0,0,w,h);
  ctx.textAlign="center";ctx.textBaseline="top";
- ctx.fillStyle="#14674e";ctx.font='bold 82px "Noto Sans TC",sans-serif';ctx.fillText("LINE 預約服務平台",center,320);
+ ctx.fillStyle="#462B52";ctx.font='bold 82px "Noto Sans TC",sans-serif';ctx.fillText("排隊怪獸",center,320);
  ctx.fillStyle="#173b32";ctx.font='bold 138px "Noto Sans TC",sans-serif';
  let y=splitText(ctx,shopName,center,490,2180,170,3);
  y=Math.max(y,880);
