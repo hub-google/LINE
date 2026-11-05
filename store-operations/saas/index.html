@@ -718,9 +718,9 @@ function safeHistoryCsvCell(value){
  return '"'+v.replace(/"/g,'""')+'"';
 }
 function historyCsvContent(items){
- const columns=["預約日期","預約時間","預約編號","永久參考碼","編號批次","顧客暱稱","人數","狀態","服務項目","送出預約時間","最後更新時間","顧客端已隱藏"];
+ const columns=["預約日期","預約時間","預約編號","永久參考碼","編號批次","預約姓名","聯絡電話","人數","狀態","服務項目","送出預約時間","最後更新時間","顧客端已隱藏"];
  const rows=items.map(x=>[
-  x.day,x.time,x.number,x.reference_code,x.round,x.name,x.party,jsStatus(x.status),
+  x.day,x.time,x.number,x.reference_code,x.round,x.name,x.phone||'',x.party,jsStatus(x.status),
   Array.isArray(x.selected_items)?x.selected_items.map(i=>i?.name||"").filter(Boolean).join("、"):"",
   formatTaipeiCreated(x.created_at),formatTaipeiCreated(x.updated_at),x.deleted_at?"是":"否"
  ]);
@@ -780,6 +780,7 @@ function historyBookingResultHtml(){
  const cards=items.map(x=>'<article class="staff-record'+(x.deleted_at?' staff-deleted-record':'')+'">'+
   '<div class="staff-record-head"><div><div class="staff-record-title">預約 '+esc(x.number||"—")+'　'+esc(x.day||"")+'　'+esc(x.time||"")+'</div>'+
   '<div class="small">'+esc(x.name||"")+" ・ "+esc(x.party||0)+' 位</div>'+
+  '<div class="small">聯絡電話：'+(x.phone?'<a href="tel:'+esc(x.phone)+'">'+esc(x.phone)+'</a>':'尚未提供')+'</div>'+
   '<div class="small">建立時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
   '<div class="small">永久參考碼：'+esc(x.reference_code||"—")+' ・ 編號批次：'+esc(x.round??"—")+'</div>'+
   selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+
@@ -911,6 +912,7 @@ function bookingCalendarPanel(){
    '<article class="staff-record"><div class="staff-record-head"><div>'+
     '<strong>'+esc(x.day)+' '+esc(x.time)+' ・ '+esc(x.number||"—")+'</strong>'+
     '<div class="small">'+esc(x.name||"")+" ・ "+esc(x.party||0)+' 位</div>'+
+  '<div class="small">聯絡電話：'+(x.phone?'<a href="tel:'+esc(x.phone)+'">'+esc(x.phone)+'</a>':'尚未提供')+'</div>'+
     '<div class="small">編號批次 '+esc(x.round??"—")+' ・ '+esc(x.reference_code||"—")+'</div>'+
     selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div></article>').join("");
   const total=Number(data.total||0);
@@ -1485,7 +1487,7 @@ function crossRecords(){
  const errMessage=customerActivityError?'<p class="alert">'+esc(customerActivityError)+'</p>':"";
  const bookingHtml=bookings.length?bookings.slice(0,80).map(x=>
    '<article class="cross-record"><div class="cross-ticket-head"><strong>'+esc(x.shop_name)+'</strong>'+tag(x.status)+'</div>'+
-   '<div>預約 '+esc(x.number||"—")+' ・ '+esc(x.day)+' '+esc(x.time)+' ・ '+esc(x.party)+' 位</div>'+
+   '<div>預約 '+esc(x.number||"—")+' ・ '+esc(x.day)+' '+esc(x.time)+' ・ '+esc(x.party)+' 位</div><div class="small">預約姓名：'+esc(x.name||'—')+' ・ 聯絡電話：'+esc(x.phone||'未提供')+'</div>'+
    '<div class="small">送出預約時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
    selectedItemsHtml(x.selected_items)+
    '<div class="staff-actionbar">'+btn("查看／管理預約","open-cross-booking","secondary",
