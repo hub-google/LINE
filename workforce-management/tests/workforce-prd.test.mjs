@@ -101,7 +101,8 @@ test('leave UI selects latest effective policy and rejects stale version shadowi
  assert.match(src,/const seen=new Set\(\)/);
  assert.match(src,/if\(!seen\.has\(p\.leave_kind\)\)/);
  assert.match(src,/p_on:today\(\)/);
- assert.match(src,/leaveKindOptions/);
+ assert.match(src,/const leaveOptions=latest\.length/);
+ assert.match(src,/if\(requestKind==='leave'\)fields\.push/);
 });
 
 
