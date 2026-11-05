@@ -28,7 +28,7 @@ test("FR-112: confirmation review is shown before creating reservation",()=>{
  assert.match(ui,/if\(a==="book"&&customer\?\.booking_confirmation_required!==false\)/);
  assert.match(ui,/if\(a==="book-final"&&/);
  assert.match(ui,/if\(a==="book"\|\|a==="book-final"\)\{await act/);
- assert.match(ui,/so_book_with_items_once/);
+ assert.match(ui,/so_book_with_contact_once/);
  assert.match(ui,/customerBookingRequestId/);
  assert.match(ui,/clearCustomerBookingRequest\(requestId\)/);
 });
