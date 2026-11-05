@@ -186,6 +186,34 @@ try{
   await employeePage.locator('#appContent .chip.approved').first().waitFor({state:'visible',timeout:20000});
   await screenshot(employeePage,'05-employee-approved');
  });
+ await step('Real notifications are visible only to the intended employee and manager',async()=>{
+  const employeeNotes=await rows('wm_notifications',users[1].token,'select=recipient_member_id,event_key,body&tenant_id=eq.'+tenant);
+  assert.ok(employeeNotes.some(x=>x.event_key.endsWith(':rejected')&&x.body.includes('駁回')),'Missing rejected notice');
+  assert.ok(employeeNotes.some(x=>x.event_key.endsWith(':approved')&&x.body.includes('核准')),'Missing approved notice');
+  assert.ok(employeeNotes.every(x=>x.recipient_member_id===member),'Employee saw another user notification');
+  const managerNotes=await rows('wm_notifications',users[2].token,'select=recipient_member_id,event_key&tenant_id=eq.'+tenant);
+  assert.ok(managerNotes.some(x=>x.event_key.startsWith('request:new:')),'Manager missing new request notice');
+  assert.ok(managerNotes.every(x=>x.recipient_member_id===managerMember),'Manager saw another user notification');
+  return 'Both decision notifications reached employee; new requests notified manager, RLS separated';
+ });
+ await step('Real manager creates a published employee shift through website',async()=>{
+  await managerPage.locator('#nav [data-tab="schedule"]').click();
+  await managerPage.locator('#pageActions [data-action="newShift"]').click();
+  const form=managerPage.locator('#overlay form[data-form="shift"]');
+  await form.waitFor({state:'visible'});
+  await form.locator('[name="member_id"]').selectOption(member);
+  await form.locator('[name="branch_id"]').selectOption(branch);
+  await form.locator('[name="starts_at"]').fill('2027-02-15T09:00');
+  await form.locator('[name="ends_at"]').fill('2027-02-15T17:00');
+  await form.locator('[name="status"]').selectOption('published');
+  await form.locator('[name="notes"]').fill('E2E manager shift '+run);
+  await screenshot(managerPage,'06-manager-shift-form');
+  await form.locator('button[type="submit"]').click();
+  await form.waitFor({state:'hidden'});
+  const shifts=await rows('wm_shifts',users[2].token,'select=id,member_id,status&tenant_id=eq.'+tenant);
+  assert.ok(shifts.some(x=>x.member_id===member&&x.status==='published'));
+  return 'Manager UI published a real DB shift';
+ });
  await step('Employee cannot create manager-only shift through REST',async()=>{
   const r=await req(api+'/rest/v1/wm_shifts','POST',{
    tenant_id:tenant,member_id:member,branch_id:branch,status:'published',created_by:users[1].id,
