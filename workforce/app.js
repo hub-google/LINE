@@ -1832,3 +1832,26 @@ $('appContent').addEventListener('click',async e=>{
  }catch(error){banner(error.message,true);}
  finally{b.disabled=false;}
 });
+
+
+/* Keep original PRD tabs intact, but group them before the sidebar becomes scrollable. */
+(function organizeWorkforceMenu(){
+ const nav=document.getElementById('nav');if(!nav)return;
+ const original=[...nav.querySelectorAll('button[data-tab]')];
+ const buttons=new Map(original.map(el=>[el.dataset.tab,el]));
+ const groups=[
+  ['工作空間',['overview','schedule','punch','qr']],
+  ['人員與假勤',['requests','approvals','employees','inbox']],
+  ['報表與營運',['reports','periods','anomalies','line','settings']]
+ ];
+ for(const [caption,tabs] of groups){
+  const section=document.createElement('div');section.className='nav-section';
+  section.textContent=caption;section.setAttribute('aria-hidden','true');
+  nav.appendChild(section);
+  for(const tab of tabs){const button=buttons.get(tab);if(button)nav.appendChild(button);}
+ }
+ // A future PRD tab stays visible even before its group is assigned.
+ for(const button of original){if(!groups.some(group=>group[1].includes(button.dataset.tab)))nav.appendChild(button);}
+ const active=nav.querySelector('button.active');
+ if(active)active.setAttribute('aria-current','page');
+})();
