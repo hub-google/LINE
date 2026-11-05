@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="line-saas-build" content="20131ff1a0de01f525ef5feb56696255279b0556">
+  <meta name="line-saas-build" content="7bb9941212279dd38f2aecffdfec3af15035f451">
 <link rel="manifest" href="./manifest.webmanifest">
 <script>
 if("serviceWorker" in navigator && location.protocol==="https:"){
  window.addEventListener("load",()=>navigator.serviceWorker.register("./pwa-sw.js",{scope:"./"}).catch(()=>{}),{once:true});
 }
 </script>
-  <script defer src="./version-watch.js?build=20131ff1a0de01f525ef5feb56696255279b0556"></script>
+  <script defer src="./version-watch.js?build=7bb9941212279dd38f2aecffdfec3af15035f451"></script>
   <meta name="theme-color" content="#f8faf5">
   <meta name="description" content="LINE 預約服務平台：商家可管理線上預約、現場取號與叫號；顧客從 LINE 或店家連結查看預約與進度。">
   <meta property="og:type" content="website">
@@ -184,6 +184,27 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
       .closing{padding:65px 0}
       .footer-top{align-items:flex-start;flex-direction:column}
     }
+
+    /* Dedicated in-store queue display feature */
+    .tv-section{background:linear-gradient(120deg,#eef8ed,#f9fbf4)}
+    .tv-feature{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:35px;align-items:center}
+    .tv-points{display:grid;gap:13px;margin:25px 0 30px;padding:0;list-style:none;color:#315e46;font-size:15px}
+    .tv-points li{display:flex;gap:12px;align-items:flex-start}
+    .tv-points li::before{content:"✓";background:#25834d;color:white;border-radius:50%;min-width:24px;height:24px;text-align:center;font-size:14px;line-height:24px;font-weight:900}
+    .tv-preview{border-radius:22px;background:#fff;box-shadow:0 25px 60px #0d3d291b;padding:15px}
+    .tv-preview-label{font-size:11px;letter-spacing:.12em;color:#6f8b79;font-weight:800;margin-bottom:10px;text-align:right}
+    .tv-screen{border-radius:13px;overflow:hidden;background:#fff;aspect-ratio:16/9;display:flex;flex-direction:column;border:2px solid #d8e5dc}
+    .tv-screen-head{background:#067039;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 18px;font-size:clamp(12px,1.3vw,19px);font-weight:900}
+    .tv-screen-head time{font-size:clamp(12px,1.5vw,21px)}
+    .tv-screen-main{display:grid;grid-template-columns:1.55fr 1fr;gap:12px;flex:1;padding:12px}
+    .tv-now{background:#e3f7e7;border-radius:15px;display:flex;flex-direction:column;justify-content:center;align-items:center;min-width:0;color:#073b21}
+    .tv-now span,.tv-order b{font-size:clamp(11px,1.5vw,21px)}
+    .tv-now strong{font-size:clamp(44px,6.2vw,87px);font-weight:950;line-height:1.5}
+    .tv-order{background:#f1f5f1;border-radius:15px;padding:10px;display:grid;gap:5px;text-align:center;align-content:stretch}
+    .tv-order span{background:#fff;border-radius:8px;display:grid;place-items:center;font-size:clamp(13px,1.9vw,27px);font-weight:900;line-height:1.2}
+    .tv-caption{color:#6a806e;text-align:center;font-size:12px;padding:12px 0 3px}
+    @media(max-width:850px){.tv-feature{grid-template-columns:1fr}.tv-preview{max-width:650px;width:100%;margin:auto}.tv-screen-head{font-size:16px}.tv-now span,.tv-order b{font-size:16px}.tv-now strong{font-size:clamp(65px,10vw,98px)}.tv-order span{font-size:clamp(18px,4vw,31px)}}
+    @media(max-width:620px){.tv-feature{gap:22px}.tv-screen-main{gap:5px;padding:7px}.tv-order{gap:3px;padding:5px}.tv-screen-head{font-size:11px;padding:7px 10px}.tv-now span,.tv-order b{font-size:11px}.tv-now strong{font-size:clamp(38px,10vw,62px)}.tv-order span{font-size:clamp(13px,3.4vw,20px)}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn{transition:none}.btn:hover{transform:none}}
   </style>
 </head>
@@ -193,7 +214,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   <div class="wrap nav">
     <a class="logo" href="./home.html" aria-label="LINE 預約平台首頁"><span class="logo-mark">L</span><span>LINE 預約</span></a>
     <nav class="navlinks" aria-label="主選單">
-      <a href="#features">平台特色</a><a href="#use-cases">預約與叫號</a><a href="#how-it-works">使用方式</a><a href="#faq">常見問題</a>
+      <a href="#features">平台特色</a><a href="#use-cases">預約與叫號</a><a href="#store-display">店內顯示器</a><a href="#how-it-works">使用方式</a><a href="#faq">常見問題</a>
     </nav>
     <div class="nav-actions">
       <a class="btn btn-outline" href="./?view=staff">商家登入</a>
@@ -202,7 +223,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
     <details class="mobile-menu">
       <summary aria-label="展開主選單">選單</summary>
       <nav class="menu-panel" aria-label="手機主選單">
-        <a href="#features">平台特色</a><a href="#use-cases">預約與叫號</a><a href="#how-it-works">使用方式</a><a href="#faq">常見問題</a>
+        <a href="#features">平台特色</a><a href="#use-cases">預約與叫號</a><a href="#store-display">店內顯示器</a><a href="#how-it-works">使用方式</a><a href="#faq">常見問題</a>
         <a href="./directory.html?mode=search">顧客找店家</a><a href="./?view=staff">商家登入</a><a href="./merchant-register.html">商家申請開通</a>
       </nav>
     </details>
@@ -263,6 +284,38 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
           <div class="visual" aria-hidden="true"><div class="ui-card ui-ticket"><p>門市現場叫號</p><strong>12</strong><p>候位進度請以即時畫面為準</p></div></div>
           <div class="showcase-content"><h3>現場取號與叫號</h3><p>門市可以管理下一位、過號、完成服務。顧客查看目前叫號；電視看板公開展示必要資訊，不暴露姓名或聯絡方式。</p><a href="./directory.html?mode=queue">尋找提供現場取號的店家 <span aria-hidden="true">›</span></a></div>
         </article>
+      </div>
+    </div>
+  </section>
+
+
+  <section id="store-display" class="section tv-section" aria-labelledby="tv-title">
+    <div class="wrap tv-feature">
+      <div class="tv-copy">
+        <p class="kicker">IN-STORE QUEUE DISPLAY</p>
+        <h2 id="tv-title">店內叫號顯示器<br>一台螢幕就能看清楚。</h2>
+        <p class="section-sub">店家只要準備一台電視或顯示器，開啟專屬叫號網頁，就能讓現場顧客清楚看到目前叫號到幾號，以及接下來的等候排序。</p>
+        <ul class="tv-points">
+          <li>顯示目前叫號與接下來等候排序，不只顯示候位組數。</li>
+          <li>過號回復、重叫或調整排序後，依門市實際隊列同步更新。</li>
+          <li>店員用手機、平板或電腦操作；顧客只需看店內螢幕。</li>
+        </ul>
+        <div class="hero-cta">
+          <a class="btn btn-solid" href="./board.html?merchant=greenfield-salon">查看測試門市叫號畫面 <span class="arrow" aria-hidden="true">›</span></a>
+          <a class="btn btn-outline" href="./?view=staff">進入店員叫號後台</a>
+        </div>
+        <p class="footer-note">無需購買專用 LED 叫號機；可使用現有電視、螢幕及能開啟瀏覽器的裝置。</p>
+      </div>
+      <div class="tv-preview" aria-label="店內叫號螢幕外觀示意，非即時資料">
+        <div class="tv-preview-label">店內叫號螢幕・畫面示意</div>
+        <div class="tv-screen">
+          <div class="tv-screen-head"><span>▤　青禾風格美髮</span><time>10:24</time></div>
+          <div class="tv-screen-main">
+            <div class="tv-now"><span>目前叫號</span><strong>28</strong></div>
+            <div class="tv-order"><b>接下來等候排序</b><span>29</span><span>31</span><span>30</span><span>32</span><span>33</span></div>
+          </div>
+        </div>
+        <div class="tv-caption">實際號碼與順序來自門市系統；看板不顯示顧客個資。</div>
       </div>
     </div>
   </section>
