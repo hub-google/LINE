@@ -133,7 +133,7 @@ test("new stores default to discoverable without overriding existing opt-outs",(
  const registration=read("saas/merchant-register.html");
  assert.match(migration,/alter table public\.so_tenants alter column directory_enabled set default true;/);
  assert.match(migration,/r\.user_id,'PLATFORM',true/);
- assert.match(client,/允許在 LINE 預約平台公開搜尋我的門市/);
+ assert.match(client,/允許在 排隊怪獸公開搜尋我的門市/);
  assert.match(client,/t\.directory_enabled\?'checked '/); // actual saved value drives the checkbox
  assert.match(registration,/門市開通後預設公開/);
  assert.doesNotMatch(client,/總公司 LINE 平台店家搜尋/);
