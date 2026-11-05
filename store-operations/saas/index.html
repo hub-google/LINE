@@ -1992,6 +1992,9 @@ function enhanceStaffUI(){
   heading.remove();detail.append(summary,body);
   card.classList.add("staff-fold-card");card.appendChild(detail);
  }
+ // Booking and queue items are operational worklists: show status, call and delete controls immediately.
+ // Do not put their controls behind a second click on either desktop or mobile.
+ if(staffTab==="bookings"||staffTab==="queue")return;
  for(const card of root.querySelectorAll(".staff-record")){
   const heading=card.querySelector(":scope > .staff-record-head");
   if(!heading)continue;
