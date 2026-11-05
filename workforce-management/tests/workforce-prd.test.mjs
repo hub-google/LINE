@@ -212,3 +212,12 @@ test('HR sidebar remains usable with expanded PRD sections on desktop and mobile
  }
  assert.match(html,/<nav id="nav"/);
 });
+
+test('real Auth onboarding uses safe minimal-response inserts without exposing private wage columns',()=>{
+ const sql=migration('20261105101037_workforce_tenant_creator_bootstrap_read.sql');
+ assert.match(sql,/created_by = \(SELECT auth\.uid\(\)\)/);
+ assert.match(sql,/is_demo = false/);
+ assert.match(src,/\['\/rest\/v1\/wm_tenants','\/rest\/v1\/wm_members'\]\.includes\(url\)/);
+ assert.match(src,/return=minimal/);
+ assert.match(src,/newTenantId=crypto\.randomUUID\(\)/);
+});
