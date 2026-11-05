@@ -1,6 +1,18 @@
 -- New stores are discoverable by default, without overriding existing merchant opt-outs.
 alter table public.so_tenants alter column directory_enabled set default true;
 
+-- Bring existing demo/QA stores in line with the new checkbox default only when no
+-- staff manager explicitly saved a listing preference. Demo/QA records remain
+-- excluded from the public directory by so_directory_search.
+update public.so_tenants t
+set directory_enabled=true,updated_at=now()
+where t.directory_enabled=false
+  and (t.slug like 'qa-%' or t.slug in ('greenfield-salon','demo-clinic'))
+  and not exists (
+    select 1 from public.so_audit a
+    where a.tenant_id=t.id and a.action='set_directory_listing'
+  );
+
 -- Merchant approval must follow the same default (it previously forced false explicitly).
 create or replace function public.so_review_merchant_request(p_id uuid, p_approve boolean)
 returns jsonb language plpgsql security definer set search_path to '' as $fn$
