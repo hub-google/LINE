@@ -42,3 +42,18 @@ test("Pages builds the stylesheet and deploys only booking and legacy SaaS paths
  assert.match(deploy,/git -C "\$pubdir" add -- booking\/ saas\//);
  assert.doesNotMatch(deploy,/git -C "\$pubdir" add\s+--all/);
 });
+
+test("staff backoffice keeps compact mobile controls and progressive records",()=>{
+ assert.match(app,/const staffQuickNav=view==="staff"/);
+ assert.match(app,/nav\("工作台","dashboard",staffTab,"staff"\)/);
+ assert.match(app,/nav\("預約","bookings",staffTab,"staff"\)/);
+ assert.match(app,/nav\("叫號","queue",staffTab,"staff"\)/);
+ assert.match(app,/function enhanceStaffUI\(\)/);
+ assert.match(app,/function staffListPage\(items,key,renderItem\)/);
+ assert.match(app,/staffListPage\(visibleOpen,"booking-open",card\)/);
+ assert.match(app,/staffListPage\(openTickets,"ticket-open",card\)/);
+ assert.match(app,/staffSecondaryByTab/);
+ assert.match(css,/body\[data-portal="staff"\] \.staff-mobile-nav/);
+ assert.match(css,/@media\(max-width:950px\)/);
+ assert.match(css,/min-height:44px/);
+});
