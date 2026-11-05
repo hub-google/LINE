@@ -43,6 +43,7 @@ class RichMenuContract(unittest.TestCase):
 
     def test_aliases_and_tab_geometry(self):
         self.assertNotEqual(richmenu.CUSTOMER_ALIAS, richmenu.MERCHANT_ALIAS)
+        self.assertIn("排隊怪獸", SOURCE.read_text(encoding="utf-8"))
         self.assertLessEqual(len(richmenu.CUSTOMER_ALIAS), 32)
         self.assertLessEqual(len(richmenu.MERCHANT_ALIAS), 32)
         self.assertGreater(richmenu.TAB_HEIGHT, 0)
