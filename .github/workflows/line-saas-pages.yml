@@ -35,6 +35,8 @@ jobs:
           node --check store-operations/saas/explore-game.js
           node --check store-operations/saas/site-auth.js
           test -s store-operations/saas/booking-theme.css
+          test -s store-operations/saas/monster-world.css
+          test -s store-operations/saas/monster-mascot.svg
       - name: Verify LINE customer and notification contracts
         run: node --test store-operations/tests/site-auth-contract.test.mjs store-operations/tests/explore-game-interaction.test.mjs store-operations/tests/explore-game-contract.test.mjs store-operations/tests/saas-contract.test.mjs store-operations/tests/queue-board-contract.test.mjs store-operations/tests/qr-poster-contract.test.mjs store-operations/tests/marketing-home-contract.test.mjs store-operations/tests/booking-branding-contract.test.mjs store-operations/tests/booking-capacity-receipt.test.mjs store-operations/tests/booking-staff-filter-csv.test.mjs store-operations/tests/booking-timestamp-seconds.test.mjs store-operations/tests/staff-reservation-history-contract.test.mjs store-operations/tests/booking-full-history-csv.test.mjs store-operations/tests/staff-booking-calendar-contract.test.mjs store-operations/tests/customer-reservation-ics.test.mjs store-operations/tests/booking-pwa-contract.test.mjs store-operations/tests/queue-ticket-party-size-k03.test.mjs store-operations/tests/queue-sync-ux11.test.mjs store-operations/tests/booking-idempotency-contract.test.mjs store-operations/tests/booking-break-overlap-contract.test.mjs store-operations/tests/queue-hold-resume-contract.test.mjs store-operations/tests/queue-arrival-admission-contract.test.mjs store-operations/tests/queue-selected-call-k10.test.mjs store-operations/tests/queue-session-switch-k12.test.mjs store-operations/tests/booking-resource-duration-contract.test.mjs store-operations/tests/service-units-contract.test.mjs store-operations/tests/queue-near-alert-oss-n03.test.mjs store-operations/tests/booking-confirmation-fr112.test.mjs store-operations/tests/store-announcements-fr110.test.mjs store-operations/tests/customer-ledger-blacklist-fr109.test.mjs
       - name: Build versioned LINE Pages files
@@ -49,6 +51,8 @@ jobs:
           grep -q "$GITHUB_SHA" "$RUNNER_TEMP/line-saas-dist/release.json"
           grep -q "booking-theme.css" "$RUNNER_TEMP/line-saas-dist/index.html"
           test -s "$RUNNER_TEMP/line-saas-dist/booking-theme.css"
+          test -s "$RUNNER_TEMP/line-saas-dist/monster-world.css"
+          test -s "$RUNNER_TEMP/line-saas-dist/monster-mascot.svg"
           test -s "$RUNNER_TEMP/line-saas-dist/explore-game.css"
           test -s "$RUNNER_TEMP/line-saas-dist/explore-game.js"
           test -s "$RUNNER_TEMP/line-saas-dist/site-auth.css"
@@ -67,7 +71,7 @@ jobs:
           git worktree add --detach "$pubdir" origin/gh-pages
           for product in booking saas; do
             mkdir -p "$pubdir/$product"
-            for f in index.html template.html home.html board.html poster.html directory.html merchant-register.html merchant-center.html privacy.html terms.html version-watch.js release.json booking-theme.css explore-game.css explore-game.js site-auth.css site-auth.js manifest.webmanifest pwa-sw.js offline.html pwa-icon-192.png pwa-icon-512.png; do
+            for f in index.html template.html home.html board.html poster.html directory.html merchant-register.html merchant-center.html privacy.html terms.html version-watch.js release.json booking-theme.css monster-world.css monster-mascot.svg explore-game.css explore-game.js site-auth.css site-auth.js manifest.webmanifest pwa-sw.js offline.html pwa-icon-192.png pwa-icon-512.png; do
               cp "$RUNNER_TEMP/line-saas-dist/$f" "$pubdir/$product/$f"
             done
           done
