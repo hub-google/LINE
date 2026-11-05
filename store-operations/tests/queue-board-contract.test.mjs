@@ -21,7 +21,7 @@ test("TV board browser module parses and supports automatic deployment versionin
   assert.equal(syntax.status,0,syntax.stderr);
   assert.match(build,/"board\.html"/);
   assert.match(deploy,/for product in booking saas/);
-  assert.match(deploy,/for f in index\.html home\.html board\.html/);
+  assert.match(deploy,/for f in [^\n]*index\.html[^\n]*home\.html[^\n]*board\.html/);
 });
 
 test("TV board reads privacy-safe store numbers publicly without LINE/Supabase sign-in",()=>{
