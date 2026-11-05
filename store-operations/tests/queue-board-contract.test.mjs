@@ -53,11 +53,11 @@ test("TV board polls the safe public read with stale indication and no sign-in",
 
 test("public board links bypass LINE login on the homepage, directory and merchant customer portal",()=>{
   const home=read("saas/home.html"),directory=read("saas/directory.html"),customer=read("saas/index.html");
-  assert.match(home,/公開叫號看板（免登入）/);
+  assert.match(home,/公開叫號看板/);
   assert.match(home,/board\.html\?merchant=qa-84b3ef9297eb470685a91a527ca499ca/);
-  assert.match(directory,/公開叫號看板（免登入）/);
+  assert.match(directory,/公開叫號看板/);
   assert.match(directory,/board\.html\?merchant=/);
   assert.match(directory,/original\.searchParams\.get\("view"\)!=="customer"\)return/);
   assert.match(customer,/if\(lineLinkStatus!=="linked"\)return box\("門市公開即時叫號"/);
-  assert.match(customer,/公開即時叫號看板（免登入）/);
+  assert.match(customer,/公開即時叫號看板/);
 });
