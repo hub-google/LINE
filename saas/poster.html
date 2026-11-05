@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="line-saas-build" content="4cc888614e337195fe16c815a411bdd1ddd43813">
-<script defer src="./version-watch.js?build=4cc888614e337195fe16c815a411bdd1ddd43813"></script>
+<meta name="line-saas-build" content="a290e49216866feeefbbb675ffc81c3c0e5d74db">
+<script defer src="./version-watch.js?build=a290e49216866feeefbbb675ffc81c3c0e5d74db"></script>
 <title>排隊怪獸｜門市 QR 立牌製作</title>
 <meta name="description" content="依正式門市資料製作線上預約與現場取號 QR Code，支援 A4 列印、PDF 與 PNG。">
 <style>
-:root{--ink:#173b32;--brand:#14674e;--muted:#58746a;--line:#dbe9e1}
+:root{--ink:#462B52;--brand:#693C8B;--muted:#785F84;--line:#dbe9e1}
 *{box-sizing:border-box}
 body{margin:0;background:#eff4f0;color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif}
 header{background:#113e33;color:#fff;padding:22px 24px}
@@ -48,7 +48,7 @@ p,small{line-height:1.65;color:var(--muted)}
  .poster{width:210mm;min-width:210mm;height:297mm;box-shadow:none;border:0;border-radius:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}
 }
 </style>
-<link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=4cc888614e337195fe16c815a411bdd1ddd43813"></head>
+<link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=a290e49216866feeefbbb675ffc81c3c0e5d74db"></head>
 <body>
 <header><div class="wrap"><div><h1>門市 QR 立牌製作</h1><div>同一套 LINE 預約與叫號系統，分別產出專屬 QR</div></div><div class="site-auth-slot site-auth-dark" id="site-auth-root" aria-label="使用者登入狀態"><a class="site-auth-button site-auth-login" href="./?view=customer&amp;merchant=greenfield-salon&amp;tab=home">使用 LINE 登入</a></div></div></header>
 <main>
@@ -156,12 +156,12 @@ function drawPosterPng(){
  ctx.fillStyle="#fff";ctx.fillRect(0,0,w,h);
  ctx.textAlign="center";ctx.textBaseline="top";
  ctx.fillStyle="#462B52";ctx.font='bold 82px "Noto Sans TC",sans-serif';ctx.fillText("排隊怪獸",center,320);
- ctx.fillStyle="#173b32";ctx.font='bold 138px "Noto Sans TC",sans-serif';
+ ctx.fillStyle="#462B52";ctx.font='bold 138px "Noto Sans TC",sans-serif';
  let y=splitText(ctx,shopName,center,490,2180,170,3);
  y=Math.max(y,880);
- ctx.font='bold 160px "Noto Sans TC",sans-serif';ctx.fillStyle="#14674e";
+ ctx.font='bold 160px "Noto Sans TC",sans-serif';ctx.fillStyle="#693C8B";
  ctx.fillText(currentMode()==="queue"?"現場取號":"線上預約",center,y+40);
- ctx.font='normal 66px "Noto Sans TC",sans-serif';ctx.fillStyle="#173b32";
+ ctx.font='normal 66px "Noto Sans TC",sans-serif';ctx.fillStyle="#462B52";
  ctx.fillText("掃碼進入本店網頁，驗證 LINE 身分後即可使用",center,y+270);
  const n=qrMatrix.getModuleCount(),px=Math.floor(1550/(n+8));
  const qrSize=(n+8)*px,x=Math.round((w-qrSize)/2),top=Math.max(1260,y+400);
@@ -169,9 +169,9 @@ function drawPosterPng(){
  ctx.fillStyle="#000";
  for(let row=0;row<n;row++)for(let col=0;col<n;col++)
   if(qrMatrix.isDark(row,col))ctx.fillRect(x+(col+4)*px,top+(row+4)*px,px,px);
- ctx.fillStyle="#173b32";ctx.font='bold 82px "Noto Sans TC",sans-serif';
+ ctx.fillStyle="#462B52";ctx.font='bold 82px "Noto Sans TC",sans-serif';
  ctx.fillText(currentMode()==="queue"?"掃描立即取號，查看候位進度":"掃描選擇日期與時間，完成預約",center,top+qrSize+90);
- ctx.font='normal 38px sans-serif';ctx.fillStyle="#58746a";
+ ctx.font='normal 38px sans-serif';ctx.fillStyle="#785F84";
  splitText(ctx,target,center,top+qrSize+225,2180,48,4);
  ctx.font='normal 47px "Noto Sans TC",sans-serif';
  ctx.fillText("請確認掃描後為正確門市，再進行預約或取號。",center,h-240);
