@@ -1,5 +1,5 @@
-import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-(()=>{
+ (async()=>{
+ const {createClient}=await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
 "use strict";
 const mount=document.getElementById("site-auth-root");
 if(!mount)return;
