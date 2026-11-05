@@ -137,12 +137,15 @@ function rowButtons(id,mode){if(!manager())return '';if(mode==='shift')return '<
 function memberFilter(selected='',name='member_id'){let arr=app.data?.members||[];if(app.mode==='real'&&!manager())arr=arr.filter(m=>m.user_id===app.user?.id);return '<select name="'+name+'" required>'+options(arr,m=>m.display_name,selected)+'</select>';}
 function branchFilter(selected='',name='branch_id'){return '<select name="'+name+'" required>'+options(app.data?.branches||[],b=>b.name,selected)+'</select>';}
 function getSelected(){const arr=app.data?.members||[];if(!arr.some(m=>m.id===app.focusMember)){app.focusMember=(app.mode==='real'&&!manager()?arr.find(x=>x.user_id===app.user?.id):arr.find(x=>x.role==='employee')||arr[0])?.id||'';}return app.focusMember;}
+function requestShortcutButtons(){
+ return '<div class="request-shortcuts"><button type="button" class="btn primary" data-action="newLeaveRequest">＋ 請假</button><button type="button" class="btn" data-action="newOvertimeRequest">＋ 加班</button><button type="button" class="btn" data-action="newCorrectionRequest">＋ 補卡</button></div>';
+}
 function overview(){
  const d=app.data,m=d.members||[],s=d.shifts||[],req=d.requests||[],p=d.punches||[];
  const todayShifts=s.filter(x=>taiDay(x.starts_at)===today()&&x.status==='published');
  const todayPunch=p.filter(x=>taiDay(x.punched_at)===today());
  const pending=req.filter(x=>x.status==='pending');
- heading();
+ heading(requestShortcutButtons());
  const cards='<div class="cards">'+stat('員工總數',m.filter(x=>x.status==='active').length,'目前在職人數')+stat('今日排班',todayShifts.length,'已發布的班次')+stat('今日打卡',todayPunch.length,'伺服器實際紀錄')+stat('待審申請',pending.length,'請假、加班、補卡')+'</div>';
  const shiftRows=todayShifts.sort((a,b)=>a.starts_at.localeCompare(b.starts_at)).map(s=>tr([personLabel(s.member_id),esc(branch(s.branch_id)?.name||''),taiTime(s.starts_at)+'–'+taiTime(s.ends_at),status(s.status)]));
  const act=p.slice(0,6).map(x=>'<li><span><b>'+personLabel(x.member_id)+'</b>　'+esc(kind(x.kind))+'</span><small>'+taiStamp(x.punched_at)+'</small></li>').join('')||'<li class="muted">尚無打卡紀錄</li>';
@@ -176,7 +179,7 @@ function requests(){
  const filterBar='<div class="request-filters" role="group" aria-label="篩選申請項目">'+
   [['all','全部'],['leave','請假'],['overtime','加班'],['correction','補卡']].map(([k,label])=>
   '<button type="button" class="request-filter '+(filter===k?'active':'')+'" aria-pressed="'+(filter===k)+'" data-action="filterRequests" data-kind="'+k+'">'+label+' <span>'+counts[k]+'</span></button>').join('')+'</div>';
- heading('<div class="request-shortcuts"><button class="btn primary" data-action="newLeaveRequest">＋ 請假</button><button class="btn" data-action="newOvertimeRequest">＋ 加班</button><button class="btn" data-action="newCorrectionRequest">＋ 補卡</button></div>');
+ heading(requestShortcutButtons());
  const rows=req.map(x=>tr([personLabel(x.member_id),esc(kind(x.kind))+(x.kind==='leave'?' · '+esc(kind(x.leave_kind)):''),
  taiStamp(x.starts_at),taiStamp(x.ends_at),status(x.status),esc(x.reason||'—')]));
  const verifiedBalances=(app.data.leaveBalances||{})[sel]||[];
