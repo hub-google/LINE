@@ -2082,7 +2082,22 @@ document.addEventListener("click",async ev=>{
    const kind=b.dataset.kind;
    if(!["booking","queue"].includes(kind))return;
    const label=kind==="booking"?"預約":"叫號";
-   if(!confirm("確定重置「"+label+"」編號嗎？\n\n下一筆新"+(kind==="booking"?"預約":"取號")+"會從 1 開始。既有資料與原編號保留。\n\n未結案資料也將保留，可能與新號碼顯示相同編號。"))return;
+   if(busy)return;
+   let preview;
+   try{
+     preview=await rpc("so_number_reset_preview",{p_slug:slug,p_kind:kind});
+   }catch(error){
+     showActionFeedback("無法確認未結案筆數，為避免錯誤重置，請稍後重試："+(error?.message||"未知錯誤"),"error");
+     return;
+   }
+   const count=Number(preview?.still_open);
+   if(!Number.isSafeInteger(count)||count<0){
+     showActionFeedback("無法取得可信的未結案筆數，已取消重置。","error");return;
+   }
+   const warning=count>0
+     ?"目前還有 "+count+" 筆未結案"+label+"。重置後新舊批次可能出現相同顯示號碼，請以批次及紀錄識別，避免錯誤操作。"
+     :"目前沒有未結案"+label+"。";
+   if(!confirm("確定重置「"+label+"」編號嗎？\n\n"+warning+"\n\n下一筆新"+(kind==="booking"?"預約":"取號")+"會從 1 開始；歷史資料與原編號都會保留。"))return;
    await act(async()=>{
      const result=await rpc(kind==="booking"?"so_reset_booking_number":"so_reset_queue_number",{p_slug:slug});
      return label+"編號已重置，新資料將從 "+(result.prefix||"")+"1 開始；既有資料未更動。";
