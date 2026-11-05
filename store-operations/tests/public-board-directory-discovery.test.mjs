@@ -15,8 +15,8 @@ test("public search discovers real named QA board without mixing it into officia
  assert.match(directory,/testBoardShop=\{slug:qaSlug,name:boardResponse\.data\.shop_name/);
  assert.match(directory,/const testMatches=mode!=="mine"&&keyword&&testBoardShop/);
  assert.match(directory,/const filtered=\[\.\.\.official,\.\.\.testMatches\]/);
- assert.match(directory,/test_board_only\?'<span class="badge">測試門市・非正式合作店家<\/span>'/);
- assert.match(directory,/查看即時叫號看板（免登入）/);
+ assert.match(directory,/test_board_only\?'<span class="badge qa-badge">測試門市・非正式合作店家<\/span>'/);
+ assert.match(directory,/開啟叫號看板/);
  assert.match(directory,/if\(t\.test_board_only\)/);
  assert.match(directory,/if\(original\.searchParams\.get\("view"\)!=="customer"\)return/);
  assert.match(publicBoardSql,/grant execute on function public\.so_public_board\(text,integer\) to anon,authenticated/);
@@ -28,6 +28,23 @@ test("search directory remains syntactically valid and distinguishes reservation
    input:scripts[0][1],encoding:"utf8"
  });
  assert.equal(result.status,0,result.stderr);
- assert.match(directory,/預約時透過 LINE 驗證身分，並填寫姓名及聯絡手機/);
+ assert.match(directory,/預約及取號才需 LINE 身分驗證/);
  assert.match(directory,/so_public_directory/);
+});
+
+test("directory cards are styled and fully clickable on mobile and desktop",()=>{
+ const style=directory.match(/<style>([\s\S]*?)<\/style>/)?.[1];
+ assert.ok(style);
+ assert.match(style,/\.merchant-card\{/);
+ assert.match(style,/\.card-cover\{/);
+ assert.match(style,/\.card-actions\{/);
+ assert.match(style,/@media\(max-width:760px\)/);
+ assert.match(style,/@media\(max-width:410px\)/);
+ assert.match(directory,/class="card-cover"/);
+ assert.match(directory,/class="merchant-card/);
+ assert.match(directory,/const cover=primaryHref/);
+ assert.match(directory,/if\(t\.test_board_only\)\{/);
+ assert.match(directory,/primaryHref=boardHref/);
+ assert.match(directory,/els\.test\.classList\.toggle\("hidden",mode==="mine"\|\|Boolean\(keyword\)\)/);
+ assert.doesNotMatch(style,/border-color:var\(--brand\}/);
 });
