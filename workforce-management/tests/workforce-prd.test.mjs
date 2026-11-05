@@ -142,3 +142,57 @@ test('all employee app enhancements preserve the same static Github Pages app an
  assert.equal(open.length,1);
  assert.doesNotThrow(()=>new vm.Script(src));
 });
+
+
+
+test('HR-SCH-05 tenant-defined hour/rest and cross-store permissions protect real shifts',()=>{
+ const limits=migration('20261105_workforce_company_schedule_rules.sql');
+ const assignment=migration('20261105_workforce_cross_branch_assignments.sql');
+ const demo=migration('20261105_workforce_demo_company_schedule_rules.sql');
+ for(const marker of ['wm_schedule_rules','min_rest_minutes','max_shift_minutes',
+  'max_week_minutes','guard_shift_overlap'])assert.ok(limits.includes(marker),marker);
+ for(const marker of ['wm_member_branches','wm_assign_branch','cross_branch_assigned',
+  '員工未獲授權跨店'])assert.ok(assignment.includes(marker),marker);
+ assert.match(demo,/98d3505c-cbe6-46ed-a95a-13672e6d98f4/);
+ assert.match(src,/showScheduleRulesForm/);
+ assert.match(src,/showBranchSupportForm/);
+});
+test('HR-ATT-04 QR is 90 seconds, identity checked, replay-guarded and locally rendered',()=>{
+ const code=migration('20261105_workforce_dynamic_qr_clock.sql');
+ const replay=migration('20261105_workforce_qr_replay_guard.sql');
+ for(const term of ['wm_qr_challenges','wm_branch_qr_settings','wm_clock_qr','wm_issue_qr',
+  '90 seconds','extensions.digest','allow_gps_replacement','wm.qr_verified_branch'])
+  assert.ok(code.includes(term),term);
+ for(const term of ['FOR UPDATE','wm_qr_uses','同一個 QR','idempotent'])
+  assert.ok(replay.includes(term),term);
+ const vendor=readFileSync(new URL('../vendor/qrcode.min.js',import.meta.url),'utf8');
+ const license=readFileSync(new URL('../vendor/QR-CODE-LICENSE',import.meta.url),'utf8');
+ assert.ok(vendor.length>10000);
+ assert.match(license,/MIT License/);
+ assert.match(src,/TABS\.qr/);
+ assert.match(src,/wm_issue_qr/);
+ assert.match(src,/wm_clock_qr/);
+ assert.match(src,/\.\/vendor\/qrcode\.min\.js/);
+});
+test('HR-RPT personal attendance report excludes breaks across Taiwan midnight',()=>{
+ const start=src.indexOf('function attendanceRows(');
+ const end=src.indexOf('async function runAttendanceDetail(',start);
+ assert.ok(start>0&&end>start);
+ const taiDay=s=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(s));
+ const taiStamp=s=>String(s);
+ const person=id=>id==='u1'?{employee_code:'EM001',display_name:'虛構員工',
+  branch_id:'b1',department_id:'d1'}:null;
+ const parse=new Function('taiDay','taiStamp','person',
+  src.slice(start,end)+';return attendanceRows;')(taiDay,taiStamp,person);
+ const punch=(kind,at)=>({member_id:'u1',kind,punched_at:at});
+ const out=parse([
+  punch('IN','2026-11-04T23:00:00+08:00'),
+  punch('BREAK_START','2026-11-05T00:00:00+08:00'),
+  punch('BREAK_END','2026-11-05T00:30:00+08:00'),
+  punch('OUT','2026-11-05T01:30:00+08:00')
+ ],'2026-11-04','2026-11-05');
+ assert.equal(out.length,1);
+ assert.equal(out[0].day,'2026-11-04');
+ assert.equal(out[0].workMinutes,120);
+ assert.equal(out[0].incomplete,false);
+});
