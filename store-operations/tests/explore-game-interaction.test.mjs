@@ -15,6 +15,7 @@ function setup(search="?mode=game"){
   const e={id,hidden:false,value:id==="arcade-game-categories"?"全部":"",innerHTML:"",textContent:"",
    dataset:{},style:{},disabled:false,handlers:{},classList:{toggle(){},add(){},remove(){}},
    addEventListener(name,fn){this.handlers[name]=fn},
+   setAttribute(name,value){this[name]=value},
    scrollIntoView(){},
    querySelectorAll(selector){
     if(id==="arcade-shopline"&&selector==="[data-shop-index]"){
