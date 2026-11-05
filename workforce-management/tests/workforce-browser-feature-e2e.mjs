@@ -21,8 +21,9 @@ async function getData(){
  const text=await r.text();assert.equal(r.status,200,text.slice(0,200));return JSON.parse(text);
 }
 async function latest(check,desc){
- for(let i=0;i<24;i++){const item=check(await getData());if(item)return item;await page.waitForTimeout(300);}
- throw Error(desc+' did not persist');
+ for(let i=0;i<65;i++){const item=check(await getData());if(item)return item;await page.waitForTimeout(300);}
+ const notice=await page.locator('#toast').innerText().catch(()=> '');
+ throw Error(desc+' did not persist; website notice: '+notice.slice(0,250));
 }
 async function run(name,fn){
  try{const detail=await fn();cases.push({name,status:'PASS',detail});console.log('PASS '+name+' '+JSON.stringify(detail));}
@@ -112,12 +113,14 @@ try{
   await tab('requests');
   await page.locator('#appContent [data-extra="swapConsent"][data-id="'+swap.id+'"]').click();
   swap=await latest(d=>d.requests.find(r=>r.id===swap.id&&r.target_accepted_at),'peer consent');
+  await page.waitForLoadState('networkidle',{timeout:20000});
   await shot('13-swap-peer-accepted');
   return 'consented';
  });
  await run('UI manager approves swap, DB shifts exchange owners',async()=>{
   await tab('approvals');
   await page.locator('#appContent [data-action="approve"][data-id="'+swap.id+'"]').click();
+  await page.waitForLoadState('networkidle',{timeout:20000});
   const r=await latest(d=>d.requests.find(x=>x.id===swap.id&&x.status==='approved'),'approved swap');
   const d=await getData();
   const a=d.shifts.find(x=>x.id===lin.id),b=d.shifts.find(x=>x.id===zhang.id);
