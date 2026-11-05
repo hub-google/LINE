@@ -49,3 +49,25 @@ body{margin:0;font-size:14px;line-height:1.55}button,select,input,textarea{font:
  .sidebar nav button{padding-top:6px;padding-bottom:6px;min-height:35px}
  .sidebar nav .nav-section{padding-top:8px}
 }
+
+/* Dedicated leave / overtime / punch-correction entry actions. */
+#pageActions .request-shortcuts{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+#pageActions .request-shortcuts .btn{white-space:nowrap;min-height:40px;padding:9px 15px}
+#pageActions .request-shortcuts .btn:not(.primary){background:#fff;border-color:#cfe2df;color:#176b5f}
+#pageActions .request-shortcuts .btn:focus-visible{outline:3px solid #9be0ce;outline-offset:2px}
+.modal .request-hint{font-size:12px;line-height:1.75;color:#607b83;margin:16px 0 0}
+.modal .request-duration{display:inline-flex;margin:9px 0 0;padding:8px 13px;border-radius:8px;background:#ebf8f3;color:#146d5a;font-weight:700;font-size:13px}
+.modal .request-duration.invalid{background:#fff1ef;color:#ad453b}
+.modal .field textarea{min-height:96px}
+@media(max-width:850px){
+ .page-head:has(.request-shortcuts){display:block}
+ .page-head:has(.request-shortcuts) #pageActions{margin-top:14px}
+ #pageActions .request-shortcuts{width:100%}
+ #pageActions .request-shortcuts .btn{flex:1 1 auto;min-width:0}
+}
+@media(max-width:460px){
+ #pageActions .request-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+ #pageActions .request-shortcuts .btn{padding:10px 4px;font-size:12px}
+ .modal .modal-actions{position:sticky;bottom:-18px;margin:16px -18px -18px;padding:14px 18px 18px;background:#fff;border-top:1px solid #edf1f2}
+ .modal .modal-actions .btn{min-height:44px}
+}
