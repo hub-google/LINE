@@ -6,6 +6,8 @@ on:
     paths:
       - "workforce-management/tests/workforce-browser-e2e.mjs"
       - "workforce-management/app.js"
+      - "workforce-management/style.css"
+      - "workforce-management/tests/workforce-mobile-visual.mjs"
       - ".github/workflows/line-workforce-browser-e2e.yml"
 
 permissions:
@@ -29,7 +31,9 @@ jobs:
           npm install --no-save --no-audit --no-fund playwright@1.56.1
           npx playwright install --with-deps chromium
       - name: Test real website actions against real Supabase public DEMO
-        run: node workforce-management/tests/workforce-browser-e2e.mjs
+        run: |
+          node workforce-management/tests/workforce-browser-e2e.mjs
+          node workforce-management/tests/workforce-mobile-visual.mjs
       - name: Upload full screenshots and machine-readable results
         if: always()
         uses: actions/upload-artifact@v4
