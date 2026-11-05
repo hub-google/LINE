@@ -1,0 +1,95 @@
+/* 排隊怪獸：方案 A｜怪獸樂園全站視覺系統。功能／資料／LINE Auth 不變。 */
+:root{
+ --monster-ink:#462B52;--monster-purple:#B782D9;--monster-yellow:#FEC55A;
+ --monster-pink:#FCA5C7;--monster-lilac:#EAD4F8;--monster-bg:#FCF7FF;
+ --ink:#3C2B45;--muted:#785F84;--line:#E8D4F0;--bg:#FCF7FF;
+ --primary:#693C8B;--pale:#F2E1FA;--booking-forest:#462B52;
+ --booking-cream:#FFF8EA;--booking-mint:#F2E1FA;--booking-rose:#FFE6F0;
+ --forest:#462B52;--forest-2:#33203D;--green:#75449A;--green-dark:#54306F;
+ --mint:#F2E1FA;--paper:#FCF7FF;--cream:#FFF8EA;--rose:#FFE6F0;
+ --shadow:0 12px 30px rgba(70,43,82,.09);
+}
+html{accent-color:#74449A}
+body{color:#3C2B45;background:radial-gradient(circle at 93% 4%,#F0E0F9,transparent 38rem),radial-gradient(circle at 0 45%,#FEEAF3,transparent 33rem),#FCF7FF}
+a{color:#734599}a:hover{color:#48295D}
+:where(a,button,input,select,textarea,[role=button]):focus-visible{outline:3px solid #F5B948!important;outline-offset:3px}
+:where(h1,h2,h3,.brand,.logo,.shop-name){color:#462B52}
+:where(.muted,.small,.section-sub,.caption){color:#785F84}
+:where(.card,.panel,.main-panel,.routecard,.merchant-card,.stat,.staff-record,.cross-ticket,.cross-record,.screen,.receipt-card){border-color:#E7D0F0;border-radius:22px;box-shadow:0 9px 27px rgba(70,43,82,.07)}
+:where(input:not([type=checkbox]):not([type=radio]),select,textarea,.field,.search,.slot){background:#FFFCFF;border:1px solid #DEC7EB;color:#462B52;border-radius:13px}
+:where(.btn,.btn-solid,.btn.primary,.action,.site-auth-button){border-radius:14px}
+:where(.btn.primary,.btn-solid,.action.primary,.primary-btn){background:#693C8B;color:#fff;border:1px solid #693C8B;box-shadow:0 8px 18px rgba(105,60,139,.17)}
+:where(.btn.primary,.btn-solid,.action.primary,.primary-btn):hover{background:#532F74;color:#fff}
+:where(.btn.secondary,.btn-pale,.btn-outline,.btn.outline,.action.light,.action.outline-light){background:#F1DFF9;color:#462B52;border-color:#D9BEE8}
+:where(.btn.secondary,.btn-pale,.btn-outline,.btn.outline):hover{background:#E9D2F6}
+:where(.eyebrow,.pill,.public-note,.tag){background:#F0DDF9;color:#714394;border-color:#E0C6F0}
+:where(.notice,.tag.ok){background:#E5F5EC;color:#286C49}
+:where(.alert){background:#FFF2D4;color:#8A5B26}
+:where(.rows th,thead th){background:#F0E3F8;color:#624576}
+:where(.rows tr:hover td,tbody tr:hover td){background:#FCF5FF}
+:where(.side-item.active,.cross-tabs button.active,.tabs a.active,.tabs button.active,.slot.active,.staff-choice input:checked+span){background:#E7D0F6!important;color:#542A77!important;border-color:#AC79CD!important}
+:where(.side-item:hover,.header-links a:hover,.headlinks a:hover){background:#F2E5FA;color:#5C327D}
+:where(.stat,.routecard,.merchant-card){background:linear-gradient(145deg,#fff 58%,#F8E9FC)}
+:where(.stat strong,.ticket,.call,.serial-value,.queue-board-current){color:#633385}
+:where(.queue-board,.cross-ticket-stat){background:#F5E9FB;border-color:#E4C8F0}
+.site-auth-name .site-auth-avatar{background:#EDD9FA;color:#5B317D}
+.site-auth-button:not(.site-auth-login){border-color:#DDC2EB;background:#FFF9FF;color:#562D75}
+.site-auth-button.site-auth-login{background:#06C755!important;color:#fff!important;border-color:#06C755!important;box-shadow:none!important}
+.logo-mark,.brandmark,.brand-mark,.brand-icon,.app-mark,.logo:has(+span){background:#EDD6FB url("./monster-mascot.svg") center/95% no-repeat!important;color:transparent!important;text-indent:-9999px;overflow:hidden;border:2px solid #DBB8EE!important;border-radius:15px!important}
+.logo-mark:after{display:none}
+body>header,.site-head,.page-header{border-color:#EAD6F2}
+.site-head,body:has(#root)>header{background:rgba(252,247,255,.96)}
+:where(.site-head .navlinks,.headlinks a,.header-links a,.nav-group){color:#62466E}
+.nav-group--external{border-color:#DEC7E8}
+.page-header{background:linear-gradient(135deg,#E5C3F6,#F9E4F4 72%,#FFF2D9)!important}
+.page-header :where(h1,h2,.hero-heading,.brand){color:#462B52!important}
+.page-header .hero-heading{position:relative;padding-right:150px}
+.page-header .hero-heading:after{content:"";position:absolute;top:-48px;right:10px;width:152px;height:178px;background:url("./monster-mascot.svg") center/contain no-repeat;pointer-events:none}
+.page-header .site-auth-dark .site-auth-name{color:#462B52}
+body:has(.site-head) .hero{background:radial-gradient(circle at 90% 0%,#F7D7EF,transparent 38%),linear-gradient(125deg,#F1D8FA,#FCEBFA 68%,#FFF5DE)}
+body:has(.site-head) .hero:before{background:#D4A7EC;opacity:.45}
+body:has(.site-head) .hero:after{background:#FECFE1;opacity:.55}
+body:has(.site-head) h1 em{color:#8450B3}
+body:has(.site-head) h1 em:after{background:#FEC55A}
+body:has(.site-head) .lead{color:#6D5578}
+body:has(.site-head) .mock-ring{background:radial-gradient(circle at 40% 32%,#FCEBFF,#DCC0EE)}
+body:has(.site-head) .mock-scene:before{content:"";position:absolute;width:185px;height:235px;right:-18px;top:-32px;z-index:4;pointer-events:none;background:url("./monster-mascot.svg") center/contain no-repeat;transform:rotate(8deg)}
+body:has(.site-head) .phone{border-color:#4B2C5C;background:#FFF9FF}
+body:has(.site-head) .phone-notch{background:#462B52}
+body:has(.site-head) .phone-card{background:#F1DDF9}
+body:has(.site-head) .phone-action{background:#693C8B}
+body:has(.site-head) .slot-mini.active{background:#FEC55A;border-color:#E5AE43;color:#462B52}
+body:has(.site-head) .step-no{background:#EDCFF9}
+body:has(.site-head) .icon{background:#E9D0F8;color:#623580}
+body:has(.site-head) .icon.peach{background:#FFE1EA;color:#9D5276}
+body:has(.site-head) .icon.yellow{background:#FFF0BB;color:#8A641F}
+body:has(.site-head) .industry{background:#F8EDFC;border-color:#E4C9EE;color:#57376B}
+body:has(.site-head) .closing{background:#462B52}
+body:has(#root) .hero{background:linear-gradient(128deg,#E4BEF3,#F7E0F8 65%,#FFF1D4)!important;color:#462B52;box-shadow:0 12px 28px rgba(70,43,82,.1)}
+body:has(#root) .hero h1{color:#462B52}
+body:has(#root) .hero .muted{color:#6B507A}
+body:has(#root) .hero .eyebrow{color:#633C80!important;background:#FBEAFB!important}
+body:has(#root) .routecard:before{background:#FEC55A}
+body:has(#root) .routecard:nth-child(2n):before{background:#FCA5C7}
+body:has(#root) .card .card{background:#FCF7FF;border-color:#E9D6F1}
+body[data-portal=staff] .card,body[data-portal=platform] .card{background:#FFFDFE}
+body[data-portal=staff] .staff-mobile-nav{background:#FCF7FF}
+:where(.tabs a[aria-current=page],.tabs a.active){background:#714193!important;color:#fff!important}
+:where(.results-header h2,.merchant-card h3){color:#462B52}
+:where(.explore-view-switch button[aria-pressed=true]){background:#E9CFF8!important;color:#462B52!important}
+body:has(.top .brand-icon) .hero{background:linear-gradient(125deg,#E5C3F6,#FBE8F6)!important;color:#462B52}
+body:has(.top .brand-icon) .hero :where(h1,p){color:#462B52}
+body:has(#qa-login-panel) #qa-login-panel{background:#F5E6FC!important;border-color:#BF8FDA!important}
+body:has(#single-board){background:#FCF7FF}
+body:has(#single-board)>header{background:#462B52!important;color:#fff!important}
+body:has(#single-board)>header :where(.shop-title,#clock){color:#fff}
+body:has(#single-board) .panel.current{background:#F0D8F9!important;border-color:#DCC0ED}
+body:has(#single-board) .panel.next{background:#FFFDFE;border-color:#E6C9F1}
+body:has(#single-board) :where(#current,.unit-now){color:#5B2E7E!important}
+body:has(#single-board) .unit-card{background:#FFFDFE;border-color:#E6C9F1}
+body:has(#single-board) .underline{background:#FEC55A}
+body:has(#single-board) #upcoming li:not(.empty){background:#FFE8AF;color:#462B52;border-radius:16px}
+body:has(#single-board) footer{background:#F8EAFD;border-color:#E8D2F1}
+@media(max-width:980px){body:has(.site-head) .mock-scene:before{width:130px;height:165px;right:0}.page-header .hero-heading:after{width:110px;height:125px}}
+@media(max-width:620px){body:has(.site-head) .mock-scene:before{width:115px;height:146px;right:-6px;top:-23px}.page-header .hero-heading{padding-right:70px}.page-header .hero-heading:after{width:75px;height:90px;right:0;top:-25px}:where(.card,.panel,.main-panel,.merchant-card){border-radius:18px}}
+@media(prefers-reduced-motion:reduce){*::before,*::after{animation:none!important;transition:none!important}}
