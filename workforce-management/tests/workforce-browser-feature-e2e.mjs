@@ -71,10 +71,14 @@ try{
   return changed.status;
  });
  let lin,zhang,beforeLinMember,beforeZhangMember;
+ const d=await getData();
+ const latest=d.shifts.reduce((max,x)=>Math.max(max,Date.parse(x.starts_at)||0),Date.now());
+ const shiftDayLin=new Date(latest+4*86400000).toISOString().slice(0,10);
+ const shiftDayZhang=new Date(latest+5*86400000).toISOString().slice(0,10);
  await run('UI creates draft shift then publishes it',async()=>{
-  lin=await shift('林小美','2027-01-04','draft');
+  lin=await shift('林小美',shiftDayLin,'draft');
   assert.equal(lin.status,'draft');
-  await page.locator('#weekPicker').fill('2027-01-04');
+  await page.locator('#weekPicker').fill(shiftDayLin);
   await page.locator('#weekPicker').dispatchEvent('change');
   const publish=page.locator('#appContent [data-action="publishShift"][data-id="'+lin.id+'"]');
   await publish.waitFor({state:'visible'});
@@ -84,13 +88,14 @@ try{
   return lin.id;
  });
  await run('UI creates second member published shift',async()=>{
-  zhang=await shift('張志明','2027-01-05','published');
+  zhang=await shift('張志明',shiftDayZhang,'published');
   assert.equal(zhang.status,'published');beforeLinMember=lin.member_id;beforeZhangMember=zhang.member_id;return zhang.id;
  });
  let swap;
  await run('UI creates shift swap requiring peer consent',async()=>{
   await tab('schedule');
   await page.locator('#appContent [data-extra="newSwap"]').click();
+  await page.locator('[data-swap-sync-status]').getByText(/已同步最新班表/).waitFor({timeout:20000});
   const form=page.locator('#overlay form[data-form="swap_create"]');
   await form.waitFor({state:'visible'});
   await form.locator('[name="source_shift_id"]').selectOption(lin.id);
