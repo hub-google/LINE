@@ -1016,7 +1016,7 @@ function staffRender(){
   const card=x=>{
    
    return '<article class="staff-record '+(x.deleted_at?'staff-deleted-record':'')+'"><div class="staff-record-head"><div><div class="staff-record-title">'+'預約 '+esc(x.number||'—')+'　'+esc(x.day)+'　'+esc(x.time)+'　'+esc(x.name)+'</div>'+
-   '<div class="small">預約人數 '+esc(x.party)+' 位</div>'+
+   '<div class="small">預約人數 '+esc(x.party)+' 位</div><div class="small">聯絡電話：'+(x.phone?'<a href="tel:'+esc(x.phone)+'">'+esc(x.phone)+'</a>':'尚未提供')+'</div>'+
    '<div class="small">送出預約時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
    selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+
    (x.deleted_at?'<p class="staff-help">此預約已從顧客端隱藏；取消勾選刪除即可恢復。</p>':staffStatusPicker("reservation",x,x.day>taipei()?["CONFIRMED","CANCELLED"]:true))+staffDeletePicker("reservation",x)+
@@ -1697,11 +1697,11 @@ function renderBookings(items,allowCancel){
   const buttons='<div class="staff-actionbar">'+
    btn("查看／列印預約憑證","booking-receipt","outline",'data-id="'+esc(x.id)+'"')+
    (["CONFIRMED","CHECKED_IN"].includes(x.status)?btn("加入行事曆（ICS）","booking-ics","outline",'data-id="'+esc(x.id)+'"'):"")+
-   (editable?btn("編輯預約","edit-book","secondary",'data-id="'+esc(x.id)+'"')+
+   (editable?btn("修改姓名／電話","edit-book-contact","secondary",'data-id="'+esc(x.id)+'"')+btn("編輯預約","edit-book","secondary",'data-id="'+esc(x.id)+'"')+
    btn(focused&&manageMode==="cancel"?"確認取消預約":"取消預約","cancel-my-book","outline",'data-id="'+esc(x.id)+'"'):"")+'</div>';
   return '<article class="staff-record" style="'+(focused?'border:2px solid #0d9488;':'')+'">'+
    '<div class="staff-record-head"><div><strong>'+'預約 '+esc(x.number||"—")+' '+esc(x.day)+' '+esc(x.time)+'</strong>'+
-   '<div class="small">'+esc(x.name)+' ・ '+esc(x.party)+' 位</div>'+
+   '<div class="small">預約姓名：'+esc(x.name)+' ・ '+esc(x.party)+' 位</div><div class="small">聯絡手機：'+esc(x.phone||'未提供')+'</div>'+
    '<div class="small">送出預約時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
    selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+
    (focused&&manageMode==="cancel"&&editable?'<p class="staff-help">請核對預約資料，再點「確認取消預約」。</p>':'')+
@@ -1740,7 +1740,7 @@ function openBookingReceipt(bookingId){
    '<h2>'+esc(shop)+'</h2><p class="receipt-number">'+esc(record.number||"—")+'</p>'+
    '<div class="receipt-field"><span>預約日期</span><strong>'+esc(record.day||"—")+'</strong></div>'+
    '<div class="receipt-field"><span>預約時間</span><strong>'+esc(record.time||"—")+'</strong></div>'+
-   '<div class="receipt-field"><span>人數</span><strong>'+esc(record.party||"—")+' 位</strong></div>'+
+   '<div class="receipt-field"><span>人數</span><strong>'+esc(record.party||"—")+' 位</strong></div><div class="receipt-field"><span>預約姓名</span><strong>'+esc(record.name||"—")+'</strong></div><div class="receipt-field"><span>聯絡電話</span><strong>'+esc(record.phone||"尚未提供")+'</strong></div>'+
    '<div class="receipt-field"><span>目前狀態</span><strong>'+esc(status)+'</strong></div>'+
    '<div class="receipt-field"><span>服務項目</span><strong>'+esc(services.length?services.join("、"):"以門市紀錄為準")+'</strong></div>'+
    '<div class="receipt-field"><span>建立時間</span><strong>'+esc(formatTaipeiCreated(record.created_at))+'</strong></div>'+
@@ -2225,8 +2225,8 @@ document.addEventListener("click",async ev=>{
      if(/^[\s]*[=+@-]/.test(v))v="'"+v;
      return '"'+v.replace(/"/g,'""')+'"';
    };
-   const columns=["預約日期","時間","預約編號","顧客暱稱","人數","目前狀態","送出預約時間","顧客端已隱藏"];
-   const rows=records.map(x=>[x.day,x.time,x.number,x.name,x.party,jsStatus(x.status),
+   const columns=["預約日期","時間","預約編號","預約姓名","聯絡手機","人數","目前狀態","送出預約時間","顧客端已隱藏"];
+   const rows=records.map(x=>[x.day,x.time,x.number,x.name,x.phone||"",x.party,jsStatus(x.status),
      formatTaipeiCreated(x.created_at),x.deleted_at?"是":"否"]);
    const csv="\uFEFF"+[columns,...rows].map(row=>row.map(csvCell).join(",")).join("\r\n");
    const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
@@ -2352,6 +2352,33 @@ document.addEventListener("click",async ev=>{
   return "預約已成立："+day+" "+time+"，"+party+" 位"+customerNoticeSuffix(notice);
  });return}
 
+ if(a==="edit-book-contact"){
+   const b=(customer?.my_reservations||[]).find(x=>x.id===id);
+   if(!b||b.status!=="CONFIRMED")return;
+   document.getElementById("booking-contact-overlay")?.remove();
+   document.body.insertAdjacentHTML("beforeend",'<div id="booking-contact-overlay" class="receipt-backdrop" role="dialog" aria-modal="true" aria-label="修改預約聯絡資料"><article class="receipt-card"><h2>修改預約聯絡資料</h2><p>預約 '+esc(b.number||"")+'</p>'+
+     field("預約姓名","contact-edit-name",b.name||"","text",'maxlength="80" required')+
+     field("聯絡手機","contact-edit-phone",b.phone||"","tel",'inputmode="tel" required')+
+     '<p class="small">修改後會更新店家後台，並向您發送新的 LINE 預約通知。</p><div class="receipt-actions">'+
+     btn("儲存修改","save-book-contact","primary",'data-id="'+esc(b.id)+'"')+
+     btn("取消","close-book-contact","outline")+'</div></article></div>');
+   $("contact-edit-name")?.focus();return;
+ }
+ if(a==="close-book-contact"){document.getElementById("booking-contact-overlay")?.remove();return;}
+ if(a==="save-book-contact"){
+   const name=val("contact-edit-name"),phone=normalizeBookingPhone(val("contact-edit-phone"));
+   if(!name||name.length>80||/[\r\n\u0000-\u001f]/.test(name)||!/^09\d{8}$/.test(phone)){
+     showActionFeedback("請填寫有效的預約姓名與台灣手機號碼","error");return;
+   }
+   await act(async()=>{
+     const result=await rpc("so_update_booking_contact",{p_slug:slug,p_booking_id:id,p_name:name,p_phone:phone});
+     document.getElementById("booking-contact-overlay")?.remove();
+     bookingContactName=name;bookingContactPhone=phone;bookingContactDirty=false;
+     if(!result.changed)return "預約聯絡資料沒有變更";
+     const notice=await sendLineNotice("notify-reservation-updated",{reservationId:id});
+     return "預約姓名和電話已更新；"+notice;
+   });return;
+ }
  if(a==="booking-ics"){downloadReservationIcs(id);return;}
  if(a==="booking-receipt"){openBookingReceipt(id);return;}
  if(a==="receipt-close"){document.getElementById("booking-receipt-overlay")?.remove();return;}
@@ -2500,6 +2527,10 @@ document.addEventListener("click",async ev=>{
       const notice=await sendLineNotice("notify-reservation-restored",{reservationId:previous.id});
       return "已還原 "+previous.label+" 為「"+jsStatus(previous.before)+"」；"+notice;
     }
+    if(result.changed&&previous.kind==="ticket"&&previous.after==="CANCELLED"&&["WAITING","HOLD"].includes(previous.before)){
+      const notice=await sendLineNotice("notify-ticket-restored",{ticketId:previous.id,eventId:result.line_restore_event_id});
+      return "已還原 "+previous.label+" 為「"+jsStatus(previous.before)+"」；"+notice;
+    }
     return "已還原 "+previous.label+" 為「"+jsStatus(previous.before)+"」；不會重新發送 LINE 通知";
   });return;
  }
@@ -2621,6 +2652,9 @@ document.addEventListener("change",async ev=>{
        ?await sendLineNotice("notify-ticket-cancel",{ticketId:id})
        :await sendLineNotice("notify-reservation-cancel",{reservationId:id});
      msg+=customerNoticeSuffix(notice);
+   }
+   if(result.changed&&kind==="ticket"&&previous==="CANCELLED"&&["WAITING","HOLD"].includes(desired)){
+     msg+="；"+await sendLineNotice("notify-ticket-restored",{ticketId:id,eventId:result.line_restore_event_id});
    }
    if(result.changed&&kind==="reservation"&&previous==="CANCELLED"&&desired==="CONFIRMED"){
      // Restored reservations reuse the existing booking confirmation LINE card.
