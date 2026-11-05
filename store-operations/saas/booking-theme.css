@@ -551,3 +551,26 @@ body[data-portal="staff"] .staff-context-bar.staff-context-compact{
  body[data-portal="staff"] .staff-context-bar.staff-context-compact{padding:0}
  body[data-portal="staff"] .staff-context-compact .staff-history-controls label{display:inline}
 }
+
+
+/* Universal service-unit card UI shared by hospitals, salons, restaurants and counters. */
+.universal-staff-head{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
+ padding:22px 25px;margin-bottom:18px;background:#e9f5ed;border-radius:18px;border:1px solid #d8e9dc}
+.universal-staff-head h2{font-size:23px;margin:0 0 7px;color:#204734}
+.universal-staff-head p{font-size:13px;color:#658272;margin:0}
+.unit-form-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:16px 0 12px}
+.unit-form-header h3{font-size:17px;margin:0;color:#214d37}
+.unit-form-header span{font-size:12px;color:#809185}
+.unit-category-chips{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 17px}
+.unit-category-chips .btn{padding:9px 15px;border-radius:999px;font-size:13px}
+.unit-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0 20px}
+.unit-option{border:1px solid #dfebe1;background:#fff;border-radius:16px;padding:18px 16px;text-align:left;
+ display:flex;justify-content:space-between;align-items:center;gap:12px;cursor:pointer;font:inherit;color:inherit;width:100%;min-width:0;
+ transition:background .15s,border-color .15s}
+.unit-option:hover{border-color:#6dbb8a;background:#f8fdf8}
+.unit-option.selected{background:#edf8ef;border:2px solid #168157;padding:17px 15px}
+.unit-option-copy{display:block;min-width:0;flex:1}.unit-option-group{display:block;color:#508365;font-size:11px;font-weight:700}
+.unit-option-copy strong{display:block;font-size:16px;color:#214833;margin:5px 0}
+.unit-option-copy small{display:block;font-size:12px;line-height:1.5;color:#788b7e}
+.unit-option-trailing{font-size:22px;font-weight:700;color:#218558;flex:none}
+@media(max-width:620px){.unit-card-grid{grid-template-columns:1fr}.universal-staff-head{padding:17px;align-items:stretch}.universal-staff-head .btn{width:100%;text-align:center}}
