@@ -53,11 +53,12 @@ async function reload(silent=false){
  app.busy=true;if(!silent)$('appContent').innerHTML='<div class="loading">資料更新中，請稍後...</div>';
  try{
   if(app.mode==='demo'){
-   const [snapshot,leaveSnapshot,anomalySnapshot,scheduleRules]=await Promise.all([
+   const [snapshot,leaveSnapshot,anomalySnapshot,scheduleRules,memberBranches]=await Promise.all([
     demo(),call('/rest/v1/rpc/wm_demo_leave_api','POST',{p_action:'snapshot',p_data:{}}),
     call('/rest/v1/rpc/wm_demo_attendance_api','POST',{p_action:'snapshot',p_data:{}}),
-    call('/rest/v1/rpc/wm_demo_schedule_api','POST',{p_action:'snapshot',p_data:{}})]);
-   app.data={...snapshot,...leaveSnapshot,...anomalySnapshot,scheduleRules};
+    call('/rest/v1/rpc/wm_demo_schedule_api','POST',{p_action:'snapshot',p_data:{}}),
+    call('/rest/v1/rpc/wm_demo_branch_support','POST',{p_action:'snapshot',p_data:{}})]);
+   app.data={...snapshot,...leaveSnapshot,...anomalySnapshot,scheduleRules,memberBranches};
   }
   else if(!app.token){app.data=null;}
   else{
@@ -65,7 +66,7 @@ async function reload(silent=false){
    if(!app.tenants.find(t=>t.id===app.tenantId))app.tenantId=app.tenants[0]?.id||'';
    if(!app.tenantId){app.data=null;}else{
     const p='tenant_id=eq.'+encodeURIComponent(app.tenantId);
-    const [branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections,leavePolicies,attendanceCases,attendanceRuleRows,requestDocs,scheduleRuleRows]=await Promise.all([
+    const [branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections,leavePolicies,attendanceCases,attendanceRuleRows,requestDocs,scheduleRuleRows,memberBranches]=await Promise.all([
      query('wm_branches','select=*&'+p+'&order=name'),query('wm_members','select=id,tenant_id,branch_id,user_id,display_name,employee_code,role,employment_type,status,created_at,department_id,hired_on,left_on,skills&'+p+'&order=employee_code'),
      query('wm_shifts','select=*&'+p+'&order=starts_at.desc&limit=600'),query('wm_punches','select=*&'+p+'&order=punched_at.desc&limit=600'),
      query('wm_requests','select=*&'+p+'&order=created_at.desc&limit=300'),query('wm_leave_entitlements','select=*&'+p),
@@ -76,7 +77,8 @@ async function reload(silent=false){
      query('wm_attendance_adjustments','select=*&'+p+'&limit=300'),query('wm_leave_policies','select=*&'+p+'&order=effective_from.desc'),
      query('wm_attendance_anomalies','select=*&'+p+'&order=created_at.desc&limit=300'),
      query('wm_attendance_rules','select=*&'+p+'&limit=1'),query('wm_request_documents','select=*&'+p+'&order=created_at.desc&limit=300'),
-     query('wm_schedule_rules','select=*&'+p+'&order=effective_from.desc&limit=10')]);
+     query('wm_schedule_rules','select=*&'+p+'&order=effective_from.desc&limit=10'),
+     query('wm_member_branches','select=*&'+p+'&order=active_from.desc')]);
     if(members.some(m=>m.user_id===app.user?.id&&['owner','hr'].includes(m.role))){
       const wages=await call('/rest/v1/rpc/wm_staff_wages','POST',{p_tenant:app.tenantId},app.token);
       const lookup=new Map((wages||[]).map(w=>[w.member_id,w.hourly_rate]));
@@ -84,7 +86,7 @@ async function reload(silent=false){
     }
     app.data={tenant:app.tenants.find(t=>t.id===app.tenantId),branches,members,shifts,punches,requests,
       entitlements,availability,departments,templates,requirements,notifications,closures,
-      adjustments,corrections,leavePolicies,attendanceCases,attendanceRules:attendanceRuleRows[0]||null,requestDocs,scheduleRules:scheduleRuleRows.find(x=>x.effective_from<=today())||null,
+      adjustments,corrections,leavePolicies,attendanceCases,attendanceRules:attendanceRuleRows[0]||null,requestDocs,scheduleRules:scheduleRuleRows.find(x=>x.effective_from<=today())||null,memberBranches,
       leaveBalances:{},requestStages:[],server_at:new Date().toISOString()};
     const selected=getSelected();
     if(selected){
@@ -510,6 +512,8 @@ action=async function(name,data){
        p_action:name==='leave_policy'?'policy':'grant',p_data:data});
     else if(name==='schedule_rules')
       result=await call('/rest/v1/rpc/wm_demo_schedule_api','POST',{p_action:'save',p_data:data});
+    else if(name==='assign_branch')
+      result=await call('/rest/v1/rpc/wm_demo_branch_support','POST',{p_action:'assign',p_data:data});
     else if(name==='attendance_scan'||name==='attendance_resolve')
       result=await call('/rest/v1/rpc/wm_demo_attendance_api','POST',{
        p_action:name==='attendance_scan'?'scan':'resolve',p_data:data});
@@ -547,6 +551,9 @@ action=async function(name,data){
     p_tenant:tenant_id,p_from:data.from,p_to:data.through});
    else if(name==='attendance_resolve')result=await rpc('wm_resolve_attendance_anomaly',{
     p_id:data.id,p_note:data.note});
+   else if(name==='assign_branch')result=await rpc('wm_assign_branch',{
+    p_tenant:tenant_id,p_member:data.member_id,p_branch:data.branch_id,
+    p_from:data.active_from,p_until:data.active_until||null});
    else if(name==='schedule_rules')result=await rpc('wm_save_schedule_rules',{
     p_tenant:tenant_id,p_effective:data.effective_from,
     p_min_rest:Number(data.min_rest_minutes),p_max_shift:Number(data.max_shift_minutes),
@@ -1548,4 +1555,35 @@ function showScheduleRulesForm(){
 $('appContent').addEventListener('click',e=>{
  const b=e.target.closest('[data-extra="showScheduleRules"]');if(!b)return;
  try{showScheduleRulesForm();}catch(error){banner(error.message,true);}
+});
+
+
+
+/* HR-ORG-03: explicitly authorized cross-store support period. */
+extraNames.add('assign_branch');
+const beforeCrossShopEmployees=employees;
+employees=function(){
+ beforeCrossShopEmployees();
+ const canAssign=manager(),rows=(app.data?.memberBranches||[]).slice(0,100).map(a=>tr([
+  personLabel(a.member_id),esc(branch(a.branch_id)?.name||'—'),
+  esc(a.active_from),esc(a.active_until||'無設定期限')]));
+ $('appContent').insertAdjacentHTML('beforeend',
+  panel('員工跨店支援授權',
+   '<div class="notice">只有已經被主管指派支援該門市的在職員工，才能建立跨店班次。職務與排班日期仍須符合企業規則。</div>'+
+   table(['員工','獲授權支援的門市','生效日','結束日'],rows),
+   canAssign?'<button class="btn small" data-extra="showBranchSupport">新增跨店支援</button>':''));
+};
+function showBranchSupportForm(){
+ if(!manager())throw Error('需要主管權限');
+ showExtraForm('指派跨店支援','assign_branch',[
+  {name:'member_id',label:'支援員工',html:memberFilter(getSelected())},
+  {name:'branch_id',label:'支援門市',html:branchFilter()},
+  {name:'active_from',label:'開始日期',html:input('active_from','date',today())},
+  {name:'active_until',label:'結束日期（可不填）',
+   html:'<input id="active_until" name="active_until" type="date">'}
+ ],'儲存跨店授權');
+}
+$('appContent').addEventListener('click',e=>{
+ const b=e.target.closest('[data-extra="showBranchSupport"]');if(!b)return;
+ try{showBranchSupportForm();}catch(error){banner(error.message,true);}
 });
