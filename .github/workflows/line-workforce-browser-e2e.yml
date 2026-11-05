@@ -1,0 +1,40 @@
+name: LINE Workforce browser acceptance
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "workforce-management/tests/workforce-browser-e2e.mjs"
+      - "workforce-management/app.js"
+      - ".github/workflows/line-workforce-browser-e2e.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: workforce-browser-qa
+  cancel-in-progress: true
+
+jobs:
+  browser-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install locked browser test runner
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Test real website actions against real Supabase public DEMO
+        run: node workforce-management/tests/workforce-browser-e2e.mjs
+      - name: Upload full screenshots and machine-readable results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workforce-browser-qa-screenshots
+          path: workforce-management/e2e-artifacts/
+          if-no-files-found: warn
+          retention-days: 14
