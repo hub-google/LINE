@@ -22,6 +22,27 @@ test("all browser inline module scripts parse",()=>{
   }
  }
 });
+test("reservation and queue records expose action buttons without a detail toggle",()=>{
+ const source=client.match(/function enhanceStaffUI\(\)\{[\s\S]*?\n\}/)?.[0];
+ assert.ok(source,"staff UI enhancement missing");
+ const countRecordFoldAttempts=(staffTab)=>{
+  let count=0;
+  const root={querySelectorAll(selector){
+   if(selector===".staff-record")count++;
+   return [];
+  }};
+  const doc={querySelector(selector){return selector==="#root .content"?root:null;}};
+  new Function("document","view","staff","staffTab","staffUiExpanded",
+   source+"\nenhanceStaffUI();")(doc,"staff",{},staffTab,new Map());
+  return count;
+ };
+ assert.equal(countRecordFoldAttempts("bookings"),0,"reservation action controls must not be folded");
+ assert.equal(countRecordFoldAttempts("queue"),0,"queue action controls must not be folded");
+ assert.equal(countRecordFoldAttempts("calendar"),1,"unrelated staff sections keep their own UX");
+ assert.match(client,/staffStatusPicker\("reservation",x/);
+ assert.match(client,/staffStatusPicker\("ticket",x/);
+});
+
 test("ticket notifications format the persisted number",()=>{
  assert.match(bridge,/function ticketNumber\(/);
  assert.match(bridge,/ticket\.number_prefix\s*\?\?\s*""/);
