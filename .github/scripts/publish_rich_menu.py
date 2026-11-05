@@ -17,14 +17,26 @@ SPLITS_X = [0, 833, 1666, WIDTH]
 SPLITS_Y = [0, 843, HEIGHT]
 BASE = "https://hub-google.github.io/LINE/booking/"
 CENTER = BASE + "merchant-center.html"
-ITEMS = [
-    ("搜尋店家", "選店並預約", "search", {"type": "uri", "label": "搜尋店家", "uri": BASE + "directory.html?mode=search"}),
-    ("我的預約", "查看與取消", "features", {"type": "uri", "label": "我的預約", "uri": BASE + "directory.html?mode=mine"}),
-    ("現場取號", "選店家領號碼", "play", {"type": "uri", "label": "現場取號", "uri": BASE + "directory.html?mode=queue"}),
-    ("商家免費開通", "沒有 OA 也能用", "store", {"type": "uri", "label": "商家免費開通", "uri": CENTER + "#activate"}),
-    ("商家管理後台", "預約與叫號管理", "dashboard", {"type": "uri", "label": "商家管理後台", "uri": BASE + "?view=staff"}),
-    ("客服與教學", "操作說明與協助", "support", {"type": "uri", "label": "客服與教學", "uri": CENTER + "#guide"}),
+CUSTOMER_ITEMS = [
+    ("找店家預約", "搜尋全平台", "search", {"type":"uri","label":"找店家預約","uri":BASE+"directory.html?mode=search"}),
+    ("現場取號", "選店家領號", "play", {"type":"uri","label":"現場取號","uri":BASE+"directory.html?mode=queue"}),
+    ("我的紀錄", "跨店預約與號碼", "features", {"type":"uri","label":"我的紀錄","uri":BASE+"directory.html?mode=mine"}),
+    ("遊戲逛街", "另一種找店方式", "store", {"type":"uri","label":"遊戲逛街","uri":BASE+"directory.html?mode=game"}),
+    ("即時叫號", "選店查看看板", "dashboard", {"type":"uri","label":"即時叫號","uri":BASE+"directory.html?mode=queue"}),
+    ("客服中心", "文字詢問協助", "support", {"type":"message","label":"客服中心","text":"客服"}),
 ]
+MERCHANT_ITEMS = [
+    ("商家開通", "不用自有 OA", "store", {"type":"uri","label":"商家開通","uri":BASE+"merchant-register.html"}),
+    ("管理後台", "門市營運管理", "dashboard", {"type":"uri","label":"管理後台","uri":BASE+"?view=staff"}),
+    ("預約與叫號", "登入後台操作", "features", {"type":"uri","label":"預約與叫號","uri":BASE+"?view=staff"}),
+    ("QR 立牌", "取得專屬連結", "play", {"type":"uri","label":"QR 立牌","uri":CENTER+"#publish"}),
+    ("操作教學", "圖解商家流程", "guide", {"type":"uri","label":"操作教學","uri":CENTER+"#guide"}),
+    ("聯絡平台", "發訊息取得協助", "support", {"type":"message","label":"聯絡平台","text":"商家客服"}),
+]
+CUSTOMER_ALIAS = "platform-booking-customers"
+MERCHANT_ALIAS = "platform-booking-merchants"
+TAB_HEIGHT = 240
+
 
 
 def font(size, bold=False):
@@ -77,32 +89,40 @@ def icon(draw, kind, x, y, ink):
         draw.ellipse((x - 6, y + 94, x + 30, y + 125), fill=ink)
 
 
-def create_image():
+def create_image(items, selected):
     im = Image.new("RGB", (WIDTH, HEIGHT), "#073d35")
     d = ImageDraw.Draw(im)
     ink = "#06473d"
-    bold = font(96, True)
-    small = font(42)
-    for i, (title, description, glyph, _) in enumerate(ITEMS):
+    bold = font(82, True)
+    small = font(36)
+    tab_font = font(70, True)
+    for idx, label in enumerate(("顧客服務", "商家服務")):
+        x0, x1 = idx * WIDTH // 2, (idx+1) * WIDTH // 2
+        is_active = idx == selected
+        d.rounded_rectangle((x0+8, 7, x1-8, TAB_HEIGHT-7), radius=35,
+                            fill="#def5e8" if is_active else "#0b5a4a")
+        d.text(((x0+x1)//2, TAB_HEIGHT//2), label,
+               font=tab_font, fill=ink if is_active else "#ffffff", anchor="mm")
+    row_height = (HEIGHT - TAB_HEIGHT) // 2
+    for i, (title, description, glyph, _) in enumerate(items):
         row, col = divmod(i, 3)
-        left, right = SPLITS_X[col], SPLITS_X[col + 1]
-        top, bottom = SPLITS_Y[row], SPLITS_Y[row + 1]
-        bg = "#def5e8" if i == 1 else "#fffdfa"
-        d.rounded_rectangle((left + 7, top + 7, right - 7, bottom - 7), radius=28, fill=bg)
-        center_x = (left + right) // 2
-        center_y = top + 275
-        d.ellipse((center_x - 143, center_y - 143, center_x + 143, center_y + 143), fill="#e5f5ed")
-        icon(d, glyph, center_x, center_y, ink)
-        d.text((center_x, top + 510), title, font=bold, fill=ink, anchor="mm")
-        pill_width, pill_height = 460, 82
-        d.rounded_rectangle((center_x - pill_width // 2, top + 630, center_x + pill_width // 2, top + 630 + pill_height), radius=40, fill="#caedda")
-        d.text((center_x, top + 672), description, font=small, fill=ink, anchor="mm")
+        left, right = SPLITS_X[col], SPLITS_X[col+1]
+        top, bottom = TAB_HEIGHT + row*row_height, TAB_HEIGHT + (row+1)*row_height
+        d.rounded_rectangle((left+7, top+7, right-7, bottom-7), radius=25,
+                            fill="#def5e8" if i == 0 else "#fffdfa")
+        cx, cy = (left+right)//2, top+210
+        d.ellipse((cx-118, cy-118, cx+118, cy+118), fill="#e5f5ed")
+        icon(d, glyph, cx, cy, ink)
+        d.text((cx, top+434), title, font=bold, fill=ink, anchor="mm")
+        d.rounded_rectangle((cx-280, top+525, cx+280, top+615),
+                            radius=42, fill="#caedda")
+        d.text((cx, top+570), description, font=small, fill=ink, anchor="mm")
     buf = io.BytesIO()
     im.save(buf, format="PNG", optimize=True)
-    value = buf.getvalue()
-    if len(value) > 1024 * 1024:
+    content = buf.getvalue()
+    if len(content) > 1024*1024:
         raise RuntimeError("LINE rich menu image exceeds 1MB")
-    return value
+    return content
 
 
 def api(path, token, method="GET", body=None, host="https://api.line.me", content_type="application/json"):
@@ -121,56 +141,89 @@ def api(path, token, method="GET", body=None, host="https://api.line.me", conten
         raise RuntimeError(f"LINE API {method} {path} returned HTTP {e.code}") from None
 
 
-def main():
-    token = os.environ.get("LINE_MESSAGING_ACCESS_TOKEN", "")
-    if not token:
-        raise RuntimeError("Missing LINE_MESSAGING_ACCESS_TOKEN Actions secret")
-    image = create_image()
-    areas = []
-    for i, (_, _, _, action) in enumerate(ITEMS):
-        row, col = divmod(i, 3)
-        areas.append({
-            "bounds": {
-                "x": SPLITS_X[col], "y": SPLITS_Y[row],
-                "width": SPLITS_X[col + 1] - SPLITS_X[col],
-                "height": SPLITS_Y[row + 1] - SPLITS_Y[row],
-            },
-            "action": action,
-        })
+def publish_menu(token, items, active, name_prefix):
+    image = create_image(items, active)
+    areas = [
+        {"bounds":{"x":0,"y":0,"width":WIDTH//2,"height":TAB_HEIGHT},
+         "action":{"type":"richmenuswitch","label":"顧客服務",
+                   "richMenuAliasId":CUSTOMER_ALIAS,"data":"menu:customer"}},
+        {"bounds":{"x":WIDTH//2,"y":0,"width":WIDTH-WIDTH//2,"height":TAB_HEIGHT},
+         "action":{"type":"richmenuswitch","label":"商家服務",
+                   "richMenuAliasId":MERCHANT_ALIAS,"data":"menu:merchant"}},
+    ]
+    row_height = (HEIGHT-TAB_HEIGHT)//2
+    for i, (_, _, _, action) in enumerate(items):
+        row, col = divmod(i,3)
+        areas.append({"bounds":{"x":SPLITS_X[col],"y":TAB_HEIGHT+row*row_height,
+              "width":SPLITS_X[col+1]-SPLITS_X[col],"height":row_height},
+              "action":action})
     config = {
-        "size": {"width": WIDTH, "height": HEIGHT},
-        "selected": True,
-        "name": "hq-merchant-" + hashlib.sha256(image + json.dumps(areas, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()[:16],
-        "chatBarText": "預約・取號服務",
-        "areas": areas,
+        "size":{"width":WIDTH,"height":HEIGHT},
+        "selected":True,
+        "name":name_prefix + hashlib.sha256(
+            image+json.dumps(areas,ensure_ascii=False,sort_keys=True).encode("utf-8")
+        ).hexdigest()[:16],
+        "chatBarText":"預約・取號服務",
+        "areas":areas,
     }
-    info = api("/v2/bot/info", token)
-    if not info.get("userId", "").startswith("U"):
-        raise RuntimeError("LINE token does not belong to a valid Official Account")
-    menus = api("/v2/bot/richmenu/list", token).get("richmenus", [])
-    existing = next((m for m in menus if m.get("name") == config["name"]), None)
+    existing = next((m for m in api("/v2/bot/richmenu/list",token).get("richmenus",[])
+                     if m.get("name")==config["name"]),None)
     if existing:
-        menu_id = existing["richMenuId"]
-        print("Reusing existing versioned rich menu.")
+        menu_id=existing["richMenuId"]
+        print("Reusing versioned menu",name_prefix)
     else:
-        result = api("/v2/bot/richmenu", token, "POST", json.dumps(config, ensure_ascii=False).encode("utf-8"))
-        menu_id = result["richMenuId"]
-        print("Created new versioned rich menu.")
+        result=api("/v2/bot/richmenu",token,"POST",
+                   json.dumps(config,ensure_ascii=False).encode("utf-8"))
+        menu_id=result["richMenuId"]
+        print("Created versioned menu",name_prefix)
     try:
-        api(f"/v2/bot/richmenu/{menu_id}/content", token, host="https://api-data.line.me")
-        print("Rich menu image already uploaded.")
+        api(f"/v2/bot/richmenu/{menu_id}/content",token,host="https://api-data.line.me")
     except RuntimeError as error:
         if "HTTP 404" not in str(error):
             raise
-        api(f"/v2/bot/richmenu/{menu_id}/content", token, "POST", image,
-            host="https://api-data.line.me", content_type="image/png")
-        print("Uploaded rich menu image.")
-    api(f"/v2/bot/user/all/richmenu/{menu_id}", token, "POST")
-    current = api("/v2/bot/user/all/richmenu", token)
-    if current.get("richMenuId") != menu_id:
-        raise RuntimeError("Default rich menu verification failed")
-    print("LIVE: headquarters rich menu set as Messaging API default.")
-    print("richMenuId=" + menu_id)
+        api(f"/v2/bot/richmenu/{menu_id}/content",token,"POST",image,
+            host="https://api-data.line.me",content_type="image/png")
+    return menu_id
+
+
+def sync_alias(token, alias, menu_id):
+    payload=json.dumps({"richMenuId":menu_id}).encode("utf-8")
+    try:
+        existing=api(f"/v2/bot/richmenu/alias/{alias}",token)
+    except RuntimeError as error:
+        if "HTTP 404" not in str(error):
+            raise
+        api("/v2/bot/richmenu/alias",token,"POST",
+            json.dumps({"richMenuAliasId":alias,"richMenuId":menu_id}).encode("utf-8"))
+        print("Created menu alias",alias)
+        return
+    if existing.get("richMenuId")!=menu_id:
+        api(f"/v2/bot/richmenu/alias/{alias}",token,"POST",payload)
+        print("Updated menu alias",alias)
+
+
+def main():
+    token=os.environ.get("LINE_MESSAGING_ACCESS_TOKEN","")
+    if not token:
+        raise RuntimeError("Missing LINE_MESSAGING_ACCESS_TOKEN Actions secret")
+    info=api("/v2/bot/info",token)
+    if not info.get("userId","").startswith("U"):
+        raise RuntimeError("LINE token does not belong to a valid Official Account")
+    customers=publish_menu(token,CUSTOMER_ITEMS,0,"platform-customers-")
+    merchants=publish_menu(token,MERCHANT_ITEMS,1,"platform-merchants-")
+    sync_alias(token,CUSTOMER_ALIAS,customers)
+    sync_alias(token,MERCHANT_ALIAS,merchants)
+    api(f"/v2/bot/user/all/richmenu/{customers}",token,"POST")
+    current=api("/v2/bot/user/all/richmenu",token)
+    if current.get("richMenuId")!=customers:
+        raise RuntimeError("Default customer rich menu verification failed")
+    for alias, expected in ((CUSTOMER_ALIAS,customers),(MERCHANT_ALIAS,merchants)):
+        actual=api(f"/v2/bot/richmenu/alias/{alias}",token)
+        if actual.get("richMenuId")!=expected:
+            raise RuntimeError("Rich menu alias verification failed: "+alias)
+    print("LIVE: Customer rich menu set as default, merchant tab linked.")
+    print("customerMenuId="+customers)
+    print("merchantMenuId="+merchants)
 
 
 if __name__ == "__main__":
