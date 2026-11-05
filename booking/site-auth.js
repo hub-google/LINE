@@ -130,6 +130,9 @@ async function logOut(){
   busy=false;draw("linked","登出失敗，請稍後重試。");
  }
 }
+window.addEventListener("line-site-auth-changed",()=>{void refresh()});
+customer.auth.onAuthStateChange(()=>{setTimeout(()=>{void refresh()},0)});
+operator.auth.onAuthStateChange(()=>{setTimeout(()=>{void refresh()},0)});
 window.addEventListener("focus",()=>{if(!document.hidden)void refresh()});
 window.addEventListener("pageshow",()=>{void refresh()});
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)void refresh()});
