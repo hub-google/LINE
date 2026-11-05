@@ -1388,3 +1388,115 @@ $('overlay').addEventListener('click',async e=>{
  catch(error){banner(error.message,true);}
  finally{b.disabled=false;}
 });
+
+
+
+/* HR-LINE-01..04: authenticated employee LINE binding and monitored deliveries. */
+TABS.line=['LINE 身分與通知','驗證員工 LINE 身分，查看通知佇列及發送狀態。'];
+document.querySelector('#nav').insertAdjacentHTML('beforeend',
+ '<button type="button" data-tab="line"><span>▣</span> LINE 通知</button>');
+app.lineState=null;
+app.lineConfig=null;
+async function lineEndpoint(data=null){
+ const headers={apikey:KEY};
+ if(data)headers['Content-Type']='application/json';
+ if(app.mode==='real'&&app.token)headers.Authorization='Bearer '+app.token;
+ const res=await fetch(API+'/functions/v1/wm-line',{
+  method:data?'POST':'GET',headers,body:data?JSON.stringify(data):undefined,cache:'no-store'});
+ const result=await res.json().catch(()=>({error:'LINE_RESPONSE_INVALID'}));
+ if(!res.ok)throw Error(result.error||'LINE 服務發生問題 ('+res.status+')');
+ return result;
+}
+async function refreshLineStatus(){
+ if(app.mode!=='real'||!app.token||!app.tenantId){app.lineState=null;return;}
+ try{
+  const [config,linked]=await Promise.all([
+   lineEndpoint(),lineEndpoint({action:'status',tenant_id:app.tenantId})]);
+  app.lineConfig=config;app.lineState=linked;
+  if(app.tab==='line')render();
+ }catch(error){app.lineState={error:error.message};if(app.tab==='line')render();}
+}
+const priorLineRender=render;
+render=function(){
+ priorLineRender();
+ if(!app.data||app.tab!=='line')return;
+ heading();
+ const info=app.lineState||{};
+ const cfg=app.lineConfig||{};
+ const linkInfo=app.mode==='demo'
+  ?'<div class="notice">公開 Demo 不能綁定 LINE 身分，也不會向真實 LINE 帳號發送訊息。請登入企業帳號後綁定。</div>'
+  :!app.token?'<div class="notice">請先登入企業帳號。</div>'
+  :'<div class="bar-row"><span>此員工 LINE 身分</span><strong>'+
+     esc(info.error?'無法確認：'+info.error:info.linked?'已驗證綁定':'尚未綁定')+'</strong></div>'+
+   '<div class="bar-row"><span>LIFF 設定</span><strong>'+
+     esc(cfg.loginConfigured?'已設定登入 Channel':'尚未設定登入 Channel')+'</strong></div>'+
+   '<div class="bar-row"><span>平台訊息發送</span><strong>'+
+     esc(cfg.messagingConfigured?'LINE token 已設定（送達仍須測試）':'尚未設定訊息 token')+'</strong></div>'+
+   '<div class="flex"><button class="btn primary" data-line="bind" '+(!cfg.liffId?'disabled':'')+'>以 LINE 驗證並綁定</button>'+
+     (info.linked?'<button class="btn" data-line="unbind">解除我的綁定</button>':'')+
+     '<button class="btn" data-line="refresh">重新檢查</button></div>'+
+   '<p class="muted">LINE 綁定僅供已登入且在職的企業員工。LIFF 必須將此網站網址加入官方 Channel 設定；未完成設定時無法直接登入。</p>';
+ const controls=app.mode==='real'&&['owner','hr'].includes(role())?
+   '<button class="btn" data-line="flush">發送待處理 LINE 通知（最多 5 筆）</button>':'';
+ $('appContent').innerHTML=
+  panel('我的 LINE 身分與 OA 狀態',linkInfo)+
+  panel('LINE 通知中心',
+  '<p class="muted">排班發布、異動、申請核准與打卡異常會產生站內通知。經驗證綁定的正式員工才可進入 LINE 發送佇列。</p>'+
+  '<div class="notice">平台 OA 與店家自有 OA 的 Channel 權限各自獨立；目前接通的是平台 OA 模式，尚不代表店家自有 OA 已綁定。</div>'+
+  controls+
+  '<p class="muted">訊息發送 API 的回傳成功不代表使用者已讀；實際送達與額度依 LINE 平台記錄為準。</p>');
+};
+const previousLineTab=setTab;
+setTab=function(tab){
+ previousLineTab(tab);
+ if(tab==='line')void refreshLineStatus();
+};
+async function loadLineSdk(){
+ if(window.liff)return window.liff;
+ const script=document.createElement('script');script.src='https://static.line-scdn.net/liff/edge/2/sdk.js';
+ script.async=true;
+ const promise=new Promise((resolve,reject)=>{
+  script.onload=()=>resolve(window.liff);
+  script.onerror=()=>reject(Error('無法載入 LINE LIFF SDK'));
+ });
+ document.head.appendChild(script);
+ return await promise;
+}
+async function connectWorkforceLine(){
+ if(app.mode!=='real'||!app.token)throw Error('請先登入企業帳號');
+ const config=await lineEndpoint();
+ if(!config.liffId)throw Error('平台尚未提供此人資入口的 LIFF ID');
+ const liff=await loadLineSdk();
+ if(!liff)throw Error('LINE SDK 初始化失敗');
+ await liff.init({liffId:config.liffId});
+ if(!liff.isLoggedIn()){
+  liff.login({redirectUri:location.href});
+  return;
+ }
+ const idToken=liff.getIDToken();
+ if(!idToken)throw Error('LINE 尚未授權 openid 身分，請重新授權');
+ const result=await lineEndpoint({action:'bind',tenant_id:app.tenantId,id_token:idToken});
+ if(result.linked){banner('LINE 身分驗證與員工綁定完成');await refreshLineStatus();}
+}
+$('appContent').addEventListener('click',async e=>{
+ const b=e.target.closest('[data-line]');if(!b)return;
+ if(b.disabled)return;
+ b.disabled=true;
+ try{
+  if(b.dataset.line==='bind')await connectWorkforceLine();
+  else if(b.dataset.line==='refresh')await refreshLineStatus();
+  else if(b.dataset.line==='unbind'){
+   if(confirm('確定解除 LINE 通知綁定？')){
+    await lineEndpoint({action:'unbind',tenant_id:app.tenantId});
+    banner('已解除 LINE 綁定');await refreshLineStatus();
+   }
+  }
+  else if(b.dataset.line==='flush'){
+   if(!['owner','hr'].includes(role()))throw Error('只有企業負責人與人資可發送');
+   const result=await lineEndpoint({action:'flush',tenant_id:app.tenantId,limit:5});
+   banner('已處理 '+result.processed+' 筆通知；LINE 接口接受 '+result.sent+' 筆，失敗 '+result.failed+' 筆');
+   await refreshLineStatus();
+  }
+ }catch(error){banner(error.message,true);}
+ finally{b.disabled=false;}
+});
