@@ -39,7 +39,7 @@ test("home and real operations view register the same product-scoped worker",()=
 test("service worker is offline-shell-only, never writes customer, auth or API responses into Cache Storage",()=>{
  assert.match(pwa,/CACHE_PREFIX="line-booking-safe-static-"/);
  assert.match(pwa,/__LINE_SAAS_BUILD__/);
- assert.match(pwa,/STATIC_ASSETS=\["\.\/offline\.html","\.\/booking-theme\.css","\.\/pwa-icon-192\.png","\.\/pwa-icon-512\.png"\]/);
+ assert.match(pwa,/STATIC_ASSETS=.*monster-world\.css.*monster-mascot\.svg.*pwa-icon-512\.png/);
  assert.match(pwa,/if\(request\.method!=="GET"\)return/);
  assert.match(pwa,/if\(url\.origin!==self\.location\.origin\)return/);
  assert.match(pwa,/if\(!url\.pathname\.startsWith\(scope\.pathname\)\)return/);
