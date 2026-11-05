@@ -163,7 +163,7 @@ def publish_menu(token, items, active, name_prefix):
         "name":name_prefix + hashlib.sha256(
             image+json.dumps(areas,ensure_ascii=False,sort_keys=True).encode("utf-8")
         ).hexdigest()[:16],
-        "chatBarText":"預約・取號服務",
+        "chatBarText":"排隊怪獸｜預約取號",
         "areas":areas,
     }
     existing = next((m for m in api("/v2/bot/richmenu/list",token).get("richmenus",[])
@@ -209,6 +209,10 @@ def main():
     info=api("/v2/bot/info",token)
     if not info.get("userId","").startswith("U"):
         raise RuntimeError("LINE token does not belong to a valid Official Account")
+    live_name=info.get("displayName","")
+    print("Live LINE OA display name: "+(live_name or "(unknown)"))
+    if live_name!="排隊怪獸":
+        print("::warning title=OA account name not updated::Change the official account display name to 排隊怪獸 in LINE Official Account Manager; Messaging API cannot rename the actual OA.")
     customers=publish_menu(token,CUSTOMER_ITEMS,0,"platform-customers-")
     merchants=publish_menu(token,MERCHANT_ITEMS,1,"platform-merchants-")
     sync_alias(token,CUSTOMER_ALIAS,customers)
