@@ -154,7 +154,9 @@ window.LineExploreGame={
   qaStore=testBoardShop;
   demoShops=Array.isArray(sampleShops)?sampleShops.filter(s=>s?.demo&&s?.slug):[];
   const current=$("arcade-game-categories").value||"全部";
-  const values=["全部",...new Set(gameList().map(shopCategory))];
+  const choices=[...shops,...demoShops];
+  if(qaStore&&!choices.some(x=>x.slug===qaStore.slug))choices.push(qaStore);
+  const values=["全部",...new Set(choices.map(shopCategory))];
   $("arcade-game-categories").innerHTML=values.map(v=>'<option value="'+escapeHtml(v)+'">'+escapeHtml(v==="全部"?"全部類別":v)+'</option>').join("");
   category=values.includes(current)?current:"全部";
   $("arcade-game-categories").value=category;
