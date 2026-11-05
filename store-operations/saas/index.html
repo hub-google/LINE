@@ -304,13 +304,18 @@ async function connectLineSession(force=false){
     // The LINE in-app browser silently re-verifies the active user to avoid
     // accepting a cached session from a different LINE account.
     const likelyLineApp=/\bLine\/[0-9.]+/i.test(navigator.userAgent||"");
-    if(!force&&!likelyLineApp&&await resumeVerifiedLineSession())return;
+    // A primary LIFF/OAuth redirect must finish liff.init() before we
+    // normalize its URL. A saved Supabase session cannot skip this step.
+    const callbackParams=new URLSearchParams(location.search);
+    const pendingLiffCallback=["liff.state","code","state","access_token"]
+      .some(key=>callbackParams.has(key));
+    if(!force&&!likelyLineApp&&!pendingLiffCallback&&await resumeVerifiedLineSession())return;
     if(!window.liff){
       for(let attempt=0;attempt<40&&!window.liff;attempt++)await new Promise(resolve=>setTimeout(resolve,100));
     }
     let inLineClient=false;
     try{inLineClient=window.liff?.isInClient?.()===true}catch(e){}
-    if(!force&&!inLineClient&&await resumeVerifiedLineSession())return;
+    if(!force&&!inLineClient&&!pendingLiffCallback&&await resumeVerifiedLineSession())return;
     if(!window.liff)throw Error("LINE 登入元件未能載入。");
     await window.liff.init({liffId:config.liffId});
     // Resolve final merchant after LIFF init completes its secondary redirect.
@@ -416,8 +421,9 @@ const $=id=>document.getElementById(id);
 const params=new URLSearchParams(location.search);
 const liffState=params.get("liff.state")||"";
 const liffArgs=new URLSearchParams(liffState.includes("?")?liffState.slice(liffState.indexOf("?")+1):"");
-// On LIFF redirects, query parameters added to the LIFF URL follow any
-// query parameters already present on the configured Endpoint URL.
+// On the primary LIFF redirect, liff.state owns the requested merchant;
+// after liff.init(), LINE appends the restored query to the secondary URL.
+// Do not rewrite SDK query fields until initialization has completed.
 function lastParam(query,key){const values=query.getAll(key);return values.length?values[values.length-1]:null}
 function incomingParam(key){return lastParam(liffArgs,key)||lastParam(params,key)}
 function isSafeMerchant(value){return typeof value==="string"&&/^[a-z0-9][a-z0-9-]{2,39}$/.test(value)}
