@@ -53,10 +53,11 @@ async function reload(silent=false){
  app.busy=true;if(!silent)$('appContent').innerHTML='<div class="loading">資料更新中，請稍後...</div>';
  try{
   if(app.mode==='demo'){
-   const [snapshot,leaveSnapshot,anomalySnapshot]=await Promise.all([
+   const [snapshot,leaveSnapshot,anomalySnapshot,scheduleRules]=await Promise.all([
     demo(),call('/rest/v1/rpc/wm_demo_leave_api','POST',{p_action:'snapshot',p_data:{}}),
-    call('/rest/v1/rpc/wm_demo_attendance_api','POST',{p_action:'snapshot',p_data:{}})]);
-   app.data={...snapshot,...leaveSnapshot,...anomalySnapshot};
+    call('/rest/v1/rpc/wm_demo_attendance_api','POST',{p_action:'snapshot',p_data:{}}),
+    call('/rest/v1/rpc/wm_demo_schedule_api','POST',{p_action:'snapshot',p_data:{}})]);
+   app.data={...snapshot,...leaveSnapshot,...anomalySnapshot,scheduleRules};
   }
   else if(!app.token){app.data=null;}
   else{
@@ -64,7 +65,7 @@ async function reload(silent=false){
    if(!app.tenants.find(t=>t.id===app.tenantId))app.tenantId=app.tenants[0]?.id||'';
    if(!app.tenantId){app.data=null;}else{
     const p='tenant_id=eq.'+encodeURIComponent(app.tenantId);
-    const [branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections,leavePolicies,attendanceCases,attendanceRuleRows,requestDocs]=await Promise.all([
+    const [branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections,leavePolicies,attendanceCases,attendanceRuleRows,requestDocs,scheduleRuleRows]=await Promise.all([
      query('wm_branches','select=*&'+p+'&order=name'),query('wm_members','select=id,tenant_id,branch_id,user_id,display_name,employee_code,role,employment_type,status,created_at,department_id,hired_on,left_on,skills&'+p+'&order=employee_code'),
      query('wm_shifts','select=*&'+p+'&order=starts_at.desc&limit=600'),query('wm_punches','select=*&'+p+'&order=punched_at.desc&limit=600'),
      query('wm_requests','select=*&'+p+'&order=created_at.desc&limit=300'),query('wm_leave_entitlements','select=*&'+p),
@@ -74,7 +75,8 @@ async function reload(silent=false){
      query('wm_period_closures','select=*&'+p+'&order=closed_at.desc&limit=36'),query('wm_period_adjustments','select=*&'+p+'&limit=300'),
      query('wm_attendance_adjustments','select=*&'+p+'&limit=300'),query('wm_leave_policies','select=*&'+p+'&order=effective_from.desc'),
      query('wm_attendance_anomalies','select=*&'+p+'&order=created_at.desc&limit=300'),
-     query('wm_attendance_rules','select=*&'+p+'&limit=1'),query('wm_request_documents','select=*&'+p+'&order=created_at.desc&limit=300')]);
+     query('wm_attendance_rules','select=*&'+p+'&limit=1'),query('wm_request_documents','select=*&'+p+'&order=created_at.desc&limit=300'),
+     query('wm_schedule_rules','select=*&'+p+'&order=effective_from.desc&limit=10')]);
     if(members.some(m=>m.user_id===app.user?.id&&['owner','hr'].includes(m.role))){
       const wages=await call('/rest/v1/rpc/wm_staff_wages','POST',{p_tenant:app.tenantId},app.token);
       const lookup=new Map((wages||[]).map(w=>[w.member_id,w.hourly_rate]));
@@ -82,7 +84,7 @@ async function reload(silent=false){
     }
     app.data={tenant:app.tenants.find(t=>t.id===app.tenantId),branches,members,shifts,punches,requests,
       entitlements,availability,departments,templates,requirements,notifications,closures,
-      adjustments,corrections,leavePolicies,attendanceCases,attendanceRules:attendanceRuleRows[0]||null,requestDocs,
+      adjustments,corrections,leavePolicies,attendanceCases,attendanceRules:attendanceRuleRows[0]||null,requestDocs,scheduleRules:scheduleRuleRows.find(x=>x.effective_from<=today())||null,
       leaveBalances:{},requestStages:[],server_at:new Date().toISOString()};
     const selected=getSelected();
     if(selected){
@@ -506,6 +508,8 @@ action=async function(name,data){
     if(name==='leave_policy'||name==='leave_grant')
       result=await call('/rest/v1/rpc/wm_demo_leave_api','POST',{
        p_action:name==='leave_policy'?'policy':'grant',p_data:data});
+    else if(name==='schedule_rules')
+      result=await call('/rest/v1/rpc/wm_demo_schedule_api','POST',{p_action:'save',p_data:data});
     else if(name==='attendance_scan'||name==='attendance_resolve')
       result=await call('/rest/v1/rpc/wm_demo_attendance_api','POST',{
        p_action:name==='attendance_scan'?'scan':'resolve',p_data:data});
@@ -543,6 +547,10 @@ action=async function(name,data){
     p_tenant:tenant_id,p_from:data.from,p_to:data.through});
    else if(name==='attendance_resolve')result=await rpc('wm_resolve_attendance_anomaly',{
     p_id:data.id,p_note:data.note});
+   else if(name==='schedule_rules')result=await rpc('wm_save_schedule_rules',{
+    p_tenant:tenant_id,p_effective:data.effective_from,
+    p_min_rest:Number(data.min_rest_minutes),p_max_shift:Number(data.max_shift_minutes),
+    p_max_week:Number(data.max_week_minutes)});
    else if(name==='attendance_rule')result=await rpc('wm_save_attendance_rule',{
     p_tenant:tenant_id,p_grace:Number(data.grace_minutes),p_sla:Number(data.anomaly_sla_hours),
     p_quiet_from:data.quiet_from,p_quiet_until:data.quiet_until});
@@ -1499,4 +1507,45 @@ $('appContent').addEventListener('click',async e=>{
   }
  }catch(error){banner(error.message,true);}
  finally{b.disabled=false;}
+});
+
+
+
+/* HR-SCH-05: company-specific scheduling bounds rather than one-size-fits-all law assumptions. */
+extraNames.add('schedule_rules');
+const beforeScheduleRules=schedule;
+schedule=function(){
+ beforeScheduleRules();
+ const r=app.data?.scheduleRules||{};
+ const canSet=app.mode==='demo'||['owner','hr'].includes(role());
+ $('appContent').insertAdjacentHTML('beforeend',
+  panel('企業排班休息與工時規則',
+   '<div class="bar-row"><span>生效日期</span><strong>'+esc(r.effective_from||'尚未設定')+'</strong></div>'+
+   '<div class="bar-row"><span>班間最低休息</span><strong>'+esc(r.min_rest_minutes||0)+' 分鐘</strong></div>'+
+   '<div class="bar-row"><span>單班排定時間上限</span><strong>'+esc(r.max_shift_minutes||0)+' 分鐘</strong></div>'+
+   '<div class="bar-row"><span>每週排定時間上限</span><strong>'+esc(r.max_week_minutes||0)+' 分鐘</strong></div>'+
+   '<div class="notice">規則由企業自行設定，0 代表未啟用該項限制；不能取代適用勞動法規、加班審認或薪資計算。新增、改期、發布班別時，由資料庫拒絕不符合設定的排班。</div>',
+   canSet?'<button class="btn small" data-extra="showScheduleRules">設定企業排班規則</button>':''));
+};
+function showScheduleRulesForm(){
+ if(!(app.mode==='demo'||['owner','hr'].includes(role())))throw Error('只有企業負責人或人資可以修改');
+ const r=app.data?.scheduleRules||{},demo=app.mode==='demo';
+ const rest=demo?'min="0" max="660"':'min="0" max="1440"';
+ const maxShift=demo?selectField('max_shift_minutes',
+  [0,480,540,600,660,720,780,840].map(x=>'<option value="'+x+'" '+(Number(r.max_shift_minutes||0)===x?'selected':'')+'>'+x+' 分鐘</option>').join('')):
+  input('max_shift_minutes','number',r.max_shift_minutes??0,'min="0" max="1440" step="30"');
+ const maxWeek=demo?selectField('max_week_minutes',
+  [0,2400,2880,3360].map(x=>'<option value="'+x+'" '+(Number(r.max_week_minutes||0)===x?'selected':'')+'>'+x+' 分鐘</option>').join('')):
+  input('max_week_minutes','number',r.max_week_minutes??0,'min="0" max="10080" step="60"');
+ showExtraForm('企業排班規則','schedule_rules',[
+  {name:'effective_from',label:'規則生效日',html:input('effective_from','date',r.effective_from||today())},
+  {name:'min_rest_minutes',label:'班間最低休息分鐘（0 不限制）',
+   html:input('min_rest_minutes','number',r.min_rest_minutes??0,rest)},
+  {name:'max_shift_minutes',label:'單班最大排定分鐘',html:maxShift},
+  {name:'max_week_minutes',label:'每週最大排定分鐘',html:maxWeek}
+ ],'儲存排班規則');
+}
+$('appContent').addEventListener('click',e=>{
+ const b=e.target.closest('[data-extra="showScheduleRules"]');if(!b)return;
+ try{showScheduleRulesForm();}catch(error){banner(error.message,true);}
 });
