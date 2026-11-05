@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "workforce-management/tests/workforce-auth-e2e.mjs"
+      - "workforce-management/tests/workforce-auth-roles-e2e.mjs"
       - ".github/workflows/line-workforce-auth-e2e.yml"
 permissions:
   contents: read
@@ -34,7 +34,7 @@ jobs:
           npm install --no-save --no-audit --no-fund playwright@1.56.1
           npx playwright install --with-deps chromium
       - name: Real two-user Auth, approval, RLS and cleanup
-        run: node workforce-management/tests/workforce-auth-e2e.mjs
+        run: node workforce-management/tests/workforce-auth-roles-e2e.mjs
       - name: Archive redacted E2E log and screenshots
         if: always()
         uses: actions/upload-artifact@v4
