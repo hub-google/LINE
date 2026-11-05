@@ -1,0 +1,135 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {fileURLToPath} from "node:url";
+import path from "node:path";
+import vm from "node:vm";
+import {spawnSync} from "node:child_process";
+
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
+const read=p=>readFileSync(path.join(root,p),"utf8");
+const code=read("saas/site-auth.js");
+const style=read("saas/site-auth.css");
+const index=read("saas/index.html");
+const sql=read("supabase/migrations/20261105150000_site_header_line_identity.sql");
+const workflow=read("../.github/workflows/line-saas-pages.yml");
+const build=read("../.github/scripts/build-line-saas.mjs");
+
+test("all pages share a real user identity with clickable login/logout",()=>{
+ const pages=["index","home","directory","board","poster","merchant-center","merchant-register","privacy","terms"];
+ for(const page of pages){
+  const html=read("saas/"+page+".html");
+  assert.match(html,/id="site-auth-root"/,page+" missing account widget");
+  assert.match(html,/href="\.\/site-auth\.css"/,page+" missing styling");
+  assert.match(html,/src="\.\/site-auth\.js"/,page+" missing action code");
+ }
+ assert.match(style,/\.site-auth-slot/);
+ assert.match(style,/\.site-auth-name/);
+ assert.match(style,/\.site-auth-login/);
+ assert.match(style,/@media\(max-width:420px\)/);
+ assert.match(build,/copyFile\(path\.join\(src, "site-auth\.js"/);
+ assert.match(build,/copyFile\(path\.join\(src, "site-auth\.css"/);
+ assert.match(workflow,/site-auth-contract\.test\.mjs/);
+ assert.match(workflow,/site-auth\.css site-auth\.js/);
+ assert.match(workflow,/node --check store-operations\/saas\/site-auth\.js/);
+ const res=spawnSync(process.execPath,["--check"],{input:code,encoding:"utf8"});
+ assert.equal(res.status,0,res.stderr);
+});
+
+test("only server-verified LINE account data is shown, not anonymous Supabase user",()=>{
+ assert.match(sql,/l\.user_id=\(select auth\.uid\(\)\)/);
+ assert.match(sql,/l\.updated_at between \(now\(\) - interval '30 days'\)/);
+ assert.match(sql,/l\.login_channel_id/);
+ assert.match(sql,/revoke all on function public\.so_site_header_identity\(\) from public,anon,authenticated/);
+ assert.match(sql,/grant execute on function public\.so_site_header_identity\(\) to authenticated/);
+ assert.match(code,/rpc\("so_site_header_identity"\)/);
+ assert.match(code,/typeof response\.data\?\.display_name==="string"/);
+ assert.match(code,/auth\.signOut\(\)/);
+ assert.match(code,/location\.reload\(\)/);
+ assert.match(code,/site_return/);
+ assert.match(index,/function finishPublicHeaderLogin/);
+ assert.match(index,/lineLinkStatus==="linked"&&finishPublicHeaderLogin\(\)/);
+ assert.match(index,/incomingParam\("site_return"\)/);
+ assert.match(index,/location\.replace\(destination\.pathname\+destination\.search\)/);
+});
+function createScenario({lineName="",customerSession=false,staffName="",url="https://hub-google.github.io/LINE/booking/directory.html?mode=game"}={}){
+ const state={signedOut:null,navigated:null,reloaded:false};
+ function node(tag){
+  return {tag,className:"",textContent:"",children:[],title:"",disabled:false,handlers:{},
+   setAttribute(name,value){this[name]=value},
+   append(...items){this.children.push(...items)},
+   appendChild(x){this.children.push(x);return x},
+   replaceChildren(...items){this.children=items},
+   addEventListener(event,fn){this.handlers[event]=fn}
+  };
+ }
+ const rootNode=node("mount");
+ const doc={getElementById(name){return name==="site-auth-root"?rootNode:null},
+  createElement:node,createTextNode(text){const n=node("text");n.textContent=text;return n},
+  addEventListener(){}};
+ const current=new URL(url);
+ const location={href:url,origin:current.origin,pathname:current.pathname,search:current.search,assign(target){state.navigated=target},reload(){state.reloaded=true}};
+ const window={addEventListener(){}};
+ const memory={};const sessionStorage={setItem(k,v){memory[k]=v},getItem(k){return memory[k]??null},removeItem(k){delete memory[k]}};
+ const localStorage={removeItem(){}};
+ function clientFor(type){
+  const logged=type==="customer"?customerSession:Boolean(staffName);
+  return {
+   auth:{
+    async getSession(){return {data:{session:logged?{access_token:"session",user:{is_anonymous:type==="customer",email:staffName}}:null},error:null}},
+    async signOut(){state.signedOut=type;return {error:null}}
+   },
+   async rpc(name){
+    if(name==="so_site_header_identity")return {data:lineName?{display_name:lineName}:null,error:null};
+    if(name==="so_my_context")return {data:{memberships:[]},error:null};
+    return {data:null,error:{message:"Unknown RPC"}};
+   }
+  }
+ }
+ const clients=[clientFor("customer"),clientFor("operator")];
+ let index=0;
+ const createClient=()=>clients[index++];
+ const sandbox={createClient,document:doc,window,location,localStorage,sessionStorage,URL,URLSearchParams,Date,Promise,console};
+ vm.runInNewContext(code.replace(/^import [^\n]*\n/,""),sandbox,{filename:"site-auth.js",timeout:1500});
+ return {rootNode,state,memory};
+}
+async function flush(){await new Promise(resolve=>setImmediate(resolve));await new Promise(resolve=>setImmediate(resolve));}
+function controls(root){return root.children.flatMap(x=>x.children)}
+test("anonymous visitor sees functional LINE login and retains return destination",async()=>{
+ const ui=createScenario({customerSession:true});
+ await flush();
+ const controlsList=controls(ui.rootNode);
+ const login=controlsList.find(x=>x.tag==="button");
+ assert.ok(login,"missing login button");
+ assert.match(login.children.map(x=>x.textContent).join(""),/使用 LINE 登入/);
+ login.handlers.click();
+ assert.ok(ui.state.navigated);
+ const dest=new URL(ui.state.navigated);
+ assert.equal(dest.searchParams.get("view"),"customer");
+ assert.equal(dest.searchParams.get("merchant"),"greenfield-salon");
+ assert.equal(dest.searchParams.get("site_return"),"directory.html?mode=game");
+ assert.match(ui.memory["line-site-auth-return-v1"],/directory\.html\?mode=game/);
+});
+test("verified LINE user appears by real display name and logout signs out active customer session",async()=>{
+ const ui=createScenario({customerSession:true,lineName:"預約人王小姐"});
+ await flush();
+ const controlsList=controls(ui.rootNode);
+ const label=controlsList.find(x=>x.className==="site-auth-name");
+ assert.ok(label);
+ assert.match(label.children.map(x=>x.textContent).join(""),/預約人王小姐/);
+ const logout=controlsList.find(x=>x.tag==="button");
+ assert.equal(logout.textContent,"登出");
+ logout.handlers.click();
+ await flush();
+ assert.equal(ui.state.signedOut,"customer");
+ assert.equal(ui.state.reloaded,true);
+});
+test("staff pages show actual operator identity and logout operator account",async()=>{
+ const ui=createScenario({customerSession:true,lineName:"LINE顧客",staffName:"staff@example.test",url:"https://hub-google.github.io/LINE/booking/?view=staff"});
+ await flush();
+ const names=controls(ui.rootNode).find(x=>x.className==="site-auth-name");
+ assert.match(names.children.map(x=>x.textContent).join(""),/staff@example\.test/);
+ const logout=controls(ui.rootNode).find(x=>x.tag==="button");
+ logout.handlers.click();await flush();
+ assert.equal(ui.state.signedOut,"operator");
+});
