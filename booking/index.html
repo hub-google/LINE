@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="8919c994df92e77d54980c272d9550fa4b8bd8ba">
+<meta name="line-saas-build" content="f345946bb5573d816c4d329c4f765dc27e000ef4">
 <meta name="theme-color" content="#173e34">
 <link rel="manifest" href="./manifest.webmanifest">
 <script>
@@ -32,7 +32,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   }
 })();
 </script>
-<script defer src="./version-watch.js?build=8919c994df92e77d54980c272d9550fa4b8bd8ba"></script>
+<script defer src="./version-watch.js?build=f345946bb5573d816c4d329c4f765dc27e000ef4"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 門市營運｜企業開通、員工後台與顧客預約</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -166,7 +166,7 @@ body{overflow-x:hidden}
 .guide-link{text-decoration:none;color:var(--primary);border:1px solid var(--line);background:#f2f8f4;min-height:42px;display:flex;align-items:center;white-space:nowrap}
 .guide-link:hover{background:#e5f3ea}
 </style>
-<link rel="stylesheet" href="./booking-theme.css?build=8919c994df92e77d54980c272d9550fa4b8bd8ba">
+<link rel="stylesheet" href="./booking-theme.css?build=f345946bb5573d816c4d329c4f765dc27e000ef4">
 <link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script></head>
 <body>
 <header><div class="top">
@@ -550,17 +550,21 @@ function unitNameForSession(sid){
 }
 function unitChooseHtml(){
  const units=unitList(),groups=[...new Set((unitConfig?.units||[]).filter(x=>x.active).map(x=>x.group||"其他"))];
- const actual=units.find(x=>x.id===unitChoice)||units[0];
- const sessions=sessionsOf(actual?.id);
- const selected=selectedUnitSession();
- return (unitConfig?.grouped?
-   '<label for="unit-category">服務分類</label><select id="unit-category" class="field"><option value="">全部分類</option>'+
-     groups.map(g=>'<option value="'+esc(g)+'" '+(unitCategory===g?'selected':'')+'>'+esc(g)+'</option>').join("")+
-   '</select>':'')+
-   '<label for="customer-unit">服務單位</label><select class="field" id="customer-unit">'+
-     units.map(u=>'<option value="'+esc(u.id)+'" '+(u.id===actual?.id?'selected':'')+'>'+esc(u.name)+'</option>').join("")+'</select>'+
-   '<label for="unit-session">服務場次</label><select class="field" id="unit-session"><option value="">請選擇場次</option>'+
-     sessions.map(s=>'<option value="'+esc(s.id)+'" '+(s.id===selected?.id?'selected':'')+
+ const actual=units.find(x=>x.id===unitChoice)||units[0],sessions=sessionsOf(actual?.id),selected=selectedUnitSession();
+ return '<div class="unit-form-header"><h3>選擇服務單位</h3><span>'+units.length+' 個選項</span></div>'+
+   (unitConfig?.grouped?'<div class="unit-category-chips">'+["全部",...groups].map(g=>
+       btn(g,"unit-category-pill",unitCategory===(g==="全部"?"":g)?"primary":"outline",
+        'data-category="'+esc(g==='全部'?'':g)+'"')).join("")+'</div>':'')+
+   '<div class="unit-card-grid">'+units.map(u=>{
+     const slots=sessionsOf(u.id),soon=slots[0];
+     return '<button type="button" class="unit-option '+(u.id===actual?.id?'selected':'')+
+       '" data-act="unit-choose" data-id="'+esc(u.id)+'" aria-pressed="'+String(u.id===actual?.id)+'">'+
+       '<span class="unit-option-copy"><span class="unit-option-group">'+esc(u.group||"服務")+'</span>'+
+       '<strong>'+esc(u.name)+'</strong><small>'+esc(soon?soon.name+" "+soon.start+"–"+soon.end:"目前沒有開放場次")+'</small></span>'+
+       '<span class="unit-option-trailing">'+(u.id===actual?.id?'✓':'›')+'</span></button>';
+   }).join("")+'</div>'+
+   '<label for="unit-session">開放場次</label><select class="field" id="unit-session"><option value="">請選擇場次</option>'+
+    sessions.map(s=>'<option value="'+esc(s.id)+'" '+(s.id===selected?.id?'selected':'')+
        ((Number(s.booked)||0)>=s.capacity?' disabled':'')+'>'+esc(s.name)+' '+esc(s.start)+'–'+esc(s.end)+
        ' · 剩 '+esc(Math.max(0,s.capacity-Number(s.booked||0)))+' 位</option>').join("")+
    '</select>';
@@ -602,7 +606,7 @@ function unitSettingsPanel(isManager){
  const units=unitConfig?.units||[],chosen=units.find(x=>x.id===unitEditingId);
  const sessions=(unitConfig?.sessions||[]),editing=sessions.find(x=>x.id===unitEditingSession);
  const options=units.filter(x=>x.active).map(u=>'<option value="'+esc(u.id)+'" '+((unitAdminUnit||editing?.unit_id)===u.id?'selected':'')+'>'+esc(u.name)+'</option>').join("");
- return box("服務單位與場次（所有產業共用）",
+ return box("服務單位設定",
    '<p class="small">不需要建立新店家。勾選多服務單位後，顧客可以先選分類與服務單位；沒有勾選就維持原本單一入口。</p>'+
    '<label class="checklist"><input type="checkbox" id="enable-units" '+(unitConfig?.multi?'checked':'')+(isManager?'':' disabled')+'> 啟用多服務單位</label>'+
    '<label class="checklist"><input type="checkbox" id="group-units" '+(unitConfig?.grouped?'checked':'')+(isManager?'':' disabled')+'> 顯示服務分類</label>'+
@@ -787,7 +791,7 @@ function layout(title,subtitle,menu,body){
   nav("工作台","dashboard",staffTab,"staff")+nav("預約","bookings",staffTab,"staff")+
   nav("叫號","queue",staffTab,"staff")+
   '<details class="staff-mobile-more"><summary aria-label="開啟更多管理功能">更多</summary><div class="staff-mobile-popup">'+
-  nav("預約日曆","calendar",staffTab,"staff")+nav("營運分析","analytics",staffTab,"staff")+
+  nav("預約日曆","calendar",staffTab,"staff")+nav("服務單位與場次","units",staffTab,"staff")+nav("營運分析","analytics",staffTab,"staff")+
   nav("菜單與服務","menu",staffTab,"staff")+nav("員工管理","members",staffTab,"staff")+
   nav("分店管理","branches",staffTab,"staff")+nav("企業設定","settings",staffTab,"staff")+
   '<a class="side-item guide-link" href="./merchant-center.html#guide">操作說明 ↗</a>'+
@@ -1144,7 +1148,7 @@ function staffRender(){
  const menu='<div class="staff-side-label">日常作業</div>'+
  nav("工作台","dashboard",staffTab,"staff")+nav("預約管理","bookings",staffTab,"staff")+
  nav("叫號管理","queue",staffTab,"staff")+nav("預約日曆","calendar",staffTab,"staff")+
- '<div class="staff-side-label">營運與設定</div>'+
+ '<div class="staff-side-label">營運與設定</div>'+nav("服務單位與場次","units",staffTab,"staff")+
  nav("營運分析","analytics",staffTab,"staff")+nav("菜單及服務設定","menu",staffTab,"staff")+
  nav("員工管理","members",staffTab,"staff")+nav("多分店管理","branches",staffTab,"staff")+
  nav("企業設定","settings",staffTab,"staff")+ '<div class="staff-side-label">使用支援</div><a class="side-item guide-link" href="./merchant-center.html#guide">操作說明 ↗</a>';
@@ -1355,8 +1359,11 @@ function staffRender(){
      '<div class="grid"><div>'+field("加入既有門市網址代碼","branch-slug-"+g.id,"")+'</div><div class="staff-actionbar">'+
      btn("加入門市","attach-business-branch","primary",'data-group="'+esc(g.id)+'"')+'</div></div>')).join("") :
      box("尚無總店群組",'<p class="muted">建立總店群組後，即可加入由你擔任 OWNER 的其他門市。</p>');
+ }else if(staffTab==="units"){
+  html+='<div class="universal-staff-head"><div><h2>服務單位與場次</h2><p>同一個店家網址，同時適用醫院、餐飲、美髮與各式櫃台。</p></div>'+
+   '<a class="btn primary" href="./template.html" target="_blank" rel="noopener noreferrer">查看通用公版預覽 ↗</a></div>'+
+   unitSettingsPanel(isManager);
  }else if(staffTab==="settings"){
-  html+=unitSettingsPanel(isManager);
   const policy=staff.bookingPolicy||{};
   const selectedFlag=staffCustomerBook.find(x=>x.id===customerFlagSelected)||staffCustomerBook[0]||null;
   if(selectedFlag)customerFlagSelected=selectedFlag.id;
@@ -1815,10 +1822,12 @@ box("LINE 身分授權",'<p class="muted">為避免機器人或惡意假預約�
     crossRecords());
  if(customerTab==="home"&&unitEnabled()){
     const units=unitList();
-    html+=box("服務單位",'<p class="small">從同一個商家網站選擇服務單位，不需要切換其他店家。</p>'+
-      '<div class="grid">'+units.map(u=>'<div class="routecard"><strong>'+esc(u.name)+'</strong>'+
-       (unitConfig.grouped?'<div class="small">'+esc(u.group||"其他")+'</div>':'')+
-       '<div class="small">獨立預約與叫號場次</div></div>').join("")+'</div>');
+    html+=box("選擇服務單位",'<p class="small">同一家店的各服務單位共用這個網站，不需要切換不同店家。</p>'+
+      (unitConfig.grouped?'<div class="unit-category-chips">'+["全部",...[...new Set((unitConfig.units||[]).filter(u=>u.active).map(u=>u.group||"其他"))]].map(g=>
+        btn(g,"unit-category-pill",unitCategory===(g==="全部"?"":g)?"primary":"outline",'data-category="'+esc(g==="全部"?"":g)+'"')).join("")+'</div>':'')+
+      '<div class="unit-card-grid">'+units.map(u=>'<button class="unit-option" data-act="unit-home-select" data-id="'+esc(u.id)+'">'+
+        '<span class="unit-option-copy"><span class="unit-option-group">'+esc(u.group||"服務")+'</span>'+
+        '<strong>'+esc(u.name)+'</strong><small>查看預約場次與目前候位</small></span><span class="unit-option-trailing">›</span></button>').join("")+'</div>');
   }
   if(customerTab==="home"&&customerAnnouncements.length){
    html+=box("門市最新公告",customerAnnouncements.map(a=>
@@ -2227,6 +2236,16 @@ document.addEventListener("click",async ev=>{
  if(staffTab==="bookings")void searchHistoricalBookings(1);
  return;
 }
+ if(b.dataset.act==="unit-category-pill"){
+   unitCategory=b.dataset.category||"";unitChoice=unitList()[0]?.id||"";unitSessionChoice="";render();return;
+ }
+ if(b.dataset.act==="unit-choose"){
+   unitChoice=b.dataset.id;unitSessionChoice="";unitConfirmKey="";render();return;
+ }
+ if(b.dataset.act==="unit-home-select"){
+   unitChoice=b.dataset.id;unitSessionChoice="";unitConfirmKey="";customerTab=customer?.tenant?.modules?.reservation?"reserve":"queue";
+   void load();return;
+ }
  if(b.dataset.nav){const v=b.dataset.nav;const tab=b.dataset.tab;if(v==="customer"){
   customerTab=tab;progressTicketId="";crossCurrentStore=false;
   if(["reserve","queue"].includes(tab)&&!customer?.tenant.modules[tab==="reserve"?"reservation":"queue"])customerTab="home";
@@ -2242,7 +2261,7 @@ document.addEventListener("click",async ev=>{
  }
  if(v==="staff"){
    staffTab=tab;
-   if(["analytics","branches","menu","settings"].includes(tab)){void load();return;}
+   if(["analytics","branches","menu","settings","units"].includes(tab)){void load();return;}
     if(tab==="bookings"){err="";flash="";render();void searchHistoricalBookings(1);return;}
     if(tab==="calendar"){err="";flash="";render();void loadBookingCalendar(1);return;}
  }
