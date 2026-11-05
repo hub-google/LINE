@@ -48,7 +48,8 @@ async function enter(user){
  await f.locator('[name="email"]').fill(user.email);
  await f.locator('[name="password"]').fill(user.password);
  await f.locator('button[type="submit"]').click();
- await page.waitForFunction(()=>document.querySelector('#connectionLabel')?.textContent==='資料已同步'&&document.querySelector('#modePill')?.classList.contains('real-pill'),null,{timeout:30000});
+ try{await page.waitForFunction(()=>document.querySelector('#connectionLabel')?.textContent==='資料已同步'&&document.querySelector('#modePill')?.classList.contains('real-pill'),null,{timeout:30000});}
+ catch(e){await screenshot(page,'FAIL-login-'+user.role);throw Error('Login screen did not finish: '+(await page.locator('#connectionLabel').textContent())+'; '+(await page.locator('#appContent').innerText()).slice(0,220));}
  return page;
 }
 async function apply(kind,tag,day){
