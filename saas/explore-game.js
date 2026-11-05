@@ -87,7 +87,7 @@ function drawStreet(){
  line.innerHTML=visible.map((shop,index)=>{
   const name=escapeHtml(shop.name);
   return '<button type="button" class="street-shop" data-shop-index="'+index+'" data-selected="'+(index===selectedIndex)+'" aria-label="查看'+name+'">'+
-   '<span class="pixel-roof" aria-hidden="true"></span><span class="pixel-body" aria-hidden="true"><span class="pixel-sign">'+name+'</span><span class="pixel-window"></span><span class="pixel-window right"></span><span class="pixel-door"></span></span>'+
+   '<span class="pixel-roof" aria-hidden="true"></span><span class="pixel-body" aria-hidden="true"><span class="pixel-sign">'+name+'</span><span class="pixel-window"></span><span class="pixel-window right"></span><span class="pixel-door"></span><span class="pixel-keeper"><i class="keeper-hair"></i><i class="keeper-face"></i><i class="keeper-apron"></i></span></span>'+
    '<span class="shop-name-bubble">'+name+'</span></button>';
  }).join("")+'<div class="pixel-avatar" id="arcade-avatar" aria-hidden="true"><span class="hair"></span><span class="face"></span><span class="shirt"></span><span class="feet"></span></div>';
  selectShop(selectedIndex,false);
