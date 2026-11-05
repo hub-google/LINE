@@ -204,9 +204,9 @@ function render(){
   const name=e(t.name),desc=e(t.description||""),address=e(t.address||"");
   const services=t.modules||{};
   const boardHref="./board.html?merchant="+encodeURIComponent(t.slug);
-  const reserveHref=customerUrl(t.slug,"reserve");
-  const queueHref=customerUrl(t.slug,"queue");
-  const mineHref=customerUrl(t.slug,"mine");
+  const reserveHref=customerUrl(t.slug,"reserve",t.oa_mode);
+  const queueHref=customerUrl(t.slug,"queue",t.oa_mode);
+  const mineHref=customerUrl(t.slug,"mine",t.oa_mode);
   let actions="",primaryHref="";
   if(t.test_board_only){
     primaryHref=boardHref;
