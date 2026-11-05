@@ -550,17 +550,21 @@ function unitNameForSession(sid){
 }
 function unitChooseHtml(){
  const units=unitList(),groups=[...new Set((unitConfig?.units||[]).filter(x=>x.active).map(x=>x.group||"其他"))];
- const actual=units.find(x=>x.id===unitChoice)||units[0];
- const sessions=sessionsOf(actual?.id);
- const selected=selectedUnitSession();
- return (unitConfig?.grouped?
-   '<label for="unit-category">服務分類</label><select id="unit-category" class="field"><option value="">全部分類</option>'+
-     groups.map(g=>'<option value="'+esc(g)+'" '+(unitCategory===g?'selected':'')+'>'+esc(g)+'</option>').join("")+
-   '</select>':'')+
-   '<label for="customer-unit">服務單位</label><select class="field" id="customer-unit">'+
-     units.map(u=>'<option value="'+esc(u.id)+'" '+(u.id===actual?.id?'selected':'')+'>'+esc(u.name)+'</option>').join("")+'</select>'+
-   '<label for="unit-session">服務場次</label><select class="field" id="unit-session"><option value="">請選擇場次</option>'+
-     sessions.map(s=>'<option value="'+esc(s.id)+'" '+(s.id===selected?.id?'selected':'')+
+ const actual=units.find(x=>x.id===unitChoice)||units[0],sessions=sessionsOf(actual?.id),selected=selectedUnitSession();
+ return '<div class="unit-form-header"><h3>選擇服務單位</h3><span>'+units.length+' 個選項</span></div>'+
+   (unitConfig?.grouped?'<div class="unit-category-chips">'+["全部",...groups].map(g=>
+       btn(g,"unit-category-pill",unitCategory===(g==="全部"?"":g)?"primary":"outline",
+        'data-category="'+esc(g==='全部'?'':g)+'"')).join("")+'</div>':'')+
+   '<div class="unit-card-grid">'+units.map(u=>{
+     const slots=sessionsOf(u.id),soon=slots[0];
+     return '<button type="button" class="unit-option '+(u.id===actual?.id?'selected':'')+
+       '" data-act="unit-choose" data-id="'+esc(u.id)+'" aria-pressed="'+String(u.id===actual?.id)+'">'+
+       '<span class="unit-option-copy"><span class="unit-option-group">'+esc(u.group||"服務")+'</span>'+
+       '<strong>'+esc(u.name)+'</strong><small>'+esc(soon?soon.name+" "+soon.start+"–"+soon.end:"目前沒有開放場次")+'</small></span>'+
+       '<span class="unit-option-trailing">'+(u.id===actual?.id?'✓':'›')+'</span></button>';
+   }).join("")+'</div>'+
+   '<label for="unit-session">開放場次</label><select class="field" id="unit-session"><option value="">請選擇場次</option>'+
+    sessions.map(s=>'<option value="'+esc(s.id)+'" '+(s.id===selected?.id?'selected':'')+
        ((Number(s.booked)||0)>=s.capacity?' disabled':'')+'>'+esc(s.name)+' '+esc(s.start)+'–'+esc(s.end)+
        ' · 剩 '+esc(Math.max(0,s.capacity-Number(s.booked||0)))+' 位</option>').join("")+
    '</select>';
@@ -1818,10 +1822,12 @@ box("LINE 身分授權",'<p class="muted">為避免機器人或惡意假預約�
     crossRecords());
  if(customerTab==="home"&&unitEnabled()){
     const units=unitList();
-    html+=box("服務單位",'<p class="small">從同一個商家網站選擇服務單位，不需要切換其他店家。</p>'+
-      '<div class="grid">'+units.map(u=>'<div class="routecard"><strong>'+esc(u.name)+'</strong>'+
-       (unitConfig.grouped?'<div class="small">'+esc(u.group||"其他")+'</div>':'')+
-       '<div class="small">獨立預約與叫號場次</div></div>').join("")+'</div>');
+    html+=box("選擇服務單位",'<p class="small">同一家店的各服務單位共用這個網站，不需要切換不同店家。</p>'+
+      (unitConfig.grouped?'<div class="unit-category-chips">'+["全部",...[...new Set((unitConfig.units||[]).filter(u=>u.active).map(u=>u.group||"其他"))]].map(g=>
+        btn(g,"unit-category-pill",unitCategory===(g==="全部"?"":g)?"primary":"outline",'data-category="'+esc(g==="全部"?"":g)+'"')).join("")+'</div>':'')+
+      '<div class="unit-card-grid">'+units.map(u=>'<button class="unit-option" data-act="unit-home-select" data-id="'+esc(u.id)+'">'+
+        '<span class="unit-option-copy"><span class="unit-option-group">'+esc(u.group||"服務")+'</span>'+
+        '<strong>'+esc(u.name)+'</strong><small>查看預約場次與目前候位</small></span><span class="unit-option-trailing">›</span></button>').join("")+'</div>');
   }
   if(customerTab==="home"&&customerAnnouncements.length){
    html+=box("門市最新公告",customerAnnouncements.map(a=>
@@ -2230,6 +2236,16 @@ document.addEventListener("click",async ev=>{
  if(staffTab==="bookings")void searchHistoricalBookings(1);
  return;
 }
+ if(b.dataset.act==="unit-category-pill"){
+   unitCategory=b.dataset.category||"";unitChoice=unitList()[0]?.id||"";unitSessionChoice="";render();return;
+ }
+ if(b.dataset.act==="unit-choose"){
+   unitChoice=b.dataset.id;unitSessionChoice="";unitConfirmKey="";render();return;
+ }
+ if(b.dataset.act==="unit-home-select"){
+   unitChoice=b.dataset.id;unitSessionChoice="";unitConfirmKey="";customerTab=customer?.tenant?.modules?.reservation?"reserve":"queue";
+   void load();return;
+ }
  if(b.dataset.nav){const v=b.dataset.nav;const tab=b.dataset.tab;if(v==="customer"){
   customerTab=tab;progressTicketId="";crossCurrentStore=false;
   if(["reserve","queue"].includes(tab)&&!customer?.tenant.modules[tab==="reserve"?"reservation":"queue"])customerTab="home";
