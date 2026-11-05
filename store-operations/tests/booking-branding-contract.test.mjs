@@ -68,9 +68,11 @@ test("pastel directory header keeps WCAG AA contrast on mobile",()=>{
    return monster.slice(at,monster.indexOf("}",at)+1);
  };
  const hex=(css,key)=>{
-   const match=css.match(new RegExp("(?:^|[;{\\\\s])"+key+":(#[0-9a-fA-F]{6})"));
-   assert.ok(match,"missing "+key+" color: "+css);
-   return match[1];
+   const declaration=css.split(/[;{}]/).map(x=>x.trim()).find(x=>x.startsWith(key+":"));
+   assert.ok(declaration,"missing "+key+" color: "+css);
+   const match=declaration.slice(key.length+1).match(/^#[0-9a-fA-F]{6}$/);
+   assert.ok(match,"invalid "+key+" color: "+declaration);
+   return match[0];
  };
  const lightness=(h)=>{
    const rgb=h.slice(1).match(/.{2}/g).map(part=>parseInt(part,16)/255);
