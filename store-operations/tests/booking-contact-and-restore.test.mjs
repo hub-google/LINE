@@ -1,0 +1,51 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import {fileURLToPath} from "node:url";
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
+const read=p=>fs.readFileSync(path.join(root,p),"utf8");
+const sql=read("supabase/migrations/20261105124000_booking_customer_contact_and_ticket_restore.sql");
+const ui=read("saas/index.html");
+const bridge=read("supabase/functions/line-bridge/index.ts");
+test("verified LINE booking stores customer-chosen name and validated phone",()=>{
+ assert.match(sql,/add column if not exists customer_phone text/);
+ assert.match(sql,/so_reservation_customer_phone_format/);
+ assert.match(sql,/create or replace function public\.so_book_with_contact_once/);
+ assert.match(sql,/public\.so_book_with_items_once\(/);
+ assert.match(sql,/where id=\(v_result->>'id'\)::uuid and user_id=auth\.uid\(\)/);
+ assert.match(sql,/customer_name=v_name,customer_phone=v_phone/);
+ assert.match(sql,/revoke all on function public\.so_book_with_contact_once[\s\S]*from public,anon;/);
+ assert.match(ui,/customer-book-name/);
+ assert.match(ui,/customer-book-phone/);
+ assert.match(ui,/為避免機器人或惡意假預約/);
+ assert.match(ui,/rpc\("so_book_with_contact_once"/);
+ assert.match(ui,/bookingConfirmationFingerprint/);
+ assert.match(ui,/normalizeBookingPhone/);
+});
+test("customer can correct reservation contact with tenant-aware LINE authorization",()=>{
+ assert.match(sql,/public\.so_update_booking_contact/);
+ assert.match(sql,/a\.user_id=auth\.uid\(\) and a\.tenant_id=v_tenant/);
+ assert.match(sql,/line_update_event_id=gen_random_uuid\(\)/);
+ assert.match(ui,/修改姓名／電話/);
+ assert.match(ui,/save-book-contact/);
+ assert.match(ui,/so_update_booking_contact/);
+ assert.match(ui,/notify-reservation-updated/);
+});
+test("reservation confirmation and update message show name and phone",()=>{
+ assert.match(bridge,/async function reservationConfirmationNotice/);
+ assert.match(bridge,/預約姓名：/);
+ assert.match(bridge,/聯絡電話：/);
+ assert.match(bridge,/customer_name,customer_phone/);
+});
+test("cancelled to waiting or hold creates unique queue restoration notification",()=>{
+ assert.match(sql,/line_restore_event_id uuid/);
+ assert.match(sql,/v_old='CANCELLED' and p_status in \('WAITING','HOLD'\)/);
+ assert.match(sql,/TICKET_RESTORED/);
+ assert.match(sql,/so_ticket_notice_outbox after insert or update of status,line_call_event_id,line_cancel_event_id,line_restore_event_id/);
+ assert.match(ui,/notify-ticket-restored/);
+ assert.match(bridge,/payload\.action==="notify-ticket-restored"/);
+ assert.match(bridge,/ticket\.line_restore_event_id!==eventId/);
+ assert.match(bridge,/TICKET_RESTORED/);
+ assert.match(bridge,/job\.event_kind === "TICKET_RESTORED"/);
+});
