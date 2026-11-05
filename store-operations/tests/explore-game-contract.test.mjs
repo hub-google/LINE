@@ -94,6 +94,13 @@ test("default merchant list is server-ranked Top 50; search uses separate pagina
  assert.match(directory,/so_public_store_search/);
  assert.match(directory,/p_limit:50/);
  assert.match(directory,/p_page:searchPage/);
+ assert.match(directory,/<option value="popular">熱門排行<\/option>/);
+ assert.match(directory,/document\.getElementById\("explore-sort"\)\.value!=="popular"/);
+ const popularSort=read("supabase/migrations/20261105174500_public_store_search_popularity_default.sql");
+ const signedDelta=read("supabase/migrations/20261105173500_public_store_popularity_signed_delta_fix.sql");
+ assert.match(popularSort,/p_sort text default 'popular'/);
+ assert.match(popularSort,/popularity_score end desc nulls last/);
+ assert.match(signedDelta,/greatest\(p_delta,0\)/);
  assert.match(directory,/searchCriteria\(\)/);
  assert.match(directory,/filtered=popular\.slice\(0,50\)/);
  assert.match(directory,/filtered=\[\.\.\.searchResults,\.\.\.testMatches\]/);
