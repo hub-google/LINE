@@ -571,7 +571,7 @@ function unitNameForSession(sid){
 }
 function unitChooseHtml(mode=customerTab){
  const units=availableUnits(mode);
- const groups=[...new Set(availableUnits(mode==="queue"?"queue":"reserve").map(u=>u.group||"其他"))];
+ const groups=[...new Set((unitConfig?.units||[]).filter(u=>u.active&&sessionsOf(u.id,mode).length).map(u=>u.group||"其他"))];
  const actual=units.find(x=>x.id===unitChoice)||units[0];
  const sessions=sessionsOf(actual?.id,mode),selected=selectedUnitSession(mode);
  return '<div class="unit-form-header"><h3>選擇服務單位</h3><span>'+units.length+' 個選項</span></div>'+
@@ -3111,7 +3111,7 @@ document.addEventListener("change",async ev=>{
  if(el.id==="staff-unit-session"){unitStaffSession=el.value;render();return;}
  if(el.id==="staff-booking-unit-filter"){bookingUnitFilter=el.value;render();return;}
  if(el.id==="unit-admin-unit"){unitAdminUnit=el.value;return;}
- if(el.id==="customer-party"){syncBookingPartyInput(el.value);unitConfirmKey="";return;}
+ if(el.id==="customer-party"){syncBookingPartyInput(el.value);unitConfirmKey="";if(unitEnabled()&&customerTab==="reserve")render();return;}
  if(el.id==="customer-queue-party"){
   const n=Number(el.value);queuePartySize=Number.isInteger(n)&&n>=1&&n<=20?n:0;
   const button=document.querySelector('button[data-act="take"],button[data-act="unit-take"]');
