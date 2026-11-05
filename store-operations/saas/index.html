@@ -970,11 +970,6 @@ function staffRender(){
   '<label for="staff-history-days" style="margin:0">已處理紀錄</label><select class="field" id="staff-history-days" style="width:145px">'+
   [7,14,30,90].map(n=>'<option value="'+n+'" '+(n===staffHistoryDays?"selected":"")+'>最近 '+n+' 天</option>').join("")+
   '</select></div></div>';
- if(testMode&&session?.user?.is_anonymous)html+=box("LINE 真實測試",
-   '<p>專屬測試門市：<strong>'+esc(slug)+'</strong></p>'+
-   '<p class="muted">先讓 LINE 顧客進入此門市取號，再從「現場叫號」操作。號碼與通知都使用真實後端。</p>'+
-   btn("複製 LINE 顧客網址","copy-test-line","primary"));
-
 
  if(staffTab==="dashboard"){
   if(isManager&&staffNoticeHealth&&(Number(staffNoticeHealth.failed||0)>0||Number(staffNoticeHealth.retry||0)>0))
