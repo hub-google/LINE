@@ -31,6 +31,9 @@ jobs:
       - name: Verify workforce PRD contracts
         run: |
           node --test workforce-management/tests/workforce-prd.test.mjs
+      - name: Verify deployed Supabase APIs
+        run: |
+          node --test workforce-management/tests/workforce-live.test.mjs
       - name: Deploy only workforce to existing gh-pages branch
         shell: bash
         run: |
