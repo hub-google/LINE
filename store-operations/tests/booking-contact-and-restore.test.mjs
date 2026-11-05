@@ -42,7 +42,7 @@ test("cancelled to waiting or hold creates unique queue restoration notification
  assert.match(sql,/line_restore_event_id uuid/);
  assert.match(sql,/v_old='CANCELLED' and p_status in \('WAITING','HOLD'\)/);
  assert.match(sql,/TICKET_RESTORED/);
- assert.match(sql,/so_ticket_notice_outbox after insert or update of status,line_call_event_id,line_cancel_event_id,line_restore_event_id/);
+ assert.match(sql,/so_ticket_notice_outbox\\s+after insert or update of status,line_call_event_id,line_cancel_event_id,line_restore_event_id/);
  assert.match(ui,/notify-ticket-restored/);
  assert.match(bridge,/payload\.action==="notify-ticket-restored"/);
  assert.match(bridge,/ticket\.line_restore_event_id!==eventId/);
