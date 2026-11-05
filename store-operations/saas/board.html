@@ -48,11 +48,11 @@
     @media(max-width:460px){header{padding:16px;align-items:flex-start}.shop-title{max-width:67%}main{padding:12px;gap:12px}.panel{padding:22px 14px}#upcoming li{min-height:65px}.board-controls{width:100%;justify-content:center}}
     @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
   </style>
-</head>
+<link rel="stylesheet" href="./site-auth.css"><script type="module" src="./site-auth.js"></script></head>
 <body>
   <header>
     <div class="shop-title"><span class="shop-icon" aria-hidden="true">▤</span><h1 id="shop">正在讀取門市資料</h1></div>
-    <time id="clock" aria-label="目前時間">--:--</time>
+    <div class="site-auth-slot site-auth-dark" id="site-auth-root" aria-label="使用者登入狀態"></div><time id="clock" aria-label="目前時間">--:--</time>
   </header>
   <section id="unit-board" hidden aria-label="多服務單位即時叫號"></section>
   <main id="single-board" aria-label="店內即時叫號資訊">
