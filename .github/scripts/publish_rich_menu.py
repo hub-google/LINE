@@ -89,10 +89,27 @@ def icon(draw, kind, x, y, ink):
         draw.ellipse((x - 6, y + 94, x + 30, y + 125), fill=ink)
 
 
+def monster_badge(draw, cx, cy, r):
+    """Small illustrated monster stamp; line art stays inside tap regions."""
+    ink = "#462B52"
+    purple = "#CA90E5"
+    yellow = "#FEC55A"
+    draw.ellipse((cx-r, cy-r*.83, cx+r, cy+r), fill=purple, outline=ink, width=max(4, int(r*.075)))
+    draw.polygon([(cx-r*.9,cy-r*.42),(cx-r*1.08,cy-r*1.16),
+                  (cx-r*.35,cy-r*.72)], fill=yellow)
+    draw.polygon([(cx+r*.9,cy-r*.42),(cx+r*1.08,cy-r*1.16),
+                  (cx+r*.35,cy-r*.72)], fill=yellow)
+    w=max(4,int(r*.08))
+    draw.arc((cx-r*.55,cy-r*.22,cx-r*.08,cy+r*.23),180,350,fill=ink,width=w)
+    draw.arc((cx+r*.08,cy-r*.22,cx+r*.55,cy+r*.23),180,350,fill=ink,width=w)
+    draw.ellipse((cx-r*.73,cy+r*.18,cx-r*.40,cy+r*.42),fill="#FCA5C7")
+    draw.ellipse((cx+r*.40,cy+r*.18,cx+r*.73,cy+r*.42),fill="#FCA5C7")
+    draw.arc((cx-r*.27,cy+r*.02,cx+r*.27,cy+r*.63),0,180,fill=ink,width=w)
+
 def create_image(items, selected):
-    im = Image.new("RGB", (WIDTH, HEIGHT), "#073d35")
+    im = Image.new("RGB", (WIDTH, HEIGHT), "#462B52")
     d = ImageDraw.Draw(im)
-    ink = "#06473d"
+    ink = "#462B52"
     bold = font(82, True)
     small = font(36)
     tab_font = font(70, True)
@@ -100,23 +117,25 @@ def create_image(items, selected):
         x0, x1 = idx * WIDTH // 2, (idx+1) * WIDTH // 2
         is_active = idx == selected
         d.rounded_rectangle((x0+8, 7, x1-8, TAB_HEIGHT-7), radius=35,
-                            fill="#def5e8" if is_active else "#0b5a4a")
+                            fill="#F4DEFB" if is_active else "#6D4385")
         d.text(((x0+x1)//2, TAB_HEIGHT//2), label,
                font=tab_font, fill=ink if is_active else "#ffffff", anchor="mm")
+        monster_badge(d, x0+100, TAB_HEIGHT//2, 59)
     row_height = (HEIGHT - TAB_HEIGHT) // 2
     for i, (title, description, glyph, _) in enumerate(items):
         row, col = divmod(i, 3)
         left, right = SPLITS_X[col], SPLITS_X[col+1]
         top, bottom = TAB_HEIGHT + row*row_height, TAB_HEIGHT + (row+1)*row_height
         d.rounded_rectangle((left+7, top+7, right-7, bottom-7), radius=25,
-                            fill="#def5e8" if i == 0 else "#fffdfa")
+                            fill=("#EDD8FB" if i%3==0 else "#FFF0CF" if i%3==1 else "#FFE8F2"))
         cx, cy = (left+right)//2, top+210
-        d.ellipse((cx-118, cy-118, cx+118, cy+118), fill="#e5f5ed")
+        d.ellipse((cx-118, cy-118, cx+118, cy+118), fill="#FCF7FF")
         icon(d, glyph, cx, cy, ink)
         d.text((cx, top+434), title, font=bold, fill=ink, anchor="mm")
         d.rounded_rectangle((cx-280, top+525, cx+280, top+615),
-                            radius=42, fill="#caedda")
+                            radius=42, fill="#E7CAFA")
         d.text((cx, top+570), description, font=small, fill=ink, anchor="mm")
+        monster_badge(d, left+94, top+96, 48)
     buf = io.BytesIO()
     im.save(buf, format="PNG", optimize=True)
     content = buf.getvalue()
