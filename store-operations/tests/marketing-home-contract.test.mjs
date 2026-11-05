@@ -10,6 +10,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
 const read=(relative)=>readFileSync(path.join(root,relative),"utf8");
 const landing=read("saas/home.html");
 const app=read("saas/index.html");
+const directory=read("saas/directory.html");
 const build=read("../.github/scripts/build-line-saas.mjs");
 const publish=read("../.github/workflows/line-saas-pages.yml");
 const deployPr=read("../.github/workflows/line-saas-pr-validation.yml");
@@ -76,4 +77,12 @@ test("bare booking or legacy SaaS roots open the dedicated booking homepage with
   assert.equal(redirected(base+suffix),null,"unexpected redirect for "+suffix);
   assert.equal(redirected(legacy+suffix),null,"unexpected legacy redirect for "+suffix);
  }
+});
+
+test("headquarters OA directory links platform shops directly to their merchant websites",()=>{
+ assert.match(directory,/function customerUrl\(slug,tab,oaMode="PLATFORM"\)/);
+ assert.match(directory,/if\(oaMode==="PLATFORM"\)return "\.\/"\+qs/);
+ assert.match(directory,/selected\?\.oa_mode==="PLATFORM"/);
+ assert.match(directory,/tab,"reserve"/);
+ assert.match(directory,/tab,"queue"/);
 });
