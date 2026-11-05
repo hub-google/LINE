@@ -31,7 +31,7 @@ const sb=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:
 const params=new URLSearchParams(location.search),mode=["search","queue","mine"].includes(params.get("mode"))?params.get("mode"):"search";
 const els={intro:document.getElementById("intro"),results:document.getElementById("results"),keyword:document.getElementById("keyword"),test:document.getElementById("test")};
 document.getElementById("tab-"+mode).classList.add("active");
-let all=[],liffId="";
+let all=[],liffId="",testBoardShop=null;
 function e(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function customerUrl(slug,tab){
  const qs="?view=customer&merchant="+encodeURIComponent(slug)+"&tab="+encodeURIComponent(tab);
@@ -44,16 +44,23 @@ function badges(t){
 }
 function render(){
  const keyword=els.keyword.value.trim().toLocaleLowerCase("zh-TW");
- const filtered=all.filter(t=>((t.name||"")+" "+(t.address||"")).toLocaleLowerCase("zh-TW").includes(keyword));
+ const official=all.filter(t=>((t.name||"")+" "+(t.address||"")).toLocaleLowerCase("zh-TW").includes(keyword));
+ // Keep QA shops out of the official directory, but let an explicit search
+ // find the real test board by its database-backed store name or slug.
+ const testMatches=mode!=="mine"&&keyword&&testBoardShop&&
+  (testBoardShop.name+" "+testBoardShop.slug).toLocaleLowerCase("zh-TW").includes(keyword)?[testBoardShop]:[];
+ const filtered=[...official,...testMatches];
  if(!filtered.length){
-   const msg=mode==="mine"?"尚未找到這個登入身分的預約或取號紀錄。":"目前沒有符合條件的已公開店家。";
+   const msg=mode==="mine"?"尚未找到這個登入身分的預約或取號紀錄。":"目前沒有符合條件的正式店家或測試看板。";
    els.results.innerHTML='<div class="empty"><strong>'+e(msg)+'</strong><p>'+(mode==="mine"?"若你曾在其他裝置預約，請透過該店家 LINE 顧客網址登入相同 LINE 帳號查詢。":"可更換關鍵字，或稍後再查看正式開放的店家。")+'</p></div>';
    return;
  }
  els.results.innerHTML=filtered.map(t=>{
   const name=e(t.name),desc=e(t.description||""),address=e(t.address||"");
   let actions="";
-  if(mode==="mine"){
+  if(t.test_board_only){
+    actions='<a class="btn" href="./board.html?merchant='+encodeURIComponent(t.slug)+'">查看即時叫號看板（免登入）</a>';
+  }else if(mode==="mine"){
     actions='<a class="btn" href="'+e(customerUrl(t.slug,"mine"))+'">查看我的紀錄</a>'+
     ((t.modules||{}).queue?'<a class="btn secondary" href="'+e(customerUrl(t.slug,"queue"))+'">查看號碼</a>':"")+
     ((t.modules||{}).queue&&(t.modules||{}).calling?'<a class="btn secondary" href="./board.html?merchant='+encodeURIComponent(t.slug)+'">公開叫號看板（免登入）</a>':"");
@@ -62,7 +69,8 @@ function render(){
     ((t.modules||{}).queue?'<a class="btn secondary" href="'+e(customerUrl(t.slug,"queue"))+'">現場取號</a>':"")+
     ((t.modules||{}).queue&&(t.modules||{}).calling?'<a class="btn secondary" href="./board.html?merchant='+encodeURIComponent(t.slug)+'">公開叫號看板（免登入）</a>':"");
   }
-  return '<article class="card"><h2>'+name+'</h2><div>'+badges(t)+'</div>'+
+  return '<article class="card"><h2>'+name+'</h2><div>'+
+    (t.test_board_only?'<span class="badge">測試門市・非正式合作店家</span>':badges(t))+'</div>'+
     (address?'<p>地點：'+address+'</p>':"")+(desc?'<p>'+desc+'</p>':"")+
     (mode==="mine"?'<p>最近預約：'+Number(t.booking_count||0)+' 筆・取號：'+Number(t.ticket_count||0)+' 筆</p>':"")+
     '<div class="actions">'+actions+'</div></article>';
@@ -109,11 +117,19 @@ async function load(){
     all=Array.isArray(data)?data:[];
   }else{
     els.intro.innerHTML=mode==="search"?
-      '<strong>搜尋合作店家</strong><p>從已公開的店家中挑選服務，直接使用 LINE 帳號完成預約，不需另填姓名或建立顧客密碼。</p>':
+      '<strong>搜尋合作店家</strong><p>從已公開的店家中挑選服務，預約時透過 LINE 驗證身分，並填寫姓名及聯絡手機。搜尋測試門市名稱時也能找到公開叫號看板。</p>':
       '<strong>現場取號</strong><p>請先選擇有開放取號的店家，再取得候位號碼並查看叫號進度。</p>';
     const {data,error}=await sb.rpc("so_public_directory",{p_query:null,p_mode:mode==="queue"?"queue":"all"});
     if(error)throw error;
     all=Array.isArray(data)?data:[];
+    // The public board RPC returns a store name and non-personal queue data
+    // with no sign-in. Do not add any test merchant to the official directory.
+    const qaSlug="qa-84b3ef9297eb470685a91a527ca499ca";
+    const boardResponse=await sb.rpc("so_public_board",{p_slug:qaSlug,p_limit:5});
+    if(!boardResponse.error&&boardResponse.data?.shop_name){
+      testBoardShop={slug:qaSlug,name:boardResponse.data.shop_name,
+        description:"專屬測試門市的即時叫號看板",address:"",test_board_only:true};
+    }
     els.test.classList.remove("hidden");
     document.getElementById("demo-link").href=customerUrl("greenfield-salon",mode==="queue"?"queue":"reserve");
   }
