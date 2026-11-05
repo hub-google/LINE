@@ -31,7 +31,7 @@ function options(items,labelFn,selected=''){return items.map(x=>'<option value="
 function role(){if(app.mode==='demo')return 'owner';return (app.data?.members||[]).find(x=>x.tenant_id===app.tenantId&&x.user_id===app.user?.id)?.role||'employee';}
 function manager(){return app.mode==='demo'||['owner','hr','manager'].includes(role());}
 function banner(m,err=false){$('toast').insertAdjacentHTML('beforeend','<div class="toast '+(err?'error':'')+'">'+esc(m)+'</div>');setTimeout(()=>{const e=$('toast').firstElementChild;if(e)e.remove();},4800);}
-async function call(url,method='GET',data=null,token=KEY,retry=true){const headers={apikey:KEY};if(token!==KEY)headers.Authorization='Bearer '+token;if(data!==null)headers['Content-Type']='application/json';if(method==='POST'||method==='PATCH')headers.Prefer='return=representation';const res=await fetch(API+url,{method,headers,body:data===null?undefined:JSON.stringify(data),cache:'no-store'});const text=await res.text();let j;try{j=text?JSON.parse(text):null;}catch{j={message:text.slice(0,200)};}if(!res.ok&&res.status===401&&retry&&token!==KEY){const renewed=await renewSession();return call(url,method,data,renewed,false);}if(!res.ok)throw Error(j?.message||j?.error_description||j?.error||'連線失敗 ('+res.status+')');return j;}
+async function call(url,method='GET',data=null,token=KEY,retry=true){const headers={apikey:KEY};if(token!==KEY)headers.Authorization='Bearer '+token;if(data!==null)headers['Content-Type']='application/json';if(method==='POST'||method==='PATCH')headers.Prefer=(method==='POST'&&url==='/rest/v1/wm_tenants'?'return=minimal':'return=representation');const res=await fetch(API+url,{method,headers,body:data===null?undefined:JSON.stringify(data),cache:'no-store'});const text=await res.text();let j;try{j=text?JSON.parse(text):null;}catch{j={message:text.slice(0,200)};}if(!res.ok&&res.status===401&&retry&&token!==KEY){const renewed=await renewSession();return call(url,method,data,renewed,false);}if(!res.ok)throw Error(j?.message||j?.error_description||j?.error||'連線失敗 ('+res.status+')');return j;}
 async function renewSession(){
  let saved={};try{saved=JSON.parse(sessionStorage.getItem('wm_auth')||'{}')}catch{}
  if(!saved.refresh_token)throw Error('登入已過期，請重新登入企業帳號');
@@ -404,8 +404,11 @@ $('overlay').addEventListener('submit',async e=>{
    }
    await reload(true);banner('企業帳號登入成功');
   }else if(form.dataset.form==='tenant'){
-   const result=await call('/rest/v1/wm_tenants','POST',{name:f.name,created_by:app.user.id},app.token);
-   app.tenantId=result[0]?.id||'';closeModal();await reload(true);banner('企業建立完成');
+   const newTenantId=crypto.randomUUID();
+   await call('/rest/v1/wm_tenants','POST',{id:newTenantId,name:f.name,created_by:app.user.id},app.token);
+   app.tenantId=newTenantId;closeModal();await reload(true);
+   if(!app.tenants.some(t=>t.id===newTenantId))throw Error('企業已送出，但無法讀取建立結果，請重新登入確認');
+   banner('企業建立完成');
   }else{
    if(f.starts_at)f.starts_at=tzIso(f.starts_at);
    if(f.ends_at)f.ends_at=tzIso(f.ends_at);
