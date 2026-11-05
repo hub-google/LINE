@@ -318,13 +318,15 @@ async function ticketProgressNotice(
 
 // Both a new booking and a restored booking use this one, maintained LINE card.
 async function reservationConfirmationNotice(db: ReturnType<typeof service>, tenant: ShopInfo, booking: {
-  id: string; booking_date: string; booking_time: string; party_size: number; selected_items: unknown;
+  id: string; booking_date: string; booking_time: string; party_size: number; selected_items: unknown;customer_name?: string;customer_phone?: string|null;
 }): Promise<Record<string, unknown>> {
   return flexNotice("預約已成立", [
     "店家：" + tenant.name,
     "日期：" + String(booking.booking_date),
     "時間：" + String(booking.booking_time).slice(0, 5),
     "人數：" + booking.party_size + " 位",
+    "預約姓名：" + (booking.customer_name || "未提供"),
+    "聯絡電話：" + (booking.customer_phone || "未提供"),
     ...selectedServicesText(booking.selected_items),
     ...shopDetails(tenant),
     "如需調整，可使用下方按鈕。",
@@ -354,7 +356,7 @@ async function pushNotice(
   db: ReturnType<typeof service>,
   tenant: { id: string; name: string },
   recipient: string,
-  eventKind: "CALLED" | "RESERVED" | "TICKET_CREATED" | "TICKET_CANCELLED" | "RESERVATION_CANCELLED" | "RESERVATION_UPDATED" | "RESERVATION_RESTORED" | "QUEUE_NEAR",
+  eventKind: "CALLED" | "RESERVED" | "TICKET_CREATED" | "TICKET_CANCELLED" | "RESERVATION_CANCELLED" | "RESERVATION_UPDATED" | "RESERVATION_RESTORED" | "TICKET_RESTORED" | "QUEUE_NEAR",
   referenceId: string,
   message: string | Record<string, unknown>,
   origin: string | null,
@@ -409,7 +411,7 @@ type NoticeJob = {
   id: number;
   tenant_id: string;
   event_kind: "CALLED" | "RESERVED" | "TICKET_CREATED" | "TICKET_CANCELLED" |
-    "RESERVATION_CANCELLED" | "RESERVATION_UPDATED" | "RESERVATION_RESTORED" | "QUEUE_NEAR";
+    "RESERVATION_CANCELLED" | "RESERVATION_UPDATED" | "RESERVATION_RESTORED" | "TICKET_RESTORED" | "QUEUE_NEAR";
   reference_id: string;
   attempts: number;
   status: string;
@@ -454,10 +456,11 @@ async function dispatchOutboxItem(
       }]), origin);
   } else if (job.event_kind === "CALLED" || job.event_kind.startsWith("TICKET_")) {
     const isCreated = job.event_kind === "TICKET_CREATED";
+    const isRestored = job.event_kind === "TICKET_RESTORED";
     const { data: ticket, error } = await db.from("so_tickets")
-      .select("id,tenant_id,user_id,status,ticket_no,number_prefix,created_at,business_date,selected_items,line_call_event_id,line_cancel_event_id")
+      .select("id,tenant_id,user_id,status,ticket_no,number_prefix,created_at,business_date,selected_items,line_call_event_id,line_cancel_event_id,line_restore_event_id")
       .eq("tenant_id", tenant.id).is("deleted_at", null)
-      .eq(isCreated ? "id" : job.event_kind === "CALLED" ? "line_call_event_id" : "line_cancel_event_id", job.reference_id)
+      .eq(isCreated ? "id" : job.event_kind === "CALLED" ? "line_call_event_id" : isRestored ? "line_restore_event_id" : "line_cancel_event_id", job.reference_id)
       .maybeSingle();
     if (error) throw error;
     if (!ticket) return { status: "SKIPPED", reason: "TICKET_MISSING" };
@@ -469,6 +472,16 @@ async function dispatchOutboxItem(
       if (ticket.status !== "WAITING") return { status: "SKIPPED", reason: "TICKET_NO_LONGER_WAITING" };
       result = await pushNotice(db, tenant, ticket.user_id, "TICKET_CREATED", job.reference_id,
         await ticketProgressNotice(db, tenant, ticket), origin);
+    } else if(isRestored){
+      if(!["WAITING","HOLD"].includes(ticket.status))return {status:"SKIPPED",reason:"TICKET_RESTORE_SUPERSEDED"};
+      result=await pushNotice(db,tenant,ticket.user_id,"TICKET_RESTORED",job.reference_id,
+        flexNotice("候位已恢復",[
+          "店家："+tenant.name,
+          "號碼："+ticketNumber(ticket),
+          "目前狀態："+(ticket.status==="HOLD"?"保留中":"候位中"),
+          "此號碼已從取消狀態恢復，請依即時叫號網頁確認最新排序。",
+          ...shopDetails(tenant),
+        ],[{label:"查看即時叫號網頁",uri:liffQueueProgressLink(await shopLinkContext(db,tenant),ticket.id)}]),origin);
     } else {
       if (ticket.status !== "CANCELLED") return { status: "SKIPPED", reason: "TICKET_NOT_CANCELLED" };
       result = await pushNotice(db, tenant, ticket.user_id, "TICKET_CANCELLED", job.reference_id,
@@ -485,7 +498,7 @@ async function dispatchOutboxItem(
       : job.event_kind === "RESERVATION_CANCELLED" ? "line_cancel_event_id"
       : "line_update_event_id";
     const { data: booking, error } = await db.from("so_reservations")
-      .select("id,user_id,status,booking_date,booking_time,party_size,selected_items,line_restore_event_id,line_cancel_event_id,line_update_event_id")
+      .select("id,user_id,status,booking_date,booking_time,party_size,customer_name,customer_phone,selected_items,line_restore_event_id,line_cancel_event_id,line_update_event_id")
       .eq("tenant_id", tenant.id).is("deleted_at", null).eq(field, job.reference_id).maybeSingle();
     if (error) throw error;
     if (!booking) return { status: "SKIPPED", reason: "BOOKING_MISSING" };
@@ -496,6 +509,8 @@ async function dispatchOutboxItem(
           "店家：" + tenant.name, "日期：" + booking.booking_date,
           "時間：" + String(booking.booking_time).slice(0, 5),
           "人數：" + booking.party_size + " 位",
+          "預約姓名：" + (booking.customer_name || "未提供"),
+          "聯絡電話：" + (booking.customer_phone || "未提供"),
           ...selectedServicesText(booking.selected_items), ...shopDetails(tenant),
         ], [{ label: "查看我的紀錄", uri: liffManageLink(await shopLinkContext(db, tenant), "reservation", booking.id, "view") }]), origin);
     } else {
@@ -507,6 +522,8 @@ async function dispatchOutboxItem(
               "店家：" + tenant.name, "日期：" + booking.booking_date,
               "時間：" + String(booking.booking_time).slice(0, 5),
               "人數：" + booking.party_size + " 位",
+              "預約姓名：" + (booking.customer_name || "未提供"),
+              "聯絡電話：" + (booking.customer_phone || "未提供"),
               ...selectedServicesText(booking.selected_items), ...shopDetails(tenant),
             ], [
               { label: "編輯預約", uri: liffManageLink(await shopLinkContext(db, tenant), "reservation", booking.id, "edit") },
@@ -921,7 +938,7 @@ Deno.serve(async (req: Request) => {
       const { data: tenant } = await db.from("so_tenants").select("id,slug,name,status,address,phone").eq("slug", slug).maybeSingle();
       if (!tenant || tenant.status !== "ACTIVE") return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
       const { data: booking } = await db.from("so_reservations")
-        .select("id,user_id,status,created_at,booking_date,booking_time,party_size,selected_items,line_restore_event_id")
+        .select("id,user_id,status,created_at,booking_date,booking_time,party_size,customer_name,customer_phone,selected_items,line_restore_event_id")
         .eq("id", payload.reservationId).eq("tenant_id", tenant.id).is("deleted_at", null).maybeSingle();
       if (!booking || booking.status !== "CONFIRMED")
         return reply(409, { error: "RESERVATION_NOT_CONFIRMED" }, origin);
@@ -952,6 +969,27 @@ Deno.serve(async (req: Request) => {
         await ticketProgressNotice(db, tenant, ticket), origin);
     }
 
+    if(payload.action==="notify-ticket-restored"){
+      const slug=String(payload.slug||""),ticketId=String(payload.ticketId||""),eventId=String(payload.eventId||"");
+      if(!slug||!validUUID(ticketId)||!validUUID(eventId))return reply(400,{error:"INVALID_RESTORE_EVENT"},origin);
+      const {data:tenant}=await db.from("so_tenants").select("id,slug,name,status,address,phone").eq("slug",slug).maybeSingle();
+      if(!tenant||tenant.status!=="ACTIVE")return reply(404,{error:"TENANT_NOT_FOUND"},origin);
+      const {data:ticket}=await db.from("so_tickets")
+        .select("id,user_id,status,ticket_no,number_prefix,line_restore_event_id")
+        .eq("id",ticketId).eq("tenant_id",tenant.id).is("deleted_at",null).maybeSingle();
+      if(!ticket||!["WAITING","HOLD"].includes(ticket.status)||ticket.line_restore_event_id!==eventId)
+        return reply(409,{error:"TICKET_NOT_RESTORED_OR_SUPERSEDED"},origin);
+      if(!await canManageRecipient(db,tenant.id,user.id,ticket.user_id))
+        return reply(403,{error:"NOT_AUTHORIZED"},origin);
+      return pushNotice(db,tenant,ticket.user_id,"TICKET_RESTORED",eventId,
+        flexNotice("候位已恢復",[
+          "店家："+tenant.name,
+          "號碼："+ticketNumber(ticket),
+          "目前狀態："+(ticket.status==="HOLD"?"保留中":"候位中"),
+          "此號碼已從取消狀態恢復，請依即時叫號網頁確認最新排序。",
+          ...shopDetails(tenant),
+        ],[{label:"查看即時叫號網頁",uri:liffQueueProgressLink(await shopLinkContext(db,tenant),ticket.id)}]),origin);
+    }
     if (payload.action === "notify-ticket-cancel" || payload.action === "notify-reservation-cancel" || payload.action === "notify-reservation-updated") {
       const slug = String(payload.slug || "");
       const isTicket = payload.action === "notify-ticket-cancel";
@@ -977,7 +1015,7 @@ Deno.serve(async (req: Request) => {
           ], [{ label: "查看我的紀錄", uri: liffManageLink(await shopLinkContext(db, tenant), "ticket", ticket.id, "view") }]), origin);
       }
       const { data: booking } = await db.from("so_reservations")
-        .select("id,user_id,status,booking_date,booking_time,party_size,line_cancel_event_id,line_update_event_id,selected_items")
+        .select("id,user_id,status,booking_date,booking_time,party_size,customer_name,customer_phone,line_cancel_event_id,line_update_event_id,selected_items")
         .eq("id", refId).eq("tenant_id", tenant.id).is("deleted_at", null).maybeSingle();
       if (!booking || !await canManageRecipient(db, tenant.id, user.id, booking.user_id))
         return reply(403, { error: "NOT_AUTHORIZED" }, origin);
@@ -986,6 +1024,8 @@ Deno.serve(async (req: Request) => {
         "日期：" + booking.booking_date,
         "時間：" + String(booking.booking_time).slice(0, 5),
         "人數：" + booking.party_size + " 位",
+        "預約姓名：" + (booking.customer_name || "未提供"),
+        "聯絡電話：" + (booking.customer_phone || "未提供"),
         ...selectedServicesText(booking.selected_items),
         ...shopDetails(tenant),
       ];
