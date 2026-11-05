@@ -31,6 +31,7 @@ jobs:
       - name: Verify workforce PRD contracts
         run: |
           node --test workforce-management/tests/workforce-prd.test.mjs
+          node --test workforce-management/tests/workforce-button-clicks.test.mjs
       - name: Verify deployed Supabase APIs
         run: |
           node --test workforce-management/tests/workforce-live.test.mjs
