@@ -24,6 +24,7 @@ jobs:
         run: |
           set -euo pipefail
           node --check workforce-management/app.js
+          node --check workforce-management/swap-sync.js
           node --check workforce-management/vendor/qrcode.min.js
           test -s workforce-management/index.html
           test -s workforce-management/style.css
@@ -43,7 +44,7 @@ jobs:
           pubdir="$RUNNER_TEMP/line-workforce-pages"
           git worktree add --detach "$pubdir" origin/gh-pages
           mkdir -p "$pubdir/workforce"
-          cp workforce-management/index.html workforce-management/app.js workforce-management/style.css "$pubdir/workforce/"
+          cp workforce-management/index.html workforce-management/app.js workforce-management/swap-sync.js workforce-management/style.css "$pubdir/workforce/"
           # Keep CSS and JS from the same deployment; avoid browser stale-cache layout corruption.
           sed -i "s@./style.css@./style.css?v=$GITHUB_SHA@g" "$pubdir/workforce/index.html"
           sed -i "s@./app.js@./app.js?v=$GITHUB_SHA@g" "$pubdir/workforce/index.html"
