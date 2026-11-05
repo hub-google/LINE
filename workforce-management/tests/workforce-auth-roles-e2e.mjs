@@ -158,7 +158,7 @@ try{
   assert.equal(await decide(first.id,'reject'),'rejected');
   await employeePage.locator('#refreshBtn').click();
   await employeePage.locator('#nav [data-tab="requests"]').click();
-  assert.match(await employeePage.locator('#appContent').innerText(),/已駁回/);
+  await employeePage.locator('#appContent .chip.rejected').first().waitFor({state:'visible',timeout:20000});
   await screenshot(employeePage,'04-employee-rejected');
  });
  await step('Owner clicks approve for second employee request',async()=>{
@@ -166,7 +166,7 @@ try{
   assert.equal(await decide(second.id,'approve'),'approved');
   await employeePage.locator('#refreshBtn').click();
   await employeePage.locator('#nav [data-tab="requests"]').click();
-  assert.match(await employeePage.locator('#appContent').innerText(),/已核准/);
+  await employeePage.locator('#appContent .chip.approved').first().waitFor({state:'visible',timeout:20000});
   await screenshot(employeePage,'05-employee-approved');
  });
  await step('Employee cannot create manager-only shift through REST',async()=>{
