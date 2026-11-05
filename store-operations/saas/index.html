@@ -2082,13 +2082,17 @@ document.addEventListener("click",async ev=>{
    const kind=b.dataset.kind;
    if(!["booking","queue"].includes(kind))return;
    const label=kind==="booking"?"預約":"叫號";
-   if(busy)return;
+   if(busy||b.disabled)return;
+   // Prevent rapid double-taps while waiting for the server-side preview.
+   b.disabled=true;
    let preview;
    try{
      preview=await rpc("so_number_reset_preview",{p_slug:slug,p_kind:kind});
    }catch(error){
      showActionFeedback("無法確認未結案筆數，為避免錯誤重置，請稍後重試："+(error?.message||"未知錯誤"),"error");
      return;
+   }finally{
+     if(b.isConnected)b.disabled=false;
    }
    const count=Number(preview?.still_open);
    if(!Number.isSafeInteger(count)||count<0){
@@ -2100,7 +2104,10 @@ document.addEventListener("click",async ev=>{
    if(!confirm("確定重置「"+label+"」編號嗎？\n\n"+warning+"\n\n下一筆新"+(kind==="booking"?"預約":"取號")+"會從 1 開始；歷史資料與原編號都會保留。"))return;
    await act(async()=>{
      const result=await rpc(kind==="booking"?"so_reset_booking_number":"so_reset_queue_number",{p_slug:slug});
-     return label+"編號已重置，新資料將從 "+(result.prefix||"")+"1 開始；既有資料未更動。";
+     const currentOpen=Number(result.still_open);
+     const changedCount=Number.isSafeInteger(currentOpen)&&currentOpen!==count
+       ?"（重置時尚有 "+currentOpen+" 筆未結案；資料可能在確認期間變動）":"";
+     return label+"編號已重置，新資料將從 "+(result.prefix||"")+"1 開始；既有資料未更動。"+changedCount;
    });return;
   }
   if(a==="resource-save"){
