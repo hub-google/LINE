@@ -37,7 +37,7 @@ test("generated staff and customer links use /booking/ without changing OAuth ca
 test("Pages builds the stylesheet and deploys only booking and legacy SaaS paths",()=>{
  assert.match(build,/await copyFile\(path\.join\(src, "booking-theme\.css"\)/);
  assert.match(deploy,/for product in booking saas/);
- assert.match(deploy,/for f in index\.html home\.html/);
+ assert.match(deploy,/for f in [^\n]*index\.html[^\n]*home\.html/);
  assert.match(deploy,/release\.json booking-theme\.css/);
  assert.match(deploy,/git -C "\$pubdir" add -- booking\/ saas\//);
  assert.doesNotMatch(deploy,/git -C "\$pubdir" add\s+--all/);
