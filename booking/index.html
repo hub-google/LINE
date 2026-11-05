@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="038a29352cb28f5f401282ce35132b6841bf3a0c">
+<meta name="line-saas-build" content="2ab14bac26c9a874b8561e8dfcb287eafc083559">
 <meta name="theme-color" content="#173e34">
 <link rel="manifest" href="./manifest.webmanifest">
 <script>
@@ -32,7 +32,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   }
 })();
 </script>
-<script defer src="./version-watch.js?build=038a29352cb28f5f401282ce35132b6841bf3a0c"></script>
+<script defer src="./version-watch.js?build=2ab14bac26c9a874b8561e8dfcb287eafc083559"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 門市營運｜企業開通、員工後台與顧客預約</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -164,7 +164,7 @@ body{overflow-x:hidden}
 .cross-record .staff-actionbar{margin-top:9px}
 @media(max-width:540px){.cross-ticket{padding:13px 11px}.cross-ticket-stats{gap:6px}.cross-ticket-stat{padding:9px 4px}.cross-ticket-stat strong{font-size:clamp(20px,6vw,30px)}}
 </style>
-<link rel="stylesheet" href="./booking-theme.css?build=038a29352cb28f5f401282ce35132b6841bf3a0c">
+<link rel="stylesheet" href="./booking-theme.css?build=2ab14bac26c9a874b8561e8dfcb287eafc083559">
 </head>
 <body>
 <header><div class="top">
@@ -1195,7 +1195,7 @@ function staffRender(){
   const weekdayChecks=[["0","週日"],["1","週一"],["2","週二"],["3","週三"],["4","週四"],["5","週五"],["6","週六"]]
       .map(([day,title])=>'<label class="checklist"><input type="checkbox" class="policy-closed-day" value="'+day+'" '+((policy.closed_weekdays||[]).includes(Number(day))?"checked":"")+'> '+title+'</label>').join("");
   html+=box("企業基本設定",!isManager?'<p class="muted">只有管理者可以修改設定。</p>':
-   '<div class="grid"><div>'+field("企業名稱","set-name",t.name)+field("電話","set-phone",t.phone)+field("地址","set-address",t.address)+field("品牌色（#RRGGBB）","set-accent",t.accent)+'</div><div>'+field("網站簡介","set-description",t.description)+field("LOGO 圖片網址","set-logo",t.logo_url)+field("開始營業","set-open",t.open_time,"time")+field("結束營業","set-close",t.close_time,"time")+'</div></div>'+
+   '<div class="grid"><div>'+field("企業名稱","set-name",t.name)+field("電話","set-phone",t.phone)+field("地址","set-address",t.address)+field("品牌色（#RRGGBB）","set-accent",t.accent)+'</div><div>'+field("網站簡介","set-description",t.description)+'<label for="set-directory-category">探索頁店家分類</label><select class="field" id="set-directory-category">'+["其他","餐飲","美髮","美甲／美容","醫療／診所","健康／按摩","運動","寵物","教育","生活服務"].map(c=>'<option value="'+c+'" '+((t.directory_category||"其他")===c?"selected":"")+'>'+c+'</option>').join("")+'</select>'+field("LOGO 圖片網址","set-logo",t.logo_url)+field("開始營業","set-open",t.open_time,"time")+field("結束營業","set-close",t.close_time,"time")+'</div></div>'+
    '<div class="grid"><div>'+field("每個時段可預約人數","set-capacity",t.slot_capacity,"number",'min="1" max="100"')+'</div><div><label>預約時段間隔</label><select class="field" id="set-minutes"><option value="15" '+(t.slot_minutes===15?"selected":"")+'>15 分鐘</option><option value="30" '+(t.slot_minutes===30?"selected":"")+'>30 分鐘</option><option value="60" '+(t.slot_minutes===60?"selected":"")+'>60 分鐘</option></select></div></div><div style="margin-top:15px">'+btn("儲存企業設定","update-settings","primary")+'</div>')+
   (isManager?box("候位保留規則",
      '<p class="small">保留期間不會叫號；到期後下一次叫號時自動恢復。可設定回原順位或隊尾，原票券號碼不變。</p>'+
@@ -2402,7 +2402,7 @@ document.addEventListener("click",async ev=>{
      return "預約營業規則已更新";
    });return;
  }
- if(a==="update-settings"){await act(async()=>{await rpc("so_update_tenant",{p_slug:slug,p_patch:{name:val("set-name"),phone:val("set-phone"),address:val("set-address"),accent:val("set-accent"),description:val("set-description"),logo_url:val("set-logo"),open_time:val("set-open"),close_time:val("set-close"),slot_capacity:Number(val("set-capacity")),slot_minutes:Number(val("set-minutes"))}});return "企業設定已保存";});return}
+ if(a==="update-settings"){await act(async()=>{await rpc("so_update_tenant",{p_slug:slug,p_patch:{name:val("set-name"),phone:val("set-phone"),address:val("set-address"),accent:val("set-accent"),description:val("set-description"),logo_url:val("set-logo"),directory_category:val("set-directory-category"),open_time:val("set-open"),close_time:val("set-close"),slot_capacity:Number(val("set-capacity")),slot_minutes:Number(val("set-minutes"))}});return "企業設定已保存";});return}
  if(a==="invite-staff"){await act(async()=>{await rpc("so_invite_staff",{p_slug:slug,p_email:val("invite-email"),p_role:val("invite-role")});return "員工邀請已儲存，請通知對方登入接受";});return}
  if(a==="book-back"){bookingConfirmationKey="";render();return;}
  if(a==="book"&&customer?.booking_confirmation_required!==false){
