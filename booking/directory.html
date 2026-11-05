@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="f70fa9f5777ebd365f26ca2f607772e0c2267264">
-<script defer src="./version-watch.js?build=f70fa9f5777ebd365f26ca2f607772e0c2267264"></script>
+<meta name="line-saas-build" content="818322f40793c7c041490ab7a6feb7c89a5e9177">
+<script defer src="./version-watch.js?build=818322f40793c7c041490ab7a6feb7c89a5e9177"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 預約｜搜尋店家與我的預約</title><meta name="description" content="使用 LINE 預約平台搜尋合作店家、預約服務、現場取號及查詢個人紀錄。">
 <style>
@@ -159,7 +159,7 @@ a.btn.secondary:hover{background:#e1f3e9}
     <label>服務類型<select id="explore-service">
       <option value="全部">全部服務</option><option value="預約">提供預約</option><option value="取號">提供取號</option><option value="看板">提供叫號看板</option>
     </select></label>
-    <label>排序<select id="explore-sort"><option value="name">店家名稱</option><option value="category">依店家分類</option></select></label>
+    <label>排序<select id="explore-sort"><option value="popular">熱門排行</option><option value="name">店家名稱</option><option value="category">依店家分類</option></select></label>
   </div>
   <div class="results-header"><h2 id="results-heading">熱門店家排行</h2><span id="result-count" class="result-count" aria-live="polite">載入中</span></div>
   <div class="merchant-grid" id="results" aria-live="polite"></div>
@@ -230,7 +230,7 @@ const searchCriteria=()=>mode!=="mine"&&(
  document.getElementById("explore-category").value!=="全部"||
  document.getElementById("explore-area").value!=="全部"||
  document.getElementById("explore-service").value!=="全部"||
- document.getElementById("explore-sort").value!=="name"
+ document.getElementById("explore-sort").value!=="popular"
 );
 const cityNames=["基隆市","臺北市","台北市","新北市","桃園市","新竹市","新竹縣","苗栗縣","臺中市","台中市","彰化縣","南投縣","雲林縣","嘉義市","嘉義縣","臺南市","台南市","高雄市","屏東縣","宜蘭縣","花蓮縣","臺東縣","台東縣","澎湖縣","金門縣","連江縣"];
 function areaOf(shop){return (cityNames.find(x=>String(shop.address||"").includes(x))||"線上商圈").replace(/^臺/,"台")}
