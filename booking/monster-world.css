@@ -34,7 +34,7 @@ a{color:#734599}a:hover{color:#48295D}
 :where(.queue-board,.cross-ticket-stat){background:#F5E9FB;border-color:#E4C8F0}
 .site-auth-name .site-auth-avatar{background:#EDD9FA;color:#5B317D}
 .site-auth-button:not(.site-auth-login){border-color:#DDC2EB;background:#FFF9FF;color:#562D75}
-.site-auth-button.site-auth-login{background:#06C755!important;color:#fff!important;border-color:#06C755!important;box-shadow:none!important}
+.site-auth-button.site-auth-login{background:#087A43!important;color:#fff!important;border-color:#087A43!important;box-shadow:none!important}
 .logo-mark,.brandmark,.brand-mark,.brand-icon,.app-mark,.logo:has(+span){background:#EDD6FB url("./monster-mascot.svg") center/95% no-repeat!important;color:transparent!important;text-indent:-9999px;overflow:hidden;border:2px solid #DBB8EE!important;border-radius:15px!important}
 .logo-mark:after{display:none}
 body>header,.site-head,.page-header{border-color:#EAD6F2}
@@ -120,3 +120,70 @@ body:has(.poster)>header{background:#462B52!important;color:#fff!important}
 body:has(.poster) .poster{border:2px solid #EAD4F8}
 body:has(.poster) .controls{border-color:#E1CAED;border-radius:20px}
 body:has(.poster) button{border-radius:13px}
+
+
+/*
+ * Mobile pastel contrast repair.
+ * Directory's legacy dark-header CSS still paints nav text, the hero eyebrow
+ * and the hero description almost white. Since Monster World switches that
+ * header to a pale lavender gradient, these text colors MUST be overridden
+ * by selectors more specific than the original component stylesheet.
+ * Keep the light monster palette: only improve foreground/background contrast.
+ */
+.page-header .header-links > a{
+  color:#4B2B5B;
+  background:rgba(255,248,255,.88);
+  border:1px solid #B48AC9;
+  font-weight:800;
+}
+.page-header .header-links > a:hover,
+.page-header .header-links > a:focus-visible{
+  color:#3C204C;
+  background:#FFFFFF;
+  border-color:#80549A;
+}
+.page-header .hero-heading .eyebrow{
+  display:inline-block;
+  width:max-content;
+  max-width:100%;
+  padding:4px 10px;
+  border-radius:7px;
+  background:#FFF8FF;
+  color:#4B2B5B;
+  letter-spacing:.12em;
+}
+.page-header .hero-heading > p:not(.eyebrow){
+  color:#523B61;
+  font-weight:600;
+  line-height:1.75;
+}
+.page-header .site-auth-slot.site-auth-dark,
+.page-header .site-auth-slot.site-auth-dark .site-auth-name{
+  color:#462B52;
+}
+.page-header .site-auth-slot.site-auth-dark .site-auth-button:not(.site-auth-login){
+  color:#4B2B5B;
+  background:#FFF8FF;
+  border-color:#AE83C7;
+  font-weight:800;
+}
+.page-header .site-auth-slot.site-auth-dark .site-auth-button:not(.site-auth-login):hover{
+  color:#3C204C;
+  background:#FFFFFF;
+  border-color:#80549A;
+}
+.page-header .site-auth-slot.site-auth-dark .site-auth-button.site-auth-login:hover{
+  background:#086B3A!important;
+  border-color:#086B3A!important;
+}
+/* Inputs and inactive navigation are readable on lilac and white surfaces. */
+.main-panel .tabs a:not(.active):not([aria-current="page"]){color:#533B60}
+.main-panel .intro-copy p{color:#614674}
+.main-panel .search::placeholder{color:#665172;opacity:1}
+.main-panel .search:focus-visible{outline-color:#80549A}
+/* Tight mobile headers should never rely on transparent white-on-pastel pills. */
+@media(max-width:620px){
+  .page-header .header-links > a{min-height:40px;display:inline-flex;align-items:center;justify-content:center}
+  .page-header .hero-heading .eyebrow{font-size:12px}
+  .page-header .hero-heading > p:not(.eyebrow){font-size:14px}
+}
