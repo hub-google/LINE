@@ -60,6 +60,28 @@ async function lineValidate(token:string){
    ||Number(line.exp||0)*1000<=Date.now())throw new Error("LINE_IDENTITY_INVALID");
  return String(line.sub);
 }
+async function sendBatch(tenant:string,limit:number){
+    const claimed=await db("rpc/wm_line_claim","POST",{p_tenant:tenant,p_limit:Math.min(10,Math.max(1,Number(limit)||5))});
+   const results:Record<string,unknown>[]=[];
+   for(const job of claimed||[]){
+    let ok=false,reason="";
+    try{
+     const out=await fetch("https://api.line.me/v2/bot/message/push",{
+      method:"POST",headers:{"Content-Type":"application/json",
+       Authorization:"Bearer "+PLATFORM_TOKEN,"X-Line-Retry-Key":job.id},
+      body:JSON.stringify({to:job.line_sub,messages:[{type:"text",
+       text:(String(job.title)+"\n"+String(job.body||"")).slice(0,4500)}]})});
+     ok=out.ok;reason=ok?"":("LINE_HTTP_"+out.status);
+    }catch{reason="LINE_NETWORK_ERROR";}
+    // Always record the outcome, and only retry non-successful events (3 attempts max).
+    await db("rpc/wm_line_ack","POST",{p_id:job.id,p_ok:ok,p_code:reason});
+    results.push({delivery_id:job.id,ok,reason});
+   }
+
+ return {processed:results.length,sent:results.filter(x=>x.ok).length,
+  failed:results.filter(x=>!x.ok).length};
+}
+
 Deno.serve(async req=>{
  const origin=req.headers.get("origin");
  if(origin&&origin!==WEBSITE)return respond(403,{error:"ORIGIN_DENIED"});
@@ -69,9 +91,25 @@ Deno.serve(async req=>{
   messagingConfigured:!!PLATFORM_TOKEN,mode:"platform"},origin);
  if(req.method!=="POST")return respond(405,{error:"METHOD_NOT_ALLOWED"},origin);
  try{
-  const actor=await getUser(req);
   const input=await req.json();
   const action=String(input?.action||"");
+  if(action==="cron"){
+   const secret=req.headers.get("x-wm-cron-secret")||"";
+   if(!/^[0-9a-f]{64}$/i.test(secret))return respond(403,{error:"CRON_SECRET_REQUIRED"},origin);
+   const result=await db("rpc/wm_line_cron_valid","POST",{p_secret:secret});
+   if(result!==true)return respond(403,{error:"CRON_NOT_AUTHORIZED"},origin);
+   if(!PLATFORM_TOKEN)return respond(503,{error:"LINE_MESSAGING_NOT_CONFIGURED"},origin);
+   const tenants=await db("rpc/wm_line_pending_tenants","POST",{p_limit:3});
+   let processed=0,sent=0,failed=0,remaining=10;
+   for(const t of tenants||[]){
+    if(remaining<1)break;
+    const outcome=await sendBatch(t.tenant_id,Math.min(5,remaining));
+    processed+=outcome.processed;sent+=outcome.sent;failed+=outcome.failed;
+    remaining-=outcome.processed;
+   }
+   return respond(200,{processed,sent,failed,via:"cron"},origin);
+  }
+  const actor=await getUser(req);
   const tenant=String(input?.tenant_id||"");
   const m=await member(tenant,actor);
   if(action==="status"){
@@ -99,24 +137,8 @@ Deno.serve(async req=>{
   if(action==="flush"){
    if(!["owner","hr"].includes(m.role))throw new Error("MANAGER_PERMISSION_REQUIRED");
    if(!PLATFORM_TOKEN)return respond(503,{error:"LINE_MESSAGING_NOT_CONFIGURED"},origin);
-   const claimed=await db("rpc/wm_line_claim","POST",{p_tenant:tenant,p_limit:Math.min(10,Math.max(1,Number(input.limit)||5))});
-   const results:Record<string,unknown>[]=[];
-   for(const job of claimed||[]){
-    let ok=false,reason="";
-    try{
-     const out=await fetch("https://api.line.me/v2/bot/message/push",{
-      method:"POST",headers:{"Content-Type":"application/json",
-       Authorization:"Bearer "+PLATFORM_TOKEN,"X-Line-Retry-Key":job.id},
-      body:JSON.stringify({to:job.line_sub,messages:[{type:"text",
-       text:(String(job.title)+"\n"+String(job.body||"")).slice(0,4500)}]})});
-     ok=out.ok;reason=ok?"":("LINE_HTTP_"+out.status);
-    }catch{reason="LINE_NETWORK_ERROR";}
-    // Always record the outcome, and only retry non-successful events (3 attempts max).
-    await db("rpc/wm_line_ack","POST",{p_id:job.id,p_ok:ok,p_code:reason});
-    results.push({delivery_id:job.id,ok,reason});
-   }
-   return respond(200,{processed:results.length,sent:results.filter(x=>x.ok).length,
-    failed:results.filter(x=>!x.ok).length},origin);
+   const result=await sendBatch(tenant,Math.min(10,Math.max(1,Number(input.limit)||5)));
+   return respond(200,result,origin);
   }
   return respond(400,{error:"UNKNOWN_ACTION"},origin);
  }catch(e){
