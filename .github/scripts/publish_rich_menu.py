@@ -18,7 +18,7 @@ SPLITS_Y = [0, 843, HEIGHT]
 BASE = "https://hub-google.github.io/LINE/booking/"
 CENTER = BASE + "merchant-center.html"
 ITEMS = [
-    ("搜尋店家", "找店家並預約", "search", {"type": "uri", "label": "搜尋店家", "uri": BASE + "directory.html?mode=search"}),
+    ("搜尋店家", "選店並預約", "search", {"type": "uri", "label": "搜尋店家", "uri": BASE + "directory.html?mode=search"}),
     ("我的預約", "查看與取消", "features", {"type": "uri", "label": "我的預約", "uri": BASE + "directory.html?mode=mine"}),
     ("現場取號", "選店家領號碼", "play", {"type": "uri", "label": "現場取號", "uri": BASE + "directory.html?mode=queue"}),
     ("商家免費開通", "沒有 OA 也能用", "store", {"type": "uri", "label": "商家免費開通", "uri": CENTER + "#activate"}),
@@ -141,7 +141,7 @@ def main():
         "size": {"width": WIDTH, "height": HEIGHT},
         "selected": True,
         "name": "hq-merchant-" + hashlib.sha256(image + json.dumps(areas, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()[:16],
-        "chatBarText": "商家服務選單",
+        "chatBarText": "預約・取號服務",
         "areas": areas,
     }
     info = api("/v2/bot/info", token)
