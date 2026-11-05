@@ -602,7 +602,7 @@ function unitSettingsPanel(isManager){
  const units=unitConfig?.units||[],chosen=units.find(x=>x.id===unitEditingId);
  const sessions=(unitConfig?.sessions||[]),editing=sessions.find(x=>x.id===unitEditingSession);
  const options=units.filter(x=>x.active).map(u=>'<option value="'+esc(u.id)+'" '+((unitAdminUnit||editing?.unit_id)===u.id?'selected':'')+'>'+esc(u.name)+'</option>').join("");
- return box("服務單位與場次（所有產業共用）",
+ return box("服務單位設定",
    '<p class="small">不需要建立新店家。勾選多服務單位後，顧客可以先選分類與服務單位；沒有勾選就維持原本單一入口。</p>'+
    '<label class="checklist"><input type="checkbox" id="enable-units" '+(unitConfig?.multi?'checked':'')+(isManager?'':' disabled')+'> 啟用多服務單位</label>'+
    '<label class="checklist"><input type="checkbox" id="group-units" '+(unitConfig?.grouped?'checked':'')+(isManager?'':' disabled')+'> 顯示服務分類</label>'+
@@ -787,7 +787,7 @@ function layout(title,subtitle,menu,body){
   nav("工作台","dashboard",staffTab,"staff")+nav("預約","bookings",staffTab,"staff")+
   nav("叫號","queue",staffTab,"staff")+
   '<details class="staff-mobile-more"><summary aria-label="開啟更多管理功能">更多</summary><div class="staff-mobile-popup">'+
-  nav("預約日曆","calendar",staffTab,"staff")+nav("營運分析","analytics",staffTab,"staff")+
+  nav("預約日曆","calendar",staffTab,"staff")+nav("服務單位與場次","units",staffTab,"staff")+nav("營運分析","analytics",staffTab,"staff")+
   nav("菜單與服務","menu",staffTab,"staff")+nav("員工管理","members",staffTab,"staff")+
   nav("分店管理","branches",staffTab,"staff")+nav("企業設定","settings",staffTab,"staff")+
   '<a class="side-item guide-link" href="./merchant-center.html#guide">操作說明 ↗</a>'+
@@ -1144,7 +1144,7 @@ function staffRender(){
  const menu='<div class="staff-side-label">日常作業</div>'+
  nav("工作台","dashboard",staffTab,"staff")+nav("預約管理","bookings",staffTab,"staff")+
  nav("叫號管理","queue",staffTab,"staff")+nav("預約日曆","calendar",staffTab,"staff")+
- '<div class="staff-side-label">營運與設定</div>'+
+ '<div class="staff-side-label">營運與設定</div>'+nav("服務單位與場次","units",staffTab,"staff")+
  nav("營運分析","analytics",staffTab,"staff")+nav("菜單及服務設定","menu",staffTab,"staff")+
  nav("員工管理","members",staffTab,"staff")+nav("多分店管理","branches",staffTab,"staff")+
  nav("企業設定","settings",staffTab,"staff")+ '<div class="staff-side-label">使用支援</div><a class="side-item guide-link" href="./merchant-center.html#guide">操作說明 ↗</a>';
@@ -1355,8 +1355,11 @@ function staffRender(){
      '<div class="grid"><div>'+field("加入既有門市網址代碼","branch-slug-"+g.id,"")+'</div><div class="staff-actionbar">'+
      btn("加入門市","attach-business-branch","primary",'data-group="'+esc(g.id)+'"')+'</div></div>')).join("") :
      box("尚無總店群組",'<p class="muted">建立總店群組後，即可加入由你擔任 OWNER 的其他門市。</p>');
+ }else if(staffTab==="units"){
+  html+='<div class="universal-staff-head"><div><h2>服務單位與場次</h2><p>同一個店家網址，同時適用醫院、餐飲、美髮與各式櫃台。</p></div>'+
+   '<a class="btn primary" href="./template.html" target="_blank" rel="noopener noreferrer">查看通用公版預覽 ↗</a></div>'+
+   unitSettingsPanel(isManager);
  }else if(staffTab==="settings"){
-  html+=unitSettingsPanel(isManager);
   const policy=staff.bookingPolicy||{};
   const selectedFlag=staffCustomerBook.find(x=>x.id===customerFlagSelected)||staffCustomerBook[0]||null;
   if(selectedFlag)customerFlagSelected=selectedFlag.id;
@@ -2242,7 +2245,7 @@ document.addEventListener("click",async ev=>{
  }
  if(v==="staff"){
    staffTab=tab;
-   if(["analytics","branches","menu","settings"].includes(tab)){void load();return;}
+   if(["analytics","branches","menu","settings","units"].includes(tab)){void load();return;}
     if(tab==="bookings"){err="";flash="";render();void searchHistoricalBookings(1);return;}
     if(tab==="calendar"){err="";flash="";render();void loadBookingCalendar(1);return;}
  }
