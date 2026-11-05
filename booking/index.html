@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="e46c00020f5146f38bebbd9f49a6f65a19b7b2d0">
+<meta name="line-saas-build" content="62eddc3ff676cef8f899c4c320ca314e7ba010a8">
 <meta name="theme-color" content="#173e34">
 <link rel="manifest" href="./manifest.webmanifest">
 <script>
@@ -32,7 +32,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   }
 })();
 </script>
-<script defer src="./version-watch.js?build=e46c00020f5146f38bebbd9f49a6f65a19b7b2d0"></script>
+<script defer src="./version-watch.js?build=62eddc3ff676cef8f899c4c320ca314e7ba010a8"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 門市營運｜企業開通、員工後台與顧客預約</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -166,7 +166,7 @@ body{overflow-x:hidden}
 .guide-link{text-decoration:none;color:var(--primary);border:1px solid var(--line);background:#f2f8f4;min-height:42px;display:flex;align-items:center;white-space:nowrap}
 .guide-link:hover{background:#e5f3ea}
 </style>
-<link rel="stylesheet" href="./booking-theme.css?build=e46c00020f5146f38bebbd9f49a6f65a19b7b2d0">
+<link rel="stylesheet" href="./booking-theme.css?build=62eddc3ff676cef8f899c4c320ca314e7ba010a8">
 <link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script></head>
 <body>
 <header><div class="top">
@@ -1992,6 +1992,9 @@ function enhanceStaffUI(){
   heading.remove();detail.append(summary,body);
   card.classList.add("staff-fold-card");card.appendChild(detail);
  }
+ // Booking and queue items are operational worklists: show status, call and delete controls immediately.
+ // Do not put their controls behind a second click on either desktop or mobile.
+ if(staffTab==="bookings"||staffTab==="queue")return;
  for(const card of root.querySelectorAll(".staff-record")){
   const heading=card.querySelector(":scope > .staff-record-head");
   if(!heading)continue;
