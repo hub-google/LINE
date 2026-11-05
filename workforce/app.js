@@ -325,7 +325,8 @@ $('appContent').addEventListener('change',e=>{
  if(e.target.id==='punchMember'){app.focusMember=e.target.value;render();}
  if(e.target.id==='balanceMember'){app.focusMember=e.target.value;render();}
 });
-$('appContent').addEventListener('click',async e=>{
+document.addEventListener('click',async e=>{
+ if(!e.target.closest('#appContent, #pageActions'))return;
  const b=e.target.closest('[data-action]');if(!b)return;
  const a=b.dataset.action,id=b.dataset.id;
  try{
@@ -341,7 +342,7 @@ $('appContent').addEventListener('click',async e=>{
  else if(a==='createTenant')showTenant();else if(a==='login')showAuth();
  else if(a==='demoMode'){app.mode='demo';app.token=null;app.tenantId=DEMO_ID;app.tenants=[];await reload(true);}
  else if(a==='retryLoad')await reload();
- }catch(e){/* handled by action */ }
+ }catch(e){banner(e.message||'操作失敗，請重試',true);}
 });
 $('overlay').addEventListener('click',e=>{const btn=e.target.closest('[data-action="closeModal"]');if(btn)closeModal();if(e.target===$('overlay'))closeModal();});
 $('overlay').addEventListener('submit',async e=>{
@@ -686,7 +687,8 @@ $('appContent').addEventListener('change',e=>{
  if(e.target.id==='notificationMember'){app.focusMember=e.target.value;render();}
  if(e.target.id==='monthPicker'){app.monthSelected=e.target.value;app.monthPreview=null;render();}
 });
-$('appContent').addEventListener('click',async e=>{
+document.addEventListener('click',async e=>{
+ if(!e.target.closest('#appContent, #pageActions'))return;
  const b=e.target.closest('[data-action],[data-extra]');if(!b)return;
  const a=b.dataset.action||b.dataset.extra;
  try{
@@ -788,7 +790,8 @@ render=function(){
     '<button class="btn primary" data-extra="acceptInvite">接受邀請加入企業</button>');
  }
 };
-$('appContent').addEventListener('click',async e=>{
+document.addEventListener('click',async e=>{
+ if(!e.target.closest('#appContent, #pageActions'))return;
  const b=e.target.closest('[data-extra]');if(!b)return;
  try{
   if(b.dataset.extra==='newSwap')showSwapDialog();
@@ -938,7 +941,8 @@ schedule=function(){
    controls+'<div class="notice">演算法參考已排班、排休、可上班時段及目前工時，暫以每週 40 小時和班間 11 小時作保守建議門檻；這不是法定工時計算結果。</div>'+
    preview+gaps));
 };
-$('appContent').addEventListener('click',async e=>{
+document.addEventListener('click',async e=>{
+ if(!e.target.closest('#appContent, #pageActions'))return;
  const b=e.target.closest('[data-extra]');if(!b)return;
  try{
   if(b.dataset.extra==='importCsv')openCsvImport();
@@ -1067,7 +1071,8 @@ approvals=function(){
  if(list.length)$('appContent').insertAdjacentHTML('beforeend',
   panel('多層請假簽核進度',table(['申請員工','假別','已完成／需要','單號末八碼'],rows)));
 };
-$('appContent').addEventListener('click',e=>{
+document.addEventListener('click',e=>{
+ if(!e.target.closest('#appContent, #pageActions'))return;
  const b=e.target.closest('[data-extra]');if(!b)return;
  try{
   if(b.dataset.extra==='newLeavePolicy')showLeavePolicyForm();
@@ -1154,7 +1159,8 @@ $('appContent').addEventListener('change',e=>{
  if(e.target.id==='anomalyFrom')app.anomalyFrom=e.target.value;
  if(e.target.id==='anomalyThrough')app.anomalyThrough=e.target.value;
 });
-$('appContent').addEventListener('click',async e=>{
+document.addEventListener('click',async e=>{
+ if(!e.target.closest('#appContent, #pageActions'))return;
  const b=e.target.closest('[data-extra]');if(!b)return;
  try{
   if(b.dataset.extra==='scanAttendance'){
@@ -1249,7 +1255,8 @@ async function downloadEvidence(id){
  a.href=url;a.download=record.filename;a.rel='noopener';document.body.appendChild(a);a.click();a.remove();
  setTimeout(()=>URL.revokeObjectURL(url),5000);
 }
-$('appContent').addEventListener('click',async e=>{
+document.addEventListener('click',async e=>{
+ if(!e.target.closest('#appContent, #pageActions'))return;
  const b=e.target.closest('[data-extra]');if(!b)return;
  try{
   if(b.dataset.extra==='evidenceUpload')showEvidenceUploader(b.dataset.id);
@@ -1391,7 +1398,8 @@ $('appContent').addEventListener('drop',async e=>{
  try{await commitShiftMove(id,day+'T'+taiTime(s.starts_at));}
  catch(error){banner(error.message,true);}
 });
-$('appContent').addEventListener('click',e=>{
+document.addEventListener('click',e=>{
+ if(!e.target.closest('#appContent, #pageActions'))return;
  const b=e.target.closest('[data-extra]');if(!b)return;
  try{
   if(b.dataset.extra==='scheduleView'){app.scheduleView=b.dataset.view;render();}
@@ -1497,7 +1505,8 @@ async function connectWorkforceLine(){
  const result=await lineEndpoint({action:'bind',tenant_id:app.tenantId,id_token:idToken});
  if(result.linked){banner('LINE 身分驗證與員工綁定完成');await refreshLineStatus();}
 }
-$('appContent').addEventListener('click',async e=>{
+document.addEventListener('click',async e=>{
+ if(!e.target.closest('#appContent, #pageActions'))return;
  const b=e.target.closest('[data-line]');if(!b)return;
  if(b.disabled)return;
  b.disabled=true;
@@ -1556,7 +1565,8 @@ function showScheduleRulesForm(){
   {name:'max_week_minutes',label:'每週最大排定分鐘',html:maxWeek}
  ],'儲存排班規則');
 }
-$('appContent').addEventListener('click',e=>{
+document.addEventListener('click',e=>{
+ if(!e.target.closest('#appContent, #pageActions'))return;
  const b=e.target.closest('[data-extra="showScheduleRules"]');if(!b)return;
  try{showScheduleRulesForm();}catch(error){banner(error.message,true);}
 });
@@ -1587,7 +1597,8 @@ function showBranchSupportForm(){
    html:'<input id="active_until" name="active_until" type="date">'}
  ],'儲存跨店授權');
 }
-$('appContent').addEventListener('click',e=>{
+document.addEventListener('click',e=>{
+ if(!e.target.closest('#appContent, #pageActions'))return;
  const b=e.target.closest('[data-extra="showBranchSupport"]');if(!b)return;
  try{showBranchSupportForm();}catch(error){banner(error.message,true);}
 });
@@ -1698,7 +1709,8 @@ async function clockWorkforceQr(kindValue){
  await reload(true);
  banner('已完成 '+kind(kindValue)+'：'+taiStamp(result.server_at));
 }
-$('appContent').addEventListener('click',async e=>{
+document.addEventListener('click',async e=>{
+ if(!e.target.closest('#appContent, #pageActions'))return;
  const b=e.target.closest('[data-qr-action]');if(!b||b.disabled)return;
  b.disabled=true;
  try{
@@ -1824,7 +1836,8 @@ reports=function(){
   table(['員工編號','員工','上班日期','上班打卡','下班打卡','工作分鐘','狀態'],tableRows)+
   '<p class="muted">跨日班依實際上班打卡日期歸類；跨店打卡的分店須另與班表核對。正式員工僅可下載 RLS 授權的本人資料。</p>'));
 };
-$('appContent').addEventListener('click',async e=>{
+document.addEventListener('click',async e=>{
+ if(!e.target.closest('#appContent, #pageActions'))return;
  const b=e.target.closest('[data-extra]');if(!b||b.disabled)return;
  try{
   if(b.dataset.extra==='runAttendanceDetail'){b.disabled=true;await runAttendanceDetail();}
