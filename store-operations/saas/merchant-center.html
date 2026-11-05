@@ -153,12 +153,12 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #e5
 @media(max-width:390px){.brand{font-size:12px}.top-link.primary{font-size:10px!important}.hero-actions .action{font-size:11px}.flow-arrow{flex-basis:7px}.flow-step{padding:8px 3px}.flow-step small{font-size:8px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.action{transition:none}}
 </style>
-</head>
+<link rel="stylesheet" href="./site-auth.css"><script type="module" src="./site-auth.js"></script></head>
 <body>
 <header class="top">
   <div class="top-inner">
     <a class="brand" href="./home.html"><span class="brand-icon" aria-hidden="true">L</span><span>LINE 預約平台<small>商家操作指南 / HELP CENTER</small></span></a>
-    <nav class="top-links" aria-label="網站連結">
+    <div class="site-auth-slot" id="site-auth-root" aria-label="使用者登入狀態"></div><nav class="top-links" aria-label="網站連結">
       <a class="top-link" href="./home.html">平台首頁</a>
       <a class="top-link" href="./merchant-register.html">申請開通</a>
       <a class="top-link primary" href="./?view=staff">進入商家後台</a>
