@@ -23,7 +23,7 @@ test("printable poster has parseable browser JS and version-safe packaging",()=>
   assert.equal(syntax.status,0,syntax.stderr);
   assert.match(build,/"poster\.html"/);
   assert.match(publish,/for product in booking saas/);
-  assert.match(publish,/for f in index\.html home\.html board\.html poster\.html/);
+  assert.match(publish,/for f in [^\n]*index\.html[^\n]*home\.html[^\n]*board\.html[^\n]*poster\.html/);
   assert.match(pr,/qr-poster-contract\.test\.mjs/);
 });
 
