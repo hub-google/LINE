@@ -1291,7 +1291,7 @@ function staffRender(){
    const resources=staff.resourceContext?.resources||[],rules=staff.resourceContext?.service_rules||[];
   const services=items.filter(x=>x.kind==="SERVICE");
   const firstService=services[0],firstRule=rules.find(x=>x.item_id===firstService?.id);
-  html+=box("預約資源（員工／房間／設備）",
+  html+=(unitEnabled()?"":box("預約資源（員工／房間／設備）",
    '<p class="small">同一資源在服務時長＋緩衝時間內不可重複預約；停用資源不會改變既有預約。</p>'+
    (resources.length?'<div class="scroll"><table class="rows"><thead><tr><th>類型</th><th>名稱</th><th>狀態</th><th>操作</th></tr></thead><tbody>'+
      resources.map(x=>'<tr><td>'+esc(({STAFF:"員工",ROOM:"房間",EQUIPMENT:"設備"})[x.kind]||x.kind)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.active?"啟用":"停用")+'</td><td>'+
@@ -1299,9 +1299,9 @@ function staffRender(){
      '</tbody></table></div>':'<p class="small">尚未建立資源；可以先建立服務項目，之後再指派員工或房間。</p>')+
    (isManager?'<div class="grid"><div>'+field("資源名稱","resource-name","")+'</div><div><label for="resource-kind">類型</label><select class="field" id="resource-kind">'+
       [["STAFF","員工"],["ROOM","房間"],["EQUIPMENT","設備"]].map(([v,n])=>'<option value="'+v+'">'+n+'</option>').join("")+
-      '</select></div></div>'+btn("新增資源","resource-save","primary"):""))+
+      '</select></div></div>'+btn("新增資源","resource-save","primary"):"")))+
     box("服務時長與緩衝（預約資源排程）",
-     '<p class="small">可指定每項服務的時間及一個員工／房間／設備。服務時間與緩衝會在後端交易中阻止撞期；原預約資料不變。</p>'+
+     '<p class="small">'+(unitEnabled()?'服務單位在「企業設定」統一管理。':'可指定每項服務的時間及一個員工／房間／設備。')+'服務時間與緩衝仍沿用既有預約資源排程。</p>'+
      (services.length?'<div class="scroll"><table class="rows"><thead><tr><th>服務</th><th>分鐘＋緩衝</th><th>指定資源</th></tr></thead><tbody>'+
        services.map(x=>{const rule=rules.find(z=>z.item_id===x.id);const res=resources.find(z=>z.id===rule?.resource_id);
          return '<tr><td>'+esc(x.name)+'</td><td>'+esc(rule?rule.duration_minutes+" + "+rule.buffer_minutes:"預設時段 "+t.slot_minutes+" + 0")+'</td><td>'+esc(res?.name||"未指派")+'</td></tr>'}).join("")+
