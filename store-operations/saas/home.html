@@ -213,7 +213,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
     @media(max-width:620px){.tv-feature{gap:22px}.tv-screen-main{gap:5px;padding:7px}.tv-order{gap:3px;padding:5px}.tv-screen-head{font-size:11px;padding:7px 10px}.tv-now span,.tv-order b{font-size:11px}.tv-now strong{font-size:clamp(38px,10vw,62px)}.tv-order span{font-size:clamp(13px,3.4vw,20px)}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn{transition:none}.btn:hover{transform:none}}
   </style>
-</head>
+<link rel="stylesheet" href="./site-auth.css"><script type="module" src="./site-auth.js"></script></head>
 <body>
 <a class="skip" href="#main">跳到主要內容</a>
 <header class="site-head">
@@ -231,7 +231,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
       <a class="btn btn-outline" href="./?view=staff">商家登入</a>
       <a class="btn btn-solid" href="./merchant-register.html">商家申請開通 <span class="arrow" aria-hidden="true">›</span></a>
     </div>
-    <details class="mobile-menu">
+    <div class="site-auth-slot" id="site-auth-root" aria-label="使用者登入狀態"></div><details class="mobile-menu">
       <summary aria-label="展開主選單">選單</summary>
       <nav class="menu-panel" aria-label="手機主選單">
         <div class="menu-section" aria-label="本頁內容">
