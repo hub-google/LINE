@@ -24,7 +24,7 @@ test("party-size availability compares integer parties against actual remaining 
 });
 
 test("selection and submission both enforce capacity, and count is not reset on render",()=>{
- assert.match(app,/bookingParty=1,queuePartySize=2,customerTab=/);
+ assert.match(app,/bookingParty=1,queuePartySize=2,bookingContactName=/);
  assert.match(app,/field\("預約人數","customer-party",bookingParty\|\|""/);
  assert.match(app,/!availableForParty\(s\)\?"disabled/);
  assert.match(app,/if\(!availableForParty\(option\)\)/);
