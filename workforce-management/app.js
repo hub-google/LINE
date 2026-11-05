@@ -105,7 +105,7 @@ async function reload(silent=false){
  app.busy=false;render();
 }
 async function action(name,data){
- if(app.busy)return;
+ if(app.busy)throw Error('上一個操作仍在處理中，請勿重複送出');
  app.busy=true;
  try{
   let result;
@@ -323,7 +323,7 @@ $('appContent').addEventListener('change',e=>{
  if(e.target.id==='weekPicker'){app.date=e.target.value;app.autoSuggestions=null;render();}
  if(e.target.id==='reportDate'){app.date=e.target.value;render();}
  if(e.target.id==='punchMember'){app.focusMember=e.target.value;render();}
- if(e.target.id==='balanceMember'){app.focusMember=e.target.value;render();}
+ if(e.target.id==='balanceMember'){app.focusMember=e.target.value;if(app.mode==='demo')render();}
 });
 document.addEventListener('click',async e=>{
  if(!e.target.closest('#appContent, #pageActions'))return;
@@ -335,7 +335,7 @@ document.addEventListener('click',async e=>{
  else if(a==='prevWeek'){app.date=dayAdd(app.date,-7);app.autoSuggestions=null;render();}
  else if(a==='nextWeek'){app.date=dayAdd(app.date,7);app.autoSuggestions=null;render();}
  else if(a==='todayWeek'){app.date=today();app.autoSuggestions=null;render();}
- else if(a==='refreshReport')render();else if(a==='exportCsv')csvSave();
+ else if(a==='refreshReport')await reload(true);else if(a==='exportCsv')csvSave();
  else if(a==='clock')await clockPunch(b.dataset.kind);
  else if(a==='approve')await approve(id,true);else if(a==='reject')await approve(id,false);
  else if(a==='cancelShift'||a==='publishShift'){if(confirm('確認更新班別狀態？'))await action('shift_status',{id,status:a==='cancelShift'?'cancelled':'published'});}
@@ -489,14 +489,14 @@ function showPeriods(){
  let tool='<div class="toolbar"><div class="field"><label>選擇月份</label><input id="monthPicker" type="month" class="filter" value="'+esc(month)+'"></div>'+
  '<button class="btn" data-action="monthPreview">試算本月工時</button>'+
  (manager()&&closure?'':'')+
- (manager()&&!closure?'<button class="btn primary" data-action="monthClose">確認鎖定月結</button>':'')+
+ ((app.mode==='demo'||['owner','hr'].includes(role()))&&!closure?'<button class="btn primary" data-action="monthClose">確認鎖定月結</button>':'')+
  '<button class="btn" data-action="monthExport" '+(!r?'disabled':'')+'>匯出 CSV</button></div>';
  $('appContent').innerHTML=panel('月度工時與假勤彙整',tool+
  '<div class="notice warning">這是以打卡事件配對和班表計算的行政試算；未涵蓋全部法定工時、補休及薪資規則，不可直接用來發放薪資。</div>'+
  (closure?'<p><span class="chip approved">已鎖定</span>　'+esc(taiStamp(closure.closed_at))+'，歷史快照不會被覆寫。</p>':'<p class="muted">目前未月結；請先試算並處理異常。</p>')+
  table(['員工','編號','排定時數','觀察工時','核准請假','未完成事件','預估成本'],rows))+
  (closure?panel('月結追溯更正',table(['員工','調整','原因','時間'],adjust),
- manager()?'<button class="btn small" data-action="newAdjustment" data-id="'+esc(closure.id)+'">＋ 新增調整單</button>':''):'');
+ (app.mode==='demo'||['owner','hr'].includes(role()))?'<button class="btn small" data-action="newAdjustment" data-id="'+esc(closure.id)+'">＋ 新增調整單</button>':''):'');
 }
 const extraNames=new Set(['department','template','requirement','availability','branch_gps',
  'assign_department','employee_status','withdraw','notify_read','month_report',
@@ -504,7 +504,7 @@ const extraNames=new Set(['department','template','requirement','availability','
 const baseAction=action;
 action=async function(name,data){
  if(!extraNames.has(name))return baseAction(name,data);
- if(app.busy)return;
+ if(app.busy)throw Error('上一個操作仍在處理中，請勿重複送出');
  app.busy=true;
  try{
   let result;
