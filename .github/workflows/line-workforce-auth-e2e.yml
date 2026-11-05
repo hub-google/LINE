@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "workforce-management/tests/workforce-auth-roles-e2e.mjs"
+      - "workforce-management/app.js"
+      - "workforce-management/supabase/migrations/20261105101037_workforce_tenant_creator_bootstrap_read.sql"
       - ".github/workflows/line-workforce-auth-e2e.yml"
 permissions:
   contents: read
