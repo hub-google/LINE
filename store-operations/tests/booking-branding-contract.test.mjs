@@ -70,7 +70,7 @@ test("pastel directory header keeps WCAG AA contrast on mobile",()=>{
  const hex=(css,key)=>{
    const declaration=css.split(/[;{}]/).map(x=>x.trim()).find(x=>x.startsWith(key+":"));
    assert.ok(declaration,"missing "+key+" color: "+css);
-   const match=declaration.slice(key.length+1).match(/^#[0-9a-fA-F]{6}$/);
+   const match=declaration.slice(key.length+1).match(/^#[0-9a-fA-F]{6}(?=\s|!|$)/);
    assert.ok(match,"invalid "+key+" color: "+declaration);
    return match[0];
  };
