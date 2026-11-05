@@ -82,7 +82,7 @@ test("LINE notice includes scoped session and preserves existing recipient behav
 
 test("new customer and board module JavaScript parses", () => {
   for (const [name, html] of [["index.html",ui],["board.html",board]]) {
-    const matches = [...html.matchAll(/<script\\b[^>]*type=["']module["'][^>]*>([\\s\\S]*?)<\\/script>/g)];
+    const matches = [...html.matchAll(/<script\b[^>]*type=["']module["'][^>]*>([\s\S]*?)<\/script>/g)];
     assert.equal(matches.length,1, name);
     const checked=spawnSync(process.execPath,["--input-type=module","--check"],{
       input:matches[0][1],encoding:"utf8"
