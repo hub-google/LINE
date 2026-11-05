@@ -6,6 +6,7 @@ on:
     paths:
       - "workforce-management/tests/workforce-browser-e2e.mjs"
       - "workforce-management/app.js"
+      - "workforce-management/swap-sync.js"
       - "workforce-management/style.css"
       - "workforce-management/tests/workforce-mobile-visual.mjs"
       - "workforce-management/tests/workforce-browser-feature-e2e.mjs"
