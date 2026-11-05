@@ -196,3 +196,18 @@ test('HR-RPT personal attendance report excludes breaks across Taiwan midnight',
  assert.equal(out[0].workMinutes,120);
  assert.equal(out[0].incomplete,false);
 });
+
+
+test('HR sidebar remains usable with expanded PRD sections on desktop and mobile',()=>{
+ const css=readFileSync(new URL('../style.css',import.meta.url),'utf8');
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ assert.match(css,/\.sidebar nav\{[^}]*overflow-y:auto/);
+ assert.match(css,/\.sidebar \.sidebar-foot\{[^}]*flex:0 0 auto/);
+ assert.match(css,/@media \(max-width:760px\)\{[^}]*100dvh/);
+ assert.match(src,/organizeWorkforceMenu/);
+ for(const tab of ['overview','schedule','punch','requests','approvals','employees','reports',
+  'inbox','periods','anomalies','line','qr','settings']) {
+  assert.match(src,new RegExp("'"+tab+"'"));
+ }
+ assert.match(html,/<nav id="nav"/);
+});
