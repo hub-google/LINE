@@ -298,8 +298,8 @@ function showRequest(requestKind='leave'){
  openModal(config.title,body);updateRequestDuration();
 }
 function updateRequestDuration(){
- const form=$('overlay')?.querySelector('form[data-request-kind="overtime"]');if(!form)return;
- const box=form.querySelector('#requestDuration');
+ const form=$('overlay')?.querySelector('form[data-request-kind="overtime"]');if(!form?.elements)return;
+ const box=form.querySelector('#requestDuration');if(!box)return;
  const a=form.elements.starts_at?.value,b=form.elements.ends_at?.value;
  if(!a||!b){box.textContent='請選擇加班開始及結束時間';box.classList.remove('invalid');return;}
  const m=(new Date(b).getTime()-new Date(a).getTime())/60000;
