@@ -101,7 +101,7 @@ async function reload(silent=false){
   }
   $('connectionLabel').textContent=app.data?'已連線 Supabase 資料庫':'尚未登入';
   if(!silent)banner(app.data?'已取得最新資料':'請先登入或建立企業');
- }catch(e){$('connectionLabel').textContent='資料庫連線異常';if(!silent)banner(e.message,true);$('appContent').innerHTML='<div class="error">'+esc(e.message)+'<p><button class="btn" id="retryLoad">重新載入</button></p></div>';app.busy=false;return;}
+ }catch(e){$('connectionLabel').textContent='資料庫連線異常';if(!silent)banner(e.message,true);$('appContent').innerHTML='<div class="error">'+esc(e.message)+'<p><button class="btn" id="retryLoad" data-action="retryLoad">重新載入</button></p></div>';app.busy=false;return;}
  app.busy=false;render();
 }
 async function action(name,data){
