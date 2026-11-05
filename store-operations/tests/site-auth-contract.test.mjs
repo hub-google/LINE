@@ -77,6 +77,7 @@ function createScenario({lineName="",customerSession=false,staffName="",url="htt
   return {
    auth:{
     async getSession(){return {data:{session:logged?{access_token:"session",user:{is_anonymous:type==="customer",email:staffName}}:null},error:null}},
+    onAuthStateChange(){return {data:{subscription:{unsubscribe(){}}}}},
     async signOut(){state.signedOut=type;return {error:null}}
    },
    async rpc(name){
