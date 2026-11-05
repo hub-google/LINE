@@ -43,6 +43,9 @@ jobs:
           git worktree add --detach "$pubdir" origin/gh-pages
           mkdir -p "$pubdir/workforce"
           cp workforce-management/index.html workforce-management/app.js workforce-management/style.css "$pubdir/workforce/"
+          # Keep CSS and JS from the same deployment; avoid browser stale-cache layout corruption.
+          sed -i "s@./style.css@./style.css?v=$GITHUB_SHA@g" "$pubdir/workforce/index.html"
+          sed -i "s@./app.js@./app.js?v=$GITHUB_SHA@g" "$pubdir/workforce/index.html"
           mkdir -p "$pubdir/workforce/vendor"
           cp workforce-management/vendor/qrcode.min.js workforce-management/vendor/QR-CODE-LICENSE "$pubdir/workforce/vendor/"
           printf '%s\n' "$GITHUB_SHA" > "$pubdir/workforce/build.txt"
