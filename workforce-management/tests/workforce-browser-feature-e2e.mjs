@@ -21,7 +21,15 @@ async function getData(){
  const text=await r.text();assert.equal(r.status,200,text.slice(0,200));return JSON.parse(text);
 }
 async function latest(check,desc){
- for(let i=0;i<65;i++){const item=check(await getData());if(item)return item;await page.waitForTimeout(300);}
+ for(let i=0;i<65;i++){
+  const item=check(await getData());
+  if(item){
+   await page.waitForLoadState('networkidle',{timeout:25000});
+   await page.waitForFunction(()=>document.querySelector('#connectionLabel')?.textContent==='資料已同步',null,{timeout:20000});
+   return item;
+  }
+  await page.waitForTimeout(300);
+ }
  const notice=await page.locator('#toast').innerText().catch(()=> '');
  throw Error(desc+' did not persist; website notice: '+notice.slice(0,250));
 }
