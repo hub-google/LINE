@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="a53bb63157f63da4d1f3a24f28d3d4f01cd8ead3">
+<meta name="line-saas-build" content="fcf5a34b72bea4790428c82c6e146c118826efcb">
 <meta name="theme-color" content="#173e34">
 <link rel="manifest" href="./manifest.webmanifest">
 <script>
@@ -32,7 +32,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   }
 })();
 </script>
-<script defer src="./version-watch.js?build=a53bb63157f63da4d1f3a24f28d3d4f01cd8ead3"></script>
+<script defer src="./version-watch.js?build=fcf5a34b72bea4790428c82c6e146c118826efcb"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 門市營運｜企業開通、員工後台與顧客預約</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -164,7 +164,7 @@ body{overflow-x:hidden}
 .cross-record .staff-actionbar{margin-top:9px}
 @media(max-width:540px){.cross-ticket{padding:13px 11px}.cross-ticket-stats{gap:6px}.cross-ticket-stat{padding:9px 4px}.cross-ticket-stat strong{font-size:clamp(20px,6vw,30px)}}
 </style>
-<link rel="stylesheet" href="./booking-theme.css?build=a53bb63157f63da4d1f3a24f28d3d4f01cd8ead3">
+<link rel="stylesheet" href="./booking-theme.css?build=fcf5a34b72bea4790428c82c6e146c118826efcb">
 </head>
 <body>
 <header><div class="top">
@@ -2082,7 +2082,22 @@ document.addEventListener("click",async ev=>{
    const kind=b.dataset.kind;
    if(!["booking","queue"].includes(kind))return;
    const label=kind==="booking"?"預約":"叫號";
-   if(!confirm("確定重置「"+label+"」編號嗎？\n\n下一筆新"+(kind==="booking"?"預約":"取號")+"會從 1 開始。既有資料與原編號保留。\n\n未結案資料也將保留，可能與新號碼顯示相同編號。"))return;
+   if(busy)return;
+   let preview;
+   try{
+     preview=await rpc("so_number_reset_preview",{p_slug:slug,p_kind:kind});
+   }catch(error){
+     showActionFeedback("無法確認未結案筆數，為避免錯誤重置，請稍後重試："+(error?.message||"未知錯誤"),"error");
+     return;
+   }
+   const count=Number(preview?.still_open);
+   if(!Number.isSafeInteger(count)||count<0){
+     showActionFeedback("無法取得可信的未結案筆數，已取消重置。","error");return;
+   }
+   const warning=count>0
+     ?"目前還有 "+count+" 筆未結案"+label+"。重置後新舊批次可能出現相同顯示號碼，請以批次及紀錄識別，避免錯誤操作。"
+     :"目前沒有未結案"+label+"。";
+   if(!confirm("確定重置「"+label+"」編號嗎？\n\n"+warning+"\n\n下一筆新"+(kind==="booking"?"預約":"取號")+"會從 1 開始；歷史資料與原編號都會保留。"))return;
    await act(async()=>{
      const result=await rpc(kind==="booking"?"so_reset_booking_number":"so_reset_queue_number",{p_slug:slug});
      return label+"編號已重置，新資料將從 "+(result.prefix||"")+"1 開始；既有資料未更動。";
