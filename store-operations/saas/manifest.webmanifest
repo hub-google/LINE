@@ -1,13 +1,13 @@
 {
-  "name": "LINE 預約・店家管理與顧客預約",
-  "short_name": "LINE 預約",
+  "name": "排隊怪獸・線上預約與取號",
+  "short_name": "排隊怪獸",
   "description": "門市預約、取號、叫號與店家管理的一站式服務。",
   "id": "./home.html",
   "start_url": "./home.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f8faf5",
-  "theme_color": "#173e34",
+  "background_color": "#FCF7FF",
+  "theme_color": "#462B52",
   "lang": "zh-TW",
   "icons": [
     {
