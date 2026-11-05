@@ -1,6 +1,6 @@
 /* LINE booking offline shell only. Never cache personal data, API, LINE OAuth or LIFF callback URLs. */
 const CACHE_PREFIX="line-booking-safe-static-";
-const CACHE_NAME=CACHE_PREFIX+"424f2a971889e047ba10bc69a0fb59ca6449f3cd";
+const CACHE_NAME=CACHE_PREFIX+"a48ba9ca43960bfaea78996a1660bf8b4b2adb86";
 const STATIC_ASSETS=["./offline.html","./booking-theme.css","./pwa-icon-192.png","./pwa-icon-512.png"];
 
 self.addEventListener("install",event=>{
