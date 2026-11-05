@@ -574,3 +574,30 @@ body[data-portal="staff"] .staff-context-bar.staff-context-compact{
 .unit-option-copy small{display:block;font-size:12px;line-height:1.5;color:#788b7e}
 .unit-option-trailing{font-size:22px;font-weight:700;color:#218558;flex:none}
 @media(max-width:620px){.unit-card-grid{grid-template-columns:1fr}.universal-staff-head{padding:17px;align-items:stretch}.universal-staff-head .btn{width:100%;text-align:center}}
+
+/* Staff customer history is a real tenant-scoped, per-person drill-down. */
+body[data-portal="staff"] .customer-history-link{
+  display:inline-block;padding:3px 4px;color:#17664c;font-weight:800;
+  text-decoration:underline;text-underline-offset:3px;
+}
+body[data-portal="staff"] .customer-history-link:hover{color:#0d4434}
+body[data-portal="staff"] .customer-history-link:focus-visible{
+  outline:2px solid #187653;outline-offset:3px;border-radius:4px
+}
+.customer-history-dialog{
+  width:min(780px,calc(100vw - 24px));max-width:780px;
+  max-height:calc(100dvh - 28px);overflow-y:auto
+}
+.customer-history-toolbar{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  gap:16px;margin-bottom:18px
+}
+.customer-history-toolbar h2{margin:0 0 6px}
+.customer-history-entry{border:1px solid #dfe8e0;border-radius:13px;padding:14px;margin:12px 0;background:#fff}
+.customer-history-entry-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:7px}
+@media(max-width:620px){
+ .customer-history-dialog{max-height:calc(100dvh - 20px)}
+ .customer-history-toolbar{gap:8px}
+ .customer-history-toolbar h2{font-size:19px}
+ .customer-history-entry{padding:12px}
+}

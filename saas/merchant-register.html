@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="8919c994df92e77d54980c272d9550fa4b8bd8ba">
-<script defer src="./version-watch.js?build=8919c994df92e77d54980c272d9550fa4b8bd8ba"></script>
+<meta name="line-saas-build" content="1aa32b60faea9f277bb4c25d9326ad17a05ec592">
+<script defer src="./version-watch.js?build=1aa32b60faea9f277bb4c25d9326ad17a05ec592"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>商家開通申請｜LINE 預約系統</title><meta name="description" content="沒有自己的 LINE OA，也可以申請使用總公司 LINE 預約服務。">
+<title>商家開通申請｜LINE 預約系統</title><meta name="description" content="沒有自己的 LINE OA，也可以申請使用平台 LINE 預約服務。">
 <style>
 :root{--green:#0c725b;--ink:#173d35;--muted:#597469;--border:#d7e4df}*{box-sizing:border-box}
 body{margin:0;background:#f5faf7;color:var(--ink);font:15px/1.6 system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif}
@@ -19,15 +19,15 @@ small{color:var(--muted)}.hidden{display:none}.status{display:inline-block;backg
 @media(max-width:580px){.row{grid-template-columns:1fr}.card{padding:17px}h1{font-size:24px}}
 </style><link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script></head>
 <body><header><div>LINE 預約平台｜商家合作</div><div class="site-auth-slot site-auth-dark" id="site-auth-root" aria-label="使用者登入狀態"><a class="site-auth-button site-auth-login" href="./?view=customer&amp;merchant=greenfield-salon&amp;tab=home">使用 LINE 登入</a></div></header><main>
-<section class="card"><h1>沒有 LINE OA，也能讓顧客用 LINE 預約</h1><p>申請開通後，店家可取得自己的預約／取號連結。沒有官方帳號的店家，由總公司 LINE OA 提供共同入口及訊息通知；店員仍可管理自己的預約和叫號。</p>
+<section class="card"><h1>沒有 LINE OA，也能讓顧客用 LINE 預約</h1><p>申請開通後，店家可取得自己的預約／取號連結。沒有官方帳號的店家，由平台 LINE OA 提供共同入口及訊息通知；店員仍可管理自己的預約和叫號。</p>
 <p>已經有自己 LINE OA 的店家也可以先使用平台 OA。每家商家自行串接 OA 的功能仍在開發中。</p></section>
 <div id="message" role="status" aria-live="polite"></div>
 <section class="card" id="qa-login-panel" style="border:2px solid #8bcdb0;background:#effbf3">
   <h2>免帳密測試入口</h2>
-  <p>原本的 <strong>TEST-HQ</strong> 測試總公司帳號保留，按一下就能測試商家申請、審核及開通。不會讀取或操作正式商家申請。</p>
-  <div class="actions"><button id="qa-login">一鍵登入測試總公司後台</button>
+  <p>原本的 <strong>TEST-HQ</strong> 測試平台帳號保留，按一下就能測試商家申請、審核及開通。不會讀取或操作正式商家申請。</p>
+  <div class="actions"><button id="qa-login">一鍵登入測試平台後台</button>
   <button id="qa-staff" class="secondary">一鍵登入測試店員後台</button>
-  <a class="btn secondary" href="./?view=platform">測試總公司營運後台</a></div>
+  <a class="btn secondary" href="./?view=platform">測試平台營運後台</a></div>
 </section>
 <section class="card" id="auth-card"><h2>商家帳號</h2><p>請使用已驗證電子郵件的正式帳號申請。一般顧客不需要這個帳號。</p>
 <div class="row"><div><label for="email">Email</label><input id="email" type="email" autocomplete="email"></div><div><label for="pass">密碼（至少 8 字元）</label><input id="pass" type="password" minlength="8" autocomplete="current-password"></div></div>
@@ -38,7 +38,7 @@ small{color:var(--muted)}.hidden{display:none}.status{display:inline-block;backg
   <h2>建立測試商家申請</h2>
   <p>建立真正寫入 Supabase 的隔離 QA 申請，測試「待審核 → 核准開通／拒絕」。不會進入正式店家名單。</p>
   <label for="qa-mode">測試商家類型</label>
-  <select id="qa-mode"><option value="PLATFORM">沒有 LINE OA，使用總公司 OA</option><option value="OWN">已有 LINE OA，先共用總公司 OA</option></select>
+  <select id="qa-mode"><option value="PLATFORM">沒有 LINE OA，使用平台 OA</option><option value="OWN">已有 LINE OA，先共用平台 OA</option></select>
   <div class="actions"><button id="qa-create">一鍵建立測試商家申請</button></div>
 </section>
 <section class="card hidden" id="application"><h2>填寫門市申請</h2>
@@ -49,11 +49,11 @@ small{color:var(--muted)}.hidden{display:none}.status{display:inline-block;backg
 <div><label for="address">門市地址（選填）</label><input id="address" maxlength="240"></div>
 </div>
 <label for="oa-mode">店家是否已有 LINE OA</label>
-<select id="oa-mode"><option value="PLATFORM">沒有，使用總公司 LINE OA 接待顧客</option><option value="OWN">已有，但先使用總公司 LINE OA（自有 OA 串接後續開放）</option></select>
-<p style="margin-top:15px">提交後由總公司審核。正式門市開通後預設不會公開出現在搜尋清單，店家管理員確認資訊後才可自行選擇公開。</p>
+<select id="oa-mode"><option value="PLATFORM">沒有，使用平台 LINE OA 接待顧客</option><option value="OWN">已有，但先使用平台 LINE OA（自有 OA 串接後續開放）</option></select>
+<p style="margin-top:15px">送出後由 LINE 預約平台審核；門市開通後預設公開在平台搜尋清單，店家管理員可隨時關閉公開搜尋。</p>
 <button id="apply">送出開通申請</button></section>
 <section class="card hidden" id="my-requests"><h2>我的開通申請</h2><div id="requests"></div></section>
-<section class="card hidden" id="admin-panel"><h2>總公司｜待審核商家</h2><p>僅限真正的平台管理員。核准後會建立獨立門市，並將申請人設為店家負責人。</p><div id="admin-list"></div></section>
+<section class="card hidden" id="admin-panel"><h2>平台｜待審核商家</h2><p>僅限真正的平台管理員。核准後會建立獨立門市，並將申請人設為店家負責人。</p><div id="admin-list"></div></section>
 <div class="actions"><a class="btn secondary" href="merchant-center.html#guide">使用教學</a><a class="btn secondary" href="directory.html?mode=search">搜尋店家</a></div>
 </main><script type="module">
 import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
@@ -81,7 +81,7 @@ async function refresh(){
  show("qa-create-panel",qaVerified);
  show("my-requests",ready);show("admin-panel",qaVerified||(signed&&new URLSearchParams(location.search).get("admin")==="1"));
  if(!ready)return;
- $("admin-panel").querySelector("h2").textContent=qaVerified?"TEST-HQ｜隔離測試商家審核":"總公司｜待審核商家";
+ $("admin-panel").querySelector("h2").textContent=qaVerified?"TEST-HQ｜隔離測試商家審核":"平台｜待審核商家";
  $("admin-panel").querySelector("p").textContent=qaVerified?"僅可審核此測試帳號自己建立的 QA 申請，不會顯示正式商家的資料。":"僅限真正的平台管理員。核准後會建立獨立門市，並將申請人設為店家負責人。";
  $("account-name").textContent=qaVerified?"TEST-HQ（免帳密隔離測試帳號）":session.user.email||"已登入";
  const mine=await rpc("so_my_merchant_requests");
@@ -92,7 +92,7 @@ async function refresh(){
    try{
     const pending=await rpc(qaVerified?"so_test_pending_merchant_requests":"so_pending_merchant_requests");
     $("admin-list").innerHTML=pending.length?pending.map(r=>'<div class="item"><strong>'+e(r.name)+'</strong> · '+e(r.slug)+
-     '<p>'+e(r.email)+' ・ '+(r.requested_oa_mode==="PLATFORM"?"無自有 OA":"已有 OA，暫用總公司 OA")+'</p>'+
+     '<p>'+e(r.email)+' ・ '+(r.requested_oa_mode==="PLATFORM"?"無自有 OA":"已有 OA，暫用平台 OA")+'</p>'+
      (r.phone?'<p>電話：'+e(r.phone)+'</p>':"")+(r.address?'<p>地址：'+e(r.address)+'</p>':"")+
      '<div class="actions"><button data-review="'+e(r.id)+'" data-approve="true">核准並開通</button><button class="danger" data-review="'+e(r.id)+'" data-approve="false">拒絕申請</button></div></div>').join(""):"<p>沒有待審核的店家。</p>";
    }catch(err){$("admin-list").textContent=err.message}
