@@ -33,7 +33,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
     .skip{position:absolute;left:15px;top:-80px;z-index:50;background:var(--white);padding:12px 16px;border-radius:10px}
     .skip:focus{top:10px}
     .site-head{position:sticky;top:0;z-index:20;background:rgba(248,250,245,.95);backdrop-filter:blur(18px);border-bottom:1px solid rgba(21,72,52,.08)}
-    .nav{min-height:82px;display:flex;align-items:center;justify-content:space-between;gap:25px}
+    .nav{min-height:82px;display:flex;align-items:center;justify-content:space-between;gap:25px;padding-top:22px;padding-bottom:16px}
     .logo{display:flex;align-items:center;gap:12px;flex:none;color:var(--forest);font-weight:950;font-size:21px;letter-spacing:-.045em}
     .logo-mark{width:40px;height:40px;border-radius:15px;background:var(--forest);color:var(--white);display:grid;place-items:center;font-size:22px;position:relative}
     .logo-mark::after{content:"";position:absolute;right:7px;bottom:-4px;width:11px;height:11px;background:var(--forest);clip-path:polygon(0 0,100% 0,100% 100%)}
@@ -168,7 +168,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
       section.section{padding:72px 0}
     }
     @media(max-width:620px){
-      .wrap{padding:0 19px}.nav{min-height:70px}.logo{font-size:20px}
+      .wrap{padding:0 19px}.nav{min-height:70px;padding-top:16px;padding-bottom:12px}.logo{font-size:20px}
       h1{font-size:clamp(40px,10.5vw,55px)}.hero{padding:43px 0 50px}
       .lead{font-size:16px}
       .hero-cta{display:grid;grid-template-columns:1fr;max-width:380px}
