@@ -210,16 +210,16 @@ function flexNotice(title: string, details: string[], actions: { label: string; 
       body: {
         type: "box", layout: "vertical", spacing: "md", paddingAll: "20px",
         contents: [
-          { type: "text", text: title, size: "xl", weight: "bold", color: "#096248", wrap: true },
+          { type: "text", text: title, size: "xl", weight: "bold", color: "#462B52", wrap: true },
           ...rows.flatMap((text) => {
             const address = text.startsWith("地址：") ? text.slice("地址：".length) : "";
             const mapUrl = address ? googleMapsDirectionsUrl(address) : null;
-            const label = { type: "text", text, size: "sm", color: mapUrl ? "#147e68" : "#334155", wrap: true,
+            const label = { type: "text", text, size: "sm", color: mapUrl ? "#693C8B" : "#334155", wrap: true,
               ...(mapUrl ? { action: { type: "uri", label: "Google Maps 導航", uri: mapUrl } } : {}),
             };
             return mapUrl ? [label, {
               type: "text", text: "開啟 Google Maps 導航", size: "sm", weight: "bold",
-              color: "#147e68", wrap: true,
+              color: "#693C8B", wrap: true,
               action: { type: "uri", label: "開啟 Google Maps 導航", uri: mapUrl },
             }] : [label];
           }),
@@ -229,7 +229,7 @@ function flexNotice(title: string, details: string[], actions: { label: string; 
         type: "box", layout: "vertical", spacing: "sm", paddingAll: "15px",
         contents: buttons.map((button, index) => ({
           type: "button", height: "sm", style: index === 0 ? "primary" : "secondary",
-          ...(index === 0 ? { color: "#147e68" } : {}),
+          ...(index === 0 ? { color: "#693C8B" } : {}),
           action: button.postback
             ? { type: "postback", label: button.label, data: button.postback }
             : { type: "uri", label: button.label, uri: button.uri },
