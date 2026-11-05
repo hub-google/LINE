@@ -13,7 +13,7 @@
 .category-pill[aria-pressed="true"]{background:#116e50;color:white;border-color:#116e50}
 .category-pill:hover{border-color:#76b595}
 .explore-help{color:#6b8779;font-size:12px;margin:9px 0 0}
-.explore-game[hidden],.explore-list[hidden]{display:none!important}
+.explore-game[hidden],.explore-list[hidden],.explore-view-switch[hidden],#explore-world[hidden],#explore-street[hidden]{display:none!important}
 .explore-game{margin-top:18px}
 .arcade-top{display:flex;flex-wrap:wrap;align-items:end;gap:15px;justify-content:space-between;margin-bottom:16px}
 .arcade-kicker{font-size:12px;font-weight:900;color:#a97631;letter-spacing:.13em;margin:0 0 4px}
