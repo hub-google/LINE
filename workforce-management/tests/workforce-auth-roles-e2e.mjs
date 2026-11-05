@@ -17,9 +17,10 @@ const run=randomBytes(5).toString('hex');
 const report={name:'Workforce genuine two-user Auth acceptance',scope:'temporary isolated tenant',started:new Date().toISOString(),steps:[],cleanup:[]};
 const users=[
  {email:'wf-auth-qa-owner-'+run+'@example.com',password:randomBytes(30).toString('base64url')+'A!8',role:'owner'},
- {email:'wf-auth-qa-employee-'+run+'@example.com',password:randomBytes(30).toString('base64url')+'A!8',role:'employee'}
+ {email:'wf-auth-qa-employee-'+run+'@example.com',password:randomBytes(30).toString('base64url')+'A!8',role:'employee'},
+ {email:'wf-auth-qa-manager-'+run+'@example.com',password:randomBytes(30).toString('base64url')+'A!8',role:'manager'}
 ];
-let secret,publicKey,tenant,branch,member,browser,managerPage,employeePage;
+let secret,publicKey,tenant,branch,member,managerMember,browser,managerPage,employeePage;
 const created=[];
 function header(key,bearer=key){return {apikey:key,authorization:'Bearer '+bearer};}
 async function req(url,method='GET',body,headers={},check=true){
@@ -129,14 +130,27 @@ try{
   const visible=await rows('wm_tenants',users[1].token,'select=id&is_demo=eq.false');
   assert.ok(visible.some(x=>x.id===tenant));
  });
- browser=await chromium.launch({headless:true});
- await step('Owner and employee actually login on two separate browser contexts',async()=>{
-  managerPage=await enter(users[0]);employeePage=await enter(users[1]);
-  await screenshot(managerPage,'01-owner-login');await screenshot(employeePage,'02-employee-login');
+ await step('Owner adds a distinct manager-role Auth member for real reviews',async()=>{
+  await req(api+'/rest/v1/wm_members','POST',
+   {tenant_id:tenant,branch_id:branch,user_id:users[2].id,display_name:'E2E 測試主管',employee_code:'E2EMGR',role:'manager'},
+   {...header(publicKey,users[0].token),Prefer:'return=minimal'});
+  const members=await rows('wm_members',users[0].token,'select=id,role&tenant_id=eq.'+tenant+'&user_id=eq.'+users[2].id);
+  managerMember=members[0]?.id;
+  assert.equal(members[0]?.role,'manager');
+  assert.ok(managerMember);
+  const company=await rows('wm_tenants',users[2].token,'select=id&is_demo=eq.false');
+  assert.ok(company.some(x=>x.id===tenant),'Manager must see its tenant');
  });
- await step('Employee RLS denies viewing the manager member record',async()=>{
+ browser=await chromium.launch({headless:true});
+ await step('Actual manager and employee login in two separate browser contexts',async()=>{
+  managerPage=await enter(users[2]);employeePage=await enter(users[1]);
+  await screenshot(managerPage,'01-manager-login');await screenshot(employeePage,'02-employee-login');
+ });
+ await step('Employee RLS denies reading the manager member record',async()=>{
   const visible=await rows('wm_members',users[1].token,'select=id,role&tenant_id=eq.'+tenant);
   assert.ok(visible.length>0&&visible.every(x=>x.id===member));
+  const mgrVisible=await rows('wm_members',users[2].token,'select=id,role&tenant_id=eq.'+tenant);
+  assert.ok(mgrVisible.some(x=>x.id===member)&&mgrVisible.some(x=>x.id===managerMember));
   await employeePage.locator('#nav [data-tab="approvals"]').click();
   assert.equal(await employeePage.locator('#appContent [data-action="approve"]').count(),0);
   await screenshot(employeePage,'03-employee-no-approval-controls');
@@ -155,7 +169,7 @@ try{
   const current=await rows('wm_requests',users[0].token,'select=status&id=eq.'+first.id);
   assert.equal(current[0]?.status,'pending');
  });
- await step('Owner clicks reject and employee sees it after refreshing',async()=>{
+ await step('Actual manager clicks reject and employee sees it after refreshing',async()=>{
   assert.equal(await decide(first.id,'reject'),'rejected');
   await employeePage.context().close();
   employeePage=await enter(users[1]);
@@ -163,7 +177,7 @@ try{
   await employeePage.locator('#appContent .chip.rejected').first().waitFor({state:'visible',timeout:20000});
   await screenshot(employeePage,'04-employee-rejected');
  });
- await step('Owner clicks approve for second employee request',async()=>{
+ await step('Actual manager clicks approve for second employee request',async()=>{
   const second=await apply('approve','E2E-'+run+'-A',dateB);
   assert.equal(await decide(second.id,'approve'),'approved');
   await employeePage.context().close();
