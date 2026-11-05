@@ -49,9 +49,9 @@ async function renewSession(){
 async function demo(action='snapshot',data={}){return call('/rest/v1/rpc/wm_demo_api','POST',{p_action:action,p_data:data});}
 async function query(table,params=''){return call('/rest/v1/'+table+'?'+params,'GET',null,app.token);}
 async function reload(silent=false){
- if(app.busy){app.reloadQueued=true;return;}
+ if(app.busy){app.reloadQueued=true;$('connectionLabel').textContent='資料更新中';return;}
  const loadingMode=app.mode,loadingToken=app.token;
- app.busy=true;if(!silent)$('appContent').innerHTML='<div class="loading">資料更新中，請稍後...</div>';
+ app.busy=true;$('connectionLabel').textContent='資料更新中';if(!silent)$('appContent').innerHTML='<div class="loading">資料更新中，請稍後...</div>';
  try{
   if(app.mode==='demo'){
    const [snapshot,leaveSnapshot,anomalySnapshot,scheduleRules,memberBranches]=await Promise.all([
@@ -99,6 +99,9 @@ async function reload(silent=false){
       app.data.requestStages=steps;
     }
    }
+  }
+  if(app.reloadQueued||loadingMode!==app.mode||loadingToken!==app.token){
+   app.busy=false;app.reloadQueued=false;app.data=null;return reload(true);
   }
   $('connectionLabel').textContent=app.data?'資料已同步':'尚未登入';
   if(!silent)banner(app.data?'已取得最新資料':'請先登入或建立企業');
