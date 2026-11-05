@@ -1500,8 +1500,8 @@ function staffRender(){
      '<p class="small" style="overflow-wrap:anywhere">'+esc(LINE_BRIDGE_URL+"?action=webhook&merchant="+encodeURIComponent(slug))+'</p>'+
      btn("複製自有 OA Webhook URL","copy-own-oa-webhook","outline")
      :'<p class="small">僅企業管理者可設定自己的 LINE OA。</p>'))+
-  (isManager?box("排隊怪獸店家搜尋",'<p>無論店家有沒有自己的 LINE 官方帳號，都可以使用平台共用 LINE 官方帳號的預約及通知服務。公開後，顧客可從 排隊怪獸搜尋並找到你的門市。</p>'+
-    '<label class="checklist"><input id="directory-enabled" type="checkbox" '+(t.directory_enabled?'checked ':'')+'>允許在 排隊怪獸公開搜尋我的門市</label>'+
+  (isManager?box("排隊怪獸店家搜尋",'<p>無論店家有沒有自己的 LINE 官方帳號，都可以使用平台共用 LINE 官方帳號的預約及通知服務。公開後，顧客可在排隊怪獸平台搜尋並找到你的門市。</p>'+
+    '<label class="checklist"><input id="directory-enabled" type="checkbox" '+(t.directory_enabled?'checked ':'')+'>允許在排隊怪獸平台公開搜尋我的門市</label>'+
     '<p class="small">新門市預設勾選公開；若取消勾選，仍可透過專屬預約網址使用服務。</p>'+
     '<p class="small">目前通知來源：平台共用 LINE 官方帳號。店家自有 OA 串接尚未開放。</p>'+
     '<div style="margin-top:12px">'+btn("儲存公開設定","save-directory","primary")+'</div>'):"")+
@@ -1905,7 +1905,7 @@ box("LINE 身分授權",'<p class="muted">為避免機器人或惡意假預約�
          a.images.map(u=>'<img loading="lazy" alt="'+esc(a.title)+' 門市照片" src="'+esc(u)+'" style="width:220px;height:150px;flex:none;object-fit:cover;border-radius:9px;scroll-snap-align:start">').join("")+
         '</div>':"")+'</article>').join(""));
  }
- return layout(t.name,"排隊怪獸與取號・Supabase 即時資料",menu,lineStatusBadge()+html);
+ return layout(t.name,"預約與取號・即時資料",menu,lineStatusBadge()+html);
 }
 
 function escapeIcsText(value){
@@ -1941,7 +1941,7 @@ function reservationToIcs(record,tenant,generatedAt=new Date().toISOString()){
  const shop=tenant?.name||"門市";
  const description="預約編號："+String(record.number||"—")+"\n預約人數："+record.party+" 位"+
   (services?"\n服務項目："+services:"")+
-  "\n此為一次性行事曆匯出，改期或取消不會自動同步，請以 排隊怪獸頁最新狀態為準。"+
+  "\n此為一次性行事曆匯出，改期或取消不會自動同步，請以排隊怪獸預約頁的最新狀態為準。"+
   "\n預設標記 "+duration+" 分鐘，非實際服務時長保證。";
  const uid=String(record.id||"").replace(/[^a-zA-Z0-9-]/g,"");
  if(!/^[0-9a-f-]{36}$/i.test(uid))throw Error("預約識別碼異常，無法建立行事曆檔案。");
@@ -2459,7 +2459,7 @@ document.addEventListener("click",async ev=>{
    return a==="connect-own-oa"?"LINE OA 已驗證並連接，請設定上方 Webhook URL，並確認 Login 與 Messaging API 同屬 Provider":"已解除自有 LINE OA，恢復平台服務";
   });return;
  }
- if(a==="save-directory"){await act(async()=>{const enabled=!!$("directory-enabled")?.checked;await rpc("so_set_directory_listing",{p_slug:slug,p_enabled:enabled,p_oa_mode:"PLATFORM"});return enabled?"門市已開放在 排隊怪獸搜尋":"門市已取消公開搜尋（原有專屬連結仍可使用）";});return;}
+ if(a==="save-directory"){await act(async()=>{const enabled=!!$("directory-enabled")?.checked;await rpc("so_set_directory_listing",{p_slug:slug,p_enabled:enabled,p_oa_mode:"PLATFORM"});return enabled?"門市已開放在排隊怪獸平台搜尋":"門市已取消公開搜尋（原有專屬連結仍可使用）";});return;}
  if(a==="menu-edit"){editingMenuItemId=id;render();return;}
  if(a==="menu-edit-clear"){editingMenuItemId="";render();return;}
  if(a==="refresh-service-slots"){void refreshServiceSlots();return;}
@@ -2856,7 +2856,7 @@ document.addEventListener("click",async ev=>{
    document.body.insertAdjacentHTML("beforeend",'<div id="booking-contact-overlay" class="receipt-backdrop" role="dialog" aria-modal="true" aria-label="修改預約聯絡資料"><article class="receipt-card"><h2>修改預約聯絡資料</h2><p>預約 '+esc(b.number||"")+'</p>'+
      field("預約姓名","contact-edit-name",b.name||"","text",'maxlength="80" required')+
      field("聯絡手機","contact-edit-phone",b.phone||"","tel",'inputmode="tel" required')+
-     '<p class="small">修改後會更新店家後台，並向您發送新的 排隊怪獸通知。</p><div class="receipt-actions">'+
+     '<p class="small">修改後會更新店家後台，並向您發送新的 LINE 預約通知。</p><div class="receipt-actions">'+
      btn("儲存修改","save-book-contact","primary",'data-id="'+esc(b.id)+'"')+
      btn("取消","close-book-contact","outline")+'</div></article></div>');
    $("contact-edit-name")?.focus();return;
