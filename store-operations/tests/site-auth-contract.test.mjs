@@ -90,7 +90,8 @@ function createScenario({lineName="",customerSession=false,staffName="",url="htt
  let index=0;
  const createClient=()=>clients[index++];
  const sandbox={createClient,document:doc,window,location,localStorage,sessionStorage,URL,URLSearchParams,Date,Promise,console};
- vm.runInNewContext(code.replace(/^import [^\n]*\n/,""),sandbox,{filename:"site-auth.js",timeout:1500});
+ const executable=code.replace(/const \\{createClient\\}=await import\\([^;]+\\);/,"const createClient=globalThis.__siteAuthCreateClient;");
+ vm.runInNewContext(executable,{...sandbox,__siteAuthCreateClient:createClient},{filename:"site-auth.js",timeout:1500});
  return {rootNode,state,memory};
 }
 async function flush(){await new Promise(resolve=>setImmediate(resolve));await new Promise(resolve=>setImmediate(resolve));}
