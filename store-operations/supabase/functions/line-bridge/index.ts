@@ -284,14 +284,14 @@ async function ticketProgressNotice(
       .eq("tenant_id", tenant.id).eq("business_date", ticket.business_date)
       .eq("status", "WAITING").is("deleted_at", null)
       .lt("queue_joined_at",ticket.queue_joined_at || ticket.created_at)),
-    db.from("so_tickets").select("id", { count: "exact", head: true })
+    scope(db.from("so_tickets").select("id", { count: "exact", head: true })
       .eq("tenant_id", tenant.id).eq("business_date", ticket.business_date)
       .in("status", ["CALLED", "SERVING"]).is("deleted_at", null)),
-    db.from("so_tickets").select("ticket_no,number_prefix,business_date")
+    scope(db.from("so_tickets").select("ticket_no,number_prefix,business_date")
       .eq("tenant_id", tenant.id).eq("business_date", ticket.business_date)
       .in("status", ["CALLED", "SERVING"]).is("deleted_at", null)
       .order("updated_at", { ascending: false }).limit(1).maybeSingle()),
-    db.from("so_tickets").select("ticket_no,number_prefix,last_called_at")
+    scope(db.from("so_tickets").select("ticket_no,number_prefix,last_called_at")
       .eq("tenant_id", tenant.id).eq("business_date", ticket.business_date).is("deleted_at", null)
       .not("last_called_at", "is", null)
       .order("last_called_at", { ascending: false }).limit(1).maybeSingle()),
