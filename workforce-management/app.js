@@ -66,7 +66,7 @@ async function reload(silent=false){
    if(!app.tenants.find(t=>t.id===app.tenantId))app.tenantId=app.tenants[0]?.id||'';
    if(!app.tenantId){app.data=null;}else{
     const p='tenant_id=eq.'+encodeURIComponent(app.tenantId);
-    const [branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections,leavePolicies,attendanceCases,attendanceRuleRows,requestDocs,scheduleRuleRows,memberBranches]=await Promise.all([
+    const [branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections,leavePolicies,attendanceCases,attendanceRuleRows,requestDocs,scheduleRuleRows,memberBranches,qrSettings]=await Promise.all([
      query('wm_branches','select=*&'+p+'&order=name'),query('wm_members','select=id,tenant_id,branch_id,user_id,display_name,employee_code,role,employment_type,status,created_at,department_id,hired_on,left_on,skills&'+p+'&order=employee_code'),
      query('wm_shifts','select=*&'+p+'&order=starts_at.desc&limit=600'),query('wm_punches','select=*&'+p+'&order=punched_at.desc&limit=600'),
      query('wm_requests','select=*&'+p+'&order=created_at.desc&limit=300'),query('wm_leave_entitlements','select=*&'+p),
@@ -78,7 +78,8 @@ async function reload(silent=false){
      query('wm_attendance_anomalies','select=*&'+p+'&order=created_at.desc&limit=300'),
      query('wm_attendance_rules','select=*&'+p+'&limit=1'),query('wm_request_documents','select=*&'+p+'&order=created_at.desc&limit=300'),
      query('wm_schedule_rules','select=*&'+p+'&order=effective_from.desc&limit=10'),
-     query('wm_member_branches','select=*&'+p+'&order=active_from.desc')]);
+     query('wm_member_branches','select=*&'+p+'&order=active_from.desc'),
+     query('wm_branch_qr_settings','select=*&'+p) ]);
     if(members.some(m=>m.user_id===app.user?.id&&['owner','hr'].includes(m.role))){
       const wages=await call('/rest/v1/rpc/wm_staff_wages','POST',{p_tenant:app.tenantId},app.token);
       const lookup=new Map((wages||[]).map(w=>[w.member_id,w.hourly_rate]));
@@ -86,7 +87,7 @@ async function reload(silent=false){
     }
     app.data={tenant:app.tenants.find(t=>t.id===app.tenantId),branches,members,shifts,punches,requests,
       entitlements,availability,departments,templates,requirements,notifications,closures,
-      adjustments,corrections,leavePolicies,attendanceCases,attendanceRules:attendanceRuleRows[0]||null,requestDocs,scheduleRules:scheduleRuleRows.find(x=>x.effective_from<=today())||null,memberBranches,
+      adjustments,corrections,leavePolicies,attendanceCases,attendanceRules:attendanceRuleRows[0]||null,requestDocs,scheduleRules:scheduleRuleRows.find(x=>x.effective_from<=today())||null,memberBranches,qrSettings,
       leaveBalances:{},requestStages:[],server_at:new Date().toISOString()};
     const selected=getSelected();
     if(selected){
@@ -551,6 +552,9 @@ action=async function(name,data){
     p_tenant:tenant_id,p_from:data.from,p_to:data.through});
    else if(name==='attendance_resolve')result=await rpc('wm_resolve_attendance_anomaly',{
     p_id:data.id,p_note:data.note});
+   else if(name==='qr_setting')result=await rpc('wm_save_qr_setting',{
+    p_tenant:tenant_id,p_branch:data.branch_id,
+    p_enabled:data.enabled==='true',p_gps_replace:data.allow_gps_replacement==='true'});
    else if(name==='assign_branch')result=await rpc('wm_assign_branch',{
     p_tenant:tenant_id,p_member:data.member_id,p_branch:data.branch_id,
     p_from:data.active_from,p_until:data.active_until||null});
