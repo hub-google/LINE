@@ -33,8 +33,12 @@ const els={intro:document.getElementById("intro"),results:document.getElementByI
 document.getElementById("tab-"+mode).classList.add("active");
 let all=[],liffId="";
 function e(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function customerUrl(slug,tab){
+function customerUrl(slug,tab,oaMode="PLATFORM"){
  const qs="?view=customer&merchant="+encodeURIComponent(slug)+"&tab="+encodeURIComponent(tab);
+ // Platform OA shops open the branded website first. LINE linking happens
+ // inside the customer page only when the verified session is missing.
+ if(oaMode==="PLATFORM")return "./"+qs;
+ // Keep the existing own-OA LIFF path until that mode has its own rollout.
  return liffId?"https://liff.line.me/"+encodeURIComponent(liffId)+"/"+qs:"./"+qs;
 }
 function badges(t){
@@ -54,12 +58,12 @@ function render(){
   const name=e(t.name),desc=e(t.description||""),address=e(t.address||"");
   let actions="";
   if(mode==="mine"){
-    actions='<a class="btn" href="'+e(customerUrl(t.slug,"mine"))+'">查看我的紀錄</a>'+
-    ((t.modules||{}).queue?'<a class="btn secondary" href="'+e(customerUrl(t.slug,"queue"))+'">查看號碼</a>':"")+
+    actions='<a class="btn" href="'+e(customerUrl(t.slug,"mine",t.oa_mode))+'">查看我的紀錄</a>'+
+    ((t.modules||{}).queue?'<a class="btn secondary" href="'+e(customerUrl(t.slug,"queue",t.oa_mode))+'">查看號碼</a>':"")+
     ((t.modules||{}).queue&&(t.modules||{}).calling?'<a class="btn secondary" href="./board.html?merchant='+encodeURIComponent(t.slug)+'">公開叫號看板（免登入）</a>':"");
   }else{
-    actions=((t.modules||{}).reservation?'<a class="btn" href="'+e(customerUrl(t.slug,"reserve"))+'">立即預約</a>':"")+
-    ((t.modules||{}).queue?'<a class="btn secondary" href="'+e(customerUrl(t.slug,"queue"))+'">現場取號</a>':"")+
+    actions=((t.modules||{}).reservation?'<a class="btn" href="'+e(customerUrl(t.slug,"reserve",t.oa_mode))+'">立即預約</a>':"")+
+    ((t.modules||{}).queue?'<a class="btn secondary" href="'+e(customerUrl(t.slug,"queue",t.oa_mode))+'">現場取號</a>':"")+
     ((t.modules||{}).queue&&(t.modules||{}).calling?'<a class="btn secondary" href="./board.html?merchant='+encodeURIComponent(t.slug)+'">公開叫號看板（免登入）</a>':"");
   }
   return '<article class="card"><h2>'+name+'</h2><div>'+badges(t)+'</div>'+
@@ -78,6 +82,10 @@ document.addEventListener("click",async event=>{
  const merchant=original.searchParams.get("merchant")||"";
  if(original.searchParams.get("view")!=="customer")return; // A public board link must NOT be redirected to LINE login.
  if(!/^[a-z0-9][a-z0-9-]{2,39}$/.test(merchant))return;
+ // Do not bounce platform-OA shoppers to a second LIFF URL before
+ // their shop-specific customer page has had a chance to restore LINE auth.
+ const selected=all.find(shop=>shop.slug===merchant);
+ if(selected?.oa_mode==="PLATFORM" || merchant==="greenfield-salon")return;
  event.preventDefault();
  const query=new URLSearchParams();
  query.set("view","customer");query.set("merchant",merchant);
@@ -109,13 +117,13 @@ async function load(){
     all=Array.isArray(data)?data:[];
   }else{
     els.intro.innerHTML=mode==="search"?
-      '<strong>搜尋合作店家</strong><p>從已公開的店家中挑選服務，直接使用 LINE 帳號完成預約，不需另填姓名或建立顧客密碼。</p>':
+      '<strong>搜尋合作店家</strong><p>先選擇店家，再前往該店預約網頁；首次預約前會請你驗證 LINE 身分，以避免惡意假預約，不需要另外建立網站帳號。</p>':
       '<strong>現場取號</strong><p>請先選擇有開放取號的店家，再取得候位號碼並查看叫號進度。</p>';
     const {data,error}=await sb.rpc("so_public_directory",{p_query:null,p_mode:mode==="queue"?"queue":"all"});
     if(error)throw error;
     all=Array.isArray(data)?data:[];
     els.test.classList.remove("hidden");
-    document.getElementById("demo-link").href=customerUrl("greenfield-salon",mode==="queue"?"queue":"reserve");
+    document.getElementById("demo-link").href=customerUrl("greenfield-salon",mode==="queue"?"queue":"reserve","PLATFORM");
   }
   render();
  }catch(error){
