@@ -19,6 +19,8 @@ for (const name of pages) {
 }
 await copyFile(path.join(src, "version-watch.js"), path.join(dest, "version-watch.js"));
 await copyFile(path.join(src, "booking-theme.css"), path.join(dest, "booking-theme.css"));
+await copyFile(path.join(src, "explore-game.css"), path.join(dest, "explore-game.css"));
+await copyFile(path.join(src, "explore-game.js"), path.join(dest, "explore-game.js"));
 
 await copyFile(path.join(src, "manifest.webmanifest"), path.join(dest, "manifest.webmanifest"));
 await copyFile(path.join(src, "offline.html"), path.join(dest, "offline.html"));
