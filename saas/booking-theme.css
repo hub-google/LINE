@@ -542,3 +542,12 @@ body[data-portal="staff"] .staff-list-more .btn{min-height:44px;font-weight:800}
  body[data-portal="staff"] .staff-list-more{flex-direction:column;align-items:stretch}
  body[data-portal="staff"] .staff-list-more .btn{width:100%}
 }
+
+body[data-portal="staff"] .staff-context-bar.staff-context-compact{
+ justify-content:flex-end;background:transparent;border:0;border-radius:0;
+ padding:0;margin-bottom:10px
+}
+@media(max-width:580px){
+ body[data-portal="staff"] .staff-context-bar.staff-context-compact{padding:0}
+ body[data-portal="staff"] .staff-context-compact .staff-history-controls label{display:inline}
+}
