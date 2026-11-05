@@ -7,7 +7,7 @@ import path from "node:path";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const bridge = readFileSync(path.join(root, "supabase/functions/line-bridge/index.ts"), "utf8");
 const directory = readFileSync(path.join(root, "saas/directory.html"), "utf8");
-const richMenu = readFileSync(path.join(root, "../../.github/scripts/publish_rich_menu.py"), "utf8");
+const richMenu = readFileSync(path.join(root, "../.github/scripts/publish_rich_menu.py"), "utf8");
 
 test("platform OA accepts signed text events without intercepting merchant-owned OA messages", () => {
   assert.match(bridge, /\["follow", "unfollow", "postback", "message"\]/);
