@@ -54,9 +54,10 @@ async function enter(user){
 }
 async function apply(kind,tag,day){
  await employeePage.locator('#nav [data-tab="requests"]').click();
- await employeePage.locator('#pageActions [data-action="newOvertimeRequest"]').click();
+ await employeePage.locator('#pageActions [data-action="'+(kind==='reject'?'newLeaveRequest':'newOvertimeRequest')+'"]').click();
  const form=employeePage.locator('#overlay form[data-form="request"]');
  await form.waitFor({state:'visible'});
+ if(kind==='reject')await form.locator('[name="leave_kind"]').selectOption('annual');
  const selections=await form.locator('[name="member_id"] option').evaluateAll(xs=>xs.map(x=>x.value));
  assert.deepEqual(selections,[member]);
  await form.locator('[name="starts_at"]').fill(day+'T18:00');
@@ -156,7 +157,8 @@ try{
  });
  await step('Owner clicks reject and employee sees it after refreshing',async()=>{
   assert.equal(await decide(first.id,'reject'),'rejected');
-  await employeePage.locator('#refreshBtn').click();
+  await employeePage.context().close();
+  employeePage=await enter(users[1]);
   await employeePage.locator('#nav [data-tab="requests"]').click();
   await employeePage.locator('#appContent .chip.rejected').first().waitFor({state:'visible',timeout:20000});
   await screenshot(employeePage,'04-employee-rejected');
@@ -164,7 +166,8 @@ try{
  await step('Owner clicks approve for second employee request',async()=>{
   const second=await apply('approve','E2E-'+run+'-A',dateB);
   assert.equal(await decide(second.id,'approve'),'approved');
-  await employeePage.locator('#refreshBtn').click();
+  await employeePage.context().close();
+  employeePage=await enter(users[1]);
   await employeePage.locator('#nav [data-tab="requests"]').click();
   await employeePage.locator('#appContent .chip.approved').first().waitFor({state:'visible',timeout:20000});
   await screenshot(employeePage,'05-employee-approved');
