@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="977d0e6a86bcae7fc2b11850e7066bb4b0cbd870">
+<meta name="line-saas-build" content="15c482fad2e89d2254cdf682f55d9f0bebc15789">
 <meta name="theme-color" content="#173e34">
 <link rel="manifest" href="./manifest.webmanifest">
 <script>
@@ -32,7 +32,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   }
 })();
 </script>
-<script defer src="./version-watch.js?build=977d0e6a86bcae7fc2b11850e7066bb4b0cbd870"></script>
+<script defer src="./version-watch.js?build=15c482fad2e89d2254cdf682f55d9f0bebc15789"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 門市營運｜企業開通、員工後台與顧客預約</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -164,7 +164,7 @@ body{overflow-x:hidden}
 .cross-record .staff-actionbar{margin-top:9px}
 @media(max-width:540px){.cross-ticket{padding:13px 11px}.cross-ticket-stats{gap:6px}.cross-ticket-stat{padding:9px 4px}.cross-ticket-stat strong{font-size:clamp(20px,6vw,30px)}}
 </style>
-<link rel="stylesheet" href="./booking-theme.css?build=977d0e6a86bcae7fc2b11850e7066bb4b0cbd870">
+<link rel="stylesheet" href="./booking-theme.css?build=15c482fad2e89d2254cdf682f55d9f0bebc15789">
 </head>
 <body>
 <header><div class="top">
@@ -622,7 +622,15 @@ function platformReady(){return !!(context?.platform_admin||(testMode&&session?.
 function nav(label,tab,current,which){return '<button class="side-item '+(tab===current?"active":"")+'" data-nav="'+which+'" data-tab="'+tab+'">'+label+'</button>'}
 function layout(title,subtitle,menu,body){
  const identityLabel=view==="customer"?lineDisplayName:normalUser();
- return '<div class="toolbar"><div><div class="eyebrow">'+(view==="customer"?"LINE BOOKING · 顧客服務":view==="staff"?"LINE BOOKING · 門市管理":"LINE BOOKING · 平台管理")+'</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div><div class="flex"><span class="small">'+esc(identityLabel)+'</span>'+(view!=="customer"&&authReady()?btn("登出","logout","outline"):"")+'</div></div><div class="layout'+(view==="customer"?" customer-layout":"")+'"><aside>'+menu+'</aside><section class="content">'+body+'</section></div>';
+ const staffQuickNav=view==="staff"?'<nav class="staff-mobile-nav" aria-label="門市功能快速導覽">'+
+  nav("工作台","dashboard",staffTab,"staff")+nav("預約","bookings",staffTab,"staff")+
+  nav("叫號","queue",staffTab,"staff")+
+  '<details class="staff-mobile-more"><summary aria-label="開啟更多管理功能">更多</summary><div class="staff-mobile-popup">'+
+  nav("預約日曆","calendar",staffTab,"staff")+nav("營運分析","analytics",staffTab,"staff")+
+  nav("菜單與服務","menu",staffTab,"staff")+nav("員工管理","members",staffTab,"staff")+
+  nav("分店管理","branches",staffTab,"staff")+nav("企業設定","settings",staffTab,"staff")+
+  (authReady()?btn("登出","logout","outline"):"")+'</div></details></nav>':"";
+ return '<div class="toolbar"><div><div class="eyebrow">'+(view==="customer"?"LINE BOOKING · 顧客服務":view==="staff"?"LINE BOOKING · 門市管理":"LINE BOOKING · 平台管理")+'</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div><div class="flex"><span class="small">'+esc(identityLabel)+'</span>'+(view!=="customer"&&authReady()?btn("登出","logout","outline"):"")+'</div></div><div class="layout'+(view==="customer"?" customer-layout":"")+'"><aside>'+menu+'</aside><section class="content">'+body+'</section></div>'+staffQuickNav;
 }
 function head(){const links=view==="customer"?[["customer","預約與取號"]]:[["marketing","網站首頁"],["platform","總公司管理"],["staff","店家管理"],["customer","顧客入口"]];
 $("headlinks").innerHTML=links.map(x=>'<a href="'+esc(x[0]==="marketing"?new URL("./home.html",location.origin+bookingPath).pathname:x[0]==="customer"?(customerUrl(slug)||route("customer",slug)):route(x[0],x[0]==="platform"?"":slug))+'" class="'+(x[0]===view?"active":"")+'">'+x[1]+'</a>').join("");
@@ -964,11 +972,15 @@ function staffRender(){
  const active=openTickets.find(x=>["CALLED","ARRIVED","ADMITTED","SERVING"].includes(x.status)),waiting=openTickets.filter(x=>x.status==="WAITING"),passed=openTickets.filter(x=>x.status==="PASSED"),held=openTickets.filter(x=>x.status==="HOLD");
  const pendingBookings=openBookings.filter(x=>x.status==="CONFIRMED"), finishedBookings=doneBookings.filter(x=>x.status==="COMPLETED");
  const role=staff.role,isManager=["OWNER","MANAGER","PLATFORM"].includes(role);
- const menu=nav("營運工作台","dashboard",staffTab,"staff")+nav("營運分析","analytics",staffTab,"staff")+nav("預約管理","bookings",staffTab,"staff")+nav("預約日曆","calendar",staffTab,"staff")+
- nav("叫號管理","queue",staffTab,"staff")+nav("菜單及服務設定","menu",staffTab,"staff")+nav("員工管理","members",staffTab,"staff")+nav("多分店管理","branches",staffTab,"staff")+nav("企業設定","settings",staffTab,"staff");
- let html='<div class="toolbar"><div class="small">管理範圍：<strong>'+esc(t.name)+'</strong>・'+esc(role)+'</div>'+
-  '<div class="flex"><span class="small">按狀態管理，跨天未結案仍會保留</span>'+
-  '<label for="staff-history-days" style="margin:0">已處理紀錄</label><select class="field" id="staff-history-days" style="width:145px">'+
+ const menu='<div class="staff-side-label">日常作業</div>'+
+ nav("工作台","dashboard",staffTab,"staff")+nav("預約管理","bookings",staffTab,"staff")+
+ nav("叫號管理","queue",staffTab,"staff")+nav("預約日曆","calendar",staffTab,"staff")+
+ '<div class="staff-side-label">營運與設定</div>'+
+ nav("營運分析","analytics",staffTab,"staff")+nav("菜單及服務設定","menu",staffTab,"staff")+
+ nav("員工管理","members",staffTab,"staff")+nav("多分店管理","branches",staffTab,"staff")+
+ nav("企業設定","settings",staffTab,"staff");
+ let html='<div class="staff-context-bar"><div class="staff-context-merchant"><span class="staff-context-hint">目前門市</span><strong>'+esc(t.name)+'</strong><span class="staff-context-role">'+esc(role)+'</span></div>'+
+  '<div class="staff-history-controls"><label for="staff-history-days">已處理紀錄</label><select class="field" id="staff-history-days" aria-label="已處理紀錄範圍">'+
   [7,14,30,90].map(n=>'<option value="'+n+'" '+(n===staffHistoryDays?"selected":"")+'>最近 '+n+' 天</option>').join("")+
   '</select></div></div>';
 
@@ -976,20 +988,22 @@ function staffRender(){
   if(isManager&&staffNoticeHealth&&(Number(staffNoticeHealth.failed||0)>0||Number(staffNoticeHealth.retry||0)>0))
     html+=box("LINE 通知異常｜需管理者處理",
       '<div class="alert">最近 7 天有 '+esc(staffNoticeHealth.retry||0)+' 筆等待重試、'+esc(staffNoticeHealth.failed||0)+
-      ' 筆已達重試上限。系統會自動重試可補發的通知；請確認 LINE OA 通知憑證、好友狀態及額度。'+
-      (staffNoticeHealth.recent_error?'（最近錯誤：'+esc(staffNoticeHealth.recent_error)+'）':'')+'</div>');
-  html+='<div class="grid4" style="margin-bottom:16px">'+stat("尚未報到",pendingBookings.length)+stat("已報到未結案",openBookings.filter(x=>x.status==="CHECKED_IN").length)+
-   stat("候位中",waiting.length)+stat("正在叫號",active?.number||"—")+'</div>'+
-   box("營運流程",'<p class="muted">預約沒有午夜自動結案。跨天仍未完成的預約與號碼牌會持續出現在工作清單。</p>'+
-    '<div class="staff-guide"><span><strong>① 查看待處理預約</strong><div>依預約日期、時間排序</div></span>'+
-    '<span><strong>② 到店報到</strong><div>在預約管理勾選已報到，不自動產生號碼牌</div></span>'+
-    '<span><strong>③ 叫號服務</strong><div>叫下一位、服務中、已完成</div></span>'+
-    '<span><strong>④ 已結案與更正</strong><div>已完成／未到／取消統一放在已處理區，仍能修正</div></span></div>'+
-    '<div class="staff-actionbar">'+btn("處理未結案預約（"+openBookings.length+"）","open-bookings","primary")+
-    btn("查看叫號（"+openTickets.length+"）","open-queue","secondary")+'</div>')+
-   box("待處理預約",openBookings.length?openBookings.slice(0,6).map(x=>'<div class="listline"><div><strong>'+esc(x.day)+' '+esc(x.time)+'　'+esc(x.name)+'</strong><div class="small">'+esc(jsStatus(x.status))+'</div></div></div>').join(""):'<p class="muted">沒有待處理預約。</p>')+
-   box("已處理預約（最近 "+staffHistoryDays+" 天）",doneBookings.length?doneBookings.slice(0,6).map(x=>'<div class="listline"><div><strong>'+esc(x.day)+' '+esc(x.time)+'　'+esc(x.name)+'</strong><div class="small">'+esc(jsStatus(x.status))+'</div></div></div>').join("")+
-    '<div class="staff-actionbar">'+btn("查看與修正已處理預約","open-bookings","outline")+'</div>':'<p class="muted">選定範圍內尚無已處理預約。</p>');
+      ' 筆已達重試上限。請檢查通知資格與額度。</div>');
+  html+='<div class="staff-stats grid4">'+
+   stat("待報到",pendingBookings.length)+
+   stat("已報到",openBookings.filter(x=>x.status==="CHECKED_IN").length)+
+   stat("候位中",waiting.length)+
+   stat("目前叫號",active?.number||"—")+'</div>'+
+   '<div class="staff-dashboard-quick">'+
+   btn("查看預約（"+openBookings.length+"）","open-bookings","primary")+
+   btn("進入叫號（"+openTickets.length+"）","open-queue","outline")+'</div>'+
+   '<div class="staff-dashboard-grid">'+
+   box("近期待處理預約",openBookings.length?openBookings.slice(0,5).map(x=>
+     '<div class="staff-dash-row"><div><strong>'+esc(x.day)+'　'+esc(x.time)+'</strong><span>'+esc(x.name)+' · '+esc(x.party||1)+' 人</span></div>'+tag(x.status)+'</div>'
+   ).join(""):'<p class="muted">目前沒有待處理預約。</p>')+
+   box("候位清單",waiting.length?waiting.slice(0,5).map(x=>
+     '<div class="staff-dash-row"><div><strong>'+esc(x.number)+'</strong><span>'+esc(x.name)+' · '+esc(x.party||1)+' 人</span></div>'+tag(x.status)+'</div>'
+   ).join(""):'<p class="muted">目前沒有候位號碼。</p>')+'</div>';
  }else if(staffTab==="analytics"){
   if(!isManager)html+=box("營運分析",'<p class="muted">僅企業管理者可查看跨日營運報表。</p>');
   else {
@@ -1752,7 +1766,60 @@ function openBookingReceipt(bookingId){
  document.body.insertAdjacentHTML("beforeend",markup);
  document.querySelector('#booking-receipt-overlay button[data-act="receipt-close"]')?.focus();
 }
-function render(){document.body.dataset.portal=view;head();$("root").innerHTML=message()+(view==="platform"?platformRender():view==="staff"?staffRender():view==="customer"?customerRender():renderHome())+'<footer>LINE 預約服務 ・ <a href="privacy.html">隱私權說明</a> ・ <a href="terms.html">使用條款</a></footer>'}
+// Compact every staff module without touching reservation/queue/database actions.
+const staffUiExpanded=new Map();
+const staffSecondaryByTab={
+ dashboard:["已處理預約"],
+ analytics:["每日預約與取號量"],
+ bookings:["預約編號設定","搜尋與篩選預約","預約管理方式","已處理預約","已刪除預約","完整預約歷史"],
+ calendar:[],
+ queue:["叫號編號設定","取號場次管理","已結束號碼牌","已刪除號碼牌"],
+ menu:["預約資源","服務時長與緩衝"],
+ members:["待接受邀請","邀請企業員工"],
+ branches:[],
+ settings:["候位保留規則","預約營業日與休息設定","預約送出前二次確認","顧客簿","門市公告與照片","LINE 官方帳號串接","總公司 LINE 平台店家搜尋","唯一顧客網址"]
+};
+function enhanceStaffUI(){
+ if(view!=="staff"||!staff)return;
+ const root=document.querySelector("#root .content");
+ if(!root)return;
+ for(const card of root.querySelectorAll("section.card")){
+  const heading=card.querySelector(":scope > h2");
+  if(!heading)continue;
+  const label=heading.textContent.trim();
+  if(!(staffSecondaryByTab[staffTab]||[]).some(prefix=>label.startsWith(prefix)))continue;
+  const key=staffTab+":panel:"+label.replace(/（.*$/,"");
+  const detail=document.createElement("details");
+  detail.className="staff-fold";detail.dataset.staffUiKey=key;
+  detail.open=staffUiExpanded.get(key)===true;
+  const summary=document.createElement("summary");summary.textContent=label;
+  const body=document.createElement("div");body.className="staff-fold-body";
+  for(const item of [...card.childNodes])if(item!==heading)body.appendChild(item);
+  heading.remove();detail.append(summary,body);
+  card.classList.add("staff-fold-card");card.appendChild(detail);
+ }
+ for(const card of root.querySelectorAll(".staff-record")){
+  const heading=card.querySelector(":scope > .staff-record-head");
+  if(!heading)continue;
+  const rest=[...card.children].filter(x=>x!==heading);
+  if(!rest.length)continue;
+  const id=card.querySelector("[data-id]")?.dataset.id||heading.textContent.slice(0,80);
+  const key=staffTab+":record:"+id;
+  const detail=document.createElement("details");detail.className="staff-record-fold";
+  detail.dataset.staffUiKey=key;detail.open=staffUiExpanded.get(key)===true;
+  const summary=document.createElement("summary");summary.textContent="查看詳細與處理";
+  const body=document.createElement("div");body.className="staff-record-fold-body";
+  for(const item of rest)body.appendChild(item);
+  detail.append(summary,body);card.appendChild(detail);
+ }
+}
+document.addEventListener("toggle",event=>{
+ const target=event.target;
+ if(target instanceof HTMLDetailsElement&&target.dataset.staffUiKey){
+  staffUiExpanded.set(target.dataset.staffUiKey,target.open);
+ }
+},true);
+function render(){document.body.dataset.portal=view;head();$("root").innerHTML=message()+(view==="platform"?platformRender():view==="staff"?staffRender():view==="customer"?customerRender():renderHome())+'<footer>LINE 預約服務 ・ <a href="privacy.html">隱私權說明</a> ・ <a href="terms.html">使用條款</a></footer>';enhanceStaffUI()}
 const CUSTOMER_BOOKING_REQUEST_KEY="line-saas-customer-booking-submission-v1";
 let pendingCustomerBookingRequest=null;
 // Preserve a request ID after a network timeout: retrying the identical booking
