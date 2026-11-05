@@ -148,6 +148,7 @@ a.btn.secondary:hover{background:#e1f3e9}
     <label>服務類型<select id="explore-service">
       <option value="全部">全部服務</option><option value="預約">提供預約</option><option value="取號">提供取號</option><option value="看板">提供叫號看板</option>
     </select></label>
+    <label>排序<select id="explore-sort"><option value="name">店家名稱</option><option value="category">依店家分類</option></select></label>
   </div>
   <div class="results-header"><h2>搜尋結果</h2><span id="result-count" class="result-count" aria-live="polite">載入中</span></div>
   <div class="merchant-grid" id="results" aria-live="polite"></div>
@@ -207,6 +208,24 @@ const params=new URLSearchParams(location.search),mode=["search","queue","mine",
 const els={intro:document.getElementById("intro"),results:document.getElementById("results"),keyword:document.getElementById("keyword"),test:document.getElementById("test")};
 document.getElementById("tab-"+(mode==="game"?"search":mode)).classList.add("active");
 let all=[],liffId="",testBoardShop=null;
+const cityNames=["基隆市","臺北市","台北市","新北市","桃園市","新竹市","新竹縣","苗栗縣","臺中市","台中市","彰化縣","南投縣","雲林縣","嘉義市","嘉義縣","臺南市","台南市","高雄市","屏東縣","宜蘭縣","花蓮縣","臺東縣","台東縣","澎湖縣","金門縣","連江縣"];
+function areaOf(shop){return (cityNames.find(x=>String(shop.address||"").includes(x))||"線上商圈").replace(/^臺/,"台")}
+function serviceMatches(shop,service){
+ const m=shop.modules||{};
+ return service==="全部"||(service==="預約"&&!!m.reservation)||(service==="取號"&&!!m.queue)||(service==="看板"&&(shop.test_board_only||!!(m.queue&&m.calling)));
+}
+function setupExploreFilters(){
+ const options=(id,items,allText)=>{
+  const control=document.getElementById(id),old=control.value;
+  control.innerHTML='<option value="全部">'+allText+'</option>'+items.map(x=>'<option value="'+e(x)+'">'+e(x)+'</option>').join("");
+  control.value=items.includes(old)?old:"全部";
+ };
+ options("explore-category",[...new Set(all.map(x=>x.category||"其他"))].sort((a,b)=>a.localeCompare(b,"zh-Hant")),"全部類別");
+ options("explore-area",[...new Set(all.map(areaOf))].sort((a,b)=>a.localeCompare(b,"zh-Hant")),"所有地區");
+ document.querySelector(".explore-view-switch").hidden=mode==="mine";
+ document.getElementById("explore-filters").classList.toggle("hidden",mode==="mine");
+}
+
 function e(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function customerUrl(slug,tab,oaMode="PLATFORM"){
  const qs="?view=customer&merchant="+encodeURIComponent(slug)+"&tab="+encodeURIComponent(tab);
@@ -228,6 +247,18 @@ function render(){
  const testMatches=mode!=="mine"&&keyword&&testBoardShop&&
   (testBoardShop.name+" "+testBoardShop.slug).toLocaleLowerCase("zh-TW").includes(keyword)?[testBoardShop]:[];
  const filtered=[...official,...testMatches];
+ const selectedCategory=document.getElementById("explore-category").value;
+ const selectedArea=document.getElementById("explore-area").value;
+ const selectedService=document.getElementById("explore-service").value;
+ for(let i=filtered.length-1;i>=0;i--){
+   const shop=filtered[i];
+   if((selectedCategory!=="全部"&&(shop.category||"其他")!==selectedCategory)
+     ||(selectedArea!=="全部"&&areaOf(shop)!==selectedArea)
+     ||!serviceMatches(shop,selectedService))filtered.splice(i,1);
+ }
+ if(document.getElementById("explore-sort").value==="category")
+   filtered.sort((a,b)=>(a.category||"其他").localeCompare(b.category||"其他","zh-Hant")||a.name.localeCompare(b.name,"zh-Hant"));
+ else filtered.sort((a,b)=>a.name.localeCompare(b.name,"zh-Hant"));
  document.getElementById("result-count").textContent=filtered.length+" 個結果";
  els.test.classList.toggle("hidden",mode==="mine"||Boolean(keyword));
  if(!filtered.length){
@@ -272,6 +303,9 @@ function render(){
 }
 function badgesForStore(t){return badges(t);}
 els.keyword.addEventListener("input",render);
+for(const id of ["explore-category","explore-area","explore-service","explore-sort"]){
+ document.getElementById(id).addEventListener("change",render);
+}
 // Resolve a merchant's own LIFF app at click time instead of sending everyone
 // through the headquarters LINE Login provider.
 document.addEventListener("click",async event=>{
@@ -314,7 +348,8 @@ async function load(){
     if(error)throw error;
     all=Array.isArray(data)?data:[];
   }else{
-    els.intro.innerHTML=mode==="search"?
+    els.intro.innerHTML=mode==="game"?
+      '<strong>遊戲逛街 · 逛商圈找店家</strong><p>在虛擬商店街點選店面，查看真實公開店家的預約與取號入口。</p>':mode==="search"?
       '<strong>找店家、查看叫號更簡單</strong><p>搜尋店名或地點，直接查看可使用的服務。公開叫號看板無須登入；預約及取號才需 LINE 身分驗證。</p>':
       '<strong>選擇提供現場取號的店家</strong><p>公開看板可直接查看；實際取號時才需要 LINE 驗證。</p>';
     const {data,error}=await sb.rpc("so_public_directory",{p_query:null,p_mode:mode==="queue"?"queue":"all"});
@@ -326,11 +361,21 @@ async function load(){
     const boardResponse=await sb.rpc("so_public_board",{p_slug:qaSlug,p_limit:5});
     if(!boardResponse.error&&boardResponse.data?.shop_name){
       testBoardShop={slug:qaSlug,name:boardResponse.data.shop_name,
-        description:"專屬測試門市的即時叫號看板",address:"",test_board_only:true};
+        description:"專屬測試門市的即時叫號看板",address:"",category:"其他",test_board_only:true};
     }
     els.test.classList.remove("hidden");
     document.getElementById("demo-link").href=customerUrl("greenfield-salon",mode==="queue"?"queue":"reserve","PLATFORM");
   }
+  setupExploreFilters();
+  if(mode!=="mine")window.LineExploreGame?.setData({
+    shops:all.map(shop=>({...shop,
+      reserve_href:customerUrl(shop.slug,"reserve",shop.oa_mode),
+      queue_href:customerUrl(shop.slug,"queue",shop.oa_mode),
+      board_href:"./board.html?merchant="+encodeURIComponent(shop.slug)
+    })),
+    testBoardShop:testBoardShop?{...testBoardShop,
+      board_href:"./board.html?merchant="+encodeURIComponent(testBoardShop.slug)}:null
+  });
   render();
  }catch(error){
   els.intro.innerHTML='<strong>讀取失敗</strong><p>'+e(error?.message||"無法連接資料庫")+'</p>';
