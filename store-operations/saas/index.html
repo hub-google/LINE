@@ -986,10 +986,11 @@ function staffRender(){
  nav("營運分析","analytics",staffTab,"staff")+nav("菜單及服務設定","menu",staffTab,"staff")+
  nav("員工管理","members",staffTab,"staff")+nav("多分店管理","branches",staffTab,"staff")+
  nav("企業設定","settings",staffTab,"staff");
- let html='<div class="staff-context-bar"><div class="staff-context-merchant"><span class="staff-context-hint">目前門市</span><strong>'+esc(t.name)+'</strong><span class="staff-context-role">'+esc(role)+'</span></div>'+
-  '<div class="staff-history-controls"><label for="staff-history-days">已處理紀錄</label><select class="field" id="staff-history-days" aria-label="已處理紀錄範圍">'+
+ let html=(["bookings","queue"].includes(staffTab)?
+  '<div class="staff-context-bar staff-context-compact"><div class="staff-history-controls">'+
+  '<label for="staff-history-days">歷史紀錄</label><select class="field" id="staff-history-days" aria-label="已處理紀錄範圍">'+
   [7,14,30,90].map(n=>'<option value="'+n+'" '+(n===staffHistoryDays?"selected":"")+'>最近 '+n+' 天</option>').join("")+
-  '</select></div></div>';
+  '</select></div></div>':"");
 
  if(staffTab==="dashboard"){
   if(isManager&&staffNoticeHealth&&(Number(staffNoticeHealth.failed||0)>0||Number(staffNoticeHealth.retry||0)>0))
