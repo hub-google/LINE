@@ -93,3 +93,30 @@ body:has(#single-board) footer{background:#F8EAFD;border-color:#E8D2F1}
 @media(max-width:980px){body:has(.site-head) .mock-scene:before{width:130px;height:165px;right:0}.page-header .hero-heading:after{width:110px;height:125px}}
 @media(max-width:620px){body:has(.site-head) .mock-scene:before{width:115px;height:146px;right:-6px;top:-23px}.page-header .hero-heading{padding-right:70px}.page-header .hero-heading:after{width:75px;height:90px;right:0;top:-25px}:where(.card,.panel,.main-panel,.merchant-card){border-radius:18px}}
 @media(prefers-reduced-motion:reduce){*::before,*::after{animation:none!important;transition:none!important}}
+
+/* Monster Arcade: the playful shop-exploration mode uses the same purple family. */
+.explore-view-switch{background:#F4E5FA;border-color:#E2C7F0}
+.explore-view-switch button{color:#623C7A}
+.explore-view-switch button[aria-pressed="true"]{background:#FFF9FF;color:#542D71}
+.explore-filter-row select{border-color:#DCC4EC;color:#462B52}
+.category-pill{border-color:#E1C9ED;color:#59366F;background:#FFFCFF}
+.category-pill[aria-pressed="true"]{background:#6C398F;color:#fff;border-color:#6C398F}
+.arcade-plain-btn{background:#FFF8FF;color:#573570;border-color:#DEC5E9}
+.arcade-plain-btn:hover{background:#EED7FA}
+.arcade-world{background:linear-gradient(180deg,#E8CAFA,#F4DFF9 62%,#FFF1CF);border-color:#CA9BE4;box-shadow:inset 0 0 0 6px #FFF1FF65}
+.region-choice{border-color:#A879C4;background:#FFF9E9;color:#583771;box-shadow:0 8px 0 #CEAAE2,0 14px 26px #50315C24}
+.region-choice.test-choice{background:#FFF0CE;border-color:#D8A95B;box-shadow:0 8px 0 #F1CE8E,0 14px 26px #7A4E2A27}
+.arcade-street{background:#E2C4F1;border-color:#9B6FB8;box-shadow:0 12px 30px #462B521F}
+.arcade-street-view{background:linear-gradient(180deg,#EAD5FC 0 40%,#F4DCEC 40% 69%,#FFE7C0 69% 73%,#9D8AA8 73% 94%,#D3BDD8 94%);border-color:#B48BC7}
+.arcade-street-view:before{background:repeating-linear-gradient(90deg,#FFE6A8 0 36px,transparent 36px 65px)}
+.arcade-controls button{border-color:#AE82C9;background:#FFF7EA;color:#583477}
+.arcade-controls button:hover{background:#F4DDFB}
+.arcade-panel{border-color:#E3C8EE;background:#FFFBFE}
+.arcade-empty{background:#FFF6E4;border-color:#E3BF79;color:#795D4B}
+.street-shop{color:#462B52}
+.street-shop .shop-name-bubble{background:#FFF9FE;border-color:#E0C8ED}
+body:has(#qa-login-panel)>header{background:#462B52!important;color:#fff!important}
+body:has(.poster)>header{background:#462B52!important;color:#fff!important}
+body:has(.poster) .poster{border:2px solid #EAD4F8}
+body:has(.poster) .controls{border-color:#E1CAED;border-radius:20px}
+body:has(.poster) button{border-radius:13px}
