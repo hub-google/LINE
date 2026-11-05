@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="2ab14bac26c9a874b8561e8dfcb287eafc083559">
+<meta name="line-saas-build" content="ae9b156d9c4b9832dddf43341081a86ef4a0238e">
 <meta name="theme-color" content="#173e34">
 <link rel="manifest" href="./manifest.webmanifest">
 <script>
@@ -32,7 +32,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   }
 })();
 </script>
-<script defer src="./version-watch.js?build=2ab14bac26c9a874b8561e8dfcb287eafc083559"></script>
+<script defer src="./version-watch.js?build=ae9b156d9c4b9832dddf43341081a86ef4a0238e"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 門市營運｜企業開通、員工後台與顧客預約</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -163,8 +163,10 @@ body{overflow-x:hidden}
 .cross-record{border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0}
 .cross-record .staff-actionbar{margin-top:9px}
 @media(max-width:540px){.cross-ticket{padding:13px 11px}.cross-ticket-stats{gap:6px}.cross-ticket-stat{padding:9px 4px}.cross-ticket-stat strong{font-size:clamp(20px,6vw,30px)}}
+.guide-link{text-decoration:none;color:var(--primary);border:1px solid var(--line);background:#f2f8f4;min-height:42px;display:flex;align-items:center;white-space:nowrap}
+.guide-link:hover{background:#e5f3ea}
 </style>
-<link rel="stylesheet" href="./booking-theme.css?build=2ab14bac26c9a874b8561e8dfcb287eafc083559">
+<link rel="stylesheet" href="./booking-theme.css?build=ae9b156d9c4b9832dddf43341081a86ef4a0238e">
 </head>
 <body>
 <header><div class="top">
@@ -634,6 +636,7 @@ function layout(title,subtitle,menu,body){
   nav("預約日曆","calendar",staffTab,"staff")+nav("營運分析","analytics",staffTab,"staff")+
   nav("菜單與服務","menu",staffTab,"staff")+nav("員工管理","members",staffTab,"staff")+
   nav("分店管理","branches",staffTab,"staff")+nav("企業設定","settings",staffTab,"staff")+
+  '<a class="side-item guide-link" href="./merchant-center.html#guide">操作說明 ↗</a>'+
   (authReady()?btn("登出","logout","outline"):"")+'</div></details></nav>':"";
  return '<div class="toolbar"><div><div class="eyebrow">'+(view==="customer"?"LINE BOOKING · 顧客服務":view==="staff"?"LINE BOOKING · 門市管理":"LINE BOOKING · 平台管理")+'</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div><div class="flex"><span class="small">'+esc(identityLabel)+'</span>'+(view!=="customer"&&authReady()?btn("登出","logout","outline"):"")+'</div></div><div class="layout'+(view==="customer"?" customer-layout":"")+'"><aside>'+menu+'</aside><section class="content">'+body+'</section></div>'+staffQuickNav;
 }
@@ -990,7 +993,7 @@ function staffRender(){
  '<div class="staff-side-label">營運與設定</div>'+
  nav("營運分析","analytics",staffTab,"staff")+nav("菜單及服務設定","menu",staffTab,"staff")+
  nav("員工管理","members",staffTab,"staff")+nav("多分店管理","branches",staffTab,"staff")+
- nav("企業設定","settings",staffTab,"staff");
+ nav("企業設定","settings",staffTab,"staff")+ '<div class="staff-side-label">使用支援</div><a class="side-item guide-link" href="./merchant-center.html#guide">操作說明 ↗</a>';
  let html=(["bookings","queue"].includes(staffTab)?
   '<div class="staff-context-bar staff-context-compact"><div class="staff-history-controls">'+
   '<label for="staff-history-days">歷史紀錄</label><select class="field" id="staff-history-days" aria-label="已處理紀錄範圍">'+
