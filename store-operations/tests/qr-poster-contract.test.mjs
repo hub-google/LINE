@@ -62,5 +62,9 @@ test("staff management links only to real QR and TV tools, not queue conversion"
  assert.match(staff,/製作預約 QR 立牌/);
  assert.match(staff,/電視即時叫號看板/);
  assert.match(staff,/製作現場取號 QR 立牌/);
- assert.match(staff,/已報到.*不會產生叫號號碼/);
+ // Keep independent booking unchanged, while opt-in clinic/service-unit mode
+ // may create one queue ticket upon check-in.
+ assert.match(staff,/unitConfig\?\.linked/);
+ assert.match(staff,/報到後會為此場次建立一張候診票券/);
+ assert.match(staff,/預約獨立管理：報到不會產生叫號號碼/);
 });
