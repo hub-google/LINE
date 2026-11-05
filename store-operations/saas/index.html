@@ -962,6 +962,13 @@ async function loadBookingCalendar(page=calendarPage){
   }
  }
 }
+const staffVisibleLimits=new Map();
+function staffListPage(items,key,renderItem){
+ const limit=Math.min(500,staffVisibleLimits.get(key)||12);
+ return items.slice(0,limit).map(renderItem).join("")+(items.length>limit?
+  '<div class="staff-list-more"><span>已顯示 '+Math.min(limit,items.length)+' / '+items.length+' 筆</span>'+
+  btn("再顯示 12 筆","staff-show-more","outline",'data-list-key="'+esc(key)+'"')+'</div>':"");
+}
 function staffRender(){
  if(recoveryMode||!authReady())return requireAuth();
  const memberships=context?.memberships||[];
@@ -1034,7 +1041,7 @@ function staffRender(){
    (x.deleted_at?'<p class="staff-help">此預約已從顧客端隱藏；取消勾選刪除即可恢復。</p>':staffStatusPicker("reservation",x,x.day>taipei()?["CONFIRMED","CANCELLED"]:true))+staffDeletePicker("reservation",x)+
    ''+'</article>';
   };
-  html+=numberSettingsPanel("booking",t,isManager)+
+  html+=
    box("搜尋與篩選預約",'<p class="small">此處僅篩選目前已載入的資料：跨日未結案預約，以及最近 '+staffHistoryDays+' 天已處理紀錄；完整歷史請使用下方後端搜尋；日／週／月曆仍待開發。</p>'+
     '<div class="grid3"><div>'+field("搜尋預約編號、姓名或服務","staff-booking-search",staffBookingSearch,"search",'placeholder="輸入關鍵字"')+'</div>'+
     '<div><label for="staff-booking-date">預約日期</label><select id="staff-booking-date" class="field">'+
@@ -1051,12 +1058,12 @@ function staffRender(){
     '<div class="staff-actionbar">'+
     (lastStaffChange&&lastStaffChange.slug===slug?btn("還原上一步","undo-staff","outline"):"")+
     '<a class="btn outline" href="./poster.html?merchant='+encodeURIComponent(slug)+'&type=reserve" target="_blank" rel="noopener noreferrer">製作預約 QR 立牌</a></div>')+
-   box("待處理預約（"+visibleOpen.length+" / "+openBookings.length+" 筆）",visibleOpen.length?visibleOpen.map(card).join(""):'<p class="muted">目前沒有未結案預約。</p>')+
+   box("待處理預約（"+visibleOpen.length+" / "+openBookings.length+" 筆）",visibleOpen.length?staffListPage(visibleOpen,"booking-open",card):'<p class="muted">目前沒有未結案預約。</p>')+
    box("已處理預約（最近 "+staffHistoryDays+" 天，"+visibleDone.length+" / "+doneBookings.length+" 筆）",'<p class="staff-help">包含已完成、未到、已取消。此區仍可修正狀態，資料依處理時間排序。</p>'+
-    (visibleDone.length?visibleDone.map(card).join(""):'<p class="muted">選定範圍內還沒有已處理預約。</p>'))+
+    (visibleDone.length?staffListPage(visibleDone,"booking-done",card):'<p class="muted">選定範圍內還沒有已處理預約。</p>'))+
    box("已刪除預約（最近 "+staffHistoryDays+" 天，"+visibleDeleted.length+" / "+deletedBookings.length+" 筆）",
     '<p class="staff-help">顧客不會看到這些預約，也不會收到刪除通知。取消勾選即可恢復。</p>'+
-    (visibleDeleted.length?visibleDeleted.map(card).join(""):'<p class="muted">目前沒有已刪除預約。</p>'))+
+    (visibleDeleted.length?staffListPage(visibleDeleted,"booking-deleted",card):'<p class="muted">目前沒有已刪除預約。</p>'))+
    box("完整預約歷史｜後端搜尋與分頁",'<p class="small">查詢本店資料庫全部歷史預約，不受工作清單「最近 7～90 天／每類最多 500 筆」限制。本區僅提供查閱，不修改狀態，也不發送 LINE 通知。</p>'+
     '<div class="grid3"><div>'+field("姓名、編號、參考碼、服務","historical-booking-search",historicalBookingQuery,"search",'maxlength="100"')+'</div>'+
     '<div>'+field("預約日期起","historical-booking-from",historicalBookingStart,"date")+'</div>'+
@@ -1070,7 +1077,7 @@ function staffRender(){
     '<div class="staff-actionbar">'+btn("查詢完整歷史","historical-search","primary")+
       btn("重設歷史篩選","historical-reset","outline")+
       (isManager&&historicalBookingResult?btn("匯出完整搜尋結果 CSV","historical-export","secondary"):"")+
-      '</div><p class="small">CSV 依目前搜尋條件從資料庫逐頁讀取，單次最多匯出 20,000 筆；超過限制須分日期區間下載，絕不默默截斷。</p>'+historyBookingResultHtml());
+      '</div><p class="small">CSV 依目前搜尋條件從資料庫逐頁讀取，單次最多匯出 20,000 筆；超過限制須分日期區間下載，絕不默默截斷。</p>'+historyBookingResultHtml())+numberSettingsPanel("booking",t,isManager);
  }else if(staffTab==="calendar"){
    html+=bookingCalendarPanel();
   }else if(staffTab==="queue"){
@@ -1082,15 +1089,8 @@ function staffRender(){
    selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+(x.deleted_at?'<p class="staff-help">此號碼已從顧客端隱藏；取消勾選刪除即可恢復。</p>':staffStatusPicker("ticket",x,true))+
    (isManager&&!x.deleted_at&&x.status==="WAITING"?'<div class="staff-actionbar">'+btn("指定叫號","call-selected","secondary",'data-id="'+esc(x.id)+'"')+'</div>':"")+
    staffDeletePicker("ticket",x)+'</article>';
-  html+=numberSettingsPanel("queue",t,isManager)+'<div class="grid4" style="margin-bottom:16px">'+stat("正在叫號",active?.number||"—")+stat("候位中",waiting.length)+
+  html+='<div class="grid4" style="margin-bottom:16px">'+stat("正在叫號",active?.number||"—")+stat("候位中",waiting.length)+
    stat("已過號",passed.length)+stat("保留中",held.length)+stat("已結束",doneTickets.length)+'</div>'+
-   box("取號場次管理",
-     '<p class="small">目前：<strong>'+esc(queueSessionName(staff.queue_session?.code||"MORNING"))+'</strong>。休場只暫停新的取號，先前的號碼仍可繼續叫號；切場不會重設流水號。</p>'+
-     '<div class="staff-actionbar">'+
-     [["MORNING","早場"],["AFTERNOON","午場"],["EVENING","晚場"],["REST","休場"]].map(([code,name])=>
-       btn(name,(staff.queue_session?.code||"MORNING")===code?"noop-queue-session":"set-queue-session",
-         (staff.queue_session?.code||"MORNING")===code?"primary":"outline",
-         'data-session-code="'+code+'"')).join("")+'</div>')+
    box("叫號操作",'<p class="muted">仍在候位的跨日號碼會繼續排隊。號碼狀態可直接勾選與更正；已叫號後可分別標記「已到場」及「已進場」，不代表服務已完成。</p>'+
     '<div class="staff-actionbar">'+btn("叫下一位","call","primary",(!waiting.length||!!active||!t.modules.calling?"disabled":""))+
     btn("再叫一次","recall","outline",(!active||active.status!=="CALLED"?"disabled":"")+' data-id="'+esc(active?.id||"")+'"')+
@@ -1098,11 +1098,18 @@ function staffRender(){
     '<a class="btn outline" href="./board.html?merchant='+encodeURIComponent(slug)+'" target="_blank" rel="noopener noreferrer">電視即時叫號看板</a>'+
     '<a class="btn outline" href="./poster.html?merchant='+encodeURIComponent(slug)+'&type=queue" target="_blank" rel="noopener noreferrer">製作現場取號 QR 立牌</a></div>'+
     '<p class="staff-help">叫號通知使用票券識別碼，避免跨天同號誤通知。已發出的 LINE 訊息無法撤回。</p>')+
-   box("未結案號碼牌（"+openTickets.length+" 筆）",openTickets.length?openTickets.map(card).join(""):'<p class="muted">目前沒有未結案號碼牌。</p>')+
-   box("已結束號碼牌（最近 "+staffHistoryDays+" 天，"+doneTickets.length+" 筆）",doneTickets.length?doneTickets.map(card).join(""):'<p class="muted">沒有已結束的號碼牌。</p>')+
+   box("取號場次管理",
+     '<p class="small">目前：<strong>'+esc(queueSessionName(staff.queue_session?.code||"MORNING"))+'</strong>。休場只暫停新的取號，先前的號碼仍可繼續叫號；切場不會重設流水號。</p>'+
+     '<div class="staff-actionbar">'+
+     [["MORNING","早場"],["AFTERNOON","午場"],["EVENING","晚場"],["REST","休場"]].map(([code,name])=>
+       btn(name,(staff.queue_session?.code||"MORNING")===code?"noop-queue-session":"set-queue-session",
+         (staff.queue_session?.code||"MORNING")===code?"primary":"outline",
+         'data-session-code="'+code+'"')).join("")+'</div>')+
+   box("未結案號碼牌（"+openTickets.length+" 筆）",openTickets.length?staffListPage(openTickets,"ticket-open",card):'<p class="muted">目前沒有未結案號碼牌。</p>')+
+   box("已結束號碼牌（最近 "+staffHistoryDays+" 天，"+doneTickets.length+" 筆）",doneTickets.length?staffListPage(doneTickets,"ticket-done",card):'<p class="muted">沒有已結束的號碼牌。</p>')+
    box("已刪除號碼牌（最近 "+staffHistoryDays+" 天，"+deletedTickets.length+" 筆）",
     '<p class="staff-help">刪除不是取消：顧客端不再顯示，也不會發送 LINE 通知；取消勾選即可恢復。</p>'+
-    (deletedTickets.length?deletedTickets.map(card).join(""):'<p class="muted">目前沒有已刪除號碼牌。</p>'));
+    (deletedTickets.length?staffListPage(deletedTickets,"ticket-deleted",card):'<p class="muted">目前沒有已刪除號碼牌。</p>'))+numberSettingsPanel("queue",t,isManager);
  }else if(staffTab==="menu"){
   const items=staff.menu_items||[],selected=items.find(x=>x.id===editingMenuItemId)||null;
   html+=box("預約／抽號選擇規則",
@@ -1989,6 +1996,12 @@ async function urlFor(v,s){
 document.addEventListener("click",async ev=>{
  const b=ev.target.closest("button");if(!b||busy)return;
  if(b.dataset.act==="dismiss-feedback"){dismissActionFeedback();flash="";err="";render();return;}
+ if(b.dataset.act==="staff-show-more"){
+  const key=b.dataset.listKey||"";
+  if(!/^(booking|ticket)-(open|done|deleted)$/.test(key))return;
+  staffVisibleLimits.set(key,Math.min(500,(staffVisibleLimits.get(key)||12)+12));
+  render();return;
+ }
  if(b.dataset.act==="open-bookings"||b.dataset.act==="open-queue"){
  staffTab=b.dataset.act==="open-bookings"?"bookings":"queue";err="";render();
  if(staffTab==="bookings")void searchHistoricalBookings(1);
