@@ -67,7 +67,7 @@ jobs:
           git worktree add --detach "$pubdir" origin/gh-pages
           for product in booking saas; do
             mkdir -p "$pubdir/$product"
-            for f in index.html home.html board.html poster.html directory.html merchant-register.html merchant-center.html privacy.html terms.html version-watch.js release.json booking-theme.css explore-game.css explore-game.js site-auth.css site-auth.js manifest.webmanifest pwa-sw.js offline.html pwa-icon-192.png pwa-icon-512.png; do
+            for f in index.html template.html home.html board.html poster.html directory.html merchant-register.html merchant-center.html privacy.html terms.html version-watch.js release.json booking-theme.css explore-game.css explore-game.js site-auth.css site-auth.js manifest.webmanifest pwa-sw.js offline.html pwa-icon-192.png pwa-icon-512.png; do
               cp "$RUNNER_TEMP/line-saas-dist/$f" "$pubdir/$product/$f"
             done
           done
