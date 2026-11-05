@@ -1591,3 +1591,120 @@ $('appContent').addEventListener('click',e=>{
  const b=e.target.closest('[data-extra="showBranchSupport"]');if(!b)return;
  try{showBranchSupportForm();}catch(error){banner(error.message,true);}
 });
+
+
+
+/* HR-ATT-04: short-lived authenticated QR issue and scan (no unverified demo punch). */
+TABS.qr=['動態 QR 打卡','門市顯示 90 秒動態 QR，已登入員工掃碼打卡。'];
+document.querySelector('#nav').insertAdjacentHTML('beforeend',
+ '<button type="button" data-tab="qr"><span>▦</span> 動態 QR</button>');
+extraNames.add('qr_setting');
+app.qrToken=new URLSearchParams(location.search).get('wqr')||'';
+if(!/^[0-9a-f]{48}$/i.test(app.qrToken))app.qrToken='';
+app.issuedQr=null;
+if(app.qrToken)app.tab='qr';
+function qrUrl(token){return new URL('./?wqr='+encodeURIComponent(token),location.href).href;}
+async function drawWorkforceQr(url){
+ const root=$('wmQrGraphic');if(!root)return;
+ root.textContent='';
+ try{
+  if(!window.QRCode){
+   await new Promise((resolve,reject)=>{
+    const script=document.createElement('script');
+    script.src='./vendor/qrcode.min.js';script.async=true;
+    script.onload=resolve;script.onerror=()=>reject(Error('QR 繪製元件無法載入'));
+    document.head.appendChild(script);
+   });
+  }
+  new window.QRCode(root,{text:url,width:240,height:240,
+   correctLevel:window.QRCode.CorrectLevel.M});
+ }catch(err){root.textContent='QR 圖碼無法顯示，請使用下方連結。';banner(err.message,true);}
+}
+function qrPage(){
+ heading();
+ if(app.mode!=='real'||!app.token){
+  $('appContent').innerHTML=panel('企業員工身分確認',
+   '<div class="notice">請先切換正式企業並登入，才可以使用動態 QR 打卡。公開 Demo 不接受真實 QR 身分打卡。</div>');
+  return;
+ }
+ const conf=app.data?.qrSettings||[];
+ const branches=app.data?.branches||[];
+ let html=panel('員工掃描後打卡',
+  '<p class="muted">相機掃描 QR 後會帶入短效憑證；資料庫以已登入員工身分和伺服器時間驗證。</p>'+
+  '<div class="field"><label for="wmQrToken">QR 代碼（掃描後自動帶入）</label>'+
+  '<input id="wmQrToken" maxlength="48" value="'+esc(app.qrToken)+'" placeholder="輸入 48 碼短效代碼"></div>'+
+  '<div class="flex">'+['IN','OUT','BREAK_START','BREAK_END'].map(k=>
+   '<button class="btn" data-qr-action="clock" data-kind="'+k+'">'+esc(kind(k))+'</button>').join('')+'</div>'+
+  '<div class="notice">QR 是短效場域憑證，不等於 GPS 定位。企業如強制 GPS，必須另行明確允許 QR 替代後，才可不提供定位打卡。</div>');
+ if(manager()){
+  let active='';
+  if(app.issuedQr){
+   const expires=Date.parse(app.issuedQr.expires_at);
+   active='<div class="inset"><div id="wmQrGraphic"></div>'+
+    '<p>QR 有效至：'+esc(taiStamp(app.issuedQr.expires_at))+'</p>'+
+    '<p class="muted">'+(expires>Date.now()?'短效憑證可供掃描':'已逾時，請重新產生')+'</p>'+
+    '<p><a href="'+esc(qrUrl(app.issuedQr.token))+'" target="_blank" rel="noopener">測試 QR 連結</a></p></div>';
+  }
+  html=panel('主管產生門市 QR',
+   '<div class="field"><label>門市</label><select id="wmQrBranch">'+options(branches,x=>x.name)+'</select></div>'+
+   '<button class="btn primary" data-qr-action="issue">產生 90 秒 QR</button>'+active)+html;
+ }
+ const rows=branches.map(b=>{
+  const c=conf.find(x=>x.branch_id===b.id)||{};
+  return tr([esc(b.name),c.enabled?'已啟用':'未啟用',
+   c.allow_gps_replacement?'可替代 GPS':'仍依 GPS 規則']);
+ });
+ html+=panel('門市 QR 安全設定',
+  table(['分店','QR 打卡','定位要求'],rows),
+  ['owner','hr'].includes(role())?'<button class="btn" data-qr-action="settings">修改 QR 規則</button>':'');
+ $('appContent').innerHTML=html;
+ if(app.issuedQr)void drawWorkforceQr(qrUrl(app.issuedQr.token));
+}
+const oldQrRender=render;
+render=function(){
+ oldQrRender();
+ if(app.tab==='qr'&&app.data)qrPage();
+};
+function showQrSettingsForm(){
+ if(app.mode!=='real'||!['owner','hr'].includes(role()))throw Error('需要企業負責人或人資權限');
+ showExtraForm('門市 QR 打卡設定','qr_setting',[
+  {name:'branch_id',label:'門市',html:branchFilter()},
+  {name:'enabled',label:'是否啟用',html:selectField('enabled',
+   '<option value="true">啟用</option><option value="false">停用</option>')},
+  {name:'allow_gps_replacement',label:'是否允許 QR 取代 GPS',html:selectField('allow_gps_replacement',
+   '<option value="false">不允許，仍須 GPS</option><option value="true">允許短效 QR 替代定位</option>')}
+ ],'儲存 QR 設定');
+}
+async function issueWorkforceQr(){
+ if(!manager()||app.mode!=='real')throw Error('需登入主管帳號');
+ const branch=$('wmQrBranch')?.value;if(!branch)throw Error('請選擇門市');
+ app.issuedQr=await call('/rest/v1/rpc/wm_issue_qr','POST',
+  {p_tenant:app.tenantId,p_branch:branch},app.token);
+ qrPage();
+ banner('90 秒 QR 已產生，超過有效期限必須刷新');
+}
+async function clockWorkforceQr(kindValue){
+ if(app.mode!=='real'||!app.token)throw Error('請先登入正式企業');
+ const token=($('wmQrToken')?.value||app.qrToken||'').trim();
+ if(!/^[0-9a-f]{48}$/i.test(token))throw Error('沒有有效的 48 碼 QR 憑證');
+ const result=await call('/rest/v1/rpc/wm_clock_qr','POST',
+  {p_token:token,p_kind:kindValue,p_key:crypto.randomUUID()},app.token);
+ app.qrToken='';
+ const u=new URL(location.href);
+ if(u.searchParams.has('wqr')){
+  u.searchParams.delete('wqr');
+  history.replaceState(null,'',u.pathname+u.search+u.hash);
+ }
+ await reload(true);
+ banner('已完成 '+kind(kindValue)+'：'+taiStamp(result.server_at));
+}
+$('appContent').addEventListener('click',async e=>{
+ const b=e.target.closest('[data-qr-action]');if(!b||b.disabled)return;
+ b.disabled=true;
+ try{
+  if(b.dataset.qrAction==='settings')showQrSettingsForm();
+  else if(b.dataset.qrAction==='issue')await issueWorkforceQr();
+  else if(b.dataset.qrAction==='clock')await clockWorkforceQr(b.dataset.kind);
+ }catch(err){banner(err.message,true);}
+ finally{b.disabled=false;}
+});
