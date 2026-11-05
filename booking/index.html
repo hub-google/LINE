@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="dbfca69ab9df1137a10581c0133ed056668b130c">
+<meta name="line-saas-build" content="5229b37b265df377b2628386b4af682b2609d47d">
 <meta name="theme-color" content="#173e34">
 <link rel="manifest" href="./manifest.webmanifest">
 <script>
@@ -32,7 +32,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   }
 })();
 </script>
-<script defer src="./version-watch.js?build=dbfca69ab9df1137a10581c0133ed056668b130c"></script>
+<script defer src="./version-watch.js?build=5229b37b265df377b2628386b4af682b2609d47d"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LINE 門市營運｜企業開通、員工後台與顧客預約</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -166,7 +166,7 @@ body{overflow-x:hidden}
 .guide-link{text-decoration:none;color:var(--primary);border:1px solid var(--line);background:#f2f8f4;min-height:42px;display:flex;align-items:center;white-space:nowrap}
 .guide-link:hover{background:#e5f3ea}
 </style>
-<link rel="stylesheet" href="./booking-theme.css?build=dbfca69ab9df1137a10581c0133ed056668b130c">
+<link rel="stylesheet" href="./booking-theme.css?build=5229b37b265df377b2628386b4af682b2609d47d">
 </head>
 <body>
 <header><div class="top">
@@ -500,6 +500,122 @@ let queueRealtimeChannel=null,queueRealtimeTenant="";
 let customerActivity={tickets:[],reservations:[]},customerActivityError="";
 let crossLastSuccessAt="",crossLastSuccessShop="";
 let crossFilter="active",crossPageSize=12,crossCurrentStore=false,crossRealtimeChannel=null,crossRealtimeKey="",crossRefreshBusy=false;
+
+
+/* Unified service units: industry-neutral opt-in over existing booking and queue modules. */
+let unitConfig=null,unitRecords={reservations:[],tickets:[]};
+let unitChoice="",unitSessionChoice="",unitCategory="",unitStaffSession="",unitAdminDate=taipei();
+let unitEditingId="",unitEditingSession="",unitAdminUnit="";
+const unitEnabled=()=>unitConfig?.multi===true;
+function unitList(){
+ let data=(unitConfig?.units||[]).filter(x=>x.active);
+ if(unitCategory&&unitConfig?.grouped)data=data.filter(x=>(x.group||"")===unitCategory);
+ return data;
+}
+function sessionsOf(unitId=unitChoice){return (unitConfig?.sessions||[]).filter(x=>x.active&&x.unit_id===unitId);}
+function unitNameForSession(sid){
+ const s=(unitConfig?.sessions||[]).find(x=>x.id===sid),u=(unitConfig?.units||[]).find(x=>x.id===s?.unit_id);
+ return u?.name||"服務單位";
+}
+function unitChooseHtml(){
+ const units=unitList(),groups=[...new Set((unitConfig?.units||[]).filter(x=>x.active).map(x=>x.group||"其他"))];
+ const actual=units.find(x=>x.id===unitChoice)||units[0];
+ const sessions=sessionsOf(actual?.id);
+ const selected=sessions.find(x=>x.id===unitSessionChoice)||sessions[0];
+ return (unitConfig?.grouped?
+   '<label for="unit-category">服務分類</label><select id="unit-category" class="field"><option value="">全部分類</option>'+
+     groups.map(g=>'<option value="'+esc(g)+'" '+(unitCategory===g?'selected':'')+'>'+esc(g)+'</option>').join("")+
+   '</select>':'')+
+   '<label for="customer-unit">服務單位</label><select class="field" id="customer-unit">'+
+     units.map(u=>'<option value="'+esc(u.id)+'" '+(u.id===actual?.id?'selected':'')+'>'+esc(u.name)+'</option>').join("")+'</select>'+
+   '<label for="unit-session">服務場次</label><select class="field" id="unit-session"><option value="">請選擇場次</option>'+
+     sessions.map(s=>'<option value="'+esc(s.id)+'" '+(s.id===selected?.id?'selected':'')+
+       ((Number(s.booked)||0)>=s.capacity?' disabled':'')+'>'+esc(s.name)+' '+esc(s.start)+'–'+esc(s.end)+
+       ' · 剩 '+esc(Math.max(0,s.capacity-Number(s.booked||0)))+' 位</option>').join("")+
+   '</select>';
+}
+function unitBookingPanel(){
+ const s=sessionsOf().find(x=>x.id===unitSessionChoice)||sessionsOf()[0];
+ const available=s&&Number(s.booked||0)+Number(bookingParty)<=s.capacity;
+ return box("選擇服務單位與預約場次",
+   '<p class="small">所有服務單位共用這個網站，僅顯示目前有開放的場次。</p>'+
+   field("預約日期","customer-day",day,"date",'min="'+taipei()+'" max="'+dateInThirtyDays()+'"')+
+   unitChooseHtml()+
+   '<div class="grid"><div>'+field("本次人數","customer-party",bookingParty||1,"number",'min="1" max="20"')+'</div></div>'+
+   menuSelectSection(customer?.tenant?.menu_booking_mode||"DISABLED",customer?.menu_items||[],bookingChosenItems,"booking")+
+   '<div class="grid"><div>'+field("預約姓名","customer-book-name",bookingContactName,"text",'maxlength="60" required autocomplete="name"')+'</div>'+
+   '<div>'+field("聯絡手機","customer-book-phone",bookingContactPhone,"tel",'required inputmode="tel" autocomplete="tel"')+'</div></div>'+
+   '<p class="small">預約場次代表可報到的時段，實際開始服務時間依現場叫號與人員安排。</p>'+
+   '<div class="staff-actionbar">'+btn("確認預約","unit-book","primary full",
+     (!available||!validBookingContact()||!menuChoiceReady(customer?.tenant?.menu_booking_mode||"DISABLED",bookingChosenItems,customer?.menu_items||[])?'disabled':''))+'</div>')+
+   box("我的近期預約",renderBookings(customer?.my_reservations||[],true));
+}
+function unitQueuePanel(){
+ const s=sessionsOf().find(x=>x.id===unitSessionChoice)||sessionsOf()[0];
+ return box("選擇服務單位與取號場次",
+   '<p class="small">每個場次獨立叫號，取號後可從「我的取號」查看實際順序。</p>'+
+   unitChooseHtml()+
+   field("本次候位人數","customer-queue-party",queuePartySize||1,"number",'min="1" max="20"')+
+   menuSelectSection(customer?.tenant?.menu_queue_mode||"DISABLED",customer?.menu_items||[],queueChosenItems,"queue")+
+   '<div class="staff-actionbar">'+btn("立即取號","unit-take","primary full",
+      (!s||!queuePartySize||s.date&&s.date!==taipei()?'disabled':''))+'</div>');
+}
+function unitSettingsPanel(isManager){
+ const units=unitConfig?.units||[],chosen=units.find(x=>x.id===unitEditingId);
+ const sessions=(unitConfig?.sessions||[]),editing=sessions.find(x=>x.id===unitEditingSession);
+ const options=units.filter(x=>x.active).map(u=>'<option value="'+esc(u.id)+'" '+((unitAdminUnit||editing?.unit_id)===u.id?'selected':'')+'>'+esc(u.name)+'</option>').join("");
+ return box("服務單位與場次（所有產業共用）",
+   '<p class="small">不需要建立新店家。勾選多服務單位後，顧客可以先選分類與服務單位；沒有勾選就維持原本單一入口。</p>'+
+   '<label class="checklist"><input type="checkbox" id="enable-units" '+(unitConfig?.multi?'checked':'')+(isManager?'':' disabled')+'> 啟用多服務單位</label>'+
+   '<label class="checklist"><input type="checkbox" id="group-units" '+(unitConfig?.grouped?'checked':'')+(isManager?'':' disabled')+'> 顯示服務分類</label>'+
+   '<label class="checklist"><input type="checkbox" id="link-units" '+(unitConfig?.linked?'checked':'')+(isManager?'':' disabled')+'> 預約報到後加入該場次叫號</label>'+
+   (isManager?'<div class="staff-actionbar">'+btn("儲存服務模式","save-unit-mode","primary")+'</div>':'')+
+   '<h3 style="margin-top:22px">服務單位</h3>'+
+   '<div class="staff-actionbar">'+units.map(u=>btn((u.active?'':'〔停用〕')+u.name,
+     "unit-edit","outline",'data-id="'+esc(u.id)+'"')).join("")+'</div>'+
+   (isManager?'<div class="grid"><div>'+field("服務單位名稱","unit-name",chosen?.name||"")+
+     field("分類名稱（可留空）","unit-group",chosen?.group||"")+'</div>'+
+     '<div>'+field("排序","unit-order",chosen?.sort_order||0,"number")+
+     field("預設容量（備註設定）","unit-capacity",chosen?.capacity||1,"number",'min="1" max="200"')+'</div></div>'+
+     '<label class="checklist"><input id="unit-active" type="checkbox" '+(chosen?.active!==false?'checked':'')+'> 啟用此單位</label>'+
+     '<div class="staff-actionbar">'+btn(chosen?"儲存服務單位":"新增服務單位","unit-save","primary")+
+     (chosen?btn("取消編輯","unit-new","outline"):"")+'</div>':'')+
+   '<h3 style="margin-top:22px">開放場次</h3>'+
+   field("場次日期","unit-admin-date",unitAdminDate,"date")+
+   '<div class="staff-actionbar">'+sessions.map(s=>btn(unitNameForSession(s.id)+' '+s.name+' '+s.start,
+     "unit-session-edit","outline",'data-id="'+esc(s.id)+'"')).join("")+'</div>'+
+   (isManager?'<label for="unit-admin-unit">服務單位</label><select class="field" id="unit-admin-unit">'+options+'</select>'+
+     '<div class="grid"><div>'+field("場次名稱","unit-session-name",editing?.name||"上午場")+
+     field("開始時間","unit-session-start",editing?.start||"09:00","time",editing?'disabled':'')+
+     '</div><div>'+field("開放名額","unit-session-capacity",editing?.capacity||10,"number",'min="1" max="300"')+
+     field("結束時間","unit-session-end",editing?.end||"12:00","time",editing?'disabled':'')+'</div></div>'+
+     '<label class="checklist"><input id="unit-session-active" type="checkbox" '+(editing?.active!==false?'checked':'')+'> 開放此場次</label>'+
+     '<div class="staff-actionbar">'+btn(editing?"儲存場次":"新增場次","unit-session-save","primary")+
+       (editing?btn("新增另一場","unit-session-new","outline"):"")+'</div>':''));
+}
+function unitStaffQueuePanel(){
+ const ss=(unitConfig?.sessions||[]).filter(s=>s.active);
+ const selected=ss.find(x=>x.id===unitStaffSession)||ss[0];
+ const tickets=(staff?.tickets||[]).filter(k=>k.service_session_id===selected?.id&&!k.deleted_at);
+ const open=tickets.filter(k=>['WAITING','HOLD','CALLED','ARRIVED','ADMITTED','SERVING','PASSED'].includes(k.status));
+ const waiting=open.filter(k=>k.status==='WAITING');
+ const current=open.find(k=>['CALLED','ARRIVED','ADMITTED','SERVING'].includes(k.status));
+ return box("按服務單位獨立叫號",
+   '<p class="small">每個單位與場次獨立服務；不同單位可以同時叫號。現有編號及通知機制繼續沿用。</p>'+
+   '<label for="staff-unit-session">操作隊列</label><select id="staff-unit-session" class="field">'+
+   ss.map(s=>'<option value="'+esc(s.id)+'" '+(s.id===selected?.id?'selected':'')+'>'+esc(unitNameForSession(s.id))+' · '+esc(s.name)+' '+esc(s.start)+'</option>').join("")+'</select>'+
+   (selected?'<div class="grid3" style="margin:12px 0">'+stat("目前叫號",current?.number||"—")+
+     stat("候位中",waiting.length)+stat("已過號",open.filter(k=>k.status==="PASSED").length)+'</div>'+
+     '<div class="staff-actionbar">'+btn("叫下一位","unit-call","primary",(!waiting.length||current?'disabled':'')+' data-session="'+esc(selected.id)+'"')+
+     btn("再叫一次","unit-recall","outline",(!current||current.status!=="CALLED"?'disabled':'')+
+       ' data-session="'+esc(selected.id)+'" data-id="'+esc(current?.id||'')+'"')+
+     '<a class="btn outline" href="./board.html?merchant='+encodeURIComponent(slug)+'&session='+encodeURIComponent(selected.id)+'" target="_blank" rel="noopener noreferrer">本隊列看板</a></div>'+
+     '<div style="margin-top:14px">'+open.map(k=>'<article class="staff-record">'+
+       '<div class="staff-record-title">'+esc(k.number)+'　'+esc(k.name)+'</div>'+
+       '<div class="small">'+esc(k.unit||"")+' · '+esc(k.session||"")+'</div>'+
+       staffStatusPicker("ticket",k,true)+'</article>').join("")+'</div>':
+     '<p class="muted">尚未設定今日場次，請先至企業設定建立服務單位與場次。</p>'));
+}
 
 const features=[["reservation","線上預約"],["queue","線上取號"],["calling","現場叫號"]];
 // New links always use the dedicated booking product path. Historic /saas/ URLs
@@ -1089,7 +1205,9 @@ function staffRender(){
       '</div><p class="small">CSV 依目前搜尋條件從資料庫逐頁讀取，單次最多匯出 20,000 筆；超過限制須分日期區間下載，絕不默默截斷。</p>'+historyBookingResultHtml())+numberSettingsPanel("booking",t,isManager);
  }else if(staffTab==="calendar"){
    html+=bookingCalendarPanel();
-  }else if(staffTab==="queue"){
+  }else if(staffTab==="queue"&&unitEnabled()){
+   html+=unitStaffQueuePanel();
+ }else if(staffTab==="queue"){
   
   const card=x=>'<article class="staff-record '+(x.deleted_at?'staff-deleted-record':'')+'"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(x.number)+'　'+esc(x.name)+'</div>'+
    '<div class="small">'+esc(x.day)+' ・ '+esc(x.party||1)+' 人／組 ・ '+esc(x.source==="RESERVATION"?"預約報到":"現場取號")+
@@ -1192,6 +1310,7 @@ function staffRender(){
      btn("加入門市","attach-business-branch","primary",'data-group="'+esc(g.id)+'"')+'</div></div>')).join("") :
      box("尚無總店群組",'<p class="muted">建立總店群組後，即可加入由你擔任 OWNER 的其他門市。</p>');
  }else if(staffTab==="settings"){
+  html+=unitSettingsPanel(isManager);
   const policy=staff.bookingPolicy||{};
   const selectedFlag=staffCustomerBook.find(x=>x.id===customerFlagSelected)||staffCustomerBook[0]||null;
   if(selectedFlag)customerFlagSelected=selectedFlag.id;
@@ -1339,7 +1458,11 @@ async function refreshQueueProgress(){
  const shop=slug;
  queueLiveLoading=true;
  try{
-  const data=await rpc("so_queue_live",{p_slug:shop,p_ticket_id:queueTicketToDisplay()});
+  const ticket=queueTicketToDisplay();
+  const unitRecord=(unitRecords?.tickets||[]).find(x=>x.id===ticket);
+  const data=unitEnabled()&&unitRecord
+   ?await rpc("so_unit_progress",{p_slug:shop,p_ticket_id:ticket})
+   :await rpc("so_queue_live",{p_slug:shop,p_ticket_id:ticket});
   if(view!=="customer"||customerTab!=="progress"||slug!==shop)return;
   queueLive=data;queueLiveShop=shop;queueLiveError="";
   queueLastSuccessAt=new Date().toISOString();queueLastSuccessShop=shop;
@@ -1593,6 +1716,7 @@ box("LINE 身分授權",'<p class="muted">為避免機器人或惡意假預約�
 (m.queue&&m.calling?'<a class="routecard" href="./board.html?merchant='+encodeURIComponent(slug)+'"><h2>公開即時叫號看板</h2><p class="muted">直接查看目前叫號及接下來的順序。</p><strong>查看公開看板 →</strong></a>':"")+'</div>';
  else if(customerTab==="reserve"){
   if(!m.reservation)html=box("未開放預約",'<p>企業目前沒有啟用此功能。</p>');
+  else if(unitEnabled())html=unitBookingPanel();
   else {
    const needsConfirmation=customer.booking_confirmation_required!==false;
    const confirming=needsConfirmation&&bookingConfirmationKey===bookingConfirmationFingerprint();
@@ -1622,6 +1746,7 @@ box("LINE 身分授權",'<p class="muted">為避免機器人或惡意假預約�
   }
  }else if(customerTab==="queue"){
   if(!m.queue)html=box("尚未開放取號",'<p>本企業只提供線上預約。</p>');
+  else if(unitEnabled())html=unitQueuePanel();
   else html=(customer.queue_session?.code==="REST"?'<p class="alert">門市目前休場，暫停新取號。已取得的號碼仍保留，現場人員可繼續處理。</p>':"")+
   '<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",customer.current||"—")+stat("等候組數",customer.waiting)+stat("我的號碼",live?.number||"—")+'</div>'+
    box("我的現場號碼",live?'<div class="ticket">'+esc(live.number)+'</div><p>'+tag(live.status)+'</p>'+
@@ -1642,7 +1767,14 @@ box("LINE 身分授權",'<p class="muted">為避免機器人或惡意假預約�
  }else html=(manageKind&&manageItem?
     box("我的預約紀錄",renderBookings(items,true))+box("我的號碼紀錄",renderMyTickets(tickets)):
     crossRecords());
- if(customerTab==="home"&&customerAnnouncements.length){
+ if(customerTab==="home"&&unitEnabled()){
+    const units=unitList();
+    html+=box("服務單位",'<p class="small">從同一個商家網站選擇服務單位，不需要切換其他店家。</p>'+
+      '<div class="grid">'+units.map(u=>'<div class="routecard"><strong>'+esc(u.name)+'</strong>'+
+       (unitConfig.grouped?'<div class="small">'+esc(u.group||"其他")+'</div>':'')+
+       '<div class="small">獨立預約與叫號場次</div></div>').join("")+'</div>');
+  }
+  if(customerTab==="home"&&customerAnnouncements.length){
    html+=box("門市最新公告",customerAnnouncements.map(a=>
       '<article class="inset" style="margin-bottom:15px"><h3>'+esc(a.title)+'</h3>'+
       '<p style="white-space:pre-wrap">'+esc(a.body||"")+'</p>'+
@@ -1968,11 +2100,40 @@ async function load(){err="";try{
   }
 }
  else if(view==="staff")staff=null;
+  if((view==="customer"&&customer)||(view==="staff"&&staff)){
+    try{
+      unitConfig=await rpc("so_unit_config",{p_slug:slug,p_date:view==="customer"?day:unitAdminDate});
+      unitRecords=await rpc("so_unit_records",{p_slug:slug});
+      const active=unitList();
+      if(!active.some(u=>u.id===unitChoice))unitChoice=active[0]?.id||"";
+      const candidates=sessionsOf(unitChoice);
+      if(!candidates.some(s=>s.id===unitSessionChoice))unitSessionChoice=candidates[0]?.id||"";
+      if(!(unitConfig.sessions||[]).some(s=>s.id===unitStaffSession))unitStaffSession=(unitConfig.sessions||[])[0]?.id||"";
+      const mapping=[...(unitRecords.reservations||[]),...(unitRecords.tickets||[])];
+      if(view==="customer"){
+        for(const [name,records] of [["my_reservations",unitRecords.reservations||[]],["my_tickets",unitRecords.tickets||[]]]){
+          const map=new Map(records.map(item=>[item.id,item]));
+          customer[name]=(customer[name]||[]).map(item=>({...item,...(map.get(item.id)||{})}));
+        }
+      }else{
+        const mr=new Map((unitRecords.reservations||[]).map(item=>[item.id,item]));
+        const mt=new Map((unitRecords.tickets||[]).map(item=>[item.id,item]));
+        for(const key of ["pending_reservations","processed_reservations","deleted_reservations"]){
+          staff[key]=(staff[key]||[]).map(item=>({...item,...(mr.get(item.id)||{})}));
+        }
+        for(const key of ["active_tickets","processed_tickets","deleted_tickets"]){
+          staff[key]=(staff[key]||[]).map(item=>({...item,...(mt.get(item.id)||{})}));
+        }
+        staff.reservations=[...(staff.pending_reservations||[]),...(staff.processed_reservations||[])];
+        staff.tickets=[...(staff.active_tickets||[]),...(staff.processed_tickets||[])];
+      }
+    }catch(unitError){unitConfig=null;unitRecords={reservations:[],tickets:[]};console.warn("Service-unit data unavailable",unitError);}
+  }
  }catch(e){err=e.message||String(e)}render();
  if(view==="staff"&&staffTab==="bookings"&&historicalBookingResult&&historicalBookingTenant===slug)
    void searchHistoricalBookings(historicalBookingPage);
  if(view==="staff"&&staffTab==="calendar"&&staff)void loadBookingCalendar(calendarPage);
- if(view==="customer"&&customerTab==="reserve"&&lineLinkStatus==="linked"){
+ if(view==="customer"&&customerTab==="reserve"&&lineLinkStatus==="linked"&&!unitEnabled()){
    void refreshServiceSlots();
  }
  if(view==="customer"&&customerTab==="progress"&&lineLinkStatus==="linked"&&(progressTicketId||crossCurrentStore)){
@@ -2021,7 +2182,7 @@ document.addEventListener("click",async ev=>{
   if(["reserve","queue"].includes(tab)&&!customer?.tenant.modules[tab==="reserve"?"reservation":"queue"])customerTab="home";
   stopQueueRealtime();
   if(customerTab==="progress"){queueLive=null;queueLiveShop="";void refreshCrossStoreOverview();}
-  if(customerTab==="reserve")void refreshServiceSlots();
+  if(customerTab==="reserve"&&!unitEnabled())void refreshServiceSlots();
   else stopCrossQueueRealtime();
   /* Customer subviews change in-place on the same page. */
  }
@@ -2405,6 +2566,79 @@ document.addEventListener("click",async ev=>{
      return "預約營業規則已更新";
    });return;
  }
+ if(a==="save-unit-mode"){
+   await act(async()=>{
+    await rpc("so_unit_manage",{p_slug:slug,p_action:"settings",p_data:{
+     multi:!!$("enable-units")?.checked,grouped:!!$("group-units")?.checked,linked:!!$("link-units")?.checked
+    }});
+    return "服務單位顯示與連動設定已儲存";
+   });return;
+ }
+ if(a==="unit-edit"){unitEditingId=id;render();return;}
+ if(a==="unit-new"){unitEditingId="";render();return;}
+ if(a==="unit-save"){
+   await act(async()=>{
+    await rpc("so_unit_manage",{p_slug:slug,p_action:"unit",p_data:{
+     id:unitEditingId||null,name:val("unit-name"),group:val("unit-group"),
+     sort_order:Number(val("unit-order")||0),capacity:Number(val("unit-capacity")||1),
+     active:!!$("unit-active")?.checked
+    }});
+    unitEditingId="";return "服務單位已儲存";
+   });return;
+ }
+ if(a==="unit-session-edit"){unitEditingSession=id;const s=(unitConfig?.sessions||[]).find(x=>x.id===id);unitAdminUnit=s?.unit_id||"";render();return;}
+ if(a==="unit-session-new"){unitEditingSession="";render();return;}
+ if(a==="unit-session-save"){
+   await act(async()=>{
+    await rpc("so_unit_manage",{p_slug:slug,p_action:"session",p_data:{
+      id:unitEditingSession||null,unit_id:val("unit-admin-unit"),date:unitAdminDate,
+      name:val("unit-session-name"),start:val("unit-session-start"),
+      end:val("unit-session-end"),capacity:Number(val("unit-session-capacity")),
+      active:!!$("unit-session-active")?.checked
+    }});
+    unitEditingSession="";return "場次設定已儲存";
+   });return;
+ }
+ if(a==="unit-call"||a==="unit-recall"){
+   await act(async()=>{
+    const res=await rpc("so_unit_call",{p_slug:slug,p_session_id:b.dataset.session,
+      p_action:a==="unit-call"?"call":"recall",p_ticket_id:a==="unit-recall"?id:null});
+    const notice=await notifyLineCalled(res.number,res.ticket_id,res.line_call_event_id);
+    return "已叫號 "+res.number+"；"+notice;
+   });return;
+ }
+ if(a==="unit-book"){
+   await act(async()=>{
+    if(lineLinkStatus!=="linked")throw Error("請先完成 LINE 身分驗證");
+    const s=sessionsOf().find(x=>x.id===unitSessionChoice)||sessionsOf()[0];
+    if(!s)throw Error("請選擇有效場次");
+    if(!validBookingContact())throw Error("請填寫姓名及有效手機號碼");
+    const party=Number(val("customer-party")),items=bookingChosenItems.slice();
+    if(!Number.isInteger(party)||party<1||party>20)throw Error("請填寫正確人數");
+    const requestId=customerBookingRequestId({merchant:slug,date:day,time:s.id,party,
+      name:bookingContactName.trim(),phone:normalizeBookingPhone(bookingContactPhone),items});
+    const result=await rpc("so_unit_book_once",{p_slug:slug,p_session_id:s.id,
+      p_name:bookingContactName.trim(),p_phone:normalizeBookingPhone(bookingContactPhone),
+      p_party:party,p_items:items,p_request_id:requestId});
+    clearCustomerBookingRequest(requestId);
+    customerTab="mine";unitSessionChoice="";bookingChosenItems=[];
+    const notice=result.replayed?"":await sendLineNotice("notify-reservation",{reservationId:result.id});
+    return (result.replayed?"已找到先前的預約":"預約已成立")+"；"+unitNameForSession(s.id)+" "+s.name+
+      (notice?customerNoticeSuffix(notice):"");
+   });return;
+ }
+ if(a==="unit-take"){
+   await act(async()=>{
+    if(lineLinkStatus!=="linked")throw Error("請先完成 LINE 身分驗證");
+    const s=sessionsOf().find(x=>x.id===unitSessionChoice)||sessionsOf()[0];
+    if(!s)throw Error("請選擇有效場次");
+    const result=await rpc("so_unit_take_number",{p_slug:slug,p_session_id:s.id,
+      p_party:Number(val("customer-queue-party")),p_items:queueChosenItems.slice()});
+    progressTicketId=result.id;customerTab="progress";queueChosenItems=[];
+    const notice=await sendLineNotice("notify-ticket",{ticketId:result.id});
+    return "已取得號碼 "+result.number+customerNoticeSuffix(notice);
+   });return;
+ }
  if(a==="update-settings"){await act(async()=>{await rpc("so_update_tenant",{p_slug:slug,p_patch:{name:val("set-name"),phone:val("set-phone"),address:val("set-address"),accent:val("set-accent"),description:val("set-description"),logo_url:val("set-logo"),directory_category:val("set-directory-category"),open_time:val("set-open"),close_time:val("set-close"),slot_capacity:Number(val("set-capacity")),slot_minutes:Number(val("set-minutes"))}});return "企業設定已保存";});return}
  if(a==="invite-staff"){await act(async()=>{await rpc("so_invite_staff",{p_slug:slug,p_email:val("invite-email"),p_role:val("invite-role")});return "員工邀請已儲存，請通知對方登入接受";});return}
  if(a==="book-back"){bookingConfirmationKey="";render();return;}
@@ -2697,6 +2931,12 @@ document.addEventListener("change",async ev=>{
  }
  if(el.id==="customer-flag-picker"){customerFlagSelected=el.value;render();return;}
  if(el.id==="customer-day"){day=el.value;chosenSlot="";serviceSlotPreview=null;await load();return;}
+ if(el.id==="unit-admin-date"){unitAdminDate=el.value;unitEditingSession="";await load();return;}
+ if(el.id==="customer-unit"){unitChoice=el.value;unitSessionChoice="";render();return;}
+ if(el.id==="unit-category"){unitCategory=el.value==="其他"?"":el.value;unitChoice="";unitSessionChoice="";render();return;}
+ if(el.id==="unit-session"){unitSessionChoice=el.value;render();return;}
+ if(el.id==="staff-unit-session"){unitStaffSession=el.value;render();return;}
+ if(el.id==="unit-admin-unit"){unitAdminUnit=el.value;return;}
  if(el.id==="customer-party"){syncBookingPartyInput(el.value);return;}
  if(el.id==="customer-queue-party"){
   const n=Number(el.value);queuePartySize=Number.isInteger(n)&&n>=1&&n<=20?n:0;
@@ -2725,7 +2965,12 @@ document.addEventListener("change",async ev=>{
   if(!id||!previous||desired===previous)return;
   if(desired==="CANCELLED"&&!confirm("確定取消嗎？系統會通知顧客。")){render();return;}
   await act(async()=>{
-   const procedure=kind==="reservation"?"so_staff_set_reservation_status":"so_staff_set_ticket_status";
+   const unitRelated=unitEnabled()&&(kind==="ticket"?(unitRecords.tickets||[]).some(x=>x.id===id):(unitRecords.reservations||[]).some(x=>x.id===id));
+   if(kind==="reservation"&&desired==="CHECKED_IN"&&unitConfig?.linked&&unitRelated){
+     const result=await rpc("so_unit_checkin",{p_slug:slug,p_reservation_id:id});
+     return "已報到並加入對應叫號隊列："+result.number;
+   }
+   const procedure=kind==="reservation"?"so_staff_set_reservation_status":unitRelated?"so_unit_set_ticket_status":"so_staff_set_ticket_status";
    const args=kind==="reservation"?
     {p_slug:slug,p_reservation_id:id,p_status:desired,p_expected_status:previous}:
     {p_slug:slug,p_ticket_id:id,p_status:desired,p_expected_status:previous};
