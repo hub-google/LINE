@@ -43,12 +43,18 @@
 37. [`20261105_workforce_line_delivery_claim_ack.sql`](./migrations/20261105_workforce_line_delivery_claim_ack.sql)
 38. [`20261105_workforce_line_scheduled_dispatch.sql`](./migrations/20261105_workforce_line_scheduled_dispatch.sql)
 39. [`20261105_workforce_line_service_role_grants_fix.sql`](./migrations/20261105_workforce_line_service_role_grants_fix.sql)
+40. [`20261105_workforce_company_schedule_rules.sql`](./migrations/20261105_workforce_company_schedule_rules.sql)
+41. [`20261105_workforce_demo_company_schedule_rules.sql`](./migrations/20261105_workforce_demo_company_schedule_rules.sql)
+42. [`20261105_workforce_cross_branch_assignments.sql`](./migrations/20261105_workforce_cross_branch_assignments.sql)
+43. [`20261105_workforce_demo_cross_store_support.sql`](./migrations/20261105_workforce_demo_cross_store_support.sql)
+44. [`20261105_workforce_dynamic_qr_clock.sql`](./migrations/20261105_workforce_dynamic_qr_clock.sql)
+45. [`20261105_workforce_qr_replay_guard.sql`](./migrations/20261105_workforce_qr_replay_guard.sql)
 
 ## 已部署情況與重建注意事項
 
 - 前四份最初透過 Supabase `apply_migration` 套用，已在遠端遷移歷史中。
 - 第 5–20 份先前以 Supabase SQL 即時套用，**已真正存在遠端資料庫，但尚未另外登記進 `supabase_migrations.schema_migrations`**。檔案已提交到 GitHub 作為版本化原始資料。請勿在同一正式環境直接重跑全套 SQL；重建應先於隔離的空資料庫依序測試。
-- 第 21–39 份以 Supabase migration 或 SQL 套用（具體 SQL 版本已提交 GitHub）；**先遵照順序在隔離資料庫演練，不要在已建立的正式資料庫整套重跑**。
+- 第 21–45 份以 Supabase migration 或 SQL 套用（具體 SQL 版本已提交 GitHub）；**先遵照順序在隔離資料庫演練，不要在已建立的正式資料庫整套重跑**。
 - LINE Edge Function 程式另存於 [../functions/wm-line/index.ts](../functions/wm-line/index.ts)；LINE 排程建立於第 38 份。
 - 不執行清空或 TRUNCATE，原預約／叫號和人資 DEMO 資料皆保留。
 - 函式及 RLS 的完整正式驗證，必須使用不同權限的真實測試帳號及資料庫交易測試；不能單憑部署判定全案完成。
