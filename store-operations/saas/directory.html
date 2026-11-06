@@ -220,7 +220,7 @@ const SB_KEY="sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy";
 const bridge=SB_URL+"/functions/v1/line-bridge?action=config";
 const sb=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"line-saas-customer-session-v2"}});
 const params=new URLSearchParams(location.search),mode=["search","queue","mine","game"].includes(params.get("mode"))?params.get("mode"):"search";
-const els={intro:document.getElementById("intro"),results:document.getElementById("results"),keyword:document.getElementById("keyword"),test:document.getElementById("test")};
+const els={intro:document.getElementById("intro"),results:document.getElementById("results"),keyword:document.getElementById("keyword"),test:null};
 document.getElementById("tab-"+(mode==="game"?"search":mode)).classList.add("active");
 let all=[],popular=[],searchResults=[],searchTotal=0,searchPage=1;
 let searchLoading=false,searchError="",searchRequest=0,searchTimer=null;
@@ -302,7 +302,7 @@ function render(){
  document.getElementById("page-label").textContent="第 "+searchPage+" / "+Math.max(1,Math.ceil(searchTotal/50))+" 頁";
  document.getElementById("page-prev").disabled=searchPage<=1;
  document.getElementById("page-next").disabled=searchPage*50>=searchTotal;
- els.test.classList.toggle("hidden",mode==="mine"||Boolean(keyword));
+ 
  if(searching&&searchLoading){
    els.results.innerHTML='<div class="empty"><strong>正在搜尋店家</strong><p>依照目前的搜尋條件查詢公開店家。</p></div>';
    return;
