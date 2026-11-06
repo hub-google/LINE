@@ -1,4 +1,6 @@
-# LINE 多企業預約、叫號 SaaS
+# Queue Monster｜排隊怪獸（原 LINE 預約）
+
+專案識別名稱：`QueueMonster`。正式英文品牌為 **Queue Monster**；此目錄維持原位置以相容既有部署與 LINE LIFF。
 實際網站：https://hub-google.github.io/LINE/booking/
 
 ## 三個入口
