@@ -75,10 +75,12 @@ test("P0 notification status is manager-scoped and avoids client-side secrets",(
  assert.match(client,/LINE 通知異常｜需管理者處理/);
  assert.match(bridge,/WORKER_UNAUTHORIZED/);
 });
-test("production admin setup demands verified owner and one-time code",()=>{
- assert.match(client,/so_claim_platform_admin/);
- assert.match(client,/bootstrap-token/);
- assert.match(client,/需要使用已驗證電子郵件/);
+test("verified platform owner is allowed by authenticated Supabase identity",()=>{
+ const registration=read("saas/merchant-register.html");
+ assert.match(registration,/so_claim_verified_platform_owner/);
+ assert.match(registration,/cit5055@gmail\.com/);
+ assert.match(registration,/signInWithPassword/);
+ assert.match(client,/context\?\.platform_admin/);
 });
 test("outbox is independently scheduled and authenticated",()=>{
  const sql=read("supabase/migrations/20261104_line_notification_outbox_retries.sql");
@@ -128,15 +130,12 @@ test("HQ LIFF endpoint is neutral to all merchant slugs",()=>{
 });
 
 
-test("new stores default to discoverable without overriding existing opt-outs",()=>{
- const migration=read("supabase/migrations/20261105154500_line_directory_default_and_customer_identity_history.sql");
+test("new merchants are hidden until business information is complete",()=>{
  const registration=read("saas/merchant-register.html");
- assert.match(migration,/alter table public\.so_tenants alter column directory_enabled set default true;/);
- assert.match(migration,/r\.user_id,'PLATFORM',true/);
+ assert.match(registration,/資料完成前不會公開/);
+ assert.match(registration,/so_start_merchant/);
+ assert.match(client,/so_complete_merchant_onboarding/);
  assert.match(client,/允許在排隊怪獸平台公開搜尋我的門市/);
- assert.match(client,/t\.directory_enabled\?'checked '/); // actual saved value drives the checkbox
- assert.match(registration,/門市開通後預設公開/);
- assert.doesNotMatch(client,/總公司 LINE 平台店家搜尋/);
  assert.doesNotMatch(registration,/總公司 LINE OA/);
 });
 
