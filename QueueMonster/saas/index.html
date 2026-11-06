@@ -489,7 +489,7 @@ function refreshLiffRoute(){
 const ORIGINAL_QA_STORE="qa-84b3ef9297eb470685a91a527ca499ca";
 const TEST_KEY="line_saas_real_qa_v1";
 let testInfo=null;
-try{testInfo=JSON.parse(localStorage.getItem(TEST_KEY)||"null")}catch(e){localStorage.removeItem(TEST_KEY)}
+try{localStorage.removeItem(TEST_KEY)}catch(_e){}
 let testMode=false;
 let recoveryMode=false;
 let view=incomingParam("view")||"customer",slug=(isSafeMerchant(incomingParam("merchant"))?incomingParam("merchant"):null)||(testMode?testInfo.slug:"greenfield-salon");
@@ -2801,10 +2801,7 @@ document.addEventListener("click",async ev=>{
  }
  if(a==="update-settings"){await act(async()=>{
  const initial=staff?.tenant?.onboarding_complete===false;
- if(initial){
-   await rpc("so_complete_merchant_onboarding",{p_slug:slug,p_name:val("set-name"),
-     p_phone:val("set-phone"),p_address:val("set-address"),p_category:val("set-directory-category")});
- }
+ // Keep an incomplete merchant unlisted until *all* settings have saved successfully.
  const t=staff?.tenant||{};
  const patch={name:val("set-name"),phone:val("set-phone"),address:val("set-address"),
  accent:val("set-accent")||t.accent||"#523B70",description:val("set-description"),
@@ -2813,6 +2810,10 @@ document.addEventListener("click",async ev=>{
  slot_capacity:Number(val("set-capacity")||t.slot_capacity||3),
  slot_minutes:Number(val("set-minutes")||t.slot_minutes||30)};
  await rpc("so_update_tenant",{p_slug:slug,p_patch:patch});
+ if(initial){
+   await rpc("so_complete_merchant_onboarding",{p_slug:slug,p_name:patch.name,
+     p_phone:patch.phone,p_address:patch.address,p_category:patch.directory_category});
+ }
  return initial?"店家資料已建立並公開搜尋":"企業設定已保存";
  });return}
  if(a==="invite-staff"){await act(async()=>{await rpc("so_invite_staff",{p_slug:slug,p_email:val("invite-email"),p_role:val("invite-role")});return "員工邀請已儲存，請通知對方登入接受";});return}
