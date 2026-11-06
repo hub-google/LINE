@@ -98,6 +98,7 @@ begin
   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
   where n.nspname='public' and p.proname=v_name;
   if v_source is null then raise exception 'Missing directory function %',v_name;end if;
+  if position('t.onboarding_complete' in v_source) > 0 then continue; end if;
   v_source:=replace(v_source,'t.directory_enabled = true','t.directory_enabled = true and t.onboarding_complete = true');
   v_source:=replace(v_source,'t.directory_enabled=true','t.directory_enabled=true and t.onboarding_complete=true');
   execute v_source;
