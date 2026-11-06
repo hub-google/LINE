@@ -465,7 +465,7 @@ async function load(){
     all=Array.isArray(directory.data)?directory.data:[];
     popular=Array.isArray(ranking.data)?ranking.data:[];
     const samples=await sb.rpc("so_public_explore_demo");
-    demoShops=!samples.error&&Array.isArray(samples.data)?samples.data:[];
+    demoShops=[];
     // The public board RPC returns a store name and non-personal queue data
     // with no sign-in. Do not add any test merchant to the official directory.
     const qaSlug="qa-84b3ef9297eb470685a91a527ca499ca";
@@ -474,7 +474,7 @@ async function load(){
       testBoardShop={slug:qaSlug,name:boardResponse.data.shop_name,
         description:"專屬門市的即時叫號看板",address:"",category:"其他",test_board_only:true};
     }
-    els.test.classList.remove("hidden");
+    testBoardShop=null;
     document.getElementById("demo-link").href=customerUrl("greenfield-salon",mode==="queue"?"queue":"reserve","PLATFORM");
   }
   setupExploreFilters();
