@@ -1,4 +1,4 @@
-name: LINE 預約網站自動部署與版本更新
+name: Queue Monster｜排隊怪獸網站自動部署與版本更新
 on:
   push:
     branches: [main]
