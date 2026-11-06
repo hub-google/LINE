@@ -304,7 +304,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #e5
           <div style="margin-top:16px"><a class="action outline" href="./directory.html?mode=search">查看店家搜尋入口 →</a></div>
         </div>
         <div class="mode-panel" id="mode-own" role="tabpanel" aria-labelledby="tab-own" hidden>
-          <p class="section-intro"><strong>商家自有 OA 模式：</strong>顧客由商家自己的官方帳號圖文選單或專屬入口進店家頁面，對應通知由該商家 OA 發送。這個模式需要商家管理者完成 LINE 頻道設定與實際測試。</p>
+          <p class="section-intro"><strong>商家自有 OA 模式：</strong>顧客由商家自己的官方帳號圖文選單或專屬入口進店家頁面，對應通知由該商家 OA 發送。這個模式需要商家管理者完成 LINE 頻道設定與實際驗證。</p>
           <div class="flow-card">
             <div class="flow-card-title"><div><h3>自有 OA 串接步驟</h3><p>只有管理者能設定；不能把 Channel Secret 貼在公開網頁或文件。</p></div><span class="demo-pill amber">需完成驗證</span></div>
             <div class="flow-strip">
@@ -320,9 +320,9 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #e5
                 <div class="screen-body"><div style="font-weight:850;margin-bottom:10px">LINE 官方帳號串接</div><div class="demo-row"><span>目前通知來源</span><b>平台 LINE OA</b></div><div class="demo-label">商家 LIFF ID</div><div class="demo-field">請輸入 LINE LIFF ID</div><div class="demo-label">Messaging API 憑證</div><div class="demo-field">••••••••••••••</div><span class="demo-btn">驗證並連接自有 LINE OA</span><p class="demo-muted" style="margin-top:10px">連接後設定該門市專屬 Webhook</p></div>
               </div><p class="caption">畫面示意｜企業設定／LINE 官方帳號串接</p>
             </div></div>
-            <div class="howto"><div class="tagline">管理者操作</div><h3>串接前先確認這些項目</h3><ol><li>商家的 LINE Login／LIFF 與 Messaging API 頻道須符合 Provider 對應規則。</li><li>在企業設定頁進行自有 OA 驗證與連接。</li><li>將後台顯示的門市專屬 Webhook 設到 LINE Developers。</li><li>使用真實 LINE 帳號測試登入、預約、取號及通知接收。</li></ol><a class="action outline" href="./?view=staff">前往串接設定 →</a></div>
+            <div class="howto"><div class="tagline">管理者操作</div><h3>串接前先確認這些項目</h3><ol><li>商家的 LINE Login／LIFF 與 Messaging API 頻道須符合 Provider 對應規則。</li><li>在企業設定頁進行自有 OA 驗證與連接。</li><li>將後台顯示的門市專屬 Webhook 設到 LINE Developers。</li><li>使用真實 LINE 帳號驗證登入、預約、取號及通知接收。</li></ol><a class="action outline" href="./?view=staff">前往串接設定 →</a></div>
           </div>
-          <div class="section-tip warm">自有 OA 串接畫面不等於已正式通過驗收。完成頻道設定、Webhook 與真實手機的收訊測試後，才能對商家宣稱已可由自有 OA 發送通知；尚未完成前可以先使用平台 OA 模式。</div>
+          <div class="section-tip warm">自有 OA 串接畫面不等於已正式通過驗收。完成頻道設定、Webhook 與真實手機的收訊驗證後，才能對商家宣稱已可由自有 OA 發送通知；尚未完成前可以先使用平台 OA 模式。</div>
         </div>
       </section>
 
