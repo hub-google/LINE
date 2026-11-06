@@ -14,7 +14,7 @@ const cityOf=store=>{
  return found?.replace(/^臺/,"台")||"線上商圈";
 };
 function shopCategory(shop){return String(shop.category||"其他").trim()||"其他"}
-function groupOf(shop){return shop.demo||shop.test_board_only?"測試商圈":cityOf(shop)}
+function groupOf(shop){return shop.demo||shop.test_board_only?"驗證商圈":cityOf(shop)}
 function destination(shop){
  if(shop.test_board_only)return shop.board_href;
  if(shop.modules?.reservation)return shop.reserve_href;
@@ -66,7 +66,7 @@ function showWorld(){
  }
  container.innerHTML=groups.map(group=>{
   const count=gameList().filter(s=>groupOf(s)===group).length;
-  const test=group==="測試商圈";
+  const test=group==="驗證商圈";
   return '<button type="button" class="region-choice'+(test?" test-choice":"")+'" data-region="'+escapeHtml(group)+'" aria-label="進入'+escapeHtml(group)+'">'+
    '<span class="region-art" aria-hidden="true"><span class="building"></span><span class="building"></span><span class="building"></span></span>'+
    '<strong>'+escapeHtml(group)+'</strong><small>'+count+' 家'+(test?" · 示範體驗":"")+'</small></button>';
