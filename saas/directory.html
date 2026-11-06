@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="29e49b1350f7a8c1b899dabd1014642ef2cf5be9">
-<script defer src="./version-watch.js?build=29e49b1350f7a8c1b899dabd1014642ef2cf5be9"></script>
+<meta name="line-saas-build" content="8727ce3874ff2db7723a1972943f6c4646027d9a">
+<script defer src="./version-watch.js?build=8727ce3874ff2db7723a1972943f6c4646027d9a"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>排隊怪獸｜找店家、預約與取號</title><meta name="description" content="使用排隊怪獸搜尋合作店家、預約服務、現場取號及查詢個人紀錄。">
 <style>
@@ -118,7 +118,7 @@ a.btn.secondary:hover{background:#e1f3e9}
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto;transition:none!important}}
 
-</style><link rel="stylesheet" href="./explore-game.css"><script defer src="./explore-game.js"></script><link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=29e49b1350f7a8c1b899dabd1014642ef2cf5be9"></head>
+</style><link rel="stylesheet" href="./explore-game.css"><script defer src="./explore-game.js"></script><link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=8727ce3874ff2db7723a1972943f6c4646027d9a"></head>
 <body>
 <header class="page-header">
  <div class="container">
@@ -196,18 +196,10 @@ a.btn.secondary:hover{background:#e1f3e9}
     <p id="explore-game-note" class="explore-help">遊戲地圖是探索介面，不代表實際地理位置。僅列出已公開的店家；公開商圈另行標示。</p>
   </section>
   <div class="bottom-panels">
-   <section id="test" class="support-panel hidden" style="display:none!important">
-    <h3>想先體驗？</h3>
-    <p>示範門市與正式合作店家分開管理，不會混入一般搜尋結果。</p>
-    <div class="card-actions">
-     <a class="btn secondary" href="./?view=customer&merchant=greenfield-salon" id="demo-link">示範預約／取號</a>
-     <a class="btn secondary" href="./board.html?merchant=qa-84b3ef9297eb470685a91a527ca499ca">測試叫號看板</a>
-    </div>
-   </section>
    <section class="support-panel">
     <h3>你是店家嗎？</h3>
     <p>無論是否擁有 LINE OA，都可以了解平台的預約與叫號服務。</p>
-    <div class="card-actions"><a class="btn secondary" href="merchant-register.html">了解商家開通</a><a class="btn secondary" href="./?view=staff">店家管理後台</a></div>
+    <div class="card-actions"><a class="btn secondary" href="merchant-register.html">了解商家開通</a><a class="btn secondary" href="./merchant-register.html?mode=login">店家管理後台</a></div>
    </section>
   </div>
  </section>
@@ -464,18 +456,7 @@ async function load(){
     if(ranking.error)throw ranking.error;
     all=Array.isArray(directory.data)?directory.data:[];
     popular=Array.isArray(ranking.data)?ranking.data:[];
-    const samples=await sb.rpc("so_public_explore_demo");
-    demoShops=[];
-    // The public board RPC returns a store name and non-personal queue data
-    // with no sign-in. Do not add any test merchant to the official directory.
-    const qaSlug="qa-84b3ef9297eb470685a91a527ca499ca";
-    const boardResponse=await sb.rpc("so_public_board",{p_slug:qaSlug,p_limit:5});
-    if(!boardResponse.error&&boardResponse.data?.shop_name){
-      testBoardShop={slug:qaSlug,name:boardResponse.data.shop_name,
-        description:"專屬門市的即時叫號看板",address:"",category:"其他",test_board_only:true};
-    }
-    testBoardShop=null;
-    document.getElementById("demo-link").href=customerUrl("greenfield-salon",mode==="queue"?"queue":"reserve","PLATFORM");
+    demoShops=[];testBoardShop=null;
   }
   setupExploreFilters();
   if(mode!=="mine")window.LineExploreGame?.setData({
