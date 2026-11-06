@@ -73,7 +73,7 @@ let busy=false,active="login",authUser=null,workspaceSlug="";
 const setMode=(mode)=>{
  active=mode==="signup"?"signup":"login";
  for(const m of ["login","signup"]){$("tab-"+m).setAttribute("aria-selected",String(active===m));$(""+m+"-form").classList.toggle("hidden",active!==m)}
- const u=new URL(location.href);u.searchParams.set("mode",active);history.replaceState(null,"",u.pathname+u.search);
+ const u=new URL(location.href);u.searchParams.set("mode",active);history.replaceState(null,"",u.pathname+u.search+u.hash);
  msg("");
 };
 $("tab-login").onclick=()=>setMode("login");$("tab-signup").onclick=()=>setMode("signup");
