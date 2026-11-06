@@ -1,4 +1,4 @@
--- LINE store-operations: free Supabase PostgreSQL backend (test environment).
+-- LINE QueueMonster: free Supabase PostgreSQL backend (test environment).
 -- Run once in Supabase SQL Editor. All writes go through SECURITY DEFINER RPCs.
 -- No passwords, service_role/secret keys, phone numbers or payment credentials in public pages.
 create extension if not exists pgcrypto;

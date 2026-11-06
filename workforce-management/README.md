@@ -5,7 +5,7 @@
 **[開啟 GitHub Pages 人資測試站](https://hub-google.github.io/LINE/workforce/)**  
 [完整 PRD](./PRD.md)｜[最新實作與驗收狀態](./IMPLEMENTATION-STATUS.md)｜[資料庫執行順序](./supabase/MIGRATION-ORDER.md)
 
-這是 `hub-google/LINE/workforce-management/` 的**獨立人資 SaaS 產品**，和 `store-operations/` 預約叫號分開。**不要在公開 DEMO 輸入真實員工個資、薪資或健康資訊**；其資料為全體訪客共享的虛構公司案例。
+這是 `hub-google/LINE/workforce-management/` 的**獨立人資 SaaS 產品**，和 `QueueMonster/` 預約叫號分開。**不要在公開 DEMO 輸入真實員工個資、薪資或健康資訊**；其資料為全體訪客共享的虛構公司案例。
 
 ## 開啟網站後可以實測
 

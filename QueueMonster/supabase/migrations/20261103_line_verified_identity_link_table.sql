@@ -1,4 +1,4 @@
--- Isolated LINE identity mappings for the existing store-operations service.
+-- Isolated LINE identity mappings for the existing QueueMonster service.
 -- Live DB migration: line_verified_identity_link_table (2026-11-03).
 create table if not exists public.so_line_links (
  tenant_id uuid not null references public.so_tenants(id) on delete cascade,

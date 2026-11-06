@@ -34,7 +34,7 @@
 
 目前沒有一個符合「開源模型、無 Gemini API、全 Google 雲端、24 小時接收、盡量 10 秒內回覆、低用量免費」的獨立 LINE 客服模組。GitHub Actions 不適合做持續在線的對外 AI 服務，故改由 Google Cloud Run 承接接入與推論。
 
-本功能為 hub-google/LINE 專案中的**第四個獨立規劃模組**；與 group-cleanup、recurring-billing、store-operations 的程式、資料庫及 LINE Channel 憑證保持隔離，除非未來明確指定整合。
+本功能為 hub-google/LINE 專案中的**第四個獨立規劃模組**；與 group-cleanup、recurring-billing、QueueMonster 的程式、資料庫及 LINE Channel 憑證保持隔離，除非未來明確指定整合。
 
 ## 2. 產品目標與成功指標
 

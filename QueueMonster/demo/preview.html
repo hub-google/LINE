@@ -54,11 +54,11 @@ button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.
 <script>
 (function(){
 "use strict";
-var KEY="hub-google-line-store-operations-demo-v1";
+var KEY="hub-google-line-QueueMonster-demo-v1";
 var ME="hub-google-line-demo-my-ticket";
 var MYR="hub-google-line-demo-my-reservation";
 var channel=null;
-try{channel=new BroadcastChannel("line-store-operations-demo-v1")}catch(e){}
+try{channel=new BroadcastChannel("line-QueueMonster-demo-v1")}catch(e){}
 function pad(n){return String(n).padStart(2,"0")}
 function localDay(offset){var d=new Date(Date.now()+(offset||0)*86400000);return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit"}).format(d).replace(/\//g,"-")}
 function stamp(){return new Date().toLocaleTimeString("zh-TW",{timeZone:"Asia/Taipei",hour:"2-digit",minute:"2-digit"})}

@@ -31,7 +31,7 @@ test("all pages share a real user identity with clickable login/logout",()=>{
  assert.match(build,/copyFile\(path\.join\(src, "site-auth\.css"/);
  assert.match(workflow,/site-auth-contract\.test\.mjs/);
  assert.match(workflow,/site-auth\.css site-auth\.js/);
- assert.match(workflow,/node --check store-operations\/saas\/site-auth\.js/);
+ assert.match(workflow,/node --check QueueMonster\/saas\/site-auth\.js/);
  const res=spawnSync(process.execPath,["--check"],{input:code,encoding:"utf8"});
  assert.equal(res.status,0,res.stderr);
 });

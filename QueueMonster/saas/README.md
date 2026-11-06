@@ -1,6 +1,6 @@
 # Queue Monster｜排隊怪獸（原 LINE 預約）
 
-專案識別名稱：`QueueMonster`。正式英文品牌為 **Queue Monster**；此目錄維持原位置以相容既有部署與 LINE LIFF。
+專案識別名稱：`QueueMonster`。正式英文品牌為 **Queue Monster**；完整專案已更名至 `QueueMonster/`，部署及測試路徑同步更新，公開網址與 LINE LIFF 維持相容。
 實際網站：https://hub-google.github.io/LINE/booking/
 
 ## 三個入口
@@ -10,7 +10,7 @@
 - 第二個租戶：?view=customer&merchant=demo-clinic（僅預約）
 
 ## 架構
-- 前端：GitHub Pages，gh-pages 分支 booking/index.html（過渡期同步保留 saas/index.html；同版原始碼在 main/store-operations/saas/index.html）。
+- 前端：GitHub Pages，gh-pages 分支 booking/index.html（過渡期同步保留 saas/index.html；同版原始碼在 main/QueueMonster/saas/index.html）。
 - 後端資料：現有 Supabase 專案 unapiwajmgqqtdkixaab。只使用 `so_` 前綴資料表與 RPC，不修改其他產品資料。
 - 所有寫入經 Supabase Auth + SECURITY DEFINER RPC 驗證權限後執行。公開讀取資料經 `so_public_state` 過濾，顧客只能看到自己的預約與取號紀錄。
 - 企業開通及設定：`so_create_tenant`、`so_update_tenant`。

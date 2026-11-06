@@ -1,6 +1,6 @@
 # Workforce 資料庫遷移執行順序
 
- > 2026-11-05。僅適用 `hub-google/LINE/workforce-management`。不可與 `store-operations` 等其他獨立產品混用。
+ > 2026-11-05。僅適用 `hub-google/LINE/workforce-management`。不可與 `QueueMonster` 等其他獨立產品混用。
 >
 > **必須遵照以下順序執行，不能按檔名字母排序。** 後續多個檔案含相同 RPC 函式的完整 `CREATE OR REPLACE` 定義；順序錯誤會退回舊功能。
 

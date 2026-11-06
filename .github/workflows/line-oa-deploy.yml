@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/line-oa-deploy.yml'
-      - 'store-operations/supabase/functions/line-bridge/index.ts'
+      - 'QueueMonster/supabase/functions/line-bridge/index.ts'
 
 permissions:
   contents: read
@@ -38,7 +38,7 @@ jobs:
         with:
           version: latest
       - name: Check LINE OA command and webhook contract
-        run: node --test store-operations/tests/line-oa-bot-contract.test.mjs
+        run: node --test QueueMonster/tests/line-oa-bot-contract.test.mjs
       - name: Deploy backend and sync encrypted LINE configuration
         shell: bash
         run: |
@@ -57,7 +57,7 @@ jobs:
           } > "$secrets_file"
           supabase secrets set --env-file "$secrets_file" --project-ref unapiwajmgqqtdkixaab --yes
           mkdir -p supabase/functions/line-bridge
-          cp store-operations/supabase/functions/line-bridge/index.ts supabase/functions/line-bridge/index.ts
+          cp QueueMonster/supabase/functions/line-bridge/index.ts supabase/functions/line-bridge/index.ts
           supabase functions deploy line-bridge --project-ref unapiwajmgqqtdkixaab --no-verify-jwt --use-api --yes
       - name: Verify configuration and backend reachability without printing keys
         shell: bash

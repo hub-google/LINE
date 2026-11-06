@@ -6,9 +6,9 @@ on:
       - '.github/scripts/test_rich_menu.py'
       - '.github/workflows/line-rich-menu.yml'
       - '.github/workflows/line-oa-deploy.yml'
-      - 'store-operations/supabase/functions/line-bridge/index.ts'
-      - 'store-operations/tests/line-oa-bot-contract.test.mjs'
-      - 'store-operations/saas/directory.html'
+      - 'QueueMonster/supabase/functions/line-bridge/index.ts'
+      - 'QueueMonster/tests/line-oa-bot-contract.test.mjs'
+      - 'QueueMonster/saas/directory.html'
   workflow_dispatch:
 
 permissions:
@@ -30,6 +30,6 @@ jobs:
           python3 -m py_compile .github/scripts/publish_rich_menu.py
           python3 -m unittest discover -s .github/scripts -p 'test_rich_menu.py' -v
       - name: Verify platform OA intent routing and friend-state constraints
-        run: node --test store-operations/tests/line-oa-bot-contract.test.mjs
+        run: node --test QueueMonster/tests/line-oa-bot-contract.test.mjs
       - name: Existing domain regression
-        run: npm --prefix store-operations test
+        run: npm --prefix QueueMonster test

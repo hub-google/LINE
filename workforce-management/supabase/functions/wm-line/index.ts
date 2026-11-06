@@ -1,5 +1,5 @@
 // LINE Workforce messaging gateway: only existing verified employee identities.
-// Separate from store-operations / line-bridge. Never accepts arbitrary LINE user IDs
+// Separate from QueueMonster / line-bridge. Never accepts arbitrary LINE user IDs
 // as push targets. Requires the employee's Supabase JWT for all writes and sends.
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const SERVICE_KEY=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";

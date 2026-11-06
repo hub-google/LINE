@@ -66,7 +66,7 @@ test("game assets are versioned and deployed under both /booking and /saas",()=>
  assert.match(directory,/src="\.\/explore-game\.js"/);
  assert.match(build,/src, "explore-game\.css"/);
  assert.match(build,/src, "explore-game\.js"/);
- assert.match(publish,/node --check store-operations\/saas\/explore-game\.js/);
+ assert.match(publish,/node --check QueueMonster\/saas\/explore-game\.js/);
  assert.match(publish,/explore-game\.css explore-game\.js/);
  assert.match(publish,/for product in booking saas/);
  for(const [label,code,flags] of [["directory",directory.match(/<script type="module">([\s\S]*?)<\/script>/)?.[1],["--input-type=module","--check"]],["game",js,["--check"]]]){

@@ -3353,7 +3353,7 @@ Payment 的核心原則：
 # 101. 2026-11-04 LINE 預約與叫號：競品使用者回饋改善 PRD
 
 > 狀態：**需求已整理、待開發、未驗收**。本章是主 PRD 的新增需求，不代表相關功能已完成。  
-> 適用專案：https://hub-google.github.io/LINE/saas/；原始碼：https://github.com/hub-google/LINE/tree/main/store-operations  
+> 適用專案：https://hub-google.github.io/LINE/saas/；原始碼：https://github.com/hub-google/LINE/tree/main/QueueMonster
 > P0：正式對外擴大使用前必須修正；P1：主要使用體驗；P2：後續差異化。  
 > 「已確認」只代表 2026-11-04 程式碼可以核對；「部分完成」代表仍欠完整流程；「待實測」不得視作已在正式環境發生事故。第三方評論代表個別使用者陳述，不是競品官方承認的事故。
 
@@ -3392,24 +3392,24 @@ Payment 的核心原則：
 **問題：** 舊前端仍表示「已報到會產生或恢復候位號碼」，2026-11-04 SQL 則改成報到僅更新預約。  
 **解法 MUST：** 清理 UI 舊流程與說明，預約及叫號維持獨立資料/狀態/統計/操作。預約管理不要把跳到叫號管理設定成報到之後的必要下一步；兩種業務動作皆由各自管理頁執行。  
 **驗收：** 顧客預約→報到→完成時資料庫 ticket 數不增加；獨立取號→叫號→完成時 reservation 不變；取消任一筆不影響另一筆；顧客與店員文字一致。  
-**程式：** https://github.com/hub-google/LINE/blob/gh-pages/saas/index.html#L636-L666 ；https://github.com/hub-google/LINE/blob/main/store-operations/supabase/migrations/20261104_independent_booking_queue_manual_serials.sql
+**程式：** https://github.com/hub-google/LINE/blob/gh-pages/saas/index.html#L636-L666 ；https://github.com/hub-google/LINE/blob/main/QueueMonster/supabase/migrations/20261104_independent_booking_queue_manual_serials.sql
 
 ### UX-02｜獨立編號、前綴和手動重置（SQL 部分完成、前端缺按鈕）
 **解法 MUST：** 預約/叫號各自提供前綴設定、重置編號按鈕；前綴預設空白、最多 3 字元並阻擋控制字元；號碼 1～9,999,999 不補 0，店家獨立。重置前顯示尚未完成筆數並二次確認，重置記錄 batch/round、操作人與時間；舊資料不變。發號與重置同時發生時以 transaction/row lock 原子執行。由於手動重置後可能與未結案舊號同號，後台以內部 round/日期輔助辨識，所有 API/通知仍用 UUID 而非顯示號碼定位。  
 **驗收：** A 店預約1、2及叫號1、2；僅重置預約後預約下一筆1、叫號下一筆3；B 店完全不受影響；清空前綴、中文/特殊字元 3 字元可行；大量並行不錯號；舊紀錄保留。  
-**程式：** https://github.com/hub-google/LINE/blob/main/store-operations/supabase/migrations/20261104_independent_booking_queue_manual_serials.sql#L1-L134
+**程式：** https://github.com/hub-google/LINE/blob/main/QueueMonster/supabase/migrations/20261104_independent_booking_queue_manual_serials.sql#L1-L134
 
 ### UX-03｜LINE Flex 與叫號驗證不再寫死 A001（已確認程式缺陷）
 **問題：** line-bridge 目前仍多處把號碼組成 A + 3 位補零，且在叫號發送前以此核對。  
 **解法 MUST：** 建立後端唯一 displayNumber 函式，格式為商家該票券的既存 prefix + ticket_no 十進位數；LINE 取號、更新、取消、postback、叫號與顧客網頁共用它。正式發送驗證改以 UUID + 事件 ID + 商家 ID + 後端授權為準，不可只以顯示字串當權限依據。維持既有 Flex 卡版型，不自行另造。  
 **驗收：** 空前綴顯示 1、自訂「美」顯示「美1」、不可出現 A001；不同店同號與重置後同號不誤通知；卡片、網頁、API 一致。  
-**程式：** https://github.com/hub-google/LINE/blob/main/store-operations/supabase/functions/line-bridge/index.ts#L233-L274 ；https://github.com/hub-google/LINE/blob/main/store-operations/supabase/functions/line-bridge/index.ts#L605-L614
+**程式：** https://github.com/hub-google/LINE/blob/main/QueueMonster/supabase/functions/line-bridge/index.ts#L233-L274 ；https://github.com/hub-google/LINE/blob/main/QueueMonster/supabase/functions/line-bridge/index.ts#L605-L614
 
 ### UX-04｜LINE 通知後端 Outbox、重試與冪等（部分完成）
 **問題：** 目前網頁先儲存 RPC 再呼叫 Edge Function，網頁中斷可造成成功預約但未推播；部分成立通知存在短時間驗證窗。  
 **解法 MUST：** 後端交易時原子寫入通知 outbox：事件 ID、商家、預約/票券 UUID、通知類型、接收人、模板版本、排程時間、發送狀態、重試次數、錯誤與操作時間；受控 worker/排程寄送。API 429/5xx 指數退避與上限、死信/人工補送；使用事件唯一鍵防重覆發送。頁面顯示「預約已成立」與「通知無法送出」分開；Messaging API 接受不能宣稱使用者收到/已讀；不因 LINE 失敗回滾真實預約。  
 **驗收：** 交易成功後立即關頁仍可自動推播一次；重複 webhook/按鈕不重送；429/5xx 能重試；未加好友能識別失敗但資料不消失；後台可查錯誤/補送。  
-**程式：** https://github.com/hub-google/LINE/blob/main/store-operations/supabase/functions/line-bridge/index.ts#L616-L651
+**程式：** https://github.com/hub-google/LINE/blob/main/QueueMonster/supabase/functions/line-bridge/index.ts#L616-L651
 
 ### UX-05｜可約時段必須考慮人數（已確認前端缺口）
 **問題：** 目前時段只在剩餘人數為 0 時禁選，未依顧客輸入人數即時禁用。  
@@ -3420,12 +3420,12 @@ Payment 的核心原則：
 ### UX-06｜狀態異動、取消與恢復一致（部分完成）
 **解法 MUST：** 預約及票券各自列出合法轉換，API 驗證 expected-status/version 與商家權限，兩店員競爭時一人成功、一人提示資料已被更新；取消/復原/過號/再叫號均記 append-only audit。取消→已預約須重算容量並在確認成功後發原有預約成立同模板，不產生新預約號碼；任何預約狀態變化都不自動改取號。  
 **驗收：** 雙人同按不跳號；復原的 LINE 版型與新成立一致；超額不允許恢復；異動可追溯操作者與前後狀態。  
-**來源：** E01；程式：https://github.com/hub-google/LINE/blob/main/store-operations/supabase/migrations/20261104_independent_booking_queue_manual_serials.sql
+**來源：** E01；程式：https://github.com/hub-google/LINE/blob/main/QueueMonster/supabase/migrations/20261104_independent_booking_queue_manual_serials.sql
 
 ### UX-07｜顧客、店家、員工的資料隔離（待實測）
 **解法 MUST：** 顧客所有資料讀寫依後端驗證 LINE 身分，員工依當下 role、tenant、必要時分店範圍授權；merchant/ticket/booking URL 參數不能直接當身份；跨店列表僅本人紀錄，刪除不外洩；切換 LINE 帳號、匿名 session、裝置及瀏覽器不能看到別人資料。  
 **驗收：** A LINE 不可讀/改 B 預約；甲店員不可動乙店；把 UUID 改成別人的記錄應 403/404；QA 後台不得取得正式店家權限；日誌不輸出 token。  
-**來源：** E08；架構：https://github.com/hub-google/LINE/blob/main/store-operations/saas/README.md
+**來源：** E08；架構：https://github.com/hub-google/LINE/blob/main/QueueMonster/saas/README.md
 
 ### UX-08｜無損部署與原測試商家恢復（待實測）
 **解法 MUST：** migration 採 additive/backfill，先測試再部署，禁止 truncate/重建正式或 QA 表；保留原測試店 qa-84b3ef9297eb470685a91a527ca499ca 的預約、號碼、設定及授權；新隔離 QA 店必須讓店員明確知道不是原門市；保留資料備份、前後筆數及 ID 校對與 rollback 計畫。  
@@ -3553,7 +3553,7 @@ Payment 的核心原則：
 # 102. 下一次重大改版統合 PRD：DoYouBook × CallMeBack × 原 LINE SaaS 全功能
 
 > 版次：2026-11-04 / NEXT-R1。狀態：**已列入需求、待開發/待實際驗收**；**本次僅修改 PRD.md，不修改程式、部署、資料庫、Secrets、LINE OA 或測試資料**。
-> 主文件：本檔 store-operations/PRD.md。原第 0–101 節（含 UX-01～UX-27、訂單/部分付款/LINE Pay/RBAC）**完整保留**，本章只增加「下一次大改版」規格及明確衝突裁決，禁止把它當作功能刪除清單。
+> 主文件：本檔 QueueMonster/PRD.md。原第 0–101 節（含 UX-01～UX-27、訂單/部分付款/LINE Pay/RBAC）**完整保留**，本章只增加「下一次大改版」規格及明確衝突裁決，禁止把它當作功能刪除清單。
 > 詳細舊競品需求仍可參考 [DoYouBook 58 項原始增補](./saas/PRD-20261104-DoYouBook-benchmark-and-solutions.md)。以「本文件 §102 最後的使用者決定」覆蓋原文件較早的「不採納/延後/可能不做」結論；未涉及的安全、稽核、付款規則繼續有效。
 > 範圍決策：**DoYouBook 官網公開呈現的全部功能 + CallMeBack 官網公開呈現的全部功能 + 原本 LINE 平台功能，全部列入下次改版待開發且最終需驗收的功能。不能因功能多自行刪除；使用者日後可以再自行取消。**
 > 比較依據：https://www.doyoubook.com/ 、https://www.doyoubook.com/faq 、https://www.doyoubook.com/explore 、https://www.callmeback.com.tw/ 、https://www.callmeback.com.tw/雲端候位 、https://www.cayintech.com/tw/digital-signage-news/t-2p.php?f=20260629 。需店主後台權限的部分標為「官方公開說明/待實測」，不能虛構真實使用操作。
@@ -3854,8 +3854,8 @@ Payment 的核心原則：
 ### 103.3 已實作／仍待驗證範圍（避免誤報完成）
 
 - GitHub 原有 `20261104_independent_booking_queue_manual_serials.sql`：分開維護兩類流水號，擁有重置函數、round 與歷史資料保留；實際上線仍以資料庫已套用版本為準。
-- GitHub 新增 `store-operations/supabase/migrations/20261104_compact_booking_queue_reference_codes.sql`：保留 UUID，新增 `reference_code` 與生成 trigger／唯一索引；已於 2026-11-04 套用至 LINE 專案使用的 Supabase。當時檢查到既有預約 4 筆、抽號 7 筆，均有 21 碼短碼，且各類型內不重複。
-- `store-operations/saas/index.html` 已調整首次尚未發號時後台顯示「1」，不是「0」。**GitHub 程式更新 ≠ GitHub Pages 已部署驗收**；前端部署與新增資料的完整端對端測試須另行驗證。
+- GitHub 新增 `QueueMonster/supabase/migrations/20261104_compact_booking_queue_reference_codes.sql`：保留 UUID，新增 `reference_code` 與生成 trigger／唯一索引；已於 2026-11-04 套用至 LINE 專案使用的 Supabase。當時檢查到既有預約 4 筆、抽號 7 筆，均有 21 碼短碼，且各類型內不重複。
+- `QueueMonster/saas/index.html` 已調整首次尚未發號時後台顯示「1」，不是「0」。**GitHub 程式更新 ≠ GitHub Pages 已部署驗收**；前端部署與新增資料的完整端對端測試須另行驗證。
 
 ### 103.4 必須新增的驗收案例
 

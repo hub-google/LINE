@@ -2,9 +2,9 @@ name: LINE 預約 PR 獨立驗證
 on:
   pull_request:
     paths:
-      - "store-operations/saas/**"
-      - "store-operations/tests/**"
-      - "store-operations/supabase/migrations/**"
+      - "QueueMonster/saas/**"
+      - "QueueMonster/tests/**"
+      - "QueueMonster/supabase/migrations/**"
       - ".github/scripts/build-line-saas.mjs"
       - ".github/workflows/line-saas-pages.yml"
       - ".github/workflows/line-saas-pr-validation.yml"
@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: "22"
       - name: Verify existing SaaS and TV board contracts
-        run: node --test store-operations/tests/saas-contract.test.mjs store-operations/tests/queue-board-contract.test.mjs store-operations/tests/qr-poster-contract.test.mjs store-operations/tests/marketing-home-contract.test.mjs store-operations/tests/booking-branding-contract.test.mjs store-operations/tests/booking-capacity-receipt.test.mjs store-operations/tests/booking-staff-filter-csv.test.mjs store-operations/tests/booking-timestamp-seconds.test.mjs store-operations/tests/staff-reservation-history-contract.test.mjs store-operations/tests/booking-full-history-csv.test.mjs store-operations/tests/staff-booking-calendar-contract.test.mjs store-operations/tests/customer-reservation-ics.test.mjs store-operations/tests/booking-pwa-contract.test.mjs store-operations/tests/queue-ticket-party-size-k03.test.mjs store-operations/tests/queue-sync-ux11.test.mjs store-operations/tests/booking-idempotency-contract.test.mjs store-operations/tests/booking-break-overlap-contract.test.mjs store-operations/tests/queue-hold-resume-contract.test.mjs store-operations/tests/queue-arrival-admission-contract.test.mjs store-operations/tests/queue-selected-call-k10.test.mjs store-operations/tests/queue-session-switch-k12.test.mjs store-operations/tests/booking-resource-duration-contract.test.mjs store-operations/tests/queue-near-alert-oss-n03.test.mjs store-operations/tests/booking-confirmation-fr112.test.mjs store-operations/tests/store-announcements-fr110.test.mjs store-operations/tests/customer-ledger-blacklist-fr109.test.mjs
+        run: node --test QueueMonster/tests/saas-contract.test.mjs QueueMonster/tests/queue-board-contract.test.mjs QueueMonster/tests/qr-poster-contract.test.mjs QueueMonster/tests/marketing-home-contract.test.mjs QueueMonster/tests/booking-branding-contract.test.mjs QueueMonster/tests/booking-capacity-receipt.test.mjs QueueMonster/tests/booking-staff-filter-csv.test.mjs QueueMonster/tests/booking-timestamp-seconds.test.mjs QueueMonster/tests/staff-reservation-history-contract.test.mjs QueueMonster/tests/booking-full-history-csv.test.mjs QueueMonster/tests/staff-booking-calendar-contract.test.mjs QueueMonster/tests/customer-reservation-ics.test.mjs QueueMonster/tests/booking-pwa-contract.test.mjs QueueMonster/tests/queue-ticket-party-size-k03.test.mjs QueueMonster/tests/queue-sync-ux11.test.mjs QueueMonster/tests/booking-idempotency-contract.test.mjs QueueMonster/tests/booking-break-overlap-contract.test.mjs QueueMonster/tests/queue-hold-resume-contract.test.mjs QueueMonster/tests/queue-arrival-admission-contract.test.mjs QueueMonster/tests/queue-selected-call-k10.test.mjs QueueMonster/tests/queue-session-switch-k12.test.mjs QueueMonster/tests/booking-resource-duration-contract.test.mjs QueueMonster/tests/queue-near-alert-oss-n03.test.mjs QueueMonster/tests/booking-confirmation-fr112.test.mjs QueueMonster/tests/store-announcements-fr110.test.mjs QueueMonster/tests/customer-ledger-blacklist-fr109.test.mjs
       - name: Verify versioned build without deploying
         env:
           GITHUB_SHA: ${{ github.event.pull_request.head.sha }}

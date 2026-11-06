@@ -1,6 +1,6 @@
 # LINE 預約 SaaS：最新版 PRD 交付現況與未完成清單
 
-> 更新基準：2026-11-04，主 PRD `store-operations/PRD.md` 第 0–103 章，及 `saas/PRD-20261104-DoYouBook-benchmark-and-solutions.md`。程式比對至 main commit `36c35a1ce803dabdb7fb42201d1793f76094dac6`。本文件是**實作狀態盤點**，**不得當作功能已驗收或刪除原 PRD 的依據**。
+> 更新基準：2026-11-04，主 PRD `QueueMonster/PRD.md` 第 0–103 章，及 `saas/PRD-20261104-DoYouBook-benchmark-and-solutions.md`。程式比對至 main commit `36c35a1ce803dabdb7fb42201d1793f76094dac6`。本文件是**實作狀態盤點**，**不得當作功能已驗收或刪除原 PRD 的依據**。
 >
 > 總結：**尚未完成全部 PRD**。第 102 章規定 DoYouBook C01–C58 與 CallMeBack K01–K32 均須納入，且 A/B/C 波次全部必做。現有 GitHub Pages + Supabase SaaS 主要完成現行核心預約／取號／叫號，完整資源排程、CRM、商業化、PWA、Calendar、多窗口、設備合作等沒有達到 PRD 全範圍。另有未部署／未逐一 E2E 驗收的 Next.js 程式骨架，不可算正式可用功能。
 
@@ -103,7 +103,7 @@
 ## 風險註記
 
 - 這份狀態為**保守的程式與部署證據盤點**，不是正式資安稽核，也不是聲稱任何特定用戶資料已暴露／遺失。
-- 既有 Next.js `store-operations/src` API 框架、schema/README 文件與 GitHub Pages 上的 Supabase SaaS 可能有重疊，但未經實際可用的正式部署驗收不得互相算作完成。
+- 既有 Next.js `QueueMonster/src` API 框架、schema/README 文件與 GitHub Pages 上的 Supabase SaaS 可能有重疊，但未經實際可用的正式部署驗收不得互相算作完成。
 
 
 ## 2026-11-04 補交付：FR-112「預約送出前二次確認」（現有需求，不是新增任務）
@@ -112,12 +112,12 @@
 
 | 項目 | 交付與證據 |
 | --- | --- |
-| 管理端 | `store-operations/saas/index.html` 原設定頁增加「送出前顯示確認卡」開關，獨立儲存 |
+| 管理端 | `QueueMonster/saas/index.html` 原設定頁增加「送出前顯示確認卡」開關，獨立儲存 |
 | 顧客端 | 原預約步驟在送出前顯示門市、日期、時段、臺灣時區、人數、LINE 暱稱、服務與估價，支援返回修改或最終確認 |
 | API／資料 | `so_booking_policy.require_confirmation` 預設 true；`so_get_booking_policy`、`so_customer_booking_confirmation`、`so_set_booking_confirmation`；OWNER／MANAGER 才可修改，寫入稽核 |
 | 一致性 | 沿用 `so_book_with_items_once` 和 `customerBookingRequestId`，不另建預約資料、UUID、容量扣減或提醒管道 |
-| Migration | `store-operations/supabase/migrations/20261104_booking_confirmation_fr112.sql` 已套用到原有 Supabase；非破壞式 migration |
-| 合約測試 | `store-operations/tests/booking-confirmation-fr112.test.mjs`，已加入既有 PR 與正式部署 CI 測試清單 |
+| Migration | `QueueMonster/supabase/migrations/20261104_booking_confirmation_fr112.sql` 已套用到原有 Supabase；非破壞式 migration |
+| 合約測試 | `QueueMonster/tests/booking-confirmation-fr112.test.mjs`，已加入既有 PR 與正式部署 CI 測試清單 |
 | 資料庫測試 | 以 QA OWNER 身分在 rollback transaction 中先讀預設 true、切換 false，再讀到 false；交易回滾後沒有更改既有店家設定 |
 | 前端測試 | 單一內嵌 module 語法通過；確認卡、返回／確認、設定與冪等 API 契約檢查通過 |
 | 佈署驗證 | 2026-11-04 已從 `gh-pages/booking/index.html` 與 `gh-pages/saas/index.html` 讀到新版程式；`booking/release.json` 顯示 build `335c4fb876cad3f1e74897527e3575d4a6e7e3f3` |
@@ -128,7 +128,7 @@
 
 ## 2026-11-04 本輪後續交付：FR-110、FR-108／109（原 PRD 範圍）
 
-> 已在原專案 `store-operations/` 的原管理端及顧客端整合；沒有另開 GitHub issue/task，沒有另建產品、沒有刪除既有顧客或預約。
+> 已在原專案 `QueueMonster/` 的原管理端及顧客端整合；沒有另開 GitHub issue/task，沒有另建產品、沒有刪除既有顧客或預約。
 
 | PRD | 已實作並儲存 | 後端測試／限制 |
 | --- | --- | --- |
@@ -137,10 +137,10 @@
 
 ### 本輪程式與 SQL
 
-- `store-operations/saas/index.html`：沿用既有 LINE 預約單頁程式，不另建流程。
-- `store-operations/supabase/migrations/20261104_store_announcements_fr110.sql`：已實際套用到 Supabase。
-- `store-operations/supabase/migrations/20261104_tenant_customer_book_fr109.sql`：已實際套用到 Supabase。
-- `store-operations/tests/store-announcements-fr110.test.mjs` 與 `customer-ledger-blacklist-fr109.test.mjs`：原有 CI 清單已加入新增契約測試。
+- `QueueMonster/saas/index.html`：沿用既有 LINE 預約單頁程式，不另建流程。
+- `QueueMonster/supabase/migrations/20261104_store_announcements_fr110.sql`：已實際套用到 Supabase。
+- `QueueMonster/supabase/migrations/20261104_tenant_customer_book_fr109.sql`：已實際套用到 Supabase。
+- `QueueMonster/tests/store-announcements-fr110.test.mjs` 與 `customer-ledger-blacklist-fr109.test.mjs`：原有 CI 清單已加入新增契約測試。
 - `gh-pages/booking/index.html` 與 `gh-pages/saas/index.html`：已能讀取到 FR-112、FR-110、FR-108／109 前端代碼；但**沒有實際手機 LINE E2E、不同門市安全滲測或付款驗收，勿宣稱整份 PRD Done**。
 
 ### 尚需完成（保留原需求，不刪除）

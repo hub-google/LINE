@@ -35,7 +35,7 @@ const $=id=>document.getElementById(id);
 const navItems=[["home","顧客首頁"],["reserve","預約時段"],["queue","現場取號"],["staff","店員叫號"],["checkin","預約報到"],["login","店員登入"]];
 let page="home",client=null, data=null, busy=false, error="", notice="",session=null;
 let currentDate=taipeiDate(),slot="",name="",party=1;
-const keyStorage="store-operations-supabase-config-v1";
+const keyStorage="QueueMonster-supabase-config-v1";
 const initialConfig=window.STORE_DEMO_DB||{};
 function taipeiDate(offset=0){const d=new Date(Date.now()+offset*86400000);const f=new Intl.DateTimeFormat("en-US",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(d);return ["year","month","day"].map(k=>f.find(x=>x.type===k).value).join("-")}
 function safe(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
@@ -74,7 +74,7 @@ $("app").innerHTML='<section class="panel"><h2>✅ 預約到店報到</h2><p>只
 }
 }
 function setupScreen(){
-$("side").innerHTML='<section class="panel"><h2>部署狀態</h2><p>GitHub Pages 已部署；尚未有可連線的 Supabase 專案。資料庫建立之前，不會假裝預約成功。</p><p>資料庫 SQL：<a href="https://github.com/hub-google/LINE/blob/main/store-operations/supabase/schema.sql">schema.sql</a></p></section>';
+$("side").innerHTML='<section class="panel"><h2>部署狀態</h2><p>GitHub Pages 已部署；尚未有可連線的 Supabase 專案。資料庫建立之前，不會假裝預約成功。</p><p>資料庫 SQL：<a href="https://github.com/hub-google/LINE/blob/main/QueueMonster/supabase/schema.sql">schema.sql</a></p></section>';
 $("app").innerHTML='<section class="panel"><h2>💾 連接雲端 PostgreSQL</h2><p>本版所有操作都會寫入 Supabase，需先建立免費專案、在 SQL Editor 執行 schema.sql，並在 Authentication 啟用匿名登入。</p><p><b>請只輸入 Supabase Project URL 和 publishable key。</b>不要輸入 secret / service_role 密鑰。</p><label for="db-url">Supabase Project URL</label><input class="field" id="db-url" placeholder="https://xxxxxxxx.supabase.co" value="'+safe(config().url||"")+'"><label for="db-key">Publishable key（公開金鑰）</label><input class="field" id="db-key" placeholder="sb_publishable_..." value="'+safe(config().publishableKey||"")+'"><div style="margin-top:13px">'+button("連接真實資料庫","connect","primary full")+'</div><div class="hint">輸入設定僅保存在你目前瀏覽器；完成驗收後，可把公開設定寫入 GitHub Pages，讓任何裝置直接使用同一套後端。</div></section>';
 }
 async function refresh(){if(!client||!session)return;const r=await client.rpc("so_demo_state",{p_date:currentDate});if(r.error)throw r.error;data=r.data;render()}

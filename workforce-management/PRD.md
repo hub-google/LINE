@@ -5,7 +5,7 @@
 > 專案位置：`hub-google/LINE/workforce-management/`
 > 產品狀態：**核心多企業 Auth／Supabase／員工與主管組織階層已實作；正式 LINE OA、全項法遵計算與部分進階 PRD 項目仍需個別驗收**
 > 市場：臺灣中小企業、連鎖門市、餐飲、美容、診所、服務業及兼職輪班團隊
-> 原則：同一 GitHub repository 內的**獨立產品**；不可覆寫 `store-operations/`、`recurring-billing/` 或其他現有產品。除非未來另經核准，不共用資料表、登入狀態、租戶資料或 LINE 憑證。
+> 原則：同一 GitHub repository 內的**獨立產品**；不可覆寫 `QueueMonster/`、`recurring-billing/` 或其他現有產品。除非未來另經核准，不共用資料表、登入狀態、租戶資料或 LINE 憑證。
 
 ---
 

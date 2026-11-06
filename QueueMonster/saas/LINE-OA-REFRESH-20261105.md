@@ -33,7 +33,7 @@
 - 主分支合併 ≠ LINE API 已部署成功。
 - LINE API 接受 ≠ 顧客實際收到通知。須再做真實手機 E2E。
 - 圖文選單部署驗證：python3 -m unittest discover -s .github/scripts -p 'test_rich_menu.py' -v、LINE API 回讀兩個 alias。
-- Webhook 驗證：node --test store-operations/tests/line-oa-bot-contract.test.mjs、部署 Edge Function 後再跑 HMAC 和 LINE 真實發送測試。
+- Webhook 驗證：node --test QueueMonster/tests/line-oa-bot-contract.test.mjs、部署 Edge Function 後再跑 HMAC 和 LINE 真實發送測試。
 - 商家沒有 OA：共用 OA 引導；商家有 OA：既有各店 Provider/Token 保留且資料隔離。
 
 ## 本次沒有宣稱完成的部分

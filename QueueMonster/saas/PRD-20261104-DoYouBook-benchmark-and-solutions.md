@@ -2,7 +2,7 @@
 
 > 文件版本：PRD 增補 v1.0（2026-11-04，台灣時間）
 > 狀態：需求決策／待實作；**本次只更新文件，沒有開發、部署、修改資料庫或寫入任何正式商家資料**
-> 產品範圍：hub-google/LINE → store-operations/saas，https://hub-google.github.io/LINE/saas/
+> 產品範圍：hub-google/LINE → QueueMonster/saas，https://hub-google.github.io/LINE/saas/
 > 基礎需求書：../PRD.md；現況說明：./README.md；LINE OA 整合：./LINE-OA-ONBOARDING.md
 > 說明：此文件為 2026-11-04 的「SaaS 現行需求增補及衝突裁決」。舊系統需求書未明確被本文件取代者仍保留；本文件明確標記的互斥規則具有優先效力。勿將「需求已列入」視為「程式已完成」。
 

@@ -2,7 +2,7 @@
 
 網站：https://hub-google.github.io/LINE/saas/
 
-- 修改 `store-operations/saas/` 的四個 HTML 頁面或 `version-watch.js`，推送到 `main` 後，GitHub Actions `line-saas-pages.yml` 自動發布到 `gh-pages/saas/`，不覆蓋其他產品。
+- 修改 `QueueMonster/saas/` 的四個 HTML 頁面或 `version-watch.js`，推送到 `main` 後，GitHub Actions `line-saas-pages.yml` 自動發布到 `gh-pages/saas/`，不覆蓋其他產品。
 - 部署時以 `GITHUB_SHA` 替換四頁 `__LINE_SAAS_BUILD__`，產生 `release.json`；`version-watch.js` 腳本本身 URL 也會隨部署版號更動。
 - 已開啟的網頁每 60 秒、重新聚焦及回到前景時檢查部署版本，確認新版 HTML 可以取得後自動重新載入，保留所有 URL 查詢參數與片段。
 - 使用者正在輸入尚未儲存的資料、焦點在表單或 LIFF 登入跳轉時不強制重載，避免遺失資料；可在提示中自主更新。
