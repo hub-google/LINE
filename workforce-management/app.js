@@ -68,7 +68,7 @@ async function reload(silent=false){
    if(!app.tenantId){app.data=null;}else{
     const p='tenant_id=eq.'+encodeURIComponent(app.tenantId);
     const [branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections,leavePolicies,attendanceCases,attendanceRuleRows,requestDocs,scheduleRuleRows,memberBranches,qrSettings]=await Promise.all([
-     query('wm_branches','select=*&'+p+'&order=name'),query('wm_members','select=id,tenant_id,branch_id,user_id,display_name,employee_code,role,employment_type,status,created_at,department_id,hired_on,left_on,skills&'+p+'&order=employee_code'),
+     query('wm_branches','select=*&'+p+'&order=name'),query('wm_members','select=id,tenant_id,branch_id,user_id,display_name,employee_code,role,employment_type,status,created_at,department_id,reports_to,job_title,hired_on,left_on,skills&'+p+'&order=employee_code'),
      query('wm_shifts','select=*&'+p+'&order=starts_at.desc&limit=600'),query('wm_punches','select=*&'+p+'&order=punched_at.desc&limit=600'),
      query('wm_requests','select=*&'+p+'&order=created_at.desc&limit=300'),query('wm_leave_entitlements','select=*&'+p),
      query('wm_availability','select=*&'+p+'&limit=200'),
@@ -409,6 +409,11 @@ $('overlay').addEventListener('submit',async e=>{
     const accepted=await call('/rest/v1/rpc/wm_accept_invite','POST',{p_token:invited},app.token);
     history.replaceState(null,'',location.pathname+location.search);
     app.tenantId=accepted.tenant_id;
+   }
+   const orgInvitation=sessionStorage.getItem('wm_org_pending_invite');
+   if(orgInvitation){
+    const link=await call('/rest/v1/rpc/wm_org_accept_invite','POST',{p_token:orgInvitation},app.token);
+    sessionStorage.removeItem('wm_org_pending_invite');app.tenantId=link.tenant_id;
    }
    await reload(true);banner('企業帳號登入成功');
   }else if(form.dataset.form==='tenant'){
