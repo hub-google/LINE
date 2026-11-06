@@ -99,7 +99,7 @@ async function getIdentity(){
  }else if(staffUser?.is_anonymous){
   const context=await operator.rpc("so_my_context");
   if(!context.error && context.data?.memberships?.some(x=>x.slug?.startsWith("qa-")))
-   operatorIdentity={type:"operator",displayName:"測試門市管理員",client:operator};
+   operatorIdentity={type:"operator",displayName:"門市管理員",client:operator};
  }
  return preferOperator?(operatorIdentity||lineIdentity):(lineIdentity||operatorIdentity);
 }

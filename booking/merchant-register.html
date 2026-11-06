@@ -1,156 +1,138 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="5724800701358184525b340aa1734f06690c3c06">
-<script defer src="./version-watch.js?build=5724800701358184525b340aa1734f06690c3c06"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>排隊怪獸｜商家開通申請</title><meta name="description" content="沒有自己的 LINE OA，也可以申請使用排隊怪獸預約服務。">
+<meta name="line-saas-build" content="9ba2636d04ebacf54812681f6c4bc8a35608a8c8">
+<script defer src="./version-watch.js?build=9ba2636d04ebacf54812681f6c4bc8a35608a8c8"></script>
+<meta name="theme-color" content="#523B70">
+<title>店家登入與註冊｜排隊怪獸</title>
+<meta name="description" content="註冊排隊怪獸店家帳號，建立專屬預約與現場叫號服務。">
+<link rel="stylesheet" href="./monster-world.css?build=9ba2636d04ebacf54812681f6c4bc8a35608a8c8">
 <style>
-:root{--green:#0c725b;--ink:#173d35;--muted:#597469;--border:#d7e4df}*{box-sizing:border-box}
-body{margin:0;background:#f5faf7;color:var(--ink);font:15px/1.6 system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif}
-header{background:#103e35;color:white;padding:19px}header>div{max-width:840px;margin:auto;font-weight:800;font-size:19px}
-main{max-width:840px;margin:22px auto 70px;padding:0 15px}h1{font-size:27px;line-height:1.3;margin:0 0 9px}h2{font-size:20px;margin:0 0 13px}
-.card{background:#fff;border:1px solid var(--border);border-radius:15px;padding:23px;margin:16px 0}
-p{color:var(--muted);margin:0 0 13px}.row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
-label{display:block;font-weight:700;margin:9px 0 5px}input,select{width:100%;padding:12px 13px;border:1px solid #b9cdc1;border-radius:10px;background:white;font:inherit}
-button,.btn{display:inline-block;background:var(--green);color:white;border:0;padding:11px 15px;border-radius:10px;min-height:44px;font:inherit;font-weight:750;cursor:pointer;text-decoration:none}
-button.secondary,.btn.secondary{background:#e9f5ee;color:#0b6550;border:1px solid #b1ddc3}button.danger{background:#9c3030}button:disabled{opacity:.5;cursor:not-allowed}
-.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}.message{margin:13px 0;padding:13px 15px;background:#e3f8e9;border:1px solid #a4cdb2;border-radius:10px}.message.error{background:#ffefed;color:#a22a25;border-color:#ffc4bc}
-small{color:var(--muted)}.hidden{display:none}.status{display:inline-block;background:#e4f5e9;border-radius:9px;padding:3px 9px}.item{padding:15px 0;border-bottom:1px solid var(--border)}.item:last-child{border:0}
-@media(max-width:580px){.row{grid-template-columns:1fr}.card{padding:17px}h1{font-size:24px}}
-</style><link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=5724800701358184525b340aa1734f06690c3c06"></head>
-<body><header><div>排隊怪獸｜商家合作</div><div class="site-auth-slot site-auth-dark" id="site-auth-root" aria-label="使用者登入狀態"><a class="site-auth-button site-auth-login" href="./?view=customer&amp;merchant=greenfield-salon&amp;tab=home">使用 LINE 登入</a></div></header><main>
-<section class="card"><h1>沒有 LINE OA，也能讓顧客使用排隊怪獸預約</h1><p>申請開通後，店家可取得自己的預約／取號連結。沒有官方帳號的店家，由平台 LINE OA 提供共同入口及訊息通知；店員仍可管理自己的預約和叫號。</p>
-<p>已經有自己 LINE OA 的店家也可以先使用平台 OA。每家商家自行串接 OA 的功能仍在開發中。</p></section>
-<div id="message" role="status" aria-live="polite"></div>
-<section class="card" id="qa-login-panel" style="border:2px solid #8bcdb0;background:#effbf3">
-  <h2>免帳密測試入口</h2>
-  <p>原本的 <strong>TEST-HQ</strong> 測試平台帳號保留，按一下就能測試商家申請、審核及開通。不會讀取或操作正式商家申請。</p>
-  <div class="actions"><button id="qa-login">一鍵登入測試平台後台</button>
-  <button id="qa-staff" class="secondary">一鍵登入測試店員後台</button>
-  <a class="btn secondary" href="./?view=platform">測試平台營運後台</a></div>
+:root{--purple:#523b70;--deep:#362849;--gold:#f8cb57;--ink:#292336;--muted:#685f76;--line:#e8e1ed}
+*{box-sizing:border-box}body{margin:0;background:#faf8fd;color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Noto Sans TC",sans-serif}
+a{color:var(--purple)}header{background:white;border-bottom:1px solid var(--line)}header .shell{max-width:1080px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:15px;padding:13px 22px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-size:22px;font-weight:900;color:var(--deep)}.brand img{width:42px;height:42px;object-fit:contain}
+.headernav{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.headernav a{text-decoration:none;font-size:14px;font-weight:750}.headernav .action{background:var(--purple);color:white;padding:8px 15px;border-radius:10px}
+main{max-width:1080px;padding:42px 22px 90px;margin:auto;display:grid;grid-template-columns:.93fr 1.07fr;gap:40px;align-items:start}
+.intro{padding:28px 0}.eyebrow{font-size:12px;letter-spacing:.13em;font-weight:900;color:var(--purple)}h1{font-size:clamp(30px,4vw,46px);line-height:1.2;margin:15px 0 19px;letter-spacing:-.04em}h1 span{color:var(--purple)}
+.intro p{font-size:17px;color:var(--muted)}.benefit{margin-top:32px;display:grid;gap:13px}.benefit div{display:flex;align-items:start;gap:11px;font-size:15px;font-weight:650}.benefit b{display:grid;place-items:center;flex:none;width:29px;height:29px;border-radius:9px;background:#ffefd1;color:#6b4c1a}
+.panel{background:white;border:1px solid var(--line);border-radius:22px;padding:30px;box-shadow:0 16px 50px #4028590d}
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:#f2eef6;border-radius:12px;padding:5px;gap:5px;margin-bottom:24px}
+.tabs button{background:transparent;color:var(--muted);border:0;border-radius:9px;font:inherit;font-weight:800;padding:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--purple);color:#fff;box-shadow:0 3px 10px #4f34602b}
+h2{font-size:24px;margin:0 0 5px}.sub{color:var(--muted);margin:0 0 20px;font-size:14px}
+label{display:block;font-size:14px;font-weight:800;margin:14px 0 6px}
+input{width:100%;min-height:46px;padding:11px 13px;background:#fff;border:1px solid #cfc5d9;border-radius:11px;font:inherit;color:var(--ink)}
+input:focus{outline:3px solid #e7d8f3;border-color:var(--purple)}
+button.primary,.linkbutton{background:var(--purple);color:white;border:0;border-radius:11px;font:inherit;font-weight:850;min-height:46px;padding:10px 18px;cursor:pointer}
+button.primary{width:100%;margin-top:22px}button:disabled{opacity:.6;cursor:wait}
+button.ghost{font:inherit;color:var(--purple);background:white;border:1px solid #a18bb8;border-radius:11px;padding:10px 16px;font-weight:800;cursor:pointer}
+.help{font-size:13px;color:var(--muted);margin-top:13px}.message{margin:14px 0;padding:13px 15px;border-radius:11px;background:#f2f8ee;color:#215d2c;font-size:14px}
+.message.error{background:#fff1f0;color:#a12635}.hidden{display:none!important}
+.account-info{padding:17px;background:#faf8fd;border-radius:14px;margin-top:14px}
+.account-info .email{font-size:14px;color:var(--muted);overflow-wrap:anywhere}.workspace{margin:17px 0;display:grid;gap:10px}
+.workspace a{display:block;border-radius:11px;text-align:center;padding:11px 15px;font-weight:800;text-decoration:none;background:#eee8f4;color:var(--purple)}
+.workspace a.strong{background:var(--purple);color:white}.muted{color:var(--muted)}
+@media(max-width:820px){main{grid-template-columns:1fr;gap:15px;padding:24px 16px 70px}.intro{padding:4px}.intro p{font-size:15px}.benefit{margin-top:18px}.panel{padding:21px}header .shell{padding:12px 15px}.headernav{gap:8px}.headernav a{font-size:12px}h1{font-size:32px}}
+</style></head><body>
+<header><div class="shell"><a href="./home.html" class="brand"><img src="./monster-mascot.svg" alt="">排隊怪獸</a><nav class="headernav"><a href="./home.html">首頁</a><a href="./directory.html">搜尋店家</a><a href="./merchant-register.html?mode=login">店家登入</a><a class="action" href="./merchant-register.html?mode=signup">店家註冊</a></nav></div></header>
+<main>
+<section class="intro"><div class="eyebrow">QUEUE MONSTER · FOR MERCHANTS</div><h1>讓顧客少排隊，<br><span>讓店家更好管理。</span></h1>
+<p>一個帳號就能開始建立專屬的預約、現場取號與叫號服務。先註冊，再自行填寫店家資料；資料完成前不會公開在搜尋名單。</p>
+<div class="benefit"><div><b>1</b> 申請店家帳號並驗證電子信箱</div><div><b>2</b> 登入後填寫自己的店名、地址及營運設定</div><div><b>3</b> 完成資料後正式開放搜尋及預約取號</div></div>
 </section>
-<section class="card" id="auth-card"><h2>商家帳號</h2><p>請使用已驗證電子郵件的正式帳號申請。一般顧客不需要這個帳號。</p>
-<div class="row"><div><label for="email">Email</label><input id="email" type="email" autocomplete="email"></div><div><label for="pass">密碼（至少 8 字元）</label><input id="pass" type="password" minlength="8" autocomplete="current-password"></div></div>
-<div class="actions"><button id="login">登入</button><button class="secondary" id="signup">註冊帳號</button></div>
-<small>註冊後如收到驗證信，請先驗證 Email 再登入。</small></section>
-<section class="card hidden" id="account"><p>已登入：<strong id="account-name"></strong></p><button class="secondary" id="logout">登出</button></section>
-<section class="card hidden" id="qa-create-panel">
-  <h2>建立測試商家申請</h2>
-  <p>建立真正寫入 Supabase 的隔離 QA 申請，測試「待審核 → 核准開通／拒絕」。不會進入正式店家名單。</p>
-  <label for="qa-mode">測試商家類型</label>
-  <select id="qa-mode"><option value="PLATFORM">沒有 LINE OA，使用平台 OA</option><option value="OWN">已有 LINE OA，先共用平台 OA</option></select>
-  <div class="actions"><button id="qa-create">一鍵建立測試商家申請</button></div>
-</section>
-<section class="card hidden" id="application"><h2>填寫門市申請</h2>
-<div class="row">
-<div><label for="business">門市名稱</label><input id="business" maxlength="120" placeholder="例如：幸福髮藝"></div>
-<div><label for="slug">門市網址代碼（英文）</label><input id="slug" maxlength="40" placeholder="例如：happy-salon"></div>
-<div><label for="phone">聯絡電話（選填）</label><input id="phone" maxlength="50"></div>
-<div><label for="address">門市地址（選填）</label><input id="address" maxlength="240"></div>
+<section class="panel">
+<div id="auth-zone">
+<div class="tabs" role="tablist" aria-label="店家帳號操作"><button id="tab-login" type="button" role="tab" aria-selected="true">登入</button><button id="tab-signup" type="button" role="tab" aria-selected="false">註冊</button></div>
+<form id="login-form"><h2>店家登入</h2><p class="sub">使用註冊信箱與密碼登入商家管理後台。</p>
+<label for="login-email">電子信箱（登入帳號）</label><input type="email" id="login-email" autocomplete="username" required>
+<label for="login-pass">密碼</label><input type="password" id="login-pass" autocomplete="current-password" required>
+<button type="submit" class="primary">登入店家後台</button>
+<p class="help">還沒有帳號？點選上方「註冊」。</p></form>
+<form id="signup-form" class="hidden"><h2>註冊店家帳號</h2><p class="sub">註冊後門市資料保持空白，由你自行填寫。</p>
+<label for="username">帳號</label><input type="text" id="username" pattern="[a-zA-Z][a-zA-Z0-9_-]{2,29}" maxlength="30" autocomplete="username" placeholder="例如：happyshop" required>
+<label for="signup-email">電子信箱</label><input type="email" id="signup-email" autocomplete="email" required>
+<label for="signup-pass">密碼（至少 8 字元）</label><input type="password" id="signup-pass" minlength="8" autocomplete="new-password" required>
+<label for="signup-confirm">確認密碼</label><input type="password" id="signup-confirm" minlength="8" autocomplete="new-password" required>
+<button type="submit" class="primary">建立店家帳號</button>
+<p class="help">會使用電子信箱驗證身分，密碼由 Supabase Auth 安全處理，不會儲存在網頁原始碼中。</p></form>
 </div>
-<label for="oa-mode">店家是否已有 LINE OA</label>
-<select id="oa-mode"><option value="PLATFORM">沒有，使用平台 LINE OA 接待顧客</option><option value="OWN">已有，但先使用平台 LINE OA（自有 OA 串接後續開放）</option></select>
-<p style="margin-top:15px">送出後由排隊怪獸平台審核；門市開通後預設公開在平台搜尋清單，店家管理員可隨時關閉公開搜尋。</p>
-<button id="apply">送出開通申請</button></section>
-<section class="card hidden" id="my-requests"><h2>我的開通申請</h2><div id="requests"></div></section>
-<section class="card hidden" id="admin-panel"><h2>平台｜待審核商家</h2><p>僅限真正的平台管理員。核准後會建立獨立門市，並將申請人設為店家負責人。</p><div id="admin-list"></div></section>
-<div class="actions"><a class="btn secondary" href="merchant-center.html#guide">使用教學</a><a class="btn secondary" href="directory.html?mode=search">搜尋店家</a></div>
-</main><script type="module">
+<div id="account-zone" class="hidden"><h2>已登入</h2><div class="account-info"><strong id="account-name"></strong><div id="account-email" class="email"></div></div>
+<div id="workspace" class="workspace"></div>
+<div id="missing-username" class="hidden"><label for="finish-username">設定帳號名稱</label><input id="finish-username" pattern="[a-zA-Z][a-zA-Z0-9_-]{2,29}" placeholder="例如：happyshop"><button class="primary" id="finish-account" type="button">完成帳號設定</button></div>
+<button class="ghost" type="button" id="logout">登出</button></div>
+<div id="message" role="status" aria-live="polite"></div>
+</section></main>
+<script type="module">
 import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 const sb=createClient("https://unapiwajmgqqtdkixaab.supabase.co","sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const $=id=>document.getElementById(id);
-const e=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-let session=null,busy=false,qaVerified=false;
-function message(v,isError=false){$("message").className=v?"message"+(isError?" error":""):"";$("message").textContent=v||""}
-async function rpc(name,args={}){const {data,error}=await sb.rpc(name,args);if(error)throw Error(error.message);return data}
-function show(id,on){$(id).classList.toggle("hidden",!on)}
-function status(s){return ({PENDING:"審核中",APPROVED:"已開通",REJECTED:"未通過"})[s]||s}
-async function refresh(){
- const a=await sb.auth.getSession();if(a.error)throw a.error;session=a.data.session;
- const signed=!!session&&!session.user?.is_anonymous;
- qaVerified=false;
- if(session?.user?.is_anonymous){
-   try{
-     const ctx=await rpc("so_my_context");
-     qaVerified=!!ctx?.memberships?.some(m=>typeof m.slug==="string"&&m.slug.startsWith("qa-")&&m.role==="OWNER");
-   }catch(e){qaVerified=false}
- }
- const ready=signed||qaVerified;
- show("qa-login-panel",!qaVerified);
- show("auth-card",!ready);show("account",ready);show("application",signed);
- show("qa-create-panel",qaVerified);
- show("my-requests",ready);show("admin-panel",qaVerified||(signed&&new URLSearchParams(location.search).get("admin")==="1"));
- if(!ready)return;
- $("admin-panel").querySelector("h2").textContent=qaVerified?"TEST-HQ｜隔離測試商家審核":"平台｜待審核商家";
- $("admin-panel").querySelector("p").textContent=qaVerified?"僅可審核此測試帳號自己建立的 QA 申請，不會顯示正式商家的資料。":"僅限真正的平台管理員。核准後會建立獨立門市，並將申請人設為店家負責人。";
- $("account-name").textContent=qaVerified?"TEST-HQ（免帳密隔離測試帳號）":session.user.email||"已登入";
- const mine=await rpc("so_my_merchant_requests");
- $("requests").innerHTML=mine.length?mine.map(r=>'<div class="item"><strong>'+e(r.name)+'</strong> · '+e(r.slug)+
- '<div><span class="status">'+e(status(r.status))+'</span></div>'+
- (r.status==="APPROVED"?'<div class="actions"><a class="btn secondary" href="./?view=staff&merchant='+encodeURIComponent(r.slug)+'">進入門市後台</a></div>':"")+'</div>').join(""):"<p>尚無申請紀錄。</p>";
- if(qaVerified||new URLSearchParams(location.search).get("admin")==="1"){
-   try{
-    const pending=await rpc(qaVerified?"so_test_pending_merchant_requests":"so_pending_merchant_requests");
-    $("admin-list").innerHTML=pending.length?pending.map(r=>'<div class="item"><strong>'+e(r.name)+'</strong> · '+e(r.slug)+
-     '<p>'+e(r.email)+' ・ '+(r.requested_oa_mode==="PLATFORM"?"無自有 OA":"已有 OA，暫用平台 OA")+'</p>'+
-     (r.phone?'<p>電話：'+e(r.phone)+'</p>':"")+(r.address?'<p>地址：'+e(r.address)+'</p>':"")+
-     '<div class="actions"><button data-review="'+e(r.id)+'" data-approve="true">核准並開通</button><button class="danger" data-review="'+e(r.id)+'" data-approve="false">拒絕申請</button></div></div>').join(""):"<p>沒有待審核的店家。</p>";
-   }catch(err){$("admin-list").textContent=err.message}
- }
-}
-async function act(fn){
- if(busy)return;busy=true;document.querySelectorAll("button").forEach(b=>b.disabled=true);message("處理中...");
- try{const result=await fn();await refresh();message(result||"操作成功");}
- catch(err){message(err.message||String(err),true)}
+const msg=(t,error=false)=>{$("message").textContent=t||"";$("message").className=t?"message"+(error?" error":""):""};
+let busy=false,active="login",authUser=null,workspaceSlug="";
+const setMode=(mode)=>{
+ active=mode==="signup"?"signup":"login";
+ for(const m of ["login","signup"]){$("tab-"+m).setAttribute("aria-selected",String(active===m));$(""+m+"-form").classList.toggle("hidden",active!==m)}
+ const u=new URL(location.href);u.searchParams.set("mode",active);history.replaceState(null,"",u.pathname+u.search);
+ msg("");
+};
+$("tab-login").onclick=()=>setMode("login");$("tab-signup").onclick=()=>setMode("signup");
+setMode(new URL(location.href).searchParams.get("mode"));
+async function execute(job){
+ if(busy)return;busy=true;document.querySelectorAll("button").forEach(b=>b.disabled=true);msg("正在處理…");
+ try{await job()}catch(error){msg(error.message||"操作失敗，請稍後再試",true)}
  finally{busy=false;document.querySelectorAll("button").forEach(b=>b.disabled=false)}
 }
-async function qaSignIn(p_view){
-   const current=await sb.auth.getSession();if(current.error)throw current.error;
-   if(current.data.session&&!current.data.session.user.is_anonymous){
-     const out=await sb.auth.signOut();if(out.error)throw out.error;
-   }
-   const check=await sb.auth.getSession();if(check.error)throw check.error;
-   if(!check.data.session){const created=await sb.auth.signInAnonymously();if(created.error)throw created.error;}
-   const result=await rpc("so_test_login",{p_view});
-   if(!result?.slug||!/^qa-[a-z0-9-]{3,36}$/.test(result.slug))throw Error("測試身分建立失敗");
-   localStorage.setItem("line_saas_real_qa_v1",JSON.stringify({slug:result.slug}));
-   return result;
+async function rpc(name,args={}){const {data,error}=await sb.rpc(name,args);if(error)throw Error(error.message);return data}
+function showAuth(user){
+ authUser=user;$("auth-zone").classList.toggle("hidden",!!user);$("account-zone").classList.toggle("hidden",!user);
+ if(user){$("account-email").textContent=user.email||"";$("account-name").textContent=user.user_metadata?.username||"店家使用者"}
+}
+async function prepare(){
+ const {data,error}=await sb.auth.getUser();
+ if(error||!data.user){showAuth(null);return}
+ const user=data.user;showAuth(user);
+ const isPlatform=(user.email||"").toLowerCase()==="cit5055@gmail.com";
+ if(isPlatform){
+  await rpc("so_claim_verified_platform_owner");
+  workspaceSlug="";$("workspace").innerHTML='<a class="strong" href="./?view=platform">進入平台總管理後台</a>';
+  $("missing-username").classList.add("hidden");return;
  }
- $("qa-login").onclick=()=>act(async()=>{
-   await qaSignIn("PLATFORM");
-   return "已登入 TEST-HQ，現在可建立、審核、核准或拒絕隔離測試商家";
- });
- $("qa-staff").onclick=()=>act(async()=>{
-   const result=await qaSignIn("STAFF");
-   location.assign("./?view=staff&merchant="+encodeURIComponent(result.slug));
-   return "已登入 TEST-STAFF，正在進入門市後台";
- });
- $("qa-create").onclick=()=>act(async()=>{
-   if(!qaVerified)throw Error("請先一鍵登入 TEST-HQ");
-   const created=await rpc("so_test_submit_merchant_request",{p_mode:$("qa-mode").value});
-   return "已建立測試商家申請："+created.slug+"（資料庫實際儲存）";
- });
- $("login").onclick=()=>act(async()=>{
- const email=$("email").value.trim(),password=$("pass").value;
- const {error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;return "登入成功";
+ let username=(user.user_metadata?.username||"").trim();
+ const input=$("finish-username").value.trim();if(input)username=input;
+ if(!username){$("missing-username").classList.remove("hidden");$("workspace").innerHTML='<p class="muted">請先設定帳號名稱。</p>';return}
+ const result=await rpc("so_start_merchant",{p_username:username});
+ workspaceSlug=result.slug;
+ $("missing-username").classList.add("hidden");
+ const url="./?view=staff&merchant="+encodeURIComponent(workspaceSlug);
+ $("workspace").replaceChildren();
+ const primary=document.createElement("a");primary.className="strong";primary.href=url;primary.textContent="進入店家後台";
+ const settings=document.createElement("a");settings.href=url+"&tab=settings";settings.textContent=result.onboarding_complete?"管理店家基本資料":"開始填寫空白店家資料";
+ $("workspace").append(primary,settings);
+}
+$("login-form").onsubmit=e=>{e.preventDefault();void execute(async()=>{
+ const email=$("login-email").value.trim(),password=$("login-pass").value;
+ const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;
+ if(!data.user)throw Error("登入狀態無法確認");
+ await prepare();msg("登入成功");
+})};
+$("signup-form").onsubmit=e=>{e.preventDefault();void execute(async()=>{
+ const username=$("username").value.trim().toLowerCase(),email=$("signup-email").value.trim().toLowerCase();
+ const password=$("signup-pass").value,confirm=$("signup-confirm").value;
+ if(!/^[a-z][a-z0-9_-]{2,29}$/.test(username))throw Error("帳號需 3 至 30 字，英文開頭，可使用數字、底線及連字號");
+ if(password.length<8)throw Error("密碼至少需要 8 字元");
+ if(password!==confirm)throw Error("兩次輸入的密碼不相同");
+ const {data,error}=await sb.auth.signUp({email,password,options:{data:{username}}});
+ if(error)throw error;
+ if(data.session){await prepare();msg("帳號已建立，請完成店家資料")}
+ else{setMode("login");$("login-email").value=email;msg("註冊已送出，請先到信箱完成驗證，再回來登入")}
+})};
+$("finish-account").onclick=()=>void execute(async()=>{
+ const username=$("finish-username").value.trim();
+ if(!/^[a-z][a-z0-9_-]{2,29}$/i.test(username))throw Error("請填寫有效的帳號名稱");
+ await prepare();msg("帳號設定已完成");
 });
-$("signup").onclick=()=>act(async()=>{
- const email=$("email").value.trim(),password=$("pass").value;
- if(!email||password.length<8)throw Error("請輸入正確 Email 與至少 8 字元密碼");
- const {error}=await sb.auth.signUp({email,password});if(error)throw error;return "已送出註冊，請確認 Email 驗證信；如已完成驗證即可登入";
+$("logout").onclick=()=>void execute(async()=>{
+ const {error}=await sb.auth.signOut();if(error)throw error;workspaceSlug="";showAuth(null);msg("已登出");
 });
-$("logout").onclick=()=>act(async()=>{const {error}=await sb.auth.signOut();if(error)throw error;return "已登出"});
-$("apply").onclick=()=>act(async()=>{
- const name=$("business").value.trim(),slug=$("slug").value.trim().toLowerCase();
- if(name.length<2||!/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug))throw Error("請填寫店名與 3–40 字元英文代碼");
- const result=await rpc("so_request_merchant",{p_name:name,p_slug:slug,p_phone:$("phone").value.trim()||null,p_address:$("address").value.trim()||null,p_requested_oa_mode:$("oa-mode").value});
- return "申請已送出，狀態："+status(result.status)+"。核准後可從此頁進入門市後台。";
-});
-document.addEventListener("click",ev=>{
- const b=ev.target.closest("button[data-review]");if(!b)return;
- const approving=b.dataset.approve==="true";
- if(!qaVerified&&!confirm(approving?"確定核准並建立門市？":"確定拒絕這筆商家申請？"))return;
- act(async()=>{const v=await rpc(qaVerified?"so_test_review_merchant_request":"so_review_merchant_request",{p_id:b.dataset.review,p_approve:approving});return (qaVerified?"QA 測試｜":"")+"已處理："+status(v.status)});
-});
-refresh().catch(err=>message(err.message||String(err),true));
-</script><footer style="text-align:center;margin:24px auto;padding:15px"><a href="privacy.html">隱私權說明</a> ・ <a href="terms.html">使用條款</a></footer></body></html>
+void (async()=>{try{await prepare()}catch(e){msg(e.message||"無法讀取帳號",true)}})();
+</script></body></html>

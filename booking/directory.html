@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="5724800701358184525b340aa1734f06690c3c06">
-<script defer src="./version-watch.js?build=5724800701358184525b340aa1734f06690c3c06"></script>
+<meta name="line-saas-build" content="9ba2636d04ebacf54812681f6c4bc8a35608a8c8">
+<script defer src="./version-watch.js?build=9ba2636d04ebacf54812681f6c4bc8a35608a8c8"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>排隊怪獸｜找店家、預約與取號</title><meta name="description" content="使用排隊怪獸搜尋合作店家、預約服務、現場取號及查詢個人紀錄。">
 <style>
@@ -118,7 +118,7 @@ a.btn.secondary:hover{background:#e1f3e9}
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto;transition:none!important}}
 
-</style><link rel="stylesheet" href="./explore-game.css"><script defer src="./explore-game.js"></script><link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=5724800701358184525b340aa1734f06690c3c06"></head>
+</style><link rel="stylesheet" href="./explore-game.css"><script defer src="./explore-game.js"></script><link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=9ba2636d04ebacf54812681f6c4bc8a35608a8c8"></head>
 <body>
 <header class="page-header">
  <div class="container">
@@ -150,7 +150,7 @@ a.btn.secondary:hover{background:#e1f3e9}
    <label for="keyword">搜尋店家名稱或地點</label>
    <div class="search-field">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
-    <input id="keyword" class="search" type="search" placeholder="例如：餐廳名稱、地區、測試門市" aria-label="輸入店家名稱或地點" autocomplete="off">
+    <input id="keyword" class="search" type="search" placeholder="例如：餐廳名稱、地區、門市" aria-label="輸入店家名稱或地點" autocomplete="off">
    </div>
   </div>
   <div id="explore-filters" class="explore-filter-row" aria-label="搜尋篩選">
@@ -193,10 +193,10 @@ a.btn.secondary:hover{background:#e1f3e9}
       <p class="arcade-prompt">點選店面可預覽，預約或取號仍使用原有 LINE 流程。</p>
       <div id="arcade-shop-info" class="arcade-panel" aria-live="polite"></div>
     </div>
-    <p id="explore-game-note" class="explore-help">遊戲地圖是探索介面，不代表實際地理位置。僅列出已公開的店家；測試商圈另行標示。</p>
+    <p id="explore-game-note" class="explore-help">遊戲地圖是探索介面，不代表實際地理位置。僅列出已公開的店家；公開商圈另行標示。</p>
   </section>
   <div class="bottom-panels">
-   <section id="test" class="support-panel hidden">
+   <section id="test" class="support-panel hidden" style="display:none!important">
     <h3>想先體驗？</h3>
     <p>示範門市與正式合作店家分開管理，不會混入一般搜尋結果。</p>
     <div class="card-actions">
@@ -220,7 +220,7 @@ const SB_KEY="sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy";
 const bridge=SB_URL+"/functions/v1/line-bridge?action=config";
 const sb=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"line-saas-customer-session-v2"}});
 const params=new URLSearchParams(location.search),mode=["search","queue","mine","game"].includes(params.get("mode"))?params.get("mode"):"search";
-const els={intro:document.getElementById("intro"),results:document.getElementById("results"),keyword:document.getElementById("keyword"),test:document.getElementById("test")};
+const els={intro:document.getElementById("intro"),results:document.getElementById("results"),keyword:document.getElementById("keyword"),test:null};
 document.getElementById("tab-"+(mode==="game"?"search":mode)).classList.add("active");
 let all=[],popular=[],searchResults=[],searchTotal=0,searchPage=1;
 let searchLoading=false,searchError="",searchRequest=0,searchTimer=null;
@@ -302,7 +302,7 @@ function render(){
  document.getElementById("page-label").textContent="第 "+searchPage+" / "+Math.max(1,Math.ceil(searchTotal/50))+" 頁";
  document.getElementById("page-prev").disabled=searchPage<=1;
  document.getElementById("page-next").disabled=searchPage*50>=searchTotal;
- els.test.classList.toggle("hidden",mode==="mine"||Boolean(keyword));
+ 
  if(searching&&searchLoading){
    els.results.innerHTML='<div class="empty"><strong>正在搜尋店家</strong><p>依照目前的搜尋條件查詢公開店家。</p></div>';
    return;
@@ -341,7 +341,7 @@ function render(){
       (services.queue?'<a class="btn'+(services.reservation?" secondary":"")+'" href="'+e(queueHref)+'">現場取號</a>':"")+
       (services.queue&&services.calling?'<a class="btn secondary" href="'+boardHref+'">公開叫號看板</a>':"");
   }
-  const badges=t.test_board_only?'<span class="badge qa-badge">測試門市・非正式合作店家</span>':badgesForStore(t);
+  const badges=t.test_board_only?'<span class="badge qa-badge">門市・非正式合作店家</span>':badgesForStore(t);
   const rank=mode!=="mine"&&!searching&&Number(t.popularity_rank)>0?
     '<span class="rank-number'+(Number(t.popularity_rank)<=3?' leading':'')+'">#'+Number(t.popularity_rank)+'</span>':"";
   const metric=rank?'<p class="popularity-metrics">近30天 · 預約 '+Number(t.booking_count||0)+' · 取號 '+Number(t.ticket_count||0)+'</p>':"";
@@ -465,16 +465,16 @@ async function load(){
     all=Array.isArray(directory.data)?directory.data:[];
     popular=Array.isArray(ranking.data)?ranking.data:[];
     const samples=await sb.rpc("so_public_explore_demo");
-    demoShops=!samples.error&&Array.isArray(samples.data)?samples.data:[];
+    demoShops=[];
     // The public board RPC returns a store name and non-personal queue data
     // with no sign-in. Do not add any test merchant to the official directory.
     const qaSlug="qa-84b3ef9297eb470685a91a527ca499ca";
     const boardResponse=await sb.rpc("so_public_board",{p_slug:qaSlug,p_limit:5});
     if(!boardResponse.error&&boardResponse.data?.shop_name){
       testBoardShop={slug:qaSlug,name:boardResponse.data.shop_name,
-        description:"專屬測試門市的即時叫號看板",address:"",category:"其他",test_board_only:true};
+        description:"專屬門市的即時叫號看板",address:"",category:"其他",test_board_only:true};
     }
-    els.test.classList.remove("hidden");
+    testBoardShop=null;
     document.getElementById("demo-link").href=customerUrl("greenfield-salon",mode==="queue"?"queue":"reserve","PLATFORM");
   }
   setupExploreFilters();
