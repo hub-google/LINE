@@ -99,3 +99,25 @@ test("pastel directory header keeps WCAG AA contrast on mobile",()=>{
  assert.match(directory,/monster-world\.css\?build=__LINE_SAAS_BUILD__/);
  assert.ok(directory.indexOf("monster-world.css")>directory.indexOf("site-auth.css"),"contrast layer must load last");
 });
+
+
+test("all 11 Queue Monster pages share a single design-system identity and live CSS",()=>{
+ const pages=["index","home","directory","board","merchant-register","merchant-center","poster","template","privacy","terms","offline"];
+ const brandCss=read("saas/monster-world.css");
+ assert.match(brandCss,/branded product design system v2/);
+ for(const page of pages){
+  const html=read("saas/"+page+".html");
+  assert.match(html,new RegExp('<body data-monster-page="'+page+'">'),page+" is missing brand scope");
+  assert.match(html,/monster-world\.css/,page+" is missing shared stylesheet");
+  if(page==="merchant-register"){
+   assert.ok(html.indexOf("monster-world.css")>html.lastIndexOf("</style>"),"shared brand stylesheet must override the legacy merchant style");
+  }
+ }
+ for(const page of pages){
+  assert.match(brandCss,new RegExp('data-monster-page="'+page+'"'),page+" must have tailored treatment");
+ }
+ assert.match(brandCss,/data-portal="staff"/);
+ assert.match(brandCss,/data-portal="platform"/);
+ assert.match(brandCss,/prefers-reduced-motion/);
+ assert.match(brandCss,/@media print/);
+});
