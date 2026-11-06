@@ -56,10 +56,10 @@ test("game mode shows only real data with explicit test neighborhood and actiona
  const api=x.window.LineExploreGame;
  assert.ok(api);
  api.setData({shops:[],demoShops:demo});
- assert.match(x.element("arcade-regions").innerHTML,/測試商圈/);
+ assert.match(x.element("arcade-regions").innerHTML,/驗證商圈/);
  assert.match(x.element("arcade-regions").innerHTML,/2 家/);
  assert.match(x.element("arcade-region-count").textContent,/0 家公開店家/);
- const regionButton={dataset:{region:"測試商圈"}};
+ const regionButton={dataset:{region:"驗證商圈"}};
  x.element("arcade-regions").handlers.click({target:{closest(){return regionButton}}});
  assert.equal(x.element("explore-world").hidden,true);
  assert.equal(x.element("explore-street").hidden,false);
