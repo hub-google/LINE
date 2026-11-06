@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="6fcfbdb320b7f0c4ce3fc87bb6978721a88a1bcc">
+<meta name="line-saas-build" content="b8df4824095f7ffd029fbb1cc154bf335327bd6a">
 <meta name="theme-color" content="#462B52">
 <link rel="manifest" href="./manifest.webmanifest">
 <script>
@@ -32,7 +32,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   }
 })();
 </script>
-<script defer src="./version-watch.js?build=6fcfbdb320b7f0c4ce3fc87bb6978721a88a1bcc"></script>
+<script defer src="./version-watch.js?build=b8df4824095f7ffd029fbb1cc154bf335327bd6a"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>排隊怪獸｜顧客預約、取號與門市管理</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -166,8 +166,8 @@ body{overflow-x:hidden}
 .guide-link{text-decoration:none;color:var(--primary);border:1px solid var(--line);background:#f2f8f4;min-height:42px;display:flex;align-items:center;white-space:nowrap}
 .guide-link:hover{background:#e5f3ea}
 </style>
-<link rel="stylesheet" href="./booking-theme.css?build=6fcfbdb320b7f0c4ce3fc87bb6978721a88a1bcc">
-<link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=6fcfbdb320b7f0c4ce3fc87bb6978721a88a1bcc"></head>
+<link rel="stylesheet" href="./booking-theme.css?build=b8df4824095f7ffd029fbb1cc154bf335327bd6a">
+<link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=b8df4824095f7ffd029fbb1cc154bf335327bd6a"></head>
 <body>
 <header><div class="top">
 <div class="brand"><span class="brandmark" aria-hidden="true"></span>排隊怪獸<small>線上預約・現場取號・門市管理</small></div>
@@ -2115,14 +2115,6 @@ async function load(){err="";try{
  }
  if(view==="customer"||(view==="staff"&&recoveryMode))await connectLineSession();
  if(view==="customer"&&lineLinkStatus==="linked"&&finishPublicHeaderLogin())return;
- if(view==="staff"&&recoveryMode&&lineLinkStatus==="linked"){
-   const restored=await rpc("so_claim_qa_recovery",{p_slug:ORIGINAL_QA_STORE});
-   if(!restored.recovered)throw Error("原驗證門市驗證未通過");
-   slug=restored.slug;
-   testInfo={slug};testMode=true;localStorage.setItem(TEST_KEY,JSON.stringify(testInfo));
-   recoveryMode=false;
-   history.replaceState(null,"",route("staff",slug));
- }
  if(view!=="customer"){
    await bridgeConfig();
    await loadContext();
@@ -2133,27 +2125,6 @@ async function load(){err="";try{
      slug=own.slug;history.replaceState(null,"",route("staff",slug));
    }
  }
- // Recover an already-authorized original test manager after the local UI
- // preference has been cleared. Never use this to grant new permissions.
- if(view==="staff"&&!recoveryMode&&!testMode&&session?.user?.is_anonymous){
-   const original=context?.memberships?.find(m=>m.slug===ORIGINAL_QA_STORE);
-   if(original){
-     testInfo={slug:ORIGINAL_QA_STORE};testMode=true;
-     localStorage.setItem(TEST_KEY,JSON.stringify(testInfo));
-     slug=ORIGINAL_QA_STORE;
-     history.replaceState(null,"",route("staff",slug));
-   }
- }
-  if(testMode&&view!=="customer"&&session?.user?.is_anonymous){
-   const membership=context?.memberships?.find(m=>m.slug===testInfo?.slug);
-   if(!membership){testMode=false;testInfo=null;localStorage.removeItem(TEST_KEY)}
-   else{
-    if(view==="platform"&&!platformReady()){await rpc("so_test_login",{p_view:"PLATFORM"});await loadContext()}
-    if(view==="staff"&&!context?.memberships?.some(m=>m.slug===slug)){
-      slug=testInfo.slug;history.replaceState(null,"",route("staff",slug))
-    }
-   }
-  }
  if(view==="customer"){
    customer=lineLinkStatus==="linked"?await rpc("so_public_state",{p_slug:slug,p_date:day}):null;
    if(customer&&!bookingContactDirty&&!bookingContactName&&!bookingContactPhone){
@@ -2355,33 +2326,6 @@ document.addEventListener("click",async ev=>{
  }
 
 
- if(a==="recover-test-store"){
-  try{
-    const cfg=await bridgeConfig();
-    if(!cfg.liffId)throw Error("LINE LIFF 尚未完成設定，無法還原原驗證門市");
-    const url="https://liff.line.me/"+encodeURIComponent(cfg.liffId)+
-       "/?view=staff&merchant="+encodeURIComponent(ORIGINAL_QA_STORE)+"&recover=1";
-    location.assign(url);
-  }catch(e){showActionFeedback(e.message||String(e),"error");}
-  return;
- }
- if(a==="test-login"){
-  if(view==="staff"&&!confirm("這會建立新的空白驗證門市，與原本的預約及取號紀錄分開。確定建立新門市嗎？"))return;
-  await act(async()=>{
-   if(session&&!session.user?.is_anonymous){const out=await supa.auth.signOut();if(out.error)throw out.error;session=null}
-   if(!session){const created=await supa.auth.signInAnonymously();if(created.error)throw created.error;session=created.data.session}
-   const result=await rpc("so_test_login",{p_view:view==="platform"?"PLATFORM":"STAFF"});
-   if(!result?.slug||!/^qa-[a-z0-9-]{3,36}$/.test(result.slug))throw Error("無法取得驗證企業");
-   testInfo={slug:result.slug};testMode=true;localStorage.setItem(TEST_KEY,JSON.stringify(testInfo));
-   slug=result.slug;history.replaceState(null,"",route(view,view==="platform"?"":slug));
-   return "已登入真正的 Supabase 驗證帳號，專屬門市："+result.slug;
-  });return}
-  if(a==="copy-test-line"){await act(async()=>{
-  if(!testMode||!testInfo?.slug)throw Error("請先一鍵登入驗證帳號");
-  const link=await urlFor("customer",testInfo.slug);
-  try{await navigator.clipboard.writeText(link);return "已複製 LINE 顧客驗證網址："+link;}
-  catch(e){window.prompt("複製 LINE 顧客網址",link);return "請複製顯示的 LINE 顧客驗證網址";}
- });return;}
   if(a==="login"||a==="signup"){const email=val("auth-email"),password=val("auth-pass");if(!email||password.length<8){err="請輸入 Email 與至少 8 字元的密碼";render();return}
  await act(async()=>{testMode=false;testInfo=null;localStorage.removeItem(TEST_KEY);if(session?.user?.is_anonymous){await supa.auth.signOut();session=null}
  const r=a==="login"?await supa.auth.signInWithPassword({email,password}):await supa.auth.signUp({email,password});
