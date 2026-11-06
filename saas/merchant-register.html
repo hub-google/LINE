@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="line-saas-build" content="a1afbac2915cd034643bd9cc4d6a2340bdc0968b">
-<script defer src="./version-watch.js?build=a1afbac2915cd034643bd9cc4d6a2340bdc0968b"></script>
+<meta name="line-saas-build" content="6fcfbdb320b7f0c4ce3fc87bb6978721a88a1bcc">
+<script defer src="./version-watch.js?build=6fcfbdb320b7f0c4ce3fc87bb6978721a88a1bcc"></script>
 <meta name="theme-color" content="#523B70">
 <title>店家登入與註冊｜排隊怪獸</title>
 <meta name="description" content="註冊排隊怪獸店家帳號，建立專屬預約與現場叫號服務。">
-<link rel="stylesheet" href="./monster-world.css?build=a1afbac2915cd034643bd9cc4d6a2340bdc0968b">
+<link rel="stylesheet" href="./monster-world.css?build=6fcfbdb320b7f0c4ce3fc87bb6978721a88a1bcc">
 <style>
 :root{--purple:#523b70;--deep:#362849;--gold:#f8cb57;--ink:#292336;--muted:#685f76;--line:#e8e1ed}
 *{box-sizing:border-box}body{margin:0;background:#faf8fd;color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Noto Sans TC",sans-serif}
@@ -73,7 +73,7 @@ let busy=false,active="login",authUser=null,workspaceSlug="";
 const setMode=(mode)=>{
  active=mode==="signup"?"signup":"login";
  for(const m of ["login","signup"]){$("tab-"+m).setAttribute("aria-selected",String(active===m));$(""+m+"-form").classList.toggle("hidden",active!==m)}
- const u=new URL(location.href);u.searchParams.set("mode",active);history.replaceState(null,"",u.pathname+u.search);
+ const u=new URL(location.href);u.searchParams.set("mode",active);history.replaceState(null,"",u.pathname+u.search+u.hash);
  msg("");
 };
 $("tab-login").onclick=()=>setMode("login");$("tab-signup").onclick=()=>setMode("signup");
