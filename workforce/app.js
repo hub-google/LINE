@@ -1936,3 +1936,243 @@ document.addEventListener('click',async e=>{
  const active=nav.querySelector('button.active');
  if(active)active.setAttribute('aria-current','page');
 })();
+
+
+/* Workforce SaaS multi-company organization console (2026-11-06).
+   The page only presents rows made visible by server-side RLS. All edits and
+   invitations are authorized in authenticated PostgreSQL RPCs. */
+TABS.org=['組織與權限','設定部門、主管隸屬與員工帳號，審核只限授權的管理範圍。'];
+(function installWorkforceOrgTab(){
+ const nav=$('nav'), anchor=nav?.querySelector('[data-tab="employees"]');
+ if(anchor&&!nav.querySelector('[data-tab="org"]')){
+  anchor.insertAdjacentHTML('afterend','<button type="button" data-tab="org"><span>♧</span> 組織與權限</button>');
+ }
+ const label=document.createElement('span');
+ label.className='top-identity';label.id='wfIdentity';label.setAttribute('aria-label','目前登入身分');
+ const signIn=$('authBtn');signIn?.parentElement?.insertBefore(label,signIn);
+})();
+const WF_ROLES={owner:'企業總管理者',hr:'人資管理者',manager:'部門／團隊主管',employee:'一般員工'};
+const wfAdmin=()=>app.mode==='real'&&['owner','hr'].includes(role());
+const wfManagerOptions=(selected='',exclude='')=>'<option value="">不指定上級主管</option>'+
+ (app.data?.members||[]).filter(m=>m.id!==exclude&&m.status==='active'&&['owner','hr','manager'].includes(m.role))
+ .map(m=>'<option value="'+esc(m.id)+'" '+(selected===m.id?'selected':'')+'>'+
+ esc(m.display_name+' · '+(m.job_title||WF_ROLES[m.role]))+'</option>').join('');
+const wfDeptOptions=(selected='')=>'<option value="">不指定部門</option>'+
+ (app.data?.departments||[]).map(x=>'<option value="'+esc(x.id)+'" '+(selected===x.id?'selected':'')+'>'+esc(x.name)+'</option>').join('');
+const wfRoleOptions=(selected='employee')=>
+ ['employee','manager','hr'].filter(r=>r!=='hr'||role()==='owner').map(r=>
+ '<option value="'+r+'" '+(selected===r?'selected':'')+'>'+esc(WF_ROLES[r])+'</option>').join('');
+function wfMyMember(){return(app.data?.members||[]).find(m=>m.user_id===app.user?.id);}
+function wfIsReport(memberId){
+ const own=wfMyMember();if(!own||!memberId||memberId===own.id)return false;
+ const seen=new Set();
+ let member=(app.data?.members||[]).find(m=>m.id===memberId);
+ while(member&&!seen.has(member.id)){
+  seen.add(member.id);
+  if(member.reports_to===own.id)return true;
+  member=(app.data?.members||[]).find(m=>m.id===member.reports_to);
+ }
+ return false;
+}
+function wfCanReview(memberId){
+ const x=(app.data?.members||[]).find(m=>m.id===memberId);
+ if(!x||x.user_id===app.user?.id)return false;
+ if(['owner','hr'].includes(role()))return true;
+ return role()==='manager'&&wfIsReport(memberId);
+}
+function wfCard(member,depth=0){
+ const subtitle=member.job_title||WF_ROLES[member.role]||'一般員工';
+ const department=(app.data.departments||[]).find(x=>x.id===member.department_id);
+ const label=member.role==='owner'?'企業管理':
+  member.role==='hr'?'人資':
+  member.role==='manager'?'主管':'員工';
+ const dot=member.role==='owner'?'owner':member.role==='hr'?'hr':member.role==='manager'?'manager':'employee';
+ const editor=wfAdmin()&&member.role!=='owner'?
+  '<button class="org-edit" type="button" data-org="edit" data-id="'+esc(member.id)+'">設定層級</button>':'';
+ return '<div class="org-person '+dot+'" style="--level:'+depth+'">'+
+  '<span class="org-avatar">'+esc(member.display_name.slice(0,1))+'</span>'+
+  '<div class="org-person-info"><strong>'+esc(member.display_name)+'</strong>'+
+  '<small>'+esc(subtitle)+(department?' · '+esc(department.name):'')+'</small></div>'+
+  '<span class="org-role '+dot+'">'+label+'</span>'+editor+'</div>';
+}
+function wfTree(){
+ const members=app.data?.members||[];
+ if(!members.length)return '<div class="org-empty">目前還沒有已加入的員工。請邀請第一位同事。</div>';
+ const ids=new Set(members.map(m=>m.id)),used=new Set();
+ const descend=(parent,depth)=>{
+  if(depth>16)return '';
+  const children=members.filter(m=>m.reports_to===parent).sort((a,b)=>a.role.localeCompare(b.role)||a.display_name.localeCompare(b.display_name));
+  return children.map(child=>{
+   if(used.has(child.id))return '';
+   used.add(child.id);
+   return '<div class="org-node">'+wfCard(child,depth)+
+   '<div class="org-children">'+descend(child.id,depth+1)+'</div></div>';
+  }).join('');
+ };
+ const roots=members.filter(m=>!m.reports_to||!ids.has(m.reports_to));
+ let tree=roots.map(m=>{
+  if(used.has(m.id))return '';
+  used.add(m.id);
+  return '<div class="org-node">'+wfCard(m,0)+'<div class="org-children">'+descend(m.id,1)+'</div></div>';
+ }).join('');
+ for(const member of members){
+  if(used.has(member.id))continue;
+  used.add(member.id);tree+='<div class="org-node">'+wfCard(member,0)+'</div>';
+ }
+ return tree;
+}
+function wfOrgView(){
+ heading(wfAdmin()?'<button type="button" class="btn" data-org="department">新增部門</button> <button type="button" class="btn primary" data-org="invite">＋ 邀請員工</button>':'');
+ const members=app.data?.members||[],active=members.filter(m=>m.status==='active');
+ const title=app.data?.tenant?.name||'我的企業';
+ const orgSummary='<div class="org-hero"><div><div class="org-kicker">ORGANIZATION WORKSPACE</div>'+
+ '<h2>'+esc(title)+'</h2><p>一家公司一套成員名冊。主管只能審核自己管理的團隊，下屬可跨多個層級。</p></div>'+
+ '<div class="org-owner-badge">'+esc(WF_ROLES[role()]||'員工')+'</div></div>';
+ const stats='<div class="org-metrics">'+
+ [['可見成員',active.length],['主管／組長',active.filter(m=>m.role==='manager').length],
+  ['部門數',(app.data?.departments||[]).length],['待審申請',(app.data?.requests||[]).filter(r=>r.status==='pending'&&wfCanReview(r.member_id)).length]
+ ].map(([name,val])=>'<div class="org-metric"><span>'+esc(name)+'</span><strong>'+val+'</strong></div>').join('')+'</div>';
+ const rows=members.map(m=>{
+ const supervisor=members.find(x=>x.id===m.reports_to),dept=app.data.departments?.find(x=>x.id===m.department_id);
+ const c=wfAdmin()&&m.role!=='owner'?'<button type="button" class="btn small" data-org="edit" data-id="'+esc(m.id)+'">設定</button>':'—';
+ return tr([esc(m.display_name),esc(m.job_title||WF_ROLES[m.role]),esc(dept?.name||'未分組'),
+  esc(supervisor?.display_name||'—'),status(m.status),c]);
+ });
+ const legend='<div class="org-guide"><div class="org-guide-title">權限如何運作</div>'+
+ '<div><b>企業總管理者</b><span>建立公司、跨部門管理、設定所有人員角色</span></div>'+
+ '<div><b>人資管理者</b><span>人員邀請、層級管理、公司範圍內審核</span></div>'+
+ '<div><b>主管／組長</b><span>只查看、排班與審核自己所管的下屬；組長可再管理員工</span></div>'+
+ '<div><b>一般員工</b><span>本人班表、打卡、請假、加班、補卡與申請進度</span></div>'+
+ '<p>角色及上下級關係保存在 Supabase；單純修改網頁無法取得權限。</p></div>';
+ $('appContent').innerHTML=orgSummary+stats+'<div class="org-columns">'+
+ '<section class="org-surface"><div class="org-section-head"><div><h2>組織架構</h2><p>由上往下設定主管與直屬成員</p></div></div>'+
+ '<div class="org-tree">'+wfTree()+'</div></section>'+
+ '<section class="org-surface">'+legend+'</section></div>'+
+ '<section class="org-surface"><div class="org-section-head"><div><h2>員工名冊與管理鏈</h2><p>各企業資料完全獨立，只有授權者能調整角色與上級。</p></div>'+
+ (wfAdmin()?'<button class="btn primary" data-org="invite">邀請新員工</button>':'')+'</div>'+
+ table(['員工','職稱／角色','所屬部門','直屬主管','狀態','管理'],rows)+'</section>';
+}
+function wfInviteModal(){
+ if(!wfAdmin())throw Error('只有企業管理者可以邀請員工');
+ openModal('邀請員工加入企業',modalForm('wf_org_invite',[
+ {name:'p_email',label:'員工登入 Email',wide:true,html:'<input name="p_email" id="p_email" type="email" required placeholder="staff@company.com" autocomplete="off">'},
+ {name:'p_name',label:'姓名',html:input('p_name','text','','maxlength="60"')},
+ {name:'p_role',label:'帳號角色',html:selectField('p_role',wfRoleOptions())},
+ {name:'p_job_title',label:'職稱',html:'<input name="p_job_title" id="p_job_title" maxlength="80" placeholder="例如：門市專員">'},
+ {name:'p_reports_to',label:'直屬主管',html:'<select name="p_reports_to" id="p_reports_to">'+wfManagerOptions()+'</select>'},
+ {name:'p_branch',label:'分店',html:selectField('p_branch',options(app.data.branches||[],x=>x.name))},
+ {name:'p_department',label:'部門',html:'<select name="p_department" id="p_department">'+wfDeptOptions()+'</select>'}
+ ],'產生專屬邀請連結')+'<p class="org-form-tip">邀請連結僅能由指定 Email 完成驗證與綁定，7 天後失效，且只能使用一次。平台不會自動替員工設定密碼。</p>');
+}
+function wfEditModal(id){
+ if(!wfAdmin())throw Error('只有企業管理者可以編輯組織');
+ const m=(app.data?.members||[]).find(x=>x.id===id);
+ if(!m||m.role==='owner')throw Error('不可編輯企業擁有者角色');
+ openModal('設定人員層級 · '+m.display_name,modalForm('wf_org_edit',[
+ {name:'p_member',label:'員工身分',wide:true,html:'<input name="p_member" value="'+esc(m.id)+'" type="hidden"><div class="org-edit-subject">'+esc(m.display_name)+'</div>'},
+ {name:'p_role',label:'角色權限',html:selectField('p_role',wfRoleOptions(m.role))},
+ {name:'p_job_title',label:'職稱',html:'<input id="p_job_title" name="p_job_title" maxlength="80" value="'+esc(m.job_title||'')+'">'},
+ {name:'p_reports_to',label:'直屬主管',html:'<select id="p_reports_to" name="p_reports_to">'+wfManagerOptions(m.reports_to||'',m.id)+'</select>'},
+ {name:'p_department',label:'所屬部門',html:'<select id="p_department" name="p_department">'+wfDeptOptions(m.department_id||'')+'</select>'}
+ ],'儲存組織設定')+
+ '<p class="org-form-tip">主管權限會隨上下級設定即時生效。不能設定跨企業上級，也不能形成循環管理鏈。</p>');
+}
+function wfDepartmentModal(){
+ if(!wfAdmin())throw Error('只有企業管理者可以新增部門');
+ openModal('新增部門',modalForm('wf_org_department',[
+ {name:'name',label:'部門名稱',wide:true,html:input('name','text','','maxlength="60"')},
+ {name:'branch_id',label:'所屬分店',wide:true,html:branchFilter()}
+ ],'建立部門'));
+}
+function wfInvitationResult(result){
+ const link=location.origin+location.pathname+'?invite='+encodeURIComponent(result.token);
+ openModal('邀請已建立','<div class="org-invite-result"><div class="org-result-mark">✓</div><h3>已建立專屬員工邀請</h3>'+
+ '<p>將下方連結傳給 <b>'+esc(result.email)+'</b>。員工註冊或登入、完成 Email 驗證後，就能加入這家公司。</p>'+
+ '<label for="orgInviteLink">專屬邀請網址</label><input id="orgInviteLink" readonly value="'+esc(link)+'">'+
+ '<div class="org-form-tip">此連結含單次使用的驗證憑證，請只傳送給指定員工。過期需重新產生邀請。</div>'+
+ '<div class="modal-actions"><button class="btn" data-action="closeModal">關閉</button>'+
+ '<button class="btn primary" type="button" data-org="copyInvite">複製邀請連結</button></div></div>');
+}
+document.addEventListener('click',async event=>{
+ const b=event.target.closest('[data-org]');if(!b)return;
+ event.preventDefault();event.stopPropagation();
+ try{
+  if(b.dataset.org==='invite')wfInviteModal();
+  else if(b.dataset.org==='edit')wfEditModal(b.dataset.id);
+  else if(b.dataset.org==='department')wfDepartmentModal();
+  else if(b.dataset.org==='copyInvite'){
+   const field=$('orgInviteLink');if(!field)return;
+   if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(field.value);
+   else{field.select();document.execCommand('copy');}
+   banner('專屬邀請連結已複製');
+  }
+  else if(b.dataset.org==='orgTab')setTab('org');
+ }catch(error){banner(error.message,true);}
+},true);
+$('overlay').addEventListener('submit',async event=>{
+ const form=event.target;
+ if(!form?.dataset?.form?.startsWith('wf_org_'))return;
+ event.preventDefault();event.stopImmediatePropagation();
+ if(!wfAdmin()){banner('沒有權限設定組織',true);return;}
+ const submit=form.querySelector('[type="submit"]');if(submit)submit.disabled=true;
+ const f=Object.fromEntries(new FormData(form).entries());
+ try{
+  if(form.dataset.form==='wf_org_invite'){
+   const payload={p_tenant:app.tenantId,p_email:f.p_email,p_name:f.p_name,
+    p_role:f.p_role,p_reports_to:f.p_reports_to||null,p_job_title:f.p_job_title||'',
+    p_branch:f.p_branch,p_department:f.p_department||null};
+   const result=await call('/rest/v1/rpc/wm_org_invite','POST',payload,app.token);
+   await reload(true);wfInvitationResult(result);
+  }else if(form.dataset.form==='wf_org_edit'){
+   await call('/rest/v1/rpc/wm_org_set_member','POST',{
+    p_member:f.p_member,p_role:f.p_role,p_reports_to:f.p_reports_to||null,
+    p_job_title:f.p_job_title||'',p_department:f.p_department||null},app.token);
+   closeModal();await reload(true);banner('組織層級與權限已更新');
+  }else if(form.dataset.form==='wf_org_department'){
+   await call('/rest/v1/wm_departments','POST',{
+    name:f.name,tenant_id:app.tenantId,branch_id:f.branch_id},app.token);
+   closeModal();await reload(true);banner('部門已建立');
+  }
+ }catch(error){banner(error.message||'操作失敗',true);if(submit)submit.disabled=false;}
+},true);
+
+const wfPreviousRender=render;
+render=function(){
+ wfPreviousRender();
+ const identity=$('wfIdentity');
+ if(identity){
+  const me=wfMyMember();
+  identity.textContent=app.mode==='demo'?'公開體驗':app.token?
+   (me?.display_name||app.user?.email||'已登入')+' · '+(WF_ROLES[role()]||'員工'):'尚未登入';
+  identity.title=app.data?.tenant?.name||'';
+ }
+ if(app.data&&app.tab==='org')wfOrgView();
+ if(app.data&&app.tab==='approvals'&&app.mode==='real'){
+  for(const btn of $('appContent').querySelectorAll('[data-action="approve"],[data-action="reject"]')){
+   const request=(app.data.requests||[]).find(r=>r.id===btn.dataset.id);
+   if(request&&!wfCanReview(request.member_id))btn.remove();
+  }
+ }
+ if(app.data&&app.tab==='employees'&&app.mode==='real'){
+  for(const btn of $('pageActions').querySelectorAll('[data-action="newEmployee"]'))btn.remove();
+  if(wfAdmin())$('pageActions').insertAdjacentHTML('beforeend','<button type="button" class="btn primary" data-org="orgTab">邀請員工／管理層級</button>');
+ }
+};
+// On invited links, remove bearer token from the visible address before accepting.
+(function initializeOrgInvite(){
+ const url=new URL(location.href),token=url.searchParams.get('invite');
+ if(!token)return;
+ url.searchParams.delete('invite');
+ history.replaceState(null,'',url.pathname+url.search+url.hash);
+ sessionStorage.setItem('wm_org_pending_invite',token);
+ if(app.token){
+  call('/rest/v1/rpc/wm_org_accept_invite','POST',{p_token:token},app.token).then(v=>{
+   sessionStorage.removeItem('wm_org_pending_invite');app.mode='real';app.tenantId=v.tenant_id;
+   app.data=null;return reload(true);
+  }).then(()=>{setTab('org');banner('已成功加入企業');})
+   .catch(e=>banner(e.message,true));
+ }else{
+  app.mode='real';app.data=null;app.tab='overview';
+  setTimeout(()=>{render();showAuth();},120);
+ }
+})();
