@@ -1,7 +1,7 @@
 {
-  "name": "排隊怪獸・線上預約與取號",
+  "name": "Queue Monster｜排隊怪獸・線上預約與取號",
   "short_name": "排隊怪獸",
-  "description": "門市預約、取號、叫號與店家管理的一站式服務。",
+  "description": "Queue Monster：門市預約、取號、叫號與店家管理的一站式服務。",
   "id": "./home.html",
   "start_url": "./home.html",
   "scope": "./",
