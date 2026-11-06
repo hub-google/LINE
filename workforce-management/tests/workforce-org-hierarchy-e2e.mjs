@@ -66,6 +66,7 @@ async function loginUI(who,viewport={width:1366,height:885}){
   document.querySelector('#modePill')?.classList.contains('real-pill')&&
   document.querySelector('#wfIdentity')?.textContent?.includes(name),
   index[who].name,{timeout:35000});
+ if(viewport.width<=760)await page.locator('#menuToggle').click();
  await page.locator('#nav [data-tab="org"]').click();
  await page.locator('#appContent .org-hero').waitFor({state:'visible'});
  await page.waitForLoadState('networkidle',{timeout:20000});
