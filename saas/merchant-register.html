@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="line-saas-build" content="26a397c60589dbb50d710661979939306fb42c05">
-<script defer src="./version-watch.js?build=26a397c60589dbb50d710661979939306fb42c05"></script>
+<meta name="line-saas-build" content="0e7ee4af0ed5c2c53684a76735fe405d2c1b48d0">
+<script defer src="./version-watch.js?build=0e7ee4af0ed5c2c53684a76735fe405d2c1b48d0"></script>
 <meta name="theme-color" content="#523B70">
 <title>店家登入與註冊｜排隊怪獸</title>
 <meta name="description" content="註冊排隊怪獸店家帳號，建立專屬預約與現場叫號服務。">
-<link rel="stylesheet" href="./monster-world.css?build=26a397c60589dbb50d710661979939306fb42c05">
+<link rel="stylesheet" href="./monster-world.css?build=0e7ee4af0ed5c2c53684a76735fe405d2c1b48d0">
 <style>
 :root{--purple:#523b70;--deep:#362849;--gold:#f8cb57;--ink:#292336;--muted:#685f76;--line:#e8e1ed}
 *{box-sizing:border-box}body{margin:0;background:#faf8fd;color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Noto Sans TC",sans-serif}
@@ -32,7 +32,7 @@ button.ghost{font:inherit;color:var(--purple);background:white;border:1px solid 
 .account-info{padding:17px;background:#faf8fd;border-radius:14px;margin-top:14px}
 .account-info .email{font-size:14px;color:var(--muted);overflow-wrap:anywhere}.workspace{margin:17px 0;display:grid;gap:10px}
 .workspace a{display:block;border-radius:11px;text-align:center;padding:11px 15px;font-weight:800;text-decoration:none;background:#eee8f4;color:var(--purple)}
-.workspace a.strong{background:var(--purple);color:white}.muted{color:var(--muted)}
+.workspace a.strong{background:var(--purple);color:white}.muted{color:var(--muted)}.secondary-action{width:100%;margin-top:10px;background:#fff;color:var(--purple);border:1px solid #b7a5c7;border-radius:11px;padding:11px 16px;font:inherit;font-weight:800;cursor:pointer}.password-panel{margin:18px 0;padding:17px;background:#f9f5fc;border:1px solid var(--line);border-radius:13px}.password-panel h3{margin:0;font-size:16px}.password-panel button{margin-top:14px}
 @media(max-width:820px){main{grid-template-columns:1fr;gap:15px;padding:24px 16px 70px}.intro{padding:4px}.intro p{font-size:15px}.benefit{margin-top:18px}.panel{padding:21px}header .shell{padding:12px 15px}.headernav{gap:8px}.headernav a{font-size:12px}h1{font-size:32px}}
 </style></head><body>
 <header><div class="shell"><a href="./home.html" class="brand"><img src="./monster-mascot.svg" alt="">排隊怪獸</a><nav class="headernav"><a href="./home.html">首頁</a><a href="./directory.html">搜尋店家</a><a href="./merchant-register.html?mode=login">店家登入</a><a class="action" href="./merchant-register.html?mode=signup">店家註冊</a></nav></div></header>
@@ -47,7 +47,7 @@ button.ghost{font:inherit;color:var(--purple);background:white;border:1px solid 
 <form id="login-form"><h2>店家登入</h2><p class="sub">使用註冊信箱與密碼登入商家管理後台。</p>
 <label for="login-email">電子信箱（登入帳號）</label><input type="email" id="login-email" autocomplete="username" required>
 <label for="login-pass">密碼</label><input type="password" id="login-pass" autocomplete="current-password" required>
-<button type="submit" class="primary">登入店家後台</button>
+<button type="submit" class="primary">登入店家後台</button><button type="button" id="email-link-login" class="secondary-action">寄送電子郵件登入連結</button><button type="button" id="forgot-pass" class="secondary-action">忘記密碼？寄送重設連結</button>
 <p class="help">還沒有帳號？點選上方「註冊」。</p></form>
 <form id="signup-form" class="hidden"><h2>註冊店家帳號</h2><p class="sub">註冊後門市資料保持空白，由你自行填寫。</p>
 <label for="username">帳號</label><input type="text" id="username" pattern="[a-zA-Z][a-zA-Z0-9_-]{2,29}" maxlength="30" autocomplete="username" placeholder="例如：happyshop" required>
@@ -59,7 +59,7 @@ button.ghost{font:inherit;color:var(--purple);background:white;border:1px solid 
 </div>
 <div id="account-zone" class="hidden"><h2>已登入</h2><div class="account-info"><strong id="account-name"></strong><div id="account-email" class="email"></div></div>
 <div id="workspace" class="workspace"></div>
-<div id="missing-username" class="hidden"><label for="finish-username">設定帳號名稱</label><input id="finish-username" pattern="[a-zA-Z][a-zA-Z0-9_-]{2,29}" placeholder="例如：happyshop"><button class="primary" id="finish-account" type="button">完成帳號設定</button></div>
+<div class="password-panel"><h3>設定或變更登入密碼</h3><p class="sub">首次使用電子郵件登入連結的管理員，請設定至少 8 字元的新密碼。</p><label for="new-pass">新密碼</label><input id="new-pass" type="password" minlength="8" autocomplete="new-password"><label for="confirm-new-pass">確認新密碼</label><input id="confirm-new-pass" type="password" minlength="8" autocomplete="new-password"><button type="button" class="ghost" id="change-pass">儲存新密碼</button></div><div id="missing-username" class="hidden"><label for="finish-username">設定帳號名稱</label><input id="finish-username" pattern="[a-zA-Z][a-zA-Z0-9_-]{2,29}" placeholder="例如：happyshop"><button class="primary" id="finish-account" type="button">完成帳號設定</button></div>
 <button class="ghost" type="button" id="logout">登出</button></div>
 <div id="message" role="status" aria-live="polite"></div>
 </section></main>
@@ -67,6 +67,7 @@ button.ghost{font:inherit;color:var(--purple);background:white;border:1px solid 
 import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 const sb=createClient("https://unapiwajmgqqtdkixaab.supabase.co","sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const $=id=>document.getElementById(id);
+const returnToLogin=()=>new URL("./merchant-register.html?mode=login",location.href).href;
 const msg=(t,error=false)=>{$("message").textContent=t||"";$("message").className=t?"message"+(error?" error":""):""};
 let busy=false,active="login",authUser=null,workspaceSlug="";
 const setMode=(mode)=>{
@@ -121,11 +122,30 @@ $("signup-form").onsubmit=e=>{e.preventDefault();void execute(async()=>{
  if(!/^[a-z][a-z0-9_-]{2,29}$/.test(username))throw Error("帳號需 3 至 30 字，英文開頭，可使用數字、底線及連字號");
  if(password.length<8)throw Error("密碼至少需要 8 字元");
  if(password!==confirm)throw Error("兩次輸入的密碼不相同");
- const {data,error}=await sb.auth.signUp({email,password,options:{data:{username}}});
+ const {data,error}=await sb.auth.signUp({email,password,options:{data:{username},emailRedirectTo:returnToLogin()}});
  if(error)throw error;
  if(data.session){await prepare();msg("帳號已建立，請完成店家資料")}
  else{setMode("login");$("login-email").value=email;msg("註冊已送出，請先到信箱完成驗證，再回來登入")}
 })};
+$("email-link-login").onclick=()=>void execute(async()=>{
+ const email=$("login-email").value.trim().toLowerCase();
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw Error("請先填寫有效的電子信箱");
+ const {error}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:returnToLogin()}});
+ if(error)throw error;msg("已申請寄送登入連結，請到信箱完成身分驗證");
+});
+$("forgot-pass").onclick=()=>void execute(async()=>{
+ const email=$("login-email").value.trim().toLowerCase();
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw Error("請先填寫有效的電子信箱");
+ const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:returnToLogin()});
+ if(error)throw error;msg("若信箱已有帳號，將收到密碼重設連結");
+});
+$("change-pass").onclick=()=>void execute(async()=>{
+ const password=$("new-pass").value,confirm=$("confirm-new-pass").value;
+ if(password.length<8)throw Error("新密碼至少需要 8 字元");
+ if(password!==confirm)throw Error("兩次輸入的密碼不相同");
+ const {error}=await sb.auth.updateUser({password});
+ if(error)throw error;$("new-pass").value="";$("confirm-new-pass").value="";msg("新密碼已儲存，可用於下次登入");
+});
 $("finish-account").onclick=()=>void execute(async()=>{
  const username=$("finish-username").value.trim();
  if(!/^[a-z][a-z0-9_-]{2,29}$/i.test(username))throw Error("請填寫有效的帳號名稱");
