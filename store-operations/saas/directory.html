@@ -150,7 +150,7 @@ a.btn.secondary:hover{background:#e1f3e9}
    <label for="keyword">搜尋店家名稱或地點</label>
    <div class="search-field">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
-    <input id="keyword" class="search" type="search" placeholder="例如：餐廳名稱、地區、測試門市" aria-label="輸入店家名稱或地點" autocomplete="off">
+    <input id="keyword" class="search" type="search" placeholder="例如：餐廳名稱、地區、門市" aria-label="輸入店家名稱或地點" autocomplete="off">
    </div>
   </div>
   <div id="explore-filters" class="explore-filter-row" aria-label="搜尋篩選">
@@ -193,7 +193,7 @@ a.btn.secondary:hover{background:#e1f3e9}
       <p class="arcade-prompt">點選店面可預覽，預約或取號仍使用原有 LINE 流程。</p>
       <div id="arcade-shop-info" class="arcade-panel" aria-live="polite"></div>
     </div>
-    <p id="explore-game-note" class="explore-help">遊戲地圖是探索介面，不代表實際地理位置。僅列出已公開的店家；測試商圈另行標示。</p>
+    <p id="explore-game-note" class="explore-help">遊戲地圖是探索介面，不代表實際地理位置。僅列出已公開的店家；公開商圈另行標示。</p>
   </section>
   <div class="bottom-panels">
    <section id="test" class="support-panel hidden">
@@ -341,7 +341,7 @@ function render(){
       (services.queue?'<a class="btn'+(services.reservation?" secondary":"")+'" href="'+e(queueHref)+'">現場取號</a>':"")+
       (services.queue&&services.calling?'<a class="btn secondary" href="'+boardHref+'">公開叫號看板</a>':"");
   }
-  const badges=t.test_board_only?'<span class="badge qa-badge">測試門市・非正式合作店家</span>':badgesForStore(t);
+  const badges=t.test_board_only?'<span class="badge qa-badge">門市・非正式合作店家</span>':badgesForStore(t);
   const rank=mode!=="mine"&&!searching&&Number(t.popularity_rank)>0?
     '<span class="rank-number'+(Number(t.popularity_rank)<=3?' leading':'')+'">#'+Number(t.popularity_rank)+'</span>':"";
   const metric=rank?'<p class="popularity-metrics">近30天 · 預約 '+Number(t.booking_count||0)+' · 取號 '+Number(t.ticket_count||0)+'</p>':"";
@@ -472,7 +472,7 @@ async function load(){
     const boardResponse=await sb.rpc("so_public_board",{p_slug:qaSlug,p_limit:5});
     if(!boardResponse.error&&boardResponse.data?.shop_name){
       testBoardShop={slug:qaSlug,name:boardResponse.data.shop_name,
-        description:"專屬測試門市的即時叫號看板",address:"",category:"其他",test_board_only:true};
+        description:"專屬門市的即時叫號看板",address:"",category:"其他",test_board_only:true};
     }
     els.test.classList.remove("hidden");
     document.getElementById("demo-link").href=customerUrl("greenfield-salon",mode==="queue"?"queue":"reserve","PLATFORM");
