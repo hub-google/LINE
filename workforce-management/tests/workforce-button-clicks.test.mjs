@@ -134,7 +134,9 @@ test('all emitted action names are handled and all click listeners cover both co
  }
  assert.ok(actions.length>=25,'main action coverage unexpectedly shrank');
  assert.ok(extras.length>=20,'extended action coverage unexpectedly shrank');
- assert.equal((src.match(/document\.addEventListener\('click'/g)||[]).length,13);
+ assert.ok((src.match(/document\.addEventListener\('click'/g)||[]).length>=14,'missing organization console click delegation');
+ assert.match(src,/data-org="invite"/);
+ assert.match(src,/data-org="edit"/);
  assert.doesNotMatch(src,/\$\('appContent'\)\.addEventListener\('click'/);
  assert.match(src,/if\(!e\.target\.closest\('#appContent, #pageActions'\)\)return/);
 });
