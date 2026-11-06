@@ -1,13 +1,26 @@
 # LINE Workforce — 員工排班、出勤打卡與請假管理 SaaS｜產品需求書（PRD）
 
-> 文件版本：v0.1（初版規劃，供審閱）
+> 文件版本：v0.2（多企業組織階層與驗收增補）
 > 建立日期：2026-11-04
 > 專案位置：`hub-google/LINE/workforce-management/`
-> 產品狀態：**僅建立規劃文件，尚未開發、部署或串接正式 LINE**
+> 產品狀態：**核心多企業 Auth／Supabase／員工與主管組織階層已實作；正式 LINE OA、全項法遵計算與部分進階 PRD 項目仍需個別驗收**
 > 市場：臺灣中小企業、連鎖門市、餐飲、美容、診所、服務業及兼職輪班團隊
 > 原則：同一 GitHub repository 內的**獨立產品**；不可覆寫 `store-operations/`、`recurring-billing/` 或其他現有產品。除非未來另經核准，不共用資料表、登入狀態、租戶資料或 LINE 憑證。
 
 ---
+
+
+## 0.A 2026-11-06 多企業組織與帳號架構（已實作）
+
+1. **一企業一 Tenant**：`wm_tenants` 及既有 `wm_branches`、`wm_departments`；真實企業由註冊且驗證電子郵件的 Owner 建立。第一名員工資料透過安全 Trigger 與 Owner UUID 關聯。一個 Auth UUID 可在不同 Tenant 擁有不同角色。
+2. **企業擁有者**：`role=owner`，全公司資料範圍。可建立部門、管理角色、發送員工單次邀請。企業 Owner 角色不可由普通成員編輯 RPC 任意新增或解除。
+3. **人資管理者**：`role=hr`，全公司人員可見且可處理人資事項；不可藉由普通角色編輯介面變更公司 Owner／HR 角色。
+4. **主管與組長**：`role=manager`，由 `wm_members.reports_to` 決定管理關係，不以固定單層店長判定。職稱放 `wm_members.job_title`；組長與經理使用同一 Manager 權限類型但具有不同上級／下級。主管看得到本人與管理鏈以下員工、只能審核下屬，不能審核自己或平行部門員工。
+5. **一般員工**：`role=employee`，只可看自己 RLS 授權的資料，沒有角色編輯／審核權限。請假、加班、補卡維持各自獨立按鈕。
+6. **員工啟用**：Owner／HR 在「組織與權限」輸入員工 Email、姓名、角色、職稱、分店、部門、直屬主管；伺服器新增未綁定的 `wm_members` 與 `wm_org_invites`，產生 48 位 hex 單次 Token。Token SHA-256 儲存於 DB，7 天有效；員工用指定 Email 註冊／登入及驗證後才可完成 Auth UUID 綁定。邀請只在有權限的企業管理員畫面顯示，需自行將連結傳給該員工；不假裝有自動寄出 Email。
+7. **資料庫權限與稽核**：`wm_private.is_org_descendant` 判定管理鏈，`wm_private.member_visible` 保護跨企業／跨部門員工資料，`wm_private.can_approve_member` 與請假／加班狀態 Trigger 限制主管審核。禁止主管形成循環或跨企業指派；角色與上下級異動寫入 `wm_org_role_audit`。敏感薪資 `hourly_rate` 仍不可由一般員工 REST 查詢。
+8. **共用 DEMO 與真正企業資料隔離**：共用 DEMO 供匿名預覽，正式測試帳號在獨立的兩家虛構企業，不能借 Demo 權限直接操作別人的公司。若使用者變更登入身分，舊的 Demo 載入會被丟棄。
+9. **自動化驗收**：測試矩陣詳見 `ORG_HIERARCHY_TESTPLAN_20261106.md`；測試使用真實 Supabase Auth、Playwright UI、REST RLS 安全斷言，以及實際操作 PNG，不以單純資料庫種子充當通過證據。
 
 ## 0. 文件約定與範圍
 
