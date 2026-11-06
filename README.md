@@ -1,6 +1,6 @@
 # LINE — 五個獨立產品
 
-這個 repository 不是單一產品，而是五個面向不同客群、可獨立部署與銷售的 LINE 相關產品。其中原「LINE 預約」產品的正式名稱為 **Queue Monster（排隊怪獸）**，專案識別名稱為 `QueueMonster`。
+這個 repository 不是單一產品，而是五個面向不同客群、可獨立部署與銷售的 LINE 相關產品。其中原「LINE 預約」產品的正式名稱為 **Queue Monster（排隊怪獸）**，專案識別名稱為 [**`QueueMonster`**](./QueueMonster/)。
 
 | 目錄 | 產品 | 主要客群 | 技術 |
 |---|---|---|---|
@@ -23,7 +23,7 @@
 
 ## 產品入口
 
-- [Queue Monster（排隊怪獸，原 LINE 預約）](./store-operations/saas)
+- [Queue Monster（排隊怪獸，原 LINE 預約）](./QueueMonster/)
 - [group-cleanup](./group-cleanup)
 - [recurring-billing](./recurring-billing)
 - [store-operations](./store-operations)
