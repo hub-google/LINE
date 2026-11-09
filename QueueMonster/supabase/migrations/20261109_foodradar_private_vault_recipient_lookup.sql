@@ -9,7 +9,7 @@ SET search_path = ''
 AS $$
     SELECT decrypted_secret
       FROM vault.decrypted_secrets
-     WHERE name = 'FOODRADAR_REPORT_LINE_USER_ID'
+     WHERE name = 'REPORT_LINE_USER_ID'
      LIMIT 1
 $$;
 REVOKE ALL ON FUNCTION public.foodradar_configured_line_recipient() FROM PUBLIC, anon, authenticated;
