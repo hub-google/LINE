@@ -105,6 +105,7 @@ test("homepage hero presents two separate Chinese-first booking and queue exampl
  for(const text of ["診所門診","選擇可預約時段","10:00","11:30","14:00","確認預約","餐廳現場候位","目前叫號","A012","我的號碼","A019","前方等候","6 組","查看叫號進度"]){
   assert.ok(landing.includes(text),"Missing example data: "+text);
  }
+ assert.match(landing,/<p class="hero-demo-foot">適合餐廳、小吃店、診所及現場服務窗口<\/p>/);
  assert.match(landing,/展示號碼非即時資料/);
  assert.doesNotMatch(landing,/<div class="float-card|<div class="phone"/);
  assert.doesNotMatch(landing,/介面示意</);
