@@ -140,6 +140,13 @@ try{
   managerMember=members[0]?.id;
   assert.equal(members[0]?.role,'manager');
   assert.ok(managerMember);
+  // Company hierarchy: the actual manager must be the employee's supervisor.
+  // The manager is not authorized to read or approve unrelated employees.
+  await req(api+'/rest/v1/wm_members?id=eq.'+member+'&tenant_id=eq.'+tenant,'PATCH',
+   {reports_to:managerMember},
+   {...header(publicKey,users[0].token),Prefer:'return=minimal'});
+  const assigned=await rows('wm_members',users[0].token,'select=reports_to&id=eq.'+member);
+  assert.equal(assigned[0]?.reports_to,managerMember);
   const company=await rows('wm_tenants',users[2].token,'select=id&is_demo=eq.false');
   assert.ok(company.some(x=>x.id===tenant),'Manager must see its tenant');
  });
