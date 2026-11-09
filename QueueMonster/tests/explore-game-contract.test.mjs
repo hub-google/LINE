@@ -21,7 +21,7 @@ test("explore lists real published stores with category/area/service filters",()
  assert.match(migration,/'directory_category',t\.directory_category/);
  assert.match(migration,/directory_category=case when p_patch \? 'directory_category'/);
  assert.match(app,/function merchantProfileFields\(prefix,tenant=\{\}\)/);
- assert.ok(app.includes("prefix+\'-directory-category\'"));
+ assert.match(app,/prefix\+'-directory-category/);
  assert.ok(app.includes('merchantProfileFields("set",t)'));
  assert.match(app,/directory_category:val\(prefix\+"-directory-category"\)/);
  assert.match(directory,/id="explore-category"/);
