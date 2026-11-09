@@ -328,7 +328,7 @@ function render(){
       (services.queue?'<a class="btn secondary" href="'+e(queueHref)+'">查看號碼</a>':"")+
       (services.queue&&services.calling?'<a class="btn secondary" href="'+boardHref+'">公開叫號看板</a>':"");
   }else{
-    primaryHref=services.reservation?reserveHref:services.queue?queueHref:services.calling?boardHref:"";
+    primaryHref=services.reservation?reserveHref:services.queue?queueHref:"";
     actions=(services.reservation?'<a class="btn" href="'+e(reserveHref)+'">立即預約</a>':"")+
       (services.queue?'<a class="btn'+(services.reservation?" secondary":"")+'" href="'+e(queueHref)+'">現場取號</a>':"")+
       (services.queue&&services.calling?'<a class="btn secondary" href="'+boardHref+'">公開叫號看板</a>':"");
