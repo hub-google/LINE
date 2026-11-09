@@ -30,8 +30,8 @@ test("generated staff and customer links use /booking/ without changing OAuth ca
  assert.match(app,/const route=\(v,s=slug,tab=""\)=>bookingPath/);
  assert.match(app,/const canonical=location\.origin\+bookingPath/);
  assert.match(app,/new URL\(location\.origin\+location\.pathname\)/);
- assert.match(app,/LINE BOOKING · 顧客服務/);
- assert.match(app,/LINE BOOKING · 門市管理/);
+ assert.match(app,/排隊怪獸 · 顧客服務/);
+ assert.match(app,/排隊怪獸 · 門市管理/);
 });
 
 test("Pages builds the stylesheet and deploys only booking and legacy SaaS paths",()=>{
