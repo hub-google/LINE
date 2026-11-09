@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="de9d5018e2842c156202fc1b8a1428cf213a5960">
+<meta name="line-saas-build" content="8d2dc39c72da1e54a7805392ee77abe962ea0072">
 <meta name="theme-color" content="#462B52">
 <link rel="manifest" href="./manifest.webmanifest">
 <script>
@@ -32,7 +32,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   }
 })();
 </script>
-<script defer src="./version-watch.js?build=de9d5018e2842c156202fc1b8a1428cf213a5960"></script>
+<script defer src="./version-watch.js?build=8d2dc39c72da1e54a7805392ee77abe962ea0072"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>排隊怪獸｜顧客預約、取號與門市管理</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -166,8 +166,8 @@ body{overflow-x:hidden}
 .guide-link{text-decoration:none;color:var(--primary);border:1px solid var(--line);background:#f2f8f4;min-height:42px;display:flex;align-items:center;white-space:nowrap}
 .guide-link:hover{background:#e5f3ea}
 </style>
-<link rel="stylesheet" href="./booking-theme.css?build=de9d5018e2842c156202fc1b8a1428cf213a5960">
-<link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=de9d5018e2842c156202fc1b8a1428cf213a5960"></head>
+<link rel="stylesheet" href="./booking-theme.css?build=8d2dc39c72da1e54a7805392ee77abe962ea0072">
+<link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=8d2dc39c72da1e54a7805392ee77abe962ea0072"></head>
 <body data-monster-page="index">
 <header><div class="top">
 <div class="brand"><span class="brandmark" aria-hidden="true"></span>排隊怪獸<small>線上預約・現場取號・門市管理</small></div>
@@ -814,6 +814,149 @@ function renderHome(){
 function featureChecks(data={},prefix="feature"){
  return '<div class="grid">'+features.map(f=>'<label class="checklist"><input type="checkbox" class="'+prefix+'" data-feature="'+f[0]+'" '+(data[f[0]]?"checked":"")+'> '+f[1]+'</label>').join("")+'</div>';
 }
+
+const MERCHANT_CATEGORIES=["其他","餐飲","美髮","美甲／美容","醫療／診所","健康／按摩","運動","寵物","教育","生活服務"];
+const MERCHANT_PALETTE=["#523B70","#7A4BBD","#147E68","#2777B4","#E47C72","#DE9C28","#243B53","#C3548C"];
+const MERCHANT_LOGO_BUCKET="so-merchant-logos";
+function merchantSafeLogoUrl(url){
+ const text=String(url||"").trim();
+ return /^https:\/\/[^\s<>"']{1,490}$/i.test(text)?text:"";
+}
+function merchantAccent(hex){
+ return /^#[0-9a-f]{6}$/i.test(String(hex||""))?String(hex).toUpperCase():"#523B70";
+}
+function merchantBrandContrast(hex){
+ const channels=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255)
+  .map(n=>n<=.04045?n/12.92:Math.pow((n+.055)/1.055,2.4));
+ const luminance=channels[0]*.2126+channels[1]*.7152+channels[2]*.0722;
+ return luminance>.30?"#22202A":"#FFFFFF";
+}
+function merchantColorControl(prefix,color){
+ const accent=merchantAccent(color);
+ return '<div class="merchant-color-editor"><label for="'+prefix+'-accent-picker">品牌顏色</label>'+
+  '<div class="merchant-color-row"><input class="merchant-color-picker" type="color" id="'+prefix+'-accent-picker" data-color-picker="'+prefix+'" value="'+accent+'" aria-label="點選調色盤選擇品牌色">'+
+  '<span class="merchant-color-hint">點擊色塊開啟調色盤，或直接選下方推薦配色</span></div>'+
+  '<div class="merchant-colors" role="group" aria-label="推薦品牌配色">'+MERCHANT_PALETTE.map(c=>
+   '<button type="button" class="merchant-color-swatch'+(c.toUpperCase()===accent?' selected':'')+'" data-color-preset="'+c+'" data-color-for="'+prefix+'" style="background:'+c+'" aria-label="選擇品牌色 '+c+'" aria-pressed="'+(c.toUpperCase()===accent)+'"></button>').join("")+'</div>'+
+  '<input type="hidden" id="'+prefix+'-accent" value="'+accent+'">'+
+  '<div class="merchant-color-preview" id="'+prefix+'-brand-preview" style="background:'+accent+';color:'+merchantBrandContrast(accent)+'"><span>品牌色預覽</span><strong>預約・取號・叫號</strong></div></div>';
+}
+function merchantLogoControl(prefix,logo){
+ const safe=merchantSafeLogoUrl(logo);
+ return '<div class="merchant-logo-editor"><label for="'+prefix+'-logo-file">店家 LOGO</label>'+
+  '<div class="merchant-logo-row"><div class="merchant-logo-frame"><img id="'+prefix+'-logo-preview" src="'+esc(safe)+'" alt="店家 LOGO 預覽" '+(safe?'':'hidden')+'>'+
+  '<span id="'+prefix+'-logo-placeholder" '+(safe?'hidden':'')+'>尚未上傳</span></div>'+
+  '<div class="merchant-logo-actions"><input class="merchant-logo-file" type="file" id="'+prefix+'-logo-file" data-logo-file="'+prefix+'" accept="image/png,image/jpeg,image/webp" aria-describedby="'+prefix+'-logo-hint">'+
+  '<p id="'+prefix+'-logo-hint" class="small">選擇 JPG、PNG 或 WebP 圖片，最大 2 MB；選取後立即預覽，按儲存才會正式上傳。</p>'+
+  '<button type="button" class="btn outline merchant-clear-logo" data-logo-clear="'+prefix+'">移除 LOGO</button></div></div>'+
+  '<input type="hidden" id="'+prefix+'-logo" value="'+esc(safe)+'"></div>';
+}
+function merchantProfileFields(prefix,tenant={}){
+ const blank=tenant.onboarding_complete===false;
+ const value=(key,fallback="")=>blank?"":(tenant[key]??fallback);
+ const accent=merchantAccent(value("accent","#523B70"));
+ const category=value("directory_category","其他");
+ const slot=value("slot_minutes",30);
+ const time=(key,fallback="")=>String(value(key,fallback)||"").slice(0,5);
+ return '<div class="merchant-profile">'+
+  '<div class="merchant-profile-section"><h3>店家識別與品牌</h3>'+
+   merchantLogoControl(prefix,value("logo_url"))+
+   '<div class="grid"><div>'+field("企業／店家名稱",prefix+"-name",value("name"),"text",'maxlength="100" autocomplete="organization"')+'</div>'+
+   '<div><label for="'+prefix+'-directory-category">店家分類</label><select class="field" id="'+prefix+'-directory-category">'+
+   MERCHANT_CATEGORIES.map(c=>'<option value="'+esc(c)+'" '+(c===category?'selected':'')+'>'+esc(c)+'</option>').join("")+'</select></div></div>'+
+   '<label for="'+prefix+'-description">網站簡介</label><textarea class="field merchant-description" id="'+prefix+'-description" maxlength="500" rows="3" placeholder="讓顧客快速了解店家提供的服務">'+esc(value("description"))+'</textarea>'+
+   merchantColorControl(prefix,accent)+'</div>'+
+  '<div class="merchant-profile-section"><h3>店家聯絡資訊</h3>'+
+   '<div class="grid"><div>'+field("聯絡電話",prefix+"-phone",value("phone"),"tel",'maxlength="40" autocomplete="tel"')+'</div>'+
+   '<div>'+field("店家地址",prefix+"-address",value("address"),"text",'maxlength="200" autocomplete="street-address"')+'</div></div></div>'+
+  '<div class="merchant-profile-section"><h3>營業與預約設定</h3>'+
+   '<div class="grid"><div>'+field("每日開始營業時間",prefix+"-open",time("open_time",prefix==="create"?"10:00":""),"time")+'</div>'+
+   '<div>'+field("每日結束營業時間",prefix+"-close",time("close_time",prefix==="create"?"20:00":""),"time")+'</div>'+
+   '<div>'+field("每時段最多預約人數",prefix+"-capacity",value("slot_capacity",prefix==="create"?3:""),"number",'min="1" max="100"')+'</div>'+
+   '<div><label for="'+prefix+'-minutes">預約時段間隔</label><select class="field" id="'+prefix+'-minutes">'+
+   (blank?'<option value="">請選擇</option>':"")+
+   [15,30,60].map(m=>'<option value="'+m+'" '+(String(slot)===String(m)?'selected':'')+'>'+m+' 分鐘</option>').join("")+'</select></div></div></div>'+
+ '</div>';
+}
+function merchantProfilePatch(prefix,previous={}){
+ const p={
+  name:val(prefix+"-name"),phone:val(prefix+"-phone"),address:val(prefix+"-address"),
+  description:val(prefix+"-description"),directory_category:val(prefix+"-directory-category")||"其他",
+  accent:val(prefix+"-accent"),logo_url:val(prefix+"-logo"),
+  open_time:String(val(prefix+"-open")||previous.open_time||"10:00").slice(0,5),
+  close_time:String(val(prefix+"-close")||previous.close_time||"20:00").slice(0,5),
+  slot_capacity:Number(val(prefix+"-capacity")||previous.slot_capacity||3),
+  slot_minutes:Number(val(prefix+"-minutes")||previous.slot_minutes||30)
+ };
+ if(p.name.length<2)throw Error("請輸入至少兩個字的店家名稱");
+ if(!/^#[0-9a-f]{6}$/i.test(p.accent))throw Error("請選擇品牌顏色");
+ if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(p.open_time)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(p.close_time)||p.close_time<=p.open_time)
+  throw Error("營業時間有誤，結束時間必須晚於開始時間");
+ if(!Number.isInteger(p.slot_capacity)||p.slot_capacity<1||p.slot_capacity>100)throw Error("每時段人數必須介於 1～100");
+ if(![15,30,60].includes(p.slot_minutes))throw Error("請選擇預約時段間隔");
+ return p;
+}
+function merchantLogoFile(prefix){
+ const file=$(prefix+"-logo-file")?.files?.[0];
+ if(!file)return null;
+ if(!["image/png","image/jpeg","image/webp"].includes(file.type))throw Error("LOGO 僅支援 JPG、PNG 或 WebP 格式");
+ if(file.size<1||file.size>2097152)throw Error("LOGO 圖片不可超過 2 MB");
+ return file;
+}
+async function merchantUploadLogo(prefix,existingUrl){
+ const file=merchantLogoFile(prefix);
+ if(!file)return existingUrl;
+ if(!session?.user?.id||!authReady())throw Error("上傳 LOGO 前請先登入");
+ const ext={"image/png":"png","image/jpeg":"jpg","image/webp":"webp"}[file.type];
+ const objectPath=session.user.id+"/"+crypto.randomUUID()+"."+ext;
+ const upload=await supa.storage.from(MERCHANT_LOGO_BUCKET).upload(objectPath,file,{
+  contentType:file.type,cacheControl:"3600",upsert:false
+ });
+ if(upload.error)throw Error("LOGO 上傳失敗："+upload.error.message);
+ const url=supa.storage.from(MERCHANT_LOGO_BUCKET).getPublicUrl(upload.data.path).data.publicUrl;
+ if(!merchantSafeLogoUrl(url))throw Error("無法取得 LOGO 的安全公開網址");
+ return url;
+}
+function merchantSetAccent(prefix,hex){
+ const color=merchantAccent(hex);
+ const hidden=$(prefix+"-accent"),picker=$(prefix+"-accent-picker"),preview=$(prefix+"-brand-preview");
+ if(hidden)hidden.value=color;
+ if(picker)picker.value=color;
+ if(preview){preview.style.backgroundColor=color;preview.style.color=merchantBrandContrast(color);}
+ document.querySelectorAll('button[data-color-for="'+prefix+'"]').forEach(button=>{
+  const active=button.dataset.colorPreset.toUpperCase()===color;
+  button.classList.toggle("selected",active);button.setAttribute("aria-pressed",String(active));
+ });
+}
+function merchantClearLogo(prefix){
+ const file=$(prefix+"-logo-file"),hidden=$(prefix+"-logo"),preview=$(prefix+"-logo-preview"),placeholder=$(prefix+"-logo-placeholder");
+ if(file)file.value="";
+ if(hidden)hidden.value="";
+ if(preview){if(preview.dataset.blobUrl)URL.revokeObjectURL(preview.dataset.blobUrl);preview.removeAttribute("src");preview.hidden=true;delete preview.dataset.blobUrl;}
+ if(placeholder)placeholder.hidden=false;
+}
+document.addEventListener("input",event=>{
+ const picker=event.target.closest?.("input[data-color-picker]");
+ if(picker)merchantSetAccent(picker.dataset.colorPicker,picker.value);
+});
+document.addEventListener("change",event=>{
+ const picker=event.target.closest?.("input[data-color-picker]");
+ if(picker){merchantSetAccent(picker.dataset.colorPicker,picker.value);return;}
+ const input=event.target.closest?.("input[data-logo-file]");
+ if(!input)return;
+ const prefix=input.dataset.logoFile,preview=$(prefix+"-logo-preview"),placeholder=$(prefix+"-logo-placeholder");
+ try{
+  const file=merchantLogoFile(prefix);
+  if(!file)return;
+  if(preview){
+   if(preview.dataset.blobUrl)URL.revokeObjectURL(preview.dataset.blobUrl);
+   const url=URL.createObjectURL(file);
+   preview.src=url;preview.hidden=false;preview.dataset.blobUrl=url;
+  }
+  if(placeholder)placeholder.hidden=true;
+ }catch(error){input.value="";showActionFeedback(error.message,"error");}
+});
+
 function platformRender(){
  if(!authReady())return requireAuth();
  if(!platformReady())return box("無平台管理權限",'<p>此帳號尚未取得平台管理權限，請以已驗證的總管理員信箱登入。</p><a class="btn primary" href="./merchant-register.html?mode=login">重新登入</a>');
@@ -834,19 +977,22 @@ function platformRender(){
     (overview.map(t=>'<tr><td><strong>'+esc(t.name)+'</strong><div class="small">'+esc(t.slug)+'</div></td><td>'+features.filter(f=>t.modules?.[f[0]]).map(f=>esc(f[1])).join("、")+'</td><td>'+tag(t.status)+'</td><td>'+esc(t.staff)+'</td><td>'+btn("設定","company-config","outline",'data-slug="'+esc(t.slug)+'"')+' <a href="'+esc(route("customer",t.slug))+'" target="_blank" rel="noopener">顧客頁</a></td></tr>').join("")||'<tr><td colspan="5">尚無企業</td></tr>')+
     '</tbody></table></div>';
    if(chosenCompany){const t=overview.find(t=>t.slug===chosenCompany);if(t) html+=box("設定 "+esc(t.name),
-     field("企業名稱","config-name",t.name)+
-     '<label>開通功能</label>'+featureChecks(t.modules,"config-feature")+
-     '<div class="flex" style="margin-top:13px">'+btn("儲存功能與名稱","save-company","primary")+
+     merchantProfileFields("config",t)+
+     '<div class="merchant-profile-section"><h3>開通服務</h3>'+featureChecks(t.modules,"config-feature")+'</div>'+
+     '<div class="flex" style="margin-top:13px">'+btn("儲存企業設定","save-company","primary")+
      btn(t.status==="ACTIVE"?"暫停企業":"恢復企業","toggle-company","outline")+
      btn("複製顧客網址","copy-customer","outline")+
      btn("複製員工網址","copy-staff","outline")+'</div>'+
      '<p class="small">LINE 官方帳號與企業自有 OA 狀態：'+esc(lineIndicator(t))+ '。LINE 綁定需後續加入正式 OAuth／憑證交換流程，不能只勾選即視為已綁定。</p>');
    }
  }else if(platformTab==="create"){
-  html=box("新增企業客戶",'<p class="muted">完成後立刻建立獨立資料租戶與網址，不必建立新的 GitHub 專案。</p><div class="grid"><div>'+
-     field("企業名稱","create-name","")+field("網址英文代碼","create-slug","","text",'pattern="[a-z0-9-]{3,40}"')+
-     '</div><div>'+field("第一位企業管理者 Email（選填）","create-owner","","email")+'<p class="small">填寫後產生待接受邀請。管理者須使用此信箱註冊並接受邀請。</p></div></div><label>功能勾選</label>'+featureChecks({reservation:true,queue:true,calling:true},"create-feature")+
-      '<div class="grid"><div>'+field("企業電話","create-phone")+field("企業地址","create-address")+field("每日開始營業時間","create-open","10:00","time")+'</div><div>'+field("品牌色（#RRGGBB）","create-accent","#147e68")+field("單時段最多預約人數","create-capacity",3,"number",'min="1" max="100"')+field("每日結束營業時間","create-close","20:00","time")+'</div></div><div style="margin-top:17px">'+btn("建立企業專屬網站","create-tenant","primary")+'</div>');
+  html=box("新增企業客戶",'<p class="muted">完成後將建立獨立的店家網站與資料空間，LOGO、品牌色及營業設定會同步套用。</p>'+
+    '<div class="grid"><div>'+field("網址英文代碼","create-slug","","text",'pattern="[a-z0-9-]{3,40}" placeholder="例如：my-shop"')+
+    '</div><div>'+field("第一位企業管理者 Email（選填）","create-owner","","email")+
+    '<p class="small">若填寫，將建立管理者邀請，請對方以該信箱註冊後接受。</p></div></div>'+
+    merchantProfileFields("create",{accent:"#523B70",open_time:"10:00",close_time:"20:00",slot_capacity:3,slot_minutes:30})+
+    '<div class="merchant-profile-section"><h3>開通服務</h3>'+featureChecks({reservation:true,queue:true,calling:true},"create-feature")+'</div>'+
+    '<div class="merchant-profile-actions">'+btn("建立企業專屬網站","create-tenant","primary")+'</div>');
  }else html=box("平台運作方式",'<p>每家企業使用同一個 GitHub Pages 前端；預約、號碼、員工、設定分別以企業 ID 保存在 Supabase。</p><p>平台登入使用 Supabase Auth，管理權限在資料庫中驗證。平台 LINE 官方帳號與 Supabase Edge Function 進行串接。真實通知需完成 LINE 身分驗證與加好友；多企業各自綁定不同官方帳號尚未開放。</p>');
 
  return layout("公司總後台","企業開通與模組管理",menu,html);
@@ -1423,8 +1569,8 @@ function staffRender(){
       '<div class="staff-actionbar">'+btn("儲存服務開關","save-service-modes","primary")+'</div>':
       '<p class="small">目前：預約 '+(serviceModules.reservation?'已開放':'未開放')+'，現場取號 '+(serviceModules.queue?'已開放':'未開放')+'。只有店家管理者可以修改。</p>'))+
   box("企業基本設定",!isManager?'<p class="muted">只有管理者可以修改設定。</p>':
-   '<div class="grid"><div>'+field("企業名稱","set-name",t.onboarding_complete===false?"":t.name)+field("電話","set-phone",t.phone)+field("地址","set-address",t.address)+field("品牌色（#RRGGBB）","set-accent",t.onboarding_complete===false?"":t.accent)+'</div><div>'+field("網站簡介","set-description",t.description)+'<label for="set-directory-category">探索頁店家分類</label><select class="field" id="set-directory-category">'+["","其他","餐飲","美髮","美甲／美容","醫療／診所","健康／按摩","運動","寵物","教育","生活服務"].map(c=>'<option value="'+c+'" '+((t.onboarding_complete===false?"":(t.directory_category||"其他"))===c?"selected":"")+'>'+(c||"請選擇分類")+'</option>').join("")+'</select>'+field("LOGO 圖片網址","set-logo",t.logo_url)+field("開始營業","set-open",t.onboarding_complete===false?"":t.open_time,"time")+field("結束營業","set-close",t.onboarding_complete===false?"":t.close_time,"time")+'</div></div>'+
-   '<div class="grid"><div>'+field("每個時段可預約人數","set-capacity",t.onboarding_complete===false?"":t.slot_capacity,"number",'min="1" max="100"')+'</div><div><label>預約時段間隔</label><select class="field" id="set-minutes">'+(t.onboarding_complete===false?'<option value="" selected>請選擇</option>':"")+'<option value="15" '+(t.onboarding_complete===false?"":t.slot_minutes===15?"selected":"")+'>15 分鐘</option><option value="30" '+(t.onboarding_complete===false?"":t.slot_minutes===30?"selected":"")+'>30 分鐘</option><option value="60" '+(t.onboarding_complete===false?"":t.slot_minutes===60?"selected":"")+'>60 分鐘</option></select></div></div><div style="margin-top:15px">'+btn("儲存企業設定","update-settings","primary")+'</div>')+
+   merchantProfileFields("set",t)+
+   '<div class="merchant-profile-actions">'+btn("儲存企業設定","update-settings","primary")+'</div>')+
   (isManager?box("候位保留規則",
      '<p class="small">保留期間不會叫號；到期後下一次叫號時自動恢復。可設定回原順位或隊尾，原票券號碼不變。</p>'+
      '<div class="grid3"><div>'+field("每次保留分鐘數","hold-minutes",staff.queue_hold_policy?.hold_minutes??20,"number",'min="1" max="120"')+
@@ -2271,6 +2417,8 @@ document.addEventListener("click",async ev=>{
    void loadCustomerHistory(1);return;
  }
  const b=ev.target.closest("button");if(!b||busy)return;
+ if(b.dataset.colorPreset&&b.dataset.colorFor){merchantSetAccent(b.dataset.colorFor,b.dataset.colorPreset);return;}
+ if(b.dataset.logoClear){merchantClearLogo(b.dataset.logoClear);return;}
  if(b.dataset.act==="dismiss-feedback"){dismissActionFeedback();flash="";err="";render();return;}
  if(b.dataset.act==="staff-show-more"){
   const key=b.dataset.listKey||"";
@@ -2345,9 +2493,31 @@ document.addEventListener("click",async ev=>{
  if(a==="accept-invite"){await act(async()=>{await rpc("so_accept_invite",{p_invite_id:id});return "已接受企業邀請";});return}
  if(a==="claim-admin"){await act(async()=>{await rpc("so_claim_platform_admin",{p_token:val("bootstrap-token")});return "已取得平台管理員權限";});return}
  if(a==="new-tenant"){platformTab="create";render();return}
- if(a==="create-tenant"){await act(async()=>{const result=await rpc("so_create_tenant",{p_name:val("create-name"),p_slug:testMode&&session?.user?.is_anonymous&&!val("create-slug").startsWith("qa-")?"qa-"+val("create-slug"):val("create-slug"),p_modules:checked("create-feature"),p_owner_email:val("create-owner")||null});await rpc("so_update_tenant",{p_slug:result.slug,p_patch:{phone:val("create-phone"),address:val("create-address"),open_time:val("create-open"),close_time:val("create-close"),accent:val("create-accent"),slot_capacity:Number(val("create-capacity"))}});platformTab="list";chosenCompany=result.slug;return "企業已建立，專屬網址可立即使用";});return}
+ if(a==="create-tenant"){await act(async()=>{
+  const patch=merchantProfilePatch("create");
+  const code=val("create-slug");
+  if(!/^[a-z0-9][a-z0-9-]{2,39}$/.test(code))throw Error("網址英文代碼需為 3～40 個小寫字母、數字或連字號");
+  const email=val("create-owner");
+  if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw Error("企業管理者 Email 格式不正確");
+  patch.logo_url=await merchantUploadLogo("create",patch.logo_url);
+  const result=await rpc("so_create_tenant",{p_name:patch.name,
+   p_slug:testMode&&session?.user?.is_anonymous&&!code.startsWith("qa-")?"qa-"+code:code,
+   p_modules:checked("create-feature"),p_owner_email:email||null});
+  try{await rpc("so_update_tenant",{p_slug:result.slug,p_patch:patch});}
+  catch(error){platformTab="list";chosenCompany=result.slug;throw Error("企業已建立，但部分設定未儲存（"+result.slug+"）："+error.message);}
+  platformTab="list";chosenCompany=result.slug;
+  return "企業已建立，LOGO 與品牌設定已儲存";
+ });return}
  if(a==="company-config"){chosenCompany=b.dataset.slug;render();return}
- if(a==="save-company"){await act(async()=>{await rpc("so_update_tenant",{p_slug:chosenCompany,p_patch:{name:val("config-name"),modules:checked("config-feature")}});return "企業名稱及模組已更新";});return}
+ if(a==="save-company"){await act(async()=>{
+  const tenant=overview.find(x=>x.slug===chosenCompany);
+  if(!tenant)throw Error("找不到企業，請重新整理企業列表");
+  const patch=merchantProfilePatch("config",tenant);
+  patch.logo_url=await merchantUploadLogo("config",patch.logo_url);
+  patch.modules=checked("config-feature");
+  await rpc("so_update_tenant",{p_slug:chosenCompany,p_patch:patch});
+  return "企業資料、品牌及服務開通設定已儲存";
+ });return}
  if(a==="toggle-company"){await act(async()=>{const t=overview.find(x=>x.slug===chosenCompany);await rpc("so_update_tenant",{p_slug:chosenCompany,p_patch:{status:t.status==="ACTIVE"?"SUSPENDED":"ACTIVE"}});return "已更新企業啟用狀態";});return}
  if(a==="copy-customer"||a==="copy-staff"){await act(async()=>{
   const s=view==="platform"?chosenCompany:slug,v=a==="copy-customer"?"customer":"staff";
@@ -2761,20 +2931,16 @@ document.addEventListener("click",async ev=>{
  });return}
  if(a==="update-settings"){await act(async()=>{
  const initial=staff?.tenant?.onboarding_complete===false;
- // Keep an incomplete merchant unlisted until *all* settings have saved successfully.
+ // Keep an incomplete merchant unlisted until all settings are successfully saved.
  const t=staff?.tenant||{};
- const patch={name:val("set-name"),phone:val("set-phone"),address:val("set-address"),
- accent:val("set-accent")||t.accent||"#523B70",description:val("set-description"),
- logo_url:val("set-logo"),directory_category:val("set-directory-category")||"其他",
- open_time:val("set-open")||t.open_time||"10:00",close_time:val("set-close")||t.close_time||"20:00",
- slot_capacity:Number(val("set-capacity")||t.slot_capacity||3),
- slot_minutes:Number(val("set-minutes")||t.slot_minutes||30)};
+ const patch=merchantProfilePatch("set",t);
+ patch.logo_url=await merchantUploadLogo("set",patch.logo_url);
  await rpc("so_update_tenant",{p_slug:slug,p_patch:patch});
  if(initial){
    await rpc("so_complete_merchant_onboarding",{p_slug:slug,p_name:patch.name,
      p_phone:patch.phone,p_address:patch.address,p_category:patch.directory_category});
  }
- return initial?"店家資料已建立並公開搜尋":"企業設定已保存";
+ return initial?"店家資料已建立並公開搜尋":"企業設定與品牌 LOGO 已儲存";
  });return}
  if(a==="invite-staff"){await act(async()=>{await rpc("so_invite_staff",{p_slug:slug,p_email:val("invite-email"),p_role:val("invite-role")});return "員工邀請已儲存，請通知對方登入接受";});return}
  if(a==="book-back"){bookingConfirmationKey="";render();return;}
