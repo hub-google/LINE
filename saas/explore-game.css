@@ -35,7 +35,6 @@
 .region-choice .building:nth-child(3){background:#e4ac93;border-color:#b17d68;height:36px;width:24px}
 .region-choice strong{font-size:16px;font-weight:900}
 .region-choice small{font-size:12px;color:#708e7b}
-.region-choice.test-choice{background:#fff7df;border-color:#d6bd83;box-shadow:0 8px 0 #c9bd95,0 14px 26px #756c4630}
 .arcade-street{position:relative;border-radius:19px;background:#a9dcbd;border:3px solid #4b8e65;overflow:hidden;padding:18px 13px 22px;box-shadow:0 12px 30px #17452a21}
 .arcade-street-header{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin:0 0 14px}
 .arcade-street-header h3{font-size:17px;font-weight:850;margin:0;color:#24513c}

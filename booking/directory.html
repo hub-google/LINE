@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="f7f616b87a91f1ce2866db7ecf6ddf4a8bc847f4">
-<script defer src="./version-watch.js?build=f7f616b87a91f1ce2866db7ecf6ddf4a8bc847f4"></script>
+<meta name="line-saas-build" content="cb52341d06e7b56d825d265b994222d1abff9d16">
+<script defer src="./version-watch.js?build=cb52341d06e7b56d825d265b994222d1abff9d16"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>排隊怪獸｜找店家、預約與取號</title><meta name="description" content="使用排隊怪獸搜尋合作店家、預約服務、現場取號及查詢個人紀錄。">
 <style>
@@ -63,7 +63,7 @@ main{position:relative;margin-top:-18px;padding-bottom:48px}
 .merchant-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .merchant-card{position:relative;background:#fff;border:1px solid #dbe8e0;border-radius:17px;min-height:232px;box-shadow:0 5px 18px rgba(15,54,43,.045);transition:transform .17s,border-color .17s,box-shadow .17s;overflow:hidden}
 .merchant-card:hover,.merchant-card:focus-within{transform:translateY(-2px);border-color:#9acbb4;box-shadow:0 12px 30px rgba(13,68,49,.11)}
-.merchant-card.qa{background:linear-gradient(154deg,#fff 72%,#f3faf6)}
+
 .card-cover{position:absolute;inset:0;z-index:1;border-radius:17px}
 .card-content{position:relative;pointer-events:none;display:flex;flex-direction:column;min-height:232px;padding:22px}
 .card-top{display:flex;align-items:start;gap:12px}
@@ -73,7 +73,7 @@ main{position:relative;margin-top:-18px;padding-bottom:48px}
 .shop-name{font-size:20px;font-weight:850;line-height:1.4;margin:0 0 7px;letter-spacing:-.03em;overflow-wrap:anywhere}
 .badges{display:flex;gap:6px;flex-wrap:wrap}
 .badge{background:#edf6f0;border:1px solid #daeade;color:#246e50;border-radius:99px;font-size:11px;font-weight:750;padding:3px 9px;line-height:1.6}
-.badge.qa-badge{background:#fff3df;border-color:#f4e1b4;color:#8e6722}
+
 .shop-desc{font-size:13px;line-height:1.65;color:#6d8277;margin:17px 0 8px}
 .shop-address{color:#71897d;font-size:12px;margin:0 0 10px}
 .card-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:auto;padding-top:16px;pointer-events:auto;position:relative;z-index:2}
@@ -118,7 +118,7 @@ a.btn.secondary:hover{background:#e1f3e9}
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto;transition:none!important}}
 
-</style><link rel="stylesheet" href="./explore-game.css"><script defer src="./explore-game.js"></script><link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=f7f616b87a91f1ce2866db7ecf6ddf4a8bc847f4"></head>
+</style><link rel="stylesheet" href="./explore-game.css"><script defer src="./explore-game.js"></script><link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=cb52341d06e7b56d825d265b994222d1abff9d16"></head>
 <body data-monster-page="directory">
 <header class="page-header">
  <div class="container">
@@ -216,7 +216,7 @@ const els={intro:document.getElementById("intro"),results:document.getElementByI
 document.getElementById("tab-"+(mode==="game"?"search":mode)).classList.add("active");
 let all=[],popular=[],searchResults=[],searchTotal=0,searchPage=1;
 let searchLoading=false,searchError="",searchRequest=0,searchTimer=null;
-let liffId="",testBoardShop=null,demoShops=[];
+let liffId="";
 const searchCriteria=()=>mode!=="mine"&&(
  Boolean(els.keyword.value.trim())||
  document.getElementById("explore-category").value!=="全部"||
@@ -228,7 +228,7 @@ const cityNames=["基隆市","臺北市","台北市","新北市","桃園市","�
 function areaOf(shop){return (cityNames.find(x=>String(shop.address||"").includes(x))||"線上商圈").replace(/^臺/,"台")}
 function serviceMatches(shop,service){
  const m=shop.modules||{};
- return service==="全部"||(service==="預約"&&!!m.reservation)||(service==="取號"&&!!m.queue)||(service==="看板"&&(shop.test_board_only||!!(m.queue&&m.calling)));
+ return service==="全部"||(service==="預約"&&!!m.reservation)||(service==="取號"&&!!m.queue)||(service==="看板"&&!!(m.queue&&m.calling));
 }
 function setupExploreFilters(){
  const options=(id,items,allText)=>{
@@ -273,12 +273,8 @@ function render(){
    const category=document.getElementById("explore-category").value;
    const area=document.getElementById("explore-area").value;
    const service=document.getElementById("explore-service").value;
-   const testMatches=keyword&&testBoardShop&&
-     (testBoardShop.name+" "+testBoardShop.slug).toLocaleLowerCase("zh-TW").includes(keyword)
-     &&(category==="全部"||category===(testBoardShop.category||"其他"))
-     &&(area==="全部"||areaOf(testBoardShop)===area)&&serviceMatches(testBoardShop,service)?[testBoardShop]:[];
-   filtered=[...searchResults,...testMatches];
-   count=searchTotal+testMatches.length;
+   filtered=searchResults;
+   count=searchTotal;
  }else{
    filtered=popular.slice(0,50);
    count=filtered.length;
@@ -300,13 +296,13 @@ function render(){
    return;
  }
  if(searching&&searchError){
-   els.results.innerHTML='<div class="empty"><strong>搜尋暫時失敗</strong><p>請調整條件再試一次，搜尋結果不會使用示範資料填充。</p></div>';
+   els.results.innerHTML='<div class="empty"><strong>搜尋暫時失敗</strong><p>請稍後重試，或改用其他搜尋條件。</p></div>';
    return;
  }
  if(!filtered.length){
    const msg=mode==="mine"?"還沒有找到你的預約紀錄":searching?"找不到符合條件的店家":"目前沒有已公開的店家";
    els.results.innerHTML='<div class="empty"><strong>'+e(msg)+'</strong><p>'+
-    (mode==="mine"?"可從店家提供的排隊怪獸預約連結登入同一帳號查看。":searching?"試試其他店名、地點或篩選條件。":"正式店家公開後，這裡會自動出現近 30 天最熱門的前 50 名；下方仍可先體驗示範服務。")+
+    (mode==="mine"?"可從店家提供的排隊怪獸預約連結登入同一帳號查看。":searching?"試試其他店名、地點或篩選條件。":"新的合作店家開放服務後，將顯示在此處。")+
     '</p></div>';
    return;
  }
@@ -319,10 +315,7 @@ function render(){
   const queueHref=customerUrl(t.slug,"queue",t.oa_mode);
   const mineHref=customerUrl(t.slug,"mine",t.oa_mode);
   let actions="",primaryHref="";
-  if(t.test_board_only){
-    primaryHref=boardHref;
-    actions='<a class="btn" href="'+boardHref+'">開啟叫號看板 <span class="btn-arrow" aria-hidden="true">↗</span></a>';
-  }else if(mode==="mine"){
+  if(mode==="mine"){
     primaryHref=mineHref;
     actions='<a class="btn" href="'+e(mineHref)+'">查看我的紀錄</a>'+
       (services.queue?'<a class="btn secondary" href="'+e(queueHref)+'">查看號碼</a>':"")+
@@ -333,12 +326,12 @@ function render(){
       (services.queue?'<a class="btn'+(services.reservation?" secondary":"")+'" href="'+e(queueHref)+'">現場取號</a>':"")+
       (services.queue&&services.calling?'<a class="btn secondary" href="'+boardHref+'">公開叫號看板</a>':"");
   }
-  const badges=t.test_board_only?'<span class="badge qa-badge">門市・非正式合作店家</span>':badgesForStore(t);
+  const badges=badgesForStore(t);
   const rank=mode!=="mine"&&!searching&&Number(t.popularity_rank)>0?
     '<span class="rank-number'+(Number(t.popularity_rank)<=3?' leading':'')+'">#'+Number(t.popularity_rank)+'</span>':"";
   const metric=rank?'<p class="popularity-metrics">近30天 · 預約 '+Number(t.booking_count||0)+' · 取號 '+Number(t.ticket_count||0)+'</p>':"";
   const cover=primaryHref?'<a class="card-cover" href="'+e(primaryHref)+'" aria-label="開啟 '+name+'"></a>':"";
-  return '<article class="merchant-card'+(t.test_board_only?" qa":"")+'">'+cover+
+  return '<article class="merchant-card">'+cover+
    '<div class="card-content"><div class="card-top"><span class="shop-icon" aria-hidden="true">'+
    (logo?'<img src="'+e(logo)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'▤')+'</span>'+
    '<div class="shop-details"><div class="rank-line">'+rank+'<h3 class="shop-name" style="margin:0">'+name+'</h3></div><div class="badges">'+badges+'</div></div></div>'+
@@ -347,7 +340,7 @@ function render(){
    (address?'<p class="shop-address">地點：'+address+'</p>':"")+
    (mode==="mine"?'<p class="shop-desc">最近預約 '+Number(t.booking_count||0)+' 筆 · 取號 '+Number(t.ticket_count||0)+' 筆</p>':"")+
    '<div class="card-actions">'+actions+
-   (address&&!t.test_board_only?'<a class="btn secondary" href="https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(t.address)+'" target="_blank" rel="noopener noreferrer">地圖位置</a>':"")+
+   (address?'<a class="btn secondary" href="https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(t.address)+'" target="_blank" rel="noopener noreferrer">地圖位置</a>':"")+
    '</div></div></article>';
  }).join("");
 }
@@ -456,7 +449,6 @@ async function load(){
     if(ranking.error)throw ranking.error;
     all=Array.isArray(directory.data)?directory.data:[];
     popular=Array.isArray(ranking.data)?ranking.data:[];
-    demoShops=[];testBoardShop=null;
   }
   setupExploreFilters();
   if(mode!=="mine")window.LineExploreGame?.setData({
@@ -464,19 +456,13 @@ async function load(){
       reserve_href:customerUrl(shop.slug,"reserve",shop.oa_mode),
       queue_href:customerUrl(shop.slug,"queue",shop.oa_mode),
       board_href:"./board.html?merchant="+encodeURIComponent(shop.slug)
-    })),
-    testBoardShop:testBoardShop?{...testBoardShop,
-      board_href:"./board.html?merchant="+encodeURIComponent(testBoardShop.slug)}:null,
-    demoShops:demoShops.map(shop=>({...shop,
-      reserve_href:customerUrl(shop.slug,"reserve",shop.oa_mode),
-      queue_href:customerUrl(shop.slug,"queue",shop.oa_mode),
-      board_href:"./board.html?merchant="+encodeURIComponent(shop.slug)
     }))
   });
   render();
  }catch(error){
-  els.intro.innerHTML='<strong>讀取失敗</strong><p>'+e(error?.message||"無法連接資料庫")+'</p>';
-  els.results.innerHTML='<div class="empty"><strong>資料暫時無法載入</strong><p>請重新整理。系統不會以假資料填充搜尋結果。</p></div>';
+  console.warn("Store discovery unavailable",error);
+  els.intro.innerHTML='<strong>暫時無法取得店家資訊</strong><p>請稍後重新整理頁面。</p>';
+  els.results.innerHTML='<div class="empty"><strong>資料暫時無法載入</strong><p>請稍後重新整理頁面。</p></div>';
  }
 }
 load();

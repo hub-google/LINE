@@ -79,7 +79,6 @@ body[data-portal=staff] .staff-mobile-nav{background:#FCF7FF}
 :where(.explore-view-switch button[aria-pressed=true]){background:#E9CFF8!important;color:#462B52!important}
 body:has(.top .brand-icon) .hero{background:linear-gradient(125deg,#E5C3F6,#FBE8F6)!important;color:#462B52}
 body:has(.top .brand-icon) .hero :where(h1,p){color:#462B52}
-body:has(#qa-login-panel) #qa-login-panel{background:#F5E6FC!important;border-color:#BF8FDA!important}
 body:has(#single-board){background:#FCF7FF}
 body:has(#single-board)>header{background:#462B52!important;color:#fff!important}
 body:has(#single-board)>header :where(.shop-title,#clock){color:#fff}
@@ -105,7 +104,6 @@ body:has(#single-board) footer{background:#F8EAFD;border-color:#E8D2F1}
 .arcade-plain-btn:hover{background:#EED7FA}
 .arcade-world{background:linear-gradient(180deg,#E8CAFA,#F4DFF9 62%,#FFF1CF);border-color:#CA9BE4;box-shadow:inset 0 0 0 6px #FFF1FF65}
 .region-choice{border-color:#A879C4;background:#FFF9E9;color:#583771;box-shadow:0 8px 0 #CEAAE2,0 14px 26px #50315C24}
-.region-choice.test-choice{background:#FFF0CE;border-color:#D8A95B;box-shadow:0 8px 0 #F1CE8E,0 14px 26px #7A4E2A27}
 .arcade-street{background:#E2C4F1;border-color:#9B6FB8;box-shadow:0 12px 30px #462B521F}
 .arcade-street-view{background:linear-gradient(180deg,#EAD5FC 0 40%,#F4DCEC 40% 69%,#FFE7C0 69% 73%,#9D8AA8 73% 94%,#D3BDD8 94%);border-color:#B48BC7}
 .arcade-street-view:before{background:repeating-linear-gradient(90deg,#FFE6A8 0 36px,transparent 36px 65px)}
@@ -115,7 +113,6 @@ body:has(#single-board) footer{background:#F8EAFD;border-color:#E8D2F1}
 .arcade-empty{background:#FFF6E4;border-color:#E3BF79;color:#795D4B}
 .street-shop{color:#462B52}
 .street-shop .shop-name-bubble{background:#FFF9FE;border-color:#E0C8ED}
-body:has(#qa-login-panel)>header{background:#462B52!important;color:#fff!important}
 body:has(.poster)>header{background:#462B52!important;color:#fff!important}
 body:has(.poster) .poster{border:2px solid #EAD4F8}
 body:has(.poster) .controls{border-color:#E1CAED;border-radius:20px}
