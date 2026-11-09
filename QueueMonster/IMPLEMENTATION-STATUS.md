@@ -1,5 +1,10 @@
 # LINE 預約 SaaS：最新版 PRD 交付現況與未完成清單
 
+
+> **2026-11-09 重構與部署追蹤（新於以下 11/04 盤點）：** [PR #38](https://github.com/hub-google/LINE/pull/38) 已合併至 main（commit `d20c5ea6c99f65d8ed4dc92ffd807f5660569cc7`），完成 GitHub Pages 使用的前端 ES modules 分檔、後台畫面與操作處理拆分、狀態管理、esbuild 正式打包及 Chromium 冒煙驗證。原 PR 記錄 160 項自動化測試通過；[部署 Actions](https://github.com/hub-google/LINE/actions/runs/42560718713) 成功，`/booking/release.json` 的 build 與主線 commit 一致。這些證據**只證明這一輪前端重構與自動測試／部署**，不等於整體 PRD、LINE 實機、跨租戶資安及金流端到端完成。
+>
+> **2026-11-09 後續維護：** 發現 PR 檢查少於正式部署的測試項目（網站登入、商家品牌、服務單位、探索互動）。已補齊 PR CI 測試覆蓋，並加入兩個 workflow 測試清單一致性檢查，避免未來 PR 通過後才在 main 部署失敗。該項修復須以後續 PR CI 結果確認；不把文件記錄當作測試通過。
+
 > 更新基準：2026-11-04，主 PRD `QueueMonster/PRD.md` 第 0–103 章，及 `saas/PRD-20261104-DoYouBook-benchmark-and-solutions.md`。程式比對至 main commit `36c35a1ce803dabdb7fb42201d1793f76094dac6`。本文件是**實作狀態盤點**，**不得當作功能已驗收或刪除原 PRD 的依據**。
 >
 > 總結：**尚未完成全部 PRD**。第 102 章規定 DoYouBook C01–C58 與 CallMeBack K01–K32 均須納入，且 A/B/C 波次全部必做。現有 GitHub Pages + Supabase SaaS 主要完成現行核心預約／取號／叫號，完整資源排程、CRM、商業化、PWA、Calendar、多窗口、設備合作等沒有達到 PRD 全範圍。另有未部署／未逐一 E2E 驗收的 Next.js 程式骨架，不可算正式可用功能。
