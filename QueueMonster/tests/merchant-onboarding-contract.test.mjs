@@ -207,8 +207,8 @@ test("production release contains no customer-visible QA or infrastructure copy"
   assert.ok(!html.includes("LINE BOOKING ·"),name+" must use the Queue Monster brand");
  }
  assert.ok(!index.includes("testMode")&&!index.includes("recoveryMode"),"legacy QA sign-ins have been removed");
- assert.ok(index.includes('startsWith("qa-")'),"internal stores remain hidden from production dashboard");
- assert.ok(index.includes('!["greenfield-salon","demo-clinic"].includes(t.slug)'),"internal sample tenants are not counted as commercial stores");
+ assert.doesNotMatch(read("saas/app/data-loading.js"),/startsWith\("qa-"\)|greenfield-salon|demo-clinic/,"dashboard must not hide stores by identifier");
+ assert.doesNotMatch(read("saas/explore-game.js"),/startsWith\("qa-"\)|greenfield-salon|demo-clinic/,"public discovery must use publication settings");
  assert.ok(!directory.includes("testBoardShop")&&!directory.includes("demoShops"),"no sample merchants can be injected into discovery");
  const game=read("saas/explore-game.js");
  assert.ok(!game.includes("qaStore")&&!game.includes("demoShops"),"game mode uses published merchants only");
