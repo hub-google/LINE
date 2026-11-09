@@ -81,7 +81,7 @@ box("LINE 身分授權",'<p class="muted">為避免機器人或惡意假預約�
  document.documentElement.style.setProperty("--merchant-accent",/^#[a-fA-F0-9]{6}$/.test(t.accent)?t.accent:"#6A398A");
  const menu=nav("首頁","home",routeState.customerTab,"customer")+(m.reservation?nav("線上預約","reserve",routeState.customerTab,"customer"):"")+(m.queue?nav("現場取號","queue",routeState.customerTab,"customer"):"")+nav("我的取號","progress",routeState.customerTab,"customer")+nav("我的紀錄","mine",routeState.customerTab,"customer");
  let html='';
- if(routeState.customerTab==="home") html='<div class="hero"><div class="eyebrow">LINE 門市線上服務</div><h1>'+esc(t.name)+'</h1><p class="muted">'+esc(t.description||"線上預約與現場候位，從這裡開始")+'</p><p class="muted">'+esc(t.address||"")+'</p></div>'+
+ if(routeState.customerTab==="home") html='<div class="hero"><div class="eyebrow">LINE 門市線上服務</div><h1>選擇服務，立即開始</h1><p class="muted">'+esc(t.description||"線上預約與現場候位，從這裡開始")+'</p><p class="muted">'+esc(t.address||"")+'</p></div>'+
  '<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",customerState.customer.current||"—")+stat("現場候位",customerState.customer.waiting+" 組")+stat("我的有效預約",items.filter(x=>x.status==="CONFIRMED").length)+'</div>'+
  '<div class="grid">'+(m.reservation?'<button class="routecard" data-nav="customer" data-tab="reserve"><h2>線上預約</h2><p class="muted">選擇日期與時段，完成預約</p><strong>立即預約 →</strong></button>':"")+
  (m.queue?'<button class="routecard" data-nav="customer" data-tab="queue"><h2>現場取號</h2><p class="muted">直接取得候位號碼與查看進度</p><strong>立即取號 →</strong></button>':"")+
