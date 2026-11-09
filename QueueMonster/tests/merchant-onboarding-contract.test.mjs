@@ -189,3 +189,22 @@ test("platform action buttons match and account logout lives only in the shared 
  assert.ok(styles.includes("grid-template-columns:repeat(3,minmax(0,1fr))"),"each button gets an equal column");
  assert.ok(styles.includes(".platform-row-actions>.btn"),"shared button sizing styles are present");
 });
+
+test("production release contains no customer-visible QA or infrastructure copy",()=>{
+ const publicPages=["index","home","directory","board","poster","merchant-register","merchant-center","privacy","terms","template"];
+ for(const name of publicPages){
+  const html=read("saas/"+name+".html");
+  assert.ok(!html.includes("測試"),name+" must not expose test labels");
+  assert.ok(!html.includes("資料庫"),name+" must not describe storage technology to customers");
+  assert.ok(!html.includes("LINE BOOKING ·"),name+" must use the Queue Monster brand");
+ }
+ assert.ok(!index.includes("testMode")&&!index.includes("recoveryMode"),"legacy QA sign-ins have been removed");
+ assert.ok(index.includes('startsWith("qa-")'),"internal stores remain hidden from production dashboard");
+ assert.ok(index.includes('!["greenfield-salon","demo-clinic"].includes(t.slug)'),"internal sample tenants are not counted as commercial stores");
+ assert.ok(!directory.includes("testBoardShop")&&!directory.includes("demoShops"),"no sample merchants can be injected into discovery");
+ const game=read("saas/explore-game.js");
+ assert.ok(!game.includes("qaStore")&&!game.includes("demoShops"),"game mode uses published merchants only");
+ assert.ok(!read("saas/privacy.html").includes("Supabase"),"privacy document describes service providers in customer terms");
+ assert.ok(!read("saas/merchant-register.html").includes("密碼由 Supabase Auth"),"account help stays customer-focused");
+ assert.ok(read("saas/template.html").includes("merchant-center.html#setup"),"retired preview directs visitors to live merchant guide");
+});
