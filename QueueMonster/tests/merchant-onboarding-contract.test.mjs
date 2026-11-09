@@ -172,7 +172,7 @@ test("headquarters login is an independent branded route and does not expose pri
  assert.match(page,/總部管理員登入/);
  assert.match(page,/id="hq-login-form"/);
  assert.match(page,/id="hq-password"/);
- assert.match(page,/href="\.\/assets\/platform-login\/main\.js\?build=__LINE_SAAS_BUILD__"/);
+ assert.match(page,/functions\/v1\/qm-admin-login/);
  assert.doesNotMatch(page,/@gmail\.com|service_role|sb_secret_|qm_admin_pin_check/);
  assert.match(source,/sb\.rpc\("so_my_context"\)/);
  assert.match(source,/so_claim_verified_platform_owner/);
