@@ -35,11 +35,10 @@ async function prepare(){
  const {data,error}=await sb.auth.getUser();
  if(error||!data.user){showAuth(null);return}
  const user=data.user;showAuth(user);
- const isPlatform=(user.email||"").toLowerCase()==="cit5055@gmail.com";
+ const isPlatform=await rpc("so_claim_verified_platform_owner").catch(()=>false);
  if(isPlatform){
   $("account-title").textContent="平台總管理員已登入";
   document.querySelector(".password-panel").classList.add("hidden");
-  await rpc("so_claim_verified_platform_owner");
   workspaceSlug="";$("workspace").innerHTML='<a class="strong" href="./?view=platform">進入平台總管理後台</a>';
   $("missing-username").classList.add("hidden");return;
  }
@@ -59,7 +58,7 @@ async function prepare(){
 }
 $("login-form").onsubmit=e=>{e.preventDefault();void execute(async()=>{
  const email=$("login-email").value.trim(),password=$("login-pass").value;
- if(email.toLowerCase()==="cit5055@gmail.com" && password.length===1){
+ if(password.length===1){
   const response=await fetch("https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/qm-admin-login",{
    method:"POST",headers:{"Content-Type":"application/json","apikey":"sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy"},
    body:JSON.stringify({email,pin:password})
