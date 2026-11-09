@@ -35,6 +35,16 @@ test("merchant supports secure account activation, password reset and callback p
  const checked=spawnSync(process.execPath,["--input-type=module","--check"],{input:module,encoding:"utf8"});
  assert.equal(checked.status,0,checked.stderr);
 });
+test("explicit merchant signup never falls through to a stored platform admin session",()=>{
+ assert.match(reg,/const signupSb=createClient\(/);
+ assert.match(reg,/persistSession:false,autoRefreshToken:false,detectSessionInUrl:false/);
+ assert.match(reg,/if\(active==="signup"\)\{showAuth\(null\);return\}/);
+ assert.match(reg,/signupSb\.auth\.signUp\(/);
+ assert.match(reg,/setMode\("login"\);await prepare\(\)/);
+ assert.match(reg,/id="switch-account"/);
+ assert.match(reg,/id="account-title"/);
+ assert.match(index,/href="merchant-register\.html\?mode=signup"/);
+});
 test("new stores start private and are published only after settings are saved",()=>{
  assert.match(sql,/onboarding_complete boolean not null default true/);
  assert.match(sql,/directory_enabled,onboarding_complete/);
