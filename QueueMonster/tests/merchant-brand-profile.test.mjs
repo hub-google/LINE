@@ -16,7 +16,7 @@ test("platform create, platform edit and merchant self-configuration use shared 
  }
  for(const key of ["-name","-description","-directory-category","-logo-file","-accent-picker",
                     "-phone","-address","-open","-close","-capacity","-minutes"]){
-  assert.ok(app.includes('prefix+"'+key+'"'),key+" must use one shared profile ID");
+  assert.ok(app.includes('prefix+"'+key+'"')||app.includes("prefix+'"+key+"'"),key+" must use one shared profile ID");
  }
  assert.match(app,/function merchantProfilePatch\(prefix,previous=\{\}\)/);
  assert.match(app,/merchantProfilePatch\("create"/);
