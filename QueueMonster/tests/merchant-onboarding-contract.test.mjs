@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {spawnSync} from "node:child_process";
+import vm from "node:vm";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 
@@ -44,6 +45,48 @@ test("explicit merchant signup never falls through to a stored platform admin se
  assert.match(reg,/id="switch-account"/);
  assert.match(reg,/id="account-title"/);
  assert.match(index,/href="merchant-register\.html\?mode=signup"/);
+});
+test("a signed-in platform admin still sees the merchant signup form",async()=>{
+ const module=reg.match(/<script type="module">([\\s\\S]+?)<\\/script>/)?.[1];
+ assert.ok(module);
+ const source=module.replace(/^import \\{createClient\\} from [^\\n]+\\n/m,"");
+ const elements=new Map();
+ const element=id=>{
+  if(!elements.has(id)){
+   const flags=new Set();
+   elements.set(id,{
+    value:"",textContent:"",innerHTML:"",attributes:{},
+    classList:{
+     toggle(name,force){if(force===undefined? !flags.has(name):force)flags.add(name);else flags.delete(name)},
+     add(name){flags.add(name)},
+     remove(name){flags.delete(name)},
+     contains(name){return flags.has(name)}
+    },
+    setAttribute(name,value){this.attributes[name]=value}
+   });
+  }
+  return elements.get(id);
+ };
+ let sessionReads=0,adminClaims=0;
+ const configs=[];
+ const createClient=(_url,_key,config)=>{
+  configs.push(config);
+  return {
+   auth:{async getUser(){sessionReads++;return {data:{user:{email:"admin@example.com"}},error:null}}},
+   async rpc(){adminClaims++;return {data:true,error:null}}
+  };
+ };
+ const document={getElementById:element,querySelectorAll:()=>[]};
+ const location={href:"https://hub-google.github.io/LINE/booking/merchant-register.html?mode=signup"};
+ vm.runInNewContext(source,{createClient,document,location,URL,history:{replaceState(){}}});
+ await Promise.resolve();
+ await Promise.resolve();
+ assert.equal(sessionReads,0,"signup must not inspect the existing admin session");
+ assert.equal(adminClaims,0,"signup must not invoke the platform claim RPC");
+ assert.equal(element("signup-form").classList.contains("hidden"),false);
+ assert.equal(element("auth-zone").classList.contains("hidden"),false);
+ assert.equal(element("account-zone").classList.contains("hidden"),true);
+ assert.equal(configs[1]?.auth?.persistSession,false,"signup must use an isolated auth client");
 });
 test("new stores start private and are published only after settings are saved",()=>{
  assert.match(sql,/onboarding_complete boolean not null default true/);
