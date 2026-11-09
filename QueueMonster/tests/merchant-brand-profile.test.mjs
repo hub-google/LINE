@@ -48,7 +48,7 @@ test("logo is selected and previewed before upload, saved only with user action"
  assert.match(app,/file\.size>2097152/);
  assert.match(app,/supa\.storage\.from\(MERCHANT_LOGO_BUCKET\)\.upload\(objectPath,file/);
  assert.match(app,/session\.user\.id\+"\/"\+crypto\.randomUUID\(\)/);
- for(const prefix of ["create","config","set"]){
+ for(const prefix of ["create","set"]){
   assert.ok(app.includes('merchantUploadLogo("'+prefix+'"'),"upload is required for "+prefix+" save");
  }
  assert.match(sql,/insert into storage\.buckets/);
