@@ -668,3 +668,30 @@ body[data-monster-page="index"] header a.brand:focus-visible{
   outline-offset:5px;
   border-radius:8px;
 }
+
+
+/* Chinese-first store search title: retain the original light title plate
+   while moving the meaningful heading into it instead of duplicating text. */
+body[data-monster-page="directory"] .page-header .hero-heading h1.eyebrow{
+  display:inline-block;
+  width:auto;
+  max-width:100%;
+  margin:0 0 16px;
+  padding:9px 18px;
+  background:#FFF8FF;
+  border:1px solid #E8D3F1;
+  border-radius:12px;
+  color:#462B52;
+  font-size:clamp(22px,3vw,35px);
+  line-height:1.35;
+  letter-spacing:-.035em;
+  font-weight:900;
+  white-space:normal;
+  box-shadow:0 4px 16px rgba(70,43,82,.06);
+}
+@media(max-width:520px){
+  body[data-monster-page="directory"] .page-header .hero-heading h1.eyebrow{
+    font-size:clamp(21px,6vw,28px);
+    padding:10px 12px;
+  }
+}

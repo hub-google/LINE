@@ -1,7 +1,7 @@
 {
-  "name": "Queue Monster｜排隊怪獸・線上預約與取號",
+  "name": "排隊怪獸｜線上預約與取號",
   "short_name": "排隊怪獸",
-  "description": "Queue Monster：門市預約、取號、叫號與店家管理的一站式服務。",
+  "description": "排隊怪獸提供門市預約、現場取號、叫號與店家管理服務。",
   "id": "./home.html",
   "start_url": "./home.html",
   "scope": "./",
@@ -11,16 +11,10 @@
   "lang": "zh-TW",
   "icons": [
     {
-      "src": "./pwa-icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "./pwa-icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "src": "./monster-mascot.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ]
 }
