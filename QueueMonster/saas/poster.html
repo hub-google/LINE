@@ -5,34 +5,34 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="line-saas-build" content="__LINE_SAAS_BUILD__">
 <script defer src="./version-watch.js?build=__LINE_SAAS_BUILD__"></script>
-<title>排隊怪獸｜門市 QR 立牌製作</title>
-<meta name="description" content="依正式門市資料製作線上預約與現場取號 QR Code，支援 A4 列印、PDF 與 PNG。">
+<title>排隊怪獸｜門市 二維碼 立牌製作</title>
+<meta name="description" content="依正式門市資料製作線上預約與現場取號 二維碼，支援 A4 列印、PDF 與 PNG。">
 <link rel="stylesheet" href="./assets/poster/page.css?build=__LINE_SAAS_BUILD__">
 <link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=__LINE_SAAS_BUILD__"></head>
 <body data-monster-page="poster">
-<header><div class="wrap"><div><h1>門市 QR 立牌製作</h1><div>同一套排隊怪獸預約與叫號系統，分別產出專屬 QR</div></div><div class="site-auth-slot site-auth-dark" id="site-auth-root" aria-label="使用者登入狀態"><a class="site-auth-button site-auth-login" href="./?view=customer&amp;merchant=greenfield-salon&amp;tab=home">使用 LINE 登入</a></div></div></header>
+<header><div class="wrap"><div><h1>門市 二維碼 立牌製作</h1><div>同一套排隊怪獸預約與叫號系統，分別產出專屬 二維碼</div></div><div class="site-auth-slot site-auth-dark" id="site-auth-root" aria-label="使用者登入狀態"><a class="site-auth-button site-auth-login" href="./?view=customer&amp;merchant=greenfield-salon&amp;tab=home">使用 LINE 登入</a></div></div></header>
 <main>
 <section class="controls">
  <h2>列印設定</h2>
  <p>資料直接來自正式門市，不使用假店名或假號碼。可印成 A4 立牌，或儲存為 PNG。</p>
- <label for="mode">QR 用途</label>
+ <label for="mode">二維碼 用途</label>
  <select id="mode" disabled><option value="queue">現場取號</option><option value="reserve">線上預約</option></select>
  <p id="status" role="status" aria-live="polite">正在讀取門市設定</p>
  <div class="actions">
   <button id="print" disabled>列印／另存 PDF</button>
   <button id="png" class="secondary" disabled>下載 A4 PNG</button>
-  <button id="copy" class="secondary" disabled>複製 QR 連結</button>
+  <button id="copy" class="secondary" disabled>複製 二維碼 連結</button>
   <a class="btn secondary" href="./?view=staff" id="back">回到商家管理</a>
  </div>
  <p>列印時在瀏覽器選擇「另存 PDF」，即可取得 A4 PDF 檔案。</p>
  <p id="channel" aria-live="polite"></p>
 </section>
-<div class="preview"><article class="poster" id="poster" aria-label="A4 QR 立牌預覽">
+<div class="preview"><article class="poster" id="poster" aria-label="A4 二維碼 立牌預覽">
  <div class="kicker">排隊怪獸</div>
  <div class="shop" id="shop">門市資料載入中</div>
  <div class="action" id="purpose">現場取號</div>
  <div class="explain">掃碼進入本店網頁，驗證 LINE 身分後即可使用</div>
- <div class="qrwrap"><img id="qr" alt="門市專屬 QR Code" hidden></div>
+ <div class="qrwrap"><img id="qr" alt="門市專屬 二維碼" hidden></div>
  <div class="instruction" id="instruction">請使用手機掃描</div>
  <div class="link" id="link"></div>
  <div class="footnote">請確認掃描後為正確門市，再進行預約或取號。</div>
