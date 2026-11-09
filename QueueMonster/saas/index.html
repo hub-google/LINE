@@ -314,7 +314,7 @@ async function connectLineSession(force=false){
   if(force)lineLinkAttempted=false;
   if(lineLinkAttempted)return;
   const config=await bridgeConfig();
-  if(!config.liffId){lineLinkStatus="not-ready";lineConnectError="尚未設定 LINE LIFF，請通知店家。";return;}
+  if(!config.liffId){lineLinkStatus="not-ready";lineConnectError="目前無法使用 LINE 登入，請聯絡店家協助。";return;}
   lineLinkAttempted=true;
   lineLinkStatus="connecting";
   lineConnectError="";
@@ -785,7 +785,7 @@ function layout(title,subtitle,menu,body){
   nav("菜單與服務","menu",staffTab,"staff")+nav("員工管理","members",staffTab,"staff")+
   nav("分店管理","branches",staffTab,"staff")+nav("企業設定","settings",staffTab,"staff")+
   '<a class="side-item guide-link" href="./merchant-center.html#guide">操作說明 ↗</a></div></details></nav>':"";
- return '<div class="toolbar"><div><div class="eyebrow">'+(view==="customer"?"LINE BOOKING · 顧客服務":view==="staff"?"LINE BOOKING · 門市管理":"LINE BOOKING · 平台管理")+'</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div></div><div class="layout'+(view==="customer"?" customer-layout":"")+'"><aside>'+menu+'</aside><section class="content">'+body+'</section></div>'+staffQuickNav;
+ return '<div class="toolbar"><div><div class="eyebrow">'+(view==="customer"?"排隊怪獸 · 顧客服務":view==="staff"?"排隊怪獸 · 門市管理":"排隊怪獸 · 平台管理")+'</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div></div><div class="layout'+(view==="customer"?" customer-layout":"")+'"><aside>'+menu+'</aside><section class="content">'+body+'</section></div>'+staffQuickNav;
 }
 function head(){const links=view==="customer"?[["customer","預約與取號"]]:[["marketing","網站首頁"],["platform","平台管理"],["staff","店家管理"],["customer","顧客入口"]];
 $("headlinks").innerHTML=links.map(x=>'<a href="'+esc(x[0]==="marketing"?new URL("./home.html",location.origin+bookingPath).pathname:x[0]==="customer"?(customerUrl(slug)||route("customer",slug)):route(x[0],x[0]==="platform"?"":slug))+'" class="'+(x[0]===view?"active":"")+'">'+x[1]+'</a>').join("");
@@ -1600,19 +1600,19 @@ function staffRender(){
        (announcementEditId?btn("取消編輯","announcement-edit-cancel","outline"):"")+'</div></div>'):"")+
   box("LINE 官方帳號串接",
     '<p>目前通知來源：<strong>'+(lineConfig?.merchantOaConnected?"商家自己的 LINE OA":"平台 LINE OA")+'</strong></p>'+
-    '<p class="small">自有 OA 必須使用同一 LINE Provider 下的 LINE Login／LIFF 頻道與 Messaging API 頻道。沒有自有 OA 的店家可繼續使用平台 OA。</p>'+
+    '<p class="small">若要使用自己的 LINE 官方帳號，請確認登入服務與訊息通知使用同一組 LINE 管理者設定；沒有自有官方帳號也可使用平台提供的服務。</p>'+
     (lineConfig?.merchantOaConnected?
      '<p>已連接 LINE OA：<strong>'+esc(lineConfig.botBasicId||"")+'</strong></p>':"")+
     (isManager?
-     '<div class="grid"><div>'+field("商家 LIFF ID","own-oa-liff",lineConfig?.merchantOaConnected?lineConfig.liffId:"")+
-      field("Messaging API Channel Access Token","own-oa-token","","password",'autocomplete="new-password"')+
-     '</div><div>'+field("Messaging API Channel Secret","own-oa-secret","","password",'autocomplete="new-password"')+
+     '<div class="grid"><div>'+field("LINE 登入應用程式編號（LIFF ID）","own-oa-liff",lineConfig?.merchantOaConnected?lineConfig.liffId:"")+
+      field("官方帳號存取憑證（Channel Access Token）","own-oa-token","","password",'autocomplete="new-password"')+
+     '</div><div>'+field("官方帳號驗證金鑰（Channel Secret）","own-oa-secret","","password",'autocomplete="new-password"')+
      '<p class="small">Channel Secret 需為 32 位十六進位字元。憑證會由系統向 LINE 驗證，成功後將安全保存，後台不會再次顯示完整憑證。</p></div></div>'+
      '<div class="staff-actionbar">'+btn("驗證並連接自有 LINE OA","connect-own-oa","primary")+
        (lineConfig?.merchantOaConnected?btn("解除自有 OA 綁定","disconnect-own-oa","outline"):"")+'</div>'+
-     '<p class="small">將下列 Webhook URL 貼入你自己的 LINE Messaging API 頻道並啟用 Webhook：</p>'+
+     '<p class="small">請在 LINE 官方帳號管理介面設定下列訊息回傳網址（Webhook URL）：</p>'+
      '<p class="small" style="overflow-wrap:anywhere">'+esc(LINE_BRIDGE_URL+"?action=webhook&merchant="+encodeURIComponent(slug))+'</p>'+
-     btn("複製自有 OA Webhook URL","copy-own-oa-webhook","outline")
+     btn("複製訊息回傳網址","copy-own-oa-webhook","outline")
      :'<p class="small">僅企業管理者可設定自己的 LINE OA。</p>'))+
   (isManager?box("排隊怪獸店家搜尋",t.onboarding_complete===false?
  '<p>填寫店名、電話、地址與分類並儲存後，門市會自動公開在排隊怪獸的搜尋清單。</p>':
