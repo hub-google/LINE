@@ -59,3 +59,11 @@ test("K06: live call HOLD expiry avoids variable and table alias collisions",()=
  assert.ok(currentCallFix.includes("replace(v_fixed,'k.','hold_ticket.')"));
  assert.ok(!currentCallFix.includes("delete from public.so_tickets"));
 });
+
+const pausedQueueMigration=readFileSync(new URL("../supabase/migrations/20261109154500_public_board_after_queue_pause.sql",import.meta.url),"utf8");
+test("existing tickets remain visible on public board after new number issuance is paused",()=>{
+ assert.ok(pausedQueueMigration.includes("so_public_board(text,integer)"));
+ assert.ok(pausedQueueMigration.includes("so_public_queue_order(text,integer)"));
+ assert.ok(pausedQueueMigration.includes("execute replace(v_definition,v_old_board,'')"));
+ assert.ok(pausedQueueMigration.includes("so_set_merchant_services"));
+});
