@@ -55,14 +55,14 @@ async function prepare(){
  if(active==="signup"){showAuth(null);return}
  const {data,error}=await sb.auth.getUser();
  if(error||!data.user){showAuth(null);return}
- const user=data.user;showAuth(user);
- const isPlatform=await rpc("so_claim_verified_platform_owner").catch(()=>false);
- if(isPlatform){
-  $("account-title").textContent="平台總管理員已登入";
-  document.querySelector(".password-panel").classList.add("hidden");
-  workspaceSlug="";$("workspace").innerHTML='<a class="strong" href="./?view=platform">進入平台總管理後台</a>';
-  $("missing-username").classList.add("hidden");return;
+ const user=data.user;
+ const context=await rpc("so_my_context");
+ if(context?.platform_admin===true){
+  // Do not expose headquarters actions on merchant login screens.
+  location.replace("./platform-login.html");
+  return;
  }
+ showAuth(user);
  $("account-title").textContent="店家帳號已登入";
  document.querySelector(".password-panel").classList.remove("hidden");
  let username=(user.user_metadata?.username||"").trim();
@@ -79,19 +79,9 @@ async function prepare(){
 }
 $("login-form").onsubmit=e=>{e.preventDefault();void execute(async()=>{
  const email=$("login-email").value.trim(),password=$("login-pass").value;
- if(password.length===1){
-  const response=await fetch("https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/qm-admin-login",{
-   method:"POST",headers:{"Content-Type":"application/json","apikey":"sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy"},
-   body:JSON.stringify({email,pin:password})
-  });
-  const result=await response.json();
-  if(!response.ok)throw Error(customerFacingError(result.error||"管理員登入失敗","login"));
-  const {error}=await sb.auth.setSession({access_token:result.access_token,refresh_token:result.refresh_token});
-  if(error)throw error;
- }else{
-  const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;
-  if(!data.user)throw Error("登入狀態無法確認");
- }
+ const {data,error}=await sb.auth.signInWithPassword({email,password});
+ if(error)throw error;
+ if(!data.user)throw Error("登入狀態無法確認");
  await prepare();msg("登入成功");
 })};
 $("signup-form").onsubmit=e=>{e.preventDefault();void execute(async()=>{
