@@ -788,7 +788,6 @@ function normalUser(){return testMode&&session?.user?.is_anonymous?"Supabase 真
 function platformReady(){return !!context?.platform_admin}
 function nav(label,tab,current,which){return '<button class="side-item '+(tab===current?"active":"")+'" data-nav="'+which+'" data-tab="'+tab+'">'+label+'</button>'}
 function layout(title,subtitle,menu,body){
- const identityLabel=view==="customer"?lineDisplayName:normalUser();
  const staffQuickNav=view==="staff"?'<nav class="staff-mobile-nav" aria-label="門市功能快速導覽">'+
   nav("工作台","dashboard",staffTab,"staff")+nav("預約","bookings",staffTab,"staff")+
   nav("叫號","queue",staffTab,"staff")+
@@ -796,9 +795,8 @@ function layout(title,subtitle,menu,body){
   nav("預約日曆","calendar",staffTab,"staff")+nav("服務單位與場次","units",staffTab,"staff")+nav("營運分析","analytics",staffTab,"staff")+
   nav("菜單與服務","menu",staffTab,"staff")+nav("員工管理","members",staffTab,"staff")+
   nav("分店管理","branches",staffTab,"staff")+nav("企業設定","settings",staffTab,"staff")+
-  '<a class="side-item guide-link" href="./merchant-center.html#guide">操作說明 ↗</a>'+
-  (authReady()?btn("登出","logout","outline"):"")+'</div></details></nav>':"";
- return '<div class="toolbar"><div><div class="eyebrow">'+(view==="customer"?"LINE BOOKING · 顧客服務":view==="staff"?"LINE BOOKING · 門市管理":"LINE BOOKING · 平台管理")+'</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div><div class="flex"><span class="small">'+esc(identityLabel)+'</span>'+(view!=="customer"&&authReady()?btn("登出","logout","outline"):"")+'</div></div><div class="layout'+(view==="customer"?" customer-layout":"")+'"><aside>'+menu+'</aside><section class="content">'+body+'</section></div>'+staffQuickNav;
+  '<a class="side-item guide-link" href="./merchant-center.html#guide">操作說明 ↗</a></div></details></nav>':"";
+ return '<div class="toolbar"><div><div class="eyebrow">'+(view==="customer"?"LINE BOOKING · 顧客服務":view==="staff"?"LINE BOOKING · 門市管理":"LINE BOOKING · 平台管理")+'</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div></div><div class="layout'+(view==="customer"?" customer-layout":"")+'"><aside>'+menu+'</aside><section class="content">'+body+'</section></div>'+staffQuickNav;
 }
 function head(){const links=view==="customer"?[["customer","預約與取號"]]:[["marketing","網站首頁"],["platform","平台管理"],["staff","店家管理"],["customer","顧客入口"]];
 $("headlinks").innerHTML=links.map(x=>'<a href="'+esc(x[0]==="marketing"?new URL("./home.html",location.origin+bookingPath).pathname:x[0]==="customer"?(customerUrl(slug)||route("customer",slug)):route(x[0],x[0]==="platform"?"":slug))+'" class="'+(x[0]===view?"active":"")+'">'+x[1]+'</a>').join("");
@@ -974,9 +972,9 @@ function platformRender(){
   }else if(platformTab==="list"){
    html='<div class="toolbar"><h2>已開通企業（'+overview.length+'）</h2>'+btn("＋ 新增企業","new-tenant","primary")+'</div>'+
     '<div class="card scroll"><table class="rows"><thead><tr><th>企業</th><th>啟用功能</th><th>狀態</th><th>員工</th><th>操作</th></tr></thead><tbody>'+
-    (overview.map(t=>'<tr><td><strong>'+esc(t.name)+'</strong><div class="small">'+esc(t.slug)+'</div></td><td>'+features.filter(f=>t.modules?.[f[0]]).map(f=>esc(f[1])).join("、")+'</td><td>'+tag(t.status)+'</td><td>'+esc(t.staff)+'</td><td><div class="flex">'+
+    (overview.map(t=>'<tr><td><strong>'+esc(t.name)+'</strong><div class="small">'+esc(t.slug)+'</div></td><td>'+features.filter(f=>t.modules?.[f[0]]).map(f=>esc(f[1])).join("、")+'</td><td>'+tag(t.status)+'</td><td>'+esc(t.staff)+'</td><td><div class="platform-row-actions" role="group" aria-label="'+esc(t.name)+' 操作">'+
       '<a class="btn outline" href="'+esc(route("staff",t.slug)+"&tab=settings")+'">設定</a>'+
-      '<a href="'+esc(route("customer",t.slug))+'" target="_blank" rel="noopener">顧客頁</a>'+
+      '<a class="btn outline" href="'+esc(route("customer",t.slug))+'" target="_blank" rel="noopener">顧客頁</a>'+
       btn(t.status==="ACTIVE"?"暫停":"恢復","toggle-company","outline",'data-slug="'+esc(t.slug)+'"')+
       '</div></td></tr>').join("")||'<tr><td colspan="5">尚無企業</td></tr>')+
     '</tbody></table></div>';
