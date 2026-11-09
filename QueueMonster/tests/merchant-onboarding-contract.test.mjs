@@ -115,10 +115,10 @@ test("retired QA entry points and customer-facing test copy are absent",()=>{
 
 test("published merchant login source does not contain a hardcoded administrator account",()=>{
  const publicScript=read("saas/assets/merchant-register/main.js");
- assert.doesNotMatch(publicScript,/[a-zA-Z0-9._%+-]+@gmail\\.com/i);
+ assert.doesNotMatch(publicScript,/[a-zA-Z0-9._%+-]+@gmail\.com/i);
  assert.doesNotMatch(publicScript,/service_role|sb_secret_|LINE_CHANNEL_SECRET|ADMIN_PASSWORD/i);
- assert.match(publicScript,/rpc\\("so_claim_verified_platform_owner"\\)/);
- assert.match(publicScript,/if\\(password\\.length===1\\)/);
+ assert.match(publicScript,/rpc\("so_claim_verified_platform_owner"\)/);
+ assert.match(publicScript,/if\(password\.length===1\)/);
 });
 
 test("platform PIN login uses server-side throttle and a real authenticated session",()=>{
