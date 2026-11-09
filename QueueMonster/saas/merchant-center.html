@@ -308,17 +308,17 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #e5
             <div class="flow-strip">
               <div class="flow-step"><span class="flow-icon">1</span><b>自有 LINE OA</b><small>準備官方頻道</small></div><span class="flow-arrow">→</span>
               <div class="flow-step"><span class="flow-icon">2</span><b>企業設定</b><small>LINE 官方帳號串接</small></div><span class="flow-arrow">→</span>
-              <div class="flow-step"><span class="flow-icon">3</span><b>連接並設 Webhook</b><small>同一 Provider</small></div><span class="flow-arrow">→</span>
+              <div class="flow-step"><span class="flow-icon">3</span><b>連接官方帳號</b><small>設定通知回傳網址</small></div><span class="flow-arrow">→</span>
               <div class="flow-step"><span class="flow-icon">4</span><b>實機驗收</b><small>預約與訊息通知</small></div>
             </div>
           </div>
           <div class="panel example">
             <div class="screen"><div style="width:100%">
               <div class="screen-inner"><div class="screen-header"><span class="screen-title"><span class="app-mark" aria-hidden="true"></span> 企業設定</span><span class="demo-pill amber">管理者</span></div>
-                <div class="screen-body"><div style="font-weight:850;margin-bottom:10px">LINE 官方帳號串接</div><div class="demo-row"><span>目前通知來源</span><b>平台 LINE OA</b></div><div class="demo-label">商家 LIFF ID</div><div class="demo-field">請輸入 LINE LIFF ID</div><div class="demo-label">Messaging API 憑證</div><div class="demo-field">••••••••••••••</div><span class="demo-btn">驗證並連接自有 LINE OA</span><p class="demo-muted" style="margin-top:10px">連接後設定該門市專屬 Webhook</p></div>
+                <div class="screen-body"><div style="font-weight:850;margin-bottom:10px">LINE 官方帳號串接</div><div class="demo-row"><span>目前通知來源</span><b>平台 LINE OA</b></div><div class="demo-label">LINE 登入應用程式編號</div><div class="demo-field">請貼上登入設定編號</div><div class="demo-label">官方帳號驗證資料</div><div class="demo-field">••••••••••••••</div><span class="demo-btn">驗證並連接自有 LINE OA</span><p class="demo-muted" style="margin-top:10px">連接後設定該門市專屬 Webhook</p></div>
               </div><p class="caption">畫面示意｜企業設定／LINE 官方帳號串接</p>
             </div></div>
-            <div class="howto"><div class="tagline">管理者操作</div><h3>串接前先確認這些項目</h3><ol><li>商家的 LINE Login／LIFF 與 Messaging API 頻道須符合 Provider 對應規則。</li><li>在企業設定頁進行自有 OA 驗證與連接。</li><li>將後台顯示的門市專屬 Webhook 設到 LINE Developers。</li><li>使用自己的 LINE 帳號確認登入、預約、取號與通知是否正常。</li></ol><a class="action outline" href="./?view=staff">前往串接設定 →</a></div>
+            <div class="howto"><div class="tagline">管理者操作</div><h3>串接前先確認這些項目</h3><ol><li>登入功能與訊息通知需要使用對應的 LINE 官方帳號設定。</li><li>在企業設定頁進行自有 OA 驗證與連接。</li><li>在 LINE 官方帳號管理介面設定後台提供的訊息回傳網址。</li><li>使用自己的 LINE 帳號確認登入、預約、取號與通知是否正常。</li></ol><a class="action outline" href="./?view=staff">前往串接設定 →</a></div>
           </div>
           <div class="section-tip warm">連接自有 LINE 官方帳號後，請先使用手機確認登入、預約及通知功能皆可正常使用，再正式分享給顧客。未連接自有官方帳號的門市可使用平台共用模式。</div>
         </div>
@@ -415,9 +415,9 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #e5
           <details><summary>客人過號、按錯，或要恢復候位怎麼辦？</summary><p>到「叫號管理」找到該號碼牌，依目前允許的狀態做更正；叫號操作若有提供「還原上一步」，可用來修正上一個動作。保留候位會依店家的保留規則恢復原順位或放到隊尾，號碼本身不變。</p></details>
           <details><summary>重置預約號碼或叫號號碼，舊資料會消失嗎？</summary><p>不會。兩套流水號各自重置，新的一筆從 1 開始，已建立的預約／號碼牌及永久識別碼仍保留。重置與更改前綴需具管理權限。</p></details>
           <details><summary>為什麼搜尋店家找不到我的門市？</summary><p>請確認門市已完成基本資料、目前處於啟用狀態，並在「企業設定」開啟公開搜尋。沒有公開搜尋時，已開通門市仍可用自己的專屬網址分享。</p></details>
-          <details><summary>顧客已經登入 LINE，為什麼沒收到通知？</summary><p>LINE 身分驗證與加入 OA 好友不同。請先確認顧客是否加入對應官方帳號、未封鎖，以及平台訊息通知的發送資格／狀態。若是自有 OA 模式，還要確認頻道與 Webhook 設定並實機驗收。</p></details>
+          <details><summary>顧客已經登入 LINE，為什麼沒收到通知？</summary><p>LINE 身分驗證與加入 OA 好友不同。請先確認顧客是否加入對應官方帳號、未封鎖，以及平台訊息通知的發送資格／狀態。若使用自有 LINE 官方帳號，也請確認通知設定與手機收訊功能正常。</p></details>
           <details><summary>可以用手機操作後台嗎？</summary><p>可以。商家管理後台支援手機和電腦瀏覽器；預約管理、叫號管理與狀態修正都可在手機開啟。建議將店家後台網址加入手機書籤，以便現場使用。</p></details>
-          <details><summary>忘記怎麼設定，或操作發生問題，要找誰？</summary><p>先查看本頁對應章節，再將遇到問題的功能名稱、操作時間及錯誤畫面告知平台客服。不要提供密碼、LINE Channel Secret、Access Token 或其他機密憑證。</p></details>
+          <details><summary>忘記怎麼設定，或操作發生問題，要找誰？</summary><p>先查看本頁對應章節，再將遇到問題的功能名稱、操作時間及錯誤畫面告知平台客服。不要提供密碼、LINE 官方帳號驗證金鑰或其他機密憑證。</p></details>
         </div>
         <div class="bottom-call"><div><h3>準備開始操作？</h3><p>已開通的店家直接進後台；新商家先提出開通申請。</p></div><div style="display:flex;flex-wrap:wrap;gap:10px"><a class="action green" href="./?view=staff">進入店家後台</a><a class="action outline" href="./merchant-register.html">申請開通</a></div></div>
       </section>
