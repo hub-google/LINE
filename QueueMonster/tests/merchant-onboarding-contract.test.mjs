@@ -113,6 +113,32 @@ test("retired QA entry points and customer-facing test copy are absent",()=>{
 });
 
 
+test("customer-facing login and registration errors are always shown in Chinese",()=>{
+ const source=read("saas/assets/merchant-register/main.js");
+ const begin=source.indexOf("function customerFacingError(");
+ const end=source.indexOf("\nconst $=",begin);
+ assert.ok(begin>=0&&end>begin);
+ const method=source.slice(begin,end);
+ const translated=(error,operation="general")=>vm.runInNewContext(method+"\ncustomerFacingError("+JSON.stringify(error)+","+JSON.stringify(operation)+")");
+ assert.equal(translated({message:"Invalid login credentials"}),"電子信箱或密碼不正確，請重新輸入。");
+ assert.match(translated({code:"email_not_confirmed",message:"Email not confirmed"}),/電子信箱尚未完成驗證/);
+ assert.match(translated({code:"user_already_exists",message:"User already registered"}),/已經註冊/);
+ assert.match(translated({message:"Email rate limit exceeded"}),/操作太頻繁/);
+ assert.match(translated({message:"NetworkError when attempting to fetch resource."}),/網路連線異常/);
+ assert.equal(translated({message:"只有店家負責人可完成開店設定"}),"只有店家負責人可完成開店設定");
+ assert.match(translated({message:"Unhandled PostgREST internal error"}, "login"),/登入失敗/);
+ assert.doesNotMatch(translated({message:"Unhandled PostgREST internal error"}, "login"),/[a-z]{3,}/i);
+ assert.match(source,/catch\(error\)\{msg\(customerFacingError\(error,/);
+ assert.doesNotMatch(source,/msg\(error\.message/);
+ const shared=read("saas/app/shared-ui.js");
+ const app=read("saas/app/data-loading.js");
+ const line=read("saas/app/line-session.js");
+ assert.ok(shared.includes("export function customerFacingError("));
+ assert.ok(app.includes("feedbackState.err=customerFacingError(e)"));
+ assert.ok(app.includes("throw Error(customerFacingError(r.error))"));
+ assert.ok(line.includes('customerFacingError(e,"line")'));
+});
+
 test("published merchant login source does not contain a hardcoded administrator account",()=>{
  const publicScript=read("saas/assets/merchant-register/main.js");
  assert.doesNotMatch(publicScript,/[a-zA-Z0-9._%+-]+@gmail\.com/i);
