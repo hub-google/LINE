@@ -10,8 +10,8 @@ const app=readFileSync(path.join(root,"saas/index.html"),"utf8");
 const css=readFileSync(path.join(root,"saas/monster-world.css"),"utf8");
 const sql=readFileSync(path.join(root,"supabase/migrations/20261109094500_platform_merchant_brand_profile.sql"),"utf8");
 
-test("platform create, platform edit and merchant self-configuration use shared fields",()=>{
- for(const prefix of ["create","config","set"]){
+test("platform creation and shared merchant settings use the same brand-profile controls",()=>{
+ for(const prefix of ["create","set"]){
   assert.match(app,new RegExp('merchantProfileFields\\("'+prefix+'"'));
  }
  for(const key of ["-name","-description","-directory-category","-logo-file","-accent-picker",
@@ -20,7 +20,7 @@ test("platform create, platform edit and merchant self-configuration use shared 
  }
  assert.match(app,/function merchantProfilePatch\(prefix,previous=\{\}\)/);
  assert.match(app,/merchantProfilePatch\("create"/);
- assert.match(app,/merchantProfilePatch\("config"/);
+ assert.ok(!app.includes('merchantProfilePatch("config"'),"remove duplicate platform brand form");
  assert.match(app,/merchantProfilePatch\("set"/);
  assert.doesNotMatch(app,/品牌色（#RRGGBB）/);
 });
@@ -59,12 +59,14 @@ test("logo is selected and previewed before upload, saved only with user action"
  assert.doesNotMatch(app,/service_role|sb_secret_/);
 });
 
-test("platform list includes the profile fields needed to edit existing stores",()=>{
+test("platform list navigates to merchant settings while retaining profile data in its overview",()=>{
  for(const field of ["description","phone","address","accent","logo_url","directory_category",
                      "open_time","close_time","slot_capacity","slot_minutes"]){
   assert.ok(sql.includes("'"+field+"',t."+field),"platform overview missing "+field);
  }
- assert.match(app,/patch\.modules=checked\("config-feature"\)/);
+ assert.ok(app.includes('route("staff",t.slug)+"&tab=settings"'));
+ assert.ok(!app.includes('if(a==="save-company")'));
+ assert.ok(app.includes('if(a==="toggle-company")'));
 });
 
 test("booking main module still passes JavaScript syntax validation",()=>{
