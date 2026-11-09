@@ -77,9 +77,12 @@ test("P0 notification status is manager-scoped and avoids client-side secrets",(
 });
 test("verified platform owner is allowed by authenticated Supabase identity",()=>{
  const registration=read("saas/merchant-register.html");
- assert.match(registration,/so_claim_verified_platform_owner/);
- assert.doesNotMatch(registration,/cit5055@gmail\.com/);
+ const headquarters=read("saas/platform-login.html");
+ assert.doesNotMatch(registration,/so_claim_verified_platform_owner|qm-admin-login/);
+ assert.match(headquarters,/so_claim_verified_platform_owner/);
+ assert.doesNotMatch(headquarters,/cit5055@gmail\.com/);
  assert.match(registration,/signInWithPassword/);
+ assert.match(headquarters,/signInWithPassword/);
  assert.match(client,/context\?\.platform_admin/);
 });
 test("outbox is independently scheduled and authenticated",()=>{
