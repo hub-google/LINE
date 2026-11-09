@@ -31,7 +31,8 @@ test("explore lists real published stores with category/area/service filters",()
  assert.match(directory,/function areaOf\(shop\)/);
  assert.match(directory,/function serviceMatches\(shop,service\)/);
  assert.match(directory,/so_public_directory/);
- assert.match(directory,/filtered=\[\.\.\.searchResults,\.\.\.testMatches\]/);
+ assert.match(directory,/filtered=searchResults;/);
+ assert.doesNotMatch(directory,/testMatches|test_board_only/);
 });
 
 test("game mode has map to street to storefront flow and works on mobile",()=>{
@@ -53,7 +54,7 @@ test("game mode has map to street to storefront flow and works on mobile",()=>{
  assert.match(js,/data-region/);
  assert.match(js,/event\.key==="ArrowLeft"/);
  assert.match(js,/event\.key==="ArrowRight"/);
- assert.match(js,/test_board_only/);
+ assert.doesNotMatch(js,/test_board_only|qaStore|demoShops/);
  assert.match(js,/shops=Array\.isArray\(publicShops\)/);
  assert.match(css,/@media\(max-width:740px\)/);
  assert.match(css,/@media\(max-width:410px\)/);
@@ -84,7 +85,7 @@ test("game shop links reuse existing OA-specific booking routes",()=>{
  assert.match(directory,/board_href:"\.\/board\.html\?merchant="\+encodeURIComponent\(shop\.slug\)/);
  assert.match(js,/if\(shop\.modules\?\.reservation\)/);
  assert.match(js,/if\(shop\.modules\?\.queue\)/);
- assert.match(js,/shop\.test_board_only\)/);
+ assert.doesNotMatch(js,/shop\.test_board_only\)/);
  assert.match(directory,/selected\?\.oa_mode==="PLATFORM"/);
  assert.match(directory,/if\(original\.searchParams\.get\("view"\)!=="customer"\)return/);
 });
@@ -105,7 +106,8 @@ test("default merchant list is server-ranked Top 50; search uses separate pagina
  assert.match(signedDelta,/greatest\(p_delta,0\)/);
  assert.match(directory,/searchCriteria\(\)/);
  assert.match(directory,/filtered=popular\.slice\(0,50\)/);
- assert.match(directory,/filtered=\[\.\.\.searchResults,\.\.\.testMatches\]/);
+ assert.match(directory,/filtered=searchResults;/);
+ assert.doesNotMatch(directory,/testMatches|test_board_only/);
  assert.match(directory,/searchPage\*50>=searchTotal/);
  assert.match(directory,/searchLoading/);
  assert.match(directory,/人氣|近30天|近 30 天/);
