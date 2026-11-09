@@ -17,8 +17,9 @@ test("manifest is installable, scoped to booking only and uses icon sizes",()=>{
  assert.equal(manifest.start_url,"./home.html");
  assert.equal(manifest.scope,"./");
  assert.equal(manifest.id,"./home.html");
- assert.deepEqual(manifest.icons.map(x=>x.sizes),["192x192","512x512"]);
- assert.equal(manifest.icons.every(x=>x.type==="image/png"),true);
+ assert.deepEqual(manifest.icons.map(x=>x.sizes),["any"]);
+ assert.equal(manifest.icons.every(x=>x.type==="image/svg+xml"&&x.src==="./monster-mascot.svg"),true);
+ assert.doesNotMatch(manifest.name,/Queue Monster/);
  assert.match(build,/pwaIcon\(size\)/);
  assert.match(build,/pwa-icon-"\+size\+"\.png"/);
  assert.match(build,/Buffer\.from\(\[137,80,78,71,13,10,26,10\]\)/);

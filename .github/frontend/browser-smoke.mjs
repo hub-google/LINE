@@ -23,6 +23,24 @@ try{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  const missing=[];page.on('response',r=>{if(r.url().startsWith(baseUrl)&&r.status()===404)missing.push(r.url());});
  const baseUrl='http://127.0.0.1:'+server.address().port;
+ // Render the single approved brand image at a real browser origin, not just inspect SVG text.
+ await page.goto(baseUrl+'/booking/home.html',{waitUntil:'networkidle'});
+ const mascot=await page.evaluate(async()=>{
+  const img=new Image();
+  img.src=new URL('./monster-mascot.svg',location.href).href;
+  await img.decode();
+  const canvas=document.createElement('canvas');canvas.width=96;canvas.height=89;
+  const ctx=canvas.getContext('2d');
+  ctx.drawImage(img,0,0,canvas.width,canvas.height);
+  const pixels=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+  let painted=0;
+  for(let i=3;i<pixels.length;i+=4)if(pixels[i]>128)painted++;
+  return {width:img.naturalWidth,height:img.naturalHeight,painted};
+ });
+ assert.equal(mascot.width,480,'Mascot source width');
+ assert.equal(mascot.height,443,'Mascot source height');
+ assert.ok(mascot.painted>1500,'Mascot must actually render rather than showing a broken/blank SVG');
+ console.log('Shared mascot rendered in Chromium:',JSON.stringify(mascot));
  // Execute the real source graph; these checks do not use the legacy lexical adapter.
  await page.goto(baseUrl+'/LINE/booking/index.html?view=staff&merchant=greenfield-salon',{waitUntil:'networkidle'});
  const result=await page.evaluate(async()=>{
