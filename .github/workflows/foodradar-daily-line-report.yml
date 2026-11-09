@@ -1,4 +1,4 @@
-name: QueueMonster OA | FoodRadar daily three-method report
+name: QueueMonster OA | FoodRadar daily two-method report
 on:
   push:
     branches: [main]
@@ -119,16 +119,16 @@ jobs:
           lines.append("（筆數是 API 抓取紀錄，可能含跨分類重複商品。）")
 
           lines.extend(["","四、目前還沒驗證的部分"])
-          if report.get("all_three_independent_methods_verified") is True:
-              lines.append("✅ 三種抓取方式均已完成交叉核對。")
+          if report.get("both_independent_methods_verified") is True:
+              lines.append("✅ API 與網頁觀測均已完成交叉核對。")
           else:
               blocked=any((s.get("browser") or {}).get("status") == "BLOCKED_BY_PLATFORM_SECURITY"
                           for s in stores)
               if blocked:
-                  lines.append("❌ 網頁直接讀取及截圖辨識遭 Uber Eats 安全驗證阻擋。")
-                  lines.append("因此無法用另外兩種方法確認是否還有漏抓商品。")
+                  lines.append("❌ 網頁直接讀取遭 Uber Eats 安全驗證阻擋。")
+                  lines.append("因此無法使用瀏覽器對照方法確認是否還有漏抓商品。")
               else:
-                  lines.append("⚠️ 網頁及截圖兩種對照方式尚未全部驗證成功。")
+                  lines.append("⚠️ 網頁對照方式尚未驗證成功。")
               lines.append("待解決：取得可正常讀取的獨立對照資料來源。")
 
           lines.extend(["","詳細報告：",
