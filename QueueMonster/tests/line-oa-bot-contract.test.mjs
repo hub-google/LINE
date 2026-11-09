@@ -35,3 +35,20 @@ test("bot links to working public booking entry points without bypassing verifie
   assert.match(richMenu, /MERCHANT_ALIAS = "platform-booking-merchants"/);
   assert.doesNotMatch(directory, /href="merchant-center\.html#activate"/);
 });
+
+test("FoodRadar daily LINE report is explicit opt-in and never broadcasts arbitrary followers", () => {
+  const workflow = readFileSync(path.join(root, "../.github/workflows/foodradar-daily-line-report.yml"), "utf8");
+  const migration = readFileSync(path.join(root, "supabase/migrations/20261109_foodradar_line_daily_report_subscriptions.sql"), "utf8");
+  assert.match(bridge, /訂閱foodradar/);
+  assert.match(bridge, /取消foodradar訂閱/);
+  assert.match(bridge, /foodradar_line_subscriptions/);
+  assert.match(bridge, /foodradar-subscribers/);
+  assert.match(bridge, /foodradar-subscribers:"\+day/);
+  assert.match(bridge, /crypto\.subtle\.sign/);
+  assert.match(migration, /ENABLE ROW LEVEL SECURITY/);
+  assert.match(migration, /REVOKE ALL ON TABLE/);
+  assert.match(workflow, /FOODRADAR_REPORT_LINE_USER_ID/);
+  assert.match(workflow, /recipients=/);
+  assert.match(workflow, /No FoodRadar LINE subscriber/);
+  assert.doesNotMatch(workflow, /\/v2\/bot\/message\/broadcast/);
+});
