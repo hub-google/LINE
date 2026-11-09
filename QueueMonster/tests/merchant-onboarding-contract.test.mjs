@@ -99,7 +99,9 @@ test("only active services appear in public entry points, preserving older ticke
  assert.ok(directory.includes("primaryHref=services.reservation?reserveHref:services.queue?queueHref:"));
  assert.ok(directory.includes("services.queue&&services.calling"));
  assert.ok(read("supabase/migrations/20261109093000_merchant_service_mode_switch.sql").includes("already issued numbers"));
- const module=index.match(/<script type="module">([\\s\\S]+?)<\\/script>/)?.[1];
+ const scriptStart=index.indexOf('<script type="module">');
+ const scriptEnd=index.indexOf("</script>",scriptStart);
+ const module=scriptStart>=0&&scriptEnd>scriptStart?index.slice(scriptStart+'<script type="module">'.length,scriptEnd):"";
  assert.ok(module,"main booking page requires an executable module");
  const checked=spawnSync(process.execPath,["--input-type=module","--check"],{input:module,encoding:"utf8"});
  assert.equal(checked.status,0,checked.stderr);
