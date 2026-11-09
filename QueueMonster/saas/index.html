@@ -178,7 +178,7 @@ body{overflow-x:hidden}
 import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 const SB_URL="https://unapiwajmgqqtdkixaab.supabase.co";
 const SB_KEY="sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy";
-// Separate LINE customer and operator Supabase sessions in the same browser.
+// Keep customer and merchant sign-in sessions separate.
 const routeBeforeAuth=new URLSearchParams(location.search);
 const initialViews=routeBeforeAuth.getAll("view");
 const initialView=initialViews[initialViews.length-1]||"customer";
@@ -310,7 +310,7 @@ function recoverLineLogin(manual=false){
  return true;
 }
 async function connectLineSession(force=false){
-  if(!(view==="customer"||(view==="staff"&&recoveryMode))||!session?.access_token)return;
+  if(view!=="customer"||!session?.access_token)return;
   if(force)lineLinkAttempted=false;
   if(lineLinkAttempted)return;
   const config=await bridgeConfig();
@@ -498,7 +498,7 @@ let bookingConfirmationKey="";
 let announcementEditId="",staffAnnouncements=[],customerAnnouncements=[],staffCustomerBook=[],customerFlagSelected="";
 let customerHistoryUserId="",customerHistoryName="",customerHistoryPage=1,customerHistoryData=null;
 let customerHistoryLoading=false,customerHistoryError="",customerHistorySeq=0;
-let day=taipei(),bookingParty=1,queuePartySize=2,bookingContactName="",bookingContactPhone="",bookingContactDirty=false,customerTab=["home","reserve","queue","mine","progress"].includes(incomingParam("tab"))?incomingParam("tab"):"home",staffTab=(incomingParam("tab")==="settings"?"settings":"dashboard"),platformTab="dashboard",chosenSlot="",chosenCompany="",registration=false;
+let day=taipei(),bookingParty=1,queuePartySize=2,bookingContactName="",bookingContactPhone="",bookingContactDirty=false,customerTab=["home","reserve","queue","mine","progress"].includes(incomingParam("tab"))?incomingParam("tab"):"home",staffTab=(incomingParam("tab")==="settings"?"settings":"dashboard"),platformTab="dashboard",chosenSlot="",registration=false;
 let manageKind=["reservation","ticket"].includes(incomingParam("manage"))?incomingParam("manage"):"";
 let manageItem=/^[0-9a-f-]{36}$/i.test(incomingParam("item")||"")?incomingParam("item"):"";
 let manageMode=["edit","cancel","view"].includes(incomingParam("mode"))?incomingParam("mode"):"view";
