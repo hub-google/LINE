@@ -12,7 +12,7 @@ const client=read("saas/index.html");
 const bridge=read("supabase/functions/line-bridge/index.ts");
 
 test("all browser inline module scripts parse",()=>{
- for(const name of ["index.html","directory.html","merchant-register.html"]){
+ for(const name of ["index.html","directory.html","merchant-register.html","platform-login.html"]){
   const html=fs.readFileSync(path.join(saas,name),"utf8");
   const scripts=[...html.matchAll(/<script\b[^>]*type=["']module["'][^>]*>([\s\S]*?)<\/script>/g)];
   assert.ok(scripts.length>0,name+" missing inline module");
