@@ -193,3 +193,59 @@
     @media(max-width:620px){.tv-feature{gap:22px}.tv-screen-main{gap:5px;padding:7px}.tv-order{gap:3px;padding:5px}.tv-screen-head{font-size:11px;padding:7px 10px}.tv-now span,.tv-order b{font-size:11px}.tv-now strong{font-size:clamp(38px,10vw,62px)}.tv-order span{font-size:clamp(13px,3.4vw,20px)}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn{transition:none}.btn:hover{transform:none}}
   
+
+/* 首頁雙服務展示：預約與抽號叫號清楚並列，數字只作靜態示範。 */
+.hero-industries{margin:-5px 0 24px;max-width:560px}
+.hero-industries-title{display:block;font-size:13px;font-weight:850;color:#674576;margin-bottom:9px}
+.hero-industry-tags{display:flex;flex-wrap:wrap;gap:7px}
+.hero-industry-tags span{display:inline-flex;align-items:center;justify-content:center;border:1px solid #dec6ed;background:#fff9ff;color:#603e75;border-radius:999px;padding:4px 11px;font-size:12px;font-weight:800;line-height:1.5}
+.hero-showcase.mock-scene{min-height:485px;padding:80px 0 16px;width:100%;max-width:585px;margin-inline:auto}
+.hero-showcase .mock-ring{width:min(98%,500px);max-width:100%;background:radial-gradient(circle at 42% 30%,#ffefff 0%,#e7cff6 72%,#dfc1f1 100%);opacity:.8}
+.hero-demo-grid{position:relative;z-index:2;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:13px;width:100%}
+.hero-demo{min-width:0;min-height:386px;background:#fffafd;border:1px solid #dfc4eb;border-radius:23px;box-shadow:0 19px 43px rgba(70,43,82,.13);overflow:hidden;display:flex;flex-direction:column}
+.hero-demo-head{display:flex;flex-direction:column;align-items:flex-start;gap:9px;min-height:114px;padding:19px 17px 15px;background:linear-gradient(140deg,#efd5fc,#fce9f6)}
+.hero-demo--queue .hero-demo-head{background:linear-gradient(145deg,#f8e1f1,#fff0d7)}
+.hero-demo-badge{display:inline-flex;padding:4px 10px;border-radius:9px;background:#fffafd;color:#633c80;border:1px solid #e7d3ee;font-size:12px;font-weight:850;line-height:1.5}
+.hero-demo-head strong{font-size:16px;line-height:1.43;color:#442a51;letter-spacing:-.025em}
+.hero-demo-body{background:white;border:1px solid #f0e5f4;border-radius:16px;margin:0 12px;padding:14px 12px;flex:1;min-height:230px;display:flex;flex-direction:column;gap:0}
+.hero-demo-location{color:#6f4b86;font-size:12px;font-weight:900;margin:0 0 11px}
+.hero-demo-row{display:flex;flex-wrap:wrap;justify-content:space-between;gap:3px 8px;align-items:baseline;padding:8px 0;border-bottom:1px solid #eee5f0;font-size:11px;color:#765f80}
+.hero-demo-row strong{font-size:12px;color:#462b52}
+.hero-demo-field{font-size:11px;color:#765f80;margin:17px 0 8px;font-weight:750}
+.hero-demo-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.hero-demo-slots span{font-size:11px;font-weight:850;text-align:center;border:1px solid #e6d8ec;border-radius:9px;background:#faf4fe;color:#5e4570;padding:8px 0;white-space:nowrap}
+.hero-demo-slots .is-selected{background:#fec55a;border-color:#e8b64f;color:#452b4f}
+.hero-demo-action{margin-top:auto;border-radius:11px;padding:10px 7px;text-align:center;background:#6b3d8a;color:white;font-size:12px;line-height:1.5;font-weight:900}
+.hero-demo--booking .hero-demo-action{margin-top:20px}
+.hero-demo-action--queue{background:#75449a}
+.hero-demo-current{text-align:center;background:#f6e9fc;border-radius:13px;padding:9px;margin-bottom:11px}
+.hero-demo-current span{display:block;font-size:11px;font-weight:800;color:#75578a}
+.hero-demo-current strong{display:block;font-size:37px;line-height:1.25;color:#60367f;font-weight:950;letter-spacing:.03em}
+.hero-demo-queue-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px}
+.hero-demo-queue-row>div{border:1px solid #efe3f2;background:#fffaff;border-radius:10px;padding:7px 5px;text-align:center;min-width:0}
+.hero-demo-queue-row span{display:block;font-size:10px;color:#806a8b;font-weight:800;white-space:nowrap}
+.hero-demo-queue-row strong{display:block;font-size:19px;color:#4d2d62;line-height:1.4;font-weight:950}
+.hero-demo-foot{padding:13px 12px 14px;margin:0;text-align:center;font-size:11px;line-height:1.55;color:#796387;font-weight:800}
+body[data-monster-page="home"] .mock-scene.hero-showcase::before{width:112px;height:115px;right:1px;top:-42px;transform:rotate(-4deg);z-index:4}
+@media(min-width:851px) and (max-width:1130px){
+  .hero-grid{grid-template-columns:1fr;gap:8px}
+  .hero-copy{max-width:850px}
+  .hero-showcase.mock-scene{max-width:680px}
+  .hero-demo-grid{max-width:610px}
+}
+@media(max-width:620px){
+  .hero-industries{margin:0 0 20px}
+  .hero-industries-title{font-size:12px}
+  .hero-industry-tags{gap:6px}
+  .hero-industry-tags span{padding:4px 9px;font-size:11px}
+  .hero-showcase.mock-scene{min-height:0;max-width:430px;padding:81px 0 10px;margin-top:15px}
+  .hero-showcase .mock-ring{max-width:330px;top:95px;opacity:.65}
+  .hero-demo-grid{grid-template-columns:1fr;gap:13px;max-width:410px}
+  .hero-demo{min-height:0;border-radius:21px}
+  .hero-demo-head{min-height:0;padding:15px 16px;gap:7px}
+  .hero-demo-head strong{font-size:15px}
+  .hero-demo-body{min-height:0;padding:13px}
+  .hero-demo-foot{padding:11px 12px}
+  .hero-demo-current strong{font-size:34px}
+  body[data-monster-page="home"] .mock-scene.hero-showcase::before{width:103px;height:107px;right:4px;top:-35px;transform:rotate(-4deg)}
+}
