@@ -625,3 +625,35 @@ body[data-portal="staff"] .merchant-profile-section{box-shadow:0 3px 10px rgba(8
  .merchant-color-hint{min-width:140px}
  .merchant-profile-actions .btn{width:100%}
 }
+
+
+/* Platform enterprise list: every row action has one consistent button style. */
+body[data-monster-page="index"][data-portal="platform"] .platform-row-actions{
+ display:grid;
+ grid-template-columns:repeat(3,minmax(0,1fr));
+ align-items:center;
+ gap:10px;
+ min-width:300px;
+}
+body[data-monster-page="index"][data-portal="platform"] .platform-row-actions>.btn{
+ display:inline-flex;
+ box-sizing:border-box;
+ align-items:center;
+ justify-content:center;
+ width:100%;
+ min-width:0;
+ min-height:48px;
+ margin:0;
+ padding:9px 11px;
+ line-height:1.25;
+ font-size:14px;
+ font-weight:850;
+ text-align:center;
+ text-decoration:none;
+ white-space:nowrap;
+ border-radius:14px;
+}
+body[data-monster-page="index"][data-portal="platform"] .platform-row-actions>.btn:focus-visible{
+ outline:3px solid #A777C5;
+ outline-offset:2px;
+}
