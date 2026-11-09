@@ -101,8 +101,8 @@ test("pastel directory header keeps WCAG AA contrast on mobile",()=>{
 });
 
 
-test("all 11 Queue Monster pages share a single design-system identity and live CSS",()=>{
- const pages=["index","home","directory","board","merchant-register","merchant-center","poster","template","privacy","terms","offline"];
+test("customer-facing pages share one design system; retired template redirects to the merchant guide",()=>{
+ const pages=["index","home","directory","board","merchant-register","merchant-center","poster","privacy","terms","offline"];
  const brandCss=read("saas/monster-world.css");
  assert.match(brandCss,/branded product design system v2/);
  for(const page of pages){
@@ -113,6 +113,9 @@ test("all 11 Queue Monster pages share a single design-system identity and live 
    assert.ok(html.indexOf("monster-world.css")>html.lastIndexOf("</style>"),"shared brand stylesheet must override the legacy merchant style");
   }
  }
+ const legacyTemplate=read("saas/template.html");
+ assert.match(legacyTemplate,/merchant-center\.html#setup/);
+ assert.doesNotMatch(legacyTemplate,/商家後台設定預覽|Supabase/);
  for(const page of pages){
   assert.match(brandCss,new RegExp('data-monster-page="'+page+'"'),page+" must have tailored treatment");
  }
