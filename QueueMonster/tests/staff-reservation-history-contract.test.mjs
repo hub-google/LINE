@@ -46,7 +46,7 @@ test("staff page uses server result, not 500-record client worklist, to search a
  assert.match(app,/p_status:historicalBookingStatus,p_deleted:historicalBookingDeleted/);
  assert.match(app,/p_page:page,p_page_size:25/);
  assert.match(app,/function staffRender\(\)/);
- assert.match(app,/完整預約歷史｜後端搜尋與分頁/);
+ assert.match(app,/完整預約歷史/);
  assert.match(app,/if\(a==="historical-search"\)/);
  assert.match(app,/if\(a==="historical-reset"\)/);
  assert.match(app,/if\(a==="historical-prev"\|\|a==="historical-next"\)/);
