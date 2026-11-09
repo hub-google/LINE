@@ -1,0 +1,1 @@
+"use strict";(()=>{(()=>{let n=null,e=document.getElementById("install-booking-app");window.addEventListener("beforeinstallprompt",t=>{t.preventDefault(),n=t,e&&(e.hidden=!1)}),window.addEventListener("appinstalled",()=>{n=null,e&&(e.hidden=!0)}),e?.addEventListener("click",async()=>{if(!n)return;let t=n;n=null,e&&(e.hidden=!0),await t.prompt()})})();})();

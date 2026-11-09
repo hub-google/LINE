@@ -3,52 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="line-saas-build" content="6da887c66e3d14099696617e78f5a9f7250a1a2d">
-  <script defer src="./version-watch.js?build=6da887c66e3d14099696617e78f5a9f7250a1a2d"></script>
+  <meta name="line-saas-build" content="d20c5ea6c99f65d8ed4dc92ffd807f5660569cc7">
+  <script defer src="./version-watch.js?build=d20c5ea6c99f65d8ed4dc92ffd807f5660569cc7"></script>
   <meta name="theme-color" content="#113d38">
   <title>排隊怪獸｜即時叫號看板</title>
   <meta name="description" content="店內電視專用即時叫號看板，顯示目前號碼與下一批候位排序。">
-  <style>
-    :root{color-scheme:light;--forest:#006c31;--dark:#053b24;--mint:#dff7e4;--off:#f3f5f3;--ink:#083f26}
-    *{box-sizing:border-box}
-    html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif;background:#fff;color:var(--ink)}
-    body{min-height:100svh;display:flex;flex-direction:column}
-    header{min-height:110px;padding:15px clamp(24px,4vw,65px);background:var(--forest);display:flex;align-items:center;justify-content:space-between;gap:20px;color:#fff}
-    header h1{margin:0;font-size:clamp(27px,3.7vw,62px);line-height:1.3;overflow-wrap:anywhere;font-weight:900;letter-spacing:-.035em}
-    .shop-title{display:flex;align-items:center;gap:18px;min-width:0}
-    .shop-icon{width:clamp(38px,5vw,70px);height:clamp(38px,5vw,70px);flex:none;border:4px solid #fff;border-radius:14px;display:grid;place-items:center;font-size:clamp(21px,3vw,35px)}
-    #clock{font-size:clamp(30px,4vw,70px);font-weight:850;white-space:nowrap;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
-    main{flex:1;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr);gap:clamp(15px,2vw,32px);padding:clamp(22px,2.8vw,48px) clamp(22px,2vw,36px) 14px}
-    .panel{border-radius:clamp(22px,3vw,44px);padding:clamp(20px,3vw,42px);display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0}
-    .panel.current{background:var(--mint);justify-content:center;min-height:400px}
-    .panel.next{background:var(--off);justify-content:flex-start}
-    .label{font-size:clamp(27px,3.5vw,54px);font-weight:900;line-height:1.4;letter-spacing:-.04em}
-    .underline{width:112px;height:9px;border-radius:20px;background:#90dca4;margin:18px auto 24px}
-    #current{font-size:clamp(110px,17vw,310px);font-weight:950;line-height:1.25;letter-spacing:-.05em;color:var(--dark);font-variant-numeric:tabular-nums;max-width:100%;overflow-wrap:anywhere}
-    #upcoming{list-style:none;padding:0;margin:0;width:100%;display:grid;gap:clamp(8px,.8vw,14px)}
-    #upcoming li{background:#fff;border-radius:clamp(14px,2vw,25px);min-height:clamp(58px,7.5vh,94px);display:flex;align-items:center;justify-content:center;font-weight:880;letter-spacing:-.03em;font-size:clamp(30px,3.6vw,62px);font-variant-numeric:tabular-nums}
-    #upcoming li.empty{color:#647b6b;font-size:clamp(22px,2.4vw,36px)}
-    footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:12px clamp(22px,3vw,46px) 22px;color:#46775a;font-size:clamp(13px,1.3vw,20px)}
-    .footer-note{background:#eaf8ea;border-radius:100px;padding:10px 24px;margin:auto;font-weight:700;text-align:center}
-    #health[data-state="ok"]{display:none}
-    #health[data-state="error"]{color:#a72c23;font-weight:800}
-    .board-controls{display:flex;gap:8px}
-    button{font:inherit;border:1px solid #c8dfce;border-radius:12px;color:#255c3c;background:#f8fbf8;padding:8px 12px;cursor:pointer;font-size:13px;white-space:nowrap}
-    button:focus-visible{outline:3px solid #46aa6a;outline-offset:3px}
-    #notice{width:100%;text-align:center;font-size:12px;color:#638776}
-    #unit-board[hidden],main[hidden]{display:none!important}
-    #unit-board{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr));gap:20px;padding:clamp(18px,3vw,40px);align-content:start}
-    .unit-card{border:1px solid #d7e7db;border-radius:22px;padding:clamp(18px,2vw,32px);background:#f5fbf6;min-width:0}
-    .unit-card h2{font-size:clamp(20px,2.3vw,38px);margin:0 0 5px;color:var(--dark)}
-    .unit-card .group{color:#52745e;font-size:clamp(13px,1.3vw,19px);font-weight:700}
-    .unit-card .unit-now{font-size:clamp(72px,9vw,155px);font-weight:950;line-height:1.25;letter-spacing:-.045em;font-variant-numeric:tabular-nums;text-align:center}
-    .unit-card .unit-next{font-size:clamp(16px,1.5vw,25px);font-weight:750;border-top:1px solid #c8dfce;padding-top:13px;overflow-wrap:anywhere}
-    @media(min-width:1200px){#unit-board{grid-template-columns:repeat(3,minmax(0,1fr))}}
-    @media(max-width:780px){header{min-height:85px}.shop-icon{display:none}main{grid-template-columns:1fr}.panel.current{min-height:270px}.panel.next{min-height:320px}#current{font-size:clamp(85px,22vw,180px)}#upcoming{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    @media(max-width:460px){header{padding:16px;align-items:flex-start}.shop-title{max-width:67%}main{padding:12px;gap:12px}.panel{padding:22px 14px}#upcoming li{min-height:65px}.board-controls{width:100%;justify-content:center}}
-    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
-  </style>
-<link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=6da887c66e3d14099696617e78f5a9f7250a1a2d"></head>
+  <link rel="stylesheet" href="./assets/board/page-UUVLKVKQ.css?build=d20c5ea6c99f65d8ed4dc92ffd807f5660569cc7">
+<link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=d20c5ea6c99f65d8ed4dc92ffd807f5660569cc7"></head>
 <body data-monster-page="board">
   <header>
     <div class="shop-title"><span class="shop-icon" aria-hidden="true">▤</span><h1 id="shop">正在讀取門市資料</h1></div>
@@ -73,134 +34,6 @@
     <div class="board-controls"><button type="button" id="refresh">重新整理</button><button type="button" id="fullscreen">全螢幕</button></div>
     <span id="notice">目前叫號與等待順序皆由門市資料同步，不顯示顧客個資。</span>
   </footer>
-  <script type="module">
-    import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-    const SUPABASE_URL="https://unapiwajmgqqtdkixaab.supabase.co";
-    const SUPABASE_ANON_KEY="sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy";
-    // Independent browser session: opening a TV board never signs out a customer or staff.
-    const client=createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{
-      auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}
-    });
-    const params=new URLSearchParams(location.search);
-    const slug=params.get("merchant")||"";
-    const selectedSession=/^[0-9a-f-]{36}$/i.test(params.get("session")||"")?params.get("session"):null;
-    const $=id=>document.getElementById(id);
-    const localTime=date=>new Intl.DateTimeFormat("zh-TW",{timeZone:"Asia/Taipei",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(date);
-    const validSlug=/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug);
-    let lastSuccess=null,loading=false,refreshQueued=false;
-    let lastData=null,staleFromFailure=false,disabled=false;
-    function renderUpcoming(numbers){
-      const list=$("upcoming");
-      list.replaceChildren();
-      if(!numbers.length){
-        const li=document.createElement("li");li.className="empty";li.textContent="目前無人等候";list.appendChild(li);return;
-      }
-      for(const number of numbers){
-        const li=document.createElement("li");li.textContent=String(number);list.appendChild(li);
-      }
-    }
-    $("clock").textContent=localTime(new Date()).slice(0,5);
-    setInterval(()=>{$("clock").textContent=localTime(new Date()).slice(0,5);},1000);
-    function health(label,state){
-      $("health").textContent=label;$("health").dataset.state=state;
-    }
-    function updateConnectionStatus(){
-      if(!validSlug||disabled)return;
-      if(!lastSuccess){health("正在取得最新叫號資料","loading");return;}
-      const elapsed=Date.now()-lastSuccess.getTime();
-      if(staleFromFailure||!navigator.onLine||elapsed>45000){
-        health("連線中斷｜畫面為上次成功同步資料","error");
-        $("notice").textContent="最後成功同步："+localTime(lastSuccess)+"。請檢查網路，勿將此畫面視為即時叫號。";
-        return;
-      }
-      health("定期更新正常","ok");
-      $("notice").textContent="最後成功同步："+localTime(lastSuccess)+"；資料每 12 秒自動核對，網路斷線會提示。";
-    }
-    function renderUnits(sessions){
-      const grid=$("unit-board");
-      grid.replaceChildren();
-      for(const s of sessions){
-        const card=document.createElement("article");card.className="unit-card";
-        const group=document.createElement("div");group.className="group";group.textContent=[s.group,s.name].filter(Boolean).join(" · ");
-        const heading=document.createElement("h2");heading.textContent=s.unit||"服務單位";
-        const now=document.createElement("div");now.className="unit-now";now.textContent=s.current||"—";
-        const next=document.createElement("div");next.className="unit-next";
-        next.textContent="接下來："+(Array.isArray(s.next)&&s.next.length?s.next.join("、"):"目前無人等候");
-        const count=document.createElement("div");count.className="group";count.textContent="等候 "+Number(s.waiting||0)+" 組";
-        card.append(group,heading,now,next,count);grid.append(card);
-      }
-      if(!sessions.length){
-        const empty=document.createElement("article");empty.className="unit-card";empty.textContent="今天尚未設定開放場次";grid.append(empty);
-      }
-      $("single-board").hidden=true;grid.hidden=false;
-    }
-    async function refresh(){
-      if(!validSlug)return;
-      if(loading){refreshQueued=true;return;}
-      loading=true;
-      try{
-        // Public read-only queue status: no LINE Login, Supabase anonymous sign-in,
-        // customer booking data, or personal identifiers.
-        const {data:units,error:unitError}=await client.rpc("so_unit_public_board",{p_slug:slug,p_session_id:selectedSession});
-        if(unitError)throw unitError;
-        if(units?.multi){
-          disabled=false;staleFromFailure=false;lastData=units;lastSuccess=new Date();
-          $("shop").textContent=String(units.shop||slug);
-          renderUnits(Array.isArray(units.sessions)?units.sessions:[]);
-          updateConnectionStatus();return;
-        }
-        $("single-board").hidden=false;$("unit-board").hidden=true;
-        const {data,error}=await client.rpc("so_public_board",{p_slug:slug,p_limit:5});
-        if(error)throw error;
-        if(!data||!data.shop_name||!Array.isArray(data.upcoming))throw Error("找不到可公開的門市叫號資訊");
-        const now=new Date();
-        disabled=false;
-        staleFromFailure=false;
-        lastData=data;
-        lastSuccess=now;
-        $("shop").textContent=String(data.shop_name||slug);
-        $("current").textContent=data.current==null||data.current===""?"—":String(data.current);
-        renderUpcoming(data.upcoming);
-        updateConnectionStatus();
-      }catch(error){
-        if(lastData){
-          staleFromFailure=true; // retain the real last success time, but mark the snapshot stale
-          updateConnectionStatus();
-        }else{
-          health("叫號資料暫時無法取得","error");
-          $("shop").textContent="無法讀取門市";
-          $("notice").textContent="請確認網路、門市網址及公開叫號服務是否開放。請勿以顯示的空白數字判斷叫號。";
-        }
-        console.warn("Queue board update failed:",String(error?.message||error));
-      }finally{
-        loading=false;
-        if(refreshQueued){refreshQueued=false;void refresh();}
-      }
-    }
-    $("refresh").addEventListener("click",()=>{void refresh();});
-    $("fullscreen").addEventListener("click",async()=>{
-      try{
-        if(document.fullscreenElement)await document.exitFullscreen();
-        else await document.documentElement.requestFullscreen();
-      }catch(_error){$("notice").textContent="此瀏覽器不支援全螢幕，仍可直接使用看板。";}
-    });
-    document.addEventListener("fullscreenchange",()=>{
-      $("fullscreen").textContent=document.fullscreenElement?"結束全螢幕":"全螢幕";
-    });
-    document.addEventListener("visibilitychange",()=>{
-      if(!document.hidden)void refresh();
-    });
-    window.addEventListener("online",()=>{void refresh();});
-    window.addEventListener("offline",updateConnectionStatus);
-    if(!validSlug){
-      $("shop").textContent="未指定有效門市";
-      health("請先選擇門市","error");
-      $("notice").textContent="網址需包含正確的 merchant 門市代碼，例如 board.html?merchant=your-shop。";
-    }else{
-      void refresh();
-      setInterval(()=>{if(!document.hidden)void refresh();},12000);
-      setInterval(updateConnectionStatus,5000);
-    }
-  </script>
+  <script type="module" src="./assets/board/main-QXPFEKNY.js?build=d20c5ea6c99f65d8ed4dc92ffd807f5660569cc7"></script>
 </body>
 </html>
