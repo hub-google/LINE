@@ -73,3 +73,34 @@ test("platform PIN login uses server-side throttle and a real authenticated sess
  assert.ok(!reg.includes('pin==="9"'));
  assert.ok(!migration.includes("crypt('9'"));
 });
+
+test("merchant can independently enable reservation and queue in their own settings",()=>{
+ const modes=read("supabase/migrations/20261109093000_merchant_service_mode_switch.sql");
+ const guide=read("saas/merchant-center.html");
+ assert.ok(index.includes('id="set-service-reservation"'));
+ assert.ok(index.includes('id="set-service-queue"'));
+ assert.ok(index.includes('if(a==="save-service-modes")'));
+ assert.ok(index.includes('rpc("so_set_merchant_services"'));
+ assert.ok(index.includes("p_reservation:reservation,p_queue:queue"));
+ assert.ok(guide.includes("儲存服務開關"));
+ assert.ok(modes.includes("private.so_role(v_t.id)"));
+ assert.ok(modes.includes("('OWNER','MANAGER')"));
+ assert.ok(modes.includes("coalesce(v_t.modules,'{}'::jsonb)"));
+ assert.ok(modes.includes("jsonb_build_object('reservation',p_reservation,'queue',p_queue,'calling',v_calling)"));
+ assert.ok(modes.includes("grant execute on function public.so_set_merchant_services"));
+ assert.ok(!modes.includes("grant execute on function public.so_set_merchant_services(text,boolean,boolean) to anon"));
+});
+
+test("only active services appear in public entry points, preserving older ticket work",()=>{
+ assert.ok(index.includes('m.reservation?nav("線上預約"'));
+ assert.ok(index.includes('m.queue?nav("現場取號"'));
+ assert.ok(index.includes('if(!m.reservation)html=box("未開放預約"'));
+ assert.ok(index.includes('if(!m.queue)html=box("尚未開放取號"'));
+ assert.ok(directory.includes("primaryHref=services.reservation?reserveHref:services.queue?queueHref:"));
+ assert.ok(directory.includes("services.queue&&services.calling"));
+ assert.ok(read("supabase/migrations/20261109093000_merchant_service_mode_switch.sql").includes("already issued numbers"));
+ const module=index.match(/<script type="module">([\\s\\S]+?)<\\/script>/)?.[1];
+ assert.ok(module,"main booking page requires an executable module");
+ const checked=spawnSync(process.execPath,["--input-type=module","--check"],{input:module,encoding:"utf8"});
+ assert.equal(checked.status,0,checked.stderr);
+});
