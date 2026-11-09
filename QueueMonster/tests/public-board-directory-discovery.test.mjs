@@ -9,18 +9,15 @@ const base=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
 const directory=readFileSync(path.join(base,"saas/directory.html"),"utf8");
 const publicBoardSql=readFileSync(path.join(base,"supabase/migrations/20261105132500_public_queue_board_without_login.sql"),"utf8");
 
-test("public search discovers real named QA board without mixing it into official directory",()=>{
- assert.match(directory,/qa-84b3ef9297eb470685a91a527ca499ca/);
- assert.match(directory,/sb\.rpc\("so_public_board",\{p_slug:qaSlug,p_limit:5\}\)/);
- assert.match(directory,/testBoardShop=\{slug:qaSlug,name:boardResponse\.data\.shop_name/);
- assert.match(directory,/const testMatches=mode!=="mine"&&keyword&&testBoardShop/);
- assert.match(directory,/const filtered=\[\.\.\.official,\.\.\.testMatches\]/);
- assert.match(directory,/test_board_only\?'<span class="badge qa-badge">測試門市・非正式合作店家<\/span>'/);
- assert.match(directory,/開啟叫號看板/);
- assert.match(directory,/if\(t\.test_board_only\)/);
+test("public search lists published merchants and preserves unauthenticated board access",()=>{
+ assert.match(directory,/sb\.rpc\("so_public_directory",\{p_query:null,p_mode:/);
+ assert.match(directory,/sb\.rpc\("so_public_popular_stores"/);
+ assert.doesNotMatch(directory,/test_board_only|qa-84b3ef9297eb470685a91a527ca499ca/);
+ assert.match(directory,/公開叫號看板/);
  assert.match(directory,/if\(original\.searchParams\.get\("view"\)!=="customer"\)return/);
  assert.match(publicBoardSql,/grant execute on function public\.so_public_board\(text,integer\) to anon,authenticated/);
 });
+
 test("search directory remains syntactically valid and distinguishes reservation identity",()=>{
  const scripts=[...directory.matchAll(/<script type="module">([\s\S]*?)<\/script>/g)];
  assert.equal(scripts.length,1);
@@ -43,9 +40,8 @@ test("directory cards are styled and fully clickable on mobile and desktop",()=>
  assert.match(directory,/class="card-cover"/);
  assert.match(directory,/class="merchant-card/);
  assert.match(directory,/const cover=primaryHref/);
- assert.match(directory,/if\(t\.test_board_only\)\{/);
- assert.match(directory,/primaryHref=boardHref/);
- assert.match(directory,/els\.test\.classList\.toggle\("hidden",mode==="mine"\|\|Boolean\(keyword\)\)/);
+ assert.match(directory,/primaryHref=services\.reservation\?reserveHref:services\.queue\?queueHref:""/);
+ assert.match(directory,/services\.queue&&services\.calling/);
  assert.doesNotMatch(style,/border-color:var\(--brand\}/);
 });
 

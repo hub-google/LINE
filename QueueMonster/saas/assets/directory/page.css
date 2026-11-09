@@ -71,7 +71,7 @@ main{position:relative;margin-top:-18px;padding-bottom:48px}
 .shop-desc{font-size:13px;line-height:1.65;color:#6d8277;margin:17px 0 8px}
 .shop-address{color:#71897d;font-size:12px;margin:0 0 10px}
 .card-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:auto;padding-top:16px;pointer-events:auto;position:relative;z-index:2}
-a.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;background:#0b7258;color:#fff;text-decoration:none;min-height:43px;padding:10px 15px;border-radius:10px;font-weight:750;font-size:13px;transition:background .15s,transform .15s;border-color .15s;white-space:normal;text-align:center}
+a.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;background:#0b7258;color:#fff;text-decoration:none;min-height:43px;padding:10px 15px;border-radius:10px;font-weight:750;font-size:13px;transition:background .15s,transform .15s,border-color .15s;white-space:normal;text-align:center}
 a.btn:hover{background:#075c47}
 a.btn.secondary{background:#f1f8f4;border:1px solid #c9e5d4;color:#11664c}
 a.btn.secondary:hover{background:#e1f3e9}

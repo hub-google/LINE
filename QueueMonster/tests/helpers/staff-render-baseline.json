@@ -1,0 +1,48 @@
+{
+  "baseline": "6da887c66e3d14099696617e78f5a9f7250a1a2d",
+  "fixture": {
+    "tenant": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "slug": "greenfield-salon",
+      "name": "測試用渲染資料",
+      "status": "ACTIVE",
+      "modules": {
+        "reservation": true,
+        "queue": true,
+        "calling": true
+      },
+      "onboarding_complete": true,
+      "open_time": "09:00",
+      "close_time": "18:00",
+      "slot_minutes": 30,
+      "capacity": 5
+    },
+    "role": "OWNER",
+    "members": [],
+    "invitations": [],
+    "reservations": [],
+    "tickets": [],
+    "branches": [],
+    "menu_items": [],
+    "resources": [],
+    "service_rules": [],
+    "pending_reservations": [],
+    "processed_reservations": [],
+    "active_tickets": [],
+    "processed_tickets": [],
+    "deleted_reservations": [],
+    "deleted_tickets": []
+  },
+  "hashes": {
+    "dashboard": "3acc035277c3b691970013caa7a7760010624b31e31361b54a983dcbaa1497b2",
+    "analytics": "6cecfe8d13ab1b98596c0e1e9ed391bd5ad783f42eba1e431a8b4f89fdc015e9",
+    "bookings": "618a11cf65cbe76deb864b5cd1d0674eaf80969b1f29fe79aca72333479e242c",
+    "calendar": "6d657dbba4be0c7bc3412cbb38774b81b81ecb8656226cd10b6b6494983399cd",
+    "queue": "25cdbeffc246ad0ef7ba6566f22fb2f857389cea82c5d3bfc2bb223035b4e14c",
+    "menu": "9d596d5d191715bac895da2b91eb055b5dc075e3d9024444461f4a66f9a74d08",
+    "members": "86d84e3b115938ba9c945650c9c845dee4862b45a5a7a902bae3c6d2d0441c7b",
+    "branches": "ee57a5a94d657dc5975d5f36a889f469b97402abcf129d85eb1ad1d13905c14a",
+    "units": "fd35af6a4ac471b6674dd433b0a0bb010cfe4afbcef312984c1e70031dad9d3e",
+    "settings": "c973b61be851a9db786e2d90babc795a16419452a146910e208e051a299a47a6"
+  }
+}

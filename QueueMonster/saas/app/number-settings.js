@@ -1,4 +1,7 @@
-function numberSettingsPanel(kind,t,isManager){
+
+import {box,btn,esc,field} from "./shared-ui.js";
+
+export function numberSettingsPanel(kind,t,isManager){
  const booking=kind==="booking",label=booking?"預約":"叫號";
  const prefix=booking?(t.booking_prefix||""):(t.queue_prefix||"");
  const last=booking?Number(t.booking_last_number||0):Number(t.queue_last_number||0);

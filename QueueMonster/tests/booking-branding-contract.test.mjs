@@ -26,8 +26,8 @@ test("customer and merchant management use the real shared brand stylesheet",()=
 });
 
 test("generated staff and customer links use /booking/ without changing OAuth callback handling",()=>{
- assert.match(app,/const bookingPath=location\.pathname\.replace\(/);
- assert.match(app,/const route=\(v,s=slug,tab=""\)=>bookingPath/);
+ assert.match(app,/bookingPath=location\.pathname\.replace\(/);
+ assert.match(app,/route=\(v,s=slug,tab=""\)=>bookingPath/);
  assert.match(app,/const canonical=location\.origin\+bookingPath/);
  assert.match(app,/new URL\(location\.origin\+location\.pathname\)/);
  assert.match(app,/排隊怪獸 · 顧客服務/);

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync,readFileSync,readdirSync,rmSync,statSync} from 'node:fs';
+import {mkdtempSync,readFileSync,readdirSync,rmSync,statSync,existsSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
@@ -29,5 +29,8 @@ test('release includes extracted assets, valid scripts, and stamped versions',()
   }};
   visit(path.join(dest,'assets'));
   assert.ok(readFileSync(path.join(dest,'index.html'),'utf8').length<6000);
+  assert.match(readFileSync(path.join(dest,'index.html'),'utf8'),/assets\/app\/main-[A-Z0-9]+\.js/);
+  assert.equal(existsSync(path.join(dest,'app')),false,'Do not publish source modules');
+  assert.ok(!readdirSync(path.join(dest,'assets'),{recursive:true}).some(x=>x.endsWith('.map')),'Do not publish source maps');
  }finally{rmSync(dest,{recursive:true,force:true})}
 });

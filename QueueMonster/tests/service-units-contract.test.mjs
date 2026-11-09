@@ -14,7 +14,7 @@ const prd = read("PRD.md");
 test("new service-unit switches are opt-in with legacy booking/queue modules retained", () => {
   for (const key of ["multi_unit_enabled", "grouped_units_enabled", "checkin_queue_enabled"])
     assert.match(sql, new RegExp(key + "[^\\n]*default false"));
-  assert.match(ui, /const unitEnabled=\(\)=>unitConfig\?\.multi===true/);
+  assert.match(ui, /unitEnabled=\(\)=>unitConfig\?\.multi===true/);
   assert.match(ui, /if\(!m\.reservation\)/);
   assert.match(ui, /else if\(unitEnabled\(\)\)html=unitBookingPanel\(\)/);
   assert.match(ui, /else if\(unitEnabled\(\)\)html=unitQueuePanel\(\)/);

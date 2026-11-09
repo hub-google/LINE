@@ -1,8 +1,16 @@
-function escapeIcsText(value){
+import {customerState} from "./state/customerState.js";
+import {lineState} from "./state/lineState.js";
+import {routeState} from "./state/routeState.js";
+
+
+import {showActionFeedback} from "./shared-ui.js";
+
+export function escapeIcsText(value){
  return String(value??"").replace(/\\/g,"\\\\").replace(/\r\n|\r|\n|\u2028|\u2029/g,"\\n")
   .replace(/;/g,"\\;").replace(/,/g,"\\,");
 }
-function foldIcsLine(line){
+
+export function foldIcsLine(line){
  const encoder=new TextEncoder(),chunks=[];
  let current="",bytes=0;
  for(const char of Array.from(line)){
@@ -13,7 +21,8 @@ function foldIcsLine(line){
  chunks.push(current);
  return chunks.join("\r\n");
 }
-function reservationToIcs(record,tenant,generatedAt=new Date().toISOString()){
+
+export function reservationToIcs(record,tenant,generatedAt=new Date().toISOString()){
  if(!record||!["CONFIRMED","CHECKED_IN"].includes(record.status))
   throw Error("這筆預約目前不能加入行事曆。");
  const day=String(record.day||""),time=String(record.time||"").slice(0,5);
@@ -49,14 +58,15 @@ function reservationToIcs(record,tenant,generatedAt=new Date().toISOString()){
  ];
  return lines.map(foldIcsLine).join("\r\n")+"\r\n";
 }
-function downloadReservationIcs(bookingId){
- if(view!=="customer"||lineLinkStatus!=="linked"){
+
+export function downloadReservationIcs(bookingId){
+ if(routeState.view!=="customer"||lineState.lineLinkStatus!=="linked"){
   showActionFeedback("請先完成 LINE 身分驗證，才能匯出自己的預約。","error");return;
  }
- const record=(customer?.my_reservations||[]).find(x=>x.id===bookingId);
+ const record=(customerState.customer?.my_reservations||[]).find(x=>x.id===bookingId);
  if(!record){showActionFeedback("找不到您的預約，請重新整理。","error");return;}
  try{
-  const data=reservationToIcs(record,customer?.tenant);
+  const data=reservationToIcs(record,customerState.customer?.tenant);
   const href=URL.createObjectURL(new Blob([data],{type:"text/calendar;charset=utf-8"}));
   const anchor=document.createElement("a");
   anchor.href=href;anchor.download="LINE_booking_"+record.day+"_"+String(record.id).slice(0,8)+".ics";

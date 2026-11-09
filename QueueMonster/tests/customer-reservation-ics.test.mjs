@@ -46,7 +46,7 @@ test("no ICS is created for cancelled bookings, malformed date or foreign record
  assert.throws(()=>reservationToIcs({...booking,id:"another-user"},{}),/識別碼/);
  assert.match(app,/if\(view!=="customer"\|\|lineLinkStatus!=="linked"\)/);
  assert.match(app,/\(customer\?\.my_reservations\|\|\[\]\)\.find\(x=>x\.id===bookingId\)/);
- assert.match(app,/if\(a==="booking-ics"\)\{downloadReservationIcs\(id\);return;\}/);
+ assert.match(app,/if\(a==="booking-ics"\)\{downloadReservationIcs\(id\);return true;\}/);
  assert.match(app,/加入行事曆（ICS）/);
  assert.match(app,/改期或取消不會自動同步/);
  assert.match(app,/type:"text\/calendar;charset=utf-8"/);

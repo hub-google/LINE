@@ -107,4 +107,4 @@
 
 ## 前端分檔
 
-主要應用已拆成 `app/` 功能來源，頁面 CSS／JS 放在 `assets/`。本機預覽須先建置；來源結構、指令及作用域限制見 [app/README.md](app/README.md)。
+主要應用已改為 `app/` 原生 ES 模組，事件與後台分頁分別放在 `actions/`、`staff/`，領域狀態放在 `state/`。頁面 CSS／JS 放在 `assets/`，正式建置會壓縮並產生內容雜湊檔名。來源結構、初始化順序及驗收指令見 [app/README.md](app/README.md)。

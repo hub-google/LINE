@@ -9,11 +9,17 @@ export function readFileSync(file, options) {
  const dir=path.dirname(name);
  const asset=relative=>{
   const target=path.resolve(dir,relative.split("?")[0]);
-  const manifest=JSON.parse(fs.readFileSync(path.join(dir,"app/manifest.json"),"utf8"));
-  const parts=manifest[relative.replace(/^\.\//,"").split("?")[0]];
-  return parts?parts.map(part=>fs.readFileSync(path.join(dir,part),"utf8")).join("\n"):fs.readFileSync(target,"utf8");
+  const parts=JSON.parse(fs.readFileSync(new URL("./application-sources.json",import.meta.url),"utf8"));
+  if(relative.startsWith("./app/main.js")){
+   // Lexical view for legacy source contracts. Native-module execution is tested separately.
+   return parts.map(part=>fs.readFileSync(path.join(dir,part),"utf8")
+    .replace(/^import .*?;\r?\n/gm,"").replace(/\bexport /g,"")
+    .replace(/\b\w+State\.(\w+)/g,"$1")
+    .replace(/\b([A-Za-z_$][\w$]*):\1(?=[,}])/g,"$1")).join("\n");
+  }
+  return fs.readFileSync(target,"utf8");
  };
- return value.replace(/<script([^>]*?) src="(\.\/assets\/[^"]+)"([^>]*)><\/script>/g,(_,before,url,after)=>'<script'+before+after+'>'+asset(url)+'</script>')
+ return value.replace(/<script([^>]*?) src="(\.\/(?:assets|app)\/[^"]+)"([^>]*)><\/script>/g,(_,before,url,after)=>'<script'+before+after+'>'+asset(url)+'</script>')
  .replace(/<link rel="stylesheet" href="(\.\/assets\/[^"]+)">/g,(_,url)=>'<style>'+asset(url)+'</style>');
 }
 export default {...fs,readFileSync};

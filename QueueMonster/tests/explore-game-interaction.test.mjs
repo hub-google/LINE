@@ -21,7 +21,7 @@ function setup(search="?mode=game"){
     if(id==="arcade-shopline"&&selector==="[data-shop-index]"){
      return Array.from(this.innerHTML.matchAll(/data-shop-index="(\d+)"/g),(m,i)=>({
       dataset:{shopIndex:m[1],selected:"false"},offsetLeft:i*184,offsetWidth:166,
-      scrollIntoView(){} 
+      scrollIntoView(){}
      }));
     }
     return [];

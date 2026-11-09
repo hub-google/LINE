@@ -33,7 +33,7 @@ test("full-history export pages through authorized RPC and aborts on changing da
  assert.match(app,/if\(records\.length!==total\)throw/);
  assert.match(app,/historicalBookingDeleted!=="active"&&!confirm/);
  assert.match(app,/link\.download="LINE_booking_history_"/);
- assert.match(app,/if\(a==="historical-export"\)\{void exportHistoricalBookings\(\);return;\}/);
+ assert.match(app,/if\(a==="historical-export"\)\{void exportHistoricalBookings\(\);return true;\}/);
  assert.match(app,/單次最多匯出 20,000 筆/);
  assert.match(app,/絕不默默截斷/);
 });

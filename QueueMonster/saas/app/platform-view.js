@@ -1,28 +1,36 @@
-function platformRender(){
+import {routeState} from "./state/routeState.js";
+import {sharedUiState} from "./state/sharedUiState.js";
+
+
+import {authReady,box,btn,esc,featureChecks,field,layout,nav,platformReady,requireAuth,stat,tag} from "./shared-ui.js";
+import {customerUrl} from "./line-session.js";
+import {merchantProfileFields} from "./merchant-brand.js";
+
+export function platformRender(){
  if(!authReady())return requireAuth();
  if(!platformReady())return box("無平台管理權限",'<p>此帳號尚未取得平台管理權限，請以已驗證的總管理員信箱登入。</p><a class="btn primary" href="./merchant-register.html?mode=login">重新登入</a>');
- const menu=nav("平台營運總覽","dashboard",platformTab,"platform")+nav("企業列表","list",platformTab,"platform")+nav("開通新企業","create",platformTab,"platform")+nav("平台說明","about",platformTab,"platform")+'<a class="side-item" href="merchant-register.html?mode=signup">店家註冊</a>';
+ const menu=nav("平台營運總覽","dashboard",routeState.platformTab,"platform")+nav("企業列表","list",routeState.platformTab,"platform")+nav("開通新企業","create",routeState.platformTab,"platform")+nav("平台說明","about",routeState.platformTab,"platform")+'<a class="side-item" href="merchant-register.html?mode=signup">店家註冊</a>';
  let html="";
- if(platformTab==="dashboard"){
-   const active=overview.filter(t=>t.status==="ACTIVE").length;
-   const bookings=overview.reduce((n,t)=>n+Number(t.today_reservations||0),0);
-   const waiting=overview.reduce((n,t)=>n+Number(t.today_waiting||0),0);
-   const completed=overview.reduce((n,t)=>n+Number(t.today_completed||0),0);
-   const staffCount=overview.reduce((n,t)=>n+Number(t.staff||0),0);
-   html='<div class="grid4" style="margin-bottom:16px">'+stat("企業總數",overview.length)+stat("營運中企業",active)+stat("今日預約",bookings)+stat("今日候位",waiting)+'</div>'+
+ if(routeState.platformTab==="dashboard"){
+   const active=routeState.overview.filter(t=>t.status==="ACTIVE").length;
+   const bookings=routeState.overview.reduce((n,t)=>n+Number(t.today_reservations||0),0);
+   const waiting=routeState.overview.reduce((n,t)=>n+Number(t.today_waiting||0),0);
+   const completed=routeState.overview.reduce((n,t)=>n+Number(t.today_completed||0),0);
+   const staffCount=routeState.overview.reduce((n,t)=>n+Number(t.staff||0),0);
+   html='<div class="grid4" style="margin-bottom:16px">'+stat("企業總數",routeState.overview.length)+stat("營運中企業",active)+stat("今日預約",bookings)+stat("今日候位",waiting)+'</div>'+
     box("平台跨企業即時營運",'<p class="muted">以下顯示各門市最新營運資訊。員工總數 '+esc(staffCount)+' 人，今日已完成 '+esc(completed)+' 組，每 15 秒更新。</p><div class="scroll"><table class="rows"><thead><tr><th>企業</th><th>狀態</th><th>員工</th><th>今日預約</th><th>候位</th><th>目前叫號</th><th>已完成</th><th>操作</th></tr></thead><tbody>'+
-    overview.map(t=>'<tr><td><strong>'+esc(t.name)+'</strong></td><td>'+tag(t.status)+'</td><td>'+esc(t.staff)+'</td><td>'+esc(t.today_reservations||0)+'</td><td>'+esc(t.today_waiting||0)+'</td><td>'+esc(t.current_number||"—")+'</td><td>'+esc(t.today_completed||0)+'</td><td><a href="'+esc(route("staff",t.slug))+'">店員後台</a> ・ <a href="'+esc((customerUrl(t.slug)||(customerUrl(t.slug)||route("customer",t.slug))))+'">顧客頁</a></td></tr>').join("")+'</tbody></table></div>');
-  }else if(platformTab==="list"){
-   html='<div class="toolbar"><h2>已開通企業（'+overview.length+'）</h2>'+btn("＋ 新增企業","new-tenant","primary")+'</div>'+
+    routeState.overview.map(t=>'<tr><td><strong>'+esc(t.name)+'</strong></td><td>'+tag(t.status)+'</td><td>'+esc(t.staff)+'</td><td>'+esc(t.today_reservations||0)+'</td><td>'+esc(t.today_waiting||0)+'</td><td>'+esc(t.current_number||"—")+'</td><td>'+esc(t.today_completed||0)+'</td><td><a href="'+esc(sharedUiState.route("staff",t.slug))+'">店員後台</a> ・ <a href="'+esc((customerUrl(t.slug)||(customerUrl(t.slug)||sharedUiState.route("customer",t.slug))))+'">顧客頁</a></td></tr>').join("")+'</tbody></table></div>');
+  }else if(routeState.platformTab==="list"){
+   html='<div class="toolbar"><h2>已開通企業（'+routeState.overview.length+'）</h2>'+btn("＋ 新增企業","new-tenant","primary")+'</div>'+
     '<div class="card scroll"><table class="rows"><thead><tr><th>企業</th><th>啟用功能</th><th>狀態</th><th>員工</th><th>操作</th></tr></thead><tbody>'+
-    (overview.map(t=>'<tr><td><strong>'+esc(t.name)+'</strong><div class="small">'+esc(t.slug)+'</div></td><td>'+features.filter(f=>t.modules?.[f[0]]).map(f=>esc(f[1])).join("、")+'</td><td>'+tag(t.status)+'</td><td>'+esc(t.staff)+'</td><td><div class="platform-row-actions" role="group" aria-label="'+esc(t.name)+' 操作">'+
-      '<a class="btn outline" href="'+esc(route("staff",t.slug)+"&tab=settings")+'">設定</a>'+
-      '<a class="btn outline" href="'+esc(route("customer",t.slug))+'" target="_blank" rel="noopener">顧客頁</a>'+
+    (routeState.overview.map(t=>'<tr><td><strong>'+esc(t.name)+'</strong><div class="small">'+esc(t.slug)+'</div></td><td>'+sharedUiState.features.filter(f=>t.modules?.[f[0]]).map(f=>esc(f[1])).join("、")+'</td><td>'+tag(t.status)+'</td><td>'+esc(t.staff)+'</td><td><div class="platform-row-actions" role="group" aria-label="'+esc(t.name)+' 操作">'+
+      '<a class="btn outline" href="'+esc(sharedUiState.route("staff",t.slug)+"&tab=settings")+'">設定</a>'+
+      '<a class="btn outline" href="'+esc(sharedUiState.route("customer",t.slug))+'" target="_blank" rel="noopener">顧客頁</a>'+
       btn(t.status==="ACTIVE"?"暫停":"恢復","toggle-company","outline",'data-slug="'+esc(t.slug)+'"')+
       '</div></td></tr>').join("")||'<tr><td colspan="5">尚無企業</td></tr>')+
     '</tbody></table></div>';
-   
- }else if(platformTab==="create"){
+
+ }else if(routeState.platformTab==="create"){
   html=box("新增企業客戶",'<p class="muted">完成後將建立獨立的店家網站與資料空間，LOGO、品牌色及營業設定會同步套用。</p>'+
     '<div class="grid"><div>'+field("網址英文代碼","create-slug","","text",'pattern="[a-z0-9-]{3,40}" placeholder="例如：my-shop"')+
     '</div><div>'+field("第一位企業管理者 Email（選填）","create-owner","","email")+

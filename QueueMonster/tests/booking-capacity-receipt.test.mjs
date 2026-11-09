@@ -24,7 +24,7 @@ test("party-size availability compares integer parties against actual remaining 
 });
 
 test("selection and submission both enforce capacity, and count is not reset on render",()=>{
- assert.match(app,/bookingParty=1,queuePartySize=2,bookingContactName=/);
+ assert.match(app,/bookingParty=1;\s*queuePartySize=2;\s*bookingContactName=/);
  assert.match(app,/field\("預約人數","customer-party",bookingParty\|\|""/);
  assert.match(app,/!availableForParty\(s\)\?"disabled/);
  assert.match(app,/if\(!availableForParty\(option\)\)/);
@@ -43,7 +43,7 @@ test("customers can view a timestamped current-state proof and print or save it"
  assert.match(app,/本憑證為/);
  assert.match(app,/不是即時有效性保證/);
  assert.match(app,/舊截圖及列印內容可能失效/);
- assert.match(app,/if\(a==="receipt-print"\)\{window\.print\(\);return;\}/);
+ assert.match(app,/if\(a==="receipt-print"\)\{window\.print\(\);return true;\}/);
  assert.match(css,/@media print/);
  assert.match(css,/#booking-receipt-overlay/);
  assert.match(css,/\.receipt-warning/);
