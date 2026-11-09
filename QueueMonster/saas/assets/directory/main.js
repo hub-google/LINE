@@ -199,7 +199,7 @@ document.addEventListener("click",async event=>{
  if(!/^[a-z0-9][a-z0-9-]{2,39}$/.test(merchant))return;
  // No second LIFF redirect for merchants sharing the headquarters OA.
  const selected=all.find(shop=>shop.slug===merchant);
- if(selected?.oa_mode==="PLATFORM" || merchant==="greenfield-salon")return;
+ if(selected?.oa_mode==="PLATFORM")return;
  event.preventDefault();
  const query=new URLSearchParams();
  query.set("view","customer");query.set("merchant",merchant);
