@@ -66,8 +66,8 @@ test("calendar UI is a separate read-only staff view with real server totals, pa
  assert.match(app,/if\(a==="calendar-prev"\|\|a==="calendar-next"\)/);
  assert.match(app,/if\(a==="calendar-page-prev"\|\|a==="calendar-page-next"\)/);
  assert.match(app,/if\(el\.id==="calendar-status"\)/);
- assert.match(app,/不會產生叫號/);
- assert.match(app,/不代表已自動安排員工或設備容量/);
+ assert.match(app,/查看日曆不會自動取號/);
+ assert.match(app,/不會安排員工或服務名額/);
 });
 
 test("responsive calendar uses seven columns and keyboard-focusable day buttons",()=>{
