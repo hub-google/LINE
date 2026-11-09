@@ -5,6 +5,27 @@ const publishableKey="sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy";
 const sb=createClient(supabaseUrl,publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 // Registration must not take over the platform administrator's existing browser session.
 const signupSb=createClient(supabaseUrl,publishableKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+function customerFacingError(error,operation="general"){
+ const raw=typeof error==="string"?error:typeof error?.message==="string"?error.message:typeof error?.error==="string"?error.error:"";
+ const code=typeof error?.code==="string"?error.code:typeof error?.error_code==="string"?error.error_code:"";
+ const detail=(code+" "+raw).toLowerCase();
+ if(/invalid.login.credentials|invalid_credentials|invalid.grant|invalid.pin|invalid.password|incorrect.password|wrong.password|email.or.password/i.test(detail))return "電子信箱或密碼不正確，請重新輸入。";
+ if(/email.not.confirmed|email_not_confirmed|email.unverified/i.test(detail))return "電子信箱尚未完成驗證，請先到信箱確認後再登入。";
+ if(/user.already.registered|user_already_exists|email_exists|already.registered/i.test(detail))return "這個電子信箱已經註冊，請直接登入或使用忘記密碼。";
+ if(/weak_password|password.should|password.must|password.is.too.short|password.*at.least|password.*characters/i.test(detail))return "密碼強度不足，請使用至少 8 個字元的密碼。";
+ if(/same_password|new.password.should.be.different/i.test(detail))return "新密碼不可與原本密碼相同，請重新設定。";
+ if(/over.*rate.limit|rate.limit|too.many.requests|security.purposes|try.again.after|too.many.attempts|admin.locked|locked.until/i.test(detail))return "操作太頻繁，請稍後再試。";
+ if(/otp.expired|token.expired|refresh.token|session.not.found|invalid.jwt|jwt.expired|auth.session.missing/i.test(detail))return "登入驗證已過期，請重新登入。";
+ if(/failed.to.fetch|network.error|networkerror|network.request.failed|load.failed|connection.*failed|fetch.failed|timeout|timed.out|network.unavailable/i.test(detail))return "網路連線異常，請檢查網路後再試一次。";
+ if(/email.address.invalid|invalid.email|valid.email|email.*format/i.test(detail))return "電子信箱格式不正確，請重新確認。";
+ if(/signup.disabled|signups.not.allowed|signups.*disabled/i.test(detail))return "目前暫時無法註冊，請稍後再試。";
+ if(/[\u3400-\u9fff]/.test(raw)&&!/\b(?:error|failed|exception|sqlstate|jwt|pgrst\d+|authapierror|internal.server.error|undefined|null)\b/i.test(raw)&&!/[a-z][a-z0-9]*_[a-z0-9_]+/i.test(raw))return raw;
+ if(operation==="login")return "登入失敗，請檢查電子信箱與密碼後重試。";
+ if(operation==="signup")return "目前無法完成註冊，請稍後再試。";
+ if(operation==="reset")return "暫時無法處理電子郵件或密碼設定，請稍後再試。";
+ if(operation==="line")return "LINE 身分驗證暫時無法完成，請重新登入。";
+ return "系統暫時無法完成操作，請稍後再試。";
+}
 const $=id=>document.getElementById(id);
 const returnToLogin=()=>new URL("./merchant-register.html?mode=login",location.href).href;
 const msg=(t,error=false)=>{$("message").textContent=t||"";$("message").className=t?"message"+(error?" error":""):""};
@@ -16,12 +37,12 @@ const setMode=(mode)=>{
  const u=new URL(location.href);u.searchParams.set("mode",active);history.replaceState(null,"",u.pathname+u.search+u.hash);
  msg("");
 };
-$("tab-login").onclick=()=>{setMode("login");void prepare().catch(e=>msg(e.message||"無法讀取登入狀態",true))};
+$("tab-login").onclick=()=>{setMode("login");void prepare().catch(e=>msg(customerFacingError(e,"login"),true))};
 $("tab-signup").onclick=()=>setMode("signup");
 setMode(new URL(location.href).searchParams.get("mode"));
-async function execute(job){
+async function execute(job,operation="general"){
  if(busy)return;busy=true;document.querySelectorAll("button").forEach(b=>b.disabled=true);msg("正在處理…");
- try{await job()}catch(error){msg(error.message||"操作失敗，請稍後再試",true)}
+ try{await job()}catch(error){msg(customerFacingError(error,operation==="general"?(active==="signup"?"signup":"login"):operation),true)}
  finally{busy=false;document.querySelectorAll("button").forEach(b=>b.disabled=false)}
 }
 async function rpc(name,args={}){const {data,error}=await sb.rpc(name,args);if(error)throw Error(error.message);return data}
@@ -64,7 +85,7 @@ $("login-form").onsubmit=e=>{e.preventDefault();void execute(async()=>{
    body:JSON.stringify({email,pin:password})
   });
   const result=await response.json();
-  if(!response.ok)throw Error(result.error||"管理員登入失敗");
+  if(!response.ok)throw Error(customerFacingError(result.error||"管理員登入失敗","login"));
   const {error}=await sb.auth.setSession({access_token:result.access_token,refresh_token:result.refresh_token});
   if(error)throw error;
  }else{
@@ -93,20 +114,20 @@ $("email-link-login").onclick=()=>void execute(async()=>{
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw Error("請先填寫有效的電子信箱");
  const {error}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:returnToLogin()}});
  if(error)throw error;msg("已申請寄送登入連結，請到信箱完成身分驗證");
-});
+},"reset");
 $("forgot-pass").onclick=()=>void execute(async()=>{
  const email=$("login-email").value.trim().toLowerCase();
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw Error("請先填寫有效的電子信箱");
  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:returnToLogin()});
  if(error)throw error;msg("若信箱已有帳號，將收到密碼重設連結");
-});
+},"reset");
 $("change-pass").onclick=()=>void execute(async()=>{
  const password=$("new-pass").value,confirm=$("confirm-new-pass").value;
  if(password.length<8)throw Error("新密碼至少需要 8 字元");
  if(password!==confirm)throw Error("兩次輸入的密碼不相同");
  const {error}=await sb.auth.updateUser({password});
  if(error)throw error;$("new-pass").value="";$("confirm-new-pass").value="";msg("新密碼已儲存，可用於下次登入");
-});
+},"reset");
 $("finish-account").onclick=()=>void execute(async()=>{
  const username=$("finish-username").value.trim();
  if(!/^[a-z][a-z0-9_-]{2,29}$/i.test(username))throw Error("請填寫有效的帳號名稱");
@@ -116,4 +137,4 @@ $("switch-account").onclick=()=>setMode("login");
 $("logout").onclick=()=>void execute(async()=>{
  const {error}=await sb.auth.signOut();if(error)throw error;workspaceSlug="";showAuth(null);msg("已登出");
 });
-void (async()=>{try{await prepare()}catch(e){msg(e.message||"無法讀取帳號",true)}})();
+void (async()=>{try{await prepare()}catch(e){msg(customerFacingError(e,"login"),true)}})();
