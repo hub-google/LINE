@@ -7,7 +7,6 @@ const SB_URL="https://unapiwajmgqqtdkixaab.supabase.co";
 const SB_KEY="sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy";
 const RETURN_KEY="line-site-auth-return-v1";
 const CUSTOMER_KEY="line-saas-customer-session-v2";
-const BIND_SHOP="greenfield-salon"; // Existing active headquarters LINE LIFF entry.
 const current=new URL(location.href);
 const customer=createClient(SB_URL,SB_KEY,{
  auth:{storageKey:CUSTOMER_KEY,persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}
@@ -40,7 +39,7 @@ function draw(status,message){
  }else{
   const login=el("button","site-auth-button site-auth-login");
   login.type="button";login.disabled=busy;
-  login.append(el("span","site-auth-line-logo","LINE"),document.createTextNode("使用 LINE 登入"));
+  login.append(el("span","site-auth-line-logo","LINE"),document.createTextNode("選擇店家並以 LINE 登入"));
   login.addEventListener("click",startLineLogin);
   holder.append(login);
  }
@@ -71,9 +70,21 @@ function startLineLogin(){
  draw("guest");
  const returnTo=currentReturn();
  try{sessionStorage.setItem(RETURN_KEY,JSON.stringify({target:returnTo,at:Date.now()}))}catch(_){}
+ const selectedMerchant=new URLSearchParams(location.search).get("merchant")||"";
+ if(!/^[a-z0-9][a-z0-9-]{2,39}$/.test(selectedMerchant)){
+   busy=false;
+   const keyword=document.getElementById("keyword");
+   if(keyword && /\/directory\.html$/.test(location.pathname)){
+     keyword.focus();
+     draw("guest","請先選擇店家，才能進行 LINE 登入。");
+   }else{
+     location.assign(new URL("./directory.html?mode=search",location.href).href);
+   }
+   return;
+ }
  const start=new URL("./",location.href);
  start.searchParams.set("view","customer");
- start.searchParams.set("merchant",BIND_SHOP);
+ start.searchParams.set("merchant",selectedMerchant);
  start.searchParams.set("tab","home");
  start.searchParams.set("site_return",returnTo);
  location.assign(start.href);

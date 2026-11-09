@@ -103,13 +103,13 @@ test("anonymous visitor sees functional LINE login and retains return destinatio
  const controlsList=controls(ui.rootNode);
  const login=controlsList.find(x=>x.tag==="button");
  assert.ok(login,"missing login button");
- assert.match(login.children.map(x=>x.textContent).join(""),/使用 LINE 登入/);
+ assert.match(login.children.map(x=>x.textContent).join(""),/LINE 登入/);
  login.handlers.click();
  assert.ok(ui.state.navigated);
  const dest=new URL(ui.state.navigated);
- assert.equal(dest.searchParams.get("view"),"customer");
- assert.equal(dest.searchParams.get("merchant"),"greenfield-salon");
- assert.equal(dest.searchParams.get("site_return"),"directory.html?mode=game");
+ assert.equal(dest.pathname,"/LINE/booking/directory.html");
+ assert.equal(dest.searchParams.get("mode"),"search");
+ assert.equal(dest.searchParams.get("merchant"),null);
  assert.match(ui.memory["line-site-auth-return-v1"],/directory\.html\?mode=game/);
 });
 test("verified LINE user appears by real display name and logout signs out active customer session",async()=>{

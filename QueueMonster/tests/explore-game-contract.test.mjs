@@ -116,7 +116,9 @@ test("default merchant list is server-ranked Top 50; search uses separate pagina
  assert.match(ranking,/so_ticket_activity_daily/);
  assert.match(ranking,/old\.status <> 'CANCELLED'/);
  assert.match(ranking,/old\.reservation_id is null/);
- assert.match(ranking,/t\.slug not like 'qa-%'/);
+ const latest=read("supabase/migrations/20261109161500_metadata_based_test_scoping.sql");
+ assert.match(latest,/is_test_tenant/);
+ assert.doesNotMatch(latest,/slug\s+(?:not\s+)?like\s+\x27qa-%\x27/);
  assert.match(ranking,/t\.directory_enabled=true/);
  assert.match(ranking,/limit least\(greatest\(coalesce\(p_limit,50\),1\),50\)/);
  assert.match(ranking,/and a\.activity_date between/);

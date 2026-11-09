@@ -141,7 +141,7 @@ document.addEventListener("keydown",event=>{
 });
 window.LineExploreGame={
  setData({shops:publicShops=[]}={}){
-  shops=Array.isArray(publicShops)?publicShops.filter(s=>s?.slug&&!s.slug.startsWith("qa-")&&!["greenfield-salon","demo-clinic"].includes(s.slug)):[];
+  shops=Array.isArray(publicShops)?publicShops.filter(s=>typeof s?.slug==="string"&&s.slug.length>0):[];
   const current=$("arcade-game-categories").value||"全部";
   const values=["全部",...new Set(shops.map(shopCategory))];
   $("arcade-game-categories").innerHTML=values.map(v=>'<option value="'+escapeHtml(v)+'">'+escapeHtml(v==="全部"?"全部類別":v)+'</option>').join("");
