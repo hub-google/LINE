@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="cb52341d06e7b56d825d265b994222d1abff9d16">
+<meta name="line-saas-build" content="6da887c66e3d14099696617e78f5a9f7250a1a2d">
 <meta name="theme-color" content="#462B52">
 <link rel="manifest" href="./manifest.webmanifest">
 <script>
@@ -32,7 +32,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   }
 })();
 </script>
-<script defer src="./version-watch.js?build=cb52341d06e7b56d825d265b994222d1abff9d16"></script>
+<script defer src="./version-watch.js?build=6da887c66e3d14099696617e78f5a9f7250a1a2d"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>排隊怪獸｜顧客預約、取號與門市管理</title>
 <meta name="description" content="排隊怪獸提供線上預約、現場取號與即時叫號，協助店家輕鬆管理顧客服務。">
@@ -166,8 +166,8 @@ body{overflow-x:hidden}
 .guide-link{text-decoration:none;color:var(--primary);border:1px solid var(--line);background:#f2f8f4;min-height:42px;display:flex;align-items:center;white-space:nowrap}
 .guide-link:hover{background:#e5f3ea}
 </style>
-<link rel="stylesheet" href="./booking-theme.css?build=cb52341d06e7b56d825d265b994222d1abff9d16">
-<link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=cb52341d06e7b56d825d265b994222d1abff9d16"></head>
+<link rel="stylesheet" href="./booking-theme.css?build=6da887c66e3d14099696617e78f5a9f7250a1a2d">
+<link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=6da887c66e3d14099696617e78f5a9f7250a1a2d"></head>
 <body data-monster-page="index">
 <header><div class="top">
 <div class="brand"><span class="brandmark" aria-hidden="true"></span>排隊怪獸<small>線上預約・現場取號・門市管理</small></div>
@@ -2138,7 +2138,7 @@ function openBookingReceipt(bookingId){
  const ref=String(record.reference_code||"—");
  const services=Array.isArray(record.selected_items)?record.selected_items.map(x=>x.name||x.title||"").filter(Boolean):[];
  const markup='<div id="booking-receipt-overlay" class="receipt-backdrop" role="dialog" aria-modal="true" aria-label="預約憑證">'+
-   '<article class="receipt-card"><div class="receipt-eyebrow">LINE BOOKING · 預約紀錄</div>'+
+   '<article class="receipt-card"><div class="receipt-eyebrow">排隊怪獸 · 預約紀錄</div>'+
    '<h2>'+esc(shop)+'</h2><p class="receipt-number">'+esc(record.number||"—")+'</p>'+
    '<div class="receipt-field"><span>預約日期</span><strong>'+esc(record.day||"—")+'</strong></div>'+
    '<div class="receipt-field"><span>預約時間</span><strong>'+esc(record.time||"—")+'</strong></div>'+
