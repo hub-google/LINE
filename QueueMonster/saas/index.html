@@ -2138,7 +2138,7 @@ function openBookingReceipt(bookingId){
  const ref=String(record.reference_code||"—");
  const services=Array.isArray(record.selected_items)?record.selected_items.map(x=>x.name||x.title||"").filter(Boolean):[];
  const markup='<div id="booking-receipt-overlay" class="receipt-backdrop" role="dialog" aria-modal="true" aria-label="預約憑證">'+
-   '<article class="receipt-card"><div class="receipt-eyebrow">LINE BOOKING · 預約紀錄</div>'+
+   '<article class="receipt-card"><div class="receipt-eyebrow">排隊怪獸 · 預約紀錄</div>'+
    '<h2>'+esc(shop)+'</h2><p class="receipt-number">'+esc(record.number||"—")+'</p>'+
    '<div class="receipt-field"><span>預約日期</span><strong>'+esc(record.day||"—")+'</strong></div>'+
    '<div class="receipt-field"><span>預約時間</span><strong>'+esc(record.time||"—")+'</strong></div>'+
