@@ -38,19 +38,39 @@ jobs:
           except Exception as exc:
               report={"date":"", "stores":[], "fatal_error":"Cannot retrieve FoodRadar report: "+type(exc).__name__}
           fresh = report.get("date") == today
-          lines = ["FoodRadar 每日三軌資料稽核", "日期："+today,
-                   "A=正式 API　B=瀏覽器 DOM　C=截圖 OCR 文字候選"]
+          lines = ["FoodRadar 每日資料完整性稽核", "日期："+today,
+                   "A=Uber API　B=原站瀏覽器 DOM　C=原站截圖辨識",
+                   "B/C 被 Cloudflare 擋下不得回報 0 件商品或宣稱已驗證。"]
           if not fresh:
               lines.append("異常：今日稽核報告未產生或尚未更新")
           if report.get("fatal_error"):
               lines.append("異常："+str(report["fatal_error"])[:160])
+          full=report.get("full_catalog_reconciliation") or {}
+          if full:
+              stats=full.get("totals") or {}
+              latest=full.get("batch_id") or "未知"
+              lines.append("全店原始資料對帳（上一成功批次 "+str(latest)+"）")
+              lines.append("HF 店家 "+str(full.get("captured_store_count","?"))+
+                           "／原始 SKU "+str(stats.get("raw_unique_skus","?"))+
+                           "／轉換後 SKU "+str(stats.get("etl_unique_skus","?")))
+              lines.append("漏轉 SKU "+str(stats.get("raw_missing_in_etl","?"))+
+                           "／價格不符 "+str(stats.get("price_mismatches","?"))+
+                           "／資料庫同批 "+("是" if (full.get("turso") or {}).get("same_batch") else "否"))
+              lines.append("資料稽核："+str(full.get("status","未驗證")))
+              lines.append("提醒：這只證明已取得的 Raw 完整傳遞，並非保證 Uber 所有隱藏商品都有回傳。")
+          else:
+              lines.append("異常：未取得最新完整 HF→DB 全店對帳")
           for store in report.get("stores",[]):
               a=store.get("api",{})
               b=store.get("browser",{})
               c=store.get("screenshot_ocr",{})
-              fmt=lambda x: str(x.get("count")) if x.get("count") is not None else "失敗"
+              fmt=lambda x: str(x.get("count")) if x.get("count") is not None else (
+                  "受阻" if "BLOCKED" in str(x.get("status","")) or "SECURITY_CHALLENGE" in str(x.get("status","")) else "失敗")
               lines.append(store.get("store","未知店家"))
               lines.append("API "+fmt(a)+"／DOM "+fmt(b)+"／OCR候選 "+fmt(c))
+              lines.append("比對狀態："+str(store.get("status","未驗證")))
+              if b.get("http_status") == 403:
+                  lines.append("原站 HTTP 403（Cloudflare），未取得商品畫面")
               if a.get("count") is not None and b.get("count") is not None:
                   delta=b["count"]-a["count"]
                   lines.append("DOM-API 差："+("%+d"%delta)+"；名稱差異 A獨有 "+
@@ -58,7 +78,9 @@ jobs:
                                str(store.get("api_vs_dom",{}).get("b_only_count","?")))
               errors=[x.get("error") for x in (a,b,c) if x.get("error")]
               if errors: lines.append("錯誤："+str(errors[0])[:130])
-          lines.extend(["注意：OCR 計數為文字候選，不等於 SKU；瀏覽器未證實所有分類完整前，不宣稱100%。",
+          if report.get("all_three_independent_methods_verified") is not True:
+              lines.append("警告：三種獨立來源尚未全部完成驗證。")
+          lines.extend(["OCR 僅作文字候選，不能當完整商品 SKU 計數或 100% 覆蓋證明。",
                         "報告：https://github.com/fafagoback/FoodRadar/blob/main/audit-results/latest.json"])
           message="\\n".join(lines)[:4900]
           payload=json.dumps({"to":target,"messages":[{"type":"text","text":message}]},ensure_ascii=False).encode("utf-8")
