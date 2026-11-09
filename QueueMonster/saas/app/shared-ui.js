@@ -163,7 +163,7 @@ export function layout(title,subtitle,menu,body){
  return '<div class="toolbar"><div><div class="eyebrow">'+(routeState.view==="customer"?"排隊怪獸 · 顧客服務":routeState.view==="staff"?"排隊怪獸 · 門市管理":"排隊怪獸 · 平台管理")+'</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div></div><div class="layout'+(routeState.view==="customer"?" customer-layout":"")+'"><aside>'+menu+'</aside><section class="content">'+body+'</section></div>'+staffQuickNav;
 }
 
-export function head(){const links=routeState.view==="customer"?[["customer","預約與取號"]]:[["marketing","網站首頁"],["platform","平台管理"],["staff","店家管理"],["customer","顧客入口"]];
+export function head(){const links=routeState.view==="customer"?[["customer","預約與取號"]]:[["marketing","網站首頁"],...(platformReady()?[["platform","平台管理"]]:[]),["staff","店家管理"],["customer","顧客入口"]];
 routeState.$("headlinks").innerHTML=links.map(x=>'<a href="'+esc(x[0]==="marketing"?new URL("./home.html",location.origin+sharedUiState.bookingPath).pathname:x[0]==="customer"?(customerUrl(routeState.slug)||sharedUiState.route("customer",routeState.slug)):sharedUiState.route(x[0],x[0]==="platform"?"":routeState.slug))+'" class="'+(x[0]===routeState.view?"active":"")+'">'+x[1]+'</a>').join("");
 }
 

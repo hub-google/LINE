@@ -94,6 +94,9 @@ try{
     else assert.ok(rects[1].left>=rects[0].right-2,'Desktop examples should display side by side');
     console.log('Homepage dual-examples layout:',width,JSON.stringify(rects));
    }
+   if(name==='index.html?view=staff&merchant=greenfield-salon'){
+    assert.equal(await page.locator('#headlinks a[href*="view=platform"]').count(),0,'Ordinary staff and guests must never see headquarters navigation');
+   }
    if(name==='merchant-register.html'){
     // Simulate an authenticated merchant account to verify visual geometry
     // without submitting credentials or touching the production database.
