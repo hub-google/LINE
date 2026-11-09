@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 10
     env:
       LINE_MESSAGING_ACCESS_TOKEN: ${{ secrets.LINE_MESSAGING_ACCESS_TOKEN }}
-      FOODRADAR_REPORT_LINE_USER_ID: ${{ secrets.FOODRADAR_REPORT_LINE_USER_ID }}
+      REPORT_LINE_USER_ID: ${{ secrets.REPORT_LINE_USER_ID }}
     steps:
       - name: Send report using existing QueueMonster LINE OA channel
         shell: python
@@ -25,13 +25,13 @@ jobs:
           now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8)))
           today = now.strftime("%Y-%m-%d")
           token = os.environ.get("LINE_MESSAGING_ACCESS_TOKEN", "")
-          target = os.environ.get("FOODRADAR_REPORT_LINE_USER_ID", "")
+          target = os.environ.get("REPORT_LINE_USER_ID", "")
           if not token:
               raise RuntimeError("Missing existing LINE_MESSAGING_ACCESS_TOKEN in hub-google/LINE secrets")
           recipients=[]
           if target:
               if not re.fullmatch(r"U[0-9a-fA-F]{32}",target):
-                  raise RuntimeError("Invalid FOODRADAR_REPORT_LINE_USER_ID: expected signed LINE UUID")
+                  raise RuntimeError("Invalid REPORT_LINE_USER_ID: expected signed LINE UUID")
               recipients=[target]
           else:
               # Allow opt-in by sending 訂閱FoodRadar to the existing
