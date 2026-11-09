@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="233b90b509c40764d77b92c70d849e12de595f13">
+<meta name="line-saas-build" content="b03da679e4279125fef7d4008963dcef5361180c">
 <meta name="theme-color" content="#462B52">
 <link rel="manifest" href="./manifest.webmanifest">
 <script>
@@ -32,7 +32,7 @@ if("serviceWorker" in navigator && location.protocol==="https:"){
   }
 })();
 </script>
-<script defer src="./version-watch.js?build=233b90b509c40764d77b92c70d849e12de595f13"></script>
+<script defer src="./version-watch.js?build=b03da679e4279125fef7d4008963dcef5361180c"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>排隊怪獸｜顧客預約、取號與門市管理</title>
 <meta name="description" content="多企業預約、取號與叫號系統，採用 Supabase 實際保存資料。">
@@ -166,8 +166,8 @@ body{overflow-x:hidden}
 .guide-link{text-decoration:none;color:var(--primary);border:1px solid var(--line);background:#f2f8f4;min-height:42px;display:flex;align-items:center;white-space:nowrap}
 .guide-link:hover{background:#e5f3ea}
 </style>
-<link rel="stylesheet" href="./booking-theme.css?build=233b90b509c40764d77b92c70d849e12de595f13">
-<link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=233b90b509c40764d77b92c70d849e12de595f13"></head>
+<link rel="stylesheet" href="./booking-theme.css?build=b03da679e4279125fef7d4008963dcef5361180c">
+<link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=b03da679e4279125fef7d4008963dcef5361180c"></head>
 <body data-monster-page="index">
 <header><div class="top">
 <div class="brand"><span class="brandmark" aria-hidden="true"></span>排隊怪獸<small>線上預約・現場取號・門市管理</small></div>
@@ -1413,7 +1413,16 @@ function staffRender(){
   if(selectedFlag)customerFlagSelected=selectedFlag.id;
   const weekdayChecks=[["0","週日"],["1","週一"],["2","週二"],["3","週三"],["4","週四"],["5","週五"],["6","週六"]]
       .map(([day,title])=>'<label class="checklist"><input type="checkbox" class="policy-closed-day" value="'+day+'" '+((policy.closed_weekdays||[]).includes(Number(day))?"checked":"")+'> '+title+'</label>').join("");
-  html+=box("企業基本設定",!isManager?'<p class="muted">只有管理者可以修改設定。</p>':
+  const serviceModules=t.modules||{};
+  html+=box("顧客服務開放設定",
+    '<p class="muted">店家可自行決定提供線上預約、現場取號，或同時提供兩種服務。關閉後顧客不再能建立新預約／新號碼，原有紀錄與已發出的號碼仍保留。</p>'+
+    (isManager?
+      '<div class="grid"><label class="checklist"><input id="set-service-reservation" type="checkbox" '+(serviceModules.reservation?'checked':'')+'> 開放線上預約</label>'+
+      '<label class="checklist"><input id="set-service-queue" type="checkbox" '+(serviceModules.queue?'checked':'')+'> 開放現場取號</label></div>'+
+      '<p class="small">只勾預約＝僅預約；只勾取號＝僅取號；都勾＝兩種服務；都不勾＝暫停接收新顧客。</p>'+
+      '<div class="staff-actionbar">'+btn("儲存服務開關","save-service-modes","primary")+'</div>':
+      '<p class="small">目前：預約 '+(serviceModules.reservation?'已開放':'未開放')+'，現場取號 '+(serviceModules.queue?'已開放':'未開放')+'。只有店家管理者可以修改。</p>'))+
+  box("企業基本設定",!isManager?'<p class="muted">只有管理者可以修改設定。</p>':
    '<div class="grid"><div>'+field("企業名稱","set-name",t.onboarding_complete===false?"":t.name)+field("電話","set-phone",t.phone)+field("地址","set-address",t.address)+field("品牌色（#RRGGBB）","set-accent",t.onboarding_complete===false?"":t.accent)+'</div><div>'+field("網站簡介","set-description",t.description)+'<label for="set-directory-category">探索頁店家分類</label><select class="field" id="set-directory-category">'+["","其他","餐飲","美髮","美甲／美容","醫療／診所","健康／按摩","運動","寵物","教育","生活服務"].map(c=>'<option value="'+c+'" '+((t.onboarding_complete===false?"":(t.directory_category||"其他"))===c?"selected":"")+'>'+(c||"請選擇分類")+'</option>').join("")+'</select>'+field("LOGO 圖片網址","set-logo",t.logo_url)+field("開始營業","set-open",t.onboarding_complete===false?"":t.open_time,"time")+field("結束營業","set-close",t.onboarding_complete===false?"":t.close_time,"time")+'</div></div>'+
    '<div class="grid"><div>'+field("每個時段可預約人數","set-capacity",t.onboarding_complete===false?"":t.slot_capacity,"number",'min="1" max="100"')+'</div><div><label>預約時段間隔</label><select class="field" id="set-minutes">'+(t.onboarding_complete===false?'<option value="" selected>請選擇</option>':"")+'<option value="15" '+(t.onboarding_complete===false?"":t.slot_minutes===15?"selected":"")+'>15 分鐘</option><option value="30" '+(t.onboarding_complete===false?"":t.slot_minutes===30?"selected":"")+'>30 分鐘</option><option value="60" '+(t.onboarding_complete===false?"":t.slot_minutes===60?"selected":"")+'>60 分鐘</option></select></div></div><div style="margin-top:15px">'+btn("儲存企業設定","update-settings","primary")+'</div>')+
   (isManager?box("候位保留規則",
@@ -2743,6 +2752,13 @@ document.addEventListener("click",async ev=>{
     return "已取得號碼 "+result.number+customerNoticeSuffix(notice);
    });return;
  }
+ if(a==="save-service-modes"){await act(async()=>{
+  const reservation=document.getElementById("set-service-reservation")?.checked;
+  const queue=document.getElementById("set-service-queue")?.checked;
+  if(typeof reservation!=="boolean"||typeof queue!=="boolean")throw Error("請在企業設定中調整服務開關");
+  await rpc("so_set_merchant_services",{p_slug:slug,p_reservation:reservation,p_queue:queue});
+  return reservation&&queue?"已開放預約與取號":reservation?"已切換為僅提供線上預約":queue?"已切換為僅提供現場取號":"已暫停接受新預約及新取號";
+ });return}
  if(a==="update-settings"){await act(async()=>{
  const initial=staff?.tenant?.onboarding_complete===false;
  // Keep an incomplete merchant unlisted until *all* settings have saved successfully.
