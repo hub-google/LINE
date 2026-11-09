@@ -56,11 +56,11 @@ button.ghost{font:inherit;color:var(--purple);background:white;border:1px solid 
 <label for="signup-pass">密碼（至少 8 字元）</label><input type="password" id="signup-pass" minlength="8" autocomplete="new-password" required>
 <label for="signup-confirm">確認密碼</label><input type="password" id="signup-confirm" minlength="8" autocomplete="new-password" required>
 <button type="submit" class="primary">建立店家帳號</button>
-<p class="help">會使用電子信箱驗證身分，密碼由 Supabase Auth 安全處理，不會儲存在網頁原始碼中。</p></form>
+<p class="help">系統會依註冊流程確認您的身分。請妥善保管登入密碼，不要與他人分享。</p></form>
 </div>
 <div id="account-zone" class="hidden"><h2 id="account-title">已登入</h2><div class="account-info"><strong id="account-name"></strong><div id="account-email" class="email"></div></div>
 <div id="workspace" class="workspace"></div><button type="button" class="secondary-action" id="switch-account">使用其他店家帳號登入</button><a class="secondary-action" style="display:block;text-align:center;text-decoration:none" href="./merchant-register.html?mode=signup">註冊新的店家帳號</a>
-<div class="password-panel"><h3>設定或變更登入密碼</h3><p class="sub">首次使用電子郵件登入連結的管理員，請設定至少 8 字元的新密碼。</p><label for="new-pass">新密碼</label><input id="new-pass" type="password" minlength="8" autocomplete="new-password"><label for="confirm-new-pass">確認新密碼</label><input id="confirm-new-pass" type="password" minlength="8" autocomplete="new-password"><button type="button" class="ghost" id="change-pass">儲存新密碼</button></div><div id="missing-username" class="hidden"><label for="finish-username">設定帳號名稱</label><input id="finish-username" pattern="[a-zA-Z][a-zA-Z0-9_-]{2,29}" placeholder="例如：happyshop"><button class="primary" id="finish-account" type="button">完成帳號設定</button></div>
+<div class="password-panel"><h3>設定或變更登入密碼</h3><p class="sub">一般店家帳號若要變更密碼，請設定至少 8 個字元的新密碼。</p><label for="new-pass">新密碼</label><input id="new-pass" type="password" minlength="8" autocomplete="new-password"><label for="confirm-new-pass">確認新密碼</label><input id="confirm-new-pass" type="password" minlength="8" autocomplete="new-password"><button type="button" class="ghost" id="change-pass">儲存新密碼</button></div><div id="missing-username" class="hidden"><label for="finish-username">設定帳號名稱</label><input id="finish-username" pattern="[a-zA-Z][a-zA-Z0-9_-]{2,29}" placeholder="例如：happyshop"><button class="primary" id="finish-account" type="button">完成帳號設定</button></div>
 <button class="ghost" type="button" id="logout">登出</button></div>
 <div id="message" role="status" aria-live="polite"></div>
 </section></main>
