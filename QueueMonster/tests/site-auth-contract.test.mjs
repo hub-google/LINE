@@ -112,6 +112,17 @@ test("anonymous visitor sees functional LINE login and retains return destinatio
  assert.equal(dest.searchParams.get("merchant"),null);
  assert.match(ui.memory["line-site-auth-return-v1"],/directory\.html\?mode=game/);
 });
+test("LINE login uses the selected merchant, not a built-in sample store",async()=>{
+ const ui=createScenario({url:"https://hub-google.github.io/LINE/booking/directory.html?merchant=store-123&mode=search"});
+ await flush();
+ const login=controls(ui.rootNode).find(x=>x.tag==="button");
+ assert.ok(login);
+ login.handlers.click();
+ const dest=new URL(ui.state.navigated);
+ assert.equal(dest.searchParams.get("merchant"),"store-123");
+ assert.equal(dest.searchParams.get("view"),"customer");
+ assert.match(dest.searchParams.get("site_return")||"",/merchant=store-123/);
+});
 test("verified LINE user appears by real display name and logout signs out active customer session",async()=>{
  const ui=createScenario({customerSession:true,lineName:"預約人王小姐"});
  await flush();
