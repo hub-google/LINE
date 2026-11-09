@@ -228,7 +228,7 @@ const cityNames=["基隆市","臺北市","台北市","新北市","桃園市","�
 function areaOf(shop){return (cityNames.find(x=>String(shop.address||"").includes(x))||"線上商圈").replace(/^臺/,"台")}
 function serviceMatches(shop,service){
  const m=shop.modules||{};
- return service==="全部"||(service==="預約"&&!!m.reservation)||(service==="取號"&&!!m.queue)||(service==="看板"&&(shop.test_board_only||!!(m.queue&&m.calling)));
+ return service==="全部"||(service==="預約"&&!!m.reservation)||(service==="取號"&&!!m.queue)||(service==="看板"&&!!(m.queue&&m.calling));
 }
 function setupExploreFilters(){
  const options=(id,items,allText)=>{
