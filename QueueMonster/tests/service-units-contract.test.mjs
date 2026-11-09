@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync } from "./helpers/source-fs.mjs";
 import { spawnSync } from "node:child_process";
 
 const read = file => readFileSync(new URL("../" + file, import.meta.url), "utf8");

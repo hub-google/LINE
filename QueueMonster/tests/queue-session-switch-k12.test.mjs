@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {readFileSync} from "node:fs";
+import {readFileSync} from "./helpers/source-fs.mjs";
 const sql=readFileSync(new URL("../supabase/migrations/20261104_queue_session_switching.sql",import.meta.url),"utf8");
 const ui=readFileSync(new URL("../saas/index.html",import.meta.url),"utf8");
 test("K12: four sessions are tenant-scoped, authorized and audited",()=>{

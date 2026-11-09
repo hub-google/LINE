@@ -1,4 +1,4 @@
-import {copyFile, mkdir, readFile, writeFile} from "node:fs/promises";
+import {copyFile, mkdir, readFile, writeFile, cp} from "node:fs/promises";
 import path from "node:path";
 import {deflateSync} from "node:zlib";
 
@@ -10,6 +10,23 @@ const pages = ["index.html", "template.html", "home.html", "board.html", "poster
 const placeholder = "__LINE_SAAS_BUILD__";
 
 await mkdir(dest, {recursive:true});
+await cp(path.join(src, "assets"), path.join(dest, "assets"), {recursive:true});
+const featureBundles = JSON.parse(await readFile(path.join(src,"app/manifest.json"),"utf8"));
+for (const [asset, parts] of Object.entries(featureBundles)) {
+  const source = (await Promise.all(parts.map(part=>readFile(path.join(src,part),"utf8")))).join("\n");
+  await mkdir(path.dirname(path.join(dest,asset)),{recursive:true});
+  await writeFile(path.join(dest,asset),source.replaceAll(placeholder,sha),"utf8");
+}
+// Replace build identifiers inside extracted scripts as well as HTML.
+async function stampAssets(dir) {
+  const {readdir}=await import("node:fs/promises");
+  for(const entry of await readdir(dir,{withFileTypes:true})) {
+    const file=path.join(dir,entry.name);
+    if(entry.isDirectory())await stampAssets(file);
+    else if(/\.(?:js|css)$/.test(entry.name))await writeFile(file,(await readFile(file,"utf8")).replaceAll(placeholder,sha));
+  }
+}
+await stampAssets(path.join(dest,"assets"));
 for (const name of pages) {
   const html = await readFile(path.join(src, name), "utf8");
   if (!html.includes(placeholder) || !html.includes("version-watch.js")) {

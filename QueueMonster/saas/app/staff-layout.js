@@ -1,0 +1,56 @@
+const staffUiExpanded=new Map();
+const staffSecondaryByTab={
+ dashboard:["已處理預約"],
+ analytics:["每日預約與取號量"],
+ bookings:["預約編號設定","搜尋與篩選預約","預約管理方式","已處理預約","已刪除預約","完整預約歷史"],
+ calendar:[],
+ queue:["叫號編號設定","取號場次管理","已結束號碼牌","已刪除號碼牌"],
+ menu:["預約資源","服務時長與緩衝"],
+ members:["待接受邀請","邀請企業員工"],
+ branches:[],
+ settings:["候位保留規則","預約營業日與休息設定","預約送出前二次確認","顧客簿","門市公告與照片","LINE 官方帳號串接","排隊怪獸店家搜尋","唯一顧客網址"]
+};
+function enhanceStaffUI(){
+ if(view!=="staff"||!staff)return;
+ const root=document.querySelector("#root .content");
+ if(!root)return;
+ for(const card of root.querySelectorAll("section.card")){
+  const heading=card.querySelector(":scope > h2");
+  if(!heading)continue;
+  const label=heading.textContent.trim();
+  if(!(staffSecondaryByTab[staffTab]||[]).some(prefix=>label.startsWith(prefix)))continue;
+  const key=staffTab+":panel:"+label.replace(/（.*$/,"");
+  const detail=document.createElement("details");
+  detail.className="staff-fold";detail.dataset.staffUiKey=key;
+  detail.open=staffUiExpanded.get(key)===true;
+  const summary=document.createElement("summary");summary.textContent=label;
+  const body=document.createElement("div");body.className="staff-fold-body";
+  for(const item of [...card.childNodes])if(item!==heading)body.appendChild(item);
+  heading.remove();detail.append(summary,body);
+  card.classList.add("staff-fold-card");card.appendChild(detail);
+ }
+ // Booking and queue items are operational worklists: show status, call and delete controls immediately.
+ // Do not put their controls behind a second click on either desktop or mobile.
+ if(staffTab==="bookings"||staffTab==="queue")return;
+ for(const card of root.querySelectorAll(".staff-record")){
+  const heading=card.querySelector(":scope > .staff-record-head");
+  if(!heading)continue;
+  const rest=[...card.children].filter(x=>x!==heading);
+  if(!rest.length)continue;
+  const id=card.querySelector("[data-id]")?.dataset.id||heading.textContent.slice(0,80);
+  const key=staffTab+":record:"+id;
+  const detail=document.createElement("details");detail.className="staff-record-fold";
+  detail.dataset.staffUiKey=key;detail.open=staffUiExpanded.get(key)===true;
+  const summary=document.createElement("summary");summary.textContent="查看詳細與處理";
+  const body=document.createElement("div");body.className="staff-record-fold-body";
+  for(const item of rest)body.appendChild(item);
+  detail.append(summary,body);card.appendChild(detail);
+ }
+}
+document.addEventListener("toggle",event=>{
+ const target=event.target;
+ if(target instanceof HTMLDetailsElement&&target.dataset.staffUiKey){
+  staffUiExpanded.set(target.dataset.staffUiKey,target.open);
+ }
+},true);
+function render(){document.body.dataset.portal=view;head();$("root").innerHTML=message()+(view==="platform"?platformRender():view==="staff"?staffRender():view==="customer"?customerRender():renderHome())+customerHistoryDialog()+'<footer>排隊怪獸服務 ・ <a href="privacy.html">隱私權說明</a> ・ <a href="terms.html">使用條款</a></footer>';enhanceStaffUI()}

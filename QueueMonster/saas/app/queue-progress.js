@@ -1,0 +1,114 @@
+function stopQueueRealtime(){
+ if(queueRealtimeChannel){
+   const ch=queueRealtimeChannel;queueRealtimeChannel=null;queueRealtimeTenant="";
+   void supa.removeChannel(ch);
+ }
+}
+function queueTicketToDisplay(){
+ const all=customer?.my_tickets||[];
+ return progressTicketId||
+   all.find(x=>["WAITING","HOLD","CALLED","ARRIVED","ADMITTED","SERVING"].includes(x.status))?.id||
+   all.find(x=>x.status==="PASSED")?.id||null;
+}
+async function refreshQueueProgress(){
+ if(view!=="customer"||customerTab!=="progress"||lineLinkStatus!=="linked"||queueLiveLoading)return;
+ const shop=slug;
+ queueLiveLoading=true;
+ try{
+  const ticket=queueTicketToDisplay();
+  const unitRecord=(unitRecords?.tickets||[]).find(x=>x.id===ticket);
+  const data=unitEnabled()&&unitRecord
+   ?await rpc("so_unit_progress",{p_slug:shop,p_ticket_id:ticket})
+   :await rpc("so_queue_live",{p_slug:shop,p_ticket_id:ticket});
+  if(view!=="customer"||customerTab!=="progress"||slug!==shop)return;
+  queueLive=data;queueLiveShop=shop;queueLiveError="";
+  queueLastSuccessAt=new Date().toISOString();queueLastSuccessShop=shop;
+  const alertTicketId=data?.mine?.id||queueTicketToDisplay();
+  if(alertTicketId){
+    try{
+      // Refresh with every explicit reload or realtime update, including
+      // preference changes made on the customer's other device.
+      const pref=await rpc("so_customer_get_queue_near_alert",{p_ticket_id:alertTicketId});
+      queueNearAlertSettings[alertTicketId]=[0,3,5].includes(pref.threshold)?pref.threshold:null;
+    }catch(e){
+      if(!Object.prototype.hasOwnProperty.call(queueNearAlertSettings,alertTicketId))
+        queueNearAlertSettings[alertTicketId]=null;
+    }
+  }
+  render();
+  if(data?.tenant_id&&queueRealtimeTenant!==data.tenant_id){
+    stopQueueRealtime();
+    queueRealtimeTenant=data.tenant_id;
+    queueRealtimeChannel=supa.channel("queue-display-"+data.tenant_id)
+      .on("postgres_changes",{event:"UPDATE",schema:"public",table:"so_queue_displays",
+        filter:"tenant_id=eq."+data.tenant_id},()=>{void refreshQueueProgress();})
+      .subscribe();
+  }
+ }catch(e){
+  if(view==="customer"&&customerTab==="progress"&&slug===shop){
+    queueLiveError="進度暫時無法同步，請點重新整理。";
+    render();
+  }
+ }finally{queueLiveLoading=false;}
+}
+function queueNearAlertControls(ticket,status){
+ if(status!=="WAITING"||!ticket?.id)return "";
+ const found=Object.prototype.hasOwnProperty.call(queueNearAlertSettings,ticket.id);
+ if(!found)return '<p class="small">正在讀取 LINE 接近到號提醒設定…</p>';
+ const current=queueNearAlertSettings[ticket.id];
+ if(current===null)return '<p class="small">提醒設定暫時無法讀取，請重新整理進度。</p>';
+ const options=[[0,"關閉提醒（預設）"],[3,"前方剩 3 組提醒"],[5,"前方剩 5 組提醒"]];
+ return '<div class="staff-record" style="text-align:left;margin-top:12px;background:#f8fafc">'+
+  '<label for="queue-near-alert-threshold">LINE 接近到號提醒</label>'+
+  '<div class="flex"><select id="queue-near-alert-threshold" class="field" style="max-width:230px">'+
+  options.map(x=>'<option value="'+x[0]+'" '+(current===x[0]?'selected':'')+'>'+esc(x[1])+'</option>').join("")+
+  '</select>'+btn("儲存提醒設定","save-queue-near-alert","secondary",'data-id="'+esc(ticket.id)+'"')+'</div>'+
+  '<p class="small">每張號碼最多提醒一次；送達取決於是否加入店家 LINE OA 好友及 LINE 訊息額度。此功能不會持續推播每次叫號變化。</p></div>';
+}
+function queueProgressBoard(){
+ const fresh=queueLiveShop===slug?queueLive:null;
+ const lastSync=queueLastSuccessShop===slug?queueLastSuccessAt:"";
+ const notLive=!!queueLiveError||navigator.onLine===false;
+ const own=fresh?.mine||null;
+ const fallbackTicket=(customer?.my_tickets||[]).find(x=>x.id===progressTicketId)||
+   (customer?.my_tickets||[]).find(x=>["WAITING","HOLD","CALLED","ARRIVED","ADMITTED","SERVING"].includes(x.status));
+ const ownNumber=own?.number||fallbackTicket?.number||"—";
+ const ownStatus=own?.status||fallbackTicket?.status||"";
+ const ownParty=own?.party||fallbackTicket?.party||1;
+ let note="號碼與候位組數會隨店員叫號自動更新。";
+ if(ownStatus==="CALLED")note="已叫到您的號碼，請依現場人員指示報到。";
+ else if(ownStatus==="ARRIVED")note="門市已確認您到場，請依現場指示等待進場。";
+  else if(ownStatus==="ADMITTED")note="門市已確認您進場，請依現場人員指示。";
+  else if(ownStatus==="SERVING")note="您的號碼目前服務中。";
+ else if(ownStatus==="COMPLETED")note="您的服務已完成。";
+ else if(ownStatus==="CANCELLED")note="這張號碼已取消，不再參與候位。";
+ else if(ownStatus==="PASSED")note="您的號碼已過號，如需協助請洽門市。";
+  else if(ownStatus==="HOLD")note="您的候位已暫時保留，不會在保留期間被叫號；恢復後會依門市規則重新排序。";
+ return '<div class="queue-board" aria-live="polite">'+
+   '<div class="queue-board-lead">現在叫到</div>'+ 
+    '<p class="small">我的候位人數：'+esc(ownParty)+' 人／組</p>'+
+   '<div class="queue-board-current">'+esc(fresh?.current||"—")+'</div>'+
+   '<div class="queue-board-sub">'+esc(fresh?.current?"請依現場叫號進度為準":"目前尚未開始叫號")+'</div>'+
+   '<div class="queue-board-grid">'+
+     '<div class="queue-board-stat"><span>我的號碼</span><strong>'+esc(ownNumber)+'</strong>'+
+       (ownStatus?'<small>'+esc(jsStatus(ownStatus))+'</small>':"")+'</div>'+
+     '<div class="queue-board-stat"><span>前面還有</span><strong>'+
+       (own?.ahead===null||own?.ahead===undefined?"—":esc(own.ahead)+" 組")+
+       '</strong><small>依實際候位與服務中計算</small></div>'+
+   '</div>'+
+   '<p class="queue-board-note">'+esc(note)+'</p>'+
+   '<p class="small" role="status">'+
+      (notLive?"<strong>最新進度無法確認：</strong>"+(navigator.onLine===false?"目前離線。":esc(queueLiveError))+"以下為最後取得的資料，請重新連線再確認。":
+        "已連線；進度在畫面開啟期間自動更新。")+
+      " 最後成功更新："+(lastSync?esc(formatTaipeiCreated(lastSync)):"尚未成功同步")+
+      "（台灣時間）。"+'</p>'+
+   queueNearAlertControls(own||fallbackTicket,ownStatus)+
+   '<div class="staff-actionbar">'+btn("重新整理進度","queue-refresh","outline")+
+      btn("查看我的紀錄","queue-records","secondary")+
+      (ownStatus==="WAITING"&&own?.id?btn("保留候位","hold-my-number","secondary",'data-id="'+esc(own.id)+'"'):"")+
+      (ownStatus==="HOLD"&&own?.id?btn("恢復候位","resume-my-number","primary",'data-id="'+esc(own.id)+'"'):"")+
+      (["WAITING","HOLD"].includes(ownStatus)&&own?.id?btn("取消排隊","cancel-my-number","outline",'data-id="'+esc(own.id)+'"'):"")+
+   '</div></div>';
+}
+
+

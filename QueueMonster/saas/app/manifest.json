@@ -1,0 +1,25 @@
+{
+  "assets/index/script-4.js": [
+    "app/line-session.js",
+    "app/route-state.js",
+    "app/service-units.js",
+    "app/shared-ui.js",
+    "app/merchant-brand.js",
+    "app/platform-view.js",
+    "app/number-settings.js",
+    "app/staff-history.js",
+    "app/booking-calendar.js",
+    "app/staff-view.js",
+    "app/booking-edit.js",
+    "app/queue-progress.js",
+    "app/cross-store.js",
+    "app/customer-booking.js",
+    "app/calendar-export.js",
+    "app/customer-records.js",
+    "app/staff-layout.js",
+    "app/data-loading.js",
+    "app/click-actions.js",
+    "app/form-events.js",
+    "app/startup.js"
+  ]
+}

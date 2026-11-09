@@ -104,3 +104,7 @@
 資料庫使用 `so_booking_resources`、`so_service_sessions`、`so_reservations`、`so_tickets`，登入與 LINE OA 使用既有架構。專案 SQL 遷移已套用至原 Supabase，不需另接新資料庫。
 
 **部署與測試說明：** 網站、資料庫及 Edge Function 已更新；已驗證 SQL 交易中雙隊列可同時報到及叫號、重複報到不會重發票券，測試使用回滾交易而未保留假病患資料。真實 LINE 手機收件、付款與各醫院既有 HIS 串接仍須個別驗收。
+
+## 前端分檔
+
+主要應用已拆成 `app/` 功能來源，頁面 CSS／JS 放在 `assets/`。本機預覽須先建置；來源結構、指令及作用域限制見 [app/README.md](app/README.md)。

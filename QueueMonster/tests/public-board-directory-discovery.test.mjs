@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {readFileSync,readdirSync} from "node:fs";
+import {readFileSync,readdirSync} from "./helpers/source-fs.mjs";
 import {fileURLToPath} from "node:url";
 import path from "node:path";
 import {spawnSync} from "node:child_process";
