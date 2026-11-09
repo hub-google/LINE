@@ -17,7 +17,7 @@ import {staffState} from "./state/staffState.js";
 
 
 
-import {authReady,platformReady,showActionFeedback,taipei} from "./shared-ui.js";
+import {authReady,platformReady,showActionFeedback,taipei,customerFacingError} from "./shared-ui.js";
 import {bridgeConfig,connectLineSession,customerUrl,finishPublicHeaderLogin} from "./line-session.js";
 import {availableForParty,currentBookingSlots,refreshServiceSlots} from "./customer-booking.js";
 import {availableUnits,sessionsOf,unitList} from "./service-units.js";
@@ -56,7 +56,7 @@ export function clearCustomerBookingRequest(id){
  }catch(_error){}
 }
 
-export async function rpc(name,arg={}){const r=await lineState.supa.rpc(name,arg);if(r.error)throw Error(r.error.message);return r.data}
+export async function rpc(name,arg={}){const r=await lineState.supa.rpc(name,arg);if(r.error)throw Error(customerFacingError(r.error));return r.data}
 
 export async function loadContext(){if(authReady())authState.context=await rpc("so_my_context");else authState.context=null}
 
@@ -173,7 +173,7 @@ export async function load(){feedbackState.err="";try{
       }
     }catch(unitError){serviceUnitsState.unitConfig=null;serviceUnitsState.unitRecords={reservations:[],tickets:[]};console.warn("Service-unit data unavailable",unitError);}
   }
- }catch(e){feedbackState.err=e.message||String(e)}render();
+ }catch(e){feedbackState.err=customerFacingError(e)}render();
  if(routeState.view==="staff"&&staffState.staffTab==="bookings"&&staffHistoryState.historicalBookingResult&&staffHistoryState.historicalBookingTenant===routeState.slug)
    void searchHistoricalBookings(staffHistoryState.historicalBookingPage);
  if(routeState.view==="staff"&&staffState.staffTab==="calendar"&&staffState.staff)void loadBookingCalendar(calendarState.calendarPage);
@@ -194,7 +194,7 @@ export async function act(fn){if(feedbackState.busy)return;feedbackState.busy=tr
  try{const m=await fn();await load();feedbackState.flash=m||"已成功儲存";
  const hasNoticeProblem=/提醒暫時無法送出|LINE 通知失敗|LINE 通知暫時|官方帳號查詢失敗/.test(feedbackState.flash);
  showActionFeedback(feedbackState.flash,hasNoticeProblem?"warning":"success")}
- catch(e){feedbackState.err=e.message||String(e);showActionFeedback(feedbackState.err,"error")}
+ catch(e){feedbackState.err=customerFacingError(e);showActionFeedback(feedbackState.err,"error")}
  finally{feedbackState.busy=false;render()}
 }
 
