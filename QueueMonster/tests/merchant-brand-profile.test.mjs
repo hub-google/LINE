@@ -26,7 +26,8 @@ test("platform create, platform edit and merchant self-configuration use shared 
 });
 
 test("brand color is selectable by native color picker, swatches and live preview",()=>{
- assert.match(app,/merchant-color-picker" type="color"/);\n assert.match(app,/data-color-picker/);
+ assert.match(app,/merchant-color-picker" type="color"/);
+ assert.match(app,/data-color-picker/);
  assert.match(app,/data-color-preset/);
  assert.match(app,/merchantSetAccent\(picker\.dataset\.colorPicker,picker\.value\)/);
  assert.match(app,/merchantSetAccent\(b\.dataset\.colorFor,b\.dataset\.colorPreset\)/);
@@ -38,7 +39,8 @@ test("brand color is selectable by native color picker, swatches and live previe
 });
 
 test("logo is selected and previewed before upload, saved only with user action",()=>{
- assert.match(app,/merchant-logo-file" type="file"/);\n assert.match(app,/data-logo-file/);
+ assert.match(app,/merchant-logo-file" type="file"/);
+ assert.match(app,/data-logo-file/);
  assert.match(app,/accept="image\/png,image\/jpeg,image\/webp"/);
  assert.match(app,/URL\.createObjectURL\(file\)/);
  assert.match(app,/URL\.revokeObjectURL/);
