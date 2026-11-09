@@ -117,8 +117,7 @@ export async function load(){feedbackState.err="";try{
  }
  if(routeState.view==="platform"&&platformReady()){
   const tenants=await rpc("so_platform_overview");
-  // Legacy QA records remain untouched, but are not part of the production company list or totals.
-  routeState.overview=(Array.isArray(tenants)?tenants:[]).filter(t=>!String(t.slug||"").startsWith("qa-")&&!["greenfield-salon","demo-clinic"].includes(t.slug));
+  routeState.overview=Array.isArray(tenants)?tenants:[];
  }
  if(routeState.view==="staff"&&authReady()&&(authState.context?.platform_admin||authState.context?.memberships?.some(m=>m.slug===routeState.slug))){
  const [meta,work,policy]=await Promise.all([
