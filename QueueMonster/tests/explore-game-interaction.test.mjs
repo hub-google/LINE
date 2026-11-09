@@ -42,44 +42,47 @@ function setup(search="?mode=game"){
  });
  return {nodes,document,window,location,history,element};
 }
-const demo=[
- {slug:"demo-clinic",name:"澄心健康服務中心（測試門市）",demo:true,
-  category:"醫療／診所",modules:{reservation:true},reserve_href:"./?view=customer&merchant=demo-clinic&tab=reserve",
-  board_href:"./board.html?merchant=demo-clinic"},
- {slug:"greenfield-salon",name:"青禾風格美髮（測試門市）",demo:true,
-  category:"美髮",modules:{reservation:true,queue:true,calling:true},reserve_href:"./?view=customer&merchant=greenfield-salon&tab=reserve",
-  queue_href:"./?view=customer&merchant=greenfield-salon&tab=queue",
-  board_href:"./board.html?merchant=greenfield-salon"}
+const published=[
+ {slug:"sunny-diner",name:"晨光餐廳",address:"台北市大安區仁愛路",category:"餐飲",
+  modules:{reservation:true},reserve_href:"./?view=customer&merchant=sunny-diner&tab=reserve",
+  board_href:"./board.html?merchant=sunny-diner"},
+ {slug:"golden-studio",name:"金禾工作室",address:"台北市松山區敦化北路",category:"美髮",
+  modules:{reservation:true,queue:true,calling:true},reserve_href:"./?view=customer&merchant=golden-studio&tab=reserve",
+  queue_href:"./?view=customer&merchant=golden-studio&tab=queue",
+  board_href:"./board.html?merchant=golden-studio"}
 ];
-test("game mode shows only real data with explicit test neighborhood and actionable doors",()=>{
+test("game mode shows only published merchants and keeps all shops actionable",()=>{
  const x=setup();
  const api=x.window.LineExploreGame;
  assert.ok(api);
- api.setData({shops:[],demoShops:demo});
- assert.match(x.element("arcade-regions").innerHTML,/驗證商圈/);
+ api.setData({shops:published,demoShops:[{slug:"qa-hidden",name:"內部門市",demo:true}]});
+ assert.match(x.element("arcade-regions").innerHTML,/台北市/);
  assert.match(x.element("arcade-regions").innerHTML,/2 家/);
- assert.match(x.element("arcade-region-count").textContent,/0 家公開店家/);
- const regionButton={dataset:{region:"驗證商圈"}};
+ assert.match(x.element("arcade-region-count").textContent,/2 家公開店家/);
+ assert.doesNotMatch(x.element("arcade-regions").innerHTML,/驗證商圈|qa-hidden/);
+ const regionButton={dataset:{region:"台北市"}};
  x.element("arcade-regions").handlers.click({target:{closest(){return regionButton}}});
  assert.equal(x.element("explore-world").hidden,true);
  assert.equal(x.element("explore-street").hidden,false);
  const street=x.element("arcade-shopline").innerHTML;
- assert.match(street,/demo-clinic|澄心健康服務中心/);
- assert.match(street,/青禾風格美髮/);
+ assert.match(street,/晨光餐廳/);
+ assert.match(street,/金禾工作室/);
  assert.match(x.element("arcade-shop-info").innerHTML,/立即預約/);
- assert.match(x.element("arcade-shop-info").innerHTML,/示範門市/);
- assert.match(x.element("arcade-open-shop").dataset.href,/demo-clinic/);
+ assert.doesNotMatch(x.element("arcade-shop-info").innerHTML,/示範門市/);
+ assert.match(x.element("arcade-open-shop").dataset.href,/sunny-diner/);
  x.element("arcade-next").handlers.click();
- assert.match(x.element("arcade-open-shop").dataset.href,/greenfield-salon/);
+ assert.match(x.element("arcade-open-shop").dataset.href,/golden-studio/);
  x.element("arcade-open-shop").handlers.click();
- assert.match(x.location.assigned,/greenfield-salon/);
+ assert.match(x.location.assigned,/golden-studio/);
  x.element("arcade-back").handlers.click();
  assert.equal(x.element("explore-world").hidden,false);
+ api.setData({shops:[],demoShops:published});
+ assert.equal(x.element("arcade-regions").innerHTML.includes("台北市"),false,"old sample fallback must stay disabled");
 });
 test("view switch retains working list navigation and filters game categories",()=>{
  const x=setup("?mode=search");
  const api=x.window.LineExploreGame;
- api.setData({shops:[],demoShops:demo});
+ api.setData({shops:published});
  assert.equal(x.element("explore-game").hidden,true);
  x.element("explore-switch-game").handlers.click();
  assert.equal(x.element("explore-game").hidden,false);
