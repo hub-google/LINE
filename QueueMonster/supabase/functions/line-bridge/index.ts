@@ -730,6 +730,27 @@ async function webhook(req: Request, origin: string | null, merchantSlug = "") {
         const token = Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
         if (!token) throw new Error("LINE_MESSAGING_NOT_CONFIGURED");
         const redelivery=(event.deliveryContext as {isRedelivery?:unknown}|undefined)?.isRedelivery===true;
+        // The platform OA accepts an explicit opt-in; it never broadcasts
+        // FoodRadar reports to all unrelated QueueMonster customers.
+        const normalized=message.text.trim().replace(/\\s+/g,"").toLowerCase();
+        const subscribe=["訂閱foodradar","foodradar訂閱","訂閱商品日報"].includes(normalized);
+        const unsubscribe=["取消foodradar訂閱","取消訂閱foodradar","取消商品日報"].includes(normalized);
+        if (subscribe || unsubscribe) {
+          const { error: updateError }=subscribe
+            ? await db.from("foodradar_line_subscriptions").upsert({
+                line_user_id:source.userId, enabled:true, updated_at:new Date().toISOString(),
+              }, {onConflict:"line_user_id"})
+            : await db.from("foodradar_line_subscriptions").update({
+                enabled:false, updated_at:new Date().toISOString(),
+              }).eq("line_user_id",source.userId);
+          if (updateError) throw updateError;
+          const notice=subscribe
+            ? "已訂閱 FoodRadar 每日商品資料完整性報告。每天早上會收到最近一次三軌查核結果；若原站網頁遭驗證阻擋，會如實標示未驗證。傳送「取消FoodRadar訂閱」可停止通知。"
+            : "已取消 FoodRadar 每日資料完整性報告。如需重新訂閱，請傳送「訂閱FoodRadar」。";
+          const sent=await replyToLine(token,replyToken,{type:"text",text:notice},redelivery);
+          if (sent) processed++; else duplicates++;
+          continue;
+        }
         const sent=await replyToLine(token,replyToken,platformBotMessage(message.text),redelivery);
         if (sent) processed++; else duplicates++;
         continue;
@@ -831,6 +852,40 @@ Deno.serve(async (req: Request) => {
   const origin = req.headers.get("origin");
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: headers(origin) });
   const url = new URL(req.url);
+  if (url.searchParams.get("action") === "foodradar-subscribers") {
+    if (req.method !== "GET") return reply(405,{error:"METHOD_NOT_ALLOWED"},origin);
+    const token=Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
+    const day=req.headers.get("x-foodradar-date") || "";
+    const provided=req.headers.get("x-foodradar-signature") || "";
+    const validDay=/^\\d{4}-\\d{2}-\\d{2}$/.test(day)
+      && Number.isFinite(Date.parse(day+"T00:00:00+08:00"))
+      && Math.abs(Date.now()-Date.parse(day+"T00:00:00+08:00")) < 36*60*60*1000;
+    if (!token || !validDay || !/^[a-f0-9]{64}$/.test(provided)) {
+      return reply(401,{error:"UNAUTHORIZED"},origin);
+    }
+    const encoder=new TextEncoder();
+    const hmacKey=await crypto.subtle.importKey("raw",encoder.encode(token),
+      {name:"HMAC",hash:"SHA-256"},false,["sign"]);
+    const signature=Array.from(new Uint8Array(await crypto.subtle.sign(
+      "HMAC",hmacKey,encoder.encode("foodradar-subscribers:"+day))))
+      .map((v)=>v.toString(16).padStart(2,"0")).join("");
+    let mismatch=0;
+    for (let i=0;i<64;i++) mismatch |= signature.charCodeAt(i)^provided.charCodeAt(i);
+    if (mismatch) return reply(401,{error:"UNAUTHORIZED"},origin);
+    try {
+      const db=service();
+      const {data,error}=await db.from("foodradar_line_subscriptions")
+        .select("line_user_id").eq("enabled",true).limit(100);
+      if (error) throw error;
+      // LINE IDs are private: no CORS header and no server-side logging.
+      return new Response(JSON.stringify({recipients:(data || []).map(
+        (r:{line_user_id:string})=>r.line_user_id)}),
+        {status:200,headers:{"content-type":"application/json",
+                             "cache-control":"no-store"}});
+    } catch {
+      return reply(503,{error:"SUBSCRIPTION_LOOKUP_UNAVAILABLE"},origin);
+    }
+  }
   if (url.searchParams.get("action") === "webhook") {
     if (req.method !== "POST") return reply(405, { error: "METHOD_NOT_ALLOWED" }, origin);
     return webhook(req, origin, url.searchParams.get("merchant") || "");
