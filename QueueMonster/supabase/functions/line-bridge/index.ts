@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+// FoodRadar subscriber opt-ins require a signed platform OA event and are stored privately.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const originAllowed = "https://hub-google.github.io";
