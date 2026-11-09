@@ -9,6 +9,7 @@ import {fileURLToPath} from "node:url";
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
 const read=p=>readFileSync(path.join(root,p),"utf8");
 const reg=read("saas/merchant-register.html");
+const headquarters=read("saas/platform-login.html");
 const index=read("saas/index.html");
 const directory=read("saas/directory.html");
 const sql=read("supabase/migrations/20261106102500_merchant_account_onboarding_and_privacy.sql");
@@ -105,7 +106,7 @@ test("new stores start private and are published only after settings are saved",
 test("retired QA entry points and customer-facing test copy are absent",()=>{
  assert.doesNotMatch(directory,/測試|demo-link|qa-84b3/);
  assert.doesNotMatch(index,/if\(a==="test-login"\)|if\(a==="recover-test-store"\)/);
- for(const name of ["home","directory","merchant-register","merchant-center","board","poster","terms","privacy"]){
+ for(const name of ["home","directory","merchant-register","platform-login","merchant-center","board","poster","terms","privacy"]){
   assert.doesNotMatch(read("saas/"+name+".html"),/測試/,name);
  }
  assert.match(sql,/revoke all on function public\.so_test_login/);
@@ -143,25 +144,53 @@ test("published merchant login source does not contain a hardcoded administrator
  const publicScript=read("saas/assets/merchant-register/main.js");
  assert.doesNotMatch(publicScript,/[a-zA-Z0-9._%+-]+@gmail\.com/i);
  assert.doesNotMatch(publicScript,/service_role|sb_secret_|LINE_CHANNEL_SECRET|ADMIN_PASSWORD/i);
- assert.match(publicScript,/rpc\("so_claim_verified_platform_owner"\)/);
- assert.match(publicScript,/if\(password\.length===1\)/);
+ assert.doesNotMatch(publicScript,/so_claim_verified_platform_owner|qm-admin-login|if\(password\.length===1\)/);
+ assert.match(publicScript,/rpc\("so_my_context"\)/);
+ assert.match(publicScript,/location\.replace\("\.\/platform-login\.html"\)/);
 });
 
 test("platform PIN login uses server-side throttle and a real authenticated session",()=>{
  const edge=read("supabase/functions/qm-admin-login/index.ts");
  const migration=read("supabase/migrations/20261106195600_platform_admin_pin_gate.sql");
- assert.ok(reg.includes("functions/v1/qm-admin-login"));
- assert.ok(reg.includes("sb.auth.setSession("));
- assert.ok(reg.includes("so_claim_verified_platform_owner"));
+ assert.ok(headquarters.includes("functions/v1/qm-admin-login"));
+ assert.ok(headquarters.includes("sb.auth.setSession("));
+ assert.ok(headquarters.includes("so_claim_verified_platform_owner"));
  assert.ok(edge.includes("qm_admin_pin_check"));
  assert.ok(edge.includes("auth.admin.generateLink"));
  assert.ok(edge.includes("verifyOtp"));
  assert.ok(migration.includes("locked_until"));
  assert.ok(migration.includes("to service_role;"));
- assert.ok(!reg.includes('pin==="9"'));
+ assert.ok(!headquarters.includes('pin==="9"'));
  assert.ok(!migration.includes("crypt('9'"));
 });
 
+test("headquarters login is an independent branded route and does not expose privileged links to ordinary merchants",()=>{
+ const source=read("saas/assets/platform-login/main.js");
+ const merchant=read("saas/assets/merchant-register/main.js");
+ const styles=read("saas/assets/merchant-register/page.css");
+ const page=read("saas/platform-login.html");
+ assert.match(page,/總部管理員登入/);
+ assert.match(page,/id="hq-login-form"/);
+ assert.match(page,/id="hq-password"/);
+ assert.match(page,/functions\/v1\/qm-admin-login/);
+ assert.doesNotMatch(page,/@gmail\.com|service_role|sb_secret_|qm_admin_pin_check/);
+ assert.match(source,/sb\.rpc\("so_my_context"\)/);
+ assert.match(source,/so_claim_verified_platform_owner/);
+ assert.match(source,/data\?\.platform_admin===true/);
+ assert.match(source,/location\.replace\("\.\/\?view=platform"\)/);
+ assert.match(source,/if\(!await goToHeadquarters\(\)\)/);
+ assert.match(source,/await sb\.auth\.signOut\(\)/);
+ assert.doesNotMatch(merchant,/functions\/v1\/qm-admin-login|進入平台總管理後台/);
+ assert.match(merchant,/location\.replace\("\.\/platform-login\.html"\)/);
+ assert.match(reg,/class="account-actions"/);
+ assert.match(reg,/<button class="ghost" type="button" id="logout">登出<\/button>/);
+ assert.match(styles,/\.account-actions\{display:grid/);
+ assert.match(styles,/\.account-actions>#logout\{position:static/);
+ for(const pageName of ["home","directory","merchant-register"]){
+  const html=read("saas/"+pageName+".html");
+  assert.doesNotMatch(html,/href="\.\/platform-login\.html"/);
+ }
+});
 test("merchant can independently enable reservation and queue in their own settings",()=>{
  const modes=read("supabase/migrations/20261109093000_merchant_service_mode_switch.sql");
  const guide=read("saas/merchant-center.html");
@@ -225,7 +254,7 @@ test("platform action buttons match and account logout lives only in the shared 
 });
 
 test("production release contains no customer-visible QA or infrastructure copy",()=>{
- const publicPages=["index","home","directory","board","poster","merchant-register","merchant-center","privacy","terms","template"];
+ const publicPages=["index","home","directory","board","poster","merchant-register","platform-login","merchant-center","privacy","terms","template"];
  for(const name of publicPages){
   const html=read("saas/"+name+".html");
   assert.ok(!html.includes("測試"),name+" must not expose test labels");

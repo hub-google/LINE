@@ -81,7 +81,7 @@ try{
  // Exercise production bundles at both desktop and mobile sizes with actual network reads.
  for(const width of [1280,390]){
   await page.setViewportSize({width,height:900});
-  for(const name of ['home.html','directory.html?mode=search','merchant-register.html','index.html?view=staff&merchant=greenfield-salon','index.html?view=customer&merchant=greenfield-salon','board.html?merchant=greenfield-salon','poster.html?merchant=greenfield-salon']){
+  for(const name of ['home.html','directory.html?mode=search','merchant-register.html','platform-login.html','index.html?view=staff&merchant=greenfield-salon','index.html?view=customer&merchant=greenfield-salon','board.html?merchant=greenfield-salon','poster.html?merchant=greenfield-salon']){
    await page.goto(baseUrl+'/booking/'+name,{waitUntil:'networkidle',timeout:45000});
    assert.ok((await page.locator('body').innerText()).trim().length>30,name);
    if(name==='home.html'){
@@ -93,6 +93,26 @@ try{
     if(width<=620)assert.ok(rects[1].top>=rects[0].bottom-2,'Mobile examples should stack cleanly');
     else assert.ok(rects[1].left>=rects[0].right-2,'Desktop examples should display side by side');
     console.log('Homepage dual-examples layout:',width,JSON.stringify(rects));
+   }
+   if(name==='merchant-register.html'){
+    // Simulate an authenticated merchant account to verify visual geometry
+    // without submitting credentials or touching the production database.
+    const layout=await page.evaluate(()=>{
+     document.getElementById('auth-zone').classList.add('hidden');
+     document.getElementById('account-zone').classList.remove('hidden');
+     document.querySelector('.password-panel').classList.add('hidden');
+     const items=['switch-account','logout'];
+     const positions=items.map(id=>{
+      const r=document.getElementById(id).getBoundingClientRect();
+      return {id,top:r.top,bottom:r.bottom,left:r.left,right:r.right,width:r.width};
+     });
+     const signup=document.querySelector('#account-zone a.secondary-action').getBoundingClientRect();
+     const panel=document.querySelector('.panel').getBoundingClientRect();
+     return {items:positions,signup:{top:signup.top,bottom:signup.bottom,left:signup.left,right:signup.right},panel:{left:panel.left,right:panel.right}};
+    });
+    assert.ok(layout.items[0].bottom+8<=layout.signup.top,'Merchant account links must be vertically separated');
+    assert.ok(layout.signup.bottom+8<=layout.items[1].top,'Logout must not overlap the registration link');
+    assert.ok(layout.items.every(r=>r.width>150&&r.left>=layout.panel.left&&r.right<=layout.panel.right),'Account buttons must stay inside the panel');
    }
    console.log(width,name,await page.title());
   }

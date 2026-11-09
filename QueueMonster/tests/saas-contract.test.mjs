@@ -12,7 +12,7 @@ const client=read("saas/index.html");
 const bridge=read("supabase/functions/line-bridge/index.ts");
 
 test("all browser inline module scripts parse",()=>{
- for(const name of ["index.html","directory.html","merchant-register.html"]){
+ for(const name of ["index.html","directory.html","merchant-register.html","platform-login.html"]){
   const html=fs.readFileSync(path.join(saas,name),"utf8");
   const scripts=[...html.matchAll(/<script\b[^>]*type=["']module["'][^>]*>([\s\S]*?)<\/script>/g)];
   assert.ok(scripts.length>0,name+" missing inline module");
@@ -77,9 +77,12 @@ test("P0 notification status is manager-scoped and avoids client-side secrets",(
 });
 test("verified platform owner is allowed by authenticated Supabase identity",()=>{
  const registration=read("saas/merchant-register.html");
- assert.match(registration,/so_claim_verified_platform_owner/);
- assert.doesNotMatch(registration,/cit5055@gmail\.com/);
+ const headquarters=read("saas/platform-login.html");
+ assert.doesNotMatch(registration,/so_claim_verified_platform_owner|qm-admin-login/);
+ assert.match(headquarters,/so_claim_verified_platform_owner/);
+ assert.doesNotMatch(headquarters,/cit5055@gmail\.com/);
  assert.match(registration,/signInWithPassword/);
+ assert.match(headquarters,/signInWithPassword/);
  assert.match(client,/context\?\.platform_admin/);
 });
 test("outbox is independently scheduled and authenticated",()=>{
