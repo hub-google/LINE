@@ -9,7 +9,7 @@ import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2
 
 
 import {incomingParam,isSafeMerchant,refreshLiffRoute} from "./route-state.js";
-import {btn,esc} from "./shared-ui.js";
+import {btn,esc,customerFacingError} from "./shared-ui.js";
 
 export async function bridgeConfig(){
   const merchant=isSafeMerchant(routeState.slug)?routeState.slug:"";
@@ -220,7 +220,7 @@ export async function connectLineSession(force=false){
        &&recoverLineLogin(false))return;
     lineState.lineLinkStatus="failed";
     lineState.lineConnectError=/code_verifier|pkce/i.test(message)?
-      "LINE 登入驗證已失效，請重新登入 LINE。":message;
+      "LINE 登入驗證已失效，請重新登入 LINE。":customerFacingError(e,"line");
     console.warn("LINE 身分連接失敗",lineState.lineConnectError);
   }
 }
