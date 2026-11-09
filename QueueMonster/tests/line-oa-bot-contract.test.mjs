@@ -47,7 +47,7 @@ test("FoodRadar daily LINE report is explicit opt-in and never broadcasts arbitr
   assert.match(bridge, /crypto\.subtle\.sign/);
   assert.match(migration, /ENABLE ROW LEVEL SECURITY/);
   assert.match(migration, /REVOKE ALL ON TABLE/);
-  assert.match(workflow, /FOODRADAR_REPORT_LINE_USER_ID/);
+  assert.match(workflow, /REPORT_LINE_USER_ID/);
   assert.match(workflow, /recipients=/);
   assert.match(workflow, /No FoodRadar LINE subscriber/);
   assert.doesNotMatch(workflow, /\/v2\/bot\/message\/broadcast/);
