@@ -654,3 +654,17 @@ body[data-monster-page="index"][data-portal="platform"] .platform-row-actions>.b
  outline:3px solid #A777C5;
  outline-offset:2px;
 }
+
+/* The operational portal brand is an accessible, real home link. */
+body[data-monster-page="index"] header a.brand{
+  display:block;
+  width:max-content;
+  max-width:100%;
+  text-decoration:none;
+  color:#462B52;
+}
+body[data-monster-page="index"] header a.brand:focus-visible{
+  outline:3px solid #693C8B;
+  outline-offset:5px;
+  border-radius:8px;
+}
