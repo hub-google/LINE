@@ -25,7 +25,7 @@ function qrCanvas(qr,cellSize,quiet=4){
  const n=qr.getModuleCount(),size=(n+2*quiet)*cellSize;
  const canvas=document.createElement("canvas");canvas.width=size;canvas.height=size;
  const ctx=canvas.getContext("2d");
- if(!ctx)throw Error("瀏覽器不支援 QR Code 繪製");
+ if(!ctx)throw Error("瀏覽器不支援二維碼繪製");
  ctx.fillStyle="#ffffff";ctx.fillRect(0,0,size,size);
  ctx.fillStyle="#000000";
  for(let row=0;row<n;row++){
@@ -69,7 +69,7 @@ function splitText(ctx,value,x,y,maxWidth,lineHeight,maxLines){
  return y;
 }
 function drawPosterPng(){
- if(!qrMatrix)throw Error("沒有可下載的 QR 立牌");
+ if(!qrMatrix)throw Error("沒有可下載的二維碼立牌");
  const w=2480,h=3508,c=document.createElement("canvas");c.width=w;c.height=h;
  const ctx=c.getContext("2d");if(!ctx)throw Error("瀏覽器無法產生 PNG");
  const center=w/2;
