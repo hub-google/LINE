@@ -8,7 +8,7 @@ const read=(name)=>readFileSync(fileURLToPath(new URL("../saas/"+name,import.met
 test("booking portal brand is a real accessible link to the product home",()=>{
  const page=read("index.html");
  assert.match(page,/<a class="brand" href="\.\/home\.html" aria-label="排隊怪獸首頁">/);
- assert.match(page,/<\/a><nav class="headlinks"/);
+ assert.match(page,/<\/a>\s*<nav class="headlinks"/);
  assert.doesNotMatch(page,/<div class="brand">/);
 });
 
