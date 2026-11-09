@@ -136,7 +136,7 @@ function updatePoster(){
  setStatus("QR 已依正式門市設定產生。");
  $("channel").textContent=merchantUsesPlatformOa?
  "此門市共用平台 LINE OA：QR 直接開啟門市網頁，首次預約或取號前才要求 LINE 身分驗證。":
- (liffId?"此門市使用自行綁定的 LINE LIFF 入口。":"尚未取得門市 LIFF 設定，QR 使用正式網頁入口。");
+ (liffId?"此門市已連接自己的 LINE 官方帳號。":"掃描後將開啟門市的預約或取號網頁。");
 }
 function splitText(ctx,value,x,y,maxWidth,lineHeight,maxLines){
  const tokens=Array.from(value),lines=[];let current="";
