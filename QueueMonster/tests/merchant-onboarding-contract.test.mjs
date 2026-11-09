@@ -164,6 +164,14 @@ test("platform PIN login uses server-side throttle and a real authenticated sess
  assert.ok(!migration.includes("crypt('9'"));
 });
 
+test("headquarters navigation only appears for a verified platform administrator",()=>{
+ const shared=read("saas/app/shared-ui.js");
+ const view=read("saas/app/platform-view.js");
+ assert.ok(shared.includes('...(platformReady()?[["platform","平台管理"]]:[])'));
+ assert.doesNotMatch(shared,/\["marketing","網站首頁"\],\["platform","平台管理"\]/);
+ assert.match(view,/if\(!authReady\(\)\)return box\("總部管理員登入"/);
+ assert.match(view,/href="\.\/platform-login\.html"/);
+});
 test("headquarters login is an independent branded route and does not expose privileged links to ordinary merchants",()=>{
  const source=read("saas/assets/platform-login/main.js");
  const merchant=read("saas/assets/merchant-register/main.js");
