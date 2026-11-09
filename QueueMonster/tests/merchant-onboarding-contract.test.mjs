@@ -47,9 +47,10 @@ test("explicit merchant signup never falls through to a stored platform admin se
  assert.match(index,/href="merchant-register\.html\?mode=signup"/);
 });
 test("a signed-in platform admin still sees the merchant signup form",async()=>{
- const module=reg.match(/<script type="module">([\\s\\S]+?)<\\/script>/)?.[1];
- assert.ok(module);
- const source=module.replace(/^import \\{createClient\\} from [^\\n]+\\n/m,"");
+ const start=reg.indexOf('<script type="module">'),end=reg.indexOf('</script>',start);
+ assert.ok(start>=0 && end>start);
+ const module=reg.slice(start+'<script type="module">'.length,end).trimStart();
+ const source=module.slice(module.indexOf("\n")+1);
  const elements=new Map();
  const element=id=>{
   if(!elements.has(id)){
