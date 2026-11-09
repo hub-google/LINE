@@ -1,0 +1,68 @@
+name: QueueMonster OA | FoodRadar daily three-method report
+on:
+  schedule:
+    # 06:15 Taiwan time, after FoodRadar 04:00 audit and before 06:30 crawl
+    - cron: '15 22 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  send-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      LINE_MESSAGING_ACCESS_TOKEN: ${{ secrets.LINE_MESSAGING_ACCESS_TOKEN }}
+      FOODRADAR_REPORT_LINE_USER_ID: ${{ secrets.FOODRADAR_REPORT_LINE_USER_ID }}
+    steps:
+      - name: Send report using existing QueueMonster LINE OA channel
+        shell: python
+        run: |
+          import datetime, json, os, urllib.request, urllib.error
+          now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8)))
+          today = now.strftime("%Y-%m-%d")
+          token = os.environ.get("LINE_MESSAGING_ACCESS_TOKEN", "")
+          target = os.environ.get("FOODRADAR_REPORT_LINE_USER_ID", "")
+          if not token:
+              raise RuntimeError("Missing existing LINE_MESSAGING_ACCESS_TOKEN in hub-google/LINE secrets")
+          if not target.startswith("U") or len(target) != 33:
+              raise RuntimeError("Configure FOODRADAR_REPORT_LINE_USER_ID: recipient LINE UUID (U + 32 hex)")
+          url = "https://raw.githubusercontent.com/fafagoback/FoodRadar/main/audit-results/latest.json?ts=" + str(int(now.timestamp()))
+          try:
+              req=urllib.request.Request(url,headers={"User-Agent":"QueueMonster-FoodRadar-Audit/1.0","Cache-Control":"no-cache"})
+              with urllib.request.urlopen(req,timeout=25) as res:
+                  report=json.load(res)
+          except Exception as exc:
+              report={"date":"", "stores":[], "fatal_error":"Cannot retrieve FoodRadar report: "+type(exc).__name__}
+          fresh = report.get("date") == today
+          lines = ["FoodRadar 每日三軌資料稽核", "日期："+today,
+                   "A=正式 API　B=瀏覽器 DOM　C=截圖 OCR 文字候選"]
+          if not fresh:
+              lines.append("異常：今日稽核報告未產生或尚未更新")
+          if report.get("fatal_error"):
+              lines.append("異常："+str(report["fatal_error"])[:160])
+          for store in report.get("stores",[]):
+              a=store.get("api",{})
+              b=store.get("browser",{})
+              c=store.get("screenshot_ocr",{})
+              fmt=lambda x: str(x.get("count")) if x.get("count") is not None else "失敗"
+              lines.append(store.get("store","未知店家"))
+              lines.append("API "+fmt(a)+"／DOM "+fmt(b)+"／OCR候選 "+fmt(c))
+              if a.get("count") is not None and b.get("count") is not None:
+                  delta=b["count"]-a["count"]
+                  lines.append("DOM-API 差："+("%+d"%delta)+"；名稱差異 A獨有 "+
+                               str(store.get("api_vs_dom",{}).get("a_only_count","?"))+"／B獨有 "+
+                               str(store.get("api_vs_dom",{}).get("b_only_count","?")))
+              errors=[x.get("error") for x in (a,b,c) if x.get("error")]
+              if errors: lines.append("錯誤："+str(errors[0])[:130])
+          lines.extend(["注意：OCR 計數為文字候選，不等於 SKU；瀏覽器未證實所有分類完整前，不宣稱100%。",
+                        "報告：https://github.com/fafagoback/FoodRadar/blob/main/audit-results/latest.json"])
+          message="\\n".join(lines)[:4900]
+          payload=json.dumps({"to":target,"messages":[{"type":"text","text":message}]},ensure_ascii=False).encode("utf-8")
+          request=urllib.request.Request("https://api.line.me/v2/bot/message/push",data=payload,method="POST",
+              headers={"Authorization":"Bearer "+token,"Content-Type":"application/json"})
+          try:
+              with urllib.request.urlopen(request,timeout=25) as response:
+                  assert response.status in (200,202)
+                  print("FoodRadar report delivered via QueueMonster OA to configured recipient; payload redacted.")
+          except urllib.error.HTTPError as exc:
+              raise RuntimeError("LINE push failed with HTTP "+str(exc.code)) from None
