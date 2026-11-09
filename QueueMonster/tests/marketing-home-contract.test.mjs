@@ -93,3 +93,23 @@ test("homepage mascot artwork does not have redundant demo text floating above i
  assert.doesNotMatch(landing,/<div class="scene-label">介面示意<\/div>/);
  assert.doesNotMatch(homeCss,/\.scene-label\s*\{/);
 });
+
+test("homepage hero presents two separate Chinese-first booking and queue examples",()=>{
+ const css=read("saas/assets/home/page.css");
+ for(const industry of ["診所","餐廳","髮廊","美容美甲","寵物服務","課程活動"]){
+  assert.match(landing,new RegExp("<span>"+industry+"</span>"),industry+" industry tag missing");
+ }
+ assert.match(landing,/class="hero-demo hero-demo--booking" aria-label="線上預約範例"/);
+ assert.match(landing,/class="hero-demo hero-demo--queue" aria-label="現場抽號叫號範例"/);
+ assert.equal((landing.match(/<article class="hero-demo hero-demo--/g)||[]).length,2);
+ for(const text of ["診所門診","選擇可預約時段","10:00","11:30","14:00","確認預約","餐廳現場候位","目前叫號","A012","我的號碼","A019","前方等候","6 組","查看叫號進度"]){
+  assert.ok(landing.includes(text),"Missing example data: "+text);
+ }
+ assert.match(landing,/展示號碼非即時資料/);
+ assert.doesNotMatch(landing,/<div class="float-card|<div class="phone"/);
+ assert.doesNotMatch(landing,/介面示意</);
+ assert.match(css,/\.hero-demo-grid\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ assert.match(css,/@media\(max-width:620px\)\{[\s\S]*?\.hero-demo-grid\{grid-template-columns:1fr/);
+ const brand=read("saas/monster-world.css");
+ assert.match(brand,/body:has\(\.site-head\) \.mock-scene:before\{[^}]*monster-mascot\.svg/);
+});
