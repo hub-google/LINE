@@ -85,3 +85,11 @@ test("headquarters OA directory links platform shops directly to their merchant 
  assert.match(directory,/customerUrl\(t\.slug,"reserve",t\.oa_mode\)/);
  assert.match(directory,/customerUrl\(t\.slug,"queue",t\.oa_mode\)/);
 });
+
+test("homepage mascot artwork does not have redundant demo text floating above it",()=>{
+ const homeCss=read("saas/assets/home/page.css");
+ assert.match(landing,/<div class="mock-scene" aria-label=/);
+ assert.match(landing,/<div class="mock-ring" aria-hidden="true"><\/div>/);
+ assert.doesNotMatch(landing,/<div class="scene-label">介面示意<\/div>/);
+ assert.doesNotMatch(homeCss,/\.scene-label\s*\{/);
+});

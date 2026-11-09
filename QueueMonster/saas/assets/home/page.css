@@ -69,7 +69,6 @@
     .float-a{left:0;top:75px;transform:rotate(7deg);min-width:175px}
     .float-b{right:0;bottom:90px;transform:rotate(6deg);min-width:180px}
     .float-b strong{color:#3a845c}
-    .scene-label{position:absolute;right:10px;top:7px;color:#5c8672;font-size:12px;font-weight:700}
     section.section{padding:94px 0}
     .section-head{max-width:740px;margin-bottom:33px}
     .kicker{font-size:13px;letter-spacing:.12em;font-weight:850;color:#38946e;margin-bottom:10px}
