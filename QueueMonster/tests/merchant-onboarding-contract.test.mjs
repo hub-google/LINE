@@ -172,3 +172,20 @@ test("platform enterprise settings reuses the merchant backend rather than a sec
  assert.ok(!index.includes('merchantProfileFields("config"'),"do not render duplicate configuration form");
  assert.ok(index.includes('merchantProfileFields("create"'),"platform can still create companies");
 });
+
+test("platform action buttons match and account logout lives only in the shared header",()=>{
+ const styles=read("saas/monster-world.css");
+ const sharedAuth=read("saas/site-auth.js");
+ const start=index.indexOf("function layout("),end=index.indexOf("function head()",start);
+ assert.ok(start>0&&end>start);
+ const layout=index.slice(start,end);
+ assert.ok(!layout.includes('btn("登出","logout"'),"no duplicate logout in toolbar or mobile navigation");
+ assert.ok(!layout.includes("identityLabel"),"no duplicate account line inside toolbar");
+ assert.ok(index.includes('id="site-auth-root"'),"retain shared account header");
+ assert.ok(sharedAuth.includes('const logout=el("button","site-auth-button","登出")'),"header still supports signout");
+ assert.ok(index.includes('class="platform-row-actions"'),"group the three actions");
+ assert.ok(index.includes('class="btn outline" href='),"both navigation actions are buttons");
+ assert.ok(index.includes('btn(t.status==="ACTIVE"?"暫停":"恢復","toggle-company","outline"'),"preserve suspend/resume action");
+ assert.ok(styles.includes("grid-template-columns:repeat(3,minmax(0,1fr))"),"each button gets an equal column");
+ assert.ok(styles.includes(".platform-row-actions>.btn"),"shared button sizing styles are present");
+});
