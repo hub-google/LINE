@@ -33,5 +33,5 @@ test("staff CSV export is manager-gated and spreadsheet-formula safe",()=>{
  assert.match(app,/if\(\/\^\[\\s\]\*\[=\+@-\]\/\.test\(v\)\)v="'"\+v/);
  assert.match(app,/type:"text\/csv;charset=utf-8"/);
  assert.match(app,/目前已載入的資料/);
- assert.match(app,/完整歷史請使用下方後端搜尋；日／週／月曆仍待開發/);
+ assert.match(app,/完整歷史請使用下方「歷史預約查詢」/);
 });
