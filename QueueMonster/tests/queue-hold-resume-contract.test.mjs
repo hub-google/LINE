@@ -51,3 +51,11 @@ test("K06: HOLD tickets persist in public and cross-store owned projections",()=
   assert.match(sql,/'hold_until',k\.hold_until/);
   assert.match(sql,/queue_joined_at,ahead\.id/);
 });
+
+const currentCallFix=readFileSync(new URL("../supabase/migrations/20261109153000_staff_call_hold_alias_fix.sql",import.meta.url),"utf8");
+test("K06: live call HOLD expiry avoids variable and table alias collisions",()=>{
+ assert.ok(currentCallFix.includes("pg_get_functiondef('public.so_staff_action"));
+ assert.ok(currentCallFix.includes("update public.so_tickets hold_ticket set"));
+ assert.ok(currentCallFix.includes("replace(v_fixed,'k.','hold_ticket.')"));
+ assert.ok(!currentCallFix.includes("delete from public.so_tickets"));
+});
