@@ -732,7 +732,7 @@ async function webhook(req: Request, origin: string | null, merchantSlug = "") {
         const redelivery=(event.deliveryContext as {isRedelivery?:unknown}|undefined)?.isRedelivery===true;
         // The platform OA accepts an explicit opt-in; it never broadcasts
         // FoodRadar reports to all unrelated QueueMonster customers.
-        const normalized=message.text.trim().replace(/\\s+/g,"").toLowerCase();
+        const normalized=message.text.trim().replace(/\s+/g,"").toLowerCase();
         const subscribe=["訂閱foodradar","foodradar訂閱","訂閱商品日報"].includes(normalized);
         const unsubscribe=["取消foodradar訂閱","取消訂閱foodradar","取消商品日報"].includes(normalized);
         if (subscribe || unsubscribe) {
@@ -857,7 +857,7 @@ Deno.serve(async (req: Request) => {
     const token=Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
     const day=req.headers.get("x-foodradar-date") || "";
     const provided=req.headers.get("x-foodradar-signature") || "";
-    const validDay=/^\\d{4}-\\d{2}-\\d{2}$/.test(day)
+    const validDay=/^\d{4}-\d{2}-\d{2}$/.test(day)
       && Number.isFinite(Date.parse(day+"T00:00:00+08:00"))
       && Math.abs(Date.now()-Date.parse(day+"T00:00:00+08:00")) < 36*60*60*1000;
     if (!token || !validDay || !/^[a-f0-9]{64}$/.test(provided)) {
