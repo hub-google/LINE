@@ -6,6 +6,8 @@ on:
       - "QueueMonster/tests/**"
       - "QueueMonster/supabase/migrations/**"
       - ".github/scripts/build-line-saas.mjs"
+      - ".github/scripts/frontend-build.mjs"
+      - ".github/frontend/**"
       - ".github/workflows/line-saas-pages.yml"
       - ".github/workflows/line-saas-pr-validation.yml"
 
@@ -23,8 +25,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Install frontend build dependencies
+        run: npm ci --prefix .github/frontend
       - name: Verify existing SaaS and TV board contracts
-        run: node --test QueueMonster/tests/merchant-onboarding-contract.test.mjs QueueMonster/tests/saas-contract.test.mjs QueueMonster/tests/queue-board-contract.test.mjs QueueMonster/tests/qr-poster-contract.test.mjs QueueMonster/tests/marketing-home-contract.test.mjs QueueMonster/tests/booking-branding-contract.test.mjs QueueMonster/tests/booking-capacity-receipt.test.mjs QueueMonster/tests/booking-staff-filter-csv.test.mjs QueueMonster/tests/booking-timestamp-seconds.test.mjs QueueMonster/tests/staff-reservation-history-contract.test.mjs QueueMonster/tests/booking-full-history-csv.test.mjs QueueMonster/tests/staff-booking-calendar-contract.test.mjs QueueMonster/tests/customer-reservation-ics.test.mjs QueueMonster/tests/booking-pwa-contract.test.mjs QueueMonster/tests/queue-ticket-party-size-k03.test.mjs QueueMonster/tests/queue-sync-ux11.test.mjs QueueMonster/tests/booking-idempotency-contract.test.mjs QueueMonster/tests/booking-break-overlap-contract.test.mjs QueueMonster/tests/queue-hold-resume-contract.test.mjs QueueMonster/tests/queue-arrival-admission-contract.test.mjs QueueMonster/tests/queue-selected-call-k10.test.mjs QueueMonster/tests/queue-session-switch-k12.test.mjs QueueMonster/tests/booking-resource-duration-contract.test.mjs QueueMonster/tests/queue-near-alert-oss-n03.test.mjs QueueMonster/tests/booking-confirmation-fr112.test.mjs QueueMonster/tests/store-announcements-fr110.test.mjs QueueMonster/tests/customer-ledger-blacklist-fr109.test.mjs
+        run: node --test QueueMonster/tests/frontend-modules.test.mjs QueueMonster/tests/frontend-build.test.mjs QueueMonster/tests/merchant-onboarding-contract.test.mjs QueueMonster/tests/saas-contract.test.mjs QueueMonster/tests/queue-board-contract.test.mjs QueueMonster/tests/qr-poster-contract.test.mjs QueueMonster/tests/marketing-home-contract.test.mjs QueueMonster/tests/booking-branding-contract.test.mjs QueueMonster/tests/booking-capacity-receipt.test.mjs QueueMonster/tests/booking-staff-filter-csv.test.mjs QueueMonster/tests/booking-timestamp-seconds.test.mjs QueueMonster/tests/staff-reservation-history-contract.test.mjs QueueMonster/tests/booking-full-history-csv.test.mjs QueueMonster/tests/staff-booking-calendar-contract.test.mjs QueueMonster/tests/customer-reservation-ics.test.mjs QueueMonster/tests/booking-pwa-contract.test.mjs QueueMonster/tests/queue-ticket-party-size-k03.test.mjs QueueMonster/tests/queue-sync-ux11.test.mjs QueueMonster/tests/booking-idempotency-contract.test.mjs QueueMonster/tests/booking-break-overlap-contract.test.mjs QueueMonster/tests/queue-hold-resume-contract.test.mjs QueueMonster/tests/queue-arrival-admission-contract.test.mjs QueueMonster/tests/queue-selected-call-k10.test.mjs QueueMonster/tests/queue-session-switch-k12.test.mjs QueueMonster/tests/booking-resource-duration-contract.test.mjs QueueMonster/tests/queue-near-alert-oss-n03.test.mjs QueueMonster/tests/booking-confirmation-fr112.test.mjs QueueMonster/tests/store-announcements-fr110.test.mjs QueueMonster/tests/customer-ledger-blacklist-fr109.test.mjs
       - name: Verify versioned build without deploying
         env:
           GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
@@ -42,3 +46,10 @@ jobs:
           test -s /tmp/line-saas-pr-dist/offline.html
           test -s /tmp/line-saas-pr-dist/pwa-icon-192.png
           test -s /tmp/line-saas-pr-dist/pwa-icon-512.png
+
+      - name: Verify native modules and production pages in Chromium
+        env:
+          BROWSER_CHANNEL: chromium
+        run: |
+          npm exec --prefix .github/frontend -- playwright install --with-deps chromium
+          node .github/frontend/browser-smoke.mjs /tmp/line-saas-pr-dist

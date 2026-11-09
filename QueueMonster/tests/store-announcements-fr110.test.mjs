@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {readFileSync} from "node:fs";
+import {readFileSync} from "./helpers/source-fs.mjs";
 import vm from "node:vm";
 
 const sql=readFileSync(new URL("../supabase/migrations/20261104_store_announcements_fr110.sql",import.meta.url),"utf8");

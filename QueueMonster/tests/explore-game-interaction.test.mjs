@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {readFileSync} from "node:fs";
+import {readFileSync} from "./helpers/source-fs.mjs";
 import {fileURLToPath} from "node:url";
 import path from "node:path";
 import vm from "node:vm";
@@ -21,7 +21,7 @@ function setup(search="?mode=game"){
     if(id==="arcade-shopline"&&selector==="[data-shop-index]"){
      return Array.from(this.innerHTML.matchAll(/data-shop-index="(\d+)"/g),(m,i)=>({
       dataset:{shopIndex:m[1],selected:"false"},offsetLeft:i*184,offsetWidth:166,
-      scrollIntoView(){} 
+      scrollIntoView(){}
      }));
     }
     return [];

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {readFileSync} from "node:fs";
+import {readFileSync} from "./helpers/source-fs.mjs";
 import {fileURLToPath} from "node:url";
 import path from "node:path";
 import {runInNewContext} from "node:vm";
@@ -54,7 +54,8 @@ test("calendar RPC is read-only, tenant-scoped and suppresses deleted reservatio
 
 test("calendar UI is a separate read-only staff view with real server totals, pagination and date navigation",()=>{
  assert.match(app,/nav\("預約日曆","calendar",staffTab,"staff"\)/);
- assert.match(app,/else if\(staffTab==="calendar"\)\{\s*html\+=bookingCalendarPanel\(\)/);
+ assert.match(app,/else if\(staffTab==="calendar"\)\{\s*html=renderStaffCalendar\(\{html\}\)/);
+ assert.match(app,/function renderStaffCalendar\(\{html\}\)\{\s*html\+=bookingCalendarPanel\(\)/);
  assert.match(app,/async function loadBookingCalendar\(page=calendarPage\)/);
  assert.match(app,/rpc\("so_staff_reservation_calendar",\{/);
  assert.match(app,/p_slug:merchant,p_start:period\.start,p_end:period\.end/);

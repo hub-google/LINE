@@ -1,5 +1,6 @@
 import {copyFile, mkdir, readFile, writeFile} from "node:fs/promises";
 import path from "node:path";
+import {buildFrontend} from "./frontend-build.mjs";
 import {deflateSync} from "node:zlib";
 
 const sha = (process.env.GITHUB_SHA || "").trim();
@@ -10,8 +11,9 @@ const pages = ["index.html", "template.html", "home.html", "board.html", "poster
 const placeholder = "__LINE_SAAS_BUILD__";
 
 await mkdir(dest, {recursive:true});
+const frontendPages=await buildFrontend(src,dest,pages);
 for (const name of pages) {
-  const html = await readFile(path.join(src, name), "utf8");
+  const html = frontendPages.get(name);
   if (!html.includes(placeholder) || !html.includes("version-watch.js")) {
     throw Error(name + " is missing the automatic version update integration");
   }

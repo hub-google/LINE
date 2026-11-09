@@ -7,6 +7,8 @@ on:
       - "QueueMonster/tests/**"
       - "QueueMonster/supabase/migrations/**"
       - ".github/scripts/build-line-saas.mjs"
+      - ".github/scripts/frontend-build.mjs"
+      - ".github/frontend/**"
       - ".github/workflows/line-saas-pages.yml"
   workflow_dispatch:
 
@@ -27,6 +29,8 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: true
+      - name: Install frontend build dependencies
+        run: npm ci --prefix .github/frontend
       - name: Validate browser script syntax
         run: |
           node --check QueueMonster/saas/version-watch.js
@@ -38,7 +42,7 @@ jobs:
           test -s QueueMonster/saas/monster-world.css
           test -s QueueMonster/saas/monster-mascot.svg
       - name: Verify LINE customer and notification contracts
-        run: node --test QueueMonster/tests/merchant-onboarding-contract.test.mjs QueueMonster/tests/site-auth-contract.test.mjs QueueMonster/tests/explore-game-interaction.test.mjs QueueMonster/tests/explore-game-contract.test.mjs QueueMonster/tests/saas-contract.test.mjs QueueMonster/tests/queue-board-contract.test.mjs QueueMonster/tests/qr-poster-contract.test.mjs QueueMonster/tests/marketing-home-contract.test.mjs QueueMonster/tests/booking-branding-contract.test.mjs QueueMonster/tests/booking-capacity-receipt.test.mjs QueueMonster/tests/booking-staff-filter-csv.test.mjs QueueMonster/tests/booking-timestamp-seconds.test.mjs QueueMonster/tests/staff-reservation-history-contract.test.mjs QueueMonster/tests/booking-full-history-csv.test.mjs QueueMonster/tests/staff-booking-calendar-contract.test.mjs QueueMonster/tests/customer-reservation-ics.test.mjs QueueMonster/tests/booking-pwa-contract.test.mjs QueueMonster/tests/queue-ticket-party-size-k03.test.mjs QueueMonster/tests/queue-sync-ux11.test.mjs QueueMonster/tests/booking-idempotency-contract.test.mjs QueueMonster/tests/booking-break-overlap-contract.test.mjs QueueMonster/tests/queue-hold-resume-contract.test.mjs QueueMonster/tests/queue-arrival-admission-contract.test.mjs QueueMonster/tests/queue-selected-call-k10.test.mjs QueueMonster/tests/queue-session-switch-k12.test.mjs QueueMonster/tests/booking-resource-duration-contract.test.mjs QueueMonster/tests/service-units-contract.test.mjs QueueMonster/tests/queue-near-alert-oss-n03.test.mjs QueueMonster/tests/booking-confirmation-fr112.test.mjs QueueMonster/tests/store-announcements-fr110.test.mjs QueueMonster/tests/customer-ledger-blacklist-fr109.test.mjs QueueMonster/tests/merchant-brand-profile.test.mjs
+        run: node --test QueueMonster/tests/frontend-modules.test.mjs QueueMonster/tests/frontend-build.test.mjs QueueMonster/tests/merchant-onboarding-contract.test.mjs QueueMonster/tests/site-auth-contract.test.mjs QueueMonster/tests/explore-game-interaction.test.mjs QueueMonster/tests/explore-game-contract.test.mjs QueueMonster/tests/saas-contract.test.mjs QueueMonster/tests/queue-board-contract.test.mjs QueueMonster/tests/qr-poster-contract.test.mjs QueueMonster/tests/marketing-home-contract.test.mjs QueueMonster/tests/booking-branding-contract.test.mjs QueueMonster/tests/booking-capacity-receipt.test.mjs QueueMonster/tests/booking-staff-filter-csv.test.mjs QueueMonster/tests/booking-timestamp-seconds.test.mjs QueueMonster/tests/staff-reservation-history-contract.test.mjs QueueMonster/tests/booking-full-history-csv.test.mjs QueueMonster/tests/staff-booking-calendar-contract.test.mjs QueueMonster/tests/customer-reservation-ics.test.mjs QueueMonster/tests/booking-pwa-contract.test.mjs QueueMonster/tests/queue-ticket-party-size-k03.test.mjs QueueMonster/tests/queue-sync-ux11.test.mjs QueueMonster/tests/booking-idempotency-contract.test.mjs QueueMonster/tests/booking-break-overlap-contract.test.mjs QueueMonster/tests/queue-hold-resume-contract.test.mjs QueueMonster/tests/queue-arrival-admission-contract.test.mjs QueueMonster/tests/queue-selected-call-k10.test.mjs QueueMonster/tests/queue-session-switch-k12.test.mjs QueueMonster/tests/booking-resource-duration-contract.test.mjs QueueMonster/tests/service-units-contract.test.mjs QueueMonster/tests/queue-near-alert-oss-n03.test.mjs QueueMonster/tests/booking-confirmation-fr112.test.mjs QueueMonster/tests/store-announcements-fr110.test.mjs QueueMonster/tests/customer-ledger-blacklist-fr109.test.mjs QueueMonster/tests/merchant-brand-profile.test.mjs
       - name: Build versioned LINE Pages files
         shell: bash
         run: |
@@ -62,6 +66,12 @@ jobs:
           test -s "$RUNNER_TEMP/line-saas-dist/offline.html"
           test -s "$RUNNER_TEMP/line-saas-dist/pwa-icon-192.png"
           test -s "$RUNNER_TEMP/line-saas-dist/pwa-icon-512.png"
+      - name: Verify native modules and production pages in Chromium
+        env:
+          BROWSER_CHANNEL: chromium
+        run: |
+          npm exec --prefix .github/frontend -- playwright install --with-deps chromium
+          node .github/frontend/browser-smoke.mjs "$RUNNER_TEMP/line-saas-dist"
       - name: Publish /booking/ and keep legacy /saas/ compatible
         shell: bash
         run: |
@@ -71,6 +81,7 @@ jobs:
           git worktree add --detach "$pubdir" origin/gh-pages
           for product in booking saas; do
             mkdir -p "$pubdir/$product"
+            cp -R "$RUNNER_TEMP/line-saas-dist/assets" "$pubdir/$product/"
             for f in index.html template.html home.html board.html poster.html directory.html merchant-register.html merchant-center.html privacy.html terms.html version-watch.js release.json booking-theme.css monster-world.css monster-mascot.svg explore-game.css explore-game.js site-auth.css site-auth.js manifest.webmanifest pwa-sw.js offline.html pwa-icon-192.png pwa-icon-512.png; do
               cp "$RUNNER_TEMP/line-saas-dist/$f" "$pubdir/$product/$f"
             done

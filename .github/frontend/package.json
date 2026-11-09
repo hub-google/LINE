@@ -1,0 +1,11 @@
+{
+  "name": "queue-monster-frontend-tools",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@babel/parser": "7.28.5",
+    "@babel/traverse": "7.28.5",
+    "esbuild": "0.25.12",
+    "playwright": "1.56.1"
+  }
+}
