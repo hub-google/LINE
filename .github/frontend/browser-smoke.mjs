@@ -84,6 +84,16 @@ try{
   for(const name of ['home.html','directory.html?mode=search','merchant-register.html','index.html?view=staff&merchant=greenfield-salon','index.html?view=customer&merchant=greenfield-salon','board.html?merchant=greenfield-salon','poster.html?merchant=greenfield-salon']){
    await page.goto(baseUrl+'/booking/'+name,{waitUntil:'networkidle',timeout:45000});
    assert.ok((await page.locator('body').innerText()).trim().length>30,name);
+   if(name==='home.html'){
+    const rects=await page.locator('.hero-demo').evaluateAll(nodes=>nodes.map(n=>{
+     const r=n.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width};
+    }));
+    assert.equal(rects.length,2,'Homepage must show booking and queue examples together');
+    assert.ok(rects.every(r=>r.width>=150&&r.left>=-2&&r.right<=width+2),'Hero cards must fit viewport');
+    if(width<=620)assert.ok(rects[1].top>=rects[0].bottom-2,'Mobile examples should stack cleanly');
+    else assert.ok(rects[1].left>=rects[0].right-2,'Desktop examples should display side by side');
+    console.log('Homepage dual-examples layout:',width,JSON.stringify(rects));
+   }
    console.log(width,name,await page.title());
   }
  }
