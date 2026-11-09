@@ -875,12 +875,22 @@ Deno.serve(async (req: Request) => {
     if (mismatch) return reply(401,{error:"UNAUTHORIZED"},origin);
     try {
       const db=service();
-      const {data,error}=await db.from("foodradar_line_subscriptions")
-        .select("line_user_id").eq("enabled",true).limit(100);
-      if (error) throw error;
+      const [subscribed,configured]=await Promise.all([
+        db.from("foodradar_line_subscriptions")
+          .select("line_user_id").eq("enabled",true).limit(100),
+        // Vault stores the privately configured recipient encrypted. The RPC
+        // is callable by service_role ONLY, not anon or authenticated clients.
+        db.rpc("foodradar_configured_line_recipient"),
+      ]);
+      if (subscribed.error || configured.error) throw new Error("PRIVATE_RECIPIENT_LOOKUP_FAILED");
+      const all=(subscribed.data || []).map(
+        (r:{line_user_id:string})=>r.line_user_id);
+      if (typeof configured.data==="string" && /^U[0-9a-f]{32}$/i.test(configured.data)) {
+        all.push(configured.data);
+      }
+      const recipients=[...new Set(all)].filter((id)=>/^U[0-9a-f]{32}$/i.test(id));
       // LINE IDs are private: no CORS header and no server-side logging.
-      return new Response(JSON.stringify({recipients:(data || []).map(
-        (r:{line_user_id:string})=>r.line_user_id)}),
+      return new Response(JSON.stringify({recipients}),
         {status:200,headers:{"content-type":"application/json",
                              "cache-control":"no-store"}});
     } catch {
