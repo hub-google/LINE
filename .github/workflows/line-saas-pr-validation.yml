@@ -39,6 +39,7 @@ jobs:
           grep -q "$GITHUB_SHA" /tmp/line-saas-pr-dist/board.html
           test -f /tmp/line-saas-pr-dist/index.html
           test -f /tmp/line-saas-pr-dist/home.html
+          test -s /tmp/line-saas-pr-dist/line-app-icon.svg
           test -f /tmp/line-saas-pr-dist/release.json
           test -s /tmp/line-saas-pr-dist/booking-theme.css
           test -s /tmp/line-saas-pr-dist/manifest.webmanifest

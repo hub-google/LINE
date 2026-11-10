@@ -23,6 +23,7 @@ await copyFile(path.join(src, "version-watch.js"), path.join(dest, "version-watc
 await copyFile(path.join(src, "booking-theme.css"), path.join(dest, "booking-theme.css"));
 await copyFile(path.join(src, "monster-world.css"), path.join(dest, "monster-world.css"));
 await copyFile(path.join(src, "monster-mascot.svg"), path.join(dest, "monster-mascot.svg"));
+await copyFile(path.join(src, "line-app-icon.svg"), path.join(dest, "line-app-icon.svg"));
 await copyFile(path.join(src, "explore-game.css"), path.join(dest, "explore-game.css"));
 await copyFile(path.join(src, "explore-game.js"), path.join(dest, "explore-game.js"));
 await copyFile(path.join(src, "site-auth.css"), path.join(dest, "site-auth.css"));

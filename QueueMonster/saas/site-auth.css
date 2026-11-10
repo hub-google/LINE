@@ -11,7 +11,9 @@
 .site-auth-button:disabled{opacity:.65;cursor:wait}
 .site-auth-button.site-auth-login{background:#06c755;color:#fff;border-color:#06c755}
 .site-auth-button.site-auth-login:hover{background:#00ac48}
-.site-auth-line-logo{display:inline-grid;place-items:center;font-weight:900;font-size:10px;letter-spacing:-.05em;width:21px;height:21px;color:#06c755;background:#fff;border-radius:7px}
+.site-auth-button.site-auth-login::before{content:"";display:block;width:23px;height:23px;flex:0 0 23px;background:url("./line-app-icon.svg") center/contain no-repeat;filter:none}
+.site-auth-button.site-auth-login{gap:8px}
+@media(max-width:420px){.site-auth-button.site-auth-login::before{width:21px;height:21px;flex-basis:21px}}
 .site-auth-feedback{font-size:12px;line-height:1.4;color:#8d3d2c}
 .site-auth-dark .site-auth-name{color:#fff}
 .site-auth-dark .site-auth-button:not(.site-auth-login){background:#ffffff18;border-color:#ffffff75;color:#fff}

@@ -136,6 +136,19 @@ try{
     assert.ok(layout.signup.bottom+8<=layout.items[1].top,'Logout must not overlap the registration link');
     assert.ok(layout.items.every(r=>r.width>150&&r.left>=layout.panel.left&&r.right<=layout.panel.right),'Account buttons must stay inside the panel');
    }
+   if(name==='home.html'||name.startsWith('directory.html')){
+    const logo=await page.locator('.site-auth-login').first().evaluate(el=>{
+     const css=getComputedStyle(el,'::before');
+     return {image:css.backgroundImage,width:parseFloat(css.width),height:parseFloat(css.height)};
+    });
+    assert.match(logo.image,/line-app-icon\.svg/,'LINE login must display the original icon');
+    assert.ok(logo.width>=20&&logo.height>=20,'LINE icon must remain visible at all widths');
+    const icon=await page.evaluate(async()=>{
+     const r=await fetch('./line-app-icon.svg');
+     return r.ok&&(await r.text()).includes('data:image/png;base64,');
+    });
+    assert.ok(icon,'LINE icon asset must be reachable by the browser');
+   }
    console.log(width,name,await page.title());
   }
  }
