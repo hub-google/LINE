@@ -33,7 +33,8 @@ export function renderStaffMenu({t,isManager,html}){
     '<label class="checklist"><input type="checkbox" id="menu-active" '+(selected?.active===false?"":"checked")+'> 開放顧客選擇</label></div></div>'+
     '<div class="staff-actionbar">'+btn(selected?"儲存修改":"新增項目","menu-save","primary")+
      (selected?btn("取消編輯","menu-edit-clear","outline"):"")+'</div>'):"");
-   const resources=staffState.staff.resourceContext?.resources||[],rules=staffState.staff.resourceContext?.service_rules||[];
+   const defaultUnitIds=new Set((serviceUnitsState.unitConfig?.units||[]).filter(u=>u.is_default).map(u=>u.id));
+   const resources=(staffState.staff.resourceContext?.resources||[]).filter(u=>!defaultUnitIds.has(u.id)),rules=staffState.staff.resourceContext?.service_rules||[];
   const services=items.filter(x=>x.kind!=="MENU");
   const firstService=services[0],firstRule=rules.find(x=>x.item_id===firstService?.id);
   html+=(serviceUnitsState.unitEnabled()?"":box("預約資源（員工／房間／設備）",
