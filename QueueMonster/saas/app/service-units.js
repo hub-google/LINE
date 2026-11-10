@@ -168,7 +168,7 @@ export function unitStaffQueuePanel(){
        '<div class="staff-record-title">'+esc(k.number)+'　'+esc(k.name)+'</div>'+
        '<div class="small">'+esc(k.unit||"")+' · '+esc(k.session||"")+'</div>'+
        staffStatusPicker("ticket",k,true)+'</article>').join("")+'</div>':
-     '<p class="muted">尚未設定今日場次，請先至企業設定建立服務單位與場次。</p>'));
+     '<p class="muted">目前沒有可操作的場次。可在下方直接新增服務單位及今日場次，或編輯現有場次並開放使用。</p>'));
 }
 
 export function initializeServiceUnits(){
