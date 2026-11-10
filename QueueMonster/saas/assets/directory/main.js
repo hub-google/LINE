@@ -6,6 +6,24 @@ const bridge=SB_URL+"/functions/v1/line-bridge?action=config";
 const sb=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"line-saas-customer-session-v2"}});
 const params=new URLSearchParams(location.search),mode=["search","queue","mine","game"].includes(params.get("mode"))?params.get("mode"):"search";
 const els={intro:document.getElementById("intro"),results:document.getElementById("results"),keyword:document.getElementById("keyword"),test:null};
+const filterDisclosure=document.getElementById("explore-filters");
+const filterViewport=window.matchMedia("(max-width: 760px)");
+const adaptFilters=()=>{if(filterDisclosure)filterDisclosure.open=!filterViewport.matches;};
+adaptFilters();
+filterViewport.addEventListener?.("change",adaptFilters);
+function updateFilterSummary(){
+ const summary=document.getElementById("filter-summary");
+ if(!summary)return;
+ const ids=["explore-category","explore-area","explore-service"];
+ const applied=ids.filter(id=>document.getElementById(id)?.value!=="全部").length+
+  (document.getElementById("explore-sort")?.value!=="popular"?1:0);
+ summary.firstChild.textContent=applied?"進階篩選（已設定 "+applied+" 項） ":"進階篩選 ";
+}
+["explore-category","explore-area","explore-service","explore-sort"].forEach(id=>{
+ document.getElementById(id)?.addEventListener("change",updateFilterSummary);
+});
+updateFilterSummary();
+
 document.getElementById("tab-"+(mode==="game"?"search":mode)).classList.add("active");
 let all=[],popular=[],searchResults=[],searchTotal=0,searchPage=1;
 let searchLoading=false,searchError="",searchRequest=0,searchTimer=null;
