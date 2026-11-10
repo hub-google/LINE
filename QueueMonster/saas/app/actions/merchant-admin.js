@@ -2,7 +2,7 @@ import {routeState} from "../state/routeState.js";
 import {staffState} from "../state/staffState.js";
 
 import {act,rpc,val} from "./../data-loading.js";
-import {merchantProfilePatch,merchantUploadLogo} from "./../merchant-brand.js";
+import {merchantLogoSaved,merchantProfilePatch,merchantUploadLogo} from "./../merchant-brand.js";
 
 export async function handleMerchantAdmin(ev,b,a,id){
 if(a==="save-service-modes"){await act(async()=>{
@@ -23,6 +23,7 @@ if(a==="save-service-modes"){await act(async()=>{
    await rpc("so_complete_merchant_onboarding",{p_slug:routeState.slug,p_name:patch.name,
      p_phone:patch.phone,p_address:patch.address,p_category:patch.directory_category});
  }
+ merchantLogoSaved("set");
  return initial?"店家資料已建立並公開搜尋":"企業設定與品牌 LOGO 已儲存";
  });return true;}
  if(a==="invite-staff"){await act(async()=>{await rpc("so_invite_staff",{p_slug:routeState.slug,p_email:val("invite-email"),p_role:val("invite-role")});return "員工邀請已儲存，請通知對方登入接受";});return true;}
