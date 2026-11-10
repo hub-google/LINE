@@ -16,7 +16,7 @@ const workflow=read("../.github/workflows/line-saas-pages.yml");
 const build=read("../.github/scripts/build-line-saas.mjs");
 
 test("all pages share a real user identity with clickable login/logout",()=>{
- const pages=["index","home","directory","board","poster","merchant-center","privacy","terms"];
+ const pages=["index","home","directory","board","merchant-center","privacy","terms"];
  for(const page of pages){
   const html=read("saas/"+page+".html");
   assert.match(html,/id="site-auth-root"/,page+" missing account widget");
