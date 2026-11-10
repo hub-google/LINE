@@ -21,7 +21,7 @@ export function merchantBrandContrast(hex){
  const channels=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255)
   .map(n=>n<=.04045?n/12.92:Math.pow((n+.055)/1.055,2.4));
  const luminance=channels[0]*.2126+channels[1]*.7152+channels[2]*.0722;
- return luminance>.30?"#22202A":"#FFFFFF";
+ return luminance>.179?"#000000":"#FFFFFF";
 }
 
 export function merchantColorControl(prefix,color){
@@ -138,7 +138,7 @@ export function merchantClearLogo(prefix){
 
 export function initializeMerchantBrand(){
 merchantBrandState.MERCHANT_CATEGORIES=["其他","餐飲","美髮","美甲／美容","醫療／診所","健康／按摩","運動","寵物","教育","生活服務"];
-merchantBrandState.MERCHANT_PALETTE=["#523B70","#7A4BBD","#147E68","#2777B4","#E47C72","#DE9C28","#243B53","#C3548C"];
+merchantBrandState.MERCHANT_PALETTE=["#523B70","#7A4BBD","#147E68","#2777B4","#E47C72","#DE9C28","#243B53","#C3548C","#FF4545","#FF6B57","#FF8A3D","#FFB020","#FFD43B","#FFF176","#B8E63B","#66D95E","#00C48C","#1DD3B0","#27D9E5","#26B8F3","#4DA3FF","#4361EE","#8A5CFF","#B56BFF","#FF5CC8","#FF78AC","#FF9EA8","#FFCFAB","#F5E06A","#A7F3D0","#91E8FF","#C4B5FD"];
 merchantBrandState.MERCHANT_LOGO_BUCKET="so-merchant-logos";
 document.addEventListener("input",event=>{
  const picker=event.target.closest?.("input[data-color-picker]");
