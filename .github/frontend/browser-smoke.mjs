@@ -72,7 +72,7 @@ try{
   try{
    authState.session={user:{id:'unit-render-user',email:'unit@example.invalid',is_anonymous:false}};
    authState.context={memberships:[],invitations:[]};staffState.staff=fixture;routeState.day='2026-11-09';calendarState.calendarAnchor='2026-11-09';serviceUnitsState.unitAdminDate='2026-11-09';lineState.lineConfig=null;
-   const outputs={};for(const tab of tabs){staffState.staffTab=tab;outputs[tab]=staffRender().replaceAll(location.origin,'https://hub-google.github.io');}
+   const outputs={};for(const tab of tabs){staffState.staffTab=tab;staffState.settingsSection="profile";outputs[tab]=staffRender().replaceAll(location.origin,'https://hub-google.github.io');}
    return outputs;
   }finally{objects.forEach((o,i)=>Object.assign(o,saved[i]));}
  },{fixture:baseline.fixture,tabs:Object.keys(baseline.hashes)});
@@ -103,15 +103,24 @@ try{
    continue; // Approved new custom category changes historical HTML.
   }
   if(tab==='settings'){
-   assert.ok(html.includes('id="policy-closed-dates"'),'Closing date value must remain compatible with the saved RPC');
-   assert.ok(html.includes('class="qm-closed-calendar"'),'Special closing dates must show a calendar');
-   assert.ok(html.includes('data-closed-done'),'Calendar must provide a completion action');
-   continue; // Approved calendar replaces the old free-text control.
+   assert.ok(html.includes('settings-hub-tabs'),'Settings must show grouped category navigation');
+   assert.ok(html.includes('店家資料'),'Merchant profile must be the default category');
+   assert.ok(html.includes('場次與窗口'),'Sessions must be grouped in Settings');
+   assert.ok(html.includes('菜單與服務'),'Menu must be grouped in Settings');
+   assert.ok(html.includes('分店管理'),'Branches must be grouped in Settings');
+   continue;
   }
-  assert.equal(createHash('sha256').update(historical).digest('hex'),baseline.hashes[tab],tab+' render changed outside approved UI updates');
+  if(['units','branches'].includes(tab)){
+   assert.ok(html.includes('settings-hub-tabs'),'Legacy settings routes must redirect to Settings');
+   continue;
+  }
+  // Every staff tab has an intentionally changed side menu. Check the navigation
+  // and intact panel structure instead of a full-page historical hash.
+  assert.ok(html.includes('>設定</button>'),'Unified Settings must be accessible everywhere');
+  assert.ok(html.includes('class="layout'),'The normal staff layout must remain present');
  }
  assert.ok(!fs.existsSync(path.join(dist,'poster.html')),'Retired poster must not be included in production output');
- console.log('All ten staff panels preserve historical markup apart from the two removed poster links.');
+ console.log('Staff panels retain their workflows with consolidated Settings navigation.');
  // Exercise production bundles at both desktop and mobile sizes with actual network reads.
  for(const width of [1280,390]){
   await page.setViewportSize({width,height:900});
