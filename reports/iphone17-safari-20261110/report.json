@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-10T07:09:35.851Z",
+  "date": "2026-11-10T07:22:23.815Z",
   "target": "https://hub-google.github.io/LINE/booking/",
   "viewport": {
     "width": 402,
@@ -27,10 +27,6 @@
       "errors": [],
       "failedRequests": [
         {
-          "url": "https://hub-google.github.io/npm/@supabase/auth-js@2.119.0/+esm",
-          "error": "Load request cancelled"
-        },
-        {
           "url": "https://hub-google.github.io/npm/@supabase/realtime-js@2.119.0/+esm",
           "error": "Load request cancelled"
         },
@@ -39,15 +35,11 @@
           "error": "Load request cancelled"
         },
         {
-          "url": "https://hub-google.github.io/npm/@supabase/postgrest-js@2.119.0/+esm",
+          "url": "https://hub-google.github.io/npm/@supabase/auth-js@2.119.0/+esm",
           "error": "Load request cancelled"
         },
         {
           "url": "https://hub-google.github.io/npm/@supabase/storage-js@2.119.0/+esm",
-          "error": "Load request cancelled"
-        },
-        {
-          "url": "https://hub-google.github.io/npm/@supabase/phoenix@0.4.5/+esm",
           "error": "Load request cancelled"
         },
         {
@@ -56,6 +48,14 @@
         },
         {
           "url": "https://hub-google.github.io/npm/iceberg-js@0.8.1/+esm",
+          "error": "Load request cancelled"
+        },
+        {
+          "url": "https://hub-google.github.io/npm/@supabase/postgrest-js@2.119.0/+esm",
+          "error": "Load request cancelled"
+        },
+        {
+          "url": "https://hub-google.github.io/npm/@supabase/phoenix@0.4.5/+esm",
           "error": "Load request cancelled"
         }
       ],
@@ -67,17 +67,17 @@
         "documentHeight": 7939,
         "rects": {
           ".mobile-menu": {
-            "top": 12,
-            "bottom": 53,
-            "left": 283,
+            "top": 13,
+            "bottom": 52,
+            "left": 331,
             "right": 390,
             "visible": true
           },
           ".menu-panel": {
             "top": 97,
             "bottom": 726,
-            "left": 26,
-            "right": 366,
+            "left": 50,
+            "right": 390,
             "visible": true
           },
           ".site-head": {
@@ -100,15 +100,15 @@
             "name": "選單",
             "top": 13,
             "height": 39,
-            "left": 307,
-            "right": 366
+            "left": 331,
+            "right": 390
           },
           {
             "name": "關閉主選單",
             "top": 108,
             "height": 37,
-            "left": 270,
-            "right": 354
+            "left": 297,
+            "right": 378
           }
         ],
         "body": "跳到主要內容 排隊怪獸 使用 LINE 登入 選單 為台灣各類型門市打造 排隊交給怪獸， 時間留給自己！ 從官方帳號或店家連結進入，就能預約、現場取號、查看叫號進度。店家可依需求只開放預約、只開放取號，或兩種都使用。 適用各種服務場景 診所 餐廳 髮廊 美容美甲 寵物服務 課程活動 我是顧客・找店家 › 遊戲模式逛店家 › 安裝到桌面 ✓ 手機與電腦同一網站 · ✓ 店家資料各自獨立管理 線上預約 先選時間，安心到店 診所門診 預約日期 11 月 12 日（四） 選擇可預約時段 10:00 11:30 14:00 確認預約 也適合餐廳、髮廊、美容、課程 抽號與叫號 抽號候位，隨時看進度 餐廳現場候位 目前叫號 A012 我的號碼 A019 前方等候 6 組 查看叫號進度 適合餐廳、小吃店、診所及現場服務窗口 平台特色 小店好上手， 多店也能各自管理。 不強迫每位顧客另外註冊會員，也不把店家和顧客塞在同一種後台。依不同身分，直接找到要做的事。 01 顧客從 LINE 開始 使用支援的 LINE 入口完成身分授權，不必重新建立顧客帳號。預約、號碼牌與最新狀態可以回來查看。 02 預約、叫號分開管理 預約使用日期與時段，取號使用獨立隊列；預約報到不會自動產生號碼牌，避免工作流程互相干擾。 03 店家有自己的管理入口 查看待處理預約、控制叫號、調整服務設定，並製作專屬的二維碼立牌和電視叫號",
@@ -141,7 +141,7 @@
         {
           "name": "Search data rendered",
           "ok": true,
-          "detail": " 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 現場取號 公開叫號看板 地圖位置 ▤ #4 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 "
+          "detail": "2 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款"
         },
         {
           "name": "Filters initially collapsed",
@@ -153,14 +153,14 @@
         },
         {
           "name": "Category keyword search returns a store",
-          "ok": true,
-          "detail": "▤ 澄心健康服務中心（測試門市） 醫療／診所 線上預約 平台 LINE 服務 預約服務時間，免現場久候 立即預約 "
+          "ok": false,
+          "detail": "找不到符合條件的店家 試試其他店名、地點或篩選條件。 "
         }
       ],
       "errors": [],
       "failedRequests": [
         {
-          "url": "https://hub-google.github.io/npm/@supabase/functions-js@2.119.0/+esm",
+          "url": "https://hub-google.github.io/npm/@supabase/postgrest-js@2.119.0/+esm",
           "error": "Load request cancelled"
         },
         {
@@ -168,7 +168,7 @@
           "error": "Load request cancelled"
         },
         {
-          "url": "https://hub-google.github.io/npm/@supabase/postgrest-js@2.119.0/+esm",
+          "url": "https://hub-google.github.io/npm/@supabase/functions-js@2.119.0/+esm",
           "error": "Load request cancelled"
         },
         {
@@ -197,7 +197,7 @@
         "url": "https://hub-google.github.io/LINE/booking/directory.html?mode=search",
         "width": 402,
         "documentWidth": 402,
-        "documentHeight": 6098,
+        "documentHeight": 1554,
         "rects": {
           "#keyword": {
             "top": 291,
@@ -208,7 +208,7 @@
           },
           "#results": {
             "top": 516,
-            "bottom": 5936,
+            "bottom": 1392,
             "left": 28,
             "right": 374,
             "visible": true
@@ -237,12 +237,12 @@
             "right": 125
           }
         ],
-        "body": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 找店家、查看叫號更簡單 搜尋店名或地點，直接查看可使用的服務。公開叫號看板無須登入；預約及取號才需 LINE 身分驗證。 熱門店家排行 近 30 天預約＋取號 · 前 12 名 ▤ #1 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 1 · 取號 1 簡介 地點：臺北市中正區北平西路3號 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #2 青禾風格美髮（測試門市） 美髮 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 1 · 取號 1 預約美髮服務、現場取號及叫號 地點：台北市示範地址（測試） 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #3 專屬測試門市 其他 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 1 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 現場取號 公開叫號看板 地圖位置 ▤ #4 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 ",
+        "body": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 找店家、查看叫號更簡單 搜尋店名或地點，直接查看可使用的服務。公開叫號看板無須登入；預約及取號才需 LINE 身分驗證。 熱門店家排行 近 30 天預約＋取號 · 前 2 名 ▤ #1 測試1 餐飲 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 1 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 現場取號 公開叫號看板 地圖位置 ▤ #2 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
         "loginVisible": true,
         "hasBookingForm": false,
         "hasQueueForm": false
       },
-      "categoryResult": "▤ 澄心健康服務中心（測試門市） 醫療／診所 線上預約 平台 LINE 服務 預約服務時間，免現場久候 立即預約 "
+      "categoryResult": "找不到符合條件的店家 試試其他店名、地點或篩選條件。 "
     },
     {
       "engine": "webkit",
@@ -262,7 +262,7 @@
         "url": "https://hub-google.github.io/LINE/booking/directory.html?mode=queue",
         "width": 402,
         "documentWidth": 402,
-        "documentHeight": 5763,
+        "documentHeight": 1536,
         "rects": {
           "#keyword": {
             "top": 291,
@@ -273,7 +273,7 @@
           },
           "#results": {
             "top": 498,
-            "bottom": 5601,
+            "bottom": 1374,
             "left": 28,
             "right": 374,
             "visible": true
@@ -302,7 +302,7 @@
             "right": 125
           }
         ],
-        "body": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 選擇提供現場取號的店家 公開看板可直接查看；實際取號時才需要 LINE 驗證。 熱門店家排行 近 30 天預約＋取號 · 前 11 名 ▤ #1 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 1 · 取號 1 簡介 地點：臺北市中正區北平西路3號 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #2 青禾風格美髮（測試門市） 美髮 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 1 · 取號 1 預約美髮服務、現場取號及叫號 地點：台北市示範地址（測試） 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #3 專屬測試門市 其他 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 1 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 現場取號 公開叫號看板 地圖位置 ▤ #4 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #5",
+        "body": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 選擇提供現場取號的店家 公開看板可直接查看；實際取號時才需要 LINE 驗證。 熱門店家排行 近 30 天預約＋取號 · 前 2 名 ▤ #1 測試1 餐飲 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 1 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 現場取號 公開叫號看板 地圖位置 ▤ #2 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
         "loginVisible": true,
         "hasBookingForm": false,
         "hasQueueForm": false
@@ -319,7 +319,12 @@
           "detail": "402 / 402"
         },
         {
-          "name": "Guest state not confused with empty history",
+          "name": "Personal records never show the popular-stores loading placeholder",
+          "ok": true,
+          "detail": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 搜尋店家名稱或地點 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 請先登入 LINE 請先使用 LINE 登入 登入後才能查詢自己的預約和號碼；未登入不代表沒有紀錄。 使用 LINE 登入後查看 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款"
+        },
+        {
+          "name": "Guest records resolve to login or explicit network error",
           "ok": true,
           "detail": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 搜尋店家名稱或地點 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 請先登入 LINE 請先使用 LINE 登入 登入後才能查詢自己的預約和號碼；未登入不代表沒有紀錄。 使用 LINE 登入後查看 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款"
         }
@@ -372,17 +377,17 @@
           },
           {
             "name": "隱私權說明",
-            "top": 663,
-            "height": 33,
-            "left": 151,
-            "right": 386
+            "top": 662,
+            "height": 35,
+            "left": 152,
+            "right": 384
           },
           {
             "name": "服務條款",
-            "top": 682,
-            "height": 14,
-            "left": 203,
-            "right": 251
+            "top": 681,
+            "height": 16,
+            "left": 202,
+            "right": 250
           }
         ],
         "body": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 搜尋店家名稱或地點 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 請先登入 LINE 請先使用 LINE 登入 登入後才能查詢自己的預約和號碼；未登入不代表沒有紀錄。 使用 LINE 登入後查看 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
@@ -450,20 +455,20 @@
           },
           {
             "name": "隱私權說明",
-            "top": 826,
-            "height": 33,
-            "left": 151,
-            "right": 386
+            "top": 825,
+            "height": 35,
+            "left": 152,
+            "right": 384
           },
           {
             "name": "服務條款",
-            "top": 845,
-            "height": 14,
-            "left": 203,
-            "right": 251
+            "top": 844,
+            "height": 16,
+            "left": 202,
+            "right": 250
           }
         ],
-        "body": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 遊戲逛店 走進商圈，逛逛店家 先選商圈，再點店面。電腦可使用方向鍵，手機可使用下方控制鈕。 分類 選擇想逛的商圈 · 12 家公開店家 台北市 2 家 線上商圈 10 家 遊戲地圖是探索介面，不代表實際地理位置。僅列出已公開的店家；公開商圈另行標示。 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
+        "body": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 遊戲逛店 走進商圈，逛逛店家 先選商圈，再點店面。電腦可使用方向鍵，手機可使用下方控制鈕。 分類 選擇想逛的商圈 · 2 家公開店家 線上商圈 2 家 遊戲地圖是探索介面，不代表實際地理位置。僅列出已公開的店家；公開商圈另行標示。 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
         "loginVisible": true,
         "hasBookingForm": false,
         "hasQueueForm": false
@@ -531,17 +536,17 @@
           },
           {
             "name": "隱私權說明",
-            "top": 778,
-            "height": 14,
+            "top": 777,
+            "height": 16,
             "left": 183,
             "right": 243
           },
           {
             "name": "使用條款",
-            "top": 778,
-            "height": 14,
-            "left": 263,
-            "right": 311
+            "top": 777,
+            "height": 16,
+            "left": 262,
+            "right": 310
           }
         ],
         "body": "排隊怪獸 搜尋店家 預約與取號 使用 LINE 登入 門市公開即時叫號 查看現在叫到幾號、後面等候順序，不必登入、不必綁定 LINE。 公開即時叫號看板 LINE 身分授權 為避免機器人或惡意假預約，預約前需綁定 LINE 身分。預約姓名及聯絡電話另行填寫，供現場核對與店家聯繫。 目前指定門市：greenfield-salon 請使用 LINE 登入後繼續預約或取號。 使用 LINE 登入 使用 LINE 登入（手機／電腦） 排隊怪獸服務 ・ 隱私權說明 ・ 使用條款",
@@ -612,17 +617,17 @@
           },
           {
             "name": "隱私權說明",
-            "top": 778,
-            "height": 14,
+            "top": 777,
+            "height": 16,
             "left": 183,
             "right": 243
           },
           {
             "name": "使用條款",
-            "top": 778,
-            "height": 14,
-            "left": 263,
-            "right": 311
+            "top": 777,
+            "height": 16,
+            "left": 262,
+            "right": 310
           }
         ],
         "body": "排隊怪獸 搜尋店家 預約與取號 使用 LINE 登入 門市公開即時叫號 查看現在叫到幾號、後面等候順序，不必登入、不必綁定 LINE。 公開即時叫號看板 LINE 身分授權 為避免機器人或惡意假預約，預約前需綁定 LINE 身分。預約姓名及聯絡電話另行填寫，供現場核對與店家聯繫。 目前指定門市：greenfield-salon 請使用 LINE 登入後繼續預約或取號。 使用 LINE 登入 使用 LINE 登入（手機／電腦） 排隊怪獸服務 ・ 隱私權說明 ・ 使用條款",
@@ -657,7 +662,7 @@
             "top": 15,
             "height": 33,
             "left": 16,
-            "right": 196
+            "right": 192
           }
         ],
         "body": "排隊怪獸 · 店家專區 操作說明 商家管理專區 讓顧客少排隊， 讓店家更好管理。 一個帳號就能開始建立專屬的預約、現場取號與叫號服務。先註冊，再自行填寫店家資料；資料完成前不會公開在搜尋名單。 1 註冊店家帳號並驗證電子信箱 2 登入後填寫自己的店名、地址及營運設定 3 完成資料後正式開放搜尋及預約取號 登入 註冊 店家登入 使用註冊信箱與密碼登入商家管理後台。 電子信箱（登入帳號） 密碼 登入店家後台寄送電子郵件登入連結忘記密碼？寄送重設連結 還沒有帳號？點選上方「註冊」。 ",
@@ -692,7 +697,7 @@
             "top": 15,
             "height": 33,
             "left": 16,
-            "right": 196
+            "right": 192
           }
         ],
         "body": "排隊怪獸 · 店家專區 操作說明 商家管理專區 讓顧客少排隊， 讓店家更好管理。 一個帳號就能開始建立專屬的預約、現場取號與叫號服務。先註冊，再自行填寫店家資料；資料完成前不會公開在搜尋名單。 1 註冊店家帳號並驗證電子信箱 2 登入後填寫自己的店名、地址及營運設定 3 完成資料後正式開放搜尋及預約取號 登入 註冊 註冊店家帳號 註冊後門市資料保持空白，由你自行填寫。 電子信箱（登入帳號） 密碼（至少 8 字元） 確認密碼 建立店家帳號 系統會依註冊流程確認您的身分。請妥善保管登入密碼，不要與他人分享。 ",
@@ -718,12 +723,7 @@
         }
       ],
       "errors": [],
-      "failedRequests": [
-        {
-          "url": "https://hub-google.github.io/LINE/booking/release.json?_t=1794294628223",
-          "error": "Load request cancelled"
-        }
-      ],
+      "failedRequests": [],
       "metrics": {
         "title": "排隊怪獸｜顧客預約、取號與門市管理",
         "url": "https://hub-google.github.io/LINE/booking/?view=staff&merchant=greenfield-salon",
@@ -771,7 +771,12 @@
         }
       ],
       "errors": [],
-      "failedRequests": [],
+      "failedRequests": [
+        {
+          "url": "https://hub-google.github.io/LINE/booking/release.json?_t=1794295396347",
+          "error": "Load request cancelled"
+        }
+      ],
       "metrics": {
         "title": "排隊怪獸｜顧客預約、取號與門市管理",
         "url": "https://hub-google.github.io/LINE/booking/?view=platform",
@@ -804,17 +809,17 @@
           },
           {
             "name": "隱私權說明",
-            "top": 393,
-            "height": 14,
+            "top": 392,
+            "height": 16,
             "left": 183,
             "right": 243
           },
           {
             "name": "使用條款",
-            "top": 393,
-            "height": 14,
-            "left": 263,
-            "right": 311
+            "top": 392,
+            "height": 16,
+            "left": 262,
+            "right": 310
           }
         ],
         "body": "排隊怪獸 總部管理 總部登入 總部管理員登入 請從總部專用入口登入，完成授權後才能使用總部管理功能。 前往總部登入 排隊怪獸服務 ・ 隱私權說明 ・ 使用條款",
@@ -839,13 +844,18 @@
         }
       ],
       "errors": [],
-      "failedRequests": [],
+      "failedRequests": [
+        {
+          "url": "https://hub-google.github.io/LINE/booking/release.json?_t=1794295399011",
+          "error": "Load request cancelled"
+        }
+      ],
       "metrics": {
         "title": "排隊怪獸｜商家操作指南",
         "url": "https://hub-google.github.io/LINE/booking/merchant-center.html",
         "width": 402,
         "documentWidth": 402,
-        "documentHeight": 12018,
+        "documentHeight": 11989,
         "rects": {
           "#mobile-guide-nav": {
             "top": 527,
@@ -890,7 +900,7 @@
         {
           "name": "Board renders without identity",
           "ok": true,
-          "detail": "▤ 青禾風格美髮（測試門市） 使用 LINE 登入 15:10 目前叫號 — 接下來等候排序 1 叫號順序將依現場狀況即時更新 重新整理 全螢幕 最後成功同步：15:10:38；資料每 12 秒自動核對，網路斷線會提示。"
+          "detail": "▤ 無法讀取門市 使用 LINE 登入 15:23 目前叫號 — 接下來等候排序 資料更新中 叫號資料暫時無法取得 叫號順序將依現場狀況即時更新 重新整理 全螢幕 請確認網路、門市網址及公開叫號服務是否開放。請勿以顯示的空白數字判斷叫號。"
         }
       ],
       "errors": [],
@@ -900,10 +910,10 @@
         "url": "https://hub-google.github.io/LINE/booking/board.html?merchant=greenfield-salon",
         "width": 402,
         "documentWidth": 402,
-        "documentHeight": 953,
+        "documentHeight": 955,
         "rects": {},
         "touchUnder40": [],
-        "body": "▤ 青禾風格美髮（測試門市） 使用 LINE 登入 15:10 目前叫號 — 接下來等候排序 1 叫號順序將依現場狀況即時更新 重新整理 全螢幕 最後成功同步：15:10:38；資料每 12 秒自動核對，網路斷線會提示。",
+        "body": "▤ 無法讀取門市 使用 LINE 登入 15:23 目前叫號 — 接下來等候排序 資料更新中 叫號資料暫時無法取得 叫號順序將依現場狀況即時更新 重新整理 全螢幕 請確認網路、門市網址及公開叫號服務是否開放。請勿以顯示的空白數字判斷叫號。",
         "loginVisible": true,
         "hasBookingForm": false,
         "hasQueueForm": false
@@ -932,7 +942,7 @@
         "url": "https://hub-google.github.io/LINE/booking/home.html",
         "width": 402,
         "documentWidth": 402,
-        "documentHeight": 7983,
+        "documentHeight": 7985,
         "rects": {
           ".mobile-menu": {
             "top": 13,
@@ -975,7 +985,7 @@
             "name": "關閉主選單",
             "top": 108,
             "height": 37,
-            "left": 294,
+            "left": 297,
             "right": 378
           }
         ],
@@ -1009,7 +1019,7 @@
         {
           "name": "Search data rendered",
           "ok": true,
-          "detail": " 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 現場取號 公開叫號看板 地圖位置 ▤ #4 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 "
+          "detail": "2 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款"
         },
         {
           "name": "Filters initially collapsed",
@@ -1021,8 +1031,8 @@
         },
         {
           "name": "Category keyword search returns a store",
-          "ok": true,
-          "detail": "▤ 澄心健康服務中心（測試門市） 醫療／診所 線上預約 平台 LINE 服務 預約服務時間，免現場久候 立即預約"
+          "ok": false,
+          "detail": "找不到符合條件的店家 試試其他店名、地點或篩選條件。"
         }
       ],
       "errors": [],
@@ -1032,7 +1042,7 @@
         "url": "https://hub-google.github.io/LINE/booking/directory.html?mode=search",
         "width": 402,
         "documentWidth": 402,
-        "documentHeight": 6157,
+        "documentHeight": 1568,
         "rects": {
           "#keyword": {
             "top": 292,
@@ -1043,7 +1053,7 @@
           },
           "#results": {
             "top": 519,
-            "bottom": 5993,
+            "bottom": 1404,
             "left": 28,
             "right": 374,
             "visible": true
@@ -1072,12 +1082,12 @@
             "right": 125
           }
         ],
-        "body": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 找店家、查看叫號更簡單 搜尋店名或地點，直接查看可使用的服務。公開叫號看板無須登入；預約及取號才需 LINE 身分驗證。 熱門店家排行 近 30 天預約＋取號 · 前 12 名 ▤ #1 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 1 · 取號 1 簡介 地點：臺北市中正區北平西路3號 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #2 青禾風格美髮（測試門市） 美髮 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 1 · 取號 1 預約美髮服務、現場取號及叫號 地點：台北市示範地址（測試） 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #3 專屬測試門市 其他 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 1 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 現場取號 公開叫號看板 地圖位置 ▤ #4 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 ",
+        "body": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 找店家、查看叫號更簡單 搜尋店名或地點，直接查看可使用的服務。公開叫號看板無須登入；預約及取號才需 LINE 身分驗證。 熱門店家排行 近 30 天預約＋取號 · 前 2 名 ▤ #1 測試1 餐飲 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 1 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 現場取號 公開叫號看板 地圖位置 ▤ #2 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
         "loginVisible": true,
         "hasBookingForm": false,
         "hasQueueForm": false
       },
-      "categoryResult": "▤ 澄心健康服務中心（測試門市） 醫療／診所 線上預約 平台 LINE 服務 預約服務時間，免現場久候 立即預約"
+      "categoryResult": "找不到符合條件的店家 試試其他店名、地點或篩選條件。"
     },
     {
       "engine": "chromium",
@@ -1097,7 +1107,7 @@
         "url": "https://hub-google.github.io/LINE/booking/directory.html?mode=queue",
         "width": 402,
         "documentWidth": 402,
-        "documentHeight": 5819,
+        "documentHeight": 1549,
         "rects": {
           "#keyword": {
             "top": 292,
@@ -1108,7 +1118,7 @@
           },
           "#results": {
             "top": 500,
-            "bottom": 5655,
+            "bottom": 1385,
             "left": 28,
             "right": 374,
             "visible": true
@@ -1137,7 +1147,7 @@
             "right": 125
           }
         ],
-        "body": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 選擇提供現場取號的店家 公開看板可直接查看；實際取號時才需要 LINE 驗證。 熱門店家排行 近 30 天預約＋取號 · 前 11 名 ▤ #1 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 1 · 取號 1 簡介 地點：臺北市中正區北平西路3號 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #2 青禾風格美髮（測試門市） 美髮 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 1 · 取號 1 預約美髮服務、現場取號及叫號 地點：台北市示範地址（測試） 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #3 專屬測試門市 其他 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 1 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 現場取號 公開叫號看板 地圖位置 ▤ #4 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #5",
+        "body": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 選擇提供現場取號的店家 公開看板可直接查看；實際取號時才需要 LINE 驗證。 熱門店家排行 近 30 天預約＋取號 · 前 2 名 ▤ #1 測試1 餐飲 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 1 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 現場取號 公開叫號看板 地圖位置 ▤ #2 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
         "loginVisible": true,
         "hasBookingForm": false,
         "hasQueueForm": false
@@ -1154,9 +1164,14 @@
           "detail": "402 / 402"
         },
         {
-          "name": "Guest state not confused with empty history",
-          "ok": false,
-          "detail": "排隊怪獸 正在確認登入狀態 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 熱門店家排行 載入中 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款"
+          "name": "Personal records never show the popular-stores loading placeholder",
+          "ok": true,
+          "detail": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 搜尋店家名稱或地點 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 請先登入 LINE 請先使用 LINE 登入 登入後才能查詢自己的預約和號碼；未登入不代表沒有紀錄。 使用 LINE 登入後查看 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款"
+        },
+        {
+          "name": "Guest records resolve to login or explicit network error",
+          "ok": true,
+          "detail": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 搜尋店家名稱或地點 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 請先登入 LINE 請先使用 LINE 登入 登入後才能查詢自己的預約和號碼；未登入不代表沒有紀錄。 使用 LINE 登入後查看 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款"
         }
       ],
       "errors": [],
@@ -1169,59 +1184,59 @@
         "documentHeight": 874,
         "rects": {
           "#keyword": {
-            "top": 282,
-            "bottom": 331,
+            "top": 235,
+            "bottom": 284,
             "left": 28,
             "right": 374,
             "visible": true
           },
           "#results": {
-            "top": 490,
-            "bottom": 490,
+            "top": 383,
+            "bottom": 570,
             "left": 28,
             "right": 374,
-            "visible": false
+            "visible": true
           },
           "#results-heading": {
-            "top": 452,
-            "bottom": 480,
+            "top": 345,
+            "bottom": 373,
             "left": 28,
-            "right": 127,
+            "right": 94,
             "visible": true
           },
           "#filter-summary": {
-            "top": 342,
-            "bottom": 386,
-            "left": 29,
-            "right": 373,
-            "visible": true
+            "top": 0,
+            "bottom": 0,
+            "left": 0,
+            "right": 0,
+            "visible": false
           }
         },
         "touchUnder40": [
           {
             "name": "排隊怪獸",
-            "top": 10,
+            "top": 15,
             "height": 34,
             "left": 14,
             "right": 125
           },
           {
             "name": "隱私權說明",
-            "top": 586,
-            "height": 34,
-            "left": 151,
-            "right": 386
+            "top": 665,
+            "height": 36,
+            "left": 152,
+            "right": 384
           },
           {
             "name": "服務條款",
-            "top": 606,
-            "height": 14,
-            "left": 203,
-            "right": 251
+            "top": 685,
+            "height": 16,
+            "left": 202,
+            "right": 250
           }
         ],
-        "body": "排隊怪獸 正在確認登入狀態 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 熱門店家排行 載入中 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
-        "loginVisible": false,
+        "body": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 搜尋店家名稱或地點 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 請先登入 LINE 請先使用 LINE 登入 登入後才能查詢自己的預約和號碼；未登入不代表沒有紀錄。 使用 LINE 登入後查看 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
+        "loginVisible": true,
         "hasBookingForm": false,
         "hasQueueForm": false
       }
@@ -1285,20 +1300,20 @@
           },
           {
             "name": "隱私權說明",
-            "top": 824,
-            "height": 34,
-            "left": 151,
-            "right": 386
+            "top": 823,
+            "height": 36,
+            "left": 152,
+            "right": 384
           },
           {
             "name": "服務條款",
-            "top": 844,
-            "height": 14,
-            "left": 203,
-            "right": 251
+            "top": 843,
+            "height": 16,
+            "left": 202,
+            "right": 250
           }
         ],
-        "body": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 遊戲逛店 走進商圈，逛逛店家 先選商圈，再點店面。電腦可使用方向鍵，手機可使用下方控制鈕。 分類 全部類別 其他 醫療／診所 美髮 選擇想逛的商圈 · 12 家公開店家 台北市 2 家 線上商圈 10 家 遊戲地圖是探索介面，不代表實際地理位置。僅列出已公開的店家；公開商圈另行標示。 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
+        "body": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 遊戲逛店 走進商圈，逛逛店家 先選商圈，再點店面。電腦可使用方向鍵，手機可使用下方控制鈕。 分類 全部類別 其他 餐飲 選擇想逛的商圈 · 2 家公開店家 線上商圈 2 家 遊戲地圖是探索介面，不代表實際地理位置。僅列出已公開的店家；公開商圈另行標示。 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
         "loginVisible": true,
         "hasBookingForm": false,
         "hasQueueForm": false
@@ -1366,17 +1381,17 @@
           },
           {
             "name": "隱私權說明",
-            "top": 780,
-            "height": 14,
+            "top": 779,
+            "height": 16,
             "left": 183,
             "right": 243
           },
           {
             "name": "使用條款",
-            "top": 780,
-            "height": 14,
-            "left": 263,
-            "right": 311
+            "top": 779,
+            "height": 16,
+            "left": 262,
+            "right": 310
           }
         ],
         "body": "排隊怪獸 搜尋店家 預約與取號 使用 LINE 登入 門市公開即時叫號 查看現在叫到幾號、後面等候順序，不必登入、不必綁定 LINE。 公開即時叫號看板 LINE 身分授權 為避免機器人或惡意假預約，預約前需綁定 LINE 身分。預約姓名及聯絡電話另行填寫，供現場核對與店家聯繫。 目前指定門市：greenfield-salon 請使用 LINE 登入後繼續預約或取號。 使用 LINE 登入 使用 LINE 登入（手機／電腦） 排隊怪獸服務 ・ 隱私權說明 ・ 使用條款",
@@ -1447,17 +1462,17 @@
           },
           {
             "name": "隱私權說明",
-            "top": 780,
-            "height": 14,
+            "top": 779,
+            "height": 16,
             "left": 183,
             "right": 243
           },
           {
             "name": "使用條款",
-            "top": 780,
-            "height": 14,
-            "left": 263,
-            "right": 311
+            "top": 779,
+            "height": 16,
+            "left": 262,
+            "right": 310
           }
         ],
         "body": "排隊怪獸 搜尋店家 預約與取號 使用 LINE 登入 門市公開即時叫號 查看現在叫到幾號、後面等候順序，不必登入、不必綁定 LINE。 公開即時叫號看板 LINE 身分授權 為避免機器人或惡意假預約，預約前需綁定 LINE 身分。預約姓名及聯絡電話另行填寫，供現場核對與店家聯繫。 目前指定門市：greenfield-salon 請使用 LINE 登入後繼續預約或取號。 使用 LINE 登入 使用 LINE 登入（手機／電腦） 排隊怪獸服務 ・ 隱私權說明 ・ 使用條款",
@@ -1492,7 +1507,7 @@
             "top": 15,
             "height": 33,
             "left": 16,
-            "right": 195
+            "right": 192
           }
         ],
         "body": "排隊怪獸 · 店家專區 操作說明 商家管理專區 讓顧客少排隊， 讓店家更好管理。 一個帳號就能開始建立專屬的預約、現場取號與叫號服務。先註冊，再自行填寫店家資料；資料完成前不會公開在搜尋名單。 1 註冊店家帳號並驗證電子信箱 2 登入後填寫自己的店名、地址及營運設定 3 完成資料後正式開放搜尋及預約取號 登入 註冊 店家登入 使用註冊信箱與密碼登入商家管理後台。 電子信箱（登入帳號） 密碼 登入店家後台寄送電子郵件登入連結忘記密碼？寄送重設連結 還沒有帳號？點選上方「註冊」。",
@@ -1527,7 +1542,7 @@
             "top": 15,
             "height": 33,
             "left": 16,
-            "right": 195
+            "right": 192
           }
         ],
         "body": "排隊怪獸 · 店家專區 操作說明 商家管理專區 讓顧客少排隊， 讓店家更好管理。 一個帳號就能開始建立專屬的預約、現場取號與叫號服務。先註冊，再自行填寫店家資料；資料完成前不會公開在搜尋名單。 1 註冊店家帳號並驗證電子信箱 2 登入後填寫自己的店名、地址及營運設定 3 完成資料後正式開放搜尋及預約取號 登入 註冊 註冊店家帳號 註冊後門市資料保持空白，由你自行填寫。 電子信箱（登入帳號） 密碼（至少 8 字元） 確認密碼 建立店家帳號 系統會依註冊流程確認您的身分。請妥善保管登入密碼，不要與他人分享。",
@@ -1634,17 +1649,17 @@
           },
           {
             "name": "隱私權說明",
-            "top": 394,
-            "height": 14,
+            "top": 393,
+            "height": 16,
             "left": 183,
             "right": 243
           },
           {
             "name": "使用條款",
-            "top": 394,
-            "height": 14,
-            "left": 263,
-            "right": 311
+            "top": 393,
+            "height": 16,
+            "left": 262,
+            "right": 310
           }
         ],
         "body": "排隊怪獸 總部管理 總部登入 總部管理員登入 請從總部專用入口登入，完成授權後才能使用總部管理功能。 前往總部登入 排隊怪獸服務 ・ 隱私權說明 ・ 使用條款",
@@ -1675,7 +1690,7 @@
         "url": "https://hub-google.github.io/LINE/booking/merchant-center.html",
         "width": 402,
         "documentWidth": 402,
-        "documentHeight": 12132,
+        "documentHeight": 12086,
         "rects": {
           "#mobile-guide-nav": {
             "top": 531,
@@ -1713,7 +1728,7 @@
         {
           "name": "Board renders without identity",
           "ok": true,
-          "detail": "▤ 青禾風格美髮（測試門市） 使用 LINE 登入 15:11 目前叫號 — 接下來等候排序 1 叫號順序將依現場狀況即時更新 重新整理 全螢幕 最後成功同步：15:11:39；資料每 12 秒自動核對，網路斷線會提示。"
+          "detail": "▤ 無法讀取門市 使用 LINE 登入 15:24 目前叫號 — 接下來等候排序 資料更新中 叫號資料暫時無法取得 叫號順序將依現場狀況即時更新 重新整理 全螢幕 請確認網路、門市網址及公開叫號服務是否開放。請勿以顯示的空白數字判斷叫號。"
         }
       ],
       "errors": [],
@@ -1723,10 +1738,10 @@
         "url": "https://hub-google.github.io/LINE/booking/board.html?merchant=greenfield-salon",
         "width": 402,
         "documentWidth": 402,
-        "documentHeight": 953,
+        "documentHeight": 955,
         "rects": {},
         "touchUnder40": [],
-        "body": "▤ 青禾風格美髮（測試門市） 使用 LINE 登入 15:11 目前叫號 — 接下來等候排序 1 叫號順序將依現場狀況即時更新 重新整理 全螢幕 最後成功同步：15:11:39；資料每 12 秒自動核對，網路斷線會提示。",
+        "body": "▤ 無法讀取門市 使用 LINE 登入 15:24 目前叫號 — 接下來等候排序 資料更新中 叫號資料暫時無法取得 叫號順序將依現場狀況即時更新 重新整理 全螢幕 請確認網路、門市網址及公開叫號服務是否開放。請勿以顯示的空白數字判斷叫號。",
         "loginVisible": true,
         "hasBookingForm": false,
         "hasQueueForm": false
@@ -1735,11 +1750,18 @@
   ],
   "failures": [
     {
-      "engine": "chromium",
-      "scenario": "my-records-guest",
-      "name": "Guest state not confused with empty history",
+      "engine": "webkit",
+      "scenario": "directory",
+      "name": "Category keyword search returns a store",
       "ok": false,
-      "detail": "排隊怪獸 正在確認登入狀態 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 熱門店家排行 載入中 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款"
+      "detail": "找不到符合條件的店家 試試其他店名、地點或篩選條件。 "
+    },
+    {
+      "engine": "chromium",
+      "scenario": "directory",
+      "name": "Category keyword search returns a store",
+      "ok": false,
+      "detail": "找不到符合條件的店家 試試其他店名、地點或篩選條件。"
     }
   ]
 }
