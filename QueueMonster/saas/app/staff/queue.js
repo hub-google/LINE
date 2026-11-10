@@ -25,7 +25,7 @@ export function renderStaffQueue({isManager,active,waiting,passed,held,doneTicke
     btn("再叫一次","recall","outline",(!active||active.status!=="CALLED"?"disabled":"")+' data-id="'+esc(active?.id||"")+'"')+
     (sharedUiState.lastStaffChange&&sharedUiState.lastStaffChange.slug===routeState.slug?btn("還原上一步","undo-staff","secondary"):"")+
     '<a class="btn outline" href="./board.html?merchant='+encodeURIComponent(routeState.slug)+'" target="_blank" rel="noopener noreferrer">電視即時叫號看板</a>'+
-    '<a class="btn outline" href="./poster.html?merchant='+encodeURIComponent(routeState.slug)+'&type=queue" target="_blank" rel="noopener noreferrer">製作現場取號 QR 立牌</a></div>'+
+    '</div>'+
     '<p class="staff-help">叫號通知使用票券識別碼，避免跨天同號誤通知。已發出的 LINE 訊息無法撤回。</p>')+
    box("取號場次管理",
      '<p class="small">目前：<strong>'+esc(queueSessionName(staffState.staff.queue_session?.code||"MORNING"))+'</strong>。休場只暫停新的取號，先前的號碼仍可繼續叫號；切場不會重設流水號。</p>'+

@@ -77,12 +77,33 @@ try{
   }finally{objects.forEach((o,i)=>Object.assign(o,saved[i]));}
  },{fixture:baseline.fixture,tabs:Object.keys(baseline.hashes)});
  const {createHash}=await import('node:crypto');
- for(const [tab,html]of Object.entries(snapshots))assert.equal(createHash('sha256').update(html).digest('hex'),baseline.hashes[tab],tab+' render changed from pre-refactor baseline');
- console.log('All ten staff panels match pre-refactor HTML snapshots.');
+ // Preserve the historical ten-tab snapshot contract while excluding only the explicitly
+ // retired QR poster buttons from current UI. Reinsert those two old anchors for hashing.
+ const legacyPosterAnchor=(mode)=>'<a class="btn outline" href="./poster.html?merchant=greenfield-salon&type='+mode+'" target="_blank" rel="noopener noreferrer">'+(mode==='reserve'?'製作預約 QR 立牌':'製作現場取號 QR 立牌')+'</a>';
+ for(const [tab,html]of Object.entries(snapshots)){
+  assert.doesNotMatch(html,/poster\\.html/,'Retired poster link must not appear in any staff panel');
+  let historical=html;
+  if(tab==='bookings'){
+   const marker='未來預約僅可取消或恢復。</p>';
+   const start=historical.indexOf(marker);
+   assert.ok(start>=0,'booking management marker must exist');
+   const end=historical.indexOf('</div>',start);
+   assert.ok(end>=0,'booking action bar must exist');
+   historical=historical.slice(0,end)+legacyPosterAnchor('reserve')+historical.slice(end);
+  }
+  if(tab==='queue'){
+   const marker='電視即時叫號看板</a></div>';
+   assert.ok(historical.includes(marker),'TV board link must remain available');
+   historical=historical.replace(marker,'電視即時叫號看板</a>'+legacyPosterAnchor('queue')+'</div>');
+  }
+  assert.equal(createHash('sha256').update(historical).digest('hex'),baseline.hashes[tab],tab+' render changed beyond the approved poster removal');
+ }
+ assert.ok(!fs.existsSync(path.join(dist,'poster.html')),'Retired poster must not be included in production output');
+ console.log('All ten staff panels preserve historical markup apart from the two removed poster links.');
  // Exercise production bundles at both desktop and mobile sizes with actual network reads.
  for(const width of [1280,390]){
   await page.setViewportSize({width,height:900});
-  for(const name of ['home.html','directory.html?mode=search','merchant-register.html','platform-login.html','index.html?view=platform','index.html?view=staff&merchant=greenfield-salon','index.html?view=customer&merchant=greenfield-salon','board.html?merchant=greenfield-salon','poster.html?merchant=greenfield-salon']){
+  for(const name of ['home.html','directory.html?mode=search','merchant-register.html','platform-login.html','index.html?view=platform','index.html?view=staff&merchant=greenfield-salon','index.html?view=customer&merchant=greenfield-salon','board.html?merchant=greenfield-salon']){
    await page.goto(baseUrl+'/booking/'+name,{waitUntil:'networkidle',timeout:45000});
    assert.ok((await page.locator('body').innerText()).trim().length>30,name);
    if(name==='home.html'){

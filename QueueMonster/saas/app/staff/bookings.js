@@ -47,7 +47,7 @@ export function renderStaffBookings({openBookings,doneBookings,deletedBookings,i
      '預約獨立管理：報到不會產生叫號號碼。')+'未來預約僅可取消或恢復。</p>'+
     '<div class="staff-actionbar">'+
     (sharedUiState.lastStaffChange&&sharedUiState.lastStaffChange.slug===routeState.slug?btn("還原上一步","undo-staff","outline"):"")+
-    '<a class="btn outline" href="./poster.html?merchant='+encodeURIComponent(routeState.slug)+'&type=reserve" target="_blank" rel="noopener noreferrer">製作預約 QR 立牌</a></div>')+
+    '</div>')+
    box("待處理預約（"+visibleOpen.length+" / "+openBookings.length+" 筆）",visibleOpen.length?staffListPage(visibleOpen,"booking-open",card):'<p class="muted">目前沒有未結案預約。</p>')+
    box("已處理預約（最近 "+staffHistoryState.staffHistoryDays+" 天，"+visibleDone.length+" / "+doneBookings.length+" 筆）",'<p class="staff-help">包含已完成、未到、已取消。此區仍可修正狀態，資料依處理時間排序。</p>'+
     (visibleDone.length?staffListPage(visibleDone,"booking-done",card):'<p class="muted">選定範圍內還沒有已處理預約。</p>'))+

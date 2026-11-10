@@ -29,7 +29,7 @@ MERCHANT_ITEMS = [
     ("商家開通", "不用自有 OA", "store", {"type":"uri","label":"商家開通","uri":BASE+"merchant-register.html"}),
     ("管理後台", "門市營運管理", "dashboard", {"type":"uri","label":"管理後台","uri":BASE+"?view=staff"}),
     ("預約與叫號", "登入後台操作", "features", {"type":"uri","label":"預約與叫號","uri":BASE+"?view=staff"}),
-    ("QR 立牌", "取得專屬連結", "play", {"type":"uri","label":"QR 立牌","uri":CENTER+"#publish"}),
+    ("分享入口", "預約與取號分享", "play", {"type":"uri","label":"分享入口","uri":CENTER+"#publish"}),
     ("操作教學", "圖解商家流程", "guide", {"type":"uri","label":"操作教學","uri":CENTER+"#guide"}),
     ("聯絡平台", "發訊息取得協助", "support", {"type":"message","label":"聯絡平台","text":"商家客服"}),
 ]
