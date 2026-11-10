@@ -1,5 +1,12 @@
 
 (() => {
+ const menu=document.querySelector(".mobile-menu");
+ if(menu){
+   menu.querySelector(".mobile-menu-close")?.addEventListener("click",()=>{menu.open=false;menu.querySelector("summary")?.focus()});
+   menu.querySelectorAll(".menu-panel a").forEach(link=>link.addEventListener("click",()=>{menu.open=false}));
+   document.addEventListener("keydown",event=>{if(event.key==="Escape"&&menu.open){menu.open=false;menu.querySelector("summary")?.focus()}});
+   document.addEventListener("pointerdown",event=>{if(menu.open&&!menu.contains(event.target))menu.open=false});
+ }
  let promptEvent=null;
  const button=document.getElementById("install-booking-app");
  window.addEventListener("beforeinstallprompt",event=>{
