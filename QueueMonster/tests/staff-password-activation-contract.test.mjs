@@ -41,3 +41,15 @@ test("shared auth email templates are branded only for Queue Monster",()=>{
  assert.match(workflow,/SUPABASE_ACCESS_TOKEN/);
  assert.doesNotMatch(workflow,/echo \$SUPABASE_ACCESS_TOKEN/);
 });
+
+test("ready status cannot be forged by client-editable user metadata",()=>{
+ const trusted=read("supabase/migrations/20261110172000_queue_monster_trusted_staff_setup_flag.sql");
+ const browser=read("saas/assets/merchant-register/main.js");
+ const invite=read("saas/supabase/functions/staff-invite/index.ts");
+ const complete=read("saas/supabase/functions/staff-complete-setup/index.ts");
+ assert.ok(trusted.includes("raw_app_meta_data"));
+ assert.ok(trusted.includes("queue_monster_password_ready"));
+ assert.ok(browser.includes("app_metadata?.queue_monster_invited"));
+ assert.ok(invite.includes("queue_monster_invited:true"));
+ assert.ok(complete.includes("app_metadata?.queue_monster_invited"));
+});
