@@ -132,15 +132,73 @@ async function prepare(){
   note("目前登入的帳號沒有這筆待接受邀請。請確認受邀信箱是否相同；如已加入企業，可使用員工後台登入。");
  }
  if(memberships.length){
-  note("你已加入以下企業，可直接進入對應的員工後台：");
+  note("你已加入以下店家，可以個別進入後台或退出不再服務的店家。");
   for(const member of memberships){
-   addLink(member.name+"（"+(roleName[member.role]||member.role)+"）－進入後台",
-    "./?view=staff&merchant="+encodeURIComponent(member.slug),true);
+   const shop=document.createElement("section");
+   shop.className="merchant-membership";
+   const shopTitle=document.createElement("strong");
+   shopTitle.className="merchant-membership-title";
+   shopTitle.textContent=member.name||"未命名店家";
+   const roleText=document.createElement("small");
+   roleText.className="muted";
+   roleText.textContent="身分："+(roleName[member.role]||member.role);
+   const actions=document.createElement("div");
+   actions.className="merchant-membership-actions";
+   const enter=document.createElement("a");
+   enter.href="./?view=staff&merchant="+encodeURIComponent(member.slug);
+   enter.className="strong";
+   enter.textContent="進入店家後台";
+   actions.append(enter);
+   const n=Number(member.member_count||0), managers=Number(member.manager_count||0);
+   const isAdmin=["OWNER","MANAGER"].includes(member.role);
+   const canLeave=n>1&&(!isAdmin||managers>1);
+   if(canLeave){
+    const leave=document.createElement("button");
+    leave.type="button";leave.className="secondary-action";
+    leave.textContent="退出店家";
+    leave.addEventListener("click",()=>void execute(async()=>{
+     if(!window.confirm("確定退出「"+member.name+"」嗎？\\n退出後立即失去該店管理權限，但不會刪除個人帳號或其他店家的權限。"))return;
+     const result=await rpc("so_leave_tenant",{p_slug:member.slug});
+     if(!result?.left)throw Error("未能退出店家，請重新整理後再試");
+     await prepare();
+     msg("已退出「"+member.name+"」，其他店家的權限不受影響。");
+    }));
+    actions.append(leave);
+   }else{
+    const hint=document.createElement("small");
+    hint.className="muted merchant-membership-hint";
+    hint.textContent=n<=1
+      ?"你是最後一位成員，不能直接退出；請由管理者解散店家。"
+      :"你是唯一管理者，請先到員工管理指定另一位管理者，再退出店家。";
+    shop.append(hint);
+   }
+   if(isAdmin){
+    const dissolve=document.createElement("button");
+    dissolve.type="button";dissolve.className="secondary-action danger-action";
+    dissolve.textContent="解散店家";
+    dissolve.addEventListener("click",()=>void execute(async()=>{
+     const typed=window.prompt("解散「"+member.name+"」會立即停止預約及叫號服務，並移除所有員工權限；歷史紀錄會保留。\\n請輸入完整店名確認：", "");
+     if(typed===null)return;
+     if(typed!==member.name)throw Error("店名不一致，已取消解散");
+     if(!window.confirm("最後確認：確定永久解散「"+member.name+"」？這不是一般退出，解散後無法自行恢復。"))return;
+     const result=await rpc("so_dissolve_tenant",{p_slug:member.slug,p_confirm_name:typed});
+     if(!result?.dissolved)throw Error("解散店家失敗");
+     await prepare();
+     msg("已解散「"+member.name+"」，所有員工已移出，歷史紀錄保留。");
+    }));
+    actions.append(dissolve);
+   }
+   shop.prepend(shopTitle,roleText);
+   shop.append(actions);
+   workspace.append(shop);
   }
   return;
  }
  // Invited employees must never be enrolled as new merchant owners.
- if(pending.length||invited)return;
+ if(pending.length||invited||context?.previous_member){
+   if(!pending.length)note("你目前沒有加入任何店家。請由新店家的管理者重新寄送邀請。");
+   return;
+ }
  // The regular merchant signup flow still creates an empty new merchant.
  const result=await rpc("so_start_merchant");
  workspaceSlug=result.slug;
