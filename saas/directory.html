@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="f4909f10d156ae21884df8c968da5c6e72ebf21b">
-<script defer src="./version-watch.js?build=f4909f10d156ae21884df8c968da5c6e72ebf21b"></script>
+<meta name="line-saas-build" content="f2af6c0272cd7fb65c12e77cdb0897b7f9571c8a">
+<script defer src="./version-watch.js?build=f2af6c0272cd7fb65c12e77cdb0897b7f9571c8a"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>排隊怪獸｜找店家、預約與取號</title><meta name="description" content="使用排隊怪獸搜尋合作店家、預約服務、現場取號及查詢個人紀錄。">
-<link rel="stylesheet" href="./assets/directory/page-L56GXOXL.css?build=f4909f10d156ae21884df8c968da5c6e72ebf21b"><link rel="stylesheet" href="./explore-game.css"><script defer src="./explore-game.js"></script><link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=f4909f10d156ae21884df8c968da5c6e72ebf21b"><link rel="icon" type="image/svg+xml" href="./monster-mascot.svg"></head>
+<link rel="stylesheet" href="./assets/directory/page-BZ4YF3PV.css?build=f2af6c0272cd7fb65c12e77cdb0897b7f9571c8a"><link rel="stylesheet" href="./explore-game.css"><script defer src="./explore-game.js"></script><link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=f2af6c0272cd7fb65c12e77cdb0897b7f9571c8a"><link rel="icon" type="image/svg+xml" href="./monster-mascot.svg"></head>
 <body data-monster-page="directory">
 <header class="page-header">
  <div class="container">
@@ -26,10 +26,6 @@
    <a id="tab-queue" href="?mode=queue">現場取號</a>
   </nav>
   <div class="explore-view-switch" role="group" aria-label="探索模式"><button type="button" id="explore-switch-list" aria-pressed="true">清單找店家</button><button type="button" id="explore-switch-game" aria-pressed="false">遊戲逛街</button></div>
-  <div class="intro-row">
-   <div id="intro" class="intro-copy" role="status"><strong>正在載入店家</strong><p>資料更新中，請稍後。</p></div>
-   <span class="public-note">公開看板</span>
-  </div>
   <div id="explore-list" class="explore-list">
   <div class="search-wrap">
    <label for="keyword">搜尋店家名稱或地點</label>
@@ -38,14 +34,21 @@
     <input id="keyword" class="search" type="search" placeholder="例如：餐廳名稱、地區、門市" aria-label="輸入店家名稱或地點" autocomplete="off">
    </div>
   </div>
-  <div id="explore-filters" class="explore-filter-row" aria-label="搜尋篩選">
+  <details id="explore-filters" class="filter-details" aria-label="搜尋篩選" open>
+    <summary class="filter-summary" id="filter-summary">進階篩選 <span class="filter-chevron" aria-hidden="true"></span></summary>
+    <div class="explore-filter-row" role="group" aria-label="篩選條件">
     <label>店家類別<select id="explore-category"><option value="全部">全部類別</option></select></label>
     <label>地區<select id="explore-area"><option value="全部">所有地區</option></select></label>
     <label>服務類型<select id="explore-service">
       <option value="全部">全部服務</option><option value="預約">提供預約</option><option value="取號">提供取號</option><option value="看板">提供叫號看板</option>
     </select></label>
     <label>排序<select id="explore-sort"><option value="popular">熱門排行</option><option value="name">店家名稱</option><option value="category">依店家分類</option></select></label>
-  </div>
+    </div>
+   </details>
+   <div class="intro-row">
+    <div id="intro" class="intro-copy" role="status"><strong>正在載入店家</strong><p>資料更新中，請稍後。</p></div>
+    <span class="public-note">公開看板</span>
+   </div>
   <div class="results-header"><h2 id="results-heading">熱門店家排行</h2><span id="result-count" class="result-count" aria-live="polite">載入中</span></div>
   <div class="merchant-grid" id="results" aria-live="polite"></div>
   <div id="result-pages" class="result-pages hidden" aria-label="搜尋結果分頁">
@@ -84,4 +87,4 @@
  </section>
 </main>
 <footer class="footer"><div class="container">預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。　<a href="privacy.html">隱私權說明</a>　·　<a href="terms.html">服務條款</a></div></footer>
-<script type="module" src="./assets/directory/main-75PQEDXS.js?build=f4909f10d156ae21884df8c968da5c6e72ebf21b"></script></body></html>
+<script type="module" src="./assets/directory/main-7WA3Z6LB.js?build=f2af6c0272cd7fb65c12e77cdb0897b7f9571c8a"></script></body></html>
