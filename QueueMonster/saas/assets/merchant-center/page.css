@@ -185,7 +185,7 @@ body[data-monster-page="merchant-center"] .section-tip a{color:#542A77}
 .qm-preview .qm-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
 .qm-preview .qm-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-start;margin-top:12px}
 .qm-preview .qm-help{color:#785F84;font-size:11px}
-.qm-preview .qm-logo{width:33px;height:33px;flex:none;border:2px solid #DBB8EE;border-radius:12px;background:#EDD6FB url("../../monster-mascot.svg") center/95% no-repeat;display:inline-block}
+.qm-preview .qm-logo{width:33px;height:33px;flex:none;border:2px solid #DBB8EE;border-radius:12px;background:#EDD6FB center/95% no-repeat;display:inline-block}
 
 /* Signup preview uses the actual merchant-register form's tab, field, and submit patterns. */
 .qm-register{background:#faf8fd;padding:15px}
