@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="line-saas-build" content="__LINE_SAAS_BUILD__">
 <script defer src="./version-watch.js?build=__LINE_SAAS_BUILD__"></script>
-<meta name="description" content="排隊怪獸店家操作指南：從申請開通、LINE 官方帳號模式、預約與取號設定，到店員叫號、顧客通知及異常處理，搭配畫面逐步教學。">
+<meta name="description" content="排隊怪獸店家操作指南：從註冊店家、LINE 官方帳號模式、預約與取號設定，到店員叫號、顧客通知及異常處理，搭配畫面逐步教學。">
 <title>排隊怪獸｜商家操作指南</title>
 <link rel="stylesheet" href="./assets/merchant-center/page.css?build=__LINE_SAAS_BUILD__">
 <link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=__LINE_SAAS_BUILD__"><link rel="icon" type="image/svg+xml" href="./monster-mascot.svg"></head>
@@ -15,7 +15,7 @@
     <a class="brand" href="./merchant-register.html?mode=login"><span class="brand-icon" aria-hidden="true"></span><span>排隊怪獸<small>商家操作指南</small></span></a>
     <div class="site-auth-slot" id="site-auth-root" aria-label="使用者登入狀態"><a class="site-auth-button site-auth-login" href="./merchant-register.html?mode=login">店家登入</a></div><nav class="top-links" aria-label="網站連結">
       <a class="top-link" href="./merchant-register.html?mode=login">店家登入</a>
-      <a class="top-link" href="./merchant-register.html">申請開通</a>
+      <a class="top-link" href="./merchant-register.html">註冊店家</a>
       <a class="top-link primary" href="./?view=staff">進入商家後台</a>
     </nav>
   </div>
@@ -25,9 +25,9 @@
   <section class="hero" id="guide" aria-labelledby="hero-title">
     <div class="eyebrow">給店主與門市人員的使用指南</div>
     <h1 id="hero-title">第一次使用，也能<br>照著畫面完成。</h1>
-    <p>不必懂技術。從商家申請、LINE 顧客入口、預約與取號設定，到店員每天怎麼操作，依照實際商家流程逐步說明。下方畫面為依現有介面製作的操作示意，不含顧客個資。</p>
+    <p>不必懂技術。從商家申請、LINE 顧客入口、預約與取號設定，到店員每天怎麼操作，依照實際商家流程逐步說明。下方以正式網站目前的版型、功能名稱及按鈕樣式呈現操作畫面，使用的門市名稱與數字均為範例，不含顧客個資。</p>
     <div class="hero-bottom">
-      <div class="hero-steps"><span>01 申請開通</span><b>→</b><span>02 完成設定</span><b>→</b><span>03 分享給顧客</span><b>→</b><span>04 每日營運</span></div>
+      <div class="hero-steps"><span>01 註冊店家</span><b>→</b><span>02 完成設定</span><b>→</b><span>03 分享給顧客</span><b>→</b><span>04 每日營運</span></div>
       <div class="hero-actions">
         <a class="action light" href="#apply">從第一步開始 →</a>
         <a class="action outline-light" href="#booking">直接看店員操作</a>
@@ -38,10 +38,10 @@
   <div class="layout">
     <nav class="side" aria-label="操作教學目錄">
       <div class="side-title">操作目錄</div>
-      <a href="#apply"><span>01</span>申請與開通</a>
+      <a href="#apply"><span>01</span>註冊與登入</a>
       <a href="#setup"><span>02</span>門市設定</a>
       <a href="#mode"><span>03</span>LINE 顧客入口</a>
-      <a href="#publish"><span>04</span>發佈連結與 二維碼</a>
+      <a href="#publish"><span>04</span>發佈連結與 QR Code</a>
       <a href="#booking"><span>05</span>管理預約</a>
       <a href="#queue"><span>06</span>取號與叫號</a>
       <a href="#display"><span>07</span>現場看板與通知</a>
@@ -51,29 +51,16 @@
 
     <main class="main">
       <section class="content-section" id="apply">
-        <div class="section-head"><span class="section-index">01</span><div><h2>先申請開通商家</h2><p>商家負責人先註冊帳號，登入後即可設定專屬門市，完成店家資料後再對外開放。</p></div></div>
+        <div class="section-head"><span class="section-index">01</span><div><h2>先註冊店家商家</h2><p>商家負責人先註冊帳號，登入後即可設定專屬門市，完成店家資料後再對外開放。</p></div></div>
         <div class="panel example">
-          <div class="screen"><div style="width:100%">
-            <div class="screen-inner">
-              <div class="screen-header"><span class="screen-title"><span class="app-mark" aria-hidden="true"></span> 註冊店家帳號</span><span class="demo-pill">商家負責人</span></div>
-              <div class="screen-body">
-                <div class="demo-label">商家帳號</div>
-                <div class="demo-grid"><div class="demo-field">電子郵件</div><div class="demo-field">密碼</div></div>
-                <div class="demo-line"></div>
-                <div class="demo-label">建立商家帳號</div>
-                <div class="demo-grid"><div class="demo-field">帳號名稱</div><div class="demo-field">電子信箱</div></div>
-                <div class="demo-row"><span class="demo-muted">登入後開始填寫門市資料</span><span class="demo-btn">建立帳號</span></div>
-              </div>
-            </div>
-            <p class="caption">操作範例｜店家註冊</p>
-          </div></div>
+<div class="screen qm-screen"><div class="qm-preview qm-register"><div class="qm-register-head"><span class="qm-logo"></span><strong>排隊怪獸</strong></div><div class="qm-register-panel"><div class="qm-register-tabs"><span>登入</span><span class="on">註冊</span></div><h3>註冊店家帳號</h3><p>註冊後門市資料保持空白，由你自行填寫。</p><div class="qm-field-wrap"><label>帳號</label><div class="qm-field">例如：happyshop</div></div><div class="qm-field-wrap"><label>電子信箱</label><div class="qm-field">shop@example.com</div></div><div class="qm-field-wrap"><label>密碼（至少 8 字元）</label><div class="qm-field">••••••••</div></div><div class="qm-field-wrap"><label>確認密碼</label><div class="qm-field">••••••••</div></div><span class="qm-btn primary">建立店家帳號</span></div></div><p class="caption">正式介面樣式對照｜店家帳號註冊頁（僅使用範例資料）</p></div>
           <div class="howto">
             <div class="tagline">商家負責人操作</div>
             <h3>先建立帳號，再完成店家設定</h3>
             <ol>
-              <li>點「申請開通」，填寫帳號名稱、電子郵件 與登入密碼。</li>
-              <li>依登入頁指示完成帳號啟用，再登入店家後台。</li>
-              <li>在「企業設定」填入店名、電話、地址、分類及營業資訊。</li>
+              <li>點「註冊店家」，填寫帳號、電子信箱、密碼與確認密碼。</li>
+              <li>依註冊頁指示完成電子郵件驗證，再使用註冊信箱與密碼登入店家後台。</li>
+              <li>在「企業設定」填入店家名稱、LOGO、品牌顏色、聯絡資訊及營業設定。</li>
               <li>儲存門市資料後即可使用管理功能，並依需要開放公開搜尋。</li>
             </ol>
             <a class="action green" href="./merchant-register.html">前往商家申請頁 →</a>
@@ -90,23 +77,7 @@
           <div class="check"><div class="num">最後 03</div><h3>預約營業規則</h3><p>公休日、休息時段、預約資源及是否開放搜尋。</p></div>
         </div>
         <div class="panel example">
-          <div class="screen"><div style="width:100%">
-            <div class="screen-inner">
-              <div class="screen-header"><span class="screen-title"><span class="app-mark" aria-hidden="true"></span> 門市營運後台</span><div class="dot-group"><i></i><i></i><i></i></div></div>
-              <div class="demo-side">
-                <div class="demo-menu">
-                  <div>工作台</div><div>預約管理</div><div>叫號管理</div><div>菜單及服務</div><div class="picked">企業設定</div>
-                </div>
-                <div class="demo-content">
-                  <div style="font-weight:850;font-size:13px;margin-bottom:8px">顧客服務開放設定</div><div class="demo-grid"><div class="demo-field">☑ 開放線上預約</div><div class="demo-field">☑ 開放現場取號</div></div><div style="text-align:right;margin:7px 0 12px"><span class="demo-btn">儲存服務開關</span></div><div style="font-weight:850;font-size:13px;margin-bottom:10px">企業基本設定</div>
-                  <div class="demo-grid"><div><div class="demo-label">開始營業</div><div class="demo-field">10:00</div></div><div><div class="demo-label">結束營業</div><div class="demo-field">20:00</div></div></div>
-                  <div class="demo-grid"><div><div class="demo-label">每時段可約人數</div><div class="demo-field">4 人</div></div><div><div class="demo-label">預約時段間隔</div><div class="demo-field">30 分鐘</div></div></div>
-                  <div style="text-align:right;margin-top:10px"><span class="demo-btn">儲存企業設定</span></div>
-                </div>
-              </div>
-            </div>
-            <p class="caption">畫面示意｜商家後台「企業設定」</p>
-          </div></div>
+<div class="screen qm-screen"><div class="qm-preview qm-admin"><div class="qm-app-top"><span class="qm-logo"></span><strong>排隊怪獸</strong><small>企業員工營運後台</small></div><div class="qm-app-layout"><aside class="qm-nav"><div class="qm-nav-group">日常作業</div><div class="qm-nav-item ">工作台</div><div class="qm-nav-item ">預約管理</div><div class="qm-nav-item ">叫號管理</div><div class="qm-nav-item ">預約日曆</div><div class="qm-nav-group">營運與設定</div><div class="qm-nav-item ">服務單位與場次</div><div class="qm-nav-item ">營運分析</div><div class="qm-nav-item ">菜單及服務設定</div><div class="qm-nav-item ">員工管理</div><div class="qm-nav-item ">多分店管理</div><div class="qm-nav-item active">企業設定</div><div class="qm-nav-group">使用支援</div><div class="qm-nav-item">操作說明 ↗</div></aside><div class="qm-app-content"><h3 class="qm-page-title">範例門市</h3><p class="qm-subtitle">企業員工營運後台</p><section class="qm-card"><h4>顧客服務開放設定</h4><p class="qm-help">店家可自行決定提供線上預約、現場取號，或同時提供兩種服務。</p><div class="qm-two"><div class="qm-check"><b>✓</b> 開放線上預約</div><div class="qm-check"><b>✓</b> 開放現場取號</div></div><div class="qm-actions"><span class="qm-btn primary">儲存服務開關</span></div></section><section class="qm-card"><h4>企業基本設定</h4><h5>店家識別與品牌</h5><div class="qm-logo-upload"><div class="qm-logo-placeholder">尚未上傳</div><div><strong>店家 LOGO</strong><p>選擇 JPG、PNG 或 WebP 圖片</p><span class="qm-btn outline">移除 LOGO</span></div></div><div class="qm-two"><div class="qm-field-wrap"><label>企業／店家名稱</label><div class="qm-field">範例門市</div></div><div class="qm-field-wrap"><label>店家分類</label><div class="qm-field">餐廳</div></div></div><div class="qm-field-wrap"><label>網站簡介</label><div class="qm-field">介紹店家提供的服務</div></div><div class="qm-color-line"><label>品牌顏色</label><span class="qm-color-swatch"></span><span>點擊色塊開啟調色盤</span></div><h5>店家聯絡資訊</h5><div class="qm-two"><div class="qm-field-wrap"><label>聯絡電話</label><div class="qm-field">02-1234-5678</div></div><div class="qm-field-wrap"><label>店家地址</label><div class="qm-field">臺北市…</div></div></div><h5>營業與預約設定</h5><div class="qm-two"><div class="qm-field-wrap"><label>每日開始營業時間</label><div class="qm-field">10:00</div></div><div class="qm-field-wrap"><label>每日結束營業時間</label><div class="qm-field">20:00</div></div><div class="qm-field-wrap"><label>每時段最多預約人數</label><div class="qm-field">4</div></div><div class="qm-field-wrap"><label>預約時段間隔</label><div class="qm-field">30 分鐘</div></div></div><div class="qm-actions"><span class="qm-btn primary">儲存企業設定</span></div></section></div></div></div><p class="caption">正式介面樣式對照｜企業設定及服務開關（僅使用範例資料）</p></div>
           <div class="howto">
             <div class="tagline">管理者操作</div>
             <h3>先完成設定，再開始分享</h3>
@@ -114,7 +85,7 @@
               <li>登入後台，開啟「企業設定」，儲存營業資訊及預約容量。</li>
               <li>在「預約營業日與休息設定」填入公休日、午休等。</li>
               <li>需要餐點、服務或指定資源時，至「菜單及服務設定」新增。</li>
-              <li>在「企業設定 → 顧客服務開放設定」勾選要提供的服務，按「儲存服務開關」。只勾預約＝僅預約；只勾取號＝僅取號；兩個都勾＝同時開放；都不勾＝暫停接新單。</li>
+              <li>在「企業設定」的「顧客服務開放設定」勾選要提供的服務，按「儲存服務開關」。只勾預約＝僅預約；只勾取號＝僅取號；兩個都勾＝同時開放；都不勾＝暫停接新單。</li>
             </ol>
             <a class="action green" href="./?view=staff">開啟店家後台 →</a>
           </div>
@@ -140,9 +111,9 @@
             </div>
           </div>
           <div class="flow-card">
-            <div class="flow-card-title"><div><h3>入口二｜店家自己的 二維碼 或連結</h3><p>貼在櫃台、門口、社群或任何店家對外管道。</p></div><span class="demo-pill">店家專屬網址</span></div>
+            <div class="flow-card-title"><div><h3>入口二｜店家自己的 QR Code 或連結</h3><p>貼在櫃台、門口、社群或任何店家對外管道。</p></div><span class="demo-pill">店家專屬網址</span></div>
             <div class="flow-strip">
-              <div class="flow-step"><span class="flow-icon">1</span><b>掃店家的 二維碼</b><small>或點分享連結</small></div><span class="flow-arrow">→</span>
+              <div class="flow-step"><span class="flow-icon">1</span><b>掃店家的 QR Code</b><small>或點分享連結</small></div><span class="flow-arrow">→</span>
               <div class="flow-step"><span class="flow-icon">2</span><b>直接看到該店</b><small>不先跳去聊天頁</small></div><span class="flow-arrow">→</span>
               <div class="flow-step"><span class="flow-icon">3</span><b>驗證 LINE 身分</b><small>完成返回原門市</small></div><span class="flow-arrow">→</span>
               <div class="flow-step"><span class="flow-icon">4</span><b>預約或取號</b><small>後台同步紀錄</small></div>
@@ -152,7 +123,7 @@
             <div><div class="phone"><div class="phone-content"><div class="phone-banner">選擇你的店家</div><div class="demo-field">搜尋店名或地區　⌕</div><div class="phone-row"><b>餐廳 A</b><span>台北市</span></div><div class="phone-mini-btn">立即預約</div><div class="phone-row"><b>餐廳 B</b><span>台中市</span></div><div class="phone-mini-btn">現場取號</div></div></div><p class="phone-caption">平台搜尋店家</p></div>
             <div><div class="phone"><div class="phone-content"><div class="phone-banner">餐廳 A<br><span style="font-size:10px;font-weight:500">店家專屬預約頁</span></div><div class="demo-label">選擇日期與時段</div><div class="demo-grid"><div class="demo-field">11 / 12</div><div class="demo-field">18:30</div></div><div class="demo-label">預約姓名／聯絡電話</div><div class="demo-field">請填入聯絡資料</div><div class="phone-mini-btn">確認預約</div></div></div><p class="phone-caption">第二種：進店家網頁完成預約</p></div>
           </div>
-          <p class="caption">顧客手機畫面示意｜從搜尋或 二維碼 進入相同的門市資料流程</p>
+          <p class="caption">顧客手機畫面示意｜從搜尋或 QR Code 進入相同的門市資料流程</p>
           <div class="section-tip">LINE 身分驗證與「加入平台官方帳號 好友」不是同一件事。系統只在需要時要求 LINE 驗證；要收到 LINE 訊息，仍需符合平台官方帳號 的好友與訊息發送條件。</div>
           <div style="margin-top:16px"><a class="action outline" href="./directory.html?mode=search">查看店家搜尋入口 →</a></div>
         </div>
@@ -168,53 +139,38 @@
             </div>
           </div>
           <div class="panel example">
-            <div class="screen"><div style="width:100%">
-              <div class="screen-inner"><div class="screen-header"><span class="screen-title"><span class="app-mark" aria-hidden="true"></span> 企業設定</span><span class="demo-pill amber">管理者</span></div>
-                <div class="screen-body"><div style="font-weight:850;margin-bottom:10px">LINE 官方帳號串接</div><div class="demo-row"><span>目前通知來源</span><b>平台 LINE 官方帳號</b></div><div class="demo-label">LINE 登入應用程式編號</div><div class="demo-field">請貼上登入設定編號</div><div class="demo-label">官方帳號驗證資料</div><div class="demo-field">••••••••••••••</div><span class="demo-btn">驗證並連接自有 LINE 官方帳號</span><p class="demo-muted" style="margin-top:10px">連接後設定該門市專屬 訊息回傳網址</p></div>
-              </div><p class="caption">畫面示意｜企業設定／LINE 官方帳號串接</p>
-            </div></div>
-            <div class="howto"><div class="tagline">管理者操作</div><h3>串接前先確認這些項目</h3><ol><li>登入功能與訊息通知需要使用對應的 LINE 官方帳號設定。</li><li>在企業設定頁進行自有官方帳號 驗證與連接。</li><li>在 LINE 官方帳號管理介面設定後台提供的訊息回傳網址。</li><li>使用自己的 LINE 帳號確認登入、預約、取號與通知是否正常。</li></ol><a class="action outline" href="./?view=staff">前往串接設定 →</a></div>
+<div class="screen qm-screen"><div class="qm-preview qm-admin"><div class="qm-app-top"><span class="qm-logo"></span><strong>排隊怪獸</strong><small>企業員工營運後台</small></div><div class="qm-app-layout"><aside class="qm-nav"><div class="qm-nav-group">日常作業</div><div class="qm-nav-item ">工作台</div><div class="qm-nav-item ">預約管理</div><div class="qm-nav-item ">叫號管理</div><div class="qm-nav-item ">預約日曆</div><div class="qm-nav-group">營運與設定</div><div class="qm-nav-item ">服務單位與場次</div><div class="qm-nav-item ">營運分析</div><div class="qm-nav-item ">菜單及服務設定</div><div class="qm-nav-item ">員工管理</div><div class="qm-nav-item ">多分店管理</div><div class="qm-nav-item active">企業設定</div><div class="qm-nav-group">使用支援</div><div class="qm-nav-item">操作說明 ↗</div></aside><div class="qm-app-content"><h3 class="qm-page-title">範例門市</h3><p class="qm-subtitle">企業員工營運後台</p><section class="qm-card"><h4>LINE 官方帳號串接</h4><p>目前通知來源：<strong>平台 LINE OA</strong></p><p class="qm-help">沒有自有官方帳號也可使用平台提供的服務。</p><div class="qm-two"><div class="qm-field-wrap"><label>LINE 登入應用程式編號（LIFF ID）（LIFF ID）</label><div class="qm-field">請輸入 LIFF ID</div></div><div class="qm-field-wrap"><label>官方帳號驗證金鑰（Channel Secret）</label><div class="qm-field">••••••••••••</div></div></div><div class="qm-field-wrap"><label>官方帳號存取憑證（Channel Access Token）</label><div class="qm-field">••••••••••••</div></div><div class="qm-actions"><span class="qm-btn primary">驗證並連接自有 LINE OA</span><span class="qm-btn outline">複製訊息回傳網址</span></div></section></div></div></div><p class="caption">正式介面樣式對照｜企業設定中的 LINE 官方帳號串接（僅使用範例資料）</p></div>
+          <div class="howto"><div class="tagline">管理者操作</div><h3>串接前先確認這些項目</h3><ol><li>登入功能與訊息通知需要使用對應的 LINE 官方帳號設定。</li><li>在企業設定頁進行自有官方帳號 驗證與連接。</li><li>在 LINE 官方帳號管理介面設定後台提供的訊息回傳網址。</li><li>使用自己的 LINE 帳號確認登入、預約、取號與通知是否正常。</li></ol><a class="action outline" href="./?view=staff">前往串接設定 →</a></div>
           </div>
           <div class="section-tip warm">連接自有 LINE 官方帳號後，請先使用手機確認登入、預約及通知功能皆可正常使用，再正式分享給顧客。未連接自有官方帳號的門市可使用平台共用模式。</div>
         </div>
       </section>
 
       <section class="content-section" id="publish">
-        <div class="section-head"><span class="section-index">04</span><div><h2>把預約或取號入口分享出去</h2><p>不需要顧客記住網址。後台已有對應的顧客連結與 二維碼 立牌入口。</p></div></div>
+        <div class="section-head"><span class="section-index">04</span><div><h2>把預約或取號入口分享出去</h2><p>不需要顧客記住網址。後台已有對應的顧客連結與 QR Code 立牌入口。</p></div></div>
         <div class="split-grid">
-          <div class="mini-info"><div class="small-label">線上預約</div><h3>分享「預約 二維碼 立牌」</h3><p>在後台「預約管理」點選「製作預約 二維碼 立牌」，讓顧客直接進這家店的預約頁。</p><div style="margin-top:13px"><a class="action outline" href="./?view=staff">前往預約管理 →</a></div></div>
-          <div class="mini-info"><div class="small-label">現場取號</div><h3>分享「取號 二維碼 立牌」</h3><p>在後台「叫號管理」點選「製作現場取號 二維碼 立牌」，讓現場顧客直接領取號碼。</p><div style="margin-top:13px"><a class="action outline" href="./?view=staff">前往叫號管理 →</a></div></div>
+          <div class="mini-info"><div class="small-label">線上預約</div><h3>分享「預約 QR 立牌」</h3><p>在後台「預約管理」點選「製作預約 QR 立牌」，讓顧客直接進這家店的預約頁。</p><div style="margin-top:13px"><a class="action outline" href="./?view=staff">前往預約管理 →</a></div></div>
+          <div class="mini-info"><div class="small-label">現場取號</div><h3>分享「取號 QR 立牌」</h3><p>在後台「叫號管理」點選「製作現場取號 QR 立牌」，讓現場顧客直接領取號碼。</p><div style="margin-top:13px"><a class="action outline" href="./?view=staff">前往叫號管理 →</a></div></div>
         </div>
         <div class="panel" style="margin-top:16px;padding:20px">
           <div style="display:flex;align-items:center;gap:15px;flex-wrap:wrap">
             <div aria-hidden="true" style="width:83px;height:83px;background:#fff;border:9px solid #e8f0e9;border-radius:12px;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:8px">
               <span style="background:#173e34;grid-row:span 2;grid-column:span 2"></span><span style="background:#173e34"></span><span style="background:#173e34;grid-row:span 2;grid-column:span 2"></span><span style="background:#173e34"></span><span style="background:#173e34"></span><span style="background:#173e34;grid-row:span 2"></span><span style="background:#173e34"></span><span style="background:#173e34;grid-column:span 2"></span>
             </div>
-            <div style="flex:1;min-width:205px"><strong style="font-size:16px">一店一組專屬入口</strong><p style="margin:4px 0 0;font-size:12px;color:var(--muted)">預約 二維碼 與取號 二維碼 分開。顧客掃描後應保留原本商家與操作用途，必要時完成 LINE 身分驗證，再回到同一個店家頁面。</p></div>
+            <div style="flex:1;min-width:205px"><strong style="font-size:16px">一店一組專屬入口</strong><p style="margin:4px 0 0;font-size:12px;color:var(--muted)">預約 QR Code 與取號 QR Code 分開。顧客掃描後應保留原本商家與操作用途，必要時完成 LINE 身分驗證，再回到同一個店家頁面。</p></div>
           </div>
         </div>
-        <div class="section-tip">要出現在平台官方帳號 的「搜尋店家」中，管理者還需在「企業設定」開啟公開搜尋並儲存。沒公開的門市仍可分享自己的連結。二維碼上方只是位置示意圖，不是可供掃描的實際二維碼。</div>
+        <div class="section-tip">要出現在平台官方帳號 的「搜尋店家」中，管理者還需在「企業設定」開啟公開搜尋並儲存。沒公開的門市仍可分享自己的連結。QR Code上方只是位置示意圖，不是可供掃描的實際QR Code。</div>
       </section>
 
       <section class="content-section" id="booking">
         <div class="section-head"><span class="section-index">05</span><div><h2>店員每天怎麼管理預約？</h2><p>從「預約管理」查看當日與跨日待處理預約，依實際情況修改狀態。</p></div></div>
         <div class="panel example">
-          <div class="screen"><div style="width:100%">
-            <div class="screen-inner"><div class="screen-header"><span class="screen-title"><span class="app-mark" aria-hidden="true"></span> 預約管理</span><span class="demo-pill">今日</span></div>
-              <div class="screen-body">
-                <div class="demo-grid"><div class="demo-stat"><small>待處理預約</small><strong>05</strong></div><div class="demo-stat"><small>已報到未結案</small><strong>02</strong></div></div>
-                <div class="demo-label">篩選預約</div><div class="demo-field">搜尋編號、姓名或服務　⌕</div>
-                <div class="demo-line"></div>
-                <div class="demo-row"><span><b>預約 12</b><br><span class="demo-muted">11 / 12　18:30 · 2 人</span></span><span class="demo-pill">已預約</span></div>
-                <div style="display:flex;gap:6px;flex-wrap:wrap;margin:12px 0"><span class="demo-btn">已報到</span><span class="demo-btn line">未到</span><span class="demo-btn line">取消</span></div>
-                <div class="demo-row"><span class="demo-muted">操作後可修改狀態或還原上一步</span><span class="demo-pill amber">畫面範例</span></div>
-              </div>
-            </div><p class="caption">畫面示意｜預約管理／預約狀態</p>
-          </div></div>
+<div class="screen qm-screen"><div class="qm-preview qm-admin"><div class="qm-app-top"><span class="qm-logo"></span><strong>排隊怪獸</strong><small>企業員工營運後台</small></div><div class="qm-app-layout"><aside class="qm-nav"><div class="qm-nav-group">日常作業</div><div class="qm-nav-item ">工作台</div><div class="qm-nav-item active">預約管理</div><div class="qm-nav-item ">叫號管理</div><div class="qm-nav-item ">預約日曆</div><div class="qm-nav-group">營運與設定</div><div class="qm-nav-item ">服務單位與場次</div><div class="qm-nav-item ">營運分析</div><div class="qm-nav-item ">菜單及服務設定</div><div class="qm-nav-item ">員工管理</div><div class="qm-nav-item ">多分店管理</div><div class="qm-nav-item ">企業設定</div><div class="qm-nav-group">使用支援</div><div class="qm-nav-item">操作說明 ↗</div></aside><div class="qm-app-content"><h3 class="qm-page-title">範例門市</h3><p class="qm-subtitle">企業員工營運後台</p><div class="qm-history">歷史紀錄　<span class="qm-field">最近 7 天</span></div><section class="qm-card"><h4>搜尋與篩選預約</h4><p class="qm-help">可依編號、姓名、日期與狀態篩選。</p><div class="qm-three"><div class="qm-field-wrap"><label>搜尋預約編號、姓名或服務</label><div class="qm-field">輸入關鍵字</div></div><div class="qm-field-wrap"><label>預約日期</label><div class="qm-field">全部日期</div></div><div class="qm-field-wrap"><label>預約狀態</label><div class="qm-field">全部狀態</div></div></div><div class="qm-actions"><span class="qm-btn primary">套用篩選</span><span class="qm-btn outline">清除篩選</span><span class="qm-btn secondary">匯出篩選結果 CSV</span></div></section><div class="qm-stats"><div class="qm-stat"><span>待處理預約</span><strong>5</strong></div><div class="qm-stat"><span>待報到</span><strong>3</strong></div><div class="qm-stat"><span>已報到未結案</span><strong>2</strong></div><div class="qm-stat"><span>已處理預約</span><strong>12</strong></div></div><section class="qm-card"><h4>預約管理方式</h4><p class="qm-help">尚未結案的預約會保留，並可重新選擇狀態。</p><div class="qm-actions"><span class="qm-btn outline">還原上一步</span><span class="qm-btn outline">製作預約 QR 立牌</span></div></section><section class="qm-card"><h4>待處理預約（5 筆）</h4><div class="qm-record"><strong>預約 12　2026-11-12　18:30　王先生</strong><p>預約人數 2 位</p><p>聯絡電話：09••••••••</p><div class="qm-picker"><div class="qm-legend">點選狀態即儲存（可重新選擇修正）</div><div class="qm-options"><span class="qm-choice selected"><i></i>已預約</span><span class="qm-choice "><i></i>已報到</span><span class="qm-choice "><i></i>已完成</span><span class="qm-choice "><i></i>未到</span><span class="qm-choice "><i></i>已取消</span></div></div><div class="qm-delete">□ 刪除（顧客端不顯示、不會發送 LINE 通知）</div></div></section> </div></div></div><p class="caption">正式介面樣式對照｜預約管理與狀態選擇（僅使用範例資料）</p></div>
           <div class="howto">
             <div class="tagline">每日店員操作</div>
             <h3>預約就是預約，狀態由店員管理</h3>
-            <ol><li>從側邊選單進入「預約管理」，查看待處理預約。</li><li>顧客到店，選擇「已報到」；完成服務、未到或取消時選擇對應狀態。</li><li>按錯可以重新選狀態，必要時用「還原上一步」。</li><li>可篩選、查看歷史，管理者可匯出 CSV。</li></ol>
+            <ol><li>從側邊選單進入「預約管理」，查看待處理預約。</li><li>顧客到店，選擇「已報到」；完成服務、未到或取消時選擇對應狀態（點選即儲存）。</li><li>按錯可以重新選狀態，必要時用「還原上一步」。</li><li>可篩選、查看歷史，管理者可匯出 CSV；部分管理面板預設收合，點標題即可展開。</li></ol>
             <a class="action green" href="./?view=staff">開啟預約管理 →</a>
           </div>
         </div>
@@ -224,19 +180,8 @@
       <section class="content-section" id="queue">
         <div class="section-head"><span class="section-index">06</span><div><h2>現場取號與叫號怎麼操作？</h2><p>取號是顧客領取候位號碼；叫號是店員依現場情況推進隊列。</p></div></div>
         <div class="panel example">
-          <div class="screen"><div style="width:100%">
-            <div class="screen-inner"><div class="screen-header"><span class="screen-title"><span class="app-mark" aria-hidden="true"></span> 叫號管理</span><span class="demo-pill">午場</span></div>
-              <div class="screen-body">
-                <div class="demo-grid"><div class="demo-stat"><small>候位中</small><strong>04</strong></div><div class="demo-stat"><small>已叫號</small><strong>01</strong></div></div>
-                <div class="number-banner"><small>目前叫號</small><strong>12</strong><small>下一位依實際候位順序</small></div>
-                <div style="display:flex;gap:7px;flex-wrap:wrap"><span class="demo-btn">叫下一位</span><span class="demo-btn line">再叫一次</span><span class="demo-btn line">還原上一步</span></div>
-                <div class="demo-line"></div><div class="demo-label">未結案號碼牌</div>
-                <div class="demo-row"><span><b>13 號</b> · 候位中</span><span class="demo-pill">可更正狀態</span></div>
-                <div class="demo-row"><span><b>14 號</b> · 候位中</span><span class="demo-pill">可更正狀態</span></div>
-              </div>
-            </div><p class="caption">畫面示意｜叫號管理／候位與叫號按鈕</p>
-          </div></div>
-          <div class="howto"><div class="tagline">每日店員操作</div><h3>叫號不等於完成服務</h3><ol><li>顧客從取號 二維碼 或網頁領取號碼，出現在候位名單。</li><li>店員按「叫下一位」，需要時「再叫一次」。</li><li>過號、保留、回到候位或操作錯誤，可依號碼牌狀態做更正。</li><li>叫到號後，可另外標記到場、進場及完成，不把叫號直接當作結案。</li></ol><a class="action green" href="./?view=staff">進入叫號管理 →</a></div>
+<div class="screen qm-screen"><div class="qm-preview qm-admin"><div class="qm-app-top"><span class="qm-logo"></span><strong>排隊怪獸</strong><small>企業員工營運後台</small></div><div class="qm-app-layout"><aside class="qm-nav"><div class="qm-nav-group">日常作業</div><div class="qm-nav-item ">工作台</div><div class="qm-nav-item ">預約管理</div><div class="qm-nav-item active">叫號管理</div><div class="qm-nav-item ">預約日曆</div><div class="qm-nav-group">營運與設定</div><div class="qm-nav-item ">服務單位與場次</div><div class="qm-nav-item ">營運分析</div><div class="qm-nav-item ">菜單及服務設定</div><div class="qm-nav-item ">員工管理</div><div class="qm-nav-item ">多分店管理</div><div class="qm-nav-item ">企業設定</div><div class="qm-nav-group">使用支援</div><div class="qm-nav-item">操作說明 ↗</div></aside><div class="qm-app-content"><h3 class="qm-page-title">範例門市</h3><p class="qm-subtitle">企業員工營運後台</p><div class="qm-history">歷史紀錄　<span class="qm-field">最近 7 天</span></div><div class="qm-stats five"><div class="qm-stat"><span>正在叫號</span><strong>12</strong></div><div class="qm-stat"><span>候位中</span><strong>4</strong></div><div class="qm-stat"><span>已過號</span><strong>1</strong></div><div class="qm-stat"><span>保留中</span><strong>0</strong></div><div class="qm-stat"><span>已結束</span><strong>8</strong></div></div><section class="qm-card"><h4>叫號操作</h4><p class="qm-help">已叫號後可分別標記已到場、已進場，不代表服務已完成。</p><div class="qm-actions"><span class="qm-btn primary">叫下一位</span><span class="qm-btn outline">再叫一次</span><span class="qm-btn secondary">還原上一步</span><span class="qm-btn outline">電視即時叫號看板</span><span class="qm-btn outline">製作現場取號 QR 立牌</span></div></section><section class="qm-card"><h4>取號場次管理</h4><p>目前：<strong>午場</strong></p><div class="qm-actions"><span class="qm-btn outline">早場</span><span class="qm-btn primary">午場</span><span class="qm-btn outline">晚場</span><span class="qm-btn outline">休場</span></div></section><section class="qm-card"><h4>未結案號碼牌（4 筆）</h4><div class="qm-record"><strong>13　陳小姐</strong><p>2026-11-12 ・ 1 人／組 ・ 現場取號</p><div class="qm-picker"><div class="qm-legend">點選狀態即儲存（可重新選擇修正）</div><div class="qm-options"><span class="qm-choice selected"><i></i>候位中</span><span class="qm-choice "><i></i>保留中</span><span class="qm-choice "><i></i>已叫號</span><span class="qm-choice "><i></i>已到場</span><span class="qm-choice "><i></i>已進場</span><span class="qm-choice "><i></i>服務中</span><span class="qm-choice "><i></i>已完成</span><span class="qm-choice "><i></i>已過號</span><span class="qm-choice "><i></i>已取消</span></div></div><div class="qm-actions"><span class="qm-btn secondary">指定叫號</span></div></div></section></div></div></div><p class="caption">正式介面樣式對照｜叫號管理與候位狀態（僅使用範例資料）</p></div>
+          <div class="howto"><div class="tagline">每日店員操作</div><h3>叫號不等於完成服務</h3><ol><li>顧客從取號 QR Code 或網頁領取號碼，出現在候位名單。</li><li>店員按「叫下一位」，需要時「再叫一次」。</li><li>過號、保留、回到候位或操作錯誤，可依號碼牌狀態做更正。</li><li>叫到號後，可另外標記到場、進場及完成，不把叫號直接當作結案。</li></ol><a class="action green" href="./?view=staff">進入叫號管理 →</a></div>
         </div>
         <div class="split-grid" style="margin-top:16px">
           <div class="mini-info"><div class="small-label">場次切換</div><h3>早場／午場／晚場／休場</h3><p>切換場次不會重設流水號；「休場」暫停新增取號，原本候位的號碼仍可以處理。</p></div>
@@ -247,16 +192,7 @@
       <section class="content-section" id="display">
         <div class="section-head"><span class="section-index">07</span><div><h2>用螢幕顯示叫號進度</h2><p>店家可以把即時叫號看板放在電視、平板或櫃台螢幕上。</p></div></div>
         <div class="panel">
-          <div class="screen full" style="padding:20px"><div style="width:100%">
-            <div style="border-radius:13px;overflow:hidden;background:#132f2b;color:white;padding:20px 22px 24px">
-              <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid #405c51;padding-bottom:14px"><strong style="font-size:16px">餐廳 A</strong><span style="font-size:11px;color:#a6c6b8">即時叫號看板</span></div>
-              <div style="display:grid;grid-template-columns:1.05fr 1fr;gap:15px;padding-top:16px">
-                <div style="background:#d9f1dc;color:#183b31;padding:19px 12px;border-radius:12px;text-align:center"><small>目前叫號</small><div style="font-size:clamp(40px,6vw,67px);font-weight:900;line-height:1.25">12</div></div>
-                <div style="padding:9px 0"><div style="font-size:12px;color:#bad2c4;margin-bottom:13px">接下來候位順序</div><div class="number-next"><span>13</span><span>15</span><span>14</span></div><p style="font-size:10px;color:#b1c9bc;margin-top:14px">順序會依保留、過號及店員調整更新</p></div>
-              </div>
-            </div>
-            <p class="caption">畫面示意｜公開叫號看板；實際號碼由門市系統同步，示意數字僅用於教學</p>
-          </div></div>
+          <div class="screen full qm-screen"><div class="qm-board"><div class="qm-board-top"><strong>範例門市</strong><time>14:20</time></div><div class="qm-board-main"><div class="qm-board-now"><h3>目前叫號</h3><i></i><strong>12</strong></div><div class="qm-board-next"><h3>接下來等候排序</h3><i></i><div><span>13</span><span>15</span><span>14</span></div></div></div><div class="qm-board-footer">叫號順序將依現場狀況即時更新　<span>重新整理</span><span>全螢幕</span></div></div><p class="caption">正式介面樣式對照｜即時叫號看板（僅使用範例號碼）</p></div></div>
           <div class="panel-pad" style="border-top:1px solid var(--line)"><p style="margin:0 0 13px;font-size:13px;color:#526f61">在「叫號管理」開啟「電視即時叫號看板」，將它顯示在店內螢幕。店員於後台叫號；顧客也能查看自己的叫號進度，不用全部擠到櫃檯。</p><a class="action green" href="./directory.html?mode=queue">查看公開叫號清單 →</a></div>
         </div>
         <div class="section-tip">LINE 通知和即時看板是不同功能。通知內容包含對應門市及預約或號碼資訊，但須符合 LINE 發送資格；即使顯示已送出，也不代表顧客已閱讀。需要最新進度時，以叫號網頁與店員後台狀態為準。</div>
@@ -265,16 +201,16 @@
       <section class="content-section" id="faq">
         <div class="section-head"><span class="section-index">08</span><div><h2>店家最常遇到的問題</h2><p>不用翻技術文件；依實際操作情境查找。</p></div></div>
         <div class="accordion">
-          <details><summary>我沒有自己的 LINE 官方帳號，也能讓顧客預約嗎？</summary><p>可以。完成註冊及門市基本設定後，可使用平台共用 LINE 官方帳號接待顧客。顧客可從平台的店家搜尋入口，或直接掃店家專屬 二維碼／點分享網址進行預約或取號。</p></details>
+          <details><summary>我沒有自己的 LINE 官方帳號，也能讓顧客預約嗎？</summary><p>可以。完成註冊及門市基本設定後，可使用平台共用 LINE 官方帳號接待顧客。顧客可從平台的店家搜尋入口，或直接掃店家專屬 QR Code／點分享網址進行預約或取號。</p></details>
           <details><summary>預約已報到，為什麼沒有自動進入叫號？</summary><p>預約與取號預設為獨立流程。若門市尚未設定場次連動，報到只會更新預約狀態；需要現場叫號時，可另行取號。</p></details>
           <details><summary>客人過號、按錯，或要恢復候位怎麼辦？</summary><p>到「叫號管理」找到該號碼牌，依目前允許的狀態做更正；叫號操作若有提供「還原上一步」，可用來修正上一個動作。保留候位會依店家的保留規則恢復原順位或放到隊尾，號碼本身不變。</p></details>
           <details><summary>重置預約號碼或叫號號碼，舊資料會消失嗎？</summary><p>不會。兩套流水號各自重置，新的一筆從 1 開始，已建立的預約／號碼牌及永久識別碼仍保留。重置與更改前綴需具管理權限。</p></details>
-          <details><summary>為什麼搜尋店家找不到我的門市？</summary><p>請確認門市已完成基本資料、目前處於啟用狀態，並在「企業設定」開啟公開搜尋。沒有公開搜尋時，已開通門市仍可用自己的專屬網址分享。</p></details>
+          <details><summary>為什麼搜尋店家找不到我的門市？</summary><p>請確認門市已完成基本資料、目前處於啟用狀態，並在「企業設定」開啟公開搜尋。沒有公開搜尋時，已註冊門市仍可用自己的專屬網址分享。</p></details>
           <details><summary>顧客已經登入 LINE，為什麼沒收到通知？</summary><p>LINE 身分驗證與加入官方帳號好友不同。請先確認顧客是否加入對應官方帳號、未封鎖，以及平台訊息通知的發送資格／狀態。若使用自有 LINE 官方帳號，也請確認通知設定與手機收訊功能正常。</p></details>
           <details><summary>可以用手機操作後台嗎？</summary><p>可以。商家管理後台支援手機和電腦瀏覽器；預約管理、叫號管理與狀態修正都可在手機開啟。建議將店家後台網址加入手機書籤，以便現場使用。</p></details>
           <details><summary>忘記怎麼設定，或操作發生問題，要找誰？</summary><p>先查看本頁對應章節，再將遇到問題的功能名稱、操作時間及錯誤畫面告知平台客服。不要提供密碼、LINE 官方帳號驗證金鑰或其他機密憑證。</p></details>
         </div>
-        <div class="bottom-call"><div><h3>準備開始操作？</h3><p>已開通的店家直接進後台；新商家先提出開通申請。</p></div><div style="display:flex;flex-wrap:wrap;gap:10px"><a class="action green" href="./?view=staff">進入店家後台</a><a class="action outline" href="./merchant-register.html">申請開通</a></div></div>
+        <div class="bottom-call"><div><h3>準備開始操作？</h3><p>已註冊的店家直接進後台；新商家先註冊店家帳號。</p></div><div style="display:flex;flex-wrap:wrap;gap:10px"><a class="action green" href="./?view=staff">進入店家後台</a><a class="action outline" href="./merchant-register.html">註冊店家</a></div></div>
       </section>
     </main>
   </div>
