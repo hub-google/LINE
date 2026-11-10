@@ -601,3 +601,25 @@ body[data-portal="staff"] .customer-history-link:focus-visible{
  .customer-history-toolbar h2{font-size:19px}
  .customer-history-entry{padding:12px}
 }
+
+
+/* Unified merchant settings: compact category navigation and readable session actions. */
+.settings-hub-head { margin: 0 0 14px; }
+.settings-hub-head h2 { margin: 0 0 5px; font-size: 1.45rem; }
+.settings-hub-head p { margin: 0; }
+.settings-hub-tabs {
+ display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 22px;
+ padding: 10px; border-radius: 16px;
+ background: color-mix(in srgb, var(--surface, #ffffff) 90%, #8052aa 10%);
+ border: 1px solid #e9d8f4;
+}
+.settings-hub-tabs .btn { flex: 0 0 auto; margin: 0; white-space: nowrap; min-height: 40px; }
+.settings-hub-tabs .btn.primary { box-shadow: 0 2px 6px rgba(85,45,117,.13); }
+.settings-hub-tabs + .card { margin-top: 0; }
+.settings-hub-head + .settings-hub-tabs + .card .staff-actionbar { flex-wrap: wrap; }
+@media (max-width: 700px) {
+ .settings-hub-head h2 { font-size: 1.2rem; }
+ .settings-hub-tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 8px; scrollbar-width: thin; }
+ .settings-hub-tabs .btn { min-height: 42px; font-size: .91rem; }
+ .settings-hub-tabs + .card .scroll { overflow-x: auto; }
+}
