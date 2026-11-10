@@ -12,6 +12,21 @@ import {render} from "./../staff-layout.js";
 import {refreshServiceSlots} from "./../customer-booking.js";
 
 export async function handleMerchantSettings(ev,b,a,id){
+if(a==="save-customer-homepage"){
+  await act(async()=>{
+    const title=val("homepage-title"),subtitle=val("homepage-subtitle"),label=val("homepage-label");
+    if(title.length>60||subtitle.length>180||label.length>32)throw Error("顧客首頁文字超過允許長度");
+    if(/[\u0000-\u001f\u007f]/.test(title+subtitle+label))throw Error("首頁文字不可包含換行或控制字元");
+    const showIntro=!!routeState.$("homepage-show-intro")?.checked;
+    const showLabel=!!routeState.$("homepage-show-label")?.checked;
+    await rpc("so_set_customer_homepage",{
+      p_slug:routeState.slug,p_title:title,p_subtitle:subtitle,p_label:label,
+      p_show_label:showLabel,p_show_intro:showIntro
+    });
+    return "顧客首頁文字與顯示設定已儲存";
+  });
+  return true;
+}
 if(a==="copy-own-oa-webhook"){
   const webhook=lineState.LINE_BRIDGE_URL+"?action=webhook&merchant="+encodeURIComponent(routeState.slug);
   try{await navigator.clipboard.writeText(webhook);showActionFeedback("已複製 Webhook URL","success");}
