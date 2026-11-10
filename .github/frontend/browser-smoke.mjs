@@ -81,7 +81,7 @@ try{
  // Exercise production bundles at both desktop and mobile sizes with actual network reads.
  for(const width of [1280,390]){
   await page.setViewportSize({width,height:900});
-  for(const name of ['home.html','directory.html?mode=search','merchant-register.html','platform-login.html','index.html?view=staff&merchant=greenfield-salon','index.html?view=customer&merchant=greenfield-salon','board.html?merchant=greenfield-salon','poster.html?merchant=greenfield-salon']){
+  for(const name of ['home.html','directory.html?mode=search','merchant-register.html','platform-login.html','index.html?view=platform','index.html?view=staff&merchant=greenfield-salon','index.html?view=customer&merchant=greenfield-salon','board.html?merchant=greenfield-salon','poster.html?merchant=greenfield-salon']){
    await page.goto(baseUrl+'/booking/'+name,{waitUntil:'networkidle',timeout:45000});
    assert.ok((await page.locator('body').innerText()).trim().length>30,name);
    if(name==='home.html'){
@@ -94,8 +94,26 @@ try{
     else assert.ok(rects[1].left>=rects[0].right-2,'Desktop examples should display side by side');
     console.log('Homepage dual-examples layout:',width,JSON.stringify(rects));
    }
+   if(name==='home.html'||name.startsWith('directory.html')){
+    const excluded=await page.locator('a[href*="merchant-register"],a[href*="platform-login"],a[href*="view=staff"],a[href*="view=platform"]').count();
+    assert.equal(excluded,0,'Public portals must not display manager or headquarters links');
+   }
    if(name==='index.html?view=staff&merchant=greenfield-salon'){
-    assert.equal(await page.locator('#headlinks a[href*="view=platform"]').count(),0,'Ordinary staff and guests must never see headquarters navigation');
+    const links=await page.locator('#headlinks a').allTextContents();
+    assert.deepEqual(links,['店家工作台','操作說明'],'Merchant header must contain only merchant functions');
+   }
+   if(name==='index.html?view=platform'){
+    const links=await page.locator('#headlinks a').allTextContents();
+    assert.deepEqual(links,['總部管理'],'Headquarters header must not show merchant or customer entry');
+   }
+   if(name==='index.html?view=customer&merchant=greenfield-salon'){
+    const links=await page.locator('#headlinks a').allTextContents();
+    assert.deepEqual(links,['搜尋店家','預約與取號'],'Customer header must not show merchant or headquarters entry');
+   }
+   if(name==='merchant-register.html'||name==='platform-login.html'){
+    const forbidden=name==='merchant-register.html'?'directory.html,home.html,platform-login.html':'directory.html,home.html,merchant-register.html';
+    const selectors=forbidden.split(',').map(s=>'header a[href*="'+s+'"]').join(',');
+    assert.equal(await page.locator(selectors).count(),0,'Private portal must not link to the other portals');
    }
    if(name==='merchant-register.html'){
     // Simulate an authenticated merchant account to verify visual geometry

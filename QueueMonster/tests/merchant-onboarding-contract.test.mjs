@@ -45,7 +45,7 @@ test("explicit merchant signup never falls through to a stored platform admin se
  assert.match(reg,/setMode\("login"\);await prepare\(\)/);
  assert.match(reg,/id="switch-account"/);
  assert.match(reg,/id="account-title"/);
- assert.match(index,/href="merchant-register\.html\?mode=signup"/);
+ assert.match(reg,/href="\.\/merchant-register\.html\?mode=signup"/);
 });
 test("a signed-in platform admin still sees the merchant signup form",async()=>{
  const start=reg.indexOf('<script type="module">'),end=reg.indexOf('</script>',start);
@@ -167,7 +167,10 @@ test("platform PIN login uses server-side throttle and a real authenticated sess
 test("headquarters navigation only appears for a verified platform administrator",()=>{
  const shared=read("saas/app/shared-ui.js");
  const view=read("saas/app/platform-view.js");
- assert.ok(shared.includes('...(platformReady()?[["platform","平台管理"]]:[])'));
+ assert.ok(shared.includes('view==="platform"?'));
+ assert.ok(shared.includes('view==="staff"?'));
+ assert.ok(shared.includes('["headquarters","總部管理"]'));
+ assert.ok(shared.includes('["merchant","店家工作台"]'));
  assert.doesNotMatch(shared,/\["marketing","網站首頁"\],\["platform","平台管理"\]/);
  assert.match(view,/if\(!authReady\(\)\)return box\("總部管理員登入"/);
  assert.match(view,/href="\.\/platform-login\.html"/);
@@ -198,6 +201,29 @@ test("headquarters login is an independent branded route and does not expose pri
   const html=read("saas/"+pageName+".html");
   assert.doesNotMatch(html,/href="\.\/platform-login\.html"/);
  }
+});
+test("customer, merchant and headquarters views never mix login and navigation links",()=>{
+ const homepage=read("saas/home.html");
+ const directory=read("saas/directory.html");
+ const merchant=read("saas/merchant-register.html");
+ const guide=read("saas/merchant-center.html");
+ const hq=read("saas/platform-login.html");
+ const platform=read("saas/app/platform-view.js");
+ const shared=read("saas/app/shared-ui.js");
+ for(const html of [homepage,directory]){
+  assert.doesNotMatch(html,/href="[^"]*(?:merchant-register|platform-login|view=staff|view=platform)/);
+ }
+ assert.doesNotMatch(merchant,/href="[^"]*(?:directory\.html|home\.html|platform-login\.html|view=platform)/);
+ const guideHeader=guide.match(/<header[\s\S]*?<\/header>/)?.[0]||"";
+ assert.doesNotMatch(guideHeader,/href="[^"]*(?:directory\.html|home\.html|platform-login\.html|view=platform)/);
+ assert.doesNotMatch(hq,/href="[^"]*(?:directory\.html|home\.html|merchant-register\.html|view=staff)/);
+ assert.doesNotMatch(platform,/class="side-item" href="merchant-register\.html/);
+ assert.match(shared,/view==="platform"/);
+ assert.match(shared,/view==="staff"/);
+ assert.match(shared,/\["browse","搜尋店家"\]/);
+ const auth=read("saas/site-auth.js");
+ assert.ok(auth.includes('return lineIdentity'));
+ assert.ok(auth.includes("return operatorIdentity"));
 });
 test("merchant can independently enable reservation and queue in their own settings",()=>{
  const modes=read("supabase/migrations/20261109093000_merchant_service_mode_switch.sql");

@@ -138,11 +138,12 @@ export function showActionFeedback(message,kind="success"){
 }
 
 export function requireAuth(){
- const isStaff=routeState.view==="staff";
- return '<div class="card auth"><h1>'+(isStaff?"店家登入":"平台管理員登入")+'</h1>'+
- '<p class="muted">使用電子信箱與密碼登入。沒有帳號可直接註冊，店家資料完成前不會公開。</p>'+
- '<div class="flex" style="margin-top:17px"><a class="btn primary" href="./merchant-register.html?mode=login">登入</a>'+
- '<a class="btn outline" href="./merchant-register.html?mode=signup">註冊</a></div></div>';
+ // Never reuse the merchant login CTA for headquarters or customer routes.
+ if(routeState.view==="platform")return box("總部管理員登入",'<p class="muted">請由總部專屬入口驗證身分。</p><a class="btn primary" href="./platform-login.html">總部登入</a>');
+ if(routeState.view==="staff")return '<div class="card auth"><h1>店家登入</h1><p class="muted">使用店家帳號管理預約及叫號。</p>'+
+  '<div class="flex" style="margin-top:17px"><a class="btn primary" href="./merchant-register.html?mode=login">店家登入</a>'+
+  '<a class="btn outline" href="./merchant-register.html?mode=signup">註冊店家</a></div></div>';
+ return box("搜尋店家",'<p class="muted">請先選擇提供預約或取號服務的店家。</p><a class="btn primary" href="./directory.html?mode=search">搜尋店家</a>');
 }
 
 export function authReady(){return !!(authState.session?.user&&!authState.session.user.is_anonymous)}
@@ -163,18 +164,35 @@ export function layout(title,subtitle,menu,body){
  return '<div class="toolbar"><div><div class="eyebrow">'+(routeState.view==="customer"?"排隊怪獸 · 顧客服務":routeState.view==="staff"?"排隊怪獸 · 門市管理":"排隊怪獸 · 平台管理")+'</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div></div><div class="layout'+(routeState.view==="customer"?" customer-layout":"")+'"><aside>'+menu+'</aside><section class="content">'+body+'</section></div>'+staffQuickNav;
 }
 
-export function head(){const links=routeState.view==="customer"?[["customer","預約與取號"]]:[["marketing","網站首頁"],...(platformReady()?[["platform","平台管理"]]:[]),["staff","店家管理"],["customer","顧客入口"]];
-routeState.$("headlinks").innerHTML=links.map(x=>'<a href="'+esc(x[0]==="marketing"?new URL("./home.html",location.origin+sharedUiState.bookingPath).pathname:x[0]==="customer"?(customerUrl(routeState.slug)||sharedUiState.route("customer",routeState.slug)):sharedUiState.route(x[0],x[0]==="platform"?"":routeState.slug))+'" class="'+(x[0]===routeState.view?"active":"")+'">'+x[1]+'</a>').join("");
+export function head(){
+ // Each audience owns its own navigation. Do not mix headquarters, merchants and customers.
+ const view=routeState.view;
+ const links=view==="platform"?
+  [["headquarters","總部管理"]]:
+  view==="staff"?
+   [["merchant","店家工作台"],["guide","操作說明"]]:
+   [["browse","搜尋店家"],...(view==="customer"&&routeState.slug?[["customer","預約與取號"]]:[])];
+ const destinations={
+  headquarters:sharedUiState.route("platform",""),
+  merchant:sharedUiState.route("staff",routeState.slug),
+  guide:"./merchant-center.html",
+  browse:"./directory.html?mode=search",
+  customer:customerUrl(routeState.slug)||sharedUiState.route("customer",routeState.slug)
+ };
+ routeState.$("headlinks").innerHTML=links.map(([key,label])=>
+  '<a href="'+esc(destinations[key])+'" class="'+((view==="platform"&&key==="headquarters")||(view==="staff"&&key==="merchant")||(view==="customer"&&key==="customer")?"active":"")+'">'+label+'</a>').join("");
+ const brand=document.querySelector("header .brand");
+ if(brand)brand.setAttribute("href",view==="platform"?destinations.headquarters:view==="staff"?destinations.merchant:"./home.html");
 }
 
 export function message(){return (feedbackState.err?'<div class="error" role="alert">'+esc(feedbackState.err)+'</div>':"")+(feedbackState.flash?'<div class="notice" role="status">'+esc(feedbackState.flash)+'</div>':"")}
 
 export function renderHome(){
- return '<div class="hero"><h1>預約、取號、叫號一次完成</h1><p class="muted">排隊怪獸讓店家建立自己的預約與候位服務。</p></div>'+
+ return '<div class="hero"><h1>預約、取號、叫號一次完成</h1><p class="muted">從公開店家名單選擇服務，不需要另外建立店家帳號。</p></div>'+
  '<div class="grid3">'+
- '<a class="routecard" href="./merchant-register.html?mode=signup"><h2>註冊店家帳號</h2><p>建立自己的空白門市後台。</p><strong>開始註冊 →</strong></a>'+
- '<a class="routecard" href="./merchant-register.html?mode=login"><h2>店家登入</h2><p>管理營業設定、預約與叫號。</p><strong>店家登入 →</strong></a>'+
- '<a class="routecard" href="./directory.html"><h2>搜尋店家</h2><p>尋找已公開上架的預約與取號服務。</p><strong>搜尋店家 →</strong></a></div>';
+ '<a class="routecard" href="./directory.html?mode=search"><h2>搜尋店家</h2><p>尋找提供預約與取號的合作店家。</p><strong>開始搜尋 →</strong></a>'+
+ '<a class="routecard" href="./directory.html?mode=queue"><h2>查看叫號</h2><p>掌握公開候位進度。</p><strong>查看候位 →</strong></a>'+
+ '<a class="routecard" href="./directory.html?mode=mine"><h2>我的預約</h2><p>從 LINE 確認自己的預約與號碼牌。</p><strong>查看紀錄 →</strong></a></div>';
 }
 
 export function featureChecks(data={},prefix="feature"){

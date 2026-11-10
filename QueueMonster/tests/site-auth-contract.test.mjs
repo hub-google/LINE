@@ -146,3 +146,32 @@ test("staff pages show actual operator identity and logout operator account",asy
  logout.handlers.click();await flush();
  assert.equal(ui.state.signedOut,"operator");
 });
+
+test("customer pages do not show an operator account from the same browser",async()=>{
+ const ui=createScenario({customerSession:false,lineName:"",staffName:"manager@example.test",url:"https://hub-google.github.io/LINE/booking/directory.html?mode=search"});
+ await flush();
+ const list=controls(ui.rootNode);
+ assert.equal(list.some(x=>x.className==="site-auth-name"),false);
+ const login=list.find(x=>x.tag==="button");
+ assert.match(login.children.map(x=>x.textContent).join(""),/LINE 登入/);
+});
+test("merchant portal never falls back to a LINE customer identity",async()=>{
+ const ui=createScenario({customerSession:true,lineName:"一般顧客",url:"https://hub-google.github.io/LINE/booking/?view=staff&merchant=shop-123"});
+ await flush();
+ const list=controls(ui.rootNode);
+ assert.equal(list.some(x=>x.className==="site-auth-name"),false);
+ const login=list.find(x=>x.tag==="button");
+ assert.equal(login.textContent,"店家登入");
+ login.handlers.click();
+ assert.equal(ui.state.navigated,"./merchant-register.html?mode=login");
+});
+test("headquarters page shows only headquarters sign-in when the operator lacks HQ role",async()=>{
+ const ui=createScenario({staffName:"merchant@example.test",url:"https://hub-google.github.io/LINE/booking/?view=platform"});
+ await flush();
+ const list=controls(ui.rootNode);
+ assert.equal(list.some(x=>x.className==="site-auth-name"),false);
+ const login=list.find(x=>x.tag==="button");
+ assert.equal(login.textContent,"總部登入");
+ login.handlers.click();
+ assert.equal(ui.state.navigated,"./platform-login.html");
+});
