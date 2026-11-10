@@ -42,6 +42,7 @@ async function inspect(id){
    overflowElements:over,
    smallTaps:taps.filter(x=>x.height<38||x.width<38).slice(0,12),
    visibleTapCount:taps.length,
+   keyRects:Object.fromEntries(['.page-header','.hero-heading','.main-panel','.tabs','#keyword','#explore-filters','#results','#results-heading','.hero-cta','.hero-showcase','.mobile-menu','.menu-panel','#root','.site-head'].map(sel=>{const el=document.querySelector(sel);if(!el)return [sel,null];const r=el.getBoundingClientRect();return[sel,{top:Math.round(r.top),bottom:Math.round(r.bottom),left:Math.round(r.left),right:Math.round(r.right),height:Math.round(r.height)}] }).filter(x=>x[1])),
    bodyText:(document.body.innerText||'').trim().replace(/\s+/g,' ').slice(0,500)
   };
  });
@@ -80,7 +81,9 @@ try{
  await visit('06-directory-queue',BASE+'directory.html?mode=queue');
  await visit('07-directory-game',BASE+'directory.html?mode=game');
  await visit('08-customer-reserve',BASE+'?view=customer&merchant=greenfield-salon&tab=reserve',{scroll:true,wait:2200});
+ await page.waitForTimeout(9000);await shot('08-customer-reserve-after-12s');
  await visit('09-customer-queue',BASE+'?view=customer&merchant=greenfield-salon&tab=queue',{scroll:true,wait:2200});
+ await page.waitForTimeout(9000);await shot('09-customer-queue-after-12s');
  await visit('10-merchant-register',BASE+'merchant-register.html',{scroll:true});
  await visit('11-merchant-center',BASE+'merchant-center.html');
  await visit('12-staff',BASE+'?view=staff&merchant=greenfield-salon',{scroll:true});
