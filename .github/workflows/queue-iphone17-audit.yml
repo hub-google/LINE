@@ -152,6 +152,34 @@ jobs:
               results.push(result);await page.close();
               if(!before||!visible||!closed||measure.scrollWidth>404)throw Error('Mobile navigation failed: '+JSON.stringify(result));
             }
+            for(const item of [
+              ['home-header','home.html','.site-head .logo','.site-head .site-auth-login','.site-head .mobile-menu > summary'],
+              ['directory-header','directory.html?mode=search','.page-header .brand','.page-header .site-auth-login',null]
+            ]){
+              const [name,route,brandSel,loginSel,menuSel]=item;
+              const p=await context.newPage();
+              await p.goto(base+route,{waitUntil:'domcontentloaded',timeout:40000});
+              await p.waitForTimeout(1500);
+              const geometry=await p.evaluate(args=>{
+                const position=selector=>{
+                  if(!selector)return null;
+                  const e=document.querySelector(selector);
+                  if(!e)return null;
+                  const r=e.getBoundingClientRect();
+                  return {centerY:Math.round((r.top+r.bottom)/2),left:Math.round(r.left),right:Math.round(r.right),visible:r.width>0&&r.height>0};
+                };
+                return {brand:position(args[0]),login:position(args[1]),menu:position(args[2]),width:innerWidth,scrollWidth:document.documentElement.scrollWidth};
+              },[brandSel,loginSel,menuSel]);
+              await p.screenshot({path:'iphone17-audit/updated-'+name+'.png',fullPage:false,animations:'disabled'});
+              const a=geometry.brand,b=geometry.login,c=geometry.menu;
+              results.push({name,route,...geometry});
+              if(!a?.visible||!b?.visible||(menuSel&&!c?.visible)||
+                Math.abs(a.centerY-b.centerY)>18||
+                (c&&Math.abs(a.centerY-c.centerY)>18)||
+                geometry.scrollWidth>geometry.width+2
+              )throw Error('Mobile header wrapping: '+JSON.stringify(geometry));
+              await p.close();
+            }
             const page=await context.newPage();
             await page.goto(base+'merchant-register.html?mode=login',{waitUntil:'domcontentloaded',timeout:40000});
             await page.waitForTimeout(1800);
