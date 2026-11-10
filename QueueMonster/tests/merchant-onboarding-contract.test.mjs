@@ -18,13 +18,22 @@ const cleanup=read("supabase/migrations/20261106103000_disable_qa_recovery.sql")
 test("merchant signup and login are separate actionable screens",()=>{
  assert.match(reg,/id="tab-login"/);
  assert.match(reg,/id="tab-signup"/);
- for(const id of ["username","signup-email","signup-pass","signup-confirm","login-email","login-pass"]){
+ for(const id of ["signup-email","signup-pass","signup-confirm","login-email","login-pass"]){
   assert.match(reg,new RegExp('id="'+id+'"'));
  }
  assert.match(reg,/signInWithPassword/);
  assert.match(reg,/auth\.signUp/);
  assert.match(reg,/so_start_merchant/);
  assert.match(reg,/emailRedirectTo:returnToLogin\(\)/);
+ assert.doesNotMatch(reg,/id="username"|id="finish-username"/);
+ assert.match(reg,/電子信箱（登入帳號）/);
+ const loginLogic=read("saas/assets/merchant-register/main.js");
+ assert.match(loginLogic,/const username="m"\+String\(user\.id/);
+ assert.match(loginLogic,/so_start_merchant/);
+ assert.doesNotMatch(loginLogic,/data:\{username\}|\$\("username"\)|\$\("finish-username"\)/);
+ const merchantGuide=read("saas/merchant-center.html");
+ assert.doesNotMatch(merchantGuide,/例如：happyshop|填寫帳號、電子信箱/);
+ assert.match(merchantGuide,/merchant-register\.html\?mode=signup/);
 });
 test("merchant supports secure account activation, password reset and callback preservation",()=>{
  assert.match(reg,/signInWithOtp/);
