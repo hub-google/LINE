@@ -9,7 +9,7 @@ import {staffState} from "../state/staffState.js";
 import {render} from "./../staff-layout.js";
 import {loadCustomerHistory} from "./../staff-history.js";
 import {act,checked,rpc,urlFor,val} from "./../data-loading.js";
-import {merchantProfilePatch,merchantUploadLogo} from "./../merchant-brand.js";
+import {merchantLogoSaved,merchantProfilePatch,merchantUploadLogo} from "./../merchant-brand.js";
 
 export async function handleAccountPlatform(ev,b,a,id){
 if(a==="customer-history-close"){
@@ -47,6 +47,7 @@ if(a==="customer-history-close"){
    p_modules:checked("create-feature"),p_owner_email:email||null});
   try{await rpc("so_update_tenant",{p_slug:result.slug,p_patch:patch});}
   catch(error){routeState.platformTab="list";throw Error("企業已建立，但部分設定未儲存（"+result.slug+"）："+error.message);}
+  merchantLogoSaved("create");
   routeState.platformTab="list";
   return "企業已建立，LOGO 與品牌設定已儲存";
  });return true;}

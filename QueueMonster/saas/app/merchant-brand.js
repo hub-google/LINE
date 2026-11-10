@@ -13,6 +13,31 @@ export function merchantSafeLogoUrl(url){
  return /^https:\/\/[^\s<>"']{1,490}$/i.test(text)?text:"";
 }
 
+
+function logoDraftKey(prefix){
+ return prefix==="set"?"set:"+String(routeState.slug||""):prefix;
+}
+
+function currentLogoDraft(prefix){
+ return merchantBrandState.logoDrafts?.get(logoDraftKey(prefix))||null;
+}
+
+function setLogoDraft(prefix,kind,file=null){
+ const key=logoDraftKey(prefix),old=currentLogoDraft(prefix);
+ if(old?.previewUrl)URL.revokeObjectURL(old.previewUrl);
+ const draft=kind==="file"?{kind,file,previewUrl:URL.createObjectURL(file)}:{kind:"clear"};
+ merchantBrandState.logoDrafts.set(key,draft);
+ document.documentElement.dataset.unsavedMerchantLogo="true";
+ return draft;
+}
+
+export function merchantLogoSaved(prefix){
+ const key=logoDraftKey(prefix),old=currentLogoDraft(prefix);
+ if(old?.previewUrl)URL.revokeObjectURL(old.previewUrl);
+ merchantBrandState.logoDrafts?.delete(key);
+ document.documentElement.dataset.unsavedMerchantLogo=merchantBrandState.logoDrafts?.size?"true":"false";
+}
+
 export function merchantAccent(hex){
  return /^#[0-9a-f]{6}$/i.test(String(hex||""))?String(hex).toUpperCase():"#523B70";
 }
@@ -36,12 +61,16 @@ export function merchantColorControl(prefix,color){
 }
 
 export function merchantLogoControl(prefix,logo){
- const safe=merchantSafeLogoUrl(logo);
+ const draft=currentLogoDraft(prefix);
+ const safe=draft?.kind==="clear"?"":merchantSafeLogoUrl(logo);
+ const displayUrl=draft?.kind==="file"?draft.previewUrl:safe;
+ const status=draft?.kind==="file"?"已選擇："+draft.file.name+"（尚未儲存）":draft?.kind==="clear"?"儲存企業設定後將移除 LOGO":"";
  return '<div class="merchant-logo-editor"><label for="'+prefix+'-logo-file">店家 LOGO</label>'+
-  '<div class="merchant-logo-row"><div class="merchant-logo-frame"><img id="'+prefix+'-logo-preview" src="'+esc(safe)+'" alt="店家 LOGO 預覽" '+(safe?'':'hidden')+'>'+
-  '<span id="'+prefix+'-logo-placeholder" '+(safe?'hidden':'')+'>尚未上傳</span></div>'+
+  '<div class="merchant-logo-row"><div class="merchant-logo-frame"><img id="'+prefix+'-logo-preview" src="'+esc(displayUrl)+'" alt="店家 LOGO 預覽" '+(displayUrl?'':'hidden')+'>'+
+  '<span id="'+prefix+'-logo-placeholder" '+(displayUrl?'hidden':'')+'>尚未上傳</span></div>'+
   '<div class="merchant-logo-actions"><input class="merchant-logo-file" type="file" id="'+prefix+'-logo-file" data-logo-file="'+prefix+'" accept="image/png,image/jpeg,image/webp" aria-describedby="'+prefix+'-logo-hint">'+
   '<p id="'+prefix+'-logo-hint" class="small">選擇 JPG、PNG 或 WebP 圖片，最大 2 MB；選取後立即預覽，按儲存才會正式上傳。</p>'+
+  '<p id="'+prefix+'-logo-selection" class="small" '+(status?'':'hidden')+'>'+esc(status)+'</p>'+
   '<button type="button" class="btn outline merchant-clear-logo" data-logo-clear="'+prefix+'">移除 LOGO</button></div></div>'+
   '<input type="hidden" id="'+prefix+'-logo" value="'+esc(safe)+'"></div>';
 }
@@ -94,7 +123,8 @@ export function merchantProfilePatch(prefix,previous={}){
 }
 
 export function merchantLogoFile(prefix){
- const file=routeState.$(prefix+"-logo-file")?.files?.[0];
+ const draft=currentLogoDraft(prefix);
+ const file=routeState.$(prefix+"-logo-file")?.files?.[0]||(draft?.kind==="file"?draft.file:null);
  if(!file)return null;
  if(!["image/png","image/jpeg","image/webp"].includes(file.type))throw Error("LOGO 僅支援 JPG、PNG 或 WebP 格式");
  if(file.size<1||file.size>2097152)throw Error("LOGO 圖片不可超過 2 MB");
@@ -129,17 +159,20 @@ export function merchantSetAccent(prefix,hex){
 }
 
 export function merchantClearLogo(prefix){
- const file=routeState.$(prefix+"-logo-file"),hidden=routeState.$(prefix+"-logo"),preview=routeState.$(prefix+"-logo-preview"),placeholder=routeState.$(prefix+"-logo-placeholder");
+ setLogoDraft(prefix,"clear");
+ const file=routeState.$(prefix+"-logo-file"),hidden=routeState.$(prefix+"-logo"),preview=routeState.$(prefix+"-logo-preview"),placeholder=routeState.$(prefix+"-logo-placeholder"),status=routeState.$(prefix+"-logo-selection");
  if(file)file.value="";
  if(hidden)hidden.value="";
- if(preview){if(preview.dataset.blobUrl)URL.revokeObjectURL(preview.dataset.blobUrl);preview.removeAttribute("src");preview.hidden=true;delete preview.dataset.blobUrl;}
+ if(preview){preview.removeAttribute("src");preview.hidden=true;}
  if(placeholder)placeholder.hidden=false;
+ if(status){status.textContent="儲存企業設定後將移除 LOGO";status.hidden=false;}
 }
 
 export function initializeMerchantBrand(){
 merchantBrandState.MERCHANT_CATEGORIES=["其他","餐飲","美髮","美甲／美容","醫療／診所","健康／按摩","運動","寵物","教育","生活服務"];
 merchantBrandState.MERCHANT_PALETTE=["#523B70","#7A4BBD","#147E68","#2777B4","#E47C72","#DE9C28","#243B53","#C3548C","#FF4545","#FF6B57","#FF8A3D","#FFB020","#FFD43B","#FFF176","#B8E63B","#66D95E","#00C48C","#1DD3B0","#27D9E5","#26B8F3","#4DA3FF","#4361EE","#8A5CFF","#B56BFF","#FF5CC8","#FF78AC","#FF9EA8","#FFCFAB","#F5E06A","#A7F3D0","#91E8FF","#C4B5FD"];
 merchantBrandState.MERCHANT_LOGO_BUCKET="so-merchant-logos";
+merchantBrandState.logoDrafts=new Map();
 document.addEventListener("input",event=>{
  const picker=event.target.closest?.("input[data-color-picker]");
  if(picker)merchantSetAccent(picker.dataset.colorPicker,picker.value);
@@ -149,16 +182,16 @@ document.addEventListener("change",event=>{
  if(picker){merchantSetAccent(picker.dataset.colorPicker,picker.value);return;}
  const input=event.target.closest?.("input[data-logo-file]");
  if(!input)return;
- const prefix=input.dataset.logoFile,preview=routeState.$(prefix+"-logo-preview"),placeholder=routeState.$(prefix+"-logo-placeholder");
+ const prefix=input.dataset.logoFile,preview=routeState.$(prefix+"-logo-preview"),placeholder=routeState.$(prefix+"-logo-placeholder"),status=routeState.$(prefix+"-logo-selection");
  try{
   const file=merchantLogoFile(prefix);
   if(!file)return;
-  if(preview){
-   if(preview.dataset.blobUrl)URL.revokeObjectURL(preview.dataset.blobUrl);
-   const url=URL.createObjectURL(file);
-   preview.src=url;preview.hidden=false;preview.dataset.blobUrl=url;
-  }
+  const draft=setLogoDraft(prefix,"file",file);
+  if(preview){preview.src=draft.previewUrl;preview.hidden=false;}
   if(placeholder)placeholder.hidden=true;
+  if(status){status.textContent="已選擇："+file.name+"（尚未儲存）";status.hidden=false;}
+
+
  }catch(error){input.value="";showActionFeedback(error.message,"error");}
 });
 }
