@@ -76,3 +76,56 @@ test("booking main module still passes JavaScript syntax validation",()=>{
  const checked=spawnSync(process.execPath,["--input-type=module","--check"],{input:module,encoding:"utf8"});
  assert.equal(checked.status,0,checked.stderr);
 });
+
+
+test("pending merchant logo stays selected across DOM replacement and clears only on save",async()=>{
+ const {initializeMerchantBrand,merchantLogoControl,merchantLogoFile,merchantClearLogo,merchantLogoSaved}=await import("../saas/app/merchant-brand.js");
+ const {routeState}=await import("../saas/app/state/routeState.js");
+ const originalDocument=globalThis.document;
+ const originalCreateObjectURL=URL.createObjectURL;
+ const originalRevokeObjectURL=URL.revokeObjectURL;
+ const originalSlug=routeState.slug,originalGetter=routeState.$;
+ const callbacks={};
+ const file=Object.assign(new Blob(["image"],{type:"image/png"}),{name:"pikachu.png"});
+ const inputs={
+  "set-logo-file":{files:[file],value:"pikachu.png"},
+  "set-logo-preview":{hidden:true,src:"",removeAttribute(k){delete this[k];}},
+  "set-logo-placeholder":{hidden:false},
+  "set-logo":{value:""},
+  "set-logo-selection":{hidden:true,textContent:""}
+ };
+ try{
+  globalThis.document={
+   documentElement:{dataset:{}},
+   addEventListener(name,fn){callbacks[name]=fn;},
+   querySelectorAll(){return [];}
+  };
+  URL.createObjectURL=()=> "blob:test-pikachu";
+  URL.revokeObjectURL=()=>{};
+  routeState.slug="logo-persistence-test";
+  routeState.$=id=>inputs[id]||null;
+  initializeMerchantBrand();
+  callbacks.change({target:{closest(selector){
+   return selector==="input[data-logo-file]"?{dataset:{logoFile:"set"}}:null;
+  }}});
+  assert.equal(merchantLogoFile("set"),file);
+  // Re-render replaces the file input with a blank DOM node.
+  inputs["set-logo-file"]={files:[],value:""};
+  assert.equal(merchantLogoFile("set"),file);
+  assert.match(merchantLogoControl("set",""),/blob:test-pikachu/);
+  assert.match(merchantLogoControl("set",""),/pikachu.png/);
+  assert.equal(document.documentElement.dataset.unsavedMerchantLogo,"true");
+  merchantClearLogo("set");
+  assert.equal(merchantLogoFile("set"),null);
+  assert.doesNotMatch(merchantLogoControl("set","https://example.com/stored.png"),/stored.png/);
+  merchantLogoSaved("set");
+  assert.equal(document.documentElement.dataset.unsavedMerchantLogo,"false");
+ }finally{
+  globalThis.document=originalDocument;
+  URL.createObjectURL=originalCreateObjectURL;
+  URL.revokeObjectURL=originalRevokeObjectURL;
+  routeState.slug=originalSlug;
+  routeState.$=originalGetter;
+ }
+});
+
