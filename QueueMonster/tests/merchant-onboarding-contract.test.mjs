@@ -221,8 +221,9 @@ test("customer, merchant and headquarters views never mix login and navigation l
  assert.match(shared,/view==="platform"/);
  assert.match(shared,/view==="staff"/);
  assert.match(shared,/\["browse","搜尋店家"\]/);
- assert.ok(shared.includes('return lineIdentity'));
- assert.ok(shared.includes("return operatorIdentity"));
+ const auth=read("saas/site-auth.js");
+ assert.ok(auth.includes('return lineIdentity'));
+ assert.ok(auth.includes("return operatorIdentity"));
 });
 test("merchant can independently enable reservation and queue in their own settings",()=>{
  const modes=read("supabase/migrations/20261109093000_merchant_service_mode_switch.sql");
