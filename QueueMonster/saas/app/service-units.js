@@ -145,8 +145,8 @@ export function unitSettingsPanel(isManager){
    '</tbody></table></div>'+
    (isManager?'<div class="staff-actionbar" style="margin-top:14px">'+btn("＋ 新增場次","unit-session-new","primary")+'</div>':'')+
    (isManager&&showForm?'<div class="inset" style="margin-top:16px"><h3>'+esc(editing?"編輯場次":"新增場次")+'</h3>'+
-    '<label for="unit-admin-unit">服務窗口（選填）</label><select class="field" id="unit-admin-unit">'+options+'</select>'+
-    '<p class="small">例如：1診、2診、售後窗口、維修窗口；一般店家可保持「不指定」。</p>'+
+    '<label for="unit-admin-unit">服務窗口（選填）</label><select class="field" id="unit-admin-unit" '+(editing?'disabled':'')+'>'+options+'</select>'+
+    '<p class="small">例如：1診、2診、售後窗口、維修窗口；一般店家可保持「不指定」。已建立場次的所屬窗口不能直接更換。</p>'+
     '<div class="grid"><div>'+field("場次名稱","unit-session-name",editing?.name||"上午場","text",'maxlength="60"')+
       field("開始時間","unit-session-start",editing?.start||"09:00","time")+'</div>'+
     '<div>'+field("開放名額","unit-session-capacity",editing?.capacity??10,"number",'min="1" max="300"')+
