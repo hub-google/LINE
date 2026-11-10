@@ -202,6 +202,7 @@ test("merchant portal never falls back to a LINE customer identity",async()=>{
  assert.equal(list.some(x=>x.className==="site-auth-name"),false);
  const login=list.find(x=>x.tag==="button");
  assert.equal(login.textContent,"店家登入");
+ assert.equal(login.className,"site-auth-button","店家登入不可顯示 LINE 圖示");
  login.handlers.click();
  assert.equal(ui.state.navigated,"./merchant-register.html?mode=login");
 });
@@ -212,6 +213,7 @@ test("headquarters page shows only headquarters sign-in when the operator lacks 
  assert.equal(list.some(x=>x.className==="site-auth-name"),false);
  const login=list.find(x=>x.tag==="button");
  assert.equal(login.textContent,"總部登入");
+ assert.equal(login.className,"site-auth-button","總部登入不可顯示 LINE 圖示");
  login.handlers.click();
  assert.equal(ui.state.navigated,"./platform-login.html");
 });
