@@ -36,7 +36,7 @@ test("shared auth email templates are branded only for Queue Monster",()=>{
  assert.match(mail,/queue-monster-mail-v1/);
  assert.match(mail,/{{ else }}/);
  assert.match(mail,/排隊怪獸/);
- assert.match(mail,/password_min_length/);
+ assert.match(mail,/password_min_length/);\n assert.doesNotMatch(mail,/api\\("PATCH",policy_patch\\)/);
  assert.match(mail,/site_url/);
  assert.match(workflow,/SUPABASE_ACCESS_TOKEN/);
  assert.doesNotMatch(workflow,/echo \$SUPABASE_ACCESS_TOKEN/);
