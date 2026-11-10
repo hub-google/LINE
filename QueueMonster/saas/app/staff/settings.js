@@ -32,7 +32,7 @@ export function renderStaffSettings({t,isManager,html}){
    '<div class="merchant-profile-actions">'+btn("儲存企業設定","update-settings","primary")+'</div>')+
   (isManager?box("顧客首頁文字與顯示設定",
     '<p class="small">以下僅影響顧客預約／取號首頁，不會更改店家名稱、搜尋資料或預約功能。留空的文字不會顯示；可直接關閉整個介紹區塊。</p>'+
-    '<label class="checklist"><input id="homepage-show-intro" type="checkbox" '+(staffState.customerHomepageCopy?.show_intro!==false?'checked':'')+'>顯示首頁介紹區塊</label>'+
+    '<label class="checklist"><input id="homepage-show-intro" type="checkbox" '+(staffState.customerHomepageCopy?.show_intro===true?'checked':'')+'>顯示首頁介紹區塊</label>'+
     '<div class="grid"><div>'+field("首頁主標題","homepage-title",staffState.customerHomepageCopy?.title??t.name,"text",'maxlength="60" placeholder="例如：歡迎來到本店"')+'</div>'+
     '<div>'+field("上方小標籤（可留空）","homepage-label",staffState.customerHomepageCopy?.label??"","text",'maxlength="32" placeholder="不需要可留空"')+'</div></div>'+
     '<label for="homepage-subtitle">首頁說明文字（可留空）</label><textarea id="homepage-subtitle" class="field" rows="2" maxlength="180" placeholder="想給顧客看的簡短介紹">'+esc(staffState.customerHomepageCopy?.subtitle??t.description??"")+'</textarea>'+
