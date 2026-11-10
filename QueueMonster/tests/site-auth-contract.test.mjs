@@ -203,3 +203,31 @@ test("headquarters page shows only headquarters sign-in when the operator lacks 
  login.handlers.click();
  assert.equal(ui.state.navigated,"./platform-login.html");
 });
+
+test("platform LINE identity is verified independently from store selection",()=>{
+ const edge=read("supabase/functions/line-bridge/index.ts");
+ const migration=read("supabase/migrations/20261110113000_platform_customer_line_identity.sql");
+ const session=read("saas/app/line-session.js");
+ const entry=read("saas/app/customer-booking.js");
+ const gate=read("saas/app/data-loading.js");
+ const redirect=read("saas/assets/index/redirect.js");
+ assert.match(edge,/payload\.action === "link-platform"/);
+ assert.match(edge,/payload\.action === "resume-platform"/);
+ assert.match(edge,/lineVerify\(idToken,accessToken,\{channelId:platformChannel\}\)/);
+ assert.match(edge,/so_platform_line_identities/);
+ assert.match(edge,/identity\(req, db\)/);
+ assert.match(edge,/verified\.login_channel_id===expectedChannelId/);
+ assert.match(edge,/if \(!ownOa/);
+ assert.match(migration,/create table if not exists public\.so_platform_line_identities/);
+ assert.match(migration,/revoke all on public\.so_platform_line_identities from public, anon, authenticated/);
+ assert.match(migration,/alter table public\.so_platform_line_identities enable row level security/);
+ assert.match(migration,/so_site_header_identity/);
+ assert.match(migration,/so_my_merchant_activity/);
+ assert.match(session,/action:"resume-platform"/);
+ assert.match(session,/action:"link-platform"/);
+ assert.match(session,/isSafeMerchant\(routeState\.slug\)\?"&merchant="/);
+ assert.match(entry,/if\(!routeState\.slug\)/);
+ assert.match(gate,/routeState\.view==="customer"&&!routeState\.slug/);
+ assert.match(redirect,/"site_return"/);
+ assert.doesNotMatch(code,/請先選擇店家，才能進行 LINE 登入/);
+});
