@@ -89,7 +89,7 @@ export function menuSelectSection(mode,items,chosen,flow){
   (active.length?'<div class="menu-choices">'+active.map(item=>
    '<label class="menu-choice"><input type="checkbox" data-menu-choice="'+flow+'" value="'+esc(item.id)+'" '+
     (chosen.includes(item.id)?"checked ":"")+'><span><strong>'+esc(item.name)+'</strong>'+
-    '<span class="small">'+(item.kind==="MENU"?"餐點":"服務")+(menuPrice(item)?" ・ "+esc(menuPrice(item)):"")+'</span>'+
+    '<span class="small">'+(item.kind==="MENU"?"餐點":item.kind==="SERVICE"?"服務":item.kind)+(menuPrice(item)?" ・ "+esc(menuPrice(item)):"")+'</span>'+
     (item.description?'<span class="small">'+esc(item.description)+'</span>':"")+'</span></label>').join("")+'</div>':
    '<p class="staff-help">店家尚未上架任何餐點或服務，請先聯絡店家。</p>')+
   (mode==="REQUIRED"?'<p class="staff-help">請至少選擇一項，才能完成送出。</p>':'<p class="staff-help">不需要預選服務，也可以直接送出。</p>')+
