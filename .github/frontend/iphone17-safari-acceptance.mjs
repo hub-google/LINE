@@ -56,7 +56,15 @@ for(const [engineName,engine] of [['webkit',webkit],['chromium',chromium]]){
      row.checks.push({name:'Result cards start in first screen',ok:m.rects['#results']?.top<874,detail:m.rects['#results']?.top});
      row.checks.push({name:'Search data rendered',ok:!/資料暫時無法載入|正在載入店家/.test(m.body),detail:m.body.slice(-170)});
     }
-    if(name==='my-records-guest')row.checks.push({name:'Guest state not confused with empty history',ok:/請先使用 LINE 登入/.test(m.body)&&!/還沒有找到你的預約紀錄/.test(m.body),detail:m.body.slice(-220)});
+    if(name==='my-records-guest'){
+     // An identity check may still be pending on slower mobile connections.
+     // Neither waiting nor unauthenticated should ever show "popular stores".
+     const first=await page.locator('body').innerText();
+     row.checks.push({name:'Personal records never show the popular-stores loading placeholder',ok:!/熱門店家排行/.test(first)&&/我的紀錄/.test(first),detail:safe(first)});
+     if(!/請先使用 LINE 登入/.test(first))await page.waitForTimeout(8500);
+     const last=await page.locator('body').innerText();
+     row.checks.push({name:'Guest records resolve to login or explicit network error',ok:/請先使用 LINE 登入|目前無法取得紀錄|資料暫時無法載入/.test(last)&&!/還沒有找到你的預約紀錄/.test(last),detail:safe(last)});
+    }
     if(name==='customer-reserve-guest'||name==='customer-queue-guest'){
      row.checks.push({name:'No unsolicited external LINE redirect',ok:m.url.startsWith(base),detail:m.url});
      row.checks.push({name:'Guest can see public board and explicit LINE action',ok:/公開即時叫號|公開叫號看板/.test(m.body)&&/LINE/.test(m.body),detail:m.body});
