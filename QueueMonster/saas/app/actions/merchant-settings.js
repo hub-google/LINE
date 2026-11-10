@@ -45,7 +45,7 @@ if(a==="copy-own-oa-webhook"){
      const priceText=val("menu-price"),price=priceText===""?null:Number(priceText);
      let kind=val("menu-kind");
      if(kind==="__CUSTOM__")kind=val("menu-custom-kind");
-     if(!kind||kind.length>30||kind==="__CUSTOM__"||/[<>\\u0000-\\u001f\\u007f]/.test(kind))throw Error("請輸入 1～30 字的有效類型名稱");
+     if(!kind||kind.length>30||kind==="__CUSTOM__"||/[<>\u0000-\u001f\u007f]/.test(kind))throw Error("請輸入 1～30 字的有效類型名稱");
      if(price!==null&&(!Number.isFinite(price)||price<0))throw Error("請輸入有效的價格");
      const result=await rpc("so_menu_save",{
        p_slug:routeState.slug,p_kind:kind,p_name:val("menu-name"),
