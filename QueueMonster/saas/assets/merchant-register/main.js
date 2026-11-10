@@ -43,7 +43,7 @@ async function effectivePassword(email,plaintext){
 const $=id=>document.getElementById(id);
 const returnToLogin=()=>{const url=new URL("./merchant-register.html?mode=login",location.href);if(invited)url.searchParams.set("staff_invite",invitedId);else url.searchParams.set("from","queue-monster");return url.href;};
 const returnToReset=()=>new URL("./merchant-register.html?mode=login&intent=recovery",location.href).href;
-const needsInitialPassword=user=>user?.user_metadata?.app==="queue-monster" && !!user?.invited_at && user?.app_metadata?.queue_monster_password_ready!==true;
+const needsInitialPassword=user=>user?.app_metadata?.queue_monster_invited===true && user?.app_metadata?.queue_monster_password_ready!==true;
 const msg=(t,error=false)=>{$("message").textContent=t||"";$("message").className=t?"message"+(error?" error":""):""};
 const invitedId=new URL(location.href).searchParams.get("staff_invite")||"";
 const inviteIdPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
