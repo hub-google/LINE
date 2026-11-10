@@ -1,0 +1,128 @@
+name: QueueMonster iPhone17 mobile UI visual audit
+on:
+  push:
+    branches: [qa/iphone17-ui-audit-20261110]
+    paths:
+      - '.github/workflows/queue-iphone17-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mobile-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: iPhone 17 portrait live-site UI screenshots
+        shell: bash
+        run: |
+          mkdir -p iphone17-audit
+          node <<'NODE'
+          const {chromium}=require('playwright');
+          const fs=require('fs');
+          const path=require('path');
+          const base='https://hub-google.github.io/LINE/booking/';
+          const cases=[
+            ['home','home.html'],
+            ['directory','directory.html?mode=search'],
+            ['directory-queue','directory.html?mode=queue'],
+            ['directory-history','directory.html?mode=mine'],
+            ['merchant-login','merchant-register.html?mode=login'],
+            ['merchant-signup','merchant-register.html?mode=signup'],
+            ['headquarters-login','platform-login.html'],
+            ['booking-home','index.html'],
+            ['staff','index.html?view=staff&merchant=qa-84b3ef9297eb470685a91a527ca499ca'],
+            ['platform','index.html?view=platform'],
+            ['customer','index.html?view=customer&merchant=qa-84b3ef9297eb470685a91a527ca499ca'],
+            ['guide','merchant-center.html'],
+            ['board','board.html']
+          ];
+          const report={timestamp:new Date().toISOString(),base,device:'iPhone 17 emulated: 402x874 DPR3, Chromium touch/mobile',cases:[]};
+          const safe=(s)=>s.replace(/[^a-zA-Z0-9-]/g,'');
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          (async()=>{
+           const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+           const context=await browser.newContext({viewport:{width:402,height:874},deviceScaleFactor:3,isMobile:true,hasTouch:true,
+             userAgent:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1',
+             locale:'zh-TW',timezoneId:'Asia/Taipei'});
+           for(const [name,route] of cases){
+            const page=await context.newPage(),r={name,url:base+route,consoleErrors:[],httpErrors:[],steps:[]};
+            page.on('pageerror',e=>r.consoleErrors.push(String(e).slice(0,250)));
+            page.on('response',z=>{if(z.status()>=400)r.httpErrors.push({status:z.status(),url:z.url().slice(0,130)})});
+            try{
+             const resp=await page.goto(r.url,{waitUntil:'domcontentloaded',timeout:35000});
+             r.httpStatus=resp?.status()||null;
+             await sleep(2800);
+             r.title=await page.title();
+             r.metrics=await page.evaluate(()=>{
+               const width=innerWidth,doc=document.documentElement,body=document.body;
+               const isShown=e=>{const s=getComputedStyle(e),b=e.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity)>0&&b.width>0&&b.height>0};
+               const safeText=e=>(e.innerText||e.getAttribute('aria-label')||e.title||'').trim().replace(/\s+/g,' ').slice(0,70);
+               const sel='header a,header button,nav a,nav button,.tabs a,.tabs button,[role=tab],summary';
+               const items=[...document.querySelectorAll(sel)].filter(isShown).slice(0,95).map(e=>{const b=e.getBoundingClientRect();return {text:safeText(e),tag:e.tagName,x:Math.round(b.x),y:Math.round(b.y),w:Math.round(b.width),h:Math.round(b.height),overRight:b.right>width+2,underLeft:b.left<-2}});
+               const over=[...document.querySelectorAll('body *')].filter(isShown).map(e=>{const b=e.getBoundingClientRect();return {tag:e.tagName,cls:String(e.className||'').slice(0,80),text:safeText(e).slice(0,35),right:Math.round(b.right),left:Math.round(b.left),width:Math.round(b.width)}}).filter(x=>x.right>width+10||x.left<-10).sort((a,b)=>b.right-a.right).slice(0,22);
+               const buttons=[...document.querySelectorAll('button,a,input,select')].filter(isShown).filter(e=>{const b=e.getBoundingClientRect();return b.top<innerHeight&&b.bottom>0}).map(e=>{const b=e.getBoundingClientRect();return {text:safeText(e),w:Math.round(b.width),h:Math.round(b.height)}}).filter(x=>x.w<38||x.h<32).slice(0,25);
+               return {windowWidth:width,scrollWidth:doc.scrollWidth,bodyScrollWidth:body.scrollWidth,overflowPx:Math.max(doc.scrollWidth,body.scrollWidth)-width,items,over,smallTargets:buttons,bodyText:body.innerText.slice(0,1000)};
+             });
+             const file='iphone17-audit/'+safe(name)+'.png';
+             await page.screenshot({path:file,fullPage:true,animations:'disabled',timeout:25000});
+             r.screenshot=file;
+             // On pages with a nav drawer, exercise its open/close state and capture.
+             const toggles=page.locator('button[aria-controls],button[aria-expanded],button[class*="menu"],button[class*="hamburger"],button[class*="nav-toggle"]');
+             const n=Math.min(await toggles.count(),8);
+             for(let i=0;i<n;i++){
+               try{
+                const b=toggles.nth(i); if(!(await b.isVisible()))continue;
+                const label=((await b.getAttribute('aria-label'))||((await b.innerText()).trim())||'').slice(0,70);
+                if(/刪除|重設|登出|取消預約|取消取號|清空/.test(label))continue;
+                await b.click({timeout:1500});await sleep(400);
+                const p='iphone17-audit/'+safe(name)+'-toggle-'+i+'.png';
+                await page.screenshot({path:p,fullPage:false,timeout:12000});
+                r.steps.push({label,screenshot:p,expanded:await b.getAttribute('aria-expanded')});
+                await b.click({timeout:1500}).catch(()=>{});
+               }catch(e){r.steps.push({toggleIndex:i,error:String(e).slice(0,170)})}
+             }
+             if(name==='merchant-login'||name==='merchant-signup'){
+               const tabs=page.getByRole('tab');
+               const count=await tabs.count();
+               for(let i=0;i<count;i++)try{
+                 await tabs.nth(i).click({timeout:1500});await sleep(250);
+                 const p='iphone17-audit/'+safe(name)+'-tab-'+i+'.png';
+                 await page.screenshot({path:p,fullPage:false,timeout:12000});
+                 r.steps.push({label:'Tab '+i+' '+(await tabs.nth(i).innerText()),screenshot:p});
+               }catch(e){r.steps.push({tabIndex:i,error:String(e).slice(0,150)})}
+             }
+             const loginBtns=page.locator('button').filter({hasText:/測試登入|一鍵登入|測試總公司|測試店員/});
+             r.qaLoginButtons=await loginBtns.count();
+             if((name==='staff'||name==='platform')&&r.qaLoginButtons){
+               try{
+                await loginBtns.first().click({timeout:1800});await sleep(2800);
+                const p='iphone17-audit/'+safe(name)+'-after-qa-login.png';
+                await page.screenshot({path:p,fullPage:true,timeout:25000});
+                r.steps.push({label:'QA login button clicked',screenshot:p,url:page.url(),bodyText:(await page.locator('body').innerText()).slice(0,900)});
+               }catch(e){r.steps.push({label:'QA login attempt',error:String(e).slice(0,250)})}
+             }
+            }catch(e){r.error=String(e).slice(0,900)}
+            finally{report.cases.push(r);await page.close()}
+           }
+           fs.writeFileSync('iphone17-audit/audit.json',JSON.stringify(report,null,2));
+           const summary=report.cases.map(c=>({name:c.name,status:c.httpStatus,overflow:c.metrics?.overflowPx,errors:c.consoleErrors.length,qaLoginButtons:c.qaLoginButtons,screen:c.screenshot,steps:c.steps.length}));
+           console.log('AUDIT SUMMARY '+JSON.stringify(summary));
+           await browser.close();
+          })().catch(e=>{console.error('Audit fatal',e);process.exit(1)});
+          NODE
+      - name: Upload screenshots and machine-readable results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: queuemonster-iphone17-audit-20261110
+          path: iphone17-audit/
+          if-no-files-found: warn
+          retention-days: 21
