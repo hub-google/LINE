@@ -14,7 +14,7 @@ export function renderStaffMembers({isManager,html}){
   invites.length?invites.map(i=>
     '<div class="listline"><span><b>'+esc(i.email)+'</b><small class="muted" style="display:block">尚未接受邀請</small></span>'+
     tag(roleName[i.role]||i.role)+
-    (isManager?btn("複製邀請連結","copy-staff-invite","outline",'data-id="'+esc(i.id)+'"'):"")+
+    (isManager?btn("重新寄送","resend-staff-invite","outline",'data-id="'+esc(i.id)+'"')+btn("複製邀請連結","copy-staff-invite","outline",'data-id="'+esc(i.id)+'"'):"")+
     '</div>').join(""):'<p class="muted">尚無待接受的邀請</p>')+
  (isManager?box("邀請企業員工",
    '<p class="muted">受邀員工會收到登入／接受邀請的 Email；如果信件未送達，可以複製上方邀請連結傳給對方。</p>'+
