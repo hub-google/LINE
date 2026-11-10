@@ -112,24 +112,10 @@ if patch:
 else:
     print("Queue Monster mail templates were already configured.")
 
-# Requested policy: any nonempty password, no required character classes.
-# Note: password policy is project-global, shared with other applications.
+# Native Supabase Auth enforces a >=6-character minimum in hosted projects.
+# Never weaken this shared Auth project's policy for Chat/Workforce/OpenData.
+# Queue Monster's client-only short-password encoding makes 1-character user
+# input compatible with the existing native minimum (without adding entropy).
 config = api("GET")
-minimum = config.get("password_min_length")
-classes = config.get("password_required_characters")
-print(f"Shared Auth password policy before update: minimum length {minimum!r}; char-class restriction present: {bool(classes)}")
-policy_patch = {}
-if minimum != 1:
-    policy_patch["password_min_length"] = 1
-if classes:
-    policy_patch["password_required_characters"] = ""
-if policy_patch:
-    try:
-        api("PATCH",policy_patch)
-    except RuntimeError as e:
-        print("::error title=Password policy refused::Supabase refused one-character passwords; mail templates remain installed.")
-        raise
-verify = api("GET")
-if verify.get("password_min_length") != 1 or bool(verify.get("password_required_characters")):
-    raise RuntimeError("Auth policy did not persist requested one-character setting")
-print("Supabase Auth verified: password minimum length is 1, with no required character classes.")
+print("Shared Supabase Auth password minimum retained:",config.get("password_min_length"))
+print("Queue Monster shorter passwords are encoded client-side; other products are unaffected.")
