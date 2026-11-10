@@ -88,6 +88,10 @@ export async function load(){feedbackState.err="";try{
  }
  if(routeState.view==="customer"){
    customerState.customer=lineState.lineLinkStatus==="linked"?await rpc("so_public_state",{p_slug:routeState.slug,p_date:routeState.day}):null;
+   if(customerState.customer){
+     try{customerState.customer.homepage=await rpc("so_get_customer_homepage",{p_slug:routeState.slug});}
+     catch(error){console.warn("顧客首頁顯示設定讀取失敗",error);customerState.customer.homepage=null;}
+   }
    if(customerState.customer&&!bookingState.bookingContactDirty&&!bookingState.bookingContactName&&!bookingState.bookingContactPhone){
      const last=(customerState.customer.my_reservations||[]).find(x=>x.phone&&/^09\d{8}$/.test(x.phone));
      if(last){bookingState.bookingContactName=last.name||"";bookingState.bookingContactPhone=last.phone||"";}
@@ -142,6 +146,8 @@ export async function load(){feedbackState.err="";try{
  }
  if(staffState.staffTab==="branches")staffState.businessGroups=await rpc("so_my_business_groups");
   if(staffState.staffTab==="settings"){
+    try{staffState.customerHomepageCopy=await rpc("so_get_customer_homepage",{p_slug:routeState.slug});}
+    catch(error){console.warn("顧客首頁顯示設定讀取失敗",error);staffState.customerHomepageCopy=null;}
     try{staffState.staffAnnouncements=await rpc("so_staff_announcements",{p_slug:routeState.slug})||[];}
     catch(_e){staffState.staffAnnouncements=[];}
     try{staffState.staffCustomerBook=await rpc("so_staff_customer_book",{p_slug:routeState.slug})||[];}
