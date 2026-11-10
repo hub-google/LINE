@@ -30,6 +30,14 @@ export function renderStaffSettings({t,isManager,html}){
   box("企業基本設定",!isManager?'<p class="muted">只有管理者可以修改設定。</p>':
    merchantProfileFields("set",t)+
    '<div class="merchant-profile-actions">'+btn("儲存企業設定","update-settings","primary")+'</div>')+
+  (isManager?box("顧客首頁文字與顯示設定",
+    '<p class="small">以下僅影響顧客預約／取號首頁，不會更改店家名稱、搜尋資料或預約功能。留空的文字不會顯示；可直接關閉整個介紹區塊。</p>'+
+    '<label class="checklist"><input id="homepage-show-intro" type="checkbox" '+(staffState.customerHomepageCopy?.show_intro!==false?'checked':'')+'>顯示首頁介紹區塊</label>'+
+    '<div class="grid"><div>'+field("首頁主標題","homepage-title",staffState.customerHomepageCopy?.title??t.name,"text",'maxlength="60" placeholder="例如：歡迎來到本店"')+'</div>'+
+    '<div>'+field("上方小標籤（可留空）","homepage-label",staffState.customerHomepageCopy?.label??"","text",'maxlength="32" placeholder="不需要可留空"')+'</div></div>'+
+    '<label for="homepage-subtitle">首頁說明文字（可留空）</label><textarea id="homepage-subtitle" class="field" rows="2" maxlength="180" placeholder="想給顧客看的簡短介紹">'+esc(staffState.customerHomepageCopy?.subtitle??t.description??"")+'</textarea>'+
+    '<label class="checklist"><input id="homepage-show-label" type="checkbox" '+(staffState.customerHomepageCopy?.show_label?'checked':'')+'>顯示上方小標籤</label>'+
+    '<div class="staff-actionbar">'+btn("儲存顧客首頁設定","save-customer-homepage","primary")+'</div>'):"")+
   (isManager?box("候位保留規則",
      '<p class="small">保留期間不會叫號；到期後下一次叫號時自動恢復。可設定回原順位或隊尾，原票券號碼不變。</p>'+
      '<div class="grid3"><div>'+field("每次保留分鐘數","hold-minutes",staffState.staff.queue_hold_policy?.hold_minutes??20,"number",'min="1" max="120"')+
