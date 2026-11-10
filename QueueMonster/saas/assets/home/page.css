@@ -281,3 +281,28 @@ body[data-monster-page="home"] .mock-scene.hero-showcase::before{width:112px;hei
  body[data-monster-page="home"] .menu-panel a:hover,
  body[data-monster-page="home"] .menu-panel a:focus-visible{background:#f1e1fb}
 }
+
+/* iPhone-width header should stay one row: mascot, LINE login, menu. */
+@media(min-width:376px) and (max-width:620px){
+ body[data-monster-page="home"] .site-head .nav{
+   display:flex;flex-wrap:nowrap!important;align-items:center;justify-content:space-between;
+   column-gap:7px!important;row-gap:0!important;padding:10px 12px!important;min-height:60px!important
+ }
+ body[data-monster-page="home"] .site-head .logo{
+   flex:0 0 auto;min-width:0;white-space:nowrap;gap:6px;
+   font-size:18px!important;letter-spacing:-.05em
+ }
+ body[data-monster-page="home"] .site-head .logo-mark{width:34px!important;height:34px!important;flex:0 0 34px}
+ body[data-monster-page="home"] .site-head .site-auth-slot{
+   margin-left:auto!important;min-width:0;flex:0 1 auto
+ }
+ body[data-monster-page="home"] .site-head .site-auth-inner{gap:4px}
+ body[data-monster-page="home"] .site-head .site-auth-button.site-auth-login{
+   min-height:39px;padding:6px 8px;font-size:11px!important;gap:5px
+ }
+ body[data-monster-page="home"] .site-head .mobile-menu{margin-left:0!important;flex:0 0 auto}
+ body[data-monster-page="home"] .site-head .mobile-menu>summary{
+   min-height:39px;padding:7px 10px;font-size:12px;gap:5px
+ }
+ body[data-monster-page="home"] .site-head .mobile-menu .menu-panel{top:45px}
+}

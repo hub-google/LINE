@@ -162,3 +162,23 @@ a.btn.secondary:hover{background:#e1f3e9}
 @media(max-width:380px){
  body[data-monster-page="directory"] .filter-details>.explore-filter-row{grid-template-columns:minmax(0,1fr)}
 }
+
+/* The brand links home already: remove the duplicate header shortcut on mobile. */
+@media(min-width:376px) and (max-width:760px){
+ body[data-monster-page="directory"] .page-header .header-row{
+   display:flex;flex-wrap:nowrap!important;align-items:center;gap:9px
+ }
+ body[data-monster-page="directory"] .page-header .header-links{
+   width:auto!important;margin-left:auto!important;flex-wrap:nowrap!important;
+   justify-content:flex-end!important;gap:0
+ }
+ body[data-monster-page="directory"] .page-header .header-links>a[href="./home.html"]{display:none!important}
+ body[data-monster-page="directory"] .page-header .brand{
+   flex:0 0 auto;white-space:nowrap;gap:8px;font-size:17px
+ }
+ body[data-monster-page="directory"] .page-header .brand-mark{width:34px;height:34px;flex:0 0 34px}
+ body[data-monster-page="directory"] .page-header .site-auth-slot{margin-left:0!important}
+ body[data-monster-page="directory"] .page-header .site-auth-button.site-auth-login{
+   font-size:11px!important;padding:6px 9px;min-height:39px
+ }
+}
