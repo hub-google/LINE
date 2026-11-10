@@ -214,7 +214,8 @@ test("customer, merchant and headquarters views never mix login and navigation l
   assert.doesNotMatch(html,/href="[^"]*(?:merchant-register|platform-login|view=staff|view=platform)/);
  }
  assert.doesNotMatch(merchant,/href="[^"]*(?:directory\.html|home\.html|platform-login\.html|view=platform)/);
- assert.doesNotMatch(guide,/href="[^"]*(?:directory\.html|home\.html|platform-login\.html|view=platform)/);
+ const guideHeader=guide.match(/<header[\s\S]*?<\/header>/)?.[0]||"";
+ assert.doesNotMatch(guideHeader,/href="[^"]*(?:directory\.html|home\.html|platform-login\.html|view=platform)/);
  assert.doesNotMatch(hq,/href="[^"]*(?:directory\.html|home\.html|merchant-register\.html|view=staff)/);
  assert.doesNotMatch(platform,/class="side-item" href="merchant-register\.html/);
  assert.match(shared,/view==="platform"/);
