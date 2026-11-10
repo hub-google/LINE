@@ -48,7 +48,7 @@ function draw(status,message){
   login.type="button";login.disabled=busy;
   const mode=portalMode();
   if(mode==="customer"){
-   login.append(el("span","site-auth-line-logo","LINE"),document.createTextNode("使用 LINE 登入"));
+   login.append(document.createTextNode("使用 LINE 登入"));
    login.addEventListener("click",startLineLogin);
   }else{
    login.textContent=mode==="headquarters"?"總部登入":"店家登入";
