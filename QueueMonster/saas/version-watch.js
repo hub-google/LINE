@@ -29,6 +29,7 @@
   }
 
   function unsavedChanges() {
+    if (document.documentElement.dataset.unsavedMerchantLogo === "true") return true;
     for (const el of touched) {
       if (!el.isConnected) { touched.delete(el); continue; }
       if (changed(el)) return true;
