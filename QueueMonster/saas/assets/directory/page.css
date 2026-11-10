@@ -112,3 +112,53 @@ a.btn.secondary:hover{background:#e1f3e9}
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto;transition:none!important}}
 
+
+/* Mobile discovery: show search before copy and use an explicit filter drawer. */
+.filter-details{margin:13px 0 5px}
+.filter-details>.filter-summary{display:none}
+.filter-details>.explore-filter-row{margin:0}
+@media(max-width:760px){
+ body[data-monster-page="directory"] .page-header{padding:10px 0 20px}
+ body[data-monster-page="directory"] .hero-heading{margin-top:4px;padding-right:0!important}
+ body[data-monster-page="directory"] .hero-heading:after{display:none}
+ body[data-monster-page="directory"] .hero-heading h1{font-size:16px;line-height:1.5;margin:0}
+ body[data-monster-page="directory"] .hero-heading p{display:none}
+ body[data-monster-page="directory"] .main-panel{padding:13px 13px 23px}
+ body[data-monster-page="directory"] .tabs{margin-bottom:8px;gap:5px}
+ body[data-monster-page="directory"] .explore-view-switch{
+   display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+   width:100%;gap:4px;margin:0 0 7px;padding:4px
+ }
+ body[data-monster-page="directory"] .explore-view-switch button{min-height:40px;padding:8px 10px}
+ body[data-monster-page="directory"] .search-wrap{margin-top:5px}
+ body[data-monster-page="directory"] .search-wrap label{font-size:12px;margin-bottom:5px}
+ body[data-monster-page="directory"] .search{min-height:48px;padding-top:11px;padding-bottom:11px}
+ body[data-monster-page="directory"] .filter-details{
+   margin:10px 0 11px;background:#fffafd;border:1px solid #e2cdeb;border-radius:12px
+ }
+ body[data-monster-page="directory"] .filter-details>.filter-summary{
+   display:flex;align-items:center;justify-content:space-between;gap:10px;
+   min-height:44px;padding:10px 13px;list-style:none;cursor:pointer;color:#643f7a;
+   font-weight:800;font-size:13px
+ }
+ body[data-monster-page="directory"] .filter-details>.filter-summary::-webkit-details-marker{display:none}
+ body[data-monster-page="directory"] .filter-chevron{
+   flex:0 0 auto;width:9px;height:9px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;
+   transform:rotate(45deg);transition:transform .16s
+ }
+ body[data-monster-page="directory"] .filter-details[open] .filter-chevron{transform:rotate(225deg)}
+ body[data-monster-page="directory"] .filter-details>.explore-filter-row{
+   display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+   gap:10px;margin:0;padding:3px 12px 13px;border-top:1px solid #eee1f4
+ }
+ body[data-monster-page="directory"] .filter-details .explore-filter-row label{min-width:0;max-width:100%}
+ body[data-monster-page="directory"] .filter-details .explore-filter-row select{width:100%;min-height:44px}
+ body[data-monster-page="directory"] .intro-row{display:block;margin:7px 0 0}
+ body[data-monster-page="directory"] .intro-copy strong{font-size:13px;margin-bottom:0;line-height:1.5}
+ body[data-monster-page="directory"] .intro-copy p{font-size:12px;line-height:1.55;margin:2px 0}
+ body[data-monster-page="directory"] .public-note{display:none}
+ body[data-monster-page="directory"] .results-header{margin:14px 0 10px}
+}
+@media(max-width:380px){
+ body[data-monster-page="directory"] .filter-details>.explore-filter-row{grid-template-columns:minmax(0,1fr)}
+}
