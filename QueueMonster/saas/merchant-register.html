@@ -25,14 +25,14 @@
 <p class="help">還沒有帳號？點選上方「註冊」。</p></form>
 <form id="signup-form" class="hidden"><h2>建立登入帳號</h2><p class="sub">受邀員工請使用邀請信指定的電子信箱註冊；不會因此自行建立店家。</p>
 <label for="signup-email">電子信箱（登入帳號）</label><input type="email" id="signup-email" autocomplete="email" required>
-<label for="signup-pass">密碼（至少 8 字元）</label><input type="password" id="signup-pass" minlength="8" autocomplete="new-password" required>
-<label for="signup-confirm">確認密碼</label><input type="password" id="signup-confirm" minlength="8" autocomplete="new-password" required>
+<label for="signup-pass">密碼</label><input type="password" id="signup-pass" minlength="1" autocomplete="new-password" required>
+<label for="signup-confirm">確認密碼</label><input type="password" id="signup-confirm" minlength="1" autocomplete="new-password" required>
 <button type="submit" class="primary">建立帳號</button>
 <p class="help">系統會依註冊流程確認您的身分。請妥善保管登入密碼，不要與他人分享。</p></form>
 </div>
 <div id="account-zone" class="hidden"><h2 id="account-title">已登入</h2><div class="account-info"><strong id="account-name"></strong><div id="account-email" class="email"></div></div>
 <div id="workspace" class="workspace"></div>
-<div class="password-panel"><h3>設定或變更登入密碼</h3><p class="sub">一般店家帳號若要變更密碼，請設定至少 8 個字元的新密碼。</p><label for="new-pass">新密碼</label><input id="new-pass" type="password" minlength="8" autocomplete="new-password"><label for="confirm-new-pass">確認新密碼</label><input id="confirm-new-pass" type="password" minlength="8" autocomplete="new-password"><button type="button" class="ghost" id="change-pass">儲存新密碼</button></div>
+<div class="password-panel"><h3>設定登入密碼</h3><p class="sub">請輸入密碼與確認密碼，完成後才能進入後台。</p><label for="new-pass">新密碼</label><input id="new-pass" type="password" minlength="1" autocomplete="new-password"><label for="confirm-new-pass">確認新密碼</label><input id="confirm-new-pass" type="password" minlength="1" autocomplete="new-password"><button type="button" class="ghost" id="change-pass">儲存新密碼</button></div>
 <div class="account-actions" role="group" aria-label="帳號操作">
 <button type="button" class="secondary-action" id="switch-account">使用其他帳號登入</button>
 <a class="secondary-action" href="./merchant-register.html?mode=signup">註冊新的店家帳號</a>
