@@ -81,7 +81,7 @@ try{
  // retired QR poster buttons from current UI. Reinsert those two old anchors for hashing.
  const legacyPosterAnchor=(mode)=>'<a class="btn outline" href="./poster.html?merchant=greenfield-salon&type='+mode+'" target="_blank" rel="noopener noreferrer">'+(mode==='reserve'?'製作預約 QR 立牌':'製作現場取號 QR 立牌')+'</a>';
  for(const [tab,html]of Object.entries(snapshots)){
-  assert.doesNotMatch(html,/poster\\.html/,'Retired poster link must not appear in any staff panel');
+  assert.equal(html.includes('poster.html'),false,'Retired poster link must not appear in any staff panel');
   let historical=html;
   if(tab==='bookings'){
    const marker='未來預約僅可取消或恢復。</p>';
