@@ -32,5 +32,16 @@
     },{rootMargin:"-20% 0px -65% 0px"});
     document.querySelectorAll(".content-section").forEach(function(section){observer.observe(section)});
   }
+  var mobileGuide=document.getElementById("mobile-guide-nav");
+  if(mobileGuide){
+    mobileGuide.querySelectorAll('a[href^="#"]').forEach(function(link){
+      link.addEventListener("click",function(){
+        mobileGuide.open=false;
+        var label=document.getElementById("mobile-guide-label");
+        if(label)label.textContent="操作目錄 · "+link.textContent.trim().replace(/^\\d+\\s*/,"");
+      });
+    });
+    document.addEventListener("keydown",function(event){if(event.key==="Escape"&&mobileGuide.open)mobileGuide.open=false});
+  }
   if(location.hash==="#mode-own"){setMode("own",false);document.getElementById("mode").scrollIntoView()}
 })();
