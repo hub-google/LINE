@@ -249,3 +249,35 @@ body[data-monster-page="home"] .mock-scene.hero-showcase::before{width:112px;hei
   .hero-demo-current strong{font-size:34px}
   body[data-monster-page="home"] .mock-scene.hero-showcase::before{width:103px;height:107px;right:4px;top:-35px;transform:rotate(-4deg)}
 }
+
+/* Clear, closeable, grouped mobile navigation. */
+@media(max-width:850px){
+ body[data-monster-page="home"] .mobile-menu{z-index:31}
+ body[data-monster-page="home"] .mobile-menu>summary{
+   display:flex;gap:9px;align-items:center;justify-content:center;cursor:pointer;
+   min-height:44px;list-style:none;font-size:14px;font-weight:800;color:#542c70;background:#fffafd;
+ }
+ body[data-monster-page="home"] .mobile-menu>summary::-webkit-details-marker{display:none}
+ body[data-monster-page="home"] .mobile-menu-caret{
+   flex:0 0 auto;width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;
+   transform:rotate(45deg);transition:transform .2s
+ }
+ body[data-monster-page="home"] .mobile-menu[open] .mobile-menu-caret{transform:rotate(225deg)}
+ body[data-monster-page="home"] .mobile-menu .menu-panel{
+   width:min(340px,calc(100vw - 28px));max-height:min(72dvh,630px);overscroll-behavior:contain;
+   padding:10px 11px 13px;background:#fffafd;border-color:#ddc7ec;box-shadow:0 18px 35px rgba(70,43,82,.18)
+ }
+ body[data-monster-page="home"] .menu-panel .mobile-menu-close{
+   appearance:none;display:block;justify-self:end;min-height:37px;
+   padding:5px 10px;font:inherit;font-size:12px;font-weight:850;
+   background:#f5e8fc;color:#5a3670;border:1px solid #e8d1f5;border-radius:9px;cursor:pointer
+ }
+ body[data-monster-page="home"] .menu-panel .menu-section{gap:0}
+ body[data-monster-page="home"] .menu-panel .menu-label{font-size:11px;color:#866b95}
+ body[data-monster-page="home"] .menu-panel a{
+   display:flex;align-items:center;min-height:43px;color:#4f3566;padding:9px 14px;
+   border-radius:10px;font-size:14px
+ }
+ body[data-monster-page="home"] .menu-panel a:hover,
+ body[data-monster-page="home"] .menu-panel a:focus-visible{background:#f1e1fb}
+}
