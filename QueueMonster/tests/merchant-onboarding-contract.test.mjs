@@ -45,7 +45,7 @@ test("merchant supports secure account activation, password reset and callback p
  assert.match(reg,/signInWithOtp/);
  assert.match(reg,/shouldCreateUser:true/);
  assert.match(reg,/resetPasswordForEmail/);
- assert.match(reg,/auth\.updateUser\(\{password\}\)/);
+ assert.ok(reg.includes("auth.updateUser({password:effective})")||reg.includes("auth.updateUser({password})"));
  assert.match(reg,/u\.pathname\+u\.search\+u\.hash/);
  const module=reg.match(/<script type="module">([\s\S]+?)<\/script>/)?.[1];
  assert.ok(module,"merchant page should have executable module");

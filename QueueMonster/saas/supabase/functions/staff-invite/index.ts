@@ -54,11 +54,17 @@ Deno.serve(async(req:Request)=>{
  let emailSent=false;
  const {data:tenant}=await admin.from("so_tenants").select("name").eq("slug",slug).maybeSingle();
  const tenantName=typeof tenant?.name==="string"?tenant.name.slice(0,100):"";
- const {error:newUserError}=await admin.auth.admin.inviteUserByEmail(email,{
+ const {data:newUser,error:newUserError}=await admin.auth.admin.inviteUserByEmail(email,{
   redirectTo:redirect.href,
   data:{app:"queue-monster",tenant_name:tenantName}
  });
- if(!newUserError)emailSent=true;
+ if(!newUserError && newUser?.user){
+  const {error:marked}=await admin.auth.admin.updateUserById(newUser.user.id,{
+   app_metadata:{...newUser.user.app_metadata,queue_monster_invited:true,queue_monster_password_ready:false}
+  });
+  if(marked)return json({saved:true,email_sent:true,setup_ready:false,error:"邀請已寄出，但員工啟用狀態尚未初始化"});
+  emailSent=true;
+ }
  else{
   // Auth's admin invitation endpoint rejects already-registered users.
   // For them, send an ordinary sign-in email instead; membership is still

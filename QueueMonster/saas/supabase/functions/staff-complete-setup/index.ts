@@ -28,7 +28,7 @@ Deno.serve(async(request:Request)=>{
  const admin=createClient(url,service,{auth:{persistSession:false,autoRefreshToken:false}});
  const {data:{user},error:checkError}=await admin.auth.getUser(token);
  if(checkError||!user||!user.email||!user.email_confirmed_at)return respond({error:"登入資訊無效"},401);
- if(user.user_metadata?.app!=="queue-monster"||!user.invited_at)return respond({error:"此帳號不需要員工首次啟用"},403);
+ if(user.app_metadata?.queue_monster_invited!==true)return respond({error:"此帳號不需要員工首次啟用"},403);
  const verifier=createClient(url,anon,{auth:{persistSession:false,autoRefreshToken:false}});
  const {data:verified,error:passwordError}=await verifier.auth.signInWithPassword({email:user.email,password});
  if(passwordError||verified.user?.id!==user.id)return respond({error:"密碼驗證失敗，請重新確認"},403);

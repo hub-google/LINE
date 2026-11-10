@@ -26,10 +26,24 @@ function customerFacingError(error,operation="general"){
  if(operation==="line")return "LINE 身分驗證暫時無法完成，請重新登入。";
  return "系統暫時無法完成操作，請稍後再試。";
 }
+// Supabase-hosted Auth enforces a six-character minimum. Queue Monster accepts
+// shorter user-entered passwords by deriving a stable, Auth-compatible credential.
+// This is ONLY a compatibility encoding; it does not add password entropy.
+// Six-or-more-character existing passwords are left unchanged.
+async function effectivePassword(email,plaintext){
+ if(typeof plaintext!=="string"||!plaintext.length)throw Error("請輸入密碼");
+ if(plaintext.length>=6)return plaintext;
+ const normalized=(email||"").trim().toLowerCase();
+ if(!normalized)throw Error("找不到帳號的電子信箱");
+ if(!globalThis.crypto?.subtle)throw Error("瀏覽器無法安全處理密碼，請使用新版瀏覽器");
+ const bytes=new TextEncoder().encode("queue-monster-short-password-v1\\0"+normalized+"\\0"+plaintext);
+ const digest=await crypto.subtle.digest("SHA-256",bytes);
+ return "qm1-"+Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,"0")).join("");
+}
 const $=id=>document.getElementById(id);
 const returnToLogin=()=>{const url=new URL("./merchant-register.html?mode=login",location.href);if(invited)url.searchParams.set("staff_invite",invitedId);else url.searchParams.set("from","queue-monster");return url.href;};
 const returnToReset=()=>new URL("./merchant-register.html?mode=login&intent=recovery",location.href).href;
-const needsInitialPassword=user=>user?.user_metadata?.app==="queue-monster" && !!user?.invited_at && user?.app_metadata?.queue_monster_password_ready!==true;
+const needsInitialPassword=user=>user?.app_metadata?.queue_monster_invited===true && user?.app_metadata?.queue_monster_password_ready!==true;
 const msg=(t,error=false)=>{$("message").textContent=t||"";$("message").className=t?"message"+(error?" error":""):""};
 const invitedId=new URL(location.href).searchParams.get("staff_invite")||"";
 const inviteIdPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -136,7 +150,7 @@ async function prepare(){
 }
 $("login-form").onsubmit=e=>{e.preventDefault();void execute(async()=>{
  const email=$("login-email").value.trim(),password=$("login-pass").value;
- const {data,error}=await sb.auth.signInWithPassword({email,password});
+ const {data,error}=await sb.auth.signInWithPassword({email,password:await effectivePassword(email,password)});
  if(error)throw error;
  if(!data.user)throw Error("登入狀態無法確認");
  await prepare();msg("登入成功");
@@ -146,7 +160,7 @@ $("signup-form").onsubmit=e=>{e.preventDefault();void execute(async()=>{
  const password=$("signup-pass").value,confirm=$("signup-confirm").value;
  if(password.length<1)throw Error("請輸入密碼");
  if(password!==confirm)throw Error("兩次輸入的密碼不相同");
- const {data,error}=await signupSb.auth.signUp({email,password,options:{emailRedirectTo:returnToLogin(),data:{app:"queue-monster"}}});
+ const {data,error}=await signupSb.auth.signUp({email,password:await effectivePassword(email,password),options:{emailRedirectTo:returnToLogin(),data:{app:"queue-monster"}}});
  if(error)throw error;
  if(data.session){
   const {error:sessionError}=await sb.auth.setSession({access_token:data.session.access_token,refresh_token:data.session.refresh_token});
@@ -171,16 +185,17 @@ $("change-pass").onclick=()=>void execute(async()=>{
  const password=$("new-pass").value,confirm=$("confirm-new-pass").value;
  if(password.length<1)throw Error("請輸入新密碼");
  if(password!==confirm)throw Error("兩次輸入的密碼不相同");
- const {data:updated,error}=await sb.auth.updateUser({password});
+ const effective=await effectivePassword(authUser?.email,password);
+ const {data:updated,error}=await sb.auth.updateUser({password:effective});
  if(error)throw error;
  if(needsInitialPassword(updated.user||authUser)){
    const email=(updated.user||authUser)?.email;
    if(!email)throw Error("無法確認員工電子信箱");
    // Verify the newly saved password with Auth before a trusted server grants staff access.
-   const verified=await sb.auth.signInWithPassword({email,password});
+   const verified=await sb.auth.signInWithPassword({email,password:effective});
    if(verified.error||verified.data.user?.id!==(updated.user||authUser)?.id)
      throw Error("密碼已更新，但尚無法確認登入；請使用新密碼重新登入後再完成啟用。");
-   const response=await sb.functions.invoke("staff-complete-setup",{body:{password}});
+   const response=await sb.functions.invoke("staff-complete-setup",{body:{password:effective}});
    if(response.error||response.data?.ready!==true)
      throw Error("密碼已儲存，但員工權限尚未啟用，請重新登入後再試一次。");
  }
