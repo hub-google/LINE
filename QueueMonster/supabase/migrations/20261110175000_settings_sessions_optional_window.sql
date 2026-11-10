@@ -1,7 +1,15 @@
 -- Service-session editing, safe deletion and optional service windows.
 -- Default window is internal only; ordinary shops create sessions without adding a window.
-alter table public.so_tenants add column if not exists unit_selection_enabled boolean not null default false;
-update public.so_tenants set unit_selection_enabled=true where multi_unit_enabled=true;
+do $backfill$
+begin
+ if not exists (
+  select 1 from information_schema.columns
+  where table_schema='public' and table_name='so_tenants' and column_name='unit_selection_enabled'
+ ) then
+  alter table public.so_tenants add column unit_selection_enabled boolean not null default false;
+  update public.so_tenants set unit_selection_enabled=true where multi_unit_enabled=true;
+ end if;
+end $backfill$;
 alter table public.so_booking_resources add column if not exists is_default_session_unit boolean not null default false;
 create unique index if not exists so_one_default_session_unit on public.so_booking_resources(tenant_id) where is_default_session_unit;
 alter table public.so_service_sessions add column if not exists deleted_at timestamptz;
