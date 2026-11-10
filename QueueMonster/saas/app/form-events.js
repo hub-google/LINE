@@ -46,6 +46,14 @@ document.addEventListener("change",async ev=>{
    if(flow==="booking"){bookingState.chosenSlot="";bookingState.serviceSlotPreview=null;serviceUnitsState.unitConfirmKey="";if(!serviceUnitsState.unitEnabled())void refreshServiceSlots();}
    render();return;
  }
+ if(el.id==="menu-kind"){
+   const custom=el.value==="__CUSTOM__";
+   const wrap=routeState.$("menu-custom-kind-wrap");
+   const input=routeState.$("menu-custom-kind");
+   if(wrap)wrap.hidden=!custom;
+   if(input){input.disabled=!custom;if(custom)input.focus();}
+   return;
+ }
  if(el.id==="rule-service"){
    const rule=(staffState.staff?.resourceContext?.service_rules||[]).find(x=>x.item_id===el.value);
    if(routeState.$("rule-duration"))routeState.$("rule-duration").value=String(rule?.duration_minutes??staffState.staff?.tenant?.slot_minutes??30);
