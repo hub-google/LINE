@@ -26,9 +26,18 @@ test("merchant directory has exactly one footer",()=>{
  assert.equal((page.match(/<\/footer>/g)||[]).length,1);
 });
 
-test("customer home displays store name only in the shared page heading",()=>{
+test("customer homepage has no forced marketing headings and merchants control the optional intro",()=>{
  const source=read("app/customer-booking.js");
- assert.match(source,/if\(routeState\.customerTab==="home"\).*?<h1>選擇服務，立即開始<\/h1>/s);
- assert.doesNotMatch(source,/<h1>'\+esc\(t\.name\)\+'<\/h1>/);
+ const settings=read("app/staff/settings.js");
+ const loading=read("app/data-loading.js");
+ assert.doesNotMatch(source,/LINE 門市線上服務|選擇服務，立即開始/);
+ assert.match(source,/const homepage=customerState\.customer\.homepage\|\|\{\}/);
+ assert.match(source,/homepage\.show_intro!==true/);
+ assert.match(source,/esc\(displayTitle\)/);
  assert.match(source,/return layout\(t\.name,"預約與取號・即時資料"/);
+ assert.match(settings,/homepage-title/);
+ assert.match(settings,/homepage-subtitle/);
+ assert.match(settings,/homepage-show-label/);
+ assert.match(settings,/save-customer-homepage/);
+ assert.match(loading,/so_get_customer_homepage/);
 });
