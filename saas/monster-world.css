@@ -695,3 +695,9 @@ body[data-monster-page="directory"] .page-header .hero-heading h1.eyebrow{
     padding:10px 12px;
   }
 }
+
+/* Queue-board controls were only 36px high on iPhone-class devices. */
+@media(max-width:620px){
+ body[data-monster-page="board"] button,
+ body:has(#single-board) button{min-height:44px;touch-action:manipulation}
+}

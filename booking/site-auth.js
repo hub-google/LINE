@@ -91,6 +91,8 @@ function startLineLogin(){
  if(/^[a-z0-9][a-z0-9-]{2,39}$/.test(selectedMerchant))
    start.searchParams.set("merchant",selectedMerchant);
  start.searchParams.set("tab","home");
+ // Only an explicit header click starts OAuth automatically on the destination page.
+ start.searchParams.set("site_login","1");
  start.searchParams.set("site_return",returnTo);
  location.assign(start.href);
 }
