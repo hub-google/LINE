@@ -985,6 +985,52 @@ Deno.serve(async (req: Request) => {
         note:"LINE Login and Messaging API channels must share a Provider",
       },origin);
     }
+    // A customer can verify their LINE identity for Queue Monster itself.
+    // The shop is selected later; never use a hidden demo merchant for login.
+    if (payload.action === "link-platform") {
+      const idToken=String(payload.idToken||"");
+      const accessToken=typeof payload.accessToken==="string" && payload.accessToken.length<=10000
+        ? payload.accessToken:undefined;
+      if (idToken.length>10000 || (!idToken && !accessToken))
+        return reply(400,{error:"LINE_LOGIN_TOKEN_REQUIRED"},origin);
+      const platformChannel=/^([0-9]{8,})-[A-Za-z0-9]+$/.exec(Deno.env.get("LINE_LIFF_ID")||"")?.[1]||"";
+      if (!platformChannel)return reply(503,{error:"LINE_LOGIN_NOT_CONFIGURED"},origin);
+      const profile=await lineVerify(idToken,accessToken,{channelId:platformChannel});
+      const {data:existing,error:readError}=await db.from("so_platform_line_identities")
+        .select("line_sub").eq("user_id",user.id).maybeSingle();
+      if(readError)throw readError;
+      if(existing && existing.line_sub!==profile.sub)
+        return reply(409,{error:"LINE_ACCOUNT_CHANGED"},origin);
+      // A Supabase session already linked to a different LINE ID for any shop
+      // must not silently adopt another identity.
+      const {data:shopLinks,error:shopError}=await db.from("so_line_links")
+        .select("line_sub").eq("user_id",user.id).limit(100);
+      if(shopError)throw shopError;
+      if((shopLinks||[]).some((r)=>r.line_sub!==profile.sub))
+        return reply(409,{error:"LINE_ACCOUNT_CHANGED"},origin);
+      const {error:writeError}=await db.from("so_platform_line_identities").upsert({
+        user_id:user.id,line_sub:profile.sub,display_name:profile.name,
+        login_channel_id:platformChannel,updated_at:new Date().toISOString(),
+      },{onConflict:"user_id"});
+      if(writeError)throw writeError;
+      return reply(200,{
+        ok:true,linked:true,displayName:profile.name,
+        isFollowing:null,recipientReachability:"UNKNOWN",friendCheckStatus:"PLATFORM_VERIFIED",
+      },origin);
+    }
+    if (payload.action === "resume-platform") {
+      const expectedChannel=/^([0-9]{8,})-[A-Za-z0-9]+$/.exec(Deno.env.get("LINE_LIFF_ID")||"")?.[1]||"";
+      const {data:profile,error:profileError}=await db.from("so_platform_line_identities")
+        .select("display_name,login_channel_id,updated_at").eq("user_id",user.id).maybeSingle();
+      if(profileError)throw profileError;
+      const age=Date.now()-Date.parse(String(profile?.updated_at||""));
+      if(!expectedChannel || profile?.login_channel_id!==expectedChannel ||
+          !profile.display_name?.trim() || !Number.isFinite(age) ||
+          age< -60000 || age>30*24*60*60*1000)
+        return reply(401,{error:"LINE_REAUTH_REQUIRED"},origin);
+      return reply(200,{ok:true,linked:true,displayName:profile.display_name,
+        isFollowing:null,recipientReachability:"UNKNOWN",friendCheckStatus:"CACHED_PLATFORM_SESSION"},origin);
+    }
     // Returning customers keep their browser's refreshable Supabase session.
     // A previously LINE-verified identity may be resumed for 30 days without
     // re-running LIFF/OAuth. The browser never supplies a LINE user ID.
@@ -998,10 +1044,37 @@ Deno.serve(async (req: Request) => {
       const ownOa = await merchantLineConfig(db, tenant.id);
       const expectedChannelId = ownOa?.channelId ||
         /^([0-9]{8,})-[A-Za-z0-9]+$/.exec(Deno.env.get("LINE_LIFF_ID") || "")?.[1] || "";
-      const { data: linked, error: linkError } = await db.from("so_line_links")
-        .select("display_name,is_following,updated_at,login_channel_id")
+      let { data: linked, error: linkError } = await db.from("so_line_links")
+        .select("display_name,line_sub,is_following,updated_at,login_channel_id")
         .eq("tenant_id", tenant.id).eq("user_id", user.id).maybeSingle();
       if (linkError) throw linkError;
+      // The same verified platform LINE account can use any platform-OA shop.
+      // Only this explicit merchant access creates a tenant-scoped link.
+      // Merchant-owned OA channels continue through their own LINE login.
+      if (!ownOa && (!linked?.display_name?.trim() ||
+          linked.login_channel_id!==expectedChannelId ||
+          Date.now()-Date.parse(String(linked.updated_at||""))>30*24*60*60*1000)) {
+        const {data:verified,error:identityError}=await db.from("so_platform_line_identities")
+          .select("line_sub,display_name,login_channel_id,updated_at")
+          .eq("user_id",user.id).maybeSingle();
+        if(identityError)throw identityError;
+        const age=Date.now()-Date.parse(String(verified?.updated_at||""));
+        if(verified?.login_channel_id===expectedChannelId &&
+           verified.display_name?.trim() && Number.isFinite(age) &&
+           age>= -60000 && age<=30*24*60*60*1000) {
+          if(linked?.line_sub && linked.line_sub!==verified.line_sub)
+            return reply(409,{error:"LINE_ACCOUNT_CHANGED"},origin);
+          const {error:upsertError}=await db.from("so_line_links").upsert({
+            tenant_id:tenant.id,user_id:user.id,line_sub:verified.line_sub,
+            login_channel_id:expectedChannelId,display_name:verified.display_name,
+            is_following:linked?.is_following??null,updated_at:new Date().toISOString(),
+          },{onConflict:"tenant_id,user_id"});
+          if(upsertError)throw upsertError;
+          linked={display_name:verified.display_name,line_sub:verified.line_sub,
+            login_channel_id:expectedChannelId,is_following:linked?.is_following??null,
+            updated_at:new Date().toISOString()};
+        }
+      }
       const verifiedAt = Date.parse(String(linked?.updated_at || ""));
       const maxAge = 30 * 24 * 60 * 60 * 1000;
       if (!linked?.display_name?.trim() || linked.login_channel_id !== expectedChannelId || !Number.isFinite(verifiedAt) ||

@@ -48,7 +48,7 @@ function draw(status,message){
   login.type="button";login.disabled=busy;
   const mode=portalMode();
   if(mode==="customer"){
-   login.append(el("span","site-auth-line-logo","LINE"),document.createTextNode("選擇店家並以 LINE 登入"));
+   login.append(el("span","site-auth-line-logo","LINE"),document.createTextNode("使用 LINE 登入"));
    login.addEventListener("click",startLineLogin);
   }else{
    login.textContent=mode==="headquarters"?"總部登入":"店家登入";
@@ -84,20 +84,12 @@ function startLineLogin(){
  const returnTo=currentReturn();
  try{sessionStorage.setItem(RETURN_KEY,JSON.stringify({target:returnTo,at:Date.now()}))}catch(_){}
  const selectedMerchant=new URLSearchParams(location.search).get("merchant")||"";
- if(!/^[a-z0-9][a-z0-9-]{2,39}$/.test(selectedMerchant)){
-   busy=false;
-   const keyword=document.getElementById("keyword");
-   if(keyword && /\/directory\.html$/.test(location.pathname)){
-     keyword.focus();
-     draw("guest","請先選擇店家，才能進行 LINE 登入。");
-   }else{
-     location.assign(new URL("./directory.html?mode=search",location.href).href);
-   }
-   return;
- }
  const start=new URL("./",location.href);
  start.searchParams.set("view","customer");
- start.searchParams.set("merchant",selectedMerchant);
+ // The platform LINE account does not need a merchant selection.
+ // Keep merchant context only when a real QR-code/store URL supplied it.
+ if(/^[a-z0-9][a-z0-9-]{2,39}$/.test(selectedMerchant))
+   start.searchParams.set("merchant",selectedMerchant);
  start.searchParams.set("tab","home");
  start.searchParams.set("site_return",returnTo);
  location.assign(start.href);

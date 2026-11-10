@@ -70,6 +70,12 @@ export async function load(){feedbackState.err="";try{
  }
  if(routeState.view==="customer")await connectLineSession();
  if(routeState.view==="customer"&&lineState.lineLinkStatus==="linked"&&finishPublicHeaderLogin())return;
+ // A platform-wide LINE login intentionally has no store until the customer chooses one.
+ if(routeState.view==="customer"&&!routeState.slug){
+   customerState.customer=null;
+   render();
+   return;
+ }
  if(routeState.view!=="customer"){
    await bridgeConfig();
    await loadContext();

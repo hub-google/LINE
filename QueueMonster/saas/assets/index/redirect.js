@@ -5,7 +5,7 @@
   const hasOnlyMarketingParameters=[...qs.keys()].every(key=>marketingKeys.has(key));
   const atBookingRoot=/\/(?:saas|booking)\/(?:index\.html)?$/.test(location.pathname);
   const isUnscopedCustomer=qs.getAll("view").at(-1)==="customer" && !qs.has("merchant");
-  const lineCallbackKeys=["liff.state","code","state","access_token","ticket","manage","recover"];
+  const lineCallbackKeys=["liff.state","code","state","access_token","ticket","manage","recover","site_return"];
   if(atBookingRoot && isUnscopedCustomer && !location.hash && !lineCallbackKeys.some(key=>qs.has(key))){
     const directory=new URL("./directory.html?mode=search",location.href);
     directory.pathname=directory.pathname.replace(/\/saas\/directory\.html$/,"/booking/directory.html");
