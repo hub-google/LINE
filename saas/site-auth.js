@@ -44,11 +44,11 @@ function draw(status,message){
   logout.type="button";logout.disabled=busy;logout.addEventListener("click",()=>{void logOut()});
   holder.append(name,logout);
  }else{
-  const login=el("button","site-auth-button site-auth-login");
-  login.type="button";login.disabled=busy;
   const mode=portalMode();
+  const login=el("button",mode==="customer"?"site-auth-button site-auth-login":"site-auth-button");
+  login.type="button";login.disabled=busy;
   if(mode==="customer"){
-   login.append(el("span","site-auth-line-logo","LINE"),document.createTextNode("使用 LINE 登入"));
+   login.append(document.createTextNode("使用 LINE 登入"));
    login.addEventListener("click",startLineLogin);
   }else{
    login.textContent=mode==="headquarters"?"總部登入":"店家登入";
