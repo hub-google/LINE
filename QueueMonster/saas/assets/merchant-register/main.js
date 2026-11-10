@@ -27,8 +27,14 @@ function customerFacingError(error,operation="general"){
  return "系統暫時無法完成操作，請稍後再試。";
 }
 const $=id=>document.getElementById(id);
-const returnToLogin=()=>new URL("./merchant-register.html?mode=login",location.href).href;
+const returnToLogin=()=>{const url=new URL("./merchant-register.html?mode=login",location.href);if(invited)url.searchParams.set("staff_invite",invitedId);return url.href;};
 const msg=(t,error=false)=>{$("message").textContent=t||"";$("message").className=t?"message"+(error?" error":""):""};
+const invitedId=new URL(location.href).searchParams.get("staff_invite")||"";
+const inviteIdPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const invited=inviteIdPattern.test(invitedId);
+const inviteHint=$("invitation-hint");
+if(invited)inviteHint.textContent="你收到排隊怪獸的企業員工邀請。請使用收到邀請的電子信箱登入，或先註冊並完成信箱驗證。";
+
 let busy=false,active="login",authUser=null,workspaceSlug="";
 const setMode=(mode)=>{
  active=mode==="signup"?"signup":"login";
@@ -51,28 +57,66 @@ function showAuth(user){
  if(user){$("account-email").textContent=user.email||"";$("account-name").textContent=user.email||"店家使用者";$("account-title").textContent="帳號已登入"}
 }
 async function prepare(){
- // The explicit signup route always displays the signup form, even for an admin session.
  if(active==="signup"){showAuth(null);return}
  const {data,error}=await sb.auth.getUser();
  if(error||!data.user){showAuth(null);return}
  const user=data.user;
  const context=await rpc("so_my_context");
  if(context?.platform_admin===true){
-  // Do not expose headquarters actions on merchant login screens.
-  location.replace("./platform-login.html");
-  return;
+  location.replace("./platform-login.html");return;
  }
  showAuth(user);
- $("account-title").textContent="店家帳號已登入";
+ $("account-title").textContent="已登入｜企業與員工權限";
  document.querySelector(".password-panel").classList.remove("hidden");
- // The database creates the internal merchant identity from the verified email account.
+ const workspace=$("workspace");
+ workspace.replaceChildren();
+ const note=(text)=>{const p=document.createElement("p");p.className="sub";p.textContent=text;workspace.append(p);};
+ const addLink=(label,url,primary=false)=>{
+  const a=document.createElement("a");a.href=url;a.textContent=label;
+  if(primary)a.className="strong";
+  workspace.append(a);return a;
+ };
+ const memberships=Array.isArray(context?.memberships)?context.memberships:[];
+ const invitations=Array.isArray(context?.invitations)?context.invitations:[];
+ const roleName={OWNER:"負責人",MANAGER:"管理者",STAFF:"員工",PLATFORM:"平台管理"};
+ const pending=invitations.slice().sort((a,b)=>Number(b.id===invitedId)-Number(a.id===invitedId));
+ if(pending.length){
+  note("你有 "+pending.length+" 筆企業邀請。確認加入後，才會開放對應的員工權限。");
+  for(const invite of pending){
+   const row=document.createElement("div");
+   row.className="workspace";
+   const title=document.createElement("strong");
+   title.textContent=invite.tenant+"｜"+(roleName[invite.role]||invite.role);
+   const accept=document.createElement("button");
+   accept.type="button";accept.className="primary";
+   accept.textContent="接受企業邀請";
+   accept.addEventListener("click",()=>void execute(async()=>{
+    const result=await rpc("so_accept_invite",{p_invite_id:invite.id});
+    if(!result?.accepted)throw Error("無法接受邀請，請重新確認登入帳號");
+    location.assign("./?view=staff&merchant="+encodeURIComponent(invite.slug));
+   }));
+   row.append(title,accept);workspace.append(row);
+  }
+ }
+ if(invited&&!pending.some(i=>i.id===invitedId)&&!memberships.length){
+  note("目前登入的帳號沒有這筆待接受邀請。請確認受邀信箱是否相同；如已加入企業，可使用員工後台登入。");
+ }
+ if(memberships.length){
+  note("你已加入以下企業，可直接進入對應的員工後台：");
+  for(const member of memberships){
+   addLink(member.name+"（"+(roleName[member.role]||member.role)+"）－進入後台",
+    "./?view=staff&merchant="+encodeURIComponent(member.slug),true);
+  }
+  return;
+ }
+ // Invited employees must never be enrolled as new merchant owners.
+ if(pending.length||invited)return;
+ // The regular merchant signup flow still creates an empty new merchant.
  const result=await rpc("so_start_merchant");
  workspaceSlug=result.slug;
- const url="./?view=staff&merchant="+encodeURIComponent(workspaceSlug);
- $("workspace").replaceChildren();
- const primary=document.createElement("a");primary.className="strong";primary.href=url;primary.textContent="進入店家後台";
- const settings=document.createElement("a");settings.href=url+"&tab=settings";settings.textContent=result.onboarding_complete?"管理店家基本資料":"開始填寫空白店家資料";
- $("workspace").append(primary,settings);
+ addLink("進入店家後台","./?view=staff&merchant="+encodeURIComponent(workspaceSlug),true);
+ addLink(result.onboarding_complete?"管理店家基本資料":"開始填寫空白店家資料",
+  "./?view=staff&merchant="+encodeURIComponent(workspaceSlug)+"&tab=settings");
 }
 $("login-form").onsubmit=e=>{e.preventDefault();void execute(async()=>{
  const email=$("login-email").value.trim(),password=$("login-pass").value;
