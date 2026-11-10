@@ -86,11 +86,21 @@ box("LINE 身分授權",'<p class="muted">為避免機器人或惡意假預約�
  document.documentElement.style.setProperty("--merchant-accent",/^#[a-fA-F0-9]{6}$/.test(t.accent)?t.accent:"#6A398A");
  const menu=nav("首頁","home",routeState.customerTab,"customer")+(m.reservation?nav("線上預約","reserve",routeState.customerTab,"customer"):"")+(m.queue?nav("現場取號","queue",routeState.customerTab,"customer"):"")+nav("我的取號","progress",routeState.customerTab,"customer")+nav("我的紀錄","mine",routeState.customerTab,"customer");
  let html='';
- if(routeState.customerTab==="home") html='<div class="hero"><div class="eyebrow">LINE 門市線上服務</div><h1>選擇服務，立即開始</h1><p class="muted">'+esc(t.description||"線上預約與現場候位，從這裡開始")+'</p><p class="muted">'+esc(t.address||"")+'</p></div>'+
+ if(routeState.customerTab==="home"){
+  const homepage=customerState.customer.homepage||{};
+  const displayTitle=homepage.title===undefined?t.name:homepage.title;
+  const displaySubtitle=homepage.subtitle===undefined?(t.description||""):homepage.subtitle;
+  const displayLabel=homepage.label||"";
+  html=(homepage.show_intro===false?"":'<section class="card customer-welcome" style="padding:18px 22px;margin-bottom:16px">'+
+   (homepage.show_label&&displayLabel?'<div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">'+esc(displayLabel)+'</div>':"")+
+   (displayTitle?'<h2 style="font-size:clamp(18px,4vw,24px);line-height:1.4;margin:0 0 6px">'+esc(displayTitle)+'</h2>':"")+
+   (displaySubtitle?'<p class="muted" style="margin:0 0 7px;white-space:pre-wrap">'+esc(displaySubtitle)+'</p>':"")+
+   (t.address?'<p class="muted" style="font-size:13px;margin:0">'+esc(t.address)+'</p>':"")+'</section>')+
  '<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",customerState.customer.current||"—")+stat("現場候位",customerState.customer.waiting+" 組")+stat("我的有效預約",items.filter(x=>x.status==="CONFIRMED").length)+'</div>'+
  '<div class="grid">'+(m.reservation?'<button class="routecard" data-nav="customer" data-tab="reserve"><h2>線上預約</h2><p class="muted">選擇日期與時段，完成預約</p><strong>立即預約 →</strong></button>':"")+
  (m.queue?'<button class="routecard" data-nav="customer" data-tab="queue"><h2>現場取號</h2><p class="muted">直接取得候位號碼與查看進度</p><strong>立即取號 →</strong></button>':"")+
 (m.queue&&m.calling?'<a class="routecard" href="./board.html?merchant='+encodeURIComponent(routeState.slug)+'"><h2>公開即時叫號看板</h2><p class="muted">直接查看目前叫號及接下來的順序。</p><strong>查看公開看板 →</strong></a>':"")+'</div>';
+ }
  else if(routeState.customerTab==="reserve"){
   if(!m.reservation)html=box("未開放預約",'<p>企業目前沒有啟用此功能。</p>');
   else if(serviceUnitsState.unitEnabled())html=unitBookingPanel();
