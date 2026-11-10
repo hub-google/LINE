@@ -95,9 +95,25 @@ try{
     else assert.ok(rects[1].left>=rects[0].right-2,'Desktop examples should display side by side');
     console.log('Homepage dual-examples layout:',width,JSON.stringify(rects));
    }
-   if(name==='home.html'||name.startsWith('directory.html')){
+   if(name.startsWith('directory.html')){
     const excluded=await page.locator('a[href*="merchant-register"],a[href*="platform-login"],a[href*="view=staff"],a[href*="view=platform"]').count();
-    assert.equal(excluded,0,'Public portals must not display manager or headquarters links');
+    assert.equal(excluded,0,'Customer directory must not display manager or headquarters links');
+   }
+   if(name==='home.html'){
+    assert.ok(await page.locator('a[href*="merchant-register.html?mode=signup"]').count()>=1,'Marketing homepage must include a distinct merchant signup entry');
+   }
+   if(width===390&&name==='directory.html?mode=search'){
+    const geometry=await page.evaluate(()=>({
+      viewport:innerWidth,document:document.documentElement.scrollWidth,
+      searchTop:document.querySelector('#keyword').getBoundingClientRect().top,
+      filterVisible:getComputedStyle(document.querySelector('#explore-filters')).display!=='none'
+    }));
+    assert.ok(geometry.document<=geometry.viewport+2,'Mobile directory must not overflow horizontally');
+    assert.ok(geometry.searchTop<440,'Search input should be accessible near top of first screen');
+    assert.equal(geometry.filterVisible,false,'Optional mobile filters should begin collapsed');
+    await page.locator('#mobile-filter-toggle').click();
+    assert.equal(await page.locator('#mobile-filter-toggle').getAttribute('aria-expanded'),'true');
+    assert.equal(await page.locator('#explore-filters').evaluate(e=>getComputedStyle(e).display),'grid');
    }
    if(name==='index.html?view=staff&merchant=greenfield-salon'){
     const links=await page.locator('#headlinks a').allTextContents();
