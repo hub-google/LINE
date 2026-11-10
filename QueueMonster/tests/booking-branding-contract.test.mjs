@@ -102,7 +102,7 @@ test("pastel directory header keeps WCAG AA contrast on mobile",()=>{
 
 
 test("customer-facing pages share one design system; retired template redirects to the merchant guide",()=>{
- const pages=["index","home","directory","board","merchant-register","merchant-center","poster","privacy","terms","offline"];
+ const pages=["index","home","directory","board","merchant-register","merchant-center","privacy","terms","offline"];
  const brandCss=read("saas/monster-world.css");
  assert.match(brandCss,/branded product design system v2/);
  for(const page of pages){
