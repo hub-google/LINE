@@ -28,13 +28,15 @@ test("independent homepage is versioned and included in non-destructive Pages de
  assert.match(landing,/prefers-reduced-motion/);
 });
 
-test("homepage routes to real customer and merchant workflows without altering identifiers",()=>{
+test("public homepage only links to customer-facing functions and legal documents",()=>{
  const targets=[
-  "./merchant-register.html?mode=signup","./merchant-register.html?mode=login",
   "./directory.html?mode=search","./directory.html?mode=queue",
   "./privacy.html","./terms.html"
  ];
- for(const href of targets) assert.ok(landing.includes('href="'+href+'"'),"Missing existing workflow link: "+href);
+ for(const href of targets) assert.ok(landing.includes('href="'+href+'"'),"Missing customer link: "+href);
+ assert.doesNotMatch(landing,/href="[^"]*(?:merchant-register|platform-login|view=staff|view=platform)/);
+ assert.doesNotMatch(directory,/href="[^"]*(?:merchant-register|platform-login|view=staff|view=platform)/);
+ assert.doesNotMatch(landing,/我是店家・開始使用|商家登入|商家註冊/);
  assert.match(landing,/預約報到不會自動/);
  assert.match(landing,/已發送的 LINE 訊息是當時的資訊快照/);
  assert.match(landing,/非 LINE 官方產品/);
