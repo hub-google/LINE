@@ -79,6 +79,7 @@ try{
  const {createHash}=await import('node:crypto');
  // Preserve the historical ten-tab snapshot contract while excluding only the explicitly
  // retired QR poster buttons from current UI. Reinsert those two old anchors for hashing.
+ // The menu snapshot includes the newly approved custom type selector and input.
  const legacyPosterAnchor=(mode)=>'<a class="btn outline" href="./poster.html?merchant=greenfield-salon&type='+mode+'" target="_blank" rel="noopener noreferrer">'+(mode==='reserve'?'製作預約 QR 立牌':'製作現場取號 QR 立牌')+'</a>';
  for(const [tab,html]of Object.entries(snapshots)){
   assert.equal(html.includes('poster.html'),false,'Retired poster link must not appear in any staff panel');
@@ -96,7 +97,11 @@ try{
    assert.ok(historical.includes(marker),'TV board link must remain available');
    historical=historical.replace(marker,'電視即時叫號看板</a>'+legacyPosterAnchor('queue')+'</div>');
   }
-  assert.equal(createHash('sha256').update(historical).digest('hex'),baseline.hashes[tab],tab+' render changed beyond the approved poster removal');
+  if(tab==='menu'){
+   assert.match(html,/value="__CUSTOM__"/,'Merchant menu must allow custom type');
+   assert.match(html,/id="menu-custom-kind-wrap"/,'Merchant menu must provide type input');
+  }
+  assert.equal(createHash('sha256').update(historical).digest('hex'),baseline.hashes[tab],tab+' render changed outside approved UI updates');
  }
  assert.ok(!fs.existsSync(path.join(dist,'poster.html')),'Retired poster must not be included in production output');
  console.log('All ten staff panels preserve historical markup apart from the two removed poster links.');
