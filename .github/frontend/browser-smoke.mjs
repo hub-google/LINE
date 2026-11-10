@@ -99,6 +99,19 @@ try{
     const excluded=await page.locator('a[href*="merchant-register"],a[href*="platform-login"],a[href*="view=staff"],a[href*="view=platform"]').count();
     assert.equal(excluded,0,'Public portals must not display manager or headquarters links');
    }
+   if(width===390&&name==='directory.html?mode=search'){
+    const geometry=await page.evaluate(()=>({
+     viewport:innerWidth,
+     document:document.documentElement.scrollWidth,
+     searchTop:document.querySelector('#keyword').getBoundingClientRect().top,
+     filterCollapsed:!document.getElementById('explore-filters').open
+    }));
+    assert.ok(geometry.document<=geometry.viewport+2,'Mobile directory must not overflow the viewport');
+    assert.ok(geometry.searchTop<440,'Mobile search should be visible near top of first screen');
+    assert.equal(geometry.filterCollapsed,true,'Advanced filters must begin collapsed on mobile');
+    await page.locator('#filter-summary').click();
+    assert.equal(await page.locator('#explore-filters').evaluate(el=>el.open),true);
+   }
    if(name==='index.html?view=staff&merchant=greenfield-salon'){
     const links=await page.locator('#headlinks a').allTextContents();
     assert.deepEqual(links,['店家工作台','操作說明'],'Merchant header must contain only merchant functions');

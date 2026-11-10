@@ -245,3 +245,20 @@ test("platform LINE identity is verified independently from store selection",()=
  assert.match(redirect,/"site_return"/);
  assert.doesNotMatch(code,/請先選擇店家，才能進行 LINE 登入/);
 });
+
+
+test("iPhone customer entry asks consent before starting external LINE login",()=>{
+ const session=read("saas/app/line-session.js");
+ const directoryJs=read("saas/assets/directory/main.js");
+ const directoryHtml=read("saas/directory.html");
+ const directoryCss=read("saas/assets/directory/page.css");
+ assert.match(code,/start\.searchParams\.set\("site_login","1"\)/);
+ assert.match(session,/new URLSearchParams\(location\.search\)\.get\("site_login"\)==="1"/);
+ assert.match(session,/lineState\.lineLinkStatus="not-logged-in"/);
+ assert.doesNotMatch(session,/if\(!window\.liff\.isInClient\(\)\)window\.liff\.login/);
+ assert.match(directoryJs,/so_site_header_identity/);
+ assert.match(directoryJs,/mineIdentityState="guest"/);
+ assert.match(directoryJs,/p_category:match\[0\]/);
+ assert.match(directoryHtml,/class="filter-details"/);
+ assert.match(directoryCss,/\.filter-details>\.filter-summary/);
+});
