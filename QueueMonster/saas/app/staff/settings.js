@@ -12,8 +12,10 @@ import {customerUrl} from "../line-session.js";
 import {closedDatesPickerMarkup,installClosedDatesPicker} from "../closed-dates-picker.js";
 
 function serviceLink(kind,label,enabled){
- const url=new URL(customerUrl(routeState.slug)||new URL(sharedUiState.route("customer",routeState.slug),location.href).href,location.href);
- url.searchParams.set("tab",kind);
+ const url=kind==="board"
+   ?new URL(sharedUiState.bookingPath+"board.html?merchant="+encodeURIComponent(routeState.slug),location.origin)
+   :new URL(customerUrl(routeState.slug)||new URL(sharedUiState.route("customer",routeState.slug),location.href).href,location.href);
+ if(kind!=="board")url.searchParams.set("tab",kind);
  const href=url.href;
  return '<div class="inset" data-service-url-kind="'+kind+'" style="margin-top:12px">'+
    '<strong>'+label+'</strong>'+
@@ -119,7 +121,7 @@ export function renderStaffSettings({t,isManager,html}){
     '<p class="small">新門市預設勾選公開；若取消勾選，仍可透過專屬預約網址使用服務。</p>'+
     '<p class="small">通知將依本店已連接的 LINE 官方帳號設定提供。</p>'+
     '<div style="margin-top:12px">'+btn("儲存公開設定","save-directory","primary")+'</div>'):"")+
-  box("顧客專屬網址（電腦與手機皆可使用）",'<p class="small">以下網址依上方服務開關即時顯示，按下「儲存服務開關」後正式生效。</p>'+serviceLink("queue","抽號網址",!!serviceModules.queue)+serviceLink("reserve","預約網址",!!serviceModules.reservation));
+  box("顧客專屬網址（電腦與手機皆可使用）",'<p class="small">叫號看板網址固定顯示；抽號與預約網址依上方服務開關即時顯示，按下「儲存服務開關」後正式生效。</p>'+serviceLink("board","叫號看板網址",true)+serviceLink("queue","抽號網址",!!serviceModules.queue)+serviceLink("reserve","預約網址",!!serviceModules.reservation));
 
 return html;
 }
