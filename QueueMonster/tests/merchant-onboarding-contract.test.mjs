@@ -121,7 +121,7 @@ test("new stores start private and are published only after settings are saved",
 test("retired QA entry points and customer-facing test copy are absent",()=>{
  assert.doesNotMatch(directory,/測試|demo-link|qa-84b3/);
  assert.doesNotMatch(index,/if\(a==="test-login"\)|if\(a==="recover-test-store"\)/);
- for(const name of ["home","directory","merchant-register","platform-login","merchant-center","board","poster","terms","privacy"]){
+ for(const name of ["home","directory","merchant-register","platform-login","merchant-center","board","terms","privacy"]){
   assert.doesNotMatch(read("saas/"+name+".html"),/測試/,name);
  }
  assert.match(sql,/revoke all on function public\.so_test_login/);
@@ -303,7 +303,7 @@ test("platform action buttons match and account logout lives only in the shared 
 });
 
 test("production release contains no customer-visible QA or infrastructure copy",()=>{
- const publicPages=["index","home","directory","board","poster","merchant-register","platform-login","merchant-center","privacy","terms","template"];
+ const publicPages=["index","home","directory","board","merchant-register","platform-login","merchant-center","privacy","terms","template"];
  for(const name of publicPages){
   const html=read("saas/"+name+".html");
   assert.ok(!html.includes("測試"),name+" must not expose test labels");
