@@ -4,14 +4,14 @@ const SUPABASE_ANON_KEY="sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy";
 const params=new URLSearchParams(location.search),slug=params.get("merchant")||"";
 const validSlug=/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug);
 const $=id=>document.getElementById(id);
-let client,qrFactory,qrMatrix,shopName="",liffId="",target="",ready=false,merchantUsesPlatformOa=true;
+let client,qrFactory,qrMatrix,shopName="",liffId="",botBasicId="",target="",ready=false,merchantUsesPlatformOa=true;
 let modules={queue:false,reservation:false};
 function setStatus(message,error=false){$("status").textContent=message;$("status").dataset.error=String(error);}
 function currentMode(){return $("mode").value==="reserve"?"reserve":"queue";}
 function targetUrl(mode){
+ if(mode==="reserve"&&botBasicId)return "https://line.me/R/oaMessage/"+encodeURIComponent(botBasicId)+"/?"+encodeURIComponent("開始預約 "+slug);
  const qp=new URLSearchParams({view:"customer",merchant:slug,tab:mode});
- // For shared platform OA shops, the QR always points to the shop's
- // HTTPS site; LINE verification runs inside the website when needed.
+ // Queue QR and missing-OA fallback keep the existing website entry.
  if(!merchantUsesPlatformOa&&liffId)return "https://liff.line.me/"+encodeURIComponent(liffId)+"/?"+qp;
  const fallback=new URL("./",location.href);
  fallback.search=qp.toString();
@@ -50,11 +50,11 @@ function updatePoster(){
  $("qr").src=preview.toDataURL("image/png");$("qr").hidden=false;
  $("shop").textContent=shopName;
  $("purpose").textContent=mode==="queue"?"現場取號":"線上預約";
- $("instruction").textContent=mode==="queue"?"掃描開啟本店取號網頁":"掃描開啟本店線上預約";
+ $("instruction").textContent=mode==="reserve"&&botBasicId?"掃描後送出開始預約，再點聊天室的預約連結":mode==="queue"?"掃描開啟本店取號網頁":"掃描開啟本店線上預約";
  $("link").textContent=target;
  $("print").disabled=false;$("png").disabled=false;$("copy").disabled=false;
  setStatus("QR 已依正式門市設定產生。");
- $("channel").textContent=merchantUsesPlatformOa?
+ $("channel").textContent=mode==="reserve"&&botBasicId?"預約 QR 會開啟官方帳號聊天室，請送出預填文字，再點回覆中的預約連結。完成預約後可申請免費確認訊息。":merchantUsesPlatformOa?
  "此門市共用平台 LINE OA：QR 直接開啟門市網頁，首次預約或取號前才要求 LINE 身分驗證。":
  (liffId?"此門市已連接自己的 LINE 官方帳號。":"掃描後將開啟門市的預約或取號網頁。");
 }
@@ -90,7 +90,7 @@ function drawPosterPng(){
  for(let row=0;row<n;row++)for(let col=0;col<n;col++)
   if(qrMatrix.isDark(row,col))ctx.fillRect(x+(col+4)*px,top+(row+4)*px,px,px);
  ctx.fillStyle="#462B52";ctx.font='bold 82px "Noto Sans TC",sans-serif';
- ctx.fillText(currentMode()==="queue"?"掃描立即取號，查看候位進度":"掃描選擇日期與時間，完成預約",center,top+qrSize+90);
+ ctx.fillText(currentMode()==="queue"?"掃描立即取號，查看候位進度":botBasicId?"掃描送出開始預約，再點預約連結":"掃描選擇日期與時間，完成預約",center,top+qrSize+90);
  ctx.font='normal 38px sans-serif';ctx.fillStyle="#785F84";
  splitText(ctx,target,center,top+qrSize+225,2180,48,4);
  ctx.font='normal 47px "Noto Sans TC",sans-serif';
@@ -134,6 +134,7 @@ async function init(){
    const config=await response.json();
    if(/^\d{8,}-[A-Za-z0-9]+$/.test(String(config?.liffId||"")))liffId=String(config.liffId);
    merchantUsesPlatformOa=config?.merchantOaConnected!==true;
+   if(/^@[a-z0-9_.-]{2,100}$/i.test(config?.botBasicId||""))botBasicId=config.botBasicId;
   }
   const desired=params.get("type")==="reserve"?"reserve":"queue";
   $("mode").value=(desired==="queue"&&!modules.queue&&modules.reservation)?"reserve":

@@ -15,7 +15,7 @@ export function renderBookings(items,allowCancel){
   const buttons='<div class="staff-actionbar">'+
    btn("查看／列印預約憑證","booking-receipt","outline",'data-id="'+esc(x.id)+'"')+
    (["CONFIRMED","CHECKED_IN"].includes(x.status)?btn("加入行事曆（ICS）","booking-ics","outline",'data-id="'+esc(x.id)+'"'):"")+
-   (editable?btn("修改姓名／電話","edit-book-contact","secondary",'data-id="'+esc(x.id)+'"')+(x.session_id?'':btn("編輯預約","edit-book","secondary",'data-id="'+esc(x.id)+'"'))+
+   (editable?btn("取得 LINE 預約資訊","booking-line-reply","outline",'data-id="'+esc(x.id)+'"')+btn("修改姓名／電話","edit-book-contact","secondary",'data-id="'+esc(x.id)+'"')+(x.session_id?'':btn("編輯預約","edit-book","secondary",'data-id="'+esc(x.id)+'"'))+
    btn(focused&&bookingState.manageMode==="cancel"?"確認取消預約":"取消預約","cancel-my-book","outline",'data-id="'+esc(x.id)+'"'):"")+'</div>';
   return '<article class="staff-record" style="'+(focused?'border:2px solid #0d9488;':'')+'">'+
    '<div class="staff-record-head"><div><strong>'+'預約 '+esc(x.number||"—")+' '+esc(x.day)+' '+esc(x.time)+'</strong>'+

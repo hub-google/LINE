@@ -383,6 +383,8 @@ async function pushNotice(
   message: string | Record<string, unknown>,
   origin: string | null,
 ) {
+  // Booking confirmations are reply-only, including legacy callers and the outbox.
+  if (eventKind === "RESERVED") return reply(200, {ok:true,sent:false,reason:"REPLY_REQUIRED"}, origin);
   const merchantOa = await merchantLineConfig(db, tenant.id);
   const token = merchantOa?.token || Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
   if (!token) return reply(503, { error: "LINE_MESSAGING_NOT_CONFIGURED" }, origin);
@@ -441,6 +443,7 @@ type NoticeJob = {
 async function dispatchOutboxItem(
   db: ReturnType<typeof service>, job: NoticeJob, origin: string | null,
 ): Promise<{ status: "SENT" | "SKIPPED" | "RETRY"; reason?: string }> {
+  if (job.event_kind === "RESERVED") return {status:"SKIPPED",reason:"REPLY_REQUIRED"};
   const { data: tenant, error: tenantErr } = await db.from("so_tenants")
     .select("id,slug,name,status,address,phone").eq("id", job.tenant_id).maybeSingle();
   if (tenantErr) throw tenantErr;
@@ -672,6 +675,29 @@ async function replyToLine(token: string, replyToken: string,
   throw new Error("LINE_REPLY_FAILED_"+response.status);
 }
 
+// Signed one-to-one events only. Never trust a browser-supplied LINE user ID.
+async function bookingReplyMessage(db: ReturnType<typeof service>, bookingId: string,
+  lineSub: string, merchantTenantId: string | null): Promise<Record<string, unknown>> {
+  const unavailable = {type:"text",text:"無法取得這筆預約，請至我的預約確認，或重新傳送正確的預約編號。"};
+  const {data:booking,error} = await db.from("so_reservations")
+    .select("id,tenant_id,user_id,status,booking_date,booking_time,party_size,customer_name,customer_phone,selected_items,service_session_id")
+    .eq("id",bookingId).is("deleted_at",null).maybeSingle();
+  if (error) throw error;
+  if (!booking || booking.status !== "CONFIRMED" ||
+      (merchantTenantId && booking.tenant_id !== merchantTenantId)) return unavailable;
+  const {data:link,error:linkError} = await db.from("so_line_links").select("user_id")
+    .eq("tenant_id",booking.tenant_id).eq("user_id",booking.user_id).eq("line_sub",lineSub).maybeSingle();
+  if (linkError) throw linkError;
+  if (!link) return unavailable;
+  // A platform event cannot retrieve bookings belonging to a different merchant OA.
+  const own = await merchantLineConfig(db,booking.tenant_id);
+  if (!merchantTenantId && own) return unavailable;
+  const {data:tenant,error:tenantError} = await db.from("so_tenants")
+    .select("id,slug,name,status,address,phone").eq("id",booking.tenant_id).eq("status","ACTIVE").maybeSingle();
+  if (tenantError) throw tenantError;
+  return tenant ? await reservationConfirmationNotice(db,tenant,booking) : unavailable;
+}
+
 async function webhook(req: Request, origin: string | null, merchantSlug = "") {
   let merchantTenantId: string | null = null;
   let ownOa: MerchantLineConfig | null = null;
@@ -722,15 +748,40 @@ async function webhook(req: Request, origin: string | null, merchantSlug = "") {
         continue;
       }
       if (event.type === "message") {
-        // Do not take over a connected merchant's own OA conversation.
-        if (merchantTenantId) continue;
         const message = event.message as { type?: unknown; text?: unknown } | undefined;
         const replyToken = event.replyToken;
         if (message?.type !== "text" || typeof message.text !== "string" ||
             typeof replyToken !== "string" || !replyToken || replyToken.length>512) continue;
-        const token = Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
+        const token = ownOa?.token || Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
         if (!token) throw new Error("LINE_MESSAGING_NOT_CONFIGURED");
         const redelivery=(event.deliveryContext as {isRedelivery?:unknown}|undefined)?.isRedelivery===true;
+        const confirmation = /^確認預約 ([0-9a-f-]{36})$/i.exec(message.text.trim());
+        if (confirmation && validUUID(confirmation[1])) {
+          const notice=await bookingReplyMessage(db,confirmation[1],source.userId,merchantTenantId);
+          const sent=await replyToLine(token,replyToken,notice,redelivery);
+          if (sent) processed++; else duplicates++;
+          continue;
+        }
+        const entry=/^開始預約 ([a-z0-9][a-z0-9-]{2,39})$/.exec(message.text.trim());
+        if (entry) {
+          const {data:tenant,error}=await db.from("so_tenants").select("id,slug,name")
+            .eq("slug",entry[1]).eq("status","ACTIVE").maybeSingle();
+          if (error) throw error;
+          let notice: Record<string,unknown>={type:"text",text:"找不到這間店家，請確認門市預約入口。"};
+          if (tenant && (!merchantTenantId || tenant.id===merchantTenantId)) {
+            const own=await merchantLineConfig(db,tenant.id);
+            if (merchantTenantId || !own) {
+              const id=own?.liffId || Deno.env.get("LINE_LIFF_ID") || "";
+              if (id) notice={type:"text",text:tenant.name+"｜請點下方連結開始預約\n"+
+                "https://liff.line.me/"+encodeURIComponent(id)+"/?view=customer&merchant="+encodeURIComponent(tenant.slug)+"&tab=reserve"};
+            }
+          }
+          const sent=await replyToLine(token,replyToken,notice,redelivery);
+          if (sent) processed++; else duplicates++;
+          continue;
+        }
+        // Do not take over a connected merchant's unrelated OA conversation.
+        if (merchantTenantId) continue;
         // The platform OA accepts an explicit opt-in; it never broadcasts
         // FoodRadar reports to all unrelated QueueMonster customers.
         const normalized=message.text.trim().replace(/\s+/g,"").toLowerCase();
@@ -923,9 +974,10 @@ Deno.serve(async (req: Request) => {
     }
     const liffId = own?.liff_id || Deno.env.get("LINE_LIFF_ID") || "";
     const expectedChannelId = /^([0-9]{8,})-[A-Za-z0-9]+$/.exec(liffId)?.[1] || null;
+    const platformFriendUrl = own ? null : await oaAddFriendUrl();
     return reply(200, {
       liffId: liffId || null, merchantOaConnected: !!own,
-      botBasicId: own?.bot_basic_id || null,
+      botBasicId: own?.bot_basic_id || platformFriendUrl?.split("/").pop() || null,
       loginReady: !!expectedChannelId,
       messagingReady: !!own || !!Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN"),
       loginChannelMatchesLiff: !!expectedChannelId &&

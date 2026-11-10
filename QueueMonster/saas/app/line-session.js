@@ -1,3 +1,4 @@
+import {requestBookingReply} from "./booking-line-reply.js";
 import {authState} from "./state/authState.js";
 import {bookingState} from "./state/bookingState.js";
 import {lineState} from "./state/lineState.js";
@@ -232,6 +233,12 @@ export async function connectLineSession(force=false){
       "LINE 登入驗證已失效，請重新登入 LINE。":customerFacingError(e,"line");
     console.warn("LINE 身分連接失敗",lineState.lineConnectError);
   }
+}
+
+export async function sendBookingReply(reservationId){
+ const result=await requestBookingReply(window.liff,reservationId);
+ return result.requested ? "LINE 確認訊息已提出申請，請查看聊天室" :
+  "提醒暫時無法送出；預約已成立。請回官方帳號聊天室傳送「"+result.command+"」取得預約資訊。";
 }
 
 export async function sendLineNotice(action,ids){

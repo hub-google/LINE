@@ -5,13 +5,26 @@ import {routeState} from "../state/routeState.js";
 import {btn,esc,field,showActionFeedback} from "./../shared-ui.js";
 import {act,rpc,val} from "./../data-loading.js";
 import {normalizeBookingPhone} from "./../customer-booking.js";
-import {customerNoticeSuffix,sendLineNotice} from "./../line-session.js";
+import {customerNoticeSuffix,sendLineNotice,sendBookingReply,bridgeConfig} from "./../line-session.js";
 import {downloadReservationIcs} from "./../calendar-export.js";
 import {openBookingReceipt} from "./../customer-records.js";
 import {beginBookingEdit,finishManageLink} from "./../booking-edit.js";
 import {render} from "./../staff-layout.js";
 
 export async function handleBookingRecordActions(ev,b,a,id){
+if(a==="booking-line-reply"){
+ const booking=(customerState.customer?.my_reservations||[]).find(x=>x.id===id&&x.status==="CONFIRMED");
+ if(!booking)return true;
+ await act(async()=>{
+  const notice=await sendBookingReply(id);
+  if(/提醒暫時無法送出/.test(notice)){
+   const config=await bridgeConfig();
+   if(/^@[a-z0-9_.-]{2,100}$/i.test(config.botBasicId||""))
+    location.assign("https://line.me/R/oaMessage/"+encodeURIComponent(config.botBasicId)+"/?"+encodeURIComponent("確認預約 "+id));
+  }
+  return notice;
+ });return true;
+}
 if(a==="edit-book-contact"){
    const b=(customerState.customer?.my_reservations||[]).find(x=>x.id===id);
    if(!b||b.status!=="CONFIRMED")return true;

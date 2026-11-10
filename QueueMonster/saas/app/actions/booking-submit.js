@@ -8,7 +8,7 @@ import {render} from "./../staff-layout.js";
 import {act,clearCustomerBookingRequest,customerBookingRequestId,rpc,val} from "./../data-loading.js";
 import {availableForParty,bookingConfirmationFingerprint,currentBookingSlots,normalizeBookingPhone,validBookingContact} from "./../customer-booking.js";
 import {jsStatus,menuChoiceReady,showActionFeedback} from "./../shared-ui.js";
-import {customerNoticeSuffix,sendLineNotice} from "./../line-session.js";
+import {customerNoticeSuffix,sendBookingReply} from "./../line-session.js";
 
 export async function handleBookingSubmit(ev,b,a,id){
 if(a==="book-back"){bookingState.bookingConfirmationKey="";render();return true;}
@@ -42,7 +42,7 @@ if(a==="book-back"){bookingState.bookingConfirmationKey="";render();return true;
   bookingState.chosenSlot="";bookingState.bookingChosenItems=[];bookingState.bookingConfirmationKey="";routeState.customerTab="mine";
   if(result.status!=="CONFIRMED")return "先前送出的預約已找到，最新狀態："+jsStatus(result.status)+"。請到我的預約確認。";
   if(result.replayed)return "已查到先前成立的預約："+routeState.day+" "+time+"，"+party+" 位；系統沒有重複建立第二筆。";
-  const notice=await sendLineNotice("notify-reservation",{reservationId:result.id});
+  const notice=await sendBookingReply(result.id);
   return "預約已成立："+routeState.day+" "+time+"，"+party+" 位"+customerNoticeSuffix(notice);
  });return true;}
 return false;
