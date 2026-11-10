@@ -11,16 +11,16 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
     timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install browser dependencies
-        run: |
-          npm ci --prefix .github/frontend
-          npm exec --prefix .github/frontend -- playwright install --with-deps chromium webkit
+      - name: Install local test dependencies (browsers preinstalled in pinned image)
+        run: npm ci --prefix .github/frontend
       - name: Run published-site mobile tests (read-only)
         id: test
         continue-on-error: true
