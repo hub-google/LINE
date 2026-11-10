@@ -42,6 +42,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git fetch origin qa/iphone17-safari-e2e-20261110
           pubdir="$RUNNER_TEMP/iphone17-qa-results"
           git worktree add -B qa-report "$pubdir" origin/qa/iphone17-safari-e2e-20261110
