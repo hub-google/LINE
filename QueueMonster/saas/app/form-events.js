@@ -81,7 +81,7 @@ document.addEventListener("change",async ev=>{
  }
  if(el.id==="customer-flag-picker"){staffState.customerFlagSelected=el.value;render();return;}
  if(el.id==="customer-day"){routeState.day=el.value;bookingState.chosenSlot="";bookingState.serviceSlotPreview=null;serviceUnitsState.unitConfirmKey="";await load();return;}
- if(el.id==="unit-admin-date"){serviceUnitsState.unitAdminDate=el.value;serviceUnitsState.unitEditingSession="";await load();return;}
+ if(el.id==="unit-admin-date"){serviceUnitsState.unitAdminDate=el.value;serviceUnitsState.unitEditingSession="";serviceUnitsState.showSessionForm=false;await load();return;}
  if(el.id==="customer-unit"){serviceUnitsState.unitChoice=el.value;serviceUnitsState.unitSessionChoice="";serviceUnitsState.unitConfirmKey="";render();return;}
  if(el.id==="unit-category"){serviceUnitsState.unitCategory=el.value;serviceUnitsState.unitChoice=availableUnits(routeState.customerTab)[0]?.id||"";serviceUnitsState.unitSessionChoice="";serviceUnitsState.unitConfirmKey="";render();return;}
  if(el.id==="unit-session"){serviceUnitsState.unitSessionChoice=el.value;serviceUnitsState.unitConfirmKey="";render();return;}
