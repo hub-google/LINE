@@ -62,16 +62,17 @@ if(a==="customer-history-close"){
  if(a==="copy-service-link"){
    const link=b.dataset.url||"";
    const kind=b.dataset.serviceKind;
-   if(!link||!["queue","reserve"].includes(kind))return true;
+   if(!link||!["board","queue","reserve"].includes(kind))return true;
    let url;
    try{
      url=new URL(link);
      if(url.protocol!=="https:"&&url.origin!==location.origin)throw Error("網址格式不正確");
    }catch(_error){showActionFeedback("顧客網址無效，請重新整理","error");return true;}
+   const label=kind==="board"?"叫號看板":kind==="queue"?"抽號":"預約";
    try{
      await navigator.clipboard.writeText(url.href);
-     showActionFeedback("已複製"+(kind==="queue"?"抽號":"預約")+"網址","success");
-   }catch(_error){window.prompt("請複製"+(kind==="queue"?"抽號":"預約")+"網址",url.href);}
+     showActionFeedback("已複製"+label+"網址","success");
+   }catch(_error){window.prompt("請複製"+label+"網址",url.href);}
    return true;
  }
  if(a==="create-business-group"){
