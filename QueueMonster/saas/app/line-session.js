@@ -172,7 +172,16 @@ export async function connectLineSession(force=false){
     }
     if(!window.liff.isLoggedIn()){
       lineState.lineLinkStatus="not-logged-in";
-      if(!window.liff.isInClient())window.liff.login({redirectUri:cleanLineRedirectUri()});
+      lineState.lineConnectError="請按下方「使用 LINE 登入」以完成身分驗證；登入前仍可查看公開叫號看板。";
+      // A customer opening a merchant URL in Safari should not be thrown
+      // straight into LINE Login before seeing the merchant's service page.
+      // An explicit click in the shared site header retains its one-click flow.
+      if(!window.liff.isInClient()&&new URLSearchParams(location.search).get("site_login")==="1"){
+        const clean=new URL(location.href);
+        clean.searchParams.delete("site_login");
+        history.replaceState(null,"",clean.pathname+clean.search+clean.hash);
+        window.liff.login({redirectUri:cleanLineRedirectUri()});
+      }
       return;
     }
     const idToken=window.liff.getIDToken()||"";
@@ -261,10 +270,11 @@ export function lineStatusBadge(){
       addFriend+' '+btn("重新授權 LINE","line-reauth","outline")+'</div></div>';
   }
   const detail=lineState.lineLinkStatus==="connecting"?"正在連接 LINE 帳號…":
-    lineState.lineLinkStatus==="not-logged-in"?"正在開啟 LINE 授權…":
+    lineState.lineLinkStatus==="not-logged-in"?"請使用 LINE 登入後繼續預約或取號。":
     lineState.lineConnectError||"請授權 LINE 使用者資訊後繼續。";
   const liffUrl=lineState.lineConfig?.liffId?lineLoginUrl():"";
-  return '<div class="alert">'+esc(detail)+' '+btn("重新登入 LINE","line-reauth","secondary")+(liffUrl?' <a href="'+esc(liffUrl)+'">使用 LINE 登入（手機／電腦）</a>':'')+'</div>';
+  const loginLabel=lineState.lineLinkStatus==="not-logged-in"?"使用 LINE 登入":"重新登入 LINE";
+  return '<div class="alert">'+esc(detail)+' '+btn(loginLabel,"line-reauth","secondary")+(liffUrl?' <a href="'+esc(liffUrl)+'">使用 LINE 登入（手機／電腦）</a>':'')+'</div>';
 }
 
 export function initializeLineSession(){
