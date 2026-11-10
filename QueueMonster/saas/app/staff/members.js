@@ -7,8 +7,8 @@ export function renderStaffMembers({isManager,html}){
  const members=staffState.staff.members||[];
  const invites=staffState.staff.invites||[];
  html+=box("已加入的員工",
-  '<div class="scroll"><table class="rows"><tr><th>帳號</th><th>角色</th></tr>'+
-  members.map(m=>'<tr><td>'+esc(m.email||('驗證員工（Auth ID '+String(m.user_id||'').slice(0,8)+'）'))+'</td><td>'+esc(roleName[m.role]||m.role)+'</td></tr>').join("")+
+  '<div class="scroll"><table class="rows"><tr><th>帳號</th><th>角色</th><th>管理</th></tr>'+
+  members.map(m=>'<tr><td>'+esc(m.email||('驗證員工（Auth ID '+String(m.user_id||'').slice(0,8)+'）'))+'</td><td>'+esc(roleName[m.role]||m.role)+'</td><td>'+(isManager&&m.role==='STAFF'?btn('設為管理者','promote-staff-manager','outline','data-id="'+esc(m.user_id)+'"'):'—')+'</td></tr>').join("")+
   '</table></div>')+
  box("待接受邀請",
   invites.length?invites.map(i=>

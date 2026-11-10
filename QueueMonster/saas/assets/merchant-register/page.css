@@ -74,3 +74,13 @@ button.ghost{font:inherit;color:var(--purple);background:white;border:1px solid 
  body[data-monster-page="merchant-register"] .tabs{margin-bottom:15px}
  body[data-monster-page="merchant-register"] .panel h2{font-size:22px}
 }
+
+/* Each employer stays independent; leaving does not remove other memberships. */
+.merchant-membership{display:grid;gap:7px;border:1px solid #e3d8eb;background:#fff;border-radius:14px;padding:15px;margin:4px 0}
+.merchant-membership-title{font-size:17px;color:#362849;overflow-wrap:anywhere}
+.merchant-membership .muted{font-size:13px}
+.merchant-membership-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin-top:5px}
+.merchant-membership-actions>a,.merchant-membership-actions>button{min-height:42px;margin:0;width:100%;font-size:14px;text-align:center}
+.merchant-membership-actions>.danger-action{color:#9e3136;border-color:#e5b7bc;background:#fff7f7}
+.merchant-membership-hint{font-size:13px}
+@media(min-width:600px){.merchant-membership-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
