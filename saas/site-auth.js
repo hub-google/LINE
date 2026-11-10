@@ -15,6 +15,13 @@ const operator=createClient(SB_URL,SB_KEY,{
  auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}
 });
 let currentIdentity=null,busy=false;
+function portalMode(){
+ const page=location.pathname.split("/").pop()||"";
+ const view=new URLSearchParams(location.search).get("view");
+ if(view==="platform")return "headquarters";
+ if(view==="staff"||["merchant-center.html","merchant-register.html"].includes(page))return "merchant";
+ return "customer";
+}
 function el(tag,className,text){
  const node=document.createElement(tag);
  if(className)node.className=className;
@@ -39,8 +46,14 @@ function draw(status,message){
  }else{
   const login=el("button","site-auth-button site-auth-login");
   login.type="button";login.disabled=busy;
-  login.append(el("span","site-auth-line-logo","LINE"),document.createTextNode("選擇店家並以 LINE 登入"));
-  login.addEventListener("click",startLineLogin);
+  const mode=portalMode();
+  if(mode==="customer"){
+   login.append(el("span","site-auth-line-logo","LINE"),document.createTextNode("選擇店家並以 LINE 登入"));
+   login.addEventListener("click",startLineLogin);
+  }else{
+   login.textContent=mode==="headquarters"?"總部登入":"店家登入";
+   login.addEventListener("click",()=>location.assign(mode==="headquarters"?"./platform-login.html":"./merchant-register.html?mode=login"));
+  }
   holder.append(login);
  }
  if(message){const hint=el("div","site-auth-feedback",message);hint.setAttribute("role","alert");holder.append(hint);}
@@ -90,8 +103,8 @@ function startLineLogin(){
  location.assign(start.href);
 }
 async function getIdentity(){
- const preferOperator=/^(?:staff|platform)$/.test(new URLSearchParams(location.search).get("view")||"")||
-   /\/merchant-register\.html$/.test(location.pathname);
+ const mode=portalMode();
+ const preferOperator=mode!=="customer";
  const [customerResult,operatorResult]=await Promise.all([
    customer.auth.getSession(),operator.auth.getSession()
  ]);
@@ -108,7 +121,13 @@ async function getIdentity(){
  if(staffUser&&!staffUser.is_anonymous){
   operatorIdentity={type:"operator",displayName:staffUser.email||"商家使用者",client:operator};
  }
- return preferOperator?(operatorIdentity||lineIdentity):(lineIdentity||operatorIdentity);
+ if(!preferOperator)return lineIdentity;
+ if(!operatorIdentity)return null;
+ if(mode==="headquarters"){
+  const role=await operator.rpc("so_my_context");
+  if(role.error||role.data?.platform_admin!==true)return null;
+ }
+ return operatorIdentity;
 }
 async function refresh(){
  if(busy)return;
