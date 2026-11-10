@@ -107,9 +107,10 @@ test("anonymous visitor sees functional LINE login and retains return destinatio
  login.handlers.click();
  assert.ok(ui.state.navigated);
  const dest=new URL(ui.state.navigated);
- assert.equal(dest.pathname,"/LINE/booking/directory.html");
- assert.equal(dest.searchParams.get("mode"),"search");
+ assert.equal(dest.pathname,"/LINE/booking/");
+ assert.equal(dest.searchParams.get("view"),"customer");
  assert.equal(dest.searchParams.get("merchant"),null);
+ assert.match(dest.searchParams.get("site_return")||"",/directory\.html\?mode=game/);
  assert.match(ui.memory["line-site-auth-return-v1"],/directory\.html\?mode=game/);
 });
 test("LINE login uses the selected merchant, not a built-in sample store",async()=>{
@@ -122,6 +123,33 @@ test("LINE login uses the selected merchant, not a built-in sample store",async(
  assert.equal(dest.searchParams.get("merchant"),"store-123");
  assert.equal(dest.searchParams.get("view"),"customer");
  assert.match(dest.searchParams.get("site_return")||"",/merchant=store-123/);
+});
+test("home and directory LINE logins do not require a merchant",async()=>{
+ for(const url of ["https://hub-google.github.io/LINE/booking/home.html",
+                   "https://hub-google.github.io/LINE/booking/directory.html?mode=search",
+                   "https://hub-google.github.io/LINE/booking/directory.html?mode=mine"]){
+  const ui=createScenario({url});
+  await flush();
+  const login=controls(ui.rootNode).find(x=>x.tag==="button");
+  assert.ok(login);
+  assert.match(login.children.map(x=>x.textContent).join(""),/使用 LINE 登入/);
+  login.handlers.click();
+  const dest=new URL(ui.state.navigated);
+  assert.equal(dest.searchParams.get("view"),"customer");
+  assert.equal(dest.searchParams.get("merchant"),null);
+  assert.match(dest.searchParams.get("site_return")||"",/\.html/);
+  assert.doesNotMatch(JSON.stringify(ui.rootNode),/請先選擇店家/);
+ }
+});
+test("unscoped login keeps shop QR code context when present",async()=>{
+ const ui=createScenario({url:"https://hub-google.github.io/LINE/booking/board.html?merchant=store-123"});
+ await flush();
+ const login=controls(ui.rootNode).find(x=>x.tag==="button");
+ assert.ok(login);
+ login.handlers.click();
+ const dest=new URL(ui.state.navigated);
+ assert.equal(dest.searchParams.get("merchant"),"store-123");
+ assert.match(dest.searchParams.get("site_return")||"",/board\.html/);
 });
 test("verified LINE user appears by real display name and logout signs out active customer session",async()=>{
  const ui=createScenario({customerSession:true,lineName:"預約人王小姐"});
