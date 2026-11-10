@@ -249,3 +249,9 @@ body[data-monster-page="home"] .mock-scene.hero-showcase::before{width:112px;hei
   .hero-demo-current strong{font-size:34px}
   body[data-monster-page="home"] .mock-scene.hero-showcase::before{width:103px;height:107px;right:4px;top:-35px;transform:rotate(-4deg)}
 }
+
+/* iPhone-class touch targets for the collapsible navigation. */
+@media(max-width:850px){
+  .mobile-menu summary{display:flex;align-items:center;justify-content:center;min-height:44px}
+  .mobile-menu .menu-panel a{display:flex;align-items:center;min-height:44px;line-height:1.35}
+}
