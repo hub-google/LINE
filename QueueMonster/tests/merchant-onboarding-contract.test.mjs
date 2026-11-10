@@ -28,11 +28,17 @@ test("merchant signup and login are separate actionable screens",()=>{
  assert.doesNotMatch(reg,/id="username"|id="finish-username"/);
  assert.match(reg,/電子信箱（登入帳號）/);
  const loginLogic=read("saas/assets/merchant-register/main.js");
- assert.match(loginLogic,/const username="m"\+String\(user\.id/);
+ assert.match(loginLogic,/rpc\("so_start_merchant"\)/);
+ assert.doesNotMatch(loginLogic,/p_username|const username="m"/);
  assert.match(loginLogic,/so_start_merchant/);
  assert.doesNotMatch(loginLogic,/data:\{username\}|\$\("username"\)|\$\("finish-username"\)/);
  const merchantGuide=read("saas/merchant-center.html");
  assert.doesNotMatch(merchantGuide,/例如：happyshop|填寫帳號、電子信箱/);
+ const emailOnlySql=read("supabase/migrations/20261110143200_queue_monster_email_only_merchant_registration.sql");
+ assert.match(emailOnlySql,/rename column username to internal_code/);
+ assert.match(emailOnlySql,/v_internal_code := 'm'/);
+ assert.match(emailOnlySql,/on conflict \(user_id\) do nothing/);
+ assert.doesNotMatch(emailOnlySql,/raw_user_meta_data|v_internal_code:=lower\(btrim/);
  assert.match(merchantGuide,/merchant-register\.html\?mode=signup/);
 });
 test("merchant supports secure account activation, password reset and callback preservation",()=>{

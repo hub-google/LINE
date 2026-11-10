@@ -65,10 +65,8 @@ async function prepare(){
  showAuth(user);
  $("account-title").textContent="店家帳號已登入";
  document.querySelector(".password-panel").classList.remove("hidden");
- // Auto-generated internal identity; the merchant logs in with email only.
- const username="m"+String(user.id||"").replace(/-/g,"").slice(0,29);
- if(!/^m[0-9a-f]{29}$/.test(username))throw Error("無法確認店家身分，請重新登入");
- const result=await rpc("so_start_merchant",{p_username:username});
+ // The database creates the internal merchant identity from the verified email account.
+ const result=await rpc("so_start_merchant");
  workspaceSlug=result.slug;
  const url="./?view=staff&merchant="+encodeURIComponent(workspaceSlug);
  $("workspace").replaceChildren();
