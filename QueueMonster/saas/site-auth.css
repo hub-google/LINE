@@ -63,3 +63,6 @@ body:has(#qa-login-panel) > header > div:first-child{margin:0}
  body:has(.shop-title)>header .site-auth-slot{order:3;width:100%}
  header.top .top-inner > .site-auth-slot{margin-left:0}
 }
+
+/* Mobile header actions must remain comfortably tappable. */
+@media(max-width:780px){.site-auth-button{min-height:44px!important;padding-block:9px}}
