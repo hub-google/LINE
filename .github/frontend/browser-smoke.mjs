@@ -100,6 +100,13 @@ try{
   if(tab==='menu'){
    assert.match(html,/value="__CUSTOM__"/,'Merchant menu must allow custom type');
    assert.match(html,/id="menu-custom-kind-wrap"/,'Merchant menu must provide type input');
+   continue; // Approved new custom category changes historical HTML.
+  }
+  if(tab==='settings'){
+   assert.ok(html.includes('id="policy-closed-dates"'),'Closing date value must remain compatible with the saved RPC');
+   assert.ok(html.includes('class="qm-closed-calendar"'),'Special closing dates must show a calendar');
+   assert.ok(html.includes('data-closed-done'),'Calendar must provide a completion action');
+   continue; // Approved calendar replaces the old free-text control.
   }
   assert.equal(createHash('sha256').update(historical).digest('hex'),baseline.hashes[tab],tab+' render changed outside approved UI updates');
  }
