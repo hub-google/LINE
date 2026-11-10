@@ -9,7 +9,7 @@ import {merchantProfileFields} from "./merchant-brand.js";
 export function platformRender(){
  if(!authReady())return box("總部管理員登入",'<p>請從總部專用入口登入，完成授權後才能使用總部管理功能。</p><a class="btn primary" href="./platform-login.html">前往總部登入</a>');
  if(!platformReady())return box("沒有總部管理權限",'<p>目前帳號無法進入總部管理後台。請使用總部專用入口登入。</p><a class="btn primary" href="./platform-login.html">前往總部登入</a>');
- const menu=nav("平台營運總覽","dashboard",routeState.platformTab,"platform")+nav("企業列表","list",routeState.platformTab,"platform")+nav("開通新企業","create",routeState.platformTab,"platform")+nav("平台說明","about",routeState.platformTab,"platform")+'<a class="side-item" href="merchant-register.html?mode=signup">店家註冊</a>';
+ const menu=nav("平台營運總覽","dashboard",routeState.platformTab,"platform")+nav("企業列表","list",routeState.platformTab,"platform")+nav("開通新企業","create",routeState.platformTab,"platform")+nav("平台說明","about",routeState.platformTab,"platform");
  let html="";
  if(routeState.platformTab==="dashboard"){
    const active=routeState.overview.filter(t=>t.status==="ACTIVE").length;
