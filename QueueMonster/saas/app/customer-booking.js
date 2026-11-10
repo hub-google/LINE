@@ -91,7 +91,7 @@ box("LINE 身分授權",'<p class="muted">為避免機器人或惡意假預約�
   const displayTitle=homepage.title===undefined?t.name:homepage.title;
   const displaySubtitle=homepage.subtitle===undefined?(t.description||""):homepage.subtitle;
   const displayLabel=homepage.label||"";
-  html=(homepage.show_intro===false?"":'<section class="card customer-welcome" style="padding:18px 22px;margin-bottom:16px">'+
+  html=(homepage.show_intro!==true?"":'<section class="card customer-welcome" style="padding:18px 22px;margin-bottom:16px">'+
    (homepage.show_label&&displayLabel?'<div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">'+esc(displayLabel)+'</div>':"")+
    (displayTitle?'<h2 style="font-size:clamp(18px,4vw,24px);line-height:1.4;margin:0 0 6px">'+esc(displayTitle)+'</h2>':"")+
    (displaySubtitle?'<p class="muted" style="margin:0 0 7px;white-space:pre-wrap">'+esc(displaySubtitle)+'</p>':"")+
