@@ -25,6 +25,10 @@ jobs:
         id: test
         continue-on-error: true
         run: node .github/frontend/iphone17-safari-acceptance.mjs
+      - name: Render synthetic mobile staff + headquarters fixture screens (no real sign-in)
+        id: roles
+        continue-on-error: true
+        run: node .github/frontend/iphone17-role-fixtures.mjs
       - name: Upload screenshots + exact failures
         if: always()
         uses: actions/upload-artifact@v4
@@ -38,13 +42,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add reports/iphone17-safari-20261110/ || true
-          if ! git diff --cached --quiet; then
-            git commit -m "qa: publish iPhone 17 WebKit screenshots and acceptance metrics"
-            git push
+          git fetch origin qa/iphone17-safari-e2e-20261110
+          pubdir="$RUNNER_TEMP/iphone17-qa-results"
+          git worktree add -B qa-report "$pubdir" origin/qa/iphone17-safari-e2e-20261110
+          mkdir -p "$pubdir/reports/iphone17-safari-20261110"
+          cp -R reports/iphone17-safari-20261110/. "$pubdir/reports/iphone17-safari-20261110/"
+          git -C "$pubdir" add reports/iphone17-safari-20261110/
+          if ! git -C "$pubdir" diff --cached --quiet; then
+            git -C "$pubdir" -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "qa: publish iPhone 17 WebKit screenshots and acceptance metrics"
+            git -C "$pubdir" push origin HEAD:qa/iphone17-safari-e2e-20261110
           fi
       - name: Fail if any acceptance check failed
-        if: steps.test.outcome == 'failure'
+        if: steps.test.outcome == 'failure' || steps.roles.outcome == 'failure'
         run: exit 1
