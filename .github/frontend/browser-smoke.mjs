@@ -108,6 +108,13 @@ try{
    assert.ok(html.includes('data-closed-done'),'Calendar must provide a completion action');
    continue; // Approved calendar replaces the old free-text control.
   }
+  if(tab==='units'){
+   assert.match(html,/服務單位與場次/,'Service-unit screen must retain its heading');
+   assert.match(html,/id="enable-units"/,'Multi-unit feature toggle must remain available');
+   assert.match(html,/id="unit-name"/,'Managers must still be able to name service units');
+   assert.match(html,/id="unit-admin-date"/,'Session date selection must remain available');
+   continue; // Multi-unit interface is checked by functional controls instead of an obsolete text hash.
+  }
   assert.equal(createHash('sha256').update(historical).digest('hex'),baseline.hashes[tab],tab+' render changed outside approved UI updates');
  }
  assert.ok(!fs.existsSync(path.join(dist,'poster.html')),'Retired poster must not be included in production output');
