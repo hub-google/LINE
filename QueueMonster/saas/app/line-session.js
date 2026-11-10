@@ -31,7 +31,7 @@ export function customerUrl(merchant){
 
 export function lineLoginUrl(){
   const siteReturn=incomingParam("site_return");
-  return "https://liff.line.me/"+encodeURIComponent(lineState.lineConfig?.liffId||"")+"/?view=customer&merchant="+encodeURIComponent(routeState.slug)+(routeState.customerTab?"&tab="+encodeURIComponent(routeState.customerTab):"")+(siteReturn?"&site_return="+encodeURIComponent(siteReturn):"")+
+  return "https://liff.line.me/"+encodeURIComponent(lineState.lineConfig?.liffId||"")+"/?view=customer"+(isSafeMerchant(routeState.slug)?"&merchant="+encodeURIComponent(routeState.slug):"")+(routeState.customerTab?"&tab="+encodeURIComponent(routeState.customerTab):"")+(siteReturn?"&site_return="+encodeURIComponent(siteReturn):"")+
     (bookingState.manageKind&&bookingState.manageItem?"&manage="+encodeURIComponent(bookingState.manageKind)+"&item="+encodeURIComponent(bookingState.manageItem)+"&mode="+encodeURIComponent(bookingState.manageMode):"")+
     (routeState.customerTab==="progress"&&queueState.progressTicketId?"&ticket="+encodeURIComponent(queueState.progressTicketId):"");
 }
@@ -90,7 +90,7 @@ export async function resumeVerifiedLineSession(){
   const res=await fetch(lineState.LINE_BRIDGE_URL,{
    method:"POST",
    headers:{"content-type":"application/json","authorization":"Bearer "+authState.session.access_token},
-   body:JSON.stringify({action:"resume",slug:routeState.slug})
+   body:JSON.stringify(isSafeMerchant(routeState.slug)?{action:"resume",slug:routeState.slug}:{action:"resume-platform"})
   });
   if(!res.ok)return false;
   const result=await res.json();
@@ -142,7 +142,7 @@ export async function connectLineSession(force=false){
   if(force)lineState.lineLinkAttempted=false;
   if(lineState.lineLinkAttempted)return;
   const config=await bridgeConfig();
-  if(!config.liffId){lineState.lineLinkStatus="not-ready";lineState.lineConnectError="目前無法使用 LINE 登入，請聯絡店家協助。";return;}
+  if(!config.liffId){lineState.lineLinkStatus="not-ready";lineState.lineConnectError="目前無法使用 LINE 登入，請稍後再試。";return;}
   lineState.lineLinkAttempted=true;
   lineState.lineLinkStatus="connecting";
   lineState.lineConnectError="";
@@ -185,7 +185,7 @@ export async function connectLineSession(force=false){
       const res=await fetch(lineState.LINE_BRIDGE_URL,{
         method:"POST",
         headers:{"content-type":"application/json","authorization":"Bearer "+authState.session.access_token},
-        body:JSON.stringify({action:"link",slug:routeState.slug,idToken,accessToken})
+        body:JSON.stringify(isSafeMerchant(routeState.slug)?{action:"link",slug:routeState.slug,idToken,accessToken}:{action:"link-platform",idToken,accessToken})
       });
       return {res,result:await res.json()};
     };
@@ -206,7 +206,7 @@ export async function connectLineSession(force=false){
       }
       const reasons={
        LINE_ID_TOKEN_EXPIRED:"LINE 登入憑證已過期，請重新登入 LINE 後再開啟顧客網址。",
-       LINE_ID_TOKEN_AUDIENCE_MISMATCH:"LINE 登入頻道與憑證不一致，請使用專屬 LINE 顧客網址重新登入。",
+       LINE_ID_TOKEN_AUDIENCE_MISMATCH:"LINE 登入頻道與憑證不一致，請重新開啟排隊怪獸並登入。",
        INVALID_LINE_ID_TOKEN:"LINE 身分憑證無法通過驗證，請在 LINE App 內重新開啟顧客網址。"
       };
       throw Error(reasons[result.error]||result.error||"LINE 身分驗證失敗");
