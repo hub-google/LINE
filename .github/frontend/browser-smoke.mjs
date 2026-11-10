@@ -67,10 +67,11 @@ try{
   const {routeState}=await import('./app/state/routeState.js');
   const {calendarState}=await import('./app/state/calendarState.js');
   const {lineState}=await import('./app/state/lineState.js');
-  const objects=[authState,staffState,routeState,calendarState,lineState];const saved=objects.map(o=>({...o}));
+  const {serviceUnitsState}=await import('./app/state/serviceUnitsState.js');
+  const objects=[authState,staffState,routeState,calendarState,lineState,serviceUnitsState];const saved=objects.map(o=>({...o}));
   try{
    authState.session={user:{id:'unit-render-user',email:'unit@example.invalid',is_anonymous:false}};
-   authState.context={memberships:[],invitations:[]};staffState.staff=fixture;routeState.day='2026-11-09';calendarState.calendarAnchor='2026-11-09';lineState.lineConfig=null;
+   authState.context={memberships:[],invitations:[]};staffState.staff=fixture;routeState.day='2026-11-09';calendarState.calendarAnchor='2026-11-09';serviceUnitsState.unitAdminDate='2026-11-09';lineState.lineConfig=null;
    const outputs={};for(const tab of tabs){staffState.staffTab=tab;outputs[tab]=staffRender().replaceAll(location.origin,'https://hub-google.github.io');}
    return outputs;
   }finally{objects.forEach((o,i)=>Object.assign(o,saved[i]));}
