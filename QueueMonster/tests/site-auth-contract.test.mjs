@@ -245,3 +245,20 @@ test("platform LINE identity is verified independently from store selection",()=
  assert.match(redirect,/"site_return"/);
  assert.doesNotMatch(code,/請先選擇店家，才能進行 LINE 登入/);
 });
+
+
+test("mobile LINE entry waits for explicit approval rather than forcing external-browser OAuth",()=>{
+ const session=read("saas/app/line-session.js");
+ const directoryJs=read("saas/assets/directory/main.js");
+ const directoryCss=read("saas/assets/directory/page.css");
+ const directoryHtml=read("saas/directory.html");
+ assert.match(code,/start\.searchParams\.set\("site_login","1"\)/);
+ assert.match(session,/new URLSearchParams\(location\.search\)\.get\("site_login"\)==="1"/);
+ assert.match(session,/lineState\.lineLinkStatus="not-logged-in"/);
+ assert.doesNotMatch(session,/if\(!window\.liff\.isInClient\(\)\)window\.liff\.login/);
+ assert.match(directoryHtml,/id="mobile-filter-toggle"/);
+ assert.match(directoryJs,/so_site_header_identity/);
+ assert.match(directoryJs,/mineIdentityState="guest"/);
+ assert.match(directoryJs,/p_category:match\[0\]/);
+ assert.match(directoryCss,/#explore-filters:not\(\.mobile-open\)/);
+});
