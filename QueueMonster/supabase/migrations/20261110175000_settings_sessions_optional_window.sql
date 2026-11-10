@@ -128,6 +128,11 @@ begin
        if v_is_busy then raise exception '此場次仍有有效預約或候位號碼，請先完成或取消後再刪除';end if;
        update public.so_service_sessions set active=false,deleted_at=now(),updated_at=now()
          where id=v_session and tenant_id=t.id returning * into s;
+       if not t.unit_selection_enabled and not exists
+         (select 1 from public.so_service_sessions remain
+           where remain.tenant_id=t.id and remain.deleted_at is null) then
+         update public.so_tenants set multi_unit_enabled=false,updated_at=now() where id=t.id;
+       end if;
      else
        if v_unit<>s.unit_id then raise exception '既有場次不能更換服務窗口，請另建場次';end if;
        if (s.start_time<>v_start or s.end_time<>v_end) and
