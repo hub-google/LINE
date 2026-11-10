@@ -7,6 +7,7 @@ import {staffState} from "../state/staffState.js";
 
 
 import {render} from "./../staff-layout.js";
+import {showActionFeedback} from "./../shared-ui.js";
 import {loadCustomerHistory} from "./../staff-history.js";
 import {act,checked,rpc,urlFor,val} from "./../data-loading.js";
 import {merchantLogoSaved,merchantProfilePatch,merchantUploadLogo} from "./../merchant-brand.js";
@@ -58,6 +59,21 @@ if(a==="customer-history-close"){
   try{await navigator.clipboard.writeText(u);return "已複製網址："+u;}
   catch(e){window.prompt("複製網址",u);return "請複製顯示的網址";}
  });return true;}
+ if(a==="copy-service-link"){
+   const link=b.dataset.url||"";
+   const kind=b.dataset.serviceKind;
+   if(!link||!["queue","reserve"].includes(kind))return true;
+   let url;
+   try{
+     url=new URL(link);
+     if(url.protocol!=="https:"&&url.origin!==location.origin)throw Error("網址格式不正確");
+   }catch(_error){showActionFeedback("顧客網址無效，請重新整理","error");return true;}
+   try{
+     await navigator.clipboard.writeText(url.href);
+     showActionFeedback("已複製"+(kind==="queue"?"抽號":"預約")+"網址","success");
+   }catch(_error){window.prompt("請複製"+(kind==="queue"?"抽號":"預約")+"網址",url.href);}
+   return true;
+ }
  if(a==="create-business-group"){
    await act(async()=>{
      await rpc("so_create_business_group",{p_name:val("group-name")});

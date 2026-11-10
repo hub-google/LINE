@@ -11,6 +11,20 @@ import {merchantProfileFields} from "../merchant-brand.js";
 import {customerUrl} from "../line-session.js";
 import {closedDatesPickerMarkup,installClosedDatesPicker} from "../closed-dates-picker.js";
 
+function serviceLink(kind,label,enabled){
+ const url=new URL(customerUrl(routeState.slug)||new URL(sharedUiState.route("customer",routeState.slug),location.href).href,location.href);
+ url.searchParams.set("tab",kind);
+ const href=url.href;
+ return '<div class="inset" data-service-url-kind="'+kind+'" style="margin-top:12px">'+
+   '<strong>'+label+'</strong>'+
+   '<div data-service-url-active'+(enabled?'':' style="display:none"')+'>'+
+     '<p style="overflow-wrap:anywhere"><a href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">'+esc(href)+'</a></p>'+
+     btn("複製"+label,"copy-service-link","outline",'data-url="'+esc(href)+'" data-service-kind="'+kind+'"')+
+   '</div>'+
+   '<p class="muted" data-service-url-inactive'+(enabled?' style="display:none"':'')+'>未選擇此功能</p>'+
+ '</div>';
+}
+
 export function renderStaffSettings({t,isManager,html}){
   installClosedDatesPicker();
   const policy=staffState.staff.bookingPolicy||{};
@@ -105,7 +119,7 @@ export function renderStaffSettings({t,isManager,html}){
     '<p class="small">新門市預設勾選公開；若取消勾選，仍可透過專屬預約網址使用服務。</p>'+
     '<p class="small">通知將依本店已連接的 LINE 官方帳號設定提供。</p>'+
     '<div style="margin-top:12px">'+btn("儲存公開設定","save-directory","primary")+'</div>'):"")+
-  box("唯一顧客網址（同時支援電腦與手機）",'<div><a href="'+esc(customerUrl(routeState.slug)||sharedUiState.route("customer",routeState.slug))+'" target="_blank" rel="noopener">'+esc(customerUrl(routeState.slug)||new URL(sharedUiState.route("customer",routeState.slug),location.href).href)+'</a></div><p class="spacer"></p>'+btn("複製顧客連結","copy-customer","outline"));
+  box("顧客專屬網址（電腦與手機皆可使用）",'<p class="small">以下網址依上方服務開關即時顯示，按下「儲存服務開關」後正式生效。</p>'+serviceLink("queue","抽號網址",!!serviceModules.queue)+serviceLink("reserve","預約網址",!!serviceModules.reservation));
 
 return html;
 }

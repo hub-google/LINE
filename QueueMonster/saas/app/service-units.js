@@ -2,6 +2,7 @@ import {bookingState} from "./state/bookingState.js";
 import {customerState} from "./state/customerState.js";
 import {queueState} from "./state/queueState.js";
 import {routeState} from "./state/routeState.js";
+import {sharedUiState} from "./state/sharedUiState.js";
 import {serviceUnitsState} from "./state/serviceUnitsState.js";
 import {staffState} from "./state/staffState.js";
 
@@ -156,6 +157,7 @@ export function unitStaffQueuePanel(){
  const current=open.find(k=>['CALLED','ARRIVED','ADMITTED','SERVING'].includes(k.status));
  return box("按服務單位獨立叫號",
    '<p class="small">每個單位與場次獨立服務；不同單位可以同時叫號。現有編號及通知機制繼續沿用。</p>'+
+   '<div class="staff-actionbar"><a class="btn outline" href="'+esc(sharedUiState.route("staff",routeState.slug)+"&tab=units")+'">前往服務單位與場次設定</a></div>'+
    '<label for="staff-unit-session">操作隊列</label><select id="staff-unit-session" class="field">'+
    ss.map(s=>'<option value="'+esc(s.id)+'" '+(s.id===selected?.id?'selected':'')+'>'+esc(unitNameForSession(s.id))+' · '+esc(s.name)+' '+esc(s.start)+'</option>').join("")+'</select>'+
    (selected?'<div class="grid3" style="margin:12px 0">'+stat("目前叫號",current?.number||"—")+
@@ -168,7 +170,7 @@ export function unitStaffQueuePanel(){
        '<div class="staff-record-title">'+esc(k.number)+'　'+esc(k.name)+'</div>'+
        '<div class="small">'+esc(k.unit||"")+' · '+esc(k.session||"")+'</div>'+
        staffStatusPicker("ticket",k,true)+'</article>').join("")+'</div>':
-     '<p class="muted">尚未設定今日場次，請先至企業設定建立服務單位與場次。</p>'));
+     '<p class="muted">目前沒有可操作的場次，請點選上方「前往服務單位與場次設定」建立服務單位與今日場次。</p>'));
 }
 
 export function initializeServiceUnits(){
