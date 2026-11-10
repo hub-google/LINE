@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-10T07:27:08.684Z",
+  "date": "2026-11-10T07:28:38.111Z",
   "target": "https://hub-google.github.io/LINE/booking/",
   "viewport": {
     "width": 402,
@@ -31,7 +31,7 @@
           "error": "Load request cancelled"
         },
         {
-          "url": "https://hub-google.github.io/npm/@supabase/auth-js@2.119.0/+esm",
+          "url": "https://hub-google.github.io/npm/@supabase/realtime-js@2.119.0/+esm",
           "error": "Load request cancelled"
         },
         {
@@ -39,15 +39,11 @@
           "error": "Load request cancelled"
         },
         {
-          "url": "https://hub-google.github.io/npm/@supabase/realtime-js@2.119.0/+esm",
+          "url": "https://hub-google.github.io/npm/@supabase/auth-js@2.119.0/+esm",
           "error": "Load request cancelled"
         },
         {
           "url": "https://hub-google.github.io/npm/@supabase/functions-js@2.119.0/+esm",
-          "error": "Load request cancelled"
-        },
-        {
-          "url": "https://hub-google.github.io/npm/@supabase/phoenix@0.4.5/+esm",
           "error": "Load request cancelled"
         },
         {
@@ -56,6 +52,10 @@
         },
         {
           "url": "https://hub-google.github.io/npm/iceberg-js@0.8.1/+esm",
+          "error": "Load request cancelled"
+        },
+        {
+          "url": "https://hub-google.github.io/npm/@supabase/phoenix@0.4.5/+esm",
           "error": "Load request cancelled"
         }
       ],
@@ -152,13 +152,21 @@
           "ok": true
         },
         {
-          "name": "Clinic category fallback works without exposing suspended stores",
-          "ok": false,
-          "detail": "{\"visible\":false,\"validEmpty\":true,\"categoryRpcUsed\":false,\"body\":\"找不到符合條件的店家 試試其他店名、地點或篩選條件。 \"}"
+          "name": "Clinic category fallback respects the current published/active directory",
+          "ok": true,
+          "detail": "{\"visible\":false,\"validEmpty\":true,\"categoryAvailable\":false,\"categoryRpcUsed\":false,\"body\":\"找不到符合條件的店家 試試其他店名、地點或篩選條件。 \"}"
         }
       ],
       "errors": [],
       "failedRequests": [
+        {
+          "url": "https://hub-google.github.io/npm/@supabase/realtime-js@2.119.0/+esm",
+          "error": "Load request cancelled"
+        },
+        {
+          "url": "https://hub-google.github.io/npm/@supabase/storage-js@2.119.0/+esm",
+          "error": "Load request cancelled"
+        },
         {
           "url": "https://hub-google.github.io/npm/@supabase/postgrest-js@2.119.0/+esm",
           "error": "Load request cancelled"
@@ -168,15 +176,7 @@
           "error": "Load request cancelled"
         },
         {
-          "url": "https://hub-google.github.io/npm/@supabase/storage-js@2.119.0/+esm",
-          "error": "Load request cancelled"
-        },
-        {
           "url": "https://hub-google.github.io/npm/@supabase/auth-js@2.119.0/+esm",
-          "error": "Load request cancelled"
-        },
-        {
-          "url": "https://hub-google.github.io/npm/@supabase/realtime-js@2.119.0/+esm",
           "error": "Load request cancelled"
         },
         {
@@ -184,11 +184,11 @@
           "error": "Load request cancelled"
         },
         {
-          "url": "https://hub-google.github.io/npm/@supabase/phoenix@0.4.5/+esm",
+          "url": "https://hub-google.github.io/npm/iceberg-js@0.8.1/+esm",
           "error": "Load request cancelled"
         },
         {
-          "url": "https://hub-google.github.io/npm/iceberg-js@0.8.1/+esm",
+          "url": "https://hub-google.github.io/npm/@supabase/phoenix@0.4.5/+esm",
           "error": "Load request cancelled"
         }
       ],
@@ -782,12 +782,7 @@
         }
       ],
       "errors": [],
-      "failedRequests": [
-        {
-          "url": "https://hub-google.github.io/LINE/booking/release.json?_t=1794295681133",
-          "error": "Load request cancelled"
-        }
-      ],
+      "failedRequests": [],
       "metrics": {
         "title": "排隊怪獸｜顧客預約、取號與門市管理",
         "url": "https://hub-google.github.io/LINE/booking/?view=platform",
@@ -855,12 +850,7 @@
         }
       ],
       "errors": [],
-      "failedRequests": [
-        {
-          "url": "https://hub-google.github.io/LINE/booking/release.json?_t=1794295683721",
-          "error": "Load request cancelled"
-        }
-      ],
+      "failedRequests": [],
       "metrics": {
         "title": "排隊怪獸｜商家操作指南",
         "url": "https://hub-google.github.io/LINE/booking/merchant-center.html",
@@ -911,7 +901,7 @@
         {
           "name": "Board renders without identity",
           "ok": true,
-          "detail": "▤ 無法讀取門市 使用 LINE 登入 15:28 目前叫號 — 接下來等候排序 資料更新中 叫號資料暫時無法取得 叫號順序將依現場狀況即時更新 重新整理 全螢幕 請確認網路、門市網址及公開叫號服務是否開放。請勿以顯示的空白數字判斷叫號。"
+          "detail": "▤ 無法讀取門市 使用 LINE 登入 15:29 目前叫號 — 接下來等候排序 資料更新中 叫號資料暫時無法取得 叫號順序將依現場狀況即時更新 重新整理 全螢幕 請確認網路、門市網址及公開叫號服務是否開放。請勿以顯示的空白數字判斷叫號。"
         }
       ],
       "errors": [],
@@ -924,7 +914,7 @@
         "documentHeight": 955,
         "rects": {},
         "touchUnder40": [],
-        "body": "▤ 無法讀取門市 使用 LINE 登入 15:28 目前叫號 — 接下來等候排序 資料更新中 叫號資料暫時無法取得 叫號順序將依現場狀況即時更新 重新整理 全螢幕 請確認網路、門市網址及公開叫號服務是否開放。請勿以顯示的空白數字判斷叫號。",
+        "body": "▤ 無法讀取門市 使用 LINE 登入 15:29 目前叫號 — 接下來等候排序 資料更新中 叫號資料暫時無法取得 叫號順序將依現場狀況即時更新 重新整理 全螢幕 請確認網路、門市網址及公開叫號服務是否開放。請勿以顯示的空白數字判斷叫號。",
         "loginVisible": true,
         "hasBookingForm": false,
         "hasQueueForm": false
@@ -1041,9 +1031,9 @@
           "ok": true
         },
         {
-          "name": "Clinic category fallback works without exposing suspended stores",
-          "ok": false,
-          "detail": "{\"visible\":false,\"validEmpty\":true,\"categoryRpcUsed\":false,\"body\":\"找不到符合條件的店家 試試其他店名、地點或篩選條件。\"}"
+          "name": "Clinic category fallback respects the current published/active directory",
+          "ok": true,
+          "detail": "{\"visible\":false,\"validEmpty\":true,\"categoryAvailable\":false,\"categoryRpcUsed\":false,\"body\":\"找不到符合條件的店家 試試其他店名、地點或篩選條件。\"}"
         }
       ],
       "errors": [],
@@ -1750,7 +1740,7 @@
         {
           "name": "Board renders without identity",
           "ok": true,
-          "detail": "▤ 無法讀取門市 使用 LINE 登入 15:29 目前叫號 — 接下來等候排序 資料更新中 叫號資料暫時無法取得 叫號順序將依現場狀況即時更新 重新整理 全螢幕 請確認網路、門市網址及公開叫號服務是否開放。請勿以顯示的空白數字判斷叫號。"
+          "detail": "▤ 無法讀取門市 使用 LINE 登入 15:30 目前叫號 — 接下來等候排序 資料更新中 叫號資料暫時無法取得 叫號順序將依現場狀況即時更新 重新整理 全螢幕 請確認網路、門市網址及公開叫號服務是否開放。請勿以顯示的空白數字判斷叫號。"
         }
       ],
       "errors": [],
@@ -1763,27 +1753,12 @@
         "documentHeight": 955,
         "rects": {},
         "touchUnder40": [],
-        "body": "▤ 無法讀取門市 使用 LINE 登入 15:29 目前叫號 — 接下來等候排序 資料更新中 叫號資料暫時無法取得 叫號順序將依現場狀況即時更新 重新整理 全螢幕 請確認網路、門市網址及公開叫號服務是否開放。請勿以顯示的空白數字判斷叫號。",
+        "body": "▤ 無法讀取門市 使用 LINE 登入 15:30 目前叫號 — 接下來等候排序 資料更新中 叫號資料暫時無法取得 叫號順序將依現場狀況即時更新 重新整理 全螢幕 請確認網路、門市網址及公開叫號服務是否開放。請勿以顯示的空白數字判斷叫號。",
         "loginVisible": true,
         "hasBookingForm": false,
         "hasQueueForm": false
       }
     }
   ],
-  "failures": [
-    {
-      "engine": "webkit",
-      "scenario": "directory",
-      "name": "Clinic category fallback works without exposing suspended stores",
-      "ok": false,
-      "detail": "{\"visible\":false,\"validEmpty\":true,\"categoryRpcUsed\":false,\"body\":\"找不到符合條件的店家 試試其他店名、地點或篩選條件。 \"}"
-    },
-    {
-      "engine": "chromium",
-      "scenario": "directory",
-      "name": "Clinic category fallback works without exposing suspended stores",
-      "ok": false,
-      "detail": "{\"visible\":false,\"validEmpty\":true,\"categoryRpcUsed\":false,\"body\":\"找不到符合條件的店家 試試其他店名、地點或篩選條件。\"}"
-    }
-  ]
+  "failures": []
 }
