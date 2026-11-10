@@ -48,7 +48,7 @@ async function execute(job,operation="general"){
 async function rpc(name,args={}){const {data,error}=await sb.rpc(name,args);if(error)throw Error(error.message);return data}
 function showAuth(user){
  authUser=user;$("auth-zone").classList.toggle("hidden",!!user);$("account-zone").classList.toggle("hidden",!user);
- if(user){$("account-email").textContent=user.email||"";$("account-name").textContent=user.user_metadata?.username||"店家使用者";$("account-title").textContent="帳號已登入"}
+ if(user){$("account-email").textContent=user.email||"";$("account-name").textContent=user.email||"店家使用者";$("account-title").textContent="帳號已登入"}
 }
 async function prepare(){
  // The explicit signup route always displays the signup form, even for an admin session.
@@ -65,12 +65,11 @@ async function prepare(){
  showAuth(user);
  $("account-title").textContent="店家帳號已登入";
  document.querySelector(".password-panel").classList.remove("hidden");
- let username=(user.user_metadata?.username||"").trim();
- const input=$("finish-username").value.trim();if(input)username=input;
- if(!username){$("missing-username").classList.remove("hidden");$("workspace").innerHTML='<p class="muted">請先設定帳號名稱。</p>';return}
+ // Auto-generated internal identity; the merchant logs in with email only.
+ const username="m"+String(user.id||"").replace(/-/g,"").slice(0,29);
+ if(!/^m[0-9a-f]{29}$/.test(username))throw Error("無法確認店家身分，請重新登入");
  const result=await rpc("so_start_merchant",{p_username:username});
  workspaceSlug=result.slug;
- $("missing-username").classList.add("hidden");
  const url="./?view=staff&merchant="+encodeURIComponent(workspaceSlug);
  $("workspace").replaceChildren();
  const primary=document.createElement("a");primary.className="strong";primary.href=url;primary.textContent="進入店家後台";
@@ -85,12 +84,11 @@ $("login-form").onsubmit=e=>{e.preventDefault();void execute(async()=>{
  await prepare();msg("登入成功");
 })};
 $("signup-form").onsubmit=e=>{e.preventDefault();void execute(async()=>{
- const username=$("username").value.trim().toLowerCase(),email=$("signup-email").value.trim().toLowerCase();
+ const email=$("signup-email").value.trim().toLowerCase();
  const password=$("signup-pass").value,confirm=$("signup-confirm").value;
- if(!/^[a-z][a-z0-9_-]{2,29}$/.test(username))throw Error("帳號需 3 至 30 字，英文開頭，可使用數字、底線及連字號");
  if(password.length<8)throw Error("密碼至少需要 8 字元");
  if(password!==confirm)throw Error("兩次輸入的密碼不相同");
- const {data,error}=await signupSb.auth.signUp({email,password,options:{data:{username},emailRedirectTo:returnToLogin()}});
+ const {data,error}=await signupSb.auth.signUp({email,password,options:{emailRedirectTo:returnToLogin()}});
  if(error)throw error;
  if(data.session){
   const {error:sessionError}=await sb.auth.setSession({access_token:data.session.access_token,refresh_token:data.session.refresh_token});
@@ -118,11 +116,6 @@ $("change-pass").onclick=()=>void execute(async()=>{
  const {error}=await sb.auth.updateUser({password});
  if(error)throw error;$("new-pass").value="";$("confirm-new-pass").value="";msg("新密碼已儲存，可用於下次登入");
 },"reset");
-$("finish-account").onclick=()=>void execute(async()=>{
- const username=$("finish-username").value.trim();
- if(!/^[a-z][a-z0-9_-]{2,29}$/i.test(username))throw Error("請填寫有效的帳號名稱");
- await prepare();msg("帳號設定已完成");
-});
 $("switch-account").onclick=()=>setMode("login");
 $("logout").onclick=()=>void execute(async()=>{
  const {error}=await sb.auth.signOut();if(error)throw error;workspaceSlug="";showAuth(null);msg("已登出");

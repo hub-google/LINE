@@ -13,7 +13,7 @@
 <main>
 <section class="intro"><div class="eyebrow">商家管理專區</div><h1>讓顧客少排隊，<br><span>讓店家更好管理。</span></h1>
 <p>一個帳號就能開始建立專屬的預約、現場取號與叫號服務。先註冊，再自行填寫店家資料；資料完成前不會公開在搜尋名單。</p>
-<div class="benefit"><div><b>1</b> 申請店家帳號並驗證電子信箱</div><div><b>2</b> 登入後填寫自己的店名、地址及營運設定</div><div><b>3</b> 完成資料後正式開放搜尋及預約取號</div></div>
+<div class="benefit"><div><b>1</b> 註冊店家帳號並驗證電子信箱</div><div><b>2</b> 登入後填寫自己的店名、地址及營運設定</div><div><b>3</b> 完成資料後正式開放搜尋及預約取號</div></div>
 </section>
 <section class="panel">
 <div id="auth-zone">
@@ -24,8 +24,7 @@
 <button type="submit" class="primary">登入店家後台</button><button type="button" id="email-link-login" class="secondary-action">寄送電子郵件登入連結</button><button type="button" id="forgot-pass" class="secondary-action">忘記密碼？寄送重設連結</button>
 <p class="help">還沒有帳號？點選上方「註冊」。</p></form>
 <form id="signup-form" class="hidden"><h2>註冊店家帳號</h2><p class="sub">註冊後門市資料保持空白，由你自行填寫。</p>
-<label for="username">帳號</label><input type="text" id="username" pattern="[a-zA-Z][a-zA-Z0-9_-]{2,29}" maxlength="30" autocomplete="username" placeholder="例如：happyshop" required>
-<label for="signup-email">電子信箱</label><input type="email" id="signup-email" autocomplete="email" required>
+<label for="signup-email">電子信箱（登入帳號）</label><input type="email" id="signup-email" autocomplete="email" required>
 <label for="signup-pass">密碼（至少 8 字元）</label><input type="password" id="signup-pass" minlength="8" autocomplete="new-password" required>
 <label for="signup-confirm">確認密碼</label><input type="password" id="signup-confirm" minlength="8" autocomplete="new-password" required>
 <button type="submit" class="primary">建立店家帳號</button>
@@ -33,7 +32,7 @@
 </div>
 <div id="account-zone" class="hidden"><h2 id="account-title">已登入</h2><div class="account-info"><strong id="account-name"></strong><div id="account-email" class="email"></div></div>
 <div id="workspace" class="workspace"></div>
-<div class="password-panel"><h3>設定或變更登入密碼</h3><p class="sub">一般店家帳號若要變更密碼，請設定至少 8 個字元的新密碼。</p><label for="new-pass">新密碼</label><input id="new-pass" type="password" minlength="8" autocomplete="new-password"><label for="confirm-new-pass">確認新密碼</label><input id="confirm-new-pass" type="password" minlength="8" autocomplete="new-password"><button type="button" class="ghost" id="change-pass">儲存新密碼</button></div><div id="missing-username" class="hidden"><label for="finish-username">設定帳號名稱</label><input id="finish-username" pattern="[a-zA-Z][a-zA-Z0-9_-]{2,29}" placeholder="例如：happyshop"><button class="primary" id="finish-account" type="button">完成帳號設定</button></div>
+<div class="password-panel"><h3>設定或變更登入密碼</h3><p class="sub">一般店家帳號若要變更密碼，請設定至少 8 個字元的新密碼。</p><label for="new-pass">新密碼</label><input id="new-pass" type="password" minlength="8" autocomplete="new-password"><label for="confirm-new-pass">確認新密碼</label><input id="confirm-new-pass" type="password" minlength="8" autocomplete="new-password"><button type="button" class="ghost" id="change-pass">儲存新密碼</button></div>
 <div class="account-actions" role="group" aria-label="帳號操作">
 <button type="button" class="secondary-action" id="switch-account">使用其他店家帳號登入</button>
 <a class="secondary-action" href="./merchant-register.html?mode=signup">註冊新的店家帳號</a>
