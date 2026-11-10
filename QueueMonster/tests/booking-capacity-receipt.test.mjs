@@ -52,5 +52,5 @@ test("customers can view a timestamped current-state proof and print or save it"
 test("unscoped customer portal no longer silently selects the fake demonstration shop",()=>{
  assert.match(app,/isUnscopedCustomer=/);
  assert.match(app,/new URL\("\.\/directory\.html\?mode=search"/);
- assert.match(app,/lineCallbackKeys=\["liff\.state","code","state","access_token","ticket","manage","recover"\]/);
+ assert.match(app,/lineCallbackKeys=\["liff\.state","code","state","access_token","ticket","manage","recover","site_return"\]/);
 });
