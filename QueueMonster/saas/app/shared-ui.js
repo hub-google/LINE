@@ -153,13 +153,13 @@ export function platformReady(){return !!authState.context?.platform_admin}
 export function nav(label,tab,current,which){return '<button class="side-item '+(tab===current?"active":"")+'" data-nav="'+which+'" data-tab="'+tab+'">'+label+'</button>'}
 
 export function layout(title,subtitle,menu,body){
- const staffQuickNav=routeState.view==="staff"?'<nav class="staff-mobile-nav" aria-label="門市功能快速導覽">'+
+ const staffQuickNav=routeState.view==="staff"?'<nav class="staff-mobile-nav" aria-label="門市功能快速導覽">'+nav("設定","settings",staffState.staffTab,"staff")+
   nav("工作台","dashboard",staffState.staffTab,"staff")+nav("預約","bookings",staffState.staffTab,"staff")+
   nav("叫號","queue",staffState.staffTab,"staff")+
   '<details class="staff-mobile-more"><summary aria-label="開啟更多管理功能">更多</summary><div class="staff-mobile-popup">'+
-  nav("預約日曆","calendar",staffState.staffTab,"staff")+nav("服務單位與場次","units",staffState.staffTab,"staff")+nav("營運分析","analytics",staffState.staffTab,"staff")+
-  nav("菜單與服務","menu",staffState.staffTab,"staff")+nav("員工管理","members",staffState.staffTab,"staff")+
-  nav("分店管理","branches",staffState.staffTab,"staff")+nav("企業設定","settings",staffState.staffTab,"staff")+
+  nav("預約日曆","calendar",staffState.staffTab,"staff")+nav("營運分析","analytics",staffState.staffTab,"staff")+
+  nav("員工管理","members",staffState.staffTab,"staff")+
+  
   '<a class="side-item guide-link" href="./merchant-center.html#guide">操作說明 ↗</a></div></details></nav>':"";
  return '<div class="toolbar"><div><div class="eyebrow">'+(routeState.view==="customer"?"排隊怪獸 · 顧客服務":routeState.view==="staff"?"排隊怪獸 · 門市管理":"排隊怪獸 · 平台管理")+'</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div></div><div class="layout'+(routeState.view==="customer"?" customer-layout":"")+'"><aside>'+menu+'</aside><section class="content">'+body+'</section></div>'+staffQuickNav;
 }
