@@ -23,19 +23,22 @@ export function staffRender(){
  const memberships=authState.context?.memberships||[];
  if(!staffState.staff){return box("企業員工後台",'<p class="muted">請先加入企業或由公司平台管理員核發邀請。'+(memberships.length?"請從下列企業進入：":"")+'</p>'+memberships.map(m=>'<p><a href="'+esc(sharedUiState.route("staff",m.slug))+'">'+esc(m.name)+'（'+esc(m.role)+'）→</a></p>').join("")+
     (authState.context?.invitations||[]).map(i=>'<div class="listline"><div>'+esc(i.tenant)+'－'+esc(i.role)+'</div>'+btn("接受邀請","accept-invite","primary",'data-id="'+esc(i.id)+'"')+'</div>').join("")); }
+ if(["units","menu","branches"].includes(staffState.staffTab)){
+   staffState.settingsSection=({units:"sessions",menu:"catalog",branches:"branches"})[staffState.staffTab];
+   staffState.staffTab="settings";
+ }
  if(staffState.staff.tenant?.onboarding_complete===false)staffState.staffTab="settings";
  const t=staffState.staff.tenant,openBookings=staffState.staff.pending_reservations||[],doneBookings=staffState.staff.processed_reservations||[],openTickets=staffState.staff.active_tickets||[],doneTickets=staffState.staff.processed_tickets||[],deletedBookings=staffState.staff.deleted_reservations||[],deletedTickets=staffState.staff.deleted_tickets||[];
  const r=openBookings.concat(doneBookings),q=openTickets.concat(doneTickets);
  const active=openTickets.find(x=>["CALLED","ARRIVED","ADMITTED","SERVING"].includes(x.status)),waiting=openTickets.filter(x=>x.status==="WAITING"),passed=openTickets.filter(x=>x.status==="PASSED"),held=openTickets.filter(x=>x.status==="HOLD");
  const pendingBookings=openBookings.filter(x=>x.status==="CONFIRMED"), finishedBookings=doneBookings.filter(x=>x.status==="COMPLETED");
  const role=staffState.staff.role,isManager=["OWNER","MANAGER","PLATFORM"].includes(role);
- const menu='<div class="staff-side-label">日常作業</div>'+
+ const menu=nav("設定","settings",staffState.staffTab,"staff")+'<div class="staff-side-label">日常作業</div>'+
  nav("工作台","dashboard",staffState.staffTab,"staff")+nav("預約管理","bookings",staffState.staffTab,"staff")+
  nav("叫號管理","queue",staffState.staffTab,"staff")+nav("預約日曆","calendar",staffState.staffTab,"staff")+
- '<div class="staff-side-label">營運與設定</div>'+nav("服務單位與場次","units",staffState.staffTab,"staff")+
- nav("營運分析","analytics",staffState.staffTab,"staff")+nav("菜單及服務設定","menu",staffState.staffTab,"staff")+
- nav("員工管理","members",staffState.staffTab,"staff")+nav("多分店管理","branches",staffState.staffTab,"staff")+
- nav("企業設定","settings",staffState.staffTab,"staff")+ '<div class="staff-side-label">使用支援</div><a class="side-item guide-link" href="./merchant-center.html#guide">操作說明 ↗</a>';
+ '<div class="staff-side-label">營運管理</div>'+
+ nav("營運分析","analytics",staffState.staffTab,"staff")+
+ nav("員工管理","members",staffState.staffTab,"staff")+ '<div class="staff-side-label">使用支援</div><a class="side-item guide-link" href="./merchant-center.html#guide">操作說明 ↗</a>';
  let html=(["bookings","queue"].includes(staffState.staffTab)?
   '<div class="staff-context-bar staff-context-compact"><div class="staff-history-controls">'+
   '<label for="staff-history-days">歷史紀錄</label><select class="field" id="staff-history-days" aria-label="已處理紀錄範圍">'+
