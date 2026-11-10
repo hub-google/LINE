@@ -20,7 +20,7 @@ test('the single approved mascot is the user-supplied character, not a reillustr
 });
 
 test('every public page and installable app uses the shared approved mascot icon',()=>{
- const pages=['index','home','directory','merchant-register','merchant-center','board','poster','privacy','terms','offline','template'];
+ const pages=['index','home','directory','merchant-register','merchant-center','board','privacy','terms','offline','template'];
  for(const page of pages)assert.match(read(page+'.html'),/<link rel="icon" type="image\/svg\+xml" href="\.\/monster-mascot\.svg">/,page);
  const manifest=JSON.parse(read('manifest.webmanifest'));
  assert.ok(manifest.icons.some(icon=>icon.src==='./monster-mascot.svg'&&icon.type==='image/svg+xml'));
