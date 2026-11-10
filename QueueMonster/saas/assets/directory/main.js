@@ -266,9 +266,17 @@ document.addEventListener("click",async event=>{
  }
 });
 async function load(){
+ // Render identity-loading before the first network request, not "popular stores".
+ let identityTimer=null;
+ if(mode==="mine"){
+  render();
+  identityTimer=setTimeout(()=>{
+   if(mineIdentityState==="loading"){mineIdentityState="error";render();}
+  },10000);
+ }
  try{
-  const conf=await fetch(bridge,{cache:"no-store"}).then(r=>r.ok?r.json():{}).catch(()=>({}));
-  liffId=conf.liffId||"";
+  // Parallelize LINE config and identity; guests can see the sign-in CTA without config.
+  const confPromise=fetch(bridge,{cache:"no-store"}).then(r=>r.ok?r.json():{}).catch(()=>({}));
   if(mode==="mine"){
     els.intro.innerHTML='<strong>我的預約與取號紀錄</strong><p>查詢自己已綁定 LINE 身分的預約與號碼紀錄。</p>';
     const s=await sb.auth.getSession();
@@ -284,8 +292,12 @@ async function load(){
       if(error)throw error;
       mineIdentityState="ready";
       all=Array.isArray(data)?data:[];
+      const conf=await confPromise;
+      liffId=conf.liffId||"";
     }
   }else{
+    const conf=await confPromise;
+    liffId=conf.liffId||"";
     els.intro.innerHTML=mode==="game"?
       '<strong>遊戲逛街 · 逛商圈找店家</strong><p>在虛擬商店街點選店面，查看真實公開店家的預約與取號入口。</p>':mode==="search"?
       '<strong>找店家、查看叫號更簡單</strong><p>搜尋店名或地點，直接查看可使用的服務。公開叫號看板無須登入；預約及取號才需 LINE 身分驗證。</p>':
@@ -313,6 +325,8 @@ async function load(){
   if(mode==="mine"){mineIdentityState="error";render();}
   els.intro.innerHTML='<strong>暫時無法取得店家資訊</strong><p>請稍後重新整理頁面。</p>';
   els.results.innerHTML='<div class="empty"><strong>資料暫時無法載入</strong><p>請稍後重新整理頁面。</p></div>';
+ }finally{
+  if(identityTimer!==null)clearTimeout(identityTimer);
  }
 }
 load();
