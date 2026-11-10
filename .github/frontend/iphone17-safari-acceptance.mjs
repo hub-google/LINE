@@ -95,7 +95,11 @@ for(const [engineName,engine] of [['webkit',webkit],['chromium',chromium]]){
      const visible=/醫療／診所|澄心健康服務中心/.test(txt);
      const validEmpty=/找不到符合條件的店家/.test(txt);
      const categoryRpcUsed=rpcCalls.some(args=>args.p_query===null&&String(args.p_category||'').includes('診所'));
-     row.checks.push({name:'Clinic category fallback works without exposing suspended stores',ok:(visible||validEmpty&&categoryRpcUsed)&&!/搜尋暫時失敗|正在搜尋店家/.test(txt),detail:JSON.stringify({visible,validEmpty,categoryRpcUsed,body:safe(txt)})});
+     const categoryAvailable=await page.locator('#explore-category option').evaluateAll(nodes=>nodes.some(n=>(n.value||'').includes('診所')));
+     // Disabled/suspended stores are absent from the public directory entirely:
+     // if no active clinic category exists, an empty search is correct, not a regression.
+     const expected=visible||(validEmpty&&(!categoryAvailable||categoryRpcUsed));
+     row.checks.push({name:'Clinic category fallback respects the current published/active directory',ok:expected&&!/搜尋暫時失敗|正在搜尋店家/.test(txt),detail:JSON.stringify({visible,validEmpty,categoryAvailable,categoryRpcUsed,body:safe(txt)})});
      await page.screenshot({path:path.join(out,engineName+'-directory-search-clinic.png'),animations:'disabled'});
     }
     if(name==='guide'){
