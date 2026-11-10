@@ -9,8 +9,10 @@ import {box,btn,esc,field,tag} from "../shared-ui.js";
 
 import {merchantProfileFields} from "../merchant-brand.js";
 import {customerUrl} from "../line-session.js";
+import {closedDatesPickerMarkup,installClosedDatesPicker} from "../closed-dates-picker.js";
 
 export function renderStaffSettings({t,isManager,html}){
+  installClosedDatesPicker();
   const policy=staffState.staff.bookingPolicy||{};
   const selectedFlag=staffState.staffCustomerBook.find(x=>x.id===staffState.customerFlagSelected)||staffState.staffCustomerBook[0]||null;
   if(selectedFlag)staffState.customerFlagSelected=selectedFlag.id;
@@ -36,9 +38,9 @@ export function renderStaffSettings({t,isManager,html}){
      [["END","返回隊尾"],["ORIGINAL","返回原順位"]].map(([v,name])=>'<option value="'+v+'" '+((staffState.staff.queue_hold_policy?.return_mode||"END")===v?"selected":"")+'>'+name+'</option>').join("")+
      '</select></div></div><div class="staff-actionbar">'+btn("儲存候位保留規則","save-hold-policy","primary")+'</div>'):"")+
    (isManager?box("預約營業日與休息設定",
-      '<p class="small">選擇每週固定公休日；特殊日期用西元日期，例如 2026-11-15,2026-11-22。既有預約不會被自動取消。</p>'+
+      '<p class="small">選擇每週固定公休日；特殊休假日期可直接點開日曆多選，系統會自動整理成日期文字。既有預約不會被自動取消。</p>'+
       '<label>每週固定公休日</label><div class="grid">'+weekdayChecks+'</div>'+
-      field("特殊休假日期（逗號分隔）","policy-closed-dates",(policy.closed_dates||[]).join(","))+
+      closedDatesPickerMarkup(policy.closed_dates||[])+
       '<div class="grid"><div>'+field("每日休息開始（可留空）","policy-break-start",policy.break_start||"","time")+
       field("最晚提前預約分鐘數","policy-notice",policy.min_notice_minutes??0,"number",'min="0" max="10080"')+'</div>'+
       '<div>'+field("每日休息結束（可留空）","policy-break-end",policy.break_end||"","time")+'</div></div>'+
