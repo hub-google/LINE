@@ -179,13 +179,13 @@ jobs:
           updates = {}
           if current_url != target:
             updates["view"] = {"url":target}
-          missing_scopes = [scope for scope in ("openid", "profile") if scope not in current_scopes]
+          missing_scopes = [scope for scope in ("openid", "profile", "chat_message.write") if scope not in current_scopes]
           if missing_scopes:
             updates["scope"] = list(dict.fromkeys(current_scopes + missing_scopes))
           if updates:
             api("/"+urllib.parse.quote(liff_id, safe=""),"PUT",updates)
             app = next((a for a in api().get("apps", []) if a.get("liffId")==liff_id), None)
           assert app is not None and app.get("view",{}).get("url")==target, "LIFF endpoint mismatch"
-          assert all(scope in (app.get("scope") or []) for scope in ("openid","profile")), "LIFF openid/profile scopes missing"
-          print("LIFF endpoint verified; openid and profile scopes enabled. No credentials displayed.")
+          assert all(scope in (app.get("scope") or []) for scope in ("openid","profile","chat_message.write")), "LIFF reply scopes missing"
+          print("LIFF endpoint verified; openid, profile and chat_message.write scopes enabled. No credentials displayed.")
           PY
