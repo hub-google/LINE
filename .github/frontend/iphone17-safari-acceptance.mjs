@@ -80,11 +80,22 @@ for(const [engineName,engine] of [['webkit',webkit],['chromium',chromium]]){
      const filters=page.locator('#explore-filters');
      row.checks.push({name:'Filters initially collapsed',ok:await filters.evaluate(el=>!el.open)});
      const summary=page.locator('#filter-summary');if(await summary.isVisible()){await summary.click();row.checks.push({name:'Filters can be expanded',ok:await filters.evaluate(el=>el.open)});await page.screenshot({path:path.join(out,engineName+'-directory-filters.png'),animations:'disabled'});}
+     const rpcCalls=[];
+     const rpcHandler=req=>{
+      if(!req.url().includes('/rpc/so_public_store_search'))return;
+      try{rpcCalls.push(JSON.parse(req.postData()||'{}'))}catch{}
+     };
+     page.on('request',rpcHandler);
      await page.locator('#keyword').fill('診所');
      await page.waitForTimeout(1800);
      const txt=await page.locator('#results').innerText();
+     page.off('request',rpcHandler);
      row.categoryResult=safe(txt);
-     row.checks.push({name:'Category keyword search returns a store',ok:!/找不到符合條件的店家|搜尋暫時失敗|正在搜尋店家/.test(txt)&&txt.trim().length>0,detail:safe(txt)});
+     row.categoryRpcCalls=rpcCalls;
+     const visible=/醫療／診所|澄心健康服務中心/.test(txt);
+     const validEmpty=/找不到符合條件的店家/.test(txt);
+     const categoryRpcUsed=rpcCalls.some(args=>args.p_query===null&&String(args.p_category||'').includes('診所'));
+     row.checks.push({name:'Clinic category fallback works without exposing suspended stores',ok:(visible||validEmpty&&categoryRpcUsed)&&!/搜尋暫時失敗|正在搜尋店家/.test(txt),detail:JSON.stringify({visible,validEmpty,categoryRpcUsed,body:safe(txt)})});
      await page.screenshot({path:path.join(out,engineName+'-directory-search-clinic.png'),animations:'disabled'});
     }
     if(name==='guide'){
