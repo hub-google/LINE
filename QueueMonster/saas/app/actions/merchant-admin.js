@@ -29,6 +29,16 @@ if(a==="save-service-modes"){await act(async()=>{
  merchantLogoSaved("set");
  return initial?"店家資料已建立並公開搜尋":"企業設定與品牌 LOGO 已儲存";
  });return true;}
+ if(a==="promote-staff-manager"){
+   const target=(staffState.staff?.members||[]).find(m=>m.user_id===id);
+   if(!target||target.role!=="STAFF"){showActionFeedback("找不到可設為管理者的員工。","error");return true;}
+   if(!window.confirm("確定將 "+(target.email||"這位員工")+" 設為管理者？對方將取得店家管理權限。"))return true;
+   await act(async()=>{
+     const result=await rpc("so_promote_tenant_manager",{p_slug:routeState.slug,p_user_id:id});
+     if(!result?.promoted)throw Error("無法變更員工角色");
+     return "已新增一位管理者。若你是原本唯一管理者，現在可以退出店家。";
+   });return true;
+ }
  if(a==="copy-staff-invite"){
    const invite=(staffState.staff?.invites||[]).find(item=>item.id===id);
    if(!invite){showActionFeedback("邀請已不存在，請重新整理員工管理頁面。","error");return true;}
