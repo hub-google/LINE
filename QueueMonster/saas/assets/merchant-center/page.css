@@ -282,3 +282,25 @@ body[data-monster-page="merchant-center"] .section-tip a{color:#542A77}
  .qm-board .qm-board-now{padding:13px}
  .qm-board .qm-board-next>div{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+
+
+/* Current customer directory and reservation forms, not the legacy mock-phone layout. */
+.qm-two-phone .qm-phone-guide{max-width:240px;min-height:310px;border-color:#462B52;background:#FFFDFE}
+.qm-two-phone .qm-phone-guide .phone-content{padding:16px 8px 10px}
+.qm-phone-guide .qm-phone-title{font-size:12px;font-weight:900;color:#462B52;padding:3px 0 10px}
+.qm-phone-guide .qm-phone-tabline{display:flex;gap:3px;padding:3px;background:#F1E4F7;border-radius:8px;margin-bottom:10px;overflow:hidden}
+.qm-phone-guide .qm-phone-tabline span{flex:1;min-width:0;text-align:center;font-size:7px;color:#664C78;padding:5px 1px;border-radius:6px;white-space:nowrap}
+.qm-phone-guide .qm-phone-tabline span.current{background:#714193;color:#fff;font-weight:800}
+.qm-phone-guide .qm-phone-heading{font-size:12px;color:#462B52;display:block}
+.qm-phone-guide .qm-phone-label{font-size:9px;font-weight:800;color:#614975;margin:9px 0 4px}
+.qm-phone-guide .qm-phone-input{min-height:25px;border:1px solid #DEC7EB;background:#FFFCFF;color:#785F84;border-radius:8px;padding:6px;font-size:9px;overflow-wrap:anywhere}
+.qm-phone-guide .qm-phone-store{border:1px solid #E7D0F0;border-radius:11px;padding:9px;margin-top:11px;background:linear-gradient(145deg,#fff 65%,#F8E9FC)}
+.qm-phone-guide .qm-phone-store strong{font-size:10px;color:#462B52}
+.qm-phone-guide .qm-phone-store p{font-size:8px;margin:3px 0;color:#785F84}
+.qm-phone-guide .qm-phone-badges,.qm-phone-guide .qm-phone-actions,.qm-phone-guide .qm-phone-slots{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.qm-phone-guide .qm-phone-badges span{border-radius:7px;background:#F0DDF9;color:#714394;font-size:7px;padding:2px 4px}
+.qm-phone-guide .qm-phone-actions span{display:inline-flex;align-items:center;justify-content:center;border-radius:8px;background:#693C8B;color:#fff;padding:6px;font-size:9px;font-weight:800;flex:1}
+.qm-phone-guide .qm-phone-actions span+span{background:#F1DFF9;color:#462B52;border:1px solid #D9BEE8}
+.qm-phone-guide .qm-phone-form{background:#fff;border:1px solid #E7D0F0;border-radius:12px;padding:9px}
+.qm-phone-guide .qm-phone-slots span{border:1px solid #DEC7EB;background:#FFFCFF;color:#614975;border-radius:8px;padding:6px 7px;font-size:9px;font-weight:800}
+.qm-phone-guide .qm-phone-slots span.selected{background:#E7D0F6;border-color:#AC79CD;color:#542A77}
