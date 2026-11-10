@@ -40,7 +40,7 @@ if(a==="save-service-modes"){await act(async()=>{
  }
  if(a==="invite-staff"){await act(async()=>{
    const email=val("invite-email").toLowerCase(),role=val("invite-role");
-   if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))throw Error("請輸入有效的員工電子信箱");
+   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw Error("請輸入有效的員工電子信箱");
    if(!["STAFF","MANAGER","OWNER"].includes(role))throw Error("員工角色不正確");
    if(!authState.session?.access_token)throw Error("請先登入管理者帳號");
    const {data,error}=await lineState.supa.functions.invoke("staff-invite",{body:{slug:routeState.slug,email,role}});
