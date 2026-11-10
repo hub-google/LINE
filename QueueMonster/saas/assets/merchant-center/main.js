@@ -38,7 +38,7 @@
       link.addEventListener("click",function(){
         mobileGuide.open=false;
         var label=document.getElementById("mobile-guide-label");
-        if(label)label.textContent="操作目錄 · "+link.textContent.trim().replace(/^\\d+\\s*/,"");
+        if(label)label.textContent="操作目錄 · "+link.textContent.trim().replace(/^\d+\s*/,"");
       });
     });
     document.addEventListener("keydown",function(event){if(event.key==="Escape"&&mobileGuide.open)mobileGuide.open=false});
