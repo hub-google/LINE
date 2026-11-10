@@ -112,3 +112,39 @@ a.btn.secondary:hover{background:#e1f3e9}
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto;transition:none!important}}
 
+
+/* iPhone 17 mobile-first discovery: search field and first store should appear above the fold. */
+.mobile-filter-toggle{display:none}
+@media(max-width:620px){
+ body[data-monster-page="directory"] .page-header{padding:10px 0 24px}
+ body[data-monster-page="directory"] .page-header .header-row{flex-wrap:nowrap;gap:8px;min-height:48px}
+ body[data-monster-page="directory"] .page-header .header-row .header-links{width:auto;min-width:0;flex:0 0 auto}
+ body[data-monster-page="directory"] .page-header .header-links>a{display:none}
+ body[data-monster-page="directory"] .page-header .hero-heading{margin-top:6px;padding-right:70px}
+ body[data-monster-page="directory"] .page-header .hero-heading h1.eyebrow{font-size:21px;margin:0;padding:5px 9px;line-height:1.3}
+ body[data-monster-page="directory"] .page-header .hero-heading>p{display:none}
+ body[data-monster-page="directory"] main{margin-top:-12px}
+ body[data-monster-page="directory"] .main-panel{padding:12px 13px 20px}
+ body[data-monster-page="directory"] .main-panel .tabs{margin:0 0 8px}
+ body[data-monster-page="directory"] .intro-row{display:none}
+ body[data-monster-page="directory"] .explore-view-switch{margin:6px 0 3px}
+ body[data-monster-page="directory"] .explore-view-switch button{min-height:44px}
+ body[data-monster-page="directory"] .search-wrap{margin-top:9px}
+ body[data-monster-page="directory"] .search-wrap label{margin-bottom:4px}
+ body[data-monster-page="directory"] .search{min-height:48px;font-size:16px}
+ body[data-monster-page="directory"] .mobile-filter-toggle{
+  display:flex;align-items:center;justify-content:space-between;width:100%;min-height:44px;
+  margin-top:10px;padding:8px 13px;border:1px solid #DCC4EC;border-radius:12px;
+  color:#583375;background:#FAF2FF;font:inherit;font-size:14px;font-weight:800;cursor:pointer
+ }
+ body[data-monster-page="directory"] #explore-filters:not(.mobile-open){display:none}
+ body[data-monster-page="directory"] #explore-filters.mobile-open{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:10px 0}
+ body[data-monster-page="directory"] #explore-filters.mobile-open label{min-width:0}
+ body[data-monster-page="directory"] #explore-filters.mobile-open select{width:100%;min-width:0;min-height:44px}
+ body[data-monster-page="directory"] .results-header{margin:12px 0 9px}
+ body[data-monster-page="directory"] .merchant-grid{gap:11px}
+ body[data-monster-page="directory"] .card-content{padding:14px}
+ body[data-monster-page="directory"] .card-actions .btn{min-height:44px}
+ body[data-monster-page="directory"][data-directory-mode="mine"] .search-wrap,
+ body[data-monster-page="directory"][data-directory-mode="mine"] .mobile-filter-toggle{display:none}
+}
