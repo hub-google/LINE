@@ -262,3 +262,17 @@ test("iPhone customer entry asks consent before starting external LINE login",()
  assert.match(directoryHtml,/class="filter-details"/);
  assert.match(directoryCss,/\.filter-details>\.filter-summary/);
 });
+
+
+test("personal records show an identity pending state before network and resolve without LINE config for guests",()=>{
+ const source=read("saas/assets/directory/main.js");
+ const load=source.slice(source.indexOf("async function load(){"));
+ assert.match(load,/if\(mode==="mine"\)\{\s*render\(\);/);
+ assert.match(load,/const confPromise=fetch\(bridge/);
+ assert.match(load,/mineIdentityState="guest"/);
+ assert.match(load,/identityTimer=setTimeout/);
+ assert.match(load,/if\(identityTimer!==null\)clearTimeout\(identityTimer\)/);
+ const identityStart=load.indexOf('if(mode==="mine"){\n  render();');
+ const fetchStart=load.indexOf('const confPromise=fetch(bridge');
+ assert.ok(identityStart>=0 && identityStart<fetchStart,"pending UI must render before LINE bridge fetch");
+});
