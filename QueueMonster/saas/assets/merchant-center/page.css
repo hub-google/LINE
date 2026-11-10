@@ -143,3 +143,142 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #e5
 @media(max-width:760px){html{scroll-padding-top:115px}.container{padding:0 15px}.top-inner{padding:10px 15px}.top-link:not(.primary){display:none}.brand{font-size:14px}.brand small{font-size:10px}.hero{margin-top:14px;padding:28px 22px 24px;border-radius:18px}.hero h1{letter-spacing:-.8px}.hero p{font-size:13px}.hero-bottom{margin-top:22px}.hero-steps{font-size:11px}.layout{display:block;padding-top:16px}.side{position:sticky;top:58px;z-index:11;display:flex;align-items:center;gap:5px;overflow-x:auto;border:1px solid #dbe7dd;border-radius:13px;background:rgba(255,255,255,.97);padding:5px;margin:0 0 28px;scrollbar-width:thin}.side-title,.side-foot{display:none}.side a{flex:0 0 auto;margin:0;padding:10px 11px;white-space:nowrap;font-size:12px}.side a span{display:none}.content-section{margin-bottom:48px;scroll-margin-top:122px}.section-head{gap:11px}.checkpoints{grid-template-columns:1fr;gap:9px}.check{padding:13px 15px}.panel-pad{padding:18px}.screen{padding:17px}.howto{padding:19px}.flow-strip{gap:5px;padding:12px}.flow-step{padding:10px 5px}.flow-step b{font-size:10px}.flow-step small{font-size:9px}.flow-icon{width:29px!important;height:29px!important}.split-grid{grid-template-columns:1fr}.bottom-call{display:block;padding:20px}.bottom-call .action{margin-top:13px}.two-phone{gap:8px;padding:12px}.phone{border-width:4px;border-radius:19px}.phone-content{padding:13px 4px 6px}.top-links .top-link.primary{padding:8px 9px;font-size:11px}}
 @media(max-width:390px){.brand{font-size:12px}.top-link.primary{font-size:10px!important}.hero-actions .action{font-size:11px}.flow-arrow{flex-basis:7px}.flow-step{padding:8px 3px}.flow-step small{font-size:8px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.action{transition:none}}
+
+
+/* The guide examples mirror the production Monster World theme and operational UI.
+   Keep these examples visually scoped: changes must never affect the live admin app. */
+body[data-monster-page="merchant-center"]{--ink:#3C2B45;--green:#75449A;--deep:#462B52;--line:#E8D4F0;--muted:#785F84;--mint:#F2E1FA}
+body[data-monster-page="merchant-center"] .side a:hover,
+body[data-monster-page="merchant-center"] .side a.active{background:#E7D0F6;color:#542A77}
+body[data-monster-page="merchant-center"] .section-index{background:#F2E1FA;color:#693C8B}
+body[data-monster-page="merchant-center"] .action.green,
+body[data-monster-page="merchant-center"] .top-link.primary{background:#693C8B;color:#fff}
+body[data-monster-page="merchant-center"] .action.outline{border-color:#D9BEE8;background:#F1DFF9;color:#462B52}
+body[data-monster-page="merchant-center"] .screen{background:#F9F0FC}
+body[data-monster-page="merchant-center"] .section-tip{background:#F5E9FB;border-color:#9D6AC0;color:#57366D}
+body[data-monster-page="merchant-center"] .section-tip.warm{background:#FFF5DE;border-color:#E8B554;color:#70522B}
+body[data-monster-page="merchant-center"] .mode-tabs{background:#F2E1FA}
+body[data-monster-page="merchant-center"] .mode-tabs button[aria-selected=true]{background:#fff;color:#542A77}
+body[data-monster-page="merchant-center"] .flow-step{background:#FCF6FF;border-color:#E9D6F1}
+body[data-monster-page="merchant-center"] .flow-step .flow-icon{background:#E7D0F6;color:#542A77}
+body[data-monster-page="merchant-center"] .phone{border-color:#462B52;background:#FFF9FF}
+body[data-monster-page="merchant-center"] .phone:before{background:#462B52}
+body[data-monster-page="merchant-center"] .phone-banner{background:#F2E1FA;color:#542A77}
+body[data-monster-page="merchant-center"] .phone-mini-btn{background:#693C8B;color:#fff}
+body[data-monster-page="merchant-center"] .demo-pill{background:#F2E1FA;color:#542A77}
+body[data-monster-page="merchant-center"] .section-tip a{color:#542A77}
+
+/* Preview windows use actual control names and the same colors/radii as the live app. */
+.qm-screen{display:block;min-width:0;padding:17px}
+.qm-screen>.caption{margin:11px 3px 0;line-height:1.45}
+.qm-preview{width:100%;max-width:100%;min-width:0;overflow:hidden;container-type:inline-size;border:1px solid #E7D0F0;border-radius:21px;background:#FCF7FF;color:#3C2B45;box-shadow:0 10px 30px rgba(70,43,82,.1);font-family:system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif;font-size:12px;line-height:1.5}
+.qm-preview *{box-sizing:border-box}
+.qm-preview h3,.qm-preview h4,.qm-preview h5,.qm-board h3{color:#462B52;margin:0}
+.qm-preview p{font-size:11px;line-height:1.55;margin:5px 0 10px;color:#785F84}
+.qm-preview .qm-btn{display:inline-flex;align-items:center;justify-content:center;min-height:35px;padding:7px 12px;border-radius:13px;font-weight:850;font-size:11px;white-space:normal;text-align:center;border:1px solid #693C8B;background:#693C8B;color:#fff;box-shadow:0 6px 14px rgba(105,60,139,.13);max-width:100%}
+.qm-preview .qm-btn.outline,.qm-preview .qm-btn.secondary{border-color:#D9BEE8;background:#F1DFF9;color:#462B52;box-shadow:none}
+.qm-preview .qm-btn.secondary{background:#F0E0F9}
+.qm-preview .qm-field-wrap{min-width:0}
+.qm-preview .qm-field-wrap label,.qm-preview .qm-color-line label{display:block;font-weight:800;font-size:11px;color:#462B52;margin:9px 0 4px}
+.qm-preview .qm-field{background:#FFFCFF;color:#785F84;border:1px solid #DEC7EB;border-radius:12px;min-height:34px;padding:8px 10px;font-size:11px;overflow-wrap:anywhere;display:flex;align-items:center}
+.qm-preview .qm-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.qm-preview .qm-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.qm-preview .qm-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-start;margin-top:12px}
+.qm-preview .qm-help{color:#785F84;font-size:11px}
+.qm-preview .qm-logo{width:33px;height:33px;flex:none;border:2px solid #DBB8EE;border-radius:12px;background:#EDD6FB url("../../monster-mascot.svg") center/95% no-repeat;display:inline-block}
+
+/* Signup preview uses the actual merchant-register form's tab, field, and submit patterns. */
+.qm-register{background:#faf8fd;padding:15px}
+.qm-register .qm-register-head{display:flex;align-items:center;gap:9px;color:#362849;font-weight:900;font-size:17px;padding:3px 3px 13px}
+.qm-register .qm-register-panel{max-width:450px;margin:0 auto;background:#fff;border:1px solid #e8e1ed;border-radius:22px;padding:19px;box-shadow:0 16px 45px rgba(64,40,89,.07)}
+.qm-register .qm-register-tabs{display:grid;grid-template-columns:1fr 1fr;padding:5px;gap:5px;background:#f2eef6;border-radius:12px;margin-bottom:16px}
+.qm-register .qm-register-tabs span{border-radius:9px;text-align:center;font-weight:800;color:#685f76;padding:9px 4px}
+.qm-register .qm-register-tabs .on{background:#523b70;color:#fff;box-shadow:0 3px 10px #4f34602b}
+.qm-register .qm-register-panel h3{font-size:19px}
+.qm-register .qm-register-panel>p{color:#685f76;margin:5px 0 13px}
+.qm-register .qm-register-panel .qm-field{min-height:41px;border-color:#cfc5d9;border-radius:11px}
+.qm-register .qm-register-panel>.qm-btn{background:#523b70;border-color:#523b70;min-height:43px;width:100%;font-size:12px;margin-top:17px}
+
+/* Live staff app is an off-white page with a white navigation rail and purple active item. */
+.qm-admin{background:#FCF7FF}
+.qm-admin .qm-app-top{background:#FFFDFE;border-bottom:1px solid #E8D4F0;padding:10px 13px;display:flex;align-items:center;gap:8px;font-size:13px}
+.qm-admin .qm-app-top .qm-logo{width:28px;height:28px;border-radius:10px}
+.qm-admin .qm-app-top small{color:#785F84;font-size:10px;margin-left:auto}
+.qm-admin .qm-app-layout{display:grid;grid-template-columns:126px minmax(0,1fr);gap:10px;padding:12px;align-items:start}
+.qm-admin .qm-nav{padding:9px 6px;border:1px solid #E7D0F0;background:#FFFDFE;border-radius:17px;min-width:0}
+.qm-admin .qm-nav-group{font-size:9px;letter-spacing:.05em;font-weight:850;color:#9B86AA;margin:7px 8px 5px}
+.qm-admin .qm-nav-item{color:#62466E;font-size:10px;font-weight:750;padding:7px 8px;border-radius:9px;margin:2px 0;overflow-wrap:anywhere}
+.qm-admin .qm-nav-item.active{background:#E7D0F6;border-left:3px solid #AC79CD;color:#542A77;font-weight:850;padding-left:5px}
+.qm-admin .qm-app-content{min-width:0}
+.qm-admin .qm-page-title{font-size:17px;letter-spacing:-.02em}
+.qm-admin .qm-subtitle{font-size:10px;margin:2px 0 12px}
+.qm-admin .qm-card{background:#FFFDFE;border:1px solid #E7D0F0;border-radius:20px;padding:13px;margin:0 0 10px;box-shadow:0 5px 13px rgba(70,43,82,.04)}
+.qm-admin .qm-card h4{font-size:14px;margin:0 0 8px}
+.qm-admin .qm-card h5{font-size:12px;margin:13px 0 5px}
+.qm-admin .qm-card h5:first-of-type{margin-top:8px}
+.qm-admin .qm-check{border:1px solid #DCC8EA;background:#FFF9FF;border-radius:12px;padding:8px 7px;font-size:10px;font-weight:750}
+.qm-admin .qm-check b{display:inline-grid;place-items:center;background:#693C8B;color:#fff;width:14px;height:14px;border-radius:3px;font-size:10px;margin-right:3px}
+.qm-admin .qm-logo-upload{display:flex;gap:11px;align-items:center;border:1px solid #E7D0F0;border-radius:13px;padding:10px;margin-top:8px}
+.qm-admin .qm-logo-upload strong{font-size:11px}
+.qm-admin .qm-logo-upload p{margin:3px 0 6px}
+.qm-admin .qm-logo-placeholder{display:grid;place-items:center;width:64px;height:64px;flex:none;border-radius:13px;border:1px dashed #C9ACDB;background:#FAF2FE;color:#8C74A0;font-size:10px}
+.qm-admin .qm-color-line{display:flex;flex-wrap:wrap;align-items:center;gap:7px;font-size:10px;color:#785F84;margin:10px 0}
+.qm-admin .qm-color-line label{margin:0}
+.qm-admin .qm-color-swatch{width:27px;height:27px;border-radius:8px;background:#523B70;border:3px solid #fff;box-shadow:0 0 0 1px #D9BEE8}
+.qm-admin .qm-history{display:flex;gap:8px;justify-content:flex-end;align-items:center;padding:4px 3px 12px;font-size:11px;font-weight:800}
+.qm-admin .qm-history .qm-field{padding:4px 8px;min-height:30px}
+.qm-admin .qm-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:11px}
+.qm-admin .qm-stats.five{grid-template-columns:repeat(5,minmax(0,1fr))}
+.qm-admin .qm-stat{border:1px solid #E7D0F0;background:linear-gradient(145deg,#fff 58%,#F8E9FC);border-radius:14px;padding:9px 8px}
+.qm-admin .qm-stat span{display:block;font-size:9px;color:#785F84}
+.qm-admin .qm-stat strong{display:block;font-size:19px;font-weight:950;color:#633385;line-height:1.4}
+.qm-admin .qm-record{border:1px solid #E7D0F0;border-radius:17px;background:#fff;padding:11px}
+.qm-admin .qm-record>strong{display:block;font-size:11px;color:#462B52}
+.qm-admin .qm-record>p{margin:5px 0;font-size:10px}
+.qm-admin .qm-picker{border:1px solid #E8D4F0;border-radius:12px;padding:10px;margin-top:9px}
+.qm-admin .qm-legend{font-size:10px;font-weight:800;color:#62466E;margin-bottom:7px}
+.qm-admin .qm-options{display:flex;gap:6px;flex-wrap:wrap}
+.qm-admin .qm-choice{border:1px solid #E1CFEB;background:#FFF9FF;border-radius:11px;padding:6px 7px;font-size:10px;color:#5B4270;display:inline-flex;align-items:center;gap:5px}
+.qm-admin .qm-choice i{width:10px;height:10px;border-radius:50%;border:1px solid #AC96BE;background:#fff}
+.qm-admin .qm-choice.selected{background:#E7D0F6;color:#542A77;border-color:#AC79CD}
+.qm-admin .qm-choice.selected i{border:3px solid #75449A}
+.qm-admin .qm-delete{font-size:9px;color:#785F84;margin:8px 0 0}
+
+/* TV board: matches board.html after the actual purple Monster World override. */
+.qm-board{width:100%;overflow:hidden;background:#FCF7FF;border-radius:20px;border:1px solid #E7D0F0;color:#462B52}
+.qm-board .qm-board-top{background:#462B52;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 18px}
+.qm-board .qm-board-top strong{font-size:20px}
+.qm-board .qm-board-top time{font-size:17px;font-weight:850}
+.qm-board .qm-board-main{display:grid;grid-template-columns:1.45fr 1fr;gap:10px;padding:12px}
+.qm-board .qm-board-now,.qm-board .qm-board-next{text-align:center;border-radius:20px;padding:20px 10px}
+.qm-board .qm-board-now{background:#F0D8F9}
+.qm-board .qm-board-next{background:#FFFDFE;border:1px solid #E6C9F1}
+.qm-board h3{font-size:clamp(14px,2.2vw,21px);font-weight:900}
+.qm-board .qm-board-now>i,.qm-board .qm-board-next>i{display:block;background:#FEC55A;width:55px;height:5px;border-radius:99px;margin:10px auto 14px}
+.qm-board .qm-board-now>strong{color:#5B2E7E;font-size:clamp(45px,6.5vw,78px);font-weight:950;line-height:1.2}
+.qm-board .qm-board-next>div{display:grid;gap:7px}
+.qm-board .qm-board-next>div>span{background:#FFE8AF;color:#462B52;font-size:17px;font-weight:850;border-radius:12px;padding:6px}
+.qm-board .qm-board-footer{background:#F8EAFD;color:#785F84;font-size:10px;padding:11px 13px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.qm-board .qm-board-footer span{border:1px solid #DEC7EB;background:#FFFDFE;border-radius:9px;padding:4px 7px;color:#462B52;font-weight:800}
+@container (max-width:550px){
+ .qm-admin .qm-app-layout{display:block;padding:9px}
+ .qm-admin .qm-nav{display:flex;gap:5px;overflow-x:auto;scrollbar-width:thin;padding:7px;white-space:nowrap;margin-bottom:10px}
+ .qm-admin .qm-nav-group{display:none}
+ .qm-admin .qm-nav-item{flex:none;padding:7px 9px;white-space:nowrap}
+ .qm-admin .qm-nav-item.active{border-left:0;border-bottom:3px solid #AC79CD;padding-left:9px;padding-bottom:4px}
+ .qm-admin .qm-app-content{padding:0 1px}
+ .qm-admin .qm-three{grid-template-columns:1fr}
+ .qm-admin .qm-stats,.qm-admin .qm-stats.five{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@container (max-width:360px){
+ .qm-admin .qm-two{grid-template-columns:1fr}
+ .qm-admin .qm-app-top small{display:none}
+ .qm-register{padding:9px}
+ .qm-register .qm-register-panel{padding:13px}
+}
+@media(max-width:650px){
+ .qm-screen{padding:9px}
+ .qm-board .qm-board-main{grid-template-columns:1fr}
+ .qm-board .qm-board-now{padding:13px}
+ .qm-board .qm-board-next>div{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
