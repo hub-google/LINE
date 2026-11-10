@@ -38,6 +38,15 @@ if(a==="save-service-modes"){await act(async()=>{
    catch(_error){window.prompt("請複製員工邀請連結",link.href);}
    return true;
  }
+ if(a==="resend-staff-invite"){
+   const invite=(staffState.staff?.invites||[]).find(item=>item.id===id);
+   if(!invite){showActionFeedback("此筆邀請不存在，請重新整理。","error");return true;}
+   await act(async()=>{
+     const {data,error}=await lineState.supa.functions.invoke("staff-invite",{body:{slug:routeState.slug,email:invite.email,role:invite.role}});
+     if(error||!data?.saved)throw Error("重新寄送失敗，請改用複製邀請連結。");
+     return data.email_sent?"邀請郵件已重新提交寄送，請對方查看收件匣與垃圾郵件。":"邀請信未能寄出，請改用複製邀請連結。";
+   });return true;
+ }
  if(a==="invite-staff"){await act(async()=>{
    const email=val("invite-email").toLowerCase(),role=val("invite-role");
    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw Error("請輸入有效的員工電子信箱");
