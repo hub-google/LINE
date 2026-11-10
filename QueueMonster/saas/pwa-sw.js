@@ -1,7 +1,7 @@
 /* LINE booking offline shell only. Never cache personal data, API, LINE OAuth or LIFF callback URLs. */
 const CACHE_PREFIX="line-booking-safe-static-";
 const CACHE_NAME=CACHE_PREFIX+"__LINE_SAAS_BUILD__";
-const STATIC_ASSETS=["./offline.html","./booking-theme.css","./monster-world.css","./monster-mascot.svg","./pwa-icon-192.png","./pwa-icon-512.png"];
+const STATIC_ASSETS=["./offline.html","./booking-theme.css","./monster-world.css","./monster-mascot.svg","./line-app-icon.svg","./pwa-icon-192.png","./pwa-icon-512.png"];
 
 self.addEventListener("install",event=>{
  event.waitUntil((async()=>{
@@ -27,7 +27,7 @@ self.addEventListener("fetch",event=>{
  if(!url.pathname.startsWith(scope.pathname))return;
  const relative=url.pathname.slice(scope.pathname.length);
  // Only these specific non-sensitive resources are cached.
- if(["offline.html","booking-theme.css","monster-world.css","monster-mascot.svg","pwa-icon-192.png","pwa-icon-512.png"].includes(relative)){
+ if(["offline.html","booking-theme.css","monster-world.css","monster-mascot.svg","line-app-icon.svg","pwa-icon-192.png","pwa-icon-512.png"].includes(relative)){
   event.respondWith((async()=>{
    const cache=await caches.open(CACHE_NAME);
    const cached=await cache.match(request,{ignoreSearch:true});
