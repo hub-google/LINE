@@ -12,7 +12,7 @@ function customerFacingError(error,operation="general"){
  if(/invalid.login.credentials|invalid_credentials|invalid.grant|invalid.pin|invalid.password|incorrect.password|wrong.password|email.or.password/i.test(detail))return "電子信箱或密碼不正確，請重新輸入。";
  if(/email.not.confirmed|email_not_confirmed|email.unverified/i.test(detail))return "電子信箱尚未完成驗證，請先到信箱確認後再登入。";
  if(/user.already.registered|user_already_exists|email_exists|already.registered/i.test(detail))return "這個電子信箱已經註冊，請直接登入或使用忘記密碼。";
- if(/weak_password|password.should|password.must|password.is.too.short|password.*at.least|password.*characters/i.test(detail))return "密碼強度不足，請使用至少 8 個字元的密碼。";
+ if(/weak_password|password.should|password.must|password.is.too.short|password.*at.least|password.*characters/i.test(detail))return "密碼不符合目前登入服務設定，請重新輸入。";
  if(/same_password|new.password.should.be.different/i.test(detail))return "新密碼不可與原本密碼相同，請重新設定。";
  if(/over.*rate.limit|rate.limit|too.many.requests|security.purposes|try.again.after|too.many.attempts|admin.locked|locked.until/i.test(detail))return "操作太頻繁，請稍後再試。";
  if(/otp.expired|token.expired|refresh.token|session.not.found|invalid.jwt|jwt.expired|auth.session.missing/i.test(detail))return "登入驗證已過期，請重新登入。";
@@ -27,7 +27,9 @@ function customerFacingError(error,operation="general"){
  return "系統暫時無法完成操作，請稍後再試。";
 }
 const $=id=>document.getElementById(id);
-const returnToLogin=()=>{const url=new URL("./merchant-register.html?mode=login",location.href);if(invited)url.searchParams.set("staff_invite",invitedId);return url.href;};
+const returnToLogin=()=>{const url=new URL("./merchant-register.html?mode=login",location.href);if(invited)url.searchParams.set("staff_invite",invitedId);else url.searchParams.set("from","queue-monster");return url.href;};
+const returnToReset=()=>new URL("./merchant-register.html?mode=login&intent=recovery",location.href).href;
+const needsInitialPassword=user=>user?.user_metadata?.app==="queue-monster" && !!user?.invited_at && user?.app_metadata?.queue_monster_password_ready!==true;
 const msg=(t,error=false)=>{$("message").textContent=t||"";$("message").className=t?"message"+(error?" error":""):""};
 const invitedId=new URL(location.href).searchParams.get("staff_invite")||"";
 const inviteIdPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -70,6 +72,20 @@ async function prepare(){
  document.querySelector(".password-panel").classList.remove("hidden");
  const workspace=$("workspace");
  workspace.replaceChildren();
+ const passwordPanel=document.querySelector(".password-panel");
+ const firstSetup=needsInitialPassword(user);
+ const recovering=new URL(location.href).searchParams.get("intent")==="recovery";
+ const title=passwordPanel.querySelector("h3"),help=passwordPanel.querySelector(".sub");
+ if(recovering||firstSetup){
+   $("account-title").textContent=recovering?"重設帳號密碼":"完成員工帳號啟用";
+   title.textContent=recovering?"設定新密碼":"首次設定登入密碼";
+   help.textContent=recovering?"請輸入新密碼並確認，完成後才能繼續。":
+     "此帳號尚未完成密碼設定。請先設定密碼並再次輸入確認，完成後才能進入員工後台。";
+   return;
+ }
+ title.textContent="變更登入密碼";
+ help.textContent="需要變更密碼時，可在此設定新的登入密碼。";
+
  const note=(text)=>{const p=document.createElement("p");p.className="sub";p.textContent=text;workspace.append(p);};
  const addLink=(label,url,primary=false)=>{
   const a=document.createElement("a");a.href=url;a.textContent=label;
@@ -128,9 +144,9 @@ $("login-form").onsubmit=e=>{e.preventDefault();void execute(async()=>{
 $("signup-form").onsubmit=e=>{e.preventDefault();void execute(async()=>{
  const email=$("signup-email").value.trim().toLowerCase();
  const password=$("signup-pass").value,confirm=$("signup-confirm").value;
- if(password.length<8)throw Error("密碼至少需要 8 字元");
+ if(password.length<1)throw Error("請輸入密碼");
  if(password!==confirm)throw Error("兩次輸入的密碼不相同");
- const {data,error}=await signupSb.auth.signUp({email,password,options:{emailRedirectTo:returnToLogin()}});
+ const {data,error}=await signupSb.auth.signUp({email,password,options:{emailRedirectTo:returnToLogin(),data:{app:"queue-monster"}}});
  if(error)throw error;
  if(data.session){
   const {error:sessionError}=await sb.auth.setSession({access_token:data.session.access_token,refresh_token:data.session.refresh_token});
@@ -142,21 +158,35 @@ $("signup-form").onsubmit=e=>{e.preventDefault();void execute(async()=>{
 $("email-link-login").onclick=()=>void execute(async()=>{
  const email=$("login-email").value.trim().toLowerCase();
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw Error("請先填寫有效的電子信箱");
- const {error}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:returnToLogin()}});
+ const {error}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:new URL("./merchant-register.html?mode=login&from=queue-monster",location.href).href}});
  if(error)throw error;msg("已申請寄送登入連結，請到信箱完成身分驗證");
 },"reset");
 $("forgot-pass").onclick=()=>void execute(async()=>{
  const email=$("login-email").value.trim().toLowerCase();
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw Error("請先填寫有效的電子信箱");
- const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:returnToLogin()});
+ const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:returnToReset()});
  if(error)throw error;msg("若信箱已有帳號，將收到密碼重設連結");
 },"reset");
 $("change-pass").onclick=()=>void execute(async()=>{
  const password=$("new-pass").value,confirm=$("confirm-new-pass").value;
- if(password.length<8)throw Error("新密碼至少需要 8 字元");
+ if(password.length<1)throw Error("請輸入新密碼");
  if(password!==confirm)throw Error("兩次輸入的密碼不相同");
- const {error}=await sb.auth.updateUser({password});
- if(error)throw error;$("new-pass").value="";$("confirm-new-pass").value="";msg("新密碼已儲存，可用於下次登入");
+ const {data:updated,error}=await sb.auth.updateUser({password});
+ if(error)throw error;
+ if(needsInitialPassword(updated.user||authUser)){
+   const email=(updated.user||authUser)?.email;
+   if(!email)throw Error("無法確認員工電子信箱");
+   // Verify the newly saved password with Auth before a trusted server grants staff access.
+   const verified=await sb.auth.signInWithPassword({email,password});
+   if(verified.error||verified.data.user?.id!==(updated.user||authUser)?.id)
+     throw Error("密碼已更新，但尚無法確認登入；請使用新密碼重新登入後再完成啟用。");
+   const response=await sb.functions.invoke("staff-complete-setup",{body:{password}});
+   if(response.error||response.data?.ready!==true)
+     throw Error("密碼已儲存，但員工權限尚未啟用，請重新登入後再試一次。");
+ }
+ $("new-pass").value="";$("confirm-new-pass").value="";
+ const u=new URL(location.href);u.searchParams.delete("intent");history.replaceState(null,"",u.pathname+u.search+u.hash);
+ await prepare();msg("密碼設定成功，可以使用員工後台。");
 },"reset");
 $("switch-account").onclick=()=>setMode("login");
 $("logout").onclick=()=>void execute(async()=>{

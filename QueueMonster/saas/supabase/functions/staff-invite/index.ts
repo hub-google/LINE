@@ -52,9 +52,11 @@ Deno.serve(async(req:Request)=>{
  redirect.searchParams.set("staff_invite",invite.invite_id);
  let sendError:unknown=null;
  let emailSent=false;
+ const {data:tenant}=await admin.from("so_tenants").select("name").eq("slug",slug).maybeSingle();
+ const tenantName=typeof tenant?.name==="string"?tenant.name.slice(0,100):"";
  const {error:newUserError}=await admin.auth.admin.inviteUserByEmail(email,{
   redirectTo:redirect.href,
-  data:{app:"queue-monster"}
+  data:{app:"queue-monster",tenant_name:tenantName}
  });
  if(!newUserError)emailSent=true;
  else{
@@ -63,7 +65,7 @@ Deno.serve(async(req:Request)=>{
   // granted only by so_accept_invite for the verified, matching address.
   const mailer=createClient(url,anonKey,{auth:{persistSession:false,autoRefreshToken:false}});
   const {error:existingUserError}=await mailer.auth.signInWithOtp({
-   email,options:{shouldCreateUser:false,emailRedirectTo:redirect.href}
+   email,options:{shouldCreateUser:false,emailRedirectTo:"https://hub-google.github.io/LINE/booking/merchant-register.html?mode=login&from=staff-invite"}
   });
   if(!existingUserError)emailSent=true;
   else sendError=existingUserError;
