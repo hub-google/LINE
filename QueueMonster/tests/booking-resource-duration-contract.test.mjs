@@ -35,7 +35,10 @@ test("NR-05: client uses server-verified service-specific available slots",()=>{
  assert.match(ui,/refreshServiceSlots\(\)/);
  assert.match(ui,/so_service_rule_save/);
  assert.match(ui,/so_resource_upsert/);
- assert.match(ui,/if\(staffTab==="menu"\)staff\.resourceContext/);
+ assert.match(ui,/staff\.resourceContext/);
+ const loading=read("saas/app/data-loading.js");
+ assert.match(loading,/staffState\.staffTab==="menu"/);
+ assert.match(loading,/staffState\.settingsSection==="catalog"/);
 });
 test("NR-05: resource tables deny direct client access and validate same tenant",()=>{
  assert.match(sql,/alter table public\.so_booking_resources enable row level security/);
