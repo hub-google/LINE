@@ -36,6 +36,18 @@ test("all pages share a real user identity with clickable login/logout",()=>{
  assert.equal(res.status,0,res.stderr);
 });
 
+test("LINE logo comes directly from the user-supplied icon asset rather than a text badge",()=>{
+ const file=read("saas/line-app-icon.svg");
+ assert.match(file,/<image width="320" height="320" href="data:image\/png;base64,/);
+ assert.ok(file.length>3000,"must embed the supplied app icon and not a fake text logo");
+ assert.match(style,/\.site-auth-button\.site-auth-login::before/);
+ assert.match(style,/line-app-icon\.svg/);
+ assert.doesNotMatch(style,/\.site-auth-line-logo\{display:inline-grid/);
+ assert.doesNotMatch(code,/el\("span","site-auth-line-logo","LINE"\)/);
+ assert.match(code,/document\.createTextNode\("使用 LINE 登入"\)/);
+ assert.match(build,/copyFile\(path\.join\(src, "line-app-icon\.svg"\)/);
+ assert.match(workflow,/line-app-icon\.svg/);
+});
 test("only server-verified LINE account data is shown, not anonymous Supabase user",()=>{
  assert.match(sql,/l\.user_id=\(select auth\.uid\(\)\)/);
  assert.match(sql,/l\.updated_at between \(now\(\) - interval '30 days'\)/);
