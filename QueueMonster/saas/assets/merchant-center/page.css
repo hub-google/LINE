@@ -304,3 +304,17 @@ body[data-monster-page="merchant-center"] .section-tip a{color:#542A77}
 .qm-phone-guide .qm-phone-form{background:#fff;border:1px solid #E7D0F0;border-radius:12px;padding:9px}
 .qm-phone-guide .qm-phone-slots span{border:1px solid #DEC7EB;background:#FFFCFF;color:#614975;border-radius:8px;padding:6px 7px;font-size:9px;font-weight:800}
 .qm-phone-guide .qm-phone-slots span.selected{background:#E7D0F6;border-color:#AC79CD;color:#542A77}
+
+/* Show every chapter immediately on phones; don't hide half the navigation off-screen. */
+@media(max-width:760px){
+  body[data-monster-page="merchant-center"] .side{
+    position:relative;top:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:6px;overflow:visible;padding:8px;margin-bottom:22px;scrollbar-width:auto;
+  }
+  body[data-monster-page="merchant-center"] .side a{
+    display:flex;align-items:center;min-height:44px;min-width:0;
+    margin:0;padding:9px 11px;white-space:normal;line-height:1.35;font-size:12px;
+  }
+  body[data-monster-page="merchant-center"] .side a span{display:inline;flex:0 0 auto}
+  body[data-monster-page="merchant-center"] .top-links .top-link.primary{min-height:44px;display:inline-flex;align-items:center}
+}
