@@ -56,6 +56,13 @@ document.addEventListener("click",async ev=>{
   staffViewState.staffVisibleLimits.set(key,Math.min(500,(staffViewState.staffVisibleLimits.get(key)||12)+12));
   render();return;
  }
+ if(b.dataset.act==="settings-section"){
+   const section=b.dataset.section;
+   if(!["profile","operations","sessions","catalog","branches","customers","public"].includes(section))return;
+   staffState.settingsSection=section;
+   if(routeState.view==="staff")staffState.staffTab="settings";
+   void load();return;
+ }
  if(b.dataset.act==="open-bookings"||b.dataset.act==="open-queue"){
  staffState.staffTab=b.dataset.act==="open-bookings"?"bookings":"queue";feedbackState.err="";render();
  if(staffState.staffTab==="bookings")void searchHistoricalBookings(1);
@@ -86,7 +93,7 @@ document.addEventListener("click",async ev=>{
  }
  if(v==="staff"){
    staffState.staffTab=tab;
-   if(["analytics","branches","menu","settings","units"].includes(tab)){void load();return;}
+   if(["analytics","branches","menu","settings","units"].includes(tab)){if(tab==="settings")staffState.settingsSection="profile";void load();return;}
     if(tab==="bookings"){feedbackState.err="";feedbackState.flash="";render();void searchHistoricalBookings(1);return;}
     if(tab==="calendar"){feedbackState.err="";feedbackState.flash="";render();void loadBookingCalendar(1);return;}
  }

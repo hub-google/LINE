@@ -137,14 +137,14 @@ export async function load(){feedbackState.err="";try{
  ]);
  staffState.staff={...meta,...work,bookingPolicy:policy,reservations:(work.pending_reservations||[]).concat(work.processed_reservations||[]),
    tickets:(work.active_tickets||[]).concat(work.processed_tickets||[])};
- if(staffState.staffTab==="menu")staffState.staff.resourceContext=await rpc("so_staff_resource_context",{p_slug:routeState.slug});
+ if(staffState.staffTab==="menu"||(staffState.staffTab==="settings"&&staffState.settingsSection==="catalog"))staffState.staff.resourceContext=await rpc("so_staff_resource_context",{p_slug:routeState.slug});
  if(staffState.staffTab==="analytics"&&["OWNER","MANAGER","PLATFORM"].includes(staffState.staff.role))
    staffState.staffAnalytics=await rpc("so_staff_analytics",{p_slug:routeState.slug,p_days:staffState.analyticsDays});
  if(staffState.staffTab==="dashboard"&&["OWNER","MANAGER","PLATFORM"].includes(staffState.staff.role)){
    try{staffState.staffNoticeHealth=await rpc("so_line_notice_health",{p_slug:routeState.slug})}
    catch(e){console.warn("LINE notification diagnostics unavailable")}
  }
- if(staffState.staffTab==="branches")staffState.businessGroups=await rpc("so_my_business_groups");
+ if(staffState.staffTab==="branches"||(staffState.staffTab==="settings"&&staffState.settingsSection==="branches"))staffState.businessGroups=await rpc("so_my_business_groups");
   if(staffState.staffTab==="settings"){
     try{staffState.customerHomepageCopy=await rpc("so_get_customer_homepage",{p_slug:routeState.slug});}
     catch(error){console.warn("顧客首頁顯示設定讀取失敗",error);staffState.customerHomepageCopy=null;}

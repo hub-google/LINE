@@ -60,7 +60,7 @@ staffLayoutState.staffSecondaryByTab={
  menu:["預約資源","服務時長與緩衝"],
  members:["待接受邀請","邀請企業員工"],
  branches:[],
- settings:["候位保留規則","預約營業日與休息設定","預約送出前二次確認","顧客簿","門市公告與照片","LINE 官方帳號串接","排隊怪獸店家搜尋","唯一顧客網址"]
+ settings:[]
 };
 document.addEventListener("toggle",event=>{
  const target=event.target;

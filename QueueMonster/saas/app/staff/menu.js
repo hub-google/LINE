@@ -33,7 +33,8 @@ export function renderStaffMenu({t,isManager,html}){
     '<label class="checklist"><input type="checkbox" id="menu-active" '+(selected?.active===false?"":"checked")+'> 開放顧客選擇</label></div></div>'+
     '<div class="staff-actionbar">'+btn(selected?"儲存修改":"新增項目","menu-save","primary")+
      (selected?btn("取消編輯","menu-edit-clear","outline"):"")+'</div>'):"");
-   const resources=staffState.staff.resourceContext?.resources||[],rules=staffState.staff.resourceContext?.service_rules||[];
+   const defaultUnitIds=new Set((serviceUnitsState.unitConfig?.units||[]).filter(u=>u.is_default).map(u=>u.id));
+   const resources=(staffState.staff.resourceContext?.resources||[]).filter(u=>!defaultUnitIds.has(u.id)),rules=staffState.staff.resourceContext?.service_rules||[];
   const services=items.filter(x=>x.kind!=="MENU");
   const firstService=services[0],firstRule=rules.find(x=>x.item_id===firstService?.id);
   html+=(serviceUnitsState.unitEnabled()?"":box("預約資源（員工／房間／設備）",
@@ -46,7 +47,7 @@ export function renderStaffMenu({t,isManager,html}){
       [["STAFF","員工"],["ROOM","房間"],["EQUIPMENT","設備"]].map(([v,n])=>'<option value="'+v+'">'+n+'</option>').join("")+
       '</select></div></div>'+btn("新增資源","resource-save","primary"):"")))+
     box("服務時長與緩衝（預約資源排程）",
-     '<p class="small">'+(serviceUnitsState.unitEnabled()?'服務單位在「企業設定」統一管理。':'可指定每項服務的時間及一個員工／房間／設備。')+'服務時間與緩衝仍沿用既有預約資源排程。</p>'+
+     '<p class="small">'+(serviceUnitsState.unitEnabled()?'服務窗口與場次請到「設定 → 場次與窗口」管理。':'可指定每項服務的時間及一個員工／房間／設備。')+'服務時間與緩衝仍沿用既有預約資源排程。</p>'+
      (services.length?'<div class="scroll"><table class="rows"><thead><tr><th>服務</th><th>分鐘＋緩衝</th><th>指定資源</th></tr></thead><tbody>'+
        services.map(x=>{const rule=rules.find(z=>z.item_id===x.id);const res=resources.find(z=>z.id===rule?.resource_id);
          return '<tr><td>'+esc(x.name)+'</td><td>'+esc(rule?rule.duration_minutes+" + "+rule.buffer_minutes:"預設時段 "+t.slot_minutes+" + 0")+'</td><td>'+esc(res?.name||"未指派")+'</td></tr>'}).join("")+

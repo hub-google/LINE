@@ -154,9 +154,9 @@ box("LINE 身分授權",'<p class="muted">為避免機器人或惡意假預約�
  }else html=(bookingState.manageKind&&bookingState.manageItem?
     box("我的預約紀錄",renderBookings(items,true))+box("我的號碼紀錄",renderMyTickets(tickets)):
     crossRecords());
- if(routeState.customerTab==="home"&&serviceUnitsState.unitEnabled()){
+ if(routeState.customerTab==="home"&&serviceUnitsState.unitEnabled()&&serviceUnitsState.unitConfig?.picker&&unitList().length>1){
     const units=unitList();
-    html+=box("選擇服務單位",'<p class="small">同一家店的各服務單位共用這個網站，不需要切換不同店家。</p>'+
+    html+=box("選擇服務窗口",'<p class="small">需要不同服務窗口時，可在此挑選；一般場次不必選擇窗口。</p>'+
       (serviceUnitsState.unitConfig.grouped?'<div class="unit-category-chips">'+["全部",...[...new Set((serviceUnitsState.unitConfig.units||[]).filter(u=>u.active).map(u=>u.group||"其他"))]].map(g=>
         btn(g,"unit-category-pill",serviceUnitsState.unitCategory===(g==="全部"?"":g)?"primary":"outline",'data-category="'+esc(g==="全部"?"":g)+'"')).join("")+'</div>':'')+
       '<div class="unit-card-grid">'+units.map(u=>'<button class="unit-option" data-act="unit-home-select" data-id="'+esc(u.id)+'">'+

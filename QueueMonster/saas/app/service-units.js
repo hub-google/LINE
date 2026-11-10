@@ -38,9 +38,11 @@ export function availableUnits(mode=routeState.customerTab){
  return unitList().filter(u=>sessionsOf(u.id,mode).length>0);
 }
 
+
 export function selectedUnitSession(mode=routeState.customerTab){
+ const useWindows=serviceUnitsState.unitConfig?.picker===true;
  const units=availableUnits(mode),actual=units.find(u=>u.id===serviceUnitsState.unitChoice)||units[0];
- const ss=sessionsOf(actual?.id,mode);
+ const ss=useWindows?sessionsOf(actual?.id,mode):sessionsOf(null,mode);
  return ss.find(s=>s.id===serviceUnitsState.unitSessionChoice)||ss[0]||null;
 }
 
@@ -52,31 +54,33 @@ export function unitBookingFingerprint(s,party){
 
 export function unitNameForSession(sid){
  const s=(serviceUnitsState.unitConfig?.sessions||[]).find(x=>x.id===sid),u=(serviceUnitsState.unitConfig?.units||[]).find(x=>x.id===s?.unit_id);
- return u?.name||"服務單位";
+ return u?.is_default?"一般場次":u?.name||"一般場次";
 }
+
 
 export function unitChooseHtml(mode=routeState.customerTab){
  const units=availableUnits(mode);
- const groups=[...new Set((serviceUnitsState.unitConfig?.units||[]).filter(u=>u.active&&sessionsOf(u.id,mode).length).map(u=>u.group||"其他"))];
+ const useWindows=serviceUnitsState.unitConfig?.picker===true && units.length>1;
+ const groups=[...new Set(units.map(u=>u.group||"其他"))];
  const actual=units.find(x=>x.id===serviceUnitsState.unitChoice)||units[0];
- const sessions=sessionsOf(actual?.id,mode),selected=selectedUnitSession(mode);
- return '<div class="unit-form-header"><h3>選擇服務單位</h3><span>'+units.length+' 個選項</span></div>'+
-   (serviceUnitsState.unitConfig?.grouped&&groups.length?'<div class="unit-category-chips">'+["全部",...groups].map(g=>
-       btn(g,"unit-category-pill",serviceUnitsState.unitCategory===(g==="全部"?"":g)?"primary":"outline",
-        'data-category="'+esc(g==='全部'?'':g)+'"')).join("")+'</div>':'')+
-   (units.length?'<div class="unit-card-grid">'+units.map(u=>{
-     const soon=sessionsOf(u.id,mode)[0];
-     return '<button type="button" class="unit-option '+(u.id===actual?.id?'selected':'')+
-       '" data-act="unit-choose" data-id="'+esc(u.id)+'" aria-pressed="'+String(u.id===actual?.id)+'">'+
-       '<span class="unit-option-copy"><span class="unit-option-group">'+esc(u.group||"服務")+'</span>'+
-       '<strong>'+esc(u.name)+'</strong><small>'+esc(soon.name+" "+soon.start+"–"+soon.end)+'</small></span>'+
-       '<span class="unit-option-trailing">'+(u.id===actual?.id?'✓':'›')+'</span></button>';
-   }).join("")+'</div>'+
-   '<label for="unit-session">開放場次</label><select class="field" id="unit-session">'+
+ const sessions=useWindows?sessionsOf(actual?.id,mode):sessionsOf(null,mode);
+ const selected=selectedUnitSession(mode);
+ return (useWindows?'<div class="unit-form-header"><h3>選擇服務窗口</h3><span>'+units.length+' 個選項</span></div>'+
+  (serviceUnitsState.unitConfig?.grouped&&groups.length?'<div class="unit-category-chips">'+["全部",...groups].map(g=>
+   btn(g,"unit-category-pill",serviceUnitsState.unitCategory===(g==="全部"?"":g)?"primary":"outline",
+    'data-category="'+esc(g==="全部"?"":g)+'"')).join("")+'</div>':'')+
+  '<div class="unit-card-grid">'+units.map(u=>{
+    const first=sessionsOf(u.id,mode)[0];
+    return '<button type="button" class="unit-option '+(u.id===actual?.id?'selected':'')+
+      '" data-act="unit-choose" data-id="'+esc(u.id)+'" aria-pressed="'+String(u.id===actual?.id)+'">'+
+      '<span class="unit-option-copy"><strong>'+esc(u.is_default?"一般場次":u.name)+'</strong><small>'+
+      esc(first?.name||"")+' '+esc(first?.start||"")+'</small></span></button>';
+   }).join("")+'</div>':'')+
+   (sessions.length?'<label for="unit-session">開放場次</label><select class="field" id="unit-session">'+
     sessions.map(s=>'<option value="'+esc(s.id)+'" '+(s.id===selected?.id?'selected':'')+'>'+
-       esc(s.name)+' '+esc(s.start)+'–'+esc(s.end)+
-       (mode==="reserve"?' · 剩 '+esc(Math.max(0,s.capacity-Number(s.booked||0)))+' 位':"")+
-       '</option>').join("")+'</select>':
+     esc(!useWindows&&units.length>1?unitNameForSession(s.id)+" · ":"")+esc(s.name)+' '+esc(s.start)+'–'+esc(s.end)+
+     (mode==="reserve"?' · 剩 '+esc(Math.max(0,s.capacity-Number(s.booked||0)))+' 位':"")+
+     '</option>').join("")+'</select>':
    '<p class="notice">'+(mode==="queue"?"目前沒有開放取號的場次，請稍後再查看。":"目前沒有可預約的場次或名額，請選擇其他日期。")+'</p>');
 }
 
@@ -84,8 +88,8 @@ export function unitBookingPanel(){
  const s=selectedUnitSession();
  const available=s&&Number(s.booked||0)+Number(bookingState.bookingParty)<=s.capacity;
  const confirming=customerState.customer?.booking_confirmation_required!==false&&serviceUnitsState.unitConfirmKey===unitBookingFingerprint(s,Number(bookingState.bookingParty));
- return box("選擇服務單位與預約場次",
-   '<p class="small">所有服務單位共用這個網站，僅顯示目前有開放的場次。</p>'+
+ return box("選擇預約場次",
+   '<p class="small">選擇可預約的場次；若店家有不同服務窗口，也可先選擇窗口。</p>'+
    field("預約日期","customer-day",routeState.day,"date",'min="'+taipei()+'" max="'+dateInThirtyDays()+'"')+
    unitChooseHtml("reserve")+
    '<div class="grid"><div>'+field("本次人數","customer-party",bookingState.bookingParty||1,"number",'min="1" max="20"')+'</div></div>'+
@@ -106,7 +110,7 @@ export function unitBookingPanel(){
 
 export function unitQueuePanel(){
  const s=selectedUnitSession();
- return box("選擇服務單位與取號場次",
+ return box("選擇取號場次",
    '<p class="small">每個場次獨立叫號，取號後可從「我的取號」查看實際順序。</p>'+
    unitChooseHtml("queue")+
    field("本次候位人數","customer-queue-party",queueState.queuePartySize||1,"number",'min="1" max="20"')+
@@ -115,37 +119,60 @@ export function unitQueuePanel(){
       (!s||!queueState.queuePartySize||!unitSessionAvailable(s,"queue")||!menuChoiceReady(customerState.customer?.tenant?.menu_queue_mode||"DISABLED",queueState.queueChosenItems,customerState.customer?.menu_items||[])?'disabled':''))+'</div>');
 }
 
+
 export function unitSettingsPanel(isManager){
- const units=serviceUnitsState.unitConfig?.units||[],chosen=units.find(x=>x.id===serviceUnitsState.unitEditingId);
- const sessions=(serviceUnitsState.unitConfig?.sessions||[]),editing=sessions.find(x=>x.id===serviceUnitsState.unitEditingSession);
- const options=units.filter(x=>x.active).map(u=>'<option value="'+esc(u.id)+'" '+((serviceUnitsState.unitAdminUnit||editing?.unit_id)===u.id?'selected':'')+'>'+esc(u.name)+'</option>').join("");
- return box("服務單位設定",
-   '<p class="small">不需要建立新店家。勾選多服務單位後，顧客可以先選分類與服務單位；沒有勾選就維持原本單一入口。</p>'+
-   '<label class="checklist"><input type="checkbox" id="enable-units" '+(serviceUnitsState.unitConfig?.multi?'checked':'')+(isManager?'':' disabled')+'> 啟用多服務單位</label>'+
-   '<label class="checklist"><input type="checkbox" id="group-units" '+(serviceUnitsState.unitConfig?.grouped?'checked':'')+(isManager?'':' disabled')+'> 顯示服務分類</label>'+
-   '<label class="checklist"><input type="checkbox" id="link-units" '+(serviceUnitsState.unitConfig?.linked?'checked':'')+(isManager?'':' disabled')+'> 預約報到後加入該場次叫號</label>'+
-   (isManager?'<div class="staff-actionbar">'+btn("儲存服務模式","save-unit-mode","primary")+'</div>':'')+
-   '<h3 style="margin-top:22px">服務單位</h3>'+
-   '<div class="staff-actionbar">'+units.map(u=>btn((u.active?'':'〔停用〕')+u.name,
-     "unit-edit","outline",'data-id="'+esc(u.id)+'"')).join("")+'</div>'+
-   (isManager?'<div class="grid"><div>'+field("服務單位名稱","unit-name",chosen?.name||"")+
-     field("分類名稱（可留空）","unit-group",chosen?.group||"")+'</div>'+
-     '<div>'+field("排序","unit-order",chosen?.sort_order||0,"number")+'</div></div>'+
-     '<label class="checklist"><input id="unit-active" type="checkbox" '+(chosen?.active!==false?'checked':'')+'> 啟用此單位</label>'+
-     '<div class="staff-actionbar">'+btn(chosen?"儲存服務單位":"新增服務單位","unit-save","primary")+
-     (chosen?btn("取消編輯","unit-new","outline"):"")+'</div>':'')+
-   '<h3 style="margin-top:22px">開放場次</h3>'+
+ const units=serviceUnitsState.unitConfig?.units||[];
+ const realUnits=units.filter(u=>!u.is_default);
+ const chosen=realUnits.find(u=>u.id===serviceUnitsState.unitEditingId);
+ const sessions=serviceUnitsState.unitConfig?.sessions||[];
+ const editing=sessions.find(s=>s.id===serviceUnitsState.unitEditingSession);
+ const showForm=serviceUnitsState.showSessionForm===true || !!editing;
+ const options='<option value="">不指定（一般場次）</option>'+
+  realUnits.filter(u=>u.active).map(u=>'<option value="'+esc(u.id)+'" '+
+   ((editing?.unit_id||serviceUnitsState.unitAdminUnit)===u.id?'selected':'')+'>'+esc(u.name)+'</option>').join("");
+ const sessionRows=sessions.map(s=>
+   '<tr><td><strong>'+esc(s.name)+'</strong><div class="small">'+esc(unitNameForSession(s.id))+'</div></td>'+
+   '<td>'+esc(s.start)+'－'+esc(s.end)+'</td><td>'+esc(s.capacity)+' 人</td>'+
+   '<td>'+esc(s.active?'開放中':'未開放')+'</td><td><div class="staff-actionbar">'+
+   (isManager?btn("編輯","unit-session-edit","outline",'data-id="'+esc(s.id)+'"')+
+     btn("刪除","unit-session-delete","outline",'data-id="'+esc(s.id)+'" data-name="'+esc(s.name)+'"'):'—')+
+   '</div></td></tr>').join("");
+ const sessionCard=box("場次管理",
+   '<p class="small">小吃店、餐廳可直接新增場次，無需建立服務窗口。每個場次可獨立設定時間與名額。</p>'+
    field("場次日期","unit-admin-date",serviceUnitsState.unitAdminDate,"date")+
-   '<div class="staff-actionbar">'+sessions.map(s=>btn(unitNameForSession(s.id)+' '+s.name+' '+s.start,
-     "unit-session-edit","outline",'data-id="'+esc(s.id)+'"')).join("")+'</div>'+
-   (isManager?'<label for="unit-admin-unit">服務單位</label><select class="field" id="unit-admin-unit">'+options+'</select>'+
-     '<div class="grid"><div>'+field("場次名稱","unit-session-name",editing?.name||"上午場")+
-     field("開始時間","unit-session-start",editing?.start||"09:00","time",editing?'disabled':'')+
-     '</div><div>'+field("開放名額","unit-session-capacity",editing?.capacity||10,"number",'min="1" max="300"')+
-     field("結束時間","unit-session-end",editing?.end||"12:00","time",editing?'disabled':'')+'</div></div>'+
-     '<label class="checklist"><input id="unit-session-active" type="checkbox" '+(editing?.active!==false?'checked':'')+'> 開放此場次</label>'+
-     '<div class="staff-actionbar">'+btn(editing?"儲存場次":"新增場次","unit-session-save","primary")+
-       (editing?btn("新增另一場","unit-session-new","outline"):"")+'</div>':''));
+   '<div class="scroll"><table class="rows"><thead><tr><th>場次</th><th>時間</th><th>名額</th><th>狀態</th><th>操作</th></tr></thead><tbody>'+
+   (sessions.length?sessionRows:'<tr><td colspan="5">這一天沒有設定場次，按下方「新增場次」開始設定。</td></tr>')+
+   '</tbody></table></div>'+
+   (isManager?'<div class="staff-actionbar" style="margin-top:14px">'+btn("＋ 新增場次","unit-session-new","primary")+'</div>':'')+
+   (isManager&&showForm?'<div class="inset" style="margin-top:16px"><h3>'+esc(editing?"編輯場次":"新增場次")+'</h3>'+
+    '<label for="unit-admin-unit">服務窗口（選填）</label><select class="field" id="unit-admin-unit" '+(editing?'disabled':'')+'>'+options+'</select>'+
+    '<p class="small">例如：1診、2診、售後窗口、維修窗口；一般店家可保持「不指定」。已建立場次的所屬窗口不能直接更換。</p>'+
+    '<div class="grid"><div>'+field("場次名稱","unit-session-name",editing?.name||"上午場","text",'maxlength="60"')+
+      field("開始時間","unit-session-start",editing?.start||"09:00","time")+'</div>'+
+    '<div>'+field("開放名額","unit-session-capacity",editing?.capacity??10,"number",'min="1" max="300"')+
+      field("結束時間","unit-session-end",editing?.end||"12:00","time")+'</div></div>'+
+    '<label class="checklist"><input id="unit-session-active" type="checkbox" '+(editing?.active!==false?'checked':'')+'> 開放此場次</label>'+
+    '<div class="staff-actionbar">'+btn(editing?"儲存修改":"儲存新場次","unit-session-save","primary")+
+      btn("取消","unit-session-cancel","outline")+'</div></div>':''));
+ const windowsCard=box("服務窗口（選填）",
+   '<p class="small">例如：1診、2診、售後窗口、維修窗口。沒有分窗口的店家不必設定這裡。</p>'+
+   (realUnits.length?'<div class="staff-actionbar">'+realUnits.map(u=>
+     btn((u.active?'':'〔停用〕')+u.name,"unit-edit","outline",'data-id="'+esc(u.id)+'"')).join("")+'</div>':'<p class="small">目前沒有額外服務窗口。</p>')+
+   (isManager?'<div class="grid"><div>'+field("服務窗口名稱","unit-name",chosen?.name||"","text",'placeholder="例如：1診、售後窗口"')+
+     field("分類（選填）","unit-group",chosen?.group||"")+'</div>'+
+     '<div>'+field("排序","unit-order",chosen?.sort_order??0,"number")+'</div></div>'+
+     '<label class="checklist"><input id="unit-active" type="checkbox" '+(chosen?.active!==false?'checked':'')+'> 啟用此窗口</label>'+
+     '<div class="staff-actionbar">'+btn(chosen?"儲存窗口修改":"新增服務窗口","unit-save","primary")+
+      (chosen?btn("取消編輯","unit-new","outline"):"")+'</div>':'')+
+   '<div class="inset" style="margin-top:14px"><p class="small">有多個窗口時，可選擇是否讓顧客先挑選窗口；不勾選時顧客仍可直接選場次。</p>'+
+   '<label class="checklist"><input type="checkbox" id="enable-units" '+
+      (serviceUnitsState.unitConfig?.picker?'checked':'')+(!isManager||!realUnits.some(u=>u.active)?' disabled':'')+'> 讓顧客選擇服務窗口</label>'+
+   '<label class="checklist"><input type="checkbox" id="group-units" '+(serviceUnitsState.unitConfig?.grouped?'checked':'')+
+      (isManager?'':' disabled')+'> 顯示窗口分類</label>'+
+   '<label class="checklist"><input type="checkbox" id="link-units" '+(serviceUnitsState.unitConfig?.linked?'checked':'')+
+      (isManager?'':' disabled')+'> 預約報到後自動加入場次叫號</label>'+
+   (isManager?'<div class="staff-actionbar">'+btn("儲存窗口顯示方式","save-unit-mode","primary")+'</div>':'')+'</div>');
+ return sessionCard+windowsCard;
 }
 
 export function unitStaffQueuePanel(){
@@ -155,9 +182,9 @@ export function unitStaffQueuePanel(){
  const open=tickets.filter(k=>['WAITING','HOLD','CALLED','ARRIVED','ADMITTED','SERVING','PASSED'].includes(k.status));
  const waiting=open.filter(k=>k.status==='WAITING');
  const current=open.find(k=>['CALLED','ARRIVED','ADMITTED','SERVING'].includes(k.status));
- return box("按服務單位獨立叫號",
-   '<p class="small">每個單位與場次獨立服務；不同單位可以同時叫號。現有編號及通知機制繼續沿用。</p>'+
-   '<div class="staff-actionbar"><a class="btn outline" href="'+esc(sharedUiState.route("staff",routeState.slug)+"&tab=units")+'">前往服務單位與場次設定</a></div>'+
+ return box("按場次獨立叫號",
+   '<p class="small">各場次可獨立叫號；無需設定服務窗口也可使用。</p>'+
+   '<div class="staff-actionbar"><a class="btn outline" href="'+esc(sharedUiState.route("staff",routeState.slug)+"&tab=settings&section=sessions")+'">前往設定場次</a></div>'+
    '<label for="staff-unit-session">操作隊列</label><select id="staff-unit-session" class="field">'+
    ss.map(s=>'<option value="'+esc(s.id)+'" '+(s.id===selected?.id?'selected':'')+'>'+esc(unitNameForSession(s.id))+' · '+esc(s.name)+' '+esc(s.start)+'</option>').join("")+'</select>'+
    (selected?'<div class="grid3" style="margin:12px 0">'+stat("目前叫號",current?.number||"—")+
@@ -170,7 +197,7 @@ export function unitStaffQueuePanel(){
        '<div class="staff-record-title">'+esc(k.number)+'　'+esc(k.name)+'</div>'+
        '<div class="small">'+esc(k.unit||"")+' · '+esc(k.session||"")+'</div>'+
        staffStatusPicker("ticket",k,true)+'</article>').join("")+'</div>':
-     '<p class="muted">目前沒有可操作的場次，請點選上方「前往服務單位與場次設定」建立服務單位與今日場次。</p>'));
+     '<p class="muted">目前沒有可操作的場次，請點選上方「前往服務單位與場次設定」新增今日場次。</p>'));
 }
 
 export function initializeServiceUnits(){

@@ -33,17 +33,28 @@ if(a==="save-unit-mode"){
     serviceUnitsState.unitEditingId="";return "服務單位已儲存";
    });return true;
  }
- if(a==="unit-session-edit"){serviceUnitsState.unitEditingSession=id;const s=(serviceUnitsState.unitConfig?.sessions||[]).find(x=>x.id===id);serviceUnitsState.unitAdminUnit=s?.unit_id||"";render();return true;}
- if(a==="unit-session-new"){serviceUnitsState.unitEditingSession="";render();return true;}
+ if(a==="unit-session-edit"){serviceUnitsState.unitEditingSession=id;serviceUnitsState.showSessionForm=true;const s=(serviceUnitsState.unitConfig?.sessions||[]).find(x=>x.id===id);serviceUnitsState.unitAdminUnit=s?.unit_id||"";render();return true;}
+ if(a==="unit-session-new"){serviceUnitsState.unitEditingSession="";serviceUnitsState.unitAdminUnit="";serviceUnitsState.showSessionForm=true;render();return true;}
+ if(a==="unit-session-cancel"){serviceUnitsState.unitEditingSession="";serviceUnitsState.unitAdminUnit="";serviceUnitsState.showSessionForm=false;render();return true;}
+ if(a==="unit-session-delete"){
+   const selected=(serviceUnitsState.unitConfig?.sessions||[]).find(x=>x.id===id);
+   if(!selected)return true;
+   if(!confirm("確定刪除「"+selected.name+"」（"+selected.start+"－"+selected.end+"）嗎？\n\n如有有效預約或候位號碼，系統會禁止刪除；過往紀錄會保留。"))return true;
+   await act(async()=>{
+     await rpc("so_unit_manage",{p_slug:routeState.slug,p_action:"session_delete",p_data:{id}});
+     serviceUnitsState.unitEditingSession="";serviceUnitsState.showSessionForm=false;
+     return "場次已刪除，歷史紀錄仍保留";
+   });return true;
+ }
  if(a==="unit-session-save"){
    await act(async()=>{
     await rpc("so_unit_manage",{p_slug:routeState.slug,p_action:"session",p_data:{
-      id:serviceUnitsState.unitEditingSession||null,unit_id:val("unit-admin-unit"),date:serviceUnitsState.unitAdminDate,
+      id:serviceUnitsState.unitEditingSession||null,unit_id:val("unit-admin-unit")||null,date:serviceUnitsState.unitAdminDate,
       name:val("unit-session-name"),start:val("unit-session-start"),
       end:val("unit-session-end"),capacity:Number(val("unit-session-capacity")),
       active:!!routeState.$("unit-session-active")?.checked
     }});
-    serviceUnitsState.unitEditingSession="";return "場次設定已儲存";
+    serviceUnitsState.unitEditingSession="";serviceUnitsState.unitAdminUnit="";serviceUnitsState.showSessionForm=false;return "場次設定已儲存";
    });return true;
  }
  if(a==="unit-call"||a==="unit-recall"){

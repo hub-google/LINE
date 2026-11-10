@@ -90,3 +90,32 @@ test("new customer and board module JavaScript parses", () => {
     assert.equal(checked.status,0,name+": "+checked.stderr);
   }
 });
+
+
+test("settings groups service windows, menu, branches and business profile under a single entry",()=>{
+ const view=read("saas/app/staff-view.js");
+ const hub=read("saas/app/staff/settings.js");
+ assert.match(view,/const menu=nav\("設定","settings"/);
+ assert.doesNotMatch(view,/nav\("菜單及服務設定","menu"/);
+ assert.doesNotMatch(view,/nav\("多分店管理","branches"/);
+ for(const section of ["profile","operations","sessions","catalog","branches","customers","public"])
+  assert.match(hub,new RegExp('\\["'+section+'","'));
+ assert.match(hub,/renderStaffMenu\(/);
+ assert.match(hub,/renderStaffBranches\(/);
+ assert.match(hub,/unitSettingsPanel\(/);
+});
+
+test("ordinary shops can create sessions without a window, and edit/delete actions are guarded",()=>{
+ const ui=read("saas/app/service-units.js");
+ const actions=read("saas/app/actions/service-unit-actions.js");
+ const migration=read("supabase/migrations/20261110175000_settings_sessions_optional_window.sql");
+ assert.match(ui,/不指定（一般場次）/);
+ assert.match(ui,/unit-session-edit/);
+ assert.match(ui,/unit-session-delete/);
+ assert.match(ui,/unit-session-start",editing\?\.start\|\|"09:00","time"\)/);
+ assert.match(actions,/p_action:"session_delete"/);
+ assert.match(actions,/unit_id:val\("unit-admin-unit"\)\|\|null/);
+ assert.match(migration,/is_default_session_unit/);
+ assert.match(migration,/deleted_at is null/);
+ assert.match(migration,/此場次仍有有效預約或候位號碼/);
+});
