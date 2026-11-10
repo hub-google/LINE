@@ -8,6 +8,7 @@ import {box,btn,esc,field,menuModeSelect,menuPrice} from "../shared-ui.js";
 
 export function renderStaffMenu({t,isManager,html}){
   const items=staffState.staff.menu_items||[],selected=items.find(x=>x.id===bookingState.editingMenuItemId)||null;
+  const kind=selected?.kind||"MENU",isCustomKind=!["MENU","SERVICE"].includes(kind);
   html+=box("預約／抽號選擇規則",
    '<p class="muted">預約與現場取號可分別設定；必填時顧客要先選好至少一項餐點或服務，才可以送出。</p>'+
    '<div class="grid"><div><label for="menu-book-mode">線上預約</label>'+menuModeSelect("menu-book-mode",t.menu_booking_mode||"DISABLED")+
@@ -16,7 +17,7 @@ export function renderStaffMenu({t,isManager,html}){
    box("菜單／服務項目（"+items.length+" 項）",
     '<p class="muted">可設定餐點或服務、說明、價格、排序及是否上架。歷史預約會保留當時選擇的項目。</p>'+
     (items.length?'<div class="scroll"><table class="rows"><thead><tr><th>類型</th><th>名稱與說明</th><th>價格</th><th>狀態</th><th>操作</th></tr></thead><tbody>'+
-      items.map(item=>'<tr><td>'+esc(item.kind==="MENU"?"餐點":"服務")+'</td><td><strong>'+esc(item.name)+'</strong>'+
+      items.map(item=>'<tr><td>'+esc(item.kind==="MENU"?"餐點":item.kind==="SERVICE"?"服務":item.kind)+'</td><td><strong>'+esc(item.name)+'</strong>'+
        (item.description?'<div class="small">'+esc(item.description)+'</div>':'')+'</td>'+
        '<td>'+esc(menuPrice(item)||"未設定")+'</td><td>'+esc(item.active?"上架中":"已停用")+'</td><td>'+
        (isManager?btn("編輯","menu-edit","outline",'data-id="'+esc(item.id)+'"')+' '+
@@ -24,8 +25,8 @@ export function renderStaffMenu({t,isManager,html}){
        '</td></tr>').join("")+'</tbody></table></div>':'<p class="muted">尚未建立餐點或服務。</p>'))+
    (isManager?box(selected?"修改餐點／服務":"新增餐點／服務",
     '<div class="grid"><div><label for="menu-kind">類型</label><select class="field" id="menu-kind">'+
-    [["MENU","餐點"],["SERVICE","服務"]].map(([v,label])=>'<option value="'+v+'" '+((selected?.kind||"MENU")===v?"selected":"")+'>'+label+'</option>').join("")+
-    '</select>'+field("名稱","menu-name",selected?.name||"")+
+    [["MENU","餐點"],["SERVICE","服務"],["__CUSTOM__","自行輸入"]].map(([v,label])=>'<option value="'+v+'" '+((isCustomKind?"__CUSTOM__":kind)===v?"selected":"")+'>'+label+'</option>').join("")+
+    '</select><div id="menu-custom-kind-wrap" '+(isCustomKind?'':'hidden')+'>'+field("自行輸入類型","menu-custom-kind",isCustomKind?kind:"","text",'maxlength="30" placeholder="例如：課程、活動、商品"'+(isCustomKind?'':' disabled'))+'</div>'+field("名稱","menu-name",selected?.name||"")+
     field("價格（NT$，可留空）","menu-price",selected?.price??"","number",'min="0" step="0.01"')+'</div>'+
     '<div>'+field("說明（選填）","menu-description",selected?.description||"")+
     field("排序（數字越小越前面）","menu-order",selected?.sort_order??0,"number",'min="-9999" max="9999"')+
@@ -33,7 +34,7 @@ export function renderStaffMenu({t,isManager,html}){
     '<div class="staff-actionbar">'+btn(selected?"儲存修改":"新增項目","menu-save","primary")+
      (selected?btn("取消編輯","menu-edit-clear","outline"):"")+'</div>'):"");
    const resources=staffState.staff.resourceContext?.resources||[],rules=staffState.staff.resourceContext?.service_rules||[];
-  const services=items.filter(x=>x.kind==="SERVICE");
+  const services=items.filter(x=>x.kind!=="MENU");
   const firstService=services[0],firstRule=rules.find(x=>x.item_id===firstService?.id);
   html+=(serviceUnitsState.unitEnabled()?"":box("預約資源（員工／房間／設備）",
    '<p class="small">同一資源在服務時長＋緩衝時間內不可重複預約；停用資源不會改變既有預約。</p>'+
