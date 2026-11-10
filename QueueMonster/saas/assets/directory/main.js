@@ -6,10 +6,12 @@ const bridge=SB_URL+"/functions/v1/line-bridge?action=config";
 const sb=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"line-saas-customer-session-v2"}});
 const params=new URLSearchParams(location.search),mode=["search","queue","mine","game"].includes(params.get("mode"))?params.get("mode"):"search";
 const els={intro:document.getElementById("intro"),results:document.getElementById("results"),keyword:document.getElementById("keyword"),test:null};
+document.body.dataset.directoryMode=mode;
 document.getElementById("tab-"+(mode==="game"?"search":mode)).classList.add("active");
 let all=[],popular=[],searchResults=[],searchTotal=0,searchPage=1;
 let searchLoading=false,searchError="",searchRequest=0,searchTimer=null;
 let liffId="";
+let mineIdentityState="loading";
 const searchCriteria=()=>mode!=="mine"&&(
  Boolean(els.keyword.value.trim())||
  document.getElementById("explore-category").value!=="全部"||
@@ -33,6 +35,7 @@ function setupExploreFilters(){
  options("explore-area",[...new Set(all.map(areaOf))].sort((a,b)=>a.localeCompare(b,"zh-Hant")),"所有地區");
  document.querySelector(".explore-view-switch").hidden=mode==="mine";
  document.getElementById("explore-filters").classList.toggle("hidden",mode==="mine");
+ document.getElementById("mobile-filter-toggle").classList.toggle("hidden",mode==="mine");
 }
 
 function e(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
@@ -50,6 +53,18 @@ function badges(t){
  (t.oa_mode==="PLATFORM"?'<span class="badge">平台 LINE 服務</span>':"");
 }
 function render(){
+ if(mode==="mine"&&mineIdentityState!=="ready"){
+  document.getElementById("results-heading").textContent="我的紀錄";
+  document.getElementById("result-count").textContent=mineIdentityState==="loading"?"正在確認身分":mineIdentityState==="guest"?"請先登入 LINE":"目前無法取得紀錄";
+  document.getElementById("result-pages").classList.add("hidden");
+  const text=mineIdentityState==="loading"?
+   '<strong>正在確認 LINE 身分</strong><p>確認後才會顯示與你綁定的預約及取號紀錄。</p>':
+   mineIdentityState==="guest"?
+   '<strong>請先使用 LINE 登入</strong><p>登入後才能查詢自己的預約和號碼；未登入不代表沒有紀錄。</p><p class="mine-login-action"><a class="btn" href="./?view=customer&tab=mine&site_login=1&site_return=directory.html%3Fmode%3Dmine">使用 LINE 登入後查看</a></p>':
+   '<strong>目前無法取得紀錄</strong><p>請重新整理頁面，或確認 LINE 已完成授權。</p>';
+  els.results.innerHTML='<div class="empty" role="status">'+text+'</div>';
+  return;
+ }
  const keyword=els.keyword.value.trim().toLocaleLowerCase("zh-TW");
  const searching=searchCriteria();
  let filtered=[],count=0;
@@ -149,7 +164,7 @@ async function loadSearch(){
    render();return;
  }
  searchLoading=true;searchError="";render();
- const {data,error}=await sb.rpc("so_public_store_search",{
+ let {data,error}=await sb.rpc("so_public_store_search",{
    p_query:els.keyword.value.trim()||null,
    p_mode:mode==="queue"?"queue":"all",
    p_category:document.getElementById("explore-category").value,
@@ -158,6 +173,23 @@ async function loadSearch(){
    p_sort:document.getElementById("explore-sort").value,
    p_page:searchPage
  });
+ // The public search RPC may match names/addresses but not a category label.
+ // When a keyword has no hits, retry against the publicly listed matching category.
+ // This does not filter or hide any stores, and leaves normal search untouched.
+ if(!error&&Number(data?.total||0)===0&&els.keyword.value.trim()&&document.getElementById("explore-category").value==="全部"){
+  const keyword=els.keyword.value.trim().toLocaleLowerCase("zh-TW");
+  const match=[...document.getElementById("explore-category").options].slice(1)
+   .map(o=>o.value).filter(c=>c.toLocaleLowerCase("zh-TW").includes(keyword));
+  if(match.length===1){
+   const retry=await sb.rpc("so_public_store_search",{
+    p_query:null,p_mode:mode==="queue"?"queue":"all",p_category:match[0],
+    p_area:document.getElementById("explore-area").value,
+    p_service:document.getElementById("explore-service").value,
+    p_sort:document.getElementById("explore-sort").value,p_page:searchPage
+   });
+   if(!retry.error){data=retry.data;error=null}
+  }
+ }
  if(current!==searchRequest)return;
  searchLoading=false;
  if(error){searchError=error.message||"SEARCH_FAILED";searchResults=[];searchTotal=0}
@@ -176,6 +208,13 @@ function queueSearch(){
  searchTimer=setTimeout(loadSearch,240);
 }
 els.keyword.addEventListener("input",queueSearch);
+const mobileToggle=document.getElementById("mobile-filter-toggle");
+mobileToggle.addEventListener("click",()=>{
+ const expanded=mobileToggle.getAttribute("aria-expanded")!=="true";
+ mobileToggle.setAttribute("aria-expanded",String(expanded));
+ document.getElementById("explore-filters").classList.toggle("mobile-open",expanded);
+ mobileToggle.querySelector("span").textContent=expanded?"－":"＋";
+});
 for(const id of ["explore-category","explore-area","explore-service","explore-sort"]){
  document.getElementById(id).addEventListener("change",queueSearch);
 }
@@ -226,9 +265,17 @@ async function load(){
     const s=await sb.auth.getSession();
     if(s.error)throw s.error;
     if(!s.data.session){const x=await sb.auth.signInAnonymously();if(x.error)throw x.error}
-    const {data,error}=await sb.rpc("so_my_merchant_activity");
-    if(error)throw error;
-    all=Array.isArray(data)?data:[];
+    const linked=await sb.rpc("so_site_header_identity");
+    if(linked.error)throw linked.error;
+    if(!String(linked.data?.display_name||"").trim()){
+      mineIdentityState="guest";
+      all=[];
+    }else{
+      const {data,error}=await sb.rpc("so_my_merchant_activity");
+      if(error)throw error;
+      mineIdentityState="ready";
+      all=Array.isArray(data)?data:[];
+    }
   }else{
     els.intro.innerHTML=mode==="game"?
       '<strong>遊戲逛街 · 逛商圈找店家</strong><p>在虛擬商店街點選店面，查看真實公開店家的預約與取號入口。</p>':mode==="search"?
@@ -254,6 +301,7 @@ async function load(){
   render();
  }catch(error){
   console.warn("Store discovery unavailable",error);
+  if(mode==="mine"){mineIdentityState="error";render();}
   els.intro.innerHTML='<strong>暫時無法取得店家資訊</strong><p>請稍後重新整理頁面。</p>';
   els.results.innerHTML='<div class="empty"><strong>資料暫時無法載入</strong><p>請稍後重新整理頁面。</p></div>';
  }
