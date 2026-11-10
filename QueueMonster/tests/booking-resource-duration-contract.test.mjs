@@ -36,7 +36,7 @@ test("NR-05: client uses server-verified service-specific available slots",()=>{
  assert.match(ui,/so_service_rule_save/);
  assert.match(ui,/so_resource_upsert/);
  assert.match(ui,/staff\.resourceContext/);
- const loading=read("saas/app/data-loading.js");
+ const loading=readFileSync(new URL("../saas/app/data-loading.js",import.meta.url),"utf8");
  assert.match(loading,/staffState\.staffTab==="menu"/);
  assert.match(loading,/staffState\.settingsSection==="catalog"/);
 });
