@@ -127,6 +127,7 @@ bookingState.bookingContactPhone="";
 bookingState.bookingContactDirty=false;
 routeState.customerTab=["home","reserve","queue","mine","progress"].includes(incomingParam("tab"))?incomingParam("tab"):"home";
 staffState.staffTab=["dashboard","bookings","queue","calendar","units","analytics","menu","members","branches","settings"].includes(incomingParam("tab"))?incomingParam("tab"):"dashboard";
+ staffState.settingsSection=["profile","operations","sessions","catalog","branches","customers","public"].includes(incomingParam("section"))?incomingParam("section"):"profile";
 routeState.platformTab="dashboard";
 bookingState.chosenSlot="";
 routeState.registration=false;
