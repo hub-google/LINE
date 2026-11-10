@@ -198,7 +198,7 @@ export async function load(){feedbackState.err="";try{
 export async function act(fn){if(feedbackState.busy)return;feedbackState.busy=true;feedbackState.err="";feedbackState.flash="";showActionFeedback("正在儲存，請勿重複點擊。","pending");
  document.querySelectorAll("button[data-act],input[data-status-kind],input[data-delete-kind]").forEach(x=>x.disabled=true);
  try{const m=await fn();await load();feedbackState.flash=m||"已成功儲存";
- const hasNoticeProblem=/提醒暫時無法送出|LINE 通知失敗|LINE 通知暫時|官方帳號查詢失敗/.test(feedbackState.flash);
+ const hasNoticeProblem=/提醒暫時無法送出|LINE 通知失敗|LINE 通知暫時|官方帳號查詢失敗|邀請信未能寄出/.test(feedbackState.flash);
  showActionFeedback(feedbackState.flash,hasNoticeProblem?"warning":"success")}
  catch(e){feedbackState.err=customerFacingError(e);showActionFeedback(feedbackState.err,"error")}
  finally{feedbackState.busy=false;render()}
