@@ -73,6 +73,13 @@ try{
    authState.session={user:{id:'unit-render-user',email:'unit@example.invalid',is_anonymous:false}};
    authState.context={memberships:[],invitations:[]};staffState.staff=fixture;routeState.day='2026-11-09';calendarState.calendarAnchor='2026-11-09';serviceUnitsState.unitAdminDate='2026-11-09';lineState.lineConfig=null;
    const outputs={};for(const tab of tabs){staffState.staffTab=tab;staffState.settingsSection="profile";outputs[tab]=staffRender().replaceAll(location.origin,'https://hub-google.github.io');}
+   staffState.staffTab="settings";
+   staffState.settingsSection="operations";
+   outputs["settings-operations"]=staffRender().replaceAll(location.origin,'https://hub-google.github.io');
+   staffState.settingsSection="sessions";
+   serviceUnitsState.unitConfig={units:[],sessions:[],multi:false,picker:false};
+   serviceUnitsState.showSessionForm=true;
+   outputs["settings-sessions"]=staffRender().replaceAll(location.origin,'https://hub-google.github.io');
    return outputs;
   }finally{objects.forEach((o,i)=>Object.assign(o,saved[i]));}
  },{fixture:baseline.fixture,tabs:Object.keys(baseline.hashes)});
@@ -101,6 +108,19 @@ try{
    assert.match(html,/value="__CUSTOM__"/,'Merchant menu must allow custom type');
    assert.match(html,/id="menu-custom-kind-wrap"/,'Merchant menu must provide type input');
    continue; // Approved new custom category changes historical HTML.
+  }
+  if(tab==='settings-operations'){
+   assert.ok(html.includes('id="policy-closed-dates"'),'Operating hours must retain saved closure dates');
+   assert.ok(html.includes('class="qm-closed-calendar"'),'Closure dates must keep the calendar');
+   assert.ok(html.includes('data-closed-done'),'Calendar must include a completion action');
+   assert.ok(html.includes('id="set-service-queue"'),'Queue mode remains configurable');
+   continue;
+  }
+  if(tab==='settings-sessions'){
+   assert.ok(html.includes('unit-admin-date'),'Sessions must allow date selection');
+   assert.ok(html.includes('unit-session-save'),'A shop without service windows must be able to save a session');
+   assert.ok(html.includes('不指定（一般場次）'),'Session window must be optional');
+   continue;
   }
   if(tab==='settings'){
    assert.ok(html.includes('settings-hub-tabs'),'Settings must show grouped category navigation');
