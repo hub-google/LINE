@@ -304,3 +304,39 @@ body[data-monster-page="merchant-center"] .section-tip a{color:#542A77}
 .qm-phone-guide .qm-phone-form{background:#fff;border:1px solid #E7D0F0;border-radius:12px;padding:9px}
 .qm-phone-guide .qm-phone-slots span{border:1px solid #DEC7EB;background:#FFFCFF;color:#614975;border-radius:8px;padding:6px 7px;font-size:9px;font-weight:800}
 .qm-phone-guide .qm-phone-slots span.selected{background:#E7D0F6;border-color:#AC79CD;color:#542A77}
+
+/* Mobile guide: replace off-screen scrolling tabs with a clear, expandable chapter picker. */
+.mobile-guide-nav{display:none}
+@media(max-width:760px){
+ body[data-monster-page="merchant-center"] .side{display:none}
+ body[data-monster-page="merchant-center"] .mobile-guide-nav{
+   display:block;position:sticky;top:62px;z-index:12;margin:0 0 22px;
+   border:1px solid #ddc6ec;border-radius:14px;background:#fffafd;
+   box-shadow:0 7px 20px rgba(70,43,82,.09)
+ }
+ body[data-monster-page="merchant-center"] .mobile-guide-nav>summary{
+   display:flex;align-items:center;justify-content:space-between;gap:12px;
+   min-height:49px;padding:11px 15px;cursor:pointer;list-style:none;
+   font-size:14px;font-weight:850;color:#542a77
+ }
+ body[data-monster-page="merchant-center"] .mobile-guide-nav>summary::-webkit-details-marker{display:none}
+ body[data-monster-page="merchant-center"] .mobile-guide-chevron{
+   width:10px;height:10px;flex:0 0 auto;border-right:2px solid currentColor;
+   border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .2s
+ }
+ body[data-monster-page="merchant-center"] .mobile-guide-nav[open] .mobile-guide-chevron{transform:rotate(225deg)}
+ body[data-monster-page="merchant-center"] .mobile-guide-links{
+   display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;
+   padding:10px;border-top:1px solid #ebdef3;max-height:55dvh;overflow-y:auto;overscroll-behavior:contain
+ }
+ body[data-monster-page="merchant-center"] .mobile-guide-links a{
+   display:flex;align-items:center;gap:7px;min-height:48px;min-width:0;
+   padding:9px;border-radius:10px;background:#f7eefb;color:#543b69;
+   font-size:12px;font-weight:760;text-decoration:none;line-height:1.4;
+   overflow-wrap:anywhere
+ }
+ body[data-monster-page="merchant-center"] .mobile-guide-links a span{font-size:11px;color:#79518b;flex:0 0 auto}
+ body[data-monster-page="merchant-center"] .mobile-guide-links a:focus-visible,
+ body[data-monster-page="merchant-center"] .mobile-guide-nav>summary:focus-visible{outline:3px solid #a66fd1;outline-offset:2px}
+ body[data-monster-page="merchant-center"] .mobile-guide-links a.active{background:#ead4f7;color:#4b2368}
+}
