@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-10T07:22:23.815Z",
+  "date": "2026-11-10T07:27:08.684Z",
   "target": "https://hub-google.github.io/LINE/booking/",
   "viewport": {
     "width": 402,
@@ -27,11 +27,7 @@
       "errors": [],
       "failedRequests": [
         {
-          "url": "https://hub-google.github.io/npm/@supabase/realtime-js@2.119.0/+esm",
-          "error": "Load request cancelled"
-        },
-        {
-          "url": "https://hub-google.github.io/npm/@supabase/functions-js@2.119.0/+esm",
+          "url": "https://hub-google.github.io/npm/@supabase/postgrest-js@2.119.0/+esm",
           "error": "Load request cancelled"
         },
         {
@@ -43,19 +39,23 @@
           "error": "Load request cancelled"
         },
         {
+          "url": "https://hub-google.github.io/npm/@supabase/realtime-js@2.119.0/+esm",
+          "error": "Load request cancelled"
+        },
+        {
+          "url": "https://hub-google.github.io/npm/@supabase/functions-js@2.119.0/+esm",
+          "error": "Load request cancelled"
+        },
+        {
+          "url": "https://hub-google.github.io/npm/@supabase/phoenix@0.4.5/+esm",
+          "error": "Load request cancelled"
+        },
+        {
           "url": "https://hub-google.github.io/npm/tslib@2.8.1/+esm",
           "error": "Load request cancelled"
         },
         {
           "url": "https://hub-google.github.io/npm/iceberg-js@0.8.1/+esm",
-          "error": "Load request cancelled"
-        },
-        {
-          "url": "https://hub-google.github.io/npm/@supabase/postgrest-js@2.119.0/+esm",
-          "error": "Load request cancelled"
-        },
-        {
-          "url": "https://hub-google.github.io/npm/@supabase/phoenix@0.4.5/+esm",
           "error": "Load request cancelled"
         }
       ],
@@ -152,19 +152,15 @@
           "ok": true
         },
         {
-          "name": "Category keyword search returns a store",
+          "name": "Clinic category fallback works without exposing suspended stores",
           "ok": false,
-          "detail": "找不到符合條件的店家 試試其他店名、地點或篩選條件。 "
+          "detail": "{\"visible\":false,\"validEmpty\":true,\"categoryRpcUsed\":false,\"body\":\"找不到符合條件的店家 試試其他店名、地點或篩選條件。 \"}"
         }
       ],
       "errors": [],
       "failedRequests": [
         {
           "url": "https://hub-google.github.io/npm/@supabase/postgrest-js@2.119.0/+esm",
-          "error": "Load request cancelled"
-        },
-        {
-          "url": "https://hub-google.github.io/npm/@supabase/realtime-js@2.119.0/+esm",
           "error": "Load request cancelled"
         },
         {
@@ -177,6 +173,10 @@
         },
         {
           "url": "https://hub-google.github.io/npm/@supabase/auth-js@2.119.0/+esm",
+          "error": "Load request cancelled"
+        },
+        {
+          "url": "https://hub-google.github.io/npm/@supabase/realtime-js@2.119.0/+esm",
           "error": "Load request cancelled"
         },
         {
@@ -242,7 +242,18 @@
         "hasBookingForm": false,
         "hasQueueForm": false
       },
-      "categoryResult": "找不到符合條件的店家 試試其他店名、地點或篩選條件。 "
+      "categoryResult": "找不到符合條件的店家 試試其他店名、地點或篩選條件。 ",
+      "categoryRpcCalls": [
+        {
+          "p_query": "診所",
+          "p_mode": "all",
+          "p_category": "全部",
+          "p_area": "全部",
+          "p_service": "全部",
+          "p_sort": "popular",
+          "p_page": 1
+        }
+      ]
     },
     {
       "engine": "webkit",
@@ -773,7 +784,7 @@
       "errors": [],
       "failedRequests": [
         {
-          "url": "https://hub-google.github.io/LINE/booking/release.json?_t=1794295396347",
+          "url": "https://hub-google.github.io/LINE/booking/release.json?_t=1794295681133",
           "error": "Load request cancelled"
         }
       ],
@@ -846,7 +857,7 @@
       "errors": [],
       "failedRequests": [
         {
-          "url": "https://hub-google.github.io/LINE/booking/release.json?_t=1794295399011",
+          "url": "https://hub-google.github.io/LINE/booking/release.json?_t=1794295683721",
           "error": "Load request cancelled"
         }
       ],
@@ -900,7 +911,7 @@
         {
           "name": "Board renders without identity",
           "ok": true,
-          "detail": "▤ 無法讀取門市 使用 LINE 登入 15:23 目前叫號 — 接下來等候排序 資料更新中 叫號資料暫時無法取得 叫號順序將依現場狀況即時更新 重新整理 全螢幕 請確認網路、門市網址及公開叫號服務是否開放。請勿以顯示的空白數字判斷叫號。"
+          "detail": "▤ 無法讀取門市 使用 LINE 登入 15:28 目前叫號 — 接下來等候排序 資料更新中 叫號資料暫時無法取得 叫號順序將依現場狀況即時更新 重新整理 全螢幕 請確認網路、門市網址及公開叫號服務是否開放。請勿以顯示的空白數字判斷叫號。"
         }
       ],
       "errors": [],
@@ -913,7 +924,7 @@
         "documentHeight": 955,
         "rects": {},
         "touchUnder40": [],
-        "body": "▤ 無法讀取門市 使用 LINE 登入 15:23 目前叫號 — 接下來等候排序 資料更新中 叫號資料暫時無法取得 叫號順序將依現場狀況即時更新 重新整理 全螢幕 請確認網路、門市網址及公開叫號服務是否開放。請勿以顯示的空白數字判斷叫號。",
+        "body": "▤ 無法讀取門市 使用 LINE 登入 15:28 目前叫號 — 接下來等候排序 資料更新中 叫號資料暫時無法取得 叫號順序將依現場狀況即時更新 重新整理 全螢幕 請確認網路、門市網址及公開叫號服務是否開放。請勿以顯示的空白數字判斷叫號。",
         "loginVisible": true,
         "hasBookingForm": false,
         "hasQueueForm": false
@@ -1030,9 +1041,9 @@
           "ok": true
         },
         {
-          "name": "Category keyword search returns a store",
+          "name": "Clinic category fallback works without exposing suspended stores",
           "ok": false,
-          "detail": "找不到符合條件的店家 試試其他店名、地點或篩選條件。"
+          "detail": "{\"visible\":false,\"validEmpty\":true,\"categoryRpcUsed\":false,\"body\":\"找不到符合條件的店家 試試其他店名、地點或篩選條件。\"}"
         }
       ],
       "errors": [],
@@ -1087,7 +1098,18 @@
         "hasBookingForm": false,
         "hasQueueForm": false
       },
-      "categoryResult": "找不到符合條件的店家 試試其他店名、地點或篩選條件。"
+      "categoryResult": "找不到符合條件的店家 試試其他店名、地點或篩選條件。",
+      "categoryRpcCalls": [
+        {
+          "p_query": "診所",
+          "p_mode": "all",
+          "p_category": "全部",
+          "p_area": "全部",
+          "p_service": "全部",
+          "p_sort": "popular",
+          "p_page": 1
+        }
+      ]
     },
     {
       "engine": "chromium",
@@ -1728,7 +1750,7 @@
         {
           "name": "Board renders without identity",
           "ok": true,
-          "detail": "▤ 無法讀取門市 使用 LINE 登入 15:24 目前叫號 — 接下來等候排序 資料更新中 叫號資料暫時無法取得 叫號順序將依現場狀況即時更新 重新整理 全螢幕 請確認網路、門市網址及公開叫號服務是否開放。請勿以顯示的空白數字判斷叫號。"
+          "detail": "▤ 無法讀取門市 使用 LINE 登入 15:29 目前叫號 — 接下來等候排序 資料更新中 叫號資料暫時無法取得 叫號順序將依現場狀況即時更新 重新整理 全螢幕 請確認網路、門市網址及公開叫號服務是否開放。請勿以顯示的空白數字判斷叫號。"
         }
       ],
       "errors": [],
@@ -1741,7 +1763,7 @@
         "documentHeight": 955,
         "rects": {},
         "touchUnder40": [],
-        "body": "▤ 無法讀取門市 使用 LINE 登入 15:24 目前叫號 — 接下來等候排序 資料更新中 叫號資料暫時無法取得 叫號順序將依現場狀況即時更新 重新整理 全螢幕 請確認網路、門市網址及公開叫號服務是否開放。請勿以顯示的空白數字判斷叫號。",
+        "body": "▤ 無法讀取門市 使用 LINE 登入 15:29 目前叫號 — 接下來等候排序 資料更新中 叫號資料暫時無法取得 叫號順序將依現場狀況即時更新 重新整理 全螢幕 請確認網路、門市網址及公開叫號服務是否開放。請勿以顯示的空白數字判斷叫號。",
         "loginVisible": true,
         "hasBookingForm": false,
         "hasQueueForm": false
@@ -1752,16 +1774,16 @@
     {
       "engine": "webkit",
       "scenario": "directory",
-      "name": "Category keyword search returns a store",
+      "name": "Clinic category fallback works without exposing suspended stores",
       "ok": false,
-      "detail": "找不到符合條件的店家 試試其他店名、地點或篩選條件。 "
+      "detail": "{\"visible\":false,\"validEmpty\":true,\"categoryRpcUsed\":false,\"body\":\"找不到符合條件的店家 試試其他店名、地點或篩選條件。 \"}"
     },
     {
       "engine": "chromium",
       "scenario": "directory",
-      "name": "Category keyword search returns a store",
+      "name": "Clinic category fallback works without exposing suspended stores",
       "ok": false,
-      "detail": "找不到符合條件的店家 試試其他店名、地點或篩選條件。"
+      "detail": "{\"visible\":false,\"validEmpty\":true,\"categoryRpcUsed\":false,\"body\":\"找不到符合條件的店家 試試其他店名、地點或篩選條件。\"}"
     }
   ]
 }
