@@ -1,5 +1,6 @@
 
     import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+    import {installBoardFullscreenFit} from "./fullscreen-fit.js";
     const SUPABASE_URL="https://unapiwajmgqqtdkixaab.supabase.co";
     const SUPABASE_ANON_KEY="sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy";
     // Independent browser session: opening a TV board never signs out a customer or staff.
@@ -25,6 +26,7 @@
       }
     }
     const $=id=>document.getElementById(id);
+    const boardFit=installBoardFullscreenFit();
     const localTime=date=>new Intl.DateTimeFormat("zh-TW",{timeZone:"Asia/Taipei",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(date);
     const validSlug=/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug);
     let lastSuccess=null,loading=false,refreshQueued=false;
@@ -33,11 +35,12 @@
       const list=$("upcoming");
       list.replaceChildren();
       if(!numbers.length){
-        const li=document.createElement("li");li.className="empty";li.textContent="目前無人等候";list.appendChild(li);return;
+        const li=document.createElement("li");li.className="empty";li.textContent="目前無人等候";list.appendChild(li);boardFit.schedule();return;
       }
       for(const number of numbers){
         const li=document.createElement("li");li.textContent=String(number);list.appendChild(li);
       }
+      boardFit.schedule();
     }
     $("clock").textContent=localTime(new Date()).slice(0,5);
     setInterval(()=>{$("clock").textContent=localTime(new Date()).slice(0,5);},1000);
@@ -92,6 +95,7 @@
         const empty=document.createElement("article");empty.className="unit-card";empty.textContent="今天尚未設定開放場次";grid.append(empty);
       }
       $("single-board").hidden=true;grid.hidden=false;
+      boardFit.schedule();
     }
 
     function renderSelectedSession(session){
@@ -202,6 +206,7 @@
     });
     document.addEventListener("fullscreenchange",()=>{
       $("fullscreen").textContent=document.fullscreenElement?"結束全螢幕":"全螢幕";
+      boardFit.schedule();
     });
     document.addEventListener("visibilitychange",()=>{
       if(!document.hidden&&!disabled)void refresh();

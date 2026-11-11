@@ -111,3 +111,25 @@ test("merchant color overrides the old high-specificity purple board theme",()=>
  assert.match(theme,/body\[data-monster-page="board"\]:has\(#single-board\) #upcoming li:not\(\.empty\)/);
  assert.match(theme,/--merchant-board-contrast/);
 });
+
+test("fullscreen board fits every panel and service unit within one viewport",()=>{
+ const css=read("saas/assets/board/page.css");
+ const script=read("saas/assets/board/main.js");
+ const fit=read("saas/assets/board/fullscreen-fit.js");
+ assert.match(css,/html:fullscreen body\s*\{/);
+ assert.match(css,/grid-template-rows:auto auto minmax\(0,1fr\) auto/);
+ assert.match(css,/html:fullscreen #upcoming/);
+ assert.match(css,/repeat\(5,minmax\(0,1fr\)\)/);
+ assert.match(css,/html:fullscreen #unit-board/);
+ assert.match(css,/grid-auto-rows:minmax\(0,1fr\)/);
+ assert.match(css,/overflow:hidden/);
+ assert.match(script,/installBoardFullscreenFit\(\)/);
+ assert.match(script,/boardFit\.schedule\(\)/);
+ assert.match(fit,/document\.addEventListener\("fullscreenchange"/);
+ assert.match(fit,/window\.addEventListener\("resize"/);
+ assert.match(fit,/body\.style\.zoom/);
+ assert.match(fit,/area\.scrollHeight/);
+ assert.match(fit,/\.unit-card/);
+ const js=spawnSync(process.execPath,["--input-type=module","--check"],{input:fit,encoding:"utf8"});
+ assert.equal(js.status,0,js.stderr);
+});
