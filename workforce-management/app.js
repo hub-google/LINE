@@ -215,7 +215,7 @@ function employees(){
  const rows=(app.data.members||[]).map(x=>tr(['<span class="person"><span class="avatar">'+esc(x.display_name[0]||'?')+'</span>'+esc(x.display_name)+'</span>',esc(x.employee_code),esc(branch(x.branch_id)?.name||'—'),esc(({owner:'擁有者',manager:'店長',hr:'人資',employee:'員工'})[x.role]||x.role),esc(x.employment_type==='part_time'?'兼職':'正職'),status(x.status)]));
  $('appContent').innerHTML=panel('企業員工　'+app.data.members.length+' 人',table(['姓名','員工編號','分店','角色','聘僱型態','狀態'],rows))+
  panel('分店據點',table(['分店','定位打卡','範圍'],app.data.branches.map(x=>tr([esc(x.name),x.gps_required?'需要 GPS':'未強制 GPS',esc(x.radius_m)+' 公尺']))),manager()?'<button class="btn small" data-action="newBranch">＋ 新增分店</button>':'')+
- '<div class="notice warning">公開 DEMO 的員工皆為虛構人物；正式企業員工邀請與 LINE 身分綁定尚待整合。</div>';
+ '<div class="notice warning">公開 DEMO 的員工皆為虛構人物。正式企業邀請請使用「組織與權限」；LINE 綁定請使用「LINE 通知」，需配置正式 Channel。</div>';
 }
 function reports(){
  heading('<button class="btn primary" data-action="exportCsv">⬇ 匯出 CSV</button>');
@@ -237,7 +237,7 @@ function reports(){
 function settings(){
  heading();
  $('appContent').innerHTML=panel('目前連線狀態','<div class="bar-row"><span>模式</span><strong>'+esc(app.mode==='demo'?'公開測試租戶':'正式 Supabase Auth')+'</strong></div><div class="bar-row"><span>企業</span><strong>'+esc(app.data.tenant?.name||'—')+'</strong></div><div class="bar-row"><span>後端</span><strong>Supabase PostgreSQL</strong></div><div class="bar-row"><span>資料更新</span><strong>'+esc(taiStamp(app.data.server_at||new Date()))+'</strong></div><div class="bar-row"><span>前端</span><strong>GitHub Pages（靜態網頁）</strong></div><div class="notice">打卡、申請、核准與班表透過 Supabase API 即時讀寫，並非 localStorage 的假資料。</div>')+
- panel('開發與限制說明','<div class="bar-row"><span>已接通</span><strong>員工／分店、排班、打卡、請假、審核、CSV 匯出</strong></div><div class="bar-row"><span>尚未接通</span><strong>LINE LIFF / OA、動態 QR、正式人資邀請</strong></div><div class="bar-row"><span>需後續驗收</span><strong>法定工時計算、月結、加班與複雜輪班規則</strong></div><p><a href="https://github.com/hub-google/LINE/blob/main/workforce-management/PRD.md" target="_blank" rel="noopener noreferrer">查看完整 PRD</a></p>');
+ panel('開發與限制說明','<div class="bar-row"><span>已具備程式</span><strong>企業註冊、組織邀請、排班、打卡、GPS／QR、假勤審核、CSV、站內通知、月結試算</strong></div><div class="bar-row"><span>仍須外部配置與驗收</span><strong>LINE LIFF／實際推播、企業自有 OA、Email 密碼重設回跳</strong></div><div class="bar-row"><span>尚未完整交付</span><strong>法定工時及假勤判定、跨企業排班衝突、進階排班最佳化、訂閱及平台營運</strong></div><p><a href="https://github.com/hub-google/LINE/blob/main/workforce-management/PRD.md" target="_blank" rel="noopener noreferrer">查看完整 PRD</a>　·　<a href="https://github.com/hub-google/LINE/blob/main/workforce-management/USER_SCENARIOS.md" target="_blank" rel="noopener noreferrer">查看全角色操作情境</a></p>');
 }
 function noTenant(){
  heading();
