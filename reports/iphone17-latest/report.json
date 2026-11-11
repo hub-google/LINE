@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-11T06:58:04.142Z",
+  "date": "2026-11-11T07:04:21.487Z",
   "device": "iPhone 17 simulated Chromium, 402x874 CSS pixels, DPR3",
   "note": "Read-only live website screenshots; no authentication, no writes; not physical Safari.",
   "screens": [
@@ -72,15 +72,15 @@
       "visibleTapCount": 16,
       "keyRects": {
         ".hero-cta": {
-          "top": -128,
-          "bottom": 58,
+          "top": -107,
+          "bottom": 79,
           "left": 20,
           "right": 382,
           "height": 186
         },
         ".hero-showcase": {
-          "top": 128,
-          "bottom": 986,
+          "top": 149,
+          "bottom": 1007,
           "left": 20,
           "right": 382,
           "height": 857
@@ -255,57 +255,57 @@
       "visibleTapCount": 9,
       "keyRects": {
         ".page-header": {
-          "top": -588,
-          "bottom": -438,
+          "top": -609,
+          "bottom": -459,
           "left": 0,
           "right": 402,
           "height": 150
         },
         ".hero-heading": {
-          "top": -530,
-          "bottom": -459,
+          "top": -551,
+          "bottom": -480,
           "left": 14,
           "right": 388,
           "height": 71
         },
         ".main-panel": {
-          "top": -455,
-          "bottom": 902,
+          "top": -476,
+          "bottom": 881,
           "left": 14,
           "right": 388,
           "height": 1357
         },
         ".tabs": {
-          "top": -441,
-          "bottom": -385,
+          "top": -462,
+          "bottom": -406,
           "left": 28,
           "right": 374,
           "height": 56
         },
         "#keyword": {
-          "top": -296,
-          "bottom": -247,
+          "top": -317,
+          "bottom": -268,
           "left": 28,
           "right": 374,
           "height": 49
         },
         "#explore-filters": {
-          "top": -237,
-          "bottom": -191,
+          "top": -258,
+          "bottom": -212,
           "left": 28,
           "right": 374,
           "height": 46
         },
         "#results": {
-          "top": -69,
-          "bottom": 878,
+          "top": -90,
+          "bottom": 857,
           "left": 28,
           "right": 374,
           "height": 947
         },
         "#results-heading": {
-          "top": -107,
-          "bottom": -79,
+          "top": -128,
+          "bottom": -100,
           "left": 28,
           "right": 127,
           "height": 28
@@ -402,7 +402,7 @@
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
-      "visibleTapCount": 8,
+      "visibleTapCount": 9,
       "keyRects": {
         ".page-header": {
           "top": 0,
@@ -461,7 +461,7 @@
           "height": 28
         }
       },
-      "bodyText": "排隊怪獸 正在確認登入狀態 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 搜尋店家名稱或地點 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 請先登入 LINE 請先使用 LINE 登入 登入後才能查詢自己的預約和號碼；未登入不代表沒有紀錄。 使用 LINE 登入後查看 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
+      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 搜尋店家名稱或地點 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 請先登入 LINE 請先使用 LINE 登入 登入後才能查詢自己的預約和號碼；未登入不代表沒有紀錄。 使用 LINE 登入後查看 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
       "errors": [],
       "failedRequests": []
     },
@@ -871,17 +871,17 @@
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
-      "visibleTapCount": 4,
+      "visibleTapCount": 2,
       "keyRects": {
         "#root": {
-          "top": 83,
-          "bottom": 364,
+          "top": 144,
+          "bottom": 293,
           "left": 0,
           "right": 402,
-          "height": 281
+          "height": 149
         }
       },
-      "bodyText": "排隊怪獸 店家登入 店家登入 使用店家帳號管理預約及叫號。 店家登入 註冊店家",
+      "bodyText": "排隊怪獸 店家登入 資料更新中，請稍後",
       "errors": [],
       "failedRequests": []
     },
@@ -986,7 +986,7 @@
       ],
       "visibleTapCount": 4,
       "keyRects": {},
-      "bodyText": "測試1 叫號變動即時更新 14:58 診間 · 上午場 2診 尚未 叫號 接下來：目前無人等候 等候 0 組 單獨顯示此場次 上午場 一般場次 2 接下來：3、5、6、7 等候 4 組 單獨顯示此場次 由排隊怪獸提供服務 全螢幕 最後成功同步：14:58:02；號碼變更即時更新，並定期核對。",
+      "bodyText": "測試1 叫號變動即時更新 15:04 診間 · 上午場 2診 尚未 叫號 接下來：目前無人等候 等候 0 組 單獨顯示此場次 上午場 一般場次 2 接下來：3、5、6、7 等候 4 組 單獨顯示此場次 由排隊怪獸提供服務 全螢幕 最後成功同步：15:04:20；號碼變更即時更新，並定期核對。",
       "errors": [],
       "failedRequests": []
     }
