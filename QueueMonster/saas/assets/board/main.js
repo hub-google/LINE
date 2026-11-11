@@ -75,7 +75,7 @@
       const lum=linear[0]*.2126+linear[1]*.7152+linear[2]*.0722;
       document.documentElement.style.setProperty("--merchant-board-accent",accent);
       document.documentElement.style.setProperty("--merchant-board-contrast",lum>.179?"#281B31":"#FFFFFF");
-      document.documentElement.style.setProperty("--merchant-board-ink","#"+rgb.map(v=>Math.round(v*.54).toString(16).padStart(2,"0")).join("").toUpperCase());
+      document.documentElement.style.setProperty("--merchant-board-ink","#"+rgb.map(v=>("0"+Math.round(v*.54).toString(16)).slice(-2)).join("").toUpperCase());
     }
     $("shop-logo")?.addEventListener("error",()=>{
       $("shop-logo").hidden=true;

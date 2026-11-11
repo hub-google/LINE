@@ -58,7 +58,9 @@ test("public board links bypass LINE login on the homepage, directory and mercha
   assert.match(directory,/公開叫號看板/);
   assert.match(directory,/board\.html\?merchant=/);
   assert.match(directory,/original\.searchParams\.get\("view"\)!=="customer"\)return/);
-  assert.match(customer,/if\(lineLinkStatus!=="linked"\)return box\("門市公開即時叫號"/);
+  assert.match(customer,/if\(lineLinkStatus!=="linked"\)/);
+  assert.match(customer,/門市公開即時叫號/);
+  assert.match(customer,/brandHeader/);
   assert.match(customer,/公開即時叫號看板/);
 });
 
