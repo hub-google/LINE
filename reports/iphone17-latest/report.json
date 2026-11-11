@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-11T01:14:07.743Z",
+  "date": "2026-11-11T01:19:36.386Z",
   "device": "iPhone 17 simulated Chromium, 402x874 CSS pixels, DPR3",
   "note": "Read-only live website screenshots; no authentication, no writes; not physical Safari.",
   "screens": [
@@ -15,14 +15,6 @@
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [
-        {
-          "text": "排隊怪獸",
-          "width": 108,
-          "height": 34,
-          "left": 12,
-          "right": 120,
-          "top": 15
-        },
         {
           "text": "關閉選單 ×",
           "width": 84,
@@ -87,14 +79,6 @@
       "overflowElements": [],
       "smallTaps": [
         {
-          "text": "排隊怪獸",
-          "width": 108,
-          "height": 34,
-          "left": 12,
-          "right": 120,
-          "top": 15
-        },
-        {
           "text": "關閉選單 ×",
           "width": 84,
           "height": 37,
@@ -106,15 +90,15 @@
       "visibleTapCount": 16,
       "keyRects": {
         ".hero-cta": {
-          "top": -107,
-          "bottom": 79,
+          "top": -128,
+          "bottom": 58,
           "left": 20,
           "right": 382,
           "height": 186
         },
         ".hero-showcase": {
-          "top": 149,
-          "bottom": 1007,
+          "top": 128,
+          "bottom": 986,
           "left": 20,
           "right": 382,
           "height": 857
@@ -157,14 +141,6 @@
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [
-        {
-          "text": "排隊怪獸",
-          "width": 108,
-          "height": 34,
-          "left": 12,
-          "right": 120,
-          "top": 15
-        },
         {
           "text": "關閉選單 ×",
           "width": 84,
@@ -224,19 +200,10 @@
       "height": 874,
       "docWidth": 402,
       "bodyWidth": 402,
-      "docHeight": 5395,
+      "docHeight": 5419,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [
-        {
-          "text": "排隊怪獸",
-          "width": 111,
-          "height": 34,
-          "left": 14,
-          "right": 125,
-          "top": 15
-        }
-      ],
+      "smallTaps": [],
       "visibleTapCount": 17,
       "keyRects": {
         ".page-header": {
@@ -308,7 +275,7 @@
       "height": 874,
       "docWidth": 402,
       "bodyWidth": 402,
-      "docHeight": 5395,
+      "docHeight": 5419,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
@@ -386,32 +353,7 @@
       "docHeight": 874,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [
-        {
-          "text": "排隊怪獸",
-          "width": 111,
-          "height": 34,
-          "left": 14,
-          "right": 125,
-          "top": 15
-        },
-        {
-          "text": "隱私權說明",
-          "width": 235,
-          "height": 34,
-          "left": 151,
-          "right": 386,
-          "top": 737
-        },
-        {
-          "text": "服務條款",
-          "width": 48,
-          "height": 14,
-          "left": 203,
-          "right": 251,
-          "top": 757
-        }
-      ],
+      "smallTaps": [],
       "visibleTapCount": 15,
       "keyRects": {
         ".page-header": {
@@ -486,33 +428,8 @@
       "docHeight": 874,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [
-        {
-          "text": "排隊怪獸",
-          "width": 111,
-          "height": 34,
-          "left": 14,
-          "right": 125,
-          "top": 15
-        },
-        {
-          "text": "隱私權說明",
-          "width": 235,
-          "height": 34,
-          "left": 151,
-          "right": 386,
-          "top": 719
-        },
-        {
-          "text": "服務條款",
-          "width": 48,
-          "height": 14,
-          "left": 203,
-          "right": 251,
-          "top": 739
-        }
-      ],
-      "visibleTapCount": 15,
+      "smallTaps": [],
+      "visibleTapCount": 9,
       "keyRects": {
         ".page-header": {
           "top": 0,
@@ -530,10 +447,10 @@
         },
         ".main-panel": {
           "top": 133,
-          "bottom": 647,
+          "bottom": 594,
           "left": 14,
           "right": 388,
-          "height": 514
+          "height": 462
         },
         ".tabs": {
           "top": 147,
@@ -543,35 +460,35 @@
           "height": 56
         },
         "#keyword": {
-          "top": 292,
-          "bottom": 341,
+          "top": 235,
+          "bottom": 284,
           "left": 28,
           "right": 374,
           "height": 49
         },
         "#explore-filters": {
-          "top": 351,
-          "bottom": 397,
-          "left": 28,
-          "right": 374,
-          "height": 46
+          "top": 0,
+          "bottom": 0,
+          "left": 0,
+          "right": 0,
+          "height": 0
         },
         "#results": {
-          "top": 500,
-          "bottom": 623,
+          "top": 383,
+          "bottom": 570,
           "left": 28,
           "right": 374,
-          "height": 122
+          "height": 187
         },
         "#results-heading": {
-          "top": 462,
-          "bottom": 490,
+          "top": 345,
+          "bottom": 373,
           "left": 28,
           "right": 94,
           "height": 28
         }
       },
-      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 正在確認身分 正在確認 LINE 身分 確認後才會顯示與你綁定的預約及取號紀錄。 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
+      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 搜尋店家名稱或地點 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 請先登入 LINE 請先使用 LINE 登入 登入後才能查詢自己的預約和號碼；未登入不代表沒有紀錄。 使用 LINE 登入後查看 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
       "errors": [],
       "failedRequests": []
     },
@@ -583,36 +500,11 @@
       "height": 874,
       "docWidth": 402,
       "bodyWidth": 402,
-      "docHeight": 874,
+      "docHeight": 5401,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [
-        {
-          "text": "排隊怪獸",
-          "width": 111,
-          "height": 34,
-          "left": 14,
-          "right": 125,
-          "top": 15
-        },
-        {
-          "text": "隱私權說明",
-          "width": 235,
-          "height": 34,
-          "left": 151,
-          "right": 386,
-          "top": 596
-        },
-        {
-          "text": "服務條款",
-          "width": 48,
-          "height": 14,
-          "left": 203,
-          "right": 251,
-          "top": 616
-        }
-      ],
-      "visibleTapCount": 15,
+      "smallTaps": [],
+      "visibleTapCount": 17,
       "keyRects": {
         ".page-header": {
           "top": 0,
@@ -630,10 +522,10 @@
         },
         ".main-panel": {
           "top": 133,
-          "bottom": 524,
+          "bottom": 5237,
           "left": 14,
           "right": 388,
-          "height": 392
+          "height": 5104
         },
         ".tabs": {
           "top": 147,
@@ -658,10 +550,10 @@
         },
         "#results": {
           "top": 500,
-          "bottom": 500,
+          "bottom": 5213,
           "left": 28,
           "right": 374,
-          "height": 0
+          "height": 4713
         },
         "#results-heading": {
           "top": 462,
@@ -671,14 +563,9 @@
           "height": 28
         }
       },
-      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 選擇提供現場取號的店家 公開看板可直接查看；實際取號時才需要 LINE 驗證。 熱門店家排行 載入中 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
+      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 選擇提供現場取號的店家 公開看板可直接查看；實際取號時才需要 LINE 驗證。 熱門店家排行 近 30 天預約＋取號 · 前 10 名 ▤ #1 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 1 · 取號 1 簡介 地點：臺北市中正區北平西路3號 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #2 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #3 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #4 專屬",
       "errors": [],
-      "failedRequests": [
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/auth/v1/signup",
-          "error": "net::ERR_ABORTED"
-        }
-      ]
+      "failedRequests": []
     },
     {
       "id": "07-directory-game",
@@ -688,35 +575,10 @@
       "height": 874,
       "docWidth": 402,
       "bodyWidth": 402,
-      "docHeight": 892,
+      "docHeight": 916,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [
-        {
-          "text": "排隊怪獸",
-          "width": 111,
-          "height": 34,
-          "left": 14,
-          "right": 125,
-          "top": 15
-        },
-        {
-          "text": "隱私權說明",
-          "width": 235,
-          "height": 34,
-          "left": 151,
-          "right": 386,
-          "top": 824
-        },
-        {
-          "text": "服務條款",
-          "width": 48,
-          "height": 14,
-          "left": 203,
-          "right": 251,
-          "top": 844
-        }
-      ],
+      "smallTaps": [],
       "visibleTapCount": 12,
       "keyRects": {
         ".page-header": {
@@ -778,16 +640,7 @@
       },
       "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 遊戲逛店 走進商圈，逛逛店家 先選商圈，再點店面。電腦可使用方向鍵，手機可使用下方控制鈕。 分類 全部類別 其他 餐飲 選擇想逛的商圈 · 10 家公開店家 台北市 1 家 線上商圈 9 家 遊戲地圖是探索介面，不代表實際地理位置。僅列出已公開的店家；公開商圈另行標示。 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
       "errors": [],
-      "failedRequests": [
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_public_directory",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_public_popular_stores",
-          "error": "net::ERR_ABORTED"
-        }
-      ]
+      "failedRequests": []
     },
     {
       "id": "08-customer-reserve",
@@ -800,21 +653,12 @@
       "docHeight": 874,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [
-        {
-          "text": "排隊怪獸線上預約・現場取號・門市管理",
-          "width": 105,
-          "height": 37,
-          "left": 14,
-          "right": 119,
-          "top": 11
-        }
-      ],
+      "smallTaps": [],
       "visibleTapCount": 2,
       "keyRects": {
         "#root": {
-          "top": 137,
-          "bottom": 286,
+          "top": 144,
+          "bottom": 293,
           "left": 0,
           "right": 402,
           "height": 149
@@ -835,21 +679,12 @@
       "docHeight": 874,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [
-        {
-          "text": "排隊怪獸線上預約・現場取號・門市管理",
-          "width": 105,
-          "height": 37,
-          "left": 14,
-          "right": 119,
-          "top": 11
-        }
-      ],
+      "smallTaps": [],
       "visibleTapCount": 2,
       "keyRects": {
         "#root": {
-          "top": 137,
-          "bottom": 286,
+          "top": 144,
+          "bottom": 293,
           "left": 0,
           "right": 402,
           "height": 149
@@ -867,59 +702,18 @@
       "height": 874,
       "docWidth": 402,
       "bodyWidth": 402,
-      "docHeight": 887,
+      "docHeight": 925,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [
-        {
-          "text": "排隊怪獸線上預約・現場取號・門市管理",
-          "width": 105,
-          "height": 37,
-          "left": 14,
-          "right": 119,
-          "top": 11
-        },
-        {
-          "text": "搜尋店家",
-          "width": 68,
-          "height": 36,
-          "left": 14,
-          "right": 82,
-          "top": 56
-        },
-        {
-          "text": "預約與取號",
-          "width": 80,
-          "height": 36,
-          "left": 82,
-          "right": 162,
-          "top": 56
-        },
-        {
-          "text": "隱私權說明",
-          "width": 60,
-          "height": 14,
-          "left": 183,
-          "right": 243,
-          "top": 801
-        },
-        {
-          "text": "使用條款",
-          "width": 48,
-          "height": 14,
-          "left": 263,
-          "right": 311,
-          "top": 801
-        }
-      ],
+      "smallTaps": [],
       "visibleTapCount": 9,
       "keyRects": {
         "#root": {
-          "top": 173,
-          "bottom": 870,
+          "top": 188,
+          "bottom": 908,
           "left": 0,
           "right": 402,
-          "height": 697
+          "height": 720
         }
       },
       "bodyText": "排隊怪獸 搜尋店家 預約與取號 使用 LINE 登入 門市公開即時叫號 查看現在叫到幾號、後面等候順序，不必登入、不必綁定 LINE。 公開即時叫號看板 LINE 身分授權 為避免機器人或惡意假預約，預約前需綁定 LINE 身分。預約姓名及聯絡電話另行填寫，供現場核對與店家聯繫。 目前指定門市：qa-84b3ef9297eb470685a91a527ca499ca 請使用 LINE 登入後繼續預約或取號。 使用 LINE 登入 使用 LINE 登入（手機／電腦） 排隊怪獸服務 ・ 隱私權說明 ・ 使用條款",
@@ -937,21 +731,12 @@
       "docHeight": 874,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [
-        {
-          "text": "排隊怪獸線上預約・現場取號・門市管理",
-          "width": 105,
-          "height": 37,
-          "left": 14,
-          "right": 119,
-          "top": 11
-        }
-      ],
+      "smallTaps": [],
       "visibleTapCount": 2,
       "keyRects": {
         "#root": {
-          "top": 137,
-          "bottom": 286,
+          "top": 144,
+          "bottom": 293,
           "left": 0,
           "right": 402,
           "height": 149
@@ -972,21 +757,12 @@
       "docHeight": 874,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [
-        {
-          "text": "排隊怪獸線上預約・現場取號・門市管理",
-          "width": 105,
-          "height": 37,
-          "left": 14,
-          "right": 119,
-          "top": 11
-        }
-      ],
+      "smallTaps": [],
       "visibleTapCount": 2,
       "keyRects": {
         "#root": {
-          "top": 137,
-          "bottom": 286,
+          "top": 144,
+          "bottom": 293,
           "left": 0,
           "right": 402,
           "height": 149
@@ -1004,59 +780,18 @@
       "height": 874,
       "docWidth": 402,
       "bodyWidth": 402,
-      "docHeight": 887,
+      "docHeight": 925,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [
-        {
-          "text": "排隊怪獸線上預約・現場取號・門市管理",
-          "width": 105,
-          "height": 37,
-          "left": 14,
-          "right": 119,
-          "top": 11
-        },
-        {
-          "text": "搜尋店家",
-          "width": 68,
-          "height": 36,
-          "left": 14,
-          "right": 82,
-          "top": 56
-        },
-        {
-          "text": "預約與取號",
-          "width": 80,
-          "height": 36,
-          "left": 82,
-          "right": 162,
-          "top": 56
-        },
-        {
-          "text": "隱私權說明",
-          "width": 60,
-          "height": 14,
-          "left": 183,
-          "right": 243,
-          "top": 801
-        },
-        {
-          "text": "使用條款",
-          "width": 48,
-          "height": 14,
-          "left": 263,
-          "right": 311,
-          "top": 801
-        }
-      ],
+      "smallTaps": [],
       "visibleTapCount": 9,
       "keyRects": {
         "#root": {
-          "top": 173,
-          "bottom": 870,
+          "top": 188,
+          "bottom": 908,
           "left": 0,
           "right": 402,
-          "height": 697
+          "height": 720
         }
       },
       "bodyText": "排隊怪獸 搜尋店家 預約與取號 使用 LINE 登入 門市公開即時叫號 查看現在叫到幾號、後面等候順序，不必登入、不必綁定 LINE。 公開即時叫號看板 LINE 身分授權 為避免機器人或惡意假預約，預約前需綁定 LINE 身分。預約姓名及聯絡電話另行填寫，供現場核對與店家聯繫。 目前指定門市：qa-84b3ef9297eb470685a91a527ca499ca 請使用 LINE 登入後繼續預約或取號。 使用 LINE 登入 使用 LINE 登入（手機／電腦） 排隊怪獸服務 ・ 隱私權說明 ・ 使用條款",
@@ -1071,24 +806,15 @@
       "height": 874,
       "docWidth": 402,
       "bodyWidth": 402,
-      "docHeight": 1088,
+      "docHeight": 1089,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [
-        {
-          "text": "排隊怪獸 · 店家專區",
-          "width": 179,
-          "height": 33,
-          "left": 16,
-          "right": 195,
-          "top": 15
-        }
-      ],
+      "smallTaps": [],
       "visibleTapCount": 9,
       "keyRects": {
         ".tabs": {
-          "top": 100,
-          "bottom": 156,
+          "top": 101,
+          "bottom": 157,
           "left": 35,
           "right": 367,
           "height": 56
@@ -1106,7 +832,7 @@
       "height": 874,
       "docWidth": 402,
       "bodyWidth": 402,
-      "docHeight": 1088,
+      "docHeight": 1089,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
@@ -1132,22 +858,13 @@
       "height": 874,
       "docWidth": 402,
       "bodyWidth": 402,
-      "docHeight": 12463,
+      "docHeight": 12517,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [
-        {
-          "text": "進入商家後台",
-          "width": 84,
-          "height": 34,
-          "left": 303,
-          "right": 387,
-          "top": 15
-        }
-      ],
-      "visibleTapCount": 14,
+      "smallTaps": [],
+      "visibleTapCount": 16,
       "keyRects": {},
-      "bodyText": "排隊怪獸 商家操作指南 店家登入 進入商家後台 給店主與門市人員的使用指南 第一次使用，也能 照著畫面完成。 不必懂技術。從店家註冊、LINE 顧客入口、預約與取號設定，到店員每天怎麼操作，依照實際商家流程逐步說明。下方以正式網站目前的版型、功能名稱及按鈕樣式呈現操作畫面，使用的門市名稱與數字均為範例，不含顧客個資。 01 註冊店家 → 02 完成設定 → 03 分享給顧客 → 04 每日營運 從第一步開始 → 直接看店員操作 操作目錄 · 選擇章節 01 先註冊店家帳號 商家負責人先註冊帳號，登入後即可設定專屬門市，完成店家資料後再對外開放。 排隊怪獸 登入 註冊 註冊店家帳號 註冊後門市資料保持空白，由你自行填寫。 電子信箱（登入帳號） shop@example.com 密碼（至少 8 字元） •••••••• 確認密碼 •••••••• 建立店家帳號 正式介面樣式對照｜店家帳號註冊頁（僅使用範例資料） 商家負責人操作 先建立帳號，再完成店家設定 點「註冊店家」，填寫電子信箱、密碼與確認密碼。 依註冊頁指示完成電子郵件驗證，再使用註冊信箱與密碼登入店家後台。 在「設定」填入店家名稱",
+      "bodyText": "排隊怪獸 商家操作指南 店家登入 店家登入 註冊店家 進入商家後台 給店主與門市人員的使用指南 第一次使用，也能 照著畫面完成。 不必懂技術。從店家註冊、LINE 顧客入口、預約與取號設定，到店員每天怎麼操作，依照實際商家流程逐步說明。下方以正式網站目前的版型、功能名稱及按鈕樣式呈現操作畫面，使用的門市名稱與數字均為範例，不含顧客個資。 01 註冊店家 → 02 完成設定 → 03 分享給顧客 → 04 每日營運 從第一步開始 → 直接看店員操作 操作目錄 · 選擇章節 01 先註冊店家帳號 商家負責人先註冊帳號，登入後即可設定專屬門市，完成店家資料後再對外開放。 排隊怪獸 登入 註冊 註冊店家帳號 註冊後門市資料保持空白，由你自行填寫。 電子信箱（登入帳號） shop@example.com 密碼（至少 8 字元） •••••••• 確認密碼 •••••••• 建立店家帳號 正式介面樣式對照｜店家帳號註冊頁（僅使用範例資料） 商家負責人操作 先建立帳號，再完成店家設定 點「註冊店家」，填寫電子信箱、密碼與確認密碼。 依註冊頁指示完成電子郵件驗證，再使用註冊信箱與密碼登入店家後台。 在",
       "errors": [],
       "failedRequests": []
     },
@@ -1162,27 +879,18 @@
       "docHeight": 874,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [
-        {
-          "text": "排隊怪獸線上預約・現場取號・門市管理",
-          "width": 105,
-          "height": 37,
-          "left": 14,
-          "right": 119,
-          "top": 11
-        }
-      ],
-      "visibleTapCount": 2,
+      "smallTaps": [],
+      "visibleTapCount": 4,
       "keyRects": {
         "#root": {
-          "top": 137,
-          "bottom": 286,
+          "top": 83,
+          "bottom": 364,
           "left": 0,
           "right": 402,
-          "height": 149
+          "height": 281
         }
       },
-      "bodyText": "排隊怪獸 店家登入 資料更新中，請稍後",
+      "bodyText": "排隊怪獸 店家登入 店家登入 使用店家帳號管理預約及叫號。 店家登入 註冊店家",
       "errors": [],
       "failedRequests": []
     },
@@ -1223,48 +931,15 @@
       "docHeight": 874,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [
-        {
-          "text": "排隊怪獸線上預約・現場取號・門市管理",
-          "width": 105,
-          "height": 37,
-          "left": 14,
-          "right": 119,
-          "top": 11
-        },
-        {
-          "text": "總部管理",
-          "width": 68,
-          "height": 36,
-          "left": 14,
-          "right": 82,
-          "top": 56
-        },
-        {
-          "text": "隱私權說明",
-          "width": 60,
-          "height": 14,
-          "left": 183,
-          "right": 243,
-          "top": 394
-        },
-        {
-          "text": "使用條款",
-          "width": 48,
-          "height": 14,
-          "left": 263,
-          "right": 311,
-          "top": 394
-        }
-      ],
+      "smallTaps": [],
       "visibleTapCount": 6,
       "keyRects": {
         "#root": {
-          "top": 173,
-          "bottom": 463,
+          "top": 188,
+          "bottom": 502,
           "left": 0,
           "right": 402,
-          "height": 290
+          "height": 314
         }
       },
       "bodyText": "排隊怪獸 總部管理 總部登入 總部管理員登入 請從總部專用入口登入，完成授權後才能使用總部管理功能。 前往總部登入 排隊怪獸服務 ・ 隱私權說明 ・ 使用條款",
@@ -1282,48 +957,15 @@
       "docHeight": 874,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [
-        {
-          "text": "排隊怪獸線上預約・現場取號・門市管理",
-          "width": 105,
-          "height": 37,
-          "left": 14,
-          "right": 119,
-          "top": 11
-        },
-        {
-          "text": "總部管理",
-          "width": 68,
-          "height": 36,
-          "left": 14,
-          "right": 82,
-          "top": 56
-        },
-        {
-          "text": "隱私權說明",
-          "width": 60,
-          "height": 14,
-          "left": 183,
-          "right": 243,
-          "top": 394
-        },
-        {
-          "text": "使用條款",
-          "width": 48,
-          "height": 14,
-          "left": 263,
-          "right": 311,
-          "top": 394
-        }
-      ],
+      "smallTaps": [],
       "visibleTapCount": 6,
       "keyRects": {
         "#root": {
-          "top": 173,
-          "bottom": 463,
+          "top": 188,
+          "bottom": 502,
           "left": 0,
           "right": 402,
-          "height": 290
+          "height": 314
         }
       },
       "bodyText": "排隊怪獸 總部管理 總部登入 總部管理員登入 請從總部專用入口登入，完成授權後才能使用總部管理功能。 前往總部登入 排隊怪獸服務 ・ 隱私權說明 ・ 使用條款",
@@ -1344,7 +986,7 @@
       "smallTaps": [],
       "visibleTapCount": 3,
       "keyRects": {},
-      "bodyText": "▤ 專屬測試門市 使用 LINE 登入 09:14 今天尚未設定開放場次 叫號順序將依現場狀況即時更新 重新整理 全螢幕 最後成功同步：09:14:06；資料每 12 秒自動核對，網路斷線會提示。",
+      "bodyText": "▤ 專屬測試門市 使用 LINE 登入 09:19 今天尚未設定開放場次 叫號順序將依現場狀況即時更新 重新整理 全螢幕 最後成功同步：09:19:35；資料每 12 秒自動核對，網路斷線會提示。",
       "errors": [],
       "failedRequests": []
     }
