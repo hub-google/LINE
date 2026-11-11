@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="line-saas-build" content="__LINE_SAAS_BUILD__">
+<script defer src="./version-watch.js?build=__LINE_SAAS_BUILD__"></script>
+<meta name="theme-color" content="#462b52">
+<title>排隊怪獸｜取餐進度看板</title>
+<meta name="description" content="公開取餐狀態看板，僅顯示訂單號碼與製作進度，不顯示顧客姓名或電話">
+<link rel="icon" href="./monster-mascot.svg" type="image/svg+xml">
+<link rel="stylesheet" href="./assets/pickup-board/page.css?build=__LINE_SAAS_BUILD__">
+</head>
+<body>
+<header><div class="brand"><img id="logo" alt="" hidden><div><span class="eyebrow">排隊怪獸 ・ 訂餐取餐進度</span><h1 id="shop">正在讀取門市資料</h1></div></div>
+<div class="sync"><span id="sync-mode" aria-live="polite">正在連線</span><time id="clock">--:--</time></div></header>
+<main>
+<section class="pickup-ready" aria-label="已完成可取餐"><h2>可取餐</h2><p>請核對自己的訂單編號，到取餐窗口領取</p><div id="ready" class="numbers" aria-live="polite">資料更新中</div></section>
+<section class="pickup-preparing" aria-label="製作中訂單"><h2>準備中</h2><p>餐點正在製作，完成後會移至可取餐區</p><div id="preparing" class="numbers">資料更新中</div><p class="pending" id="pending"></p></section>
+</main>
+<footer><p id="health" role="status">正在同步取餐進度</p><a href="./home.html">由排隊怪獸提供服務</a><button type="button" id="fullscreen">全螢幕</button></footer>
+<script type="module" src="./assets/pickup-board/main.js?build=__LINE_SAAS_BUILD__"></script>
+</body></html>
