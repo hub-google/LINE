@@ -2176,3 +2176,89 @@ render=function(){
   setTimeout(()=>{render();showAuth();},120);
  }
 })();
+
+
+/* Workforce account recovery (email reset).
+   Supabase Auth owns email verification and password update; the public client
+   never stores a recovery access token in persistent browser storage. */
+const wfOriginalShowAuth=showAuth;
+showAuth=function(){
+ wfOriginalShowAuth();
+ const form=$('overlay')?.querySelector('form[data-form="auth"]');
+ if(form&&!$('overlay').querySelector('[data-wf-account="forgot"]')){
+  form.insertAdjacentHTML('afterend',
+   '<div class="auth-note"><button type="button" class="linklike" data-wf-account="forgot">忘記密碼？使用電子郵件重設</button></div>');
+ }
+};
+let wfRecoveryAccessToken=null;
+function wfForgotPasswordModal(){
+ const email=$('overlay')?.querySelector('form[data-form="auth"] input[name="email"]')?.value||'';
+ openModal('忘記密碼', 
+  '<p class="muted">輸入企業帳號的電子郵件。如果帳號存在，系統會寄出重設密碼連結。</p>'+
+  '<form data-form="wf_forgot_password"><div class="field"><label for="wfRecoveryEmail">電子郵件</label>'+
+  '<input id="wfRecoveryEmail" name="email" type="email" value="'+esc(email)+'" required autocomplete="email"></div>'+
+  '<div class="modal-actions"><button type="button" class="btn" data-wf-account="back">返回登入</button>'+
+  '<button class="btn primary" type="submit">寄送重設連結</button></div></form>');
+}
+function wfNewPasswordModal(){
+ openModal('設定新密碼',
+  '<p class="muted">已確認重設連結，請設定新的登入密碼。</p>'+
+  '<form data-form="wf_set_password"><div class="form-grid">'+
+  '<div class="field wide"><label for="wfNewPassword">新密碼</label><input id="wfNewPassword" name="password" type="password" required autocomplete="new-password"></div>'+
+  '<div class="field wide"><label for="wfConfirmPassword">再次輸入新密碼</label><input id="wfConfirmPassword" name="confirm" type="password" required autocomplete="new-password"></div></div>'+
+  '<div class="modal-actions"><button class="btn primary" type="submit">更新密碼</button></div></form>');
+}
+async function wfReceiveRecoveryLink(){
+ const params=new URLSearchParams(location.hash.slice(1));
+ if(params.get('type')!=='recovery')return;
+ const token=params.get('access_token');
+ // Remove the token from the address bar before making any network requests.
+ history.replaceState(null,'',location.pathname+location.search);
+ if(!token){banner('密碼重設連結沒有有效授權，請重新申請',true);return;}
+ try{
+  const r=await fetch(API+'/auth/v1/user',{headers:{apikey:KEY,Authorization:'Bearer '+token},cache:'no-store'});
+  if(!r.ok)throw Error('重設連結已失效，請重新申請');
+  wfRecoveryAccessToken=token;
+  wfNewPasswordModal();
+ }catch(err){wfRecoveryAccessToken=null;banner(err.message,true);}
+}
+document.addEventListener('click',e=>{
+ const button=e.target.closest('[data-wf-account]');
+ if(!button)return;
+ e.preventDefault();
+ if(button.dataset.wfAccount==='forgot')wfForgotPasswordModal();
+ else if(button.dataset.wfAccount==='back')showAuth();
+});
+$('overlay').addEventListener('submit',async e=>{
+ const form=e.target;
+ if(!['wf_forgot_password','wf_set_password'].includes(form?.dataset?.form))return;
+ e.preventDefault();
+ e.stopImmediatePropagation();
+ const submit=form.querySelector('button[type="submit"]');
+ if(submit)submit.disabled=true;
+ try{
+  const values=Object.fromEntries(new FormData(form).entries());
+  if(form.dataset.form==='wf_forgot_password'){
+   const redirect=location.origin+location.pathname;
+   // This redirect must be allowlisted in Supabase Auth URL Configuration.
+   await call('/auth/v1/recover?redirect_to='+encodeURIComponent(redirect),'POST',{email:String(values.email||'').trim()});
+   closeModal();
+   banner('如帳號存在，重設密碼郵件將寄至指定信箱');
+  }else{
+   if(!wfRecoveryAccessToken)throw Error('重設授權已過期，請重新申請');
+   if(values.password!==values.confirm)throw Error('兩次輸入的密碼不一致');
+   const response=await fetch(API+'/auth/v1/user',{
+    method:'PUT',headers:{apikey:KEY,Authorization:'Bearer '+wfRecoveryAccessToken,'Content-Type':'application/json'},
+    body:JSON.stringify({password:values.password}),cache:'no-store'
+   });
+   const result=await response.json().catch(()=>({}));
+   if(!response.ok)throw Error(result.msg||result.message||result.error_description||'密碼更新失敗');
+   wfRecoveryAccessToken=null;
+   sessionStorage.removeItem('wm_auth');
+   app.token=null;app.user=null;app.data=null;app.tenants=[];app.mode='demo';app.tenantId=DEMO_ID;
+   closeModal();await reload(true);
+   banner('密碼已更新，請使用新密碼重新登入');
+  }
+ }catch(err){banner(err.message||'操作失敗',true);if(submit)submit.disabled=false;}
+},true);
+void wfReceiveRecoveryLink();
