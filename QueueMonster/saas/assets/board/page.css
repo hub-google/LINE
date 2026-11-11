@@ -220,6 +220,13 @@ html.board-fit #unit-board .unit-card .unit-now{
   display:flex;align-items:center;justify-content:center;
   padding:0;
 }
+html.board-fit #unit-board .unit-card .unit-now.is-empty{
+  white-space:pre-line;
+  line-height:1.08;
+  text-align:center;
+  overflow-wrap:normal;
+  word-break:keep-all;
+}
 html.board-fit #unit-board .unit-card .group,
 html.board-fit #unit-board .unit-card .unit-next,
 html.board-fit #unit-board .unit-card h2{line-height:1.1;min-height:0}
