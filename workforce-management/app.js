@@ -67,7 +67,7 @@ async function reload(silent=false){
    if(!app.tenants.find(t=>t.id===app.tenantId))app.tenantId=app.tenants[0]?.id||'';
    if(!app.tenantId){app.data=null;}else{
     const p='tenant_id=eq.'+encodeURIComponent(app.tenantId);
-    const [branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections,leavePolicies,attendanceCases,attendanceRuleRows,requestDocs,scheduleRuleRows,memberBranches,qrSettings,leaveCancellations,availabilityPolicy]=await Promise.all([
+    const [branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections,leavePolicies,attendanceCases,attendanceRuleRows,requestDocs,scheduleRuleRows,memberBranches,qrSettings,leaveCancellations,availabilityPolicy,leaveAmendments]=await Promise.all([
      query('wm_branches','select=*&'+p+'&order=name'),query('wm_members','select=id,tenant_id,branch_id,user_id,display_name,employee_code,role,employment_type,status,created_at,department_id,reports_to,job_title,hired_on,left_on,skills&'+p+'&order=employee_code'),
      query('wm_shifts','select=*&'+p+'&order=starts_at.desc&limit=600'),query('wm_punches','select=*&'+p+'&order=punched_at.desc&limit=600'),
      query('wm_requests','select=*&'+p+'&order=created_at.desc&limit=300'),query('wm_leave_entitlements','select=*&'+p),
@@ -82,7 +82,8 @@ async function reload(silent=false){
      query('wm_member_branches','select=*&'+p+'&order=active_from.desc'),
      query('wm_branch_qr_settings','select=*&'+p),
      call('/rest/v1/rpc/wm_list_leave_cancellations','POST',{p_tenant:app.tenantId},app.token),
-     call('/rest/v1/rpc/wm_get_availability_policy','POST',{p_tenant:app.tenantId},app.token) ]);
+     call('/rest/v1/rpc/wm_get_availability_policy','POST',{p_tenant:app.tenantId},app.token),
+     call('/rest/v1/rpc/wm_list_leave_amendments','POST',{p_tenant:app.tenantId},app.token) ]);
     if(members.some(m=>m.user_id===app.user?.id&&['owner','hr'].includes(m.role))){
       const wages=await call('/rest/v1/rpc/wm_staff_wages','POST',{p_tenant:app.tenantId},app.token);
       const lookup=new Map((wages||[]).map(w=>[w.member_id,w.hourly_rate]));
@@ -90,7 +91,7 @@ async function reload(silent=false){
     }
     app.data={tenant:app.tenants.find(t=>t.id===app.tenantId),branches,members,shifts,punches,requests,
       entitlements,availability,departments,templates,requirements,notifications,closures,
-      adjustments,corrections,leavePolicies,attendanceCases,attendanceRules:attendanceRuleRows[0]||null,requestDocs,scheduleRules:scheduleRuleRows.find(x=>x.effective_from<=today())||null,memberBranches,qrSettings,leaveCancellations,availabilityPolicy,
+      adjustments,corrections,leavePolicies,attendanceCases,attendanceRules:attendanceRuleRows[0]||null,requestDocs,scheduleRules:scheduleRuleRows.find(x=>x.effective_from<=today())||null,memberBranches,qrSettings,leaveCancellations,availabilityPolicy,leaveAmendments,
       leaveBalances:{},requestStages:[],server_at:new Date().toISOString()};
     const selected=getSelected();
     if(selected){
@@ -2488,4 +2489,130 @@ $('overlay').addEventListener('submit',async event=>{
   }
   closeModal();await reload(true);banner('設定或審核結果已由資料庫確認');
  }catch(err){banner(err.message,true);if(submit)submit.disabled=false;}
+},true);
+
+
+/* HR-LVE-03: date amendment for approved leave. Reuse wm_requests, request_actions,
+ * existing member hierarchy and policy balances. The server checks all auth,
+ * stages, month locks, duplicate leave, and policy version before committing. */
+const wfPreviousAmendmentRequests=requests;
+requests=function(){
+ wfPreviousAmendmentRequests();
+ if(app.mode!=='real'||!app.token)return;
+ const me=(app.data?.members||[]).find(m=>m.user_id===app.user?.id&&m.tenant_id===app.tenantId);
+ if(!me)return;
+ const requestsForMember=(app.data?.requests||[]).filter(r=>r.member_id===me.id&&r.kind==='leave'&&r.status==='approved'&&Date.parse(r.starts_at)>Date.now());
+ const amendments=(app.data?.leaveAmendments||[]).filter(a=>a.member_id===me.id);
+ const pending=new Set(amendments.filter(a=>a.status==='pending').map(a=>a.request_id));
+ const cancellationPending=new Set((app.data?.leaveCancellations||[]).filter(a=>a.status==='pending').map(a=>a.request_id));
+ const rows=requestsForMember.map(r=>tr([
+  esc(kind(r.leave_kind)),esc(taiStamp(r.starts_at)),esc(taiStamp(r.ends_at)),
+  (pending.has(r.id)||cancellationPending.has(r.id))?
+   '<span class="chip pending">有待審變更／取消</span>':
+   '<button type="button" class="btn small" data-wf-leave-amend="submit" data-id="'+esc(r.id)+'">修改請假日期</button>'
+ ]));
+ const history=amendments.map(a=>tr([
+  esc(taiStamp(a.original_starts_at))+'～'+esc(taiStamp(a.original_ends_at)),
+  esc(taiStamp(a.proposed_starts_at))+'～'+esc(taiStamp(a.proposed_ends_at)),
+  a.status==='pending'?'待審核（'+Number(a.completed_steps||0)+'／'+Number(a.required_steps||1)+' 關）':
+    a.status==='approved'?'已核准變更':'變更遭駁回',
+  esc(a.reason),esc(a.decision_note||'—')
+ ]));
+ $('appContent').insertAdjacentHTML('beforeend',
+  panel('HR-LVE-03｜修改已核准請假',
+   '<div class="notice">申請變更期間，原本核准的假單不變；所有審核關卡完成後才更新日期。已開始或已月結的日期不能直接修改。</div>'+
+   table(['假別','原開始','原結束','操作'],rows))+
+  panel('請假日期變更紀錄',table(['原期間','變更期間','審核結果','原因','審核備註'],history)));
+};
+const wfPreviousAmendmentApprovals=approvals;
+approvals=function(){
+ wfPreviousAmendmentApprovals();
+ if(app.mode!=='real'||!app.token||!manager())return;
+ const waiting=(app.data?.leaveAmendments||[]).filter(a=>a.status==='pending'&&wfCanReview(a.member_id));
+ const rows=waiting.map(a=>tr([
+  personLabel(a.member_id),
+  esc(taiStamp(a.original_starts_at))+'～'+esc(taiStamp(a.original_ends_at)),
+  esc(taiStamp(a.proposed_starts_at))+'～'+esc(taiStamp(a.proposed_ends_at)),
+  esc(a.reason),
+  Number(a.completed_steps||0)+'／'+Number(a.required_steps||1),
+  '<button type="button" class="btn small primary" data-wf-leave-amend="review" data-id="'+esc(a.id)+'" data-ok="true">核准本關</button> '+
+  '<button type="button" class="btn small danger" data-wf-leave-amend="review" data-id="'+esc(a.id)+'" data-ok="false">駁回</button>'
+ ]));
+ $('appContent').insertAdjacentHTML('beforeend',
+  panel('HR-LVE-03｜待審核的請假日期變更',
+   table(['員工','原核准期間','新申請期間','變更原因','完成簽核','操作'],rows)+
+   '<p class="muted">多層審核必須由不同主管完成；所有關卡完成前原請假日期與額度不會改動。</p>'));
+};
+function wfLocalDateTime(iso){
+ const parts=new Intl.DateTimeFormat('en-CA',{
+  timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit',
+  hour:'2-digit',minute:'2-digit',hourCycle:'h23'
+ }).formatToParts(new Date(iso));
+ const out=Object.fromEntries(parts.filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
+ return out.year+'-'+out.month+'-'+out.day+'T'+out.hour+':'+out.minute;
+}
+function wfShowLeaveAmendment(id){
+ const r=(app.data?.requests||[]).find(x=>x.id===id&&x.kind==='leave'&&x.status==='approved');
+ const mine=wfMyMember();
+ if(!r||!mine||r.member_id!==mine.id||Date.parse(r.starts_at)<=Date.now())
+  throw Error('只能變更本人尚未開始、已核准的請假');
+ if((app.data?.leaveAmendments||[]).some(a=>a.request_id===id&&a.status==='pending')||
+  (app.data?.leaveCancellations||[]).some(a=>a.request_id===id&&a.status==='pending'))
+  throw Error('這筆請假已有待審變更或取消申請');
+ openModal('申請修改已核准請假日期',modalForm('wf_leave_amend_request',[
+  {name:'p_request',label:'原核准假期',wide:true,html:
+   '<input type="hidden" name="p_request" value="'+esc(id)+'">'+
+   '<p>'+esc(kind(r.leave_kind))+' · '+esc(taiStamp(r.starts_at))+'～'+esc(taiStamp(r.ends_at))+'</p>'},
+  {name:'p_start',label:'新請假開始',html:input('p_start','datetime-local',wfLocalDateTime(r.starts_at))},
+  {name:'p_end',label:'新請假結束',html:input('p_end','datetime-local',wfLocalDateTime(r.ends_at))},
+  {name:'p_reason',label:'變更原因（3–500 字）',wide:true,
+   html:'<textarea name="p_reason" minlength="3" maxlength="500" rows="3" required></textarea>'}
+ ],'送出變更申請')+
+ '<p class="muted">原核准日期在主管完成簽核前不受影響。新期間會重新檢查請假重疊、假額與月結規則。</p>');
+}
+function wfShowLeaveAmendDecision(id,approve){
+ const a=(app.data?.leaveAmendments||[]).find(x=>x.id===id&&x.status==='pending');
+ if(!a||!wfCanReview(a.member_id))throw Error('沒有審核此日期變更的權限');
+ openModal(approve?'核准請假日期變更':'駁回請假日期變更',
+  modalForm('wf_leave_amend_review',[
+   {name:'p_amendment',label:'變更內容',wide:true,html:
+    '<input type="hidden" name="p_amendment" value="'+esc(id)+'"><p>'+
+    personLabel(a.member_id)+' · '+esc(taiStamp(a.proposed_starts_at))+'～'+
+    esc(taiStamp(a.proposed_ends_at))+'</p>'},
+   {name:'p_approved',label:'審核決定',html:
+    '<input type="hidden" name="p_approved" value="'+String(approve)+'"><p>'+
+    (approve?'核准本關（需完成所有簽核才生效）':'駁回並保留原核准期間')+'</p>'},
+   {name:'p_note',label:'簽核意見',wide:true,
+    html:'<textarea name="p_note" maxlength="500" rows="3"></textarea>'}
+  ],approve?'確認核准':'確認駁回'));
+}
+document.addEventListener('click',event=>{
+ const button=event.target.closest('[data-wf-leave-amend]');
+ if(!button||!button.closest('#appContent'))return;
+ event.preventDefault();
+ try{
+  if(button.dataset.wfLeaveAmend==='submit')wfShowLeaveAmendment(button.dataset.id);
+  else if(button.dataset.wfLeaveAmend==='review')
+    wfShowLeaveAmendDecision(button.dataset.id,button.dataset.ok==='true');
+ }catch(err){banner(err.message||'操作失敗',true);}
+});
+$('overlay').addEventListener('submit',async event=>{
+ const form=event.target;
+ if(!['wf_leave_amend_request','wf_leave_amend_review'].includes(form?.dataset?.form))return;
+ event.preventDefault();event.stopImmediatePropagation();
+ const submit=form.querySelector('button[type="submit"]');if(submit)submit.disabled=true;
+ try{
+  if(app.mode!=='real'||!app.token)throw Error('請先登入企業帳號');
+  const values=Object.fromEntries(new FormData(form).entries());
+  if(form.dataset.form==='wf_leave_amend_request'){
+   const start=tzIso(values.p_start),end=tzIso(values.p_end);
+   if(!start||!end||Date.parse(end)<=Date.parse(start))throw Error('新請假期間起訖不正確');
+   await call('/rest/v1/rpc/wm_request_leave_amendment','POST',{
+    p_request:values.p_request,p_start:start,p_end:end,p_reason:values.p_reason},app.token);
+  }else{
+   await call('/rest/v1/rpc/wm_review_leave_amendment','POST',{
+    p_amendment:values.p_amendment,p_approved:values.p_approved==='true',p_note:values.p_note},app.token);
+  }
+  closeModal();await reload(true);banner('已由資料庫保存，請依簽核結果查看是否生效');
+ }catch(err){banner(err.message||'操作失敗',true);if(submit)submit.disabled=false;}
 },true);
