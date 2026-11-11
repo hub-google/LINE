@@ -62,7 +62,7 @@ export function renderPickupSettings(isManager){
    field("可提前預訂天數（0～30）","pickup-days",s.days_ahead??7,"number",'min="0" max="30"')+'</div></div>'+
    field("預估製作時間（分鐘）","pickup-prep",s.prep_minutes??20,"number",'min="1" max="180"')+
    '<p class="small">例如 08:00 取餐、預估製作 20 分鐘，需到 07:40 才可點「開始製作」；05:30 取餐的訂單不受影響。既有訂單的取餐時間不會因設定變更而被修改。</p>'+
-   '<div class="staff-actionbar">'+btn("儲存取餐設定","pickup-save","primary")+'</div>'))+
+   '<div class="staff-actionbar">'+btn("儲存取餐設定","pickup-save","primary")+'</div>')+
    '<div class="inset" style="margin-top:12px"><strong>點餐連結</strong><p class="small">服務啟用後，可把下方網址提供給顧客。</p>'+
    (s.enabled?'<p style="overflow-wrap:anywhere"><a target="_blank" rel="noopener noreferrer" href="'+esc(new URL("./index.html?view=customer&merchant="+encodeURIComponent(routeState.slug)+"&tab=order",location.href).href)+'">'+
    esc(new URL("./index.html?view=customer&merchant="+encodeURIComponent(routeState.slug)+"&tab=order",location.href).href)+'</a></p>':'<p class="muted">尚未開放線上點餐</p>')+'</div>');
