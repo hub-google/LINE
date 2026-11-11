@@ -36,3 +36,39 @@
 3. 共用錯誤、分頁及狀態修正不得複製新的判斷程式。
 4. 每次修改前檢查最新 `main`，提交採用預期 SHA／非強制更新，避免多視窗覆蓋。
 5. 跑 `service-units-contract.test.mjs`、`merchant-onboarding-contract.test.mjs`、既有正式部署測試；沒有通過不得視為完成。
+
+
+## 第二輪重複實作稽核（2026-11-11）
+
+本輪從 GitHub `main` 的完整 `QueueMonster/` 目錄、正式 Pages 入口、GitHub Actions 與**正式 Supabase 的唯讀系統目錄**交叉確認。沒有對既有預約、取號及會員資料執行修改。
+
+### 確認重複，已合併
+
+| 項目 | 原問題 | 單一來源／保留方式 |
+|---|---|---|
+| Supabase 公開連線資訊 | 前端登入、店家註冊、平台登入、店家搜尋、叫號看板及 LINE 管理模組各自硬編碼同一個 URL/公開金鑰 | `saas/public-config.js`；六個入口共用，**不同登入 Session 仍保持隔離** |
+| Demo 正式檔與 live 別名 | `demo/index.html`、`demo/live.html` 完全相同 | `demo/index.html` 唯一實作，live.html 僅保留相容轉址，含 query/hash |
+
+### 有重複職責，但仍必須保留業務差異
+
+| 優先 | 項目／實際程式 | 原因及後續方向 |
+|---|---|---|
+| P1 | `so_staff_action` 與 `so_unit_call` | 都處理叫號／重叫，但一般叫號對租戶鎖定、多場次依 session 隔離；應先以測試矩陣鎖定每個轉態，才能將共同交易狀態機抽到唯一核心 |
+| P1 | `so_staff_set_ticket_status` 與 `so_unit_set_ticket_status` | 都寫入同一 `so_tickets`；保留不同場次與 HOLD 規則，避免以刪除一支 RPC 的方式合併 |
+| P1 | `so_queue_session_state` 與 `so_service_sessions` | 前者是早／午／晚／休場開關，後者是可定日期、時段、服務窗口的場次；兩者業務概念不同，應統一表達與 API 契約，而非直接合併資料表 |
+| P2 | `saas/app/line-session.js` 與 `saas/assets/directory/main.js` 的 customer URL 建構 | 兩者處理平台 OA／店家自有 OA、跨店 LIFF 的情況不同；應抽出純函式並保留原有 URL 結果 |
+| P2 | `saas/assets/directory/main.js`、`saas/assets/board/main.js` 與品牌設定的 LOGO URL 檢查 | 同類型 URL 安全檢查但長度及路徑政策不同；需先補合法／非法 LOGO 案例比對，避免改變原有品牌顯示 |
+| P2 | `so_queue_live`、`so_unit_progress`、`so_unit_public_board` 與一般叫號看板讀取程序 | 皆讀取 `so_tickets`，但授權範圍、場次篩選及顯示內容不同；可共用底層排序計算，不可直接互換顧客與公開 RPC |
+
+### 非同一正式執行鏈，暫不刪除
+
+- `QueueMonster/src/`、`QueueMonster/prisma/`：獨立的 Next.js／Prisma 原型，含點餐、付款等 Pages 版未正式整合的功能；目前 `/booking/` 是由 `QueueMonster/saas/` 建置，不應無驗收直接刪除另一套原型。
+- `QueueMonster/demo/preview.html`：本地儲存的獨立模擬頁，並非正式 Supabase 客戶端；用途應明確標示，不得以它的測試當成正式後端驗收。
+- `supabase/migrations/`：歷史 SQL 版本記錄不能以重複宣告為由刪除。
+- `.github/workflows/line-saas-pages.yml` 是 Pages 發布；`line-oa-deploy.yml` 是 Edge Function／LINE 設定；`line-saas-pr-validation.yml` 是 PR 檢查；`queue-monster-mobile-qa.yml` 是截圖稽核，各自職責不同。
+
+### 唯讀資料庫實測
+
+2026-11-11 查詢正式專案 `unapiwajmgqqtdkixaab` 的 `pg_proc`：`public` 下的 `so_*/qm_*` 共 **118 支函式／118 個唯一名稱**，不存在同名多載及完全相同 `prosrc` 主體的函式組。這**不等於**沒有業務邏輯相似的程序，上面兩組叫號 RPC 即是未完成合併的具體案例。正式資料庫中未找到 `so_demo_*` RPC，不應把舊 Demo 的操作視為已連接正式系統。
+
+本輪共用公開設定的發布 commit `037ec913` 已通過 Actions `42966906122`，並核對 `gh-pages/booking/release.json`。
