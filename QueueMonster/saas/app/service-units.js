@@ -6,7 +6,7 @@ import {serviceUnitsState} from "./state/serviceUnitsState.js";
 
 
 import {box,btn,esc,field,menuChoiceReady,menuSelectSection,taipei} from "./shared-ui.js";
-import {normalizeBookingPhone,validBookingContact} from "./customer-booking.js";
+import {bookingContactFields,normalizeBookingPhone,validBookingContact} from "./customer-booking.js";
 import {dateInNinetyDays} from "./booking-edit.js";
 import {renderBookings} from "./customer-records.js";
 
@@ -92,8 +92,7 @@ export function unitBookingPanel(){
    unitChooseHtml("reserve")+
    '<div class="grid"><div>'+field("本次人數","customer-party",bookingState.bookingParty||1,"number",'min="1" max="20"')+'</div></div>'+
    menuSelectSection(customerState.customer?.tenant?.menu_booking_mode||"DISABLED",customerState.customer?.menu_items||[],bookingState.bookingChosenItems,"booking")+
-   '<div class="grid"><div>'+field("預約姓名","customer-book-name",bookingState.bookingContactName,"text",'maxlength="60" required autocomplete="name"')+'</div>'+
-   '<div>'+field("聯絡手機","customer-book-phone",bookingState.bookingContactPhone,"tel",'required inputmode="tel" autocomplete="tel"')+'</div></div>'+
+   bookingContactFields("unit")+
    '<p class="small">預約場次代表可報到的時段，實際開始服務時間依現場叫號與人員安排。</p>'+
    (confirming?'<div class="notice"><strong>確認預約資訊</strong><p>'+esc(unitNameForSession(s?.id))+' · '+esc(s?.name||"")+
     '</p><p>日期：'+esc(routeState.day)+' '+esc(s?.start||"")+'–'+esc(s?.end||"")+'</p>'+

@@ -6,7 +6,7 @@ import {routeState} from "../state/routeState.js";
 
 import {render} from "./../staff-layout.js";
 import {act,clearCustomerBookingRequest,customerBookingRequestId,rpc,val} from "./../data-loading.js";
-import {availableForParty,bookingConfirmationFingerprint,currentBookingSlots,normalizeBookingPhone,validBookingContact} from "./../customer-booking.js";
+import {availableForParty,bookingConfirmationFingerprint,bookingRequestDetails,currentBookingSlots,normalizeBookingPhone,validBookingContact} from "./../customer-booking.js";
 import {jsStatus,menuChoiceReady,showActionFeedback} from "./../shared-ui.js";
 import {customerNoticeSuffix,sendBookingReply} from "./../line-session.js";
 
@@ -34,7 +34,7 @@ if(a==="book-back"){bookingState.bookingConfirmationKey="";render();return true;
   const selected=currentBookingSlots().find(x=>x.time===time);
   if(!availableForParty(selected,party))throw Error("此時段已沒有足夠名額，請重新選擇時間。");
   const items=bookingState.bookingChosenItems.slice();
-  const requestId=customerBookingRequestId({merchant:routeState.slug,date:routeState.day,time,party,name:bookingState.bookingContactName.trim(),phone:normalizeBookingPhone(bookingState.bookingContactPhone),items});
+  const requestId=customerBookingRequestId(bookingRequestDetails(time,party,items));
   const result=await rpc("so_book_with_contact_once",{p_slug:routeState.slug,p_date:routeState.day,p_time:time,p_name:bookingState.bookingContactName.trim(),p_phone:normalizeBookingPhone(bookingState.bookingContactPhone),p_party:party,p_items:items,p_request_id:requestId});
   // Clear only AFTER the database has acknowledged this ID. A lost response
   // leaves the same ID ready for a safe retry.

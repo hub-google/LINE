@@ -241,3 +241,40 @@ test("one renderer powers ordinary queues and independent sessions without losin
  assert.match(form,/ticketStatusRpc\(id\)/);
  assert.doesNotMatch(form,/unitRelated\?"so_unit_set_ticket_status"/);
 });
+
+
+test("booking variants reuse one contact field and idempotency payload implementation",()=>{
+ const customer=read("saas/app/customer-booking.js");
+ const unit=read("saas/app/service-units.js");
+ const ordinaryAction=read("saas/app/actions/booking-submit.js");
+ const unitAction=read("saas/app/actions/service-unit-actions.js");
+ assert.match(customer,/export function bookingContactFields\(mode="standard"\)/);
+ assert.match(customer,/bookingContactFields\(\)\+/);
+ assert.match(unit,/bookingContactFields\("unit"\)\+/);
+ assert.match(unit,/import \{bookingContactFields,/);
+ assert.match(ordinaryAction,/customerBookingRequestId\(bookingRequestDetails\(time,party,items\)\)/);
+ assert.match(unitAction,/customerBookingRequestId\(bookingRequestDetails\(s\.id,party,items\)\)/);
+ assert.match(ordinaryAction,/p_request_id:requestId/);
+ assert.match(unitAction,/p_request_id:requestId/);
+ const state={bookingContactName:"陳測試",bookingContactPhone:"0912345678"};
+ const fields=customer.match(/export function bookingContactFields\(mode="standard"\)\{[\s\S]*?\n\}/)?.[0];
+ assert.ok(fields);
+ const makeFields=new Function("bookingState","field",fields.replace("export ","")+";return bookingContactFields;");
+ const draw=makeFields(state,(label,id,value,type,attrs)=>label+" | "+id+" | "+type+" | "+attrs);
+ const normal=draw(),session=draw("unit");
+ assert.match(normal,/預約姓名（現場核對）/);
+ assert.match(normal,/maxlength="80"/);
+ assert.match(normal,/0912345678 或 \+886912345678/);
+ assert.match(normal,/資料供本次預約店家聯繫使用/);
+ assert.match(session,/預約姓名 \| customer-book-name/);
+ assert.match(session,/maxlength="60"/);
+ assert.doesNotMatch(session,/資料供本次預約店家聯繫使用/);
+ const body=customer.match(/export function bookingRequestDetails\(time,party,items\)\{[\s\S]*?\n\}/)?.[0];
+ assert.ok(body);
+ const makeDetails=new Function("routeState","bookingState","normalizeBookingPhone",body.replace("export ","")+";return bookingRequestDetails;");
+ const details=makeDetails({slug:"unit-test",day:"2026-11-11"},state,x=>x);
+ assert.deepEqual(details("session-1",2,["service-a"]),{
+  merchant:"unit-test",date:"2026-11-11",time:"session-1",party:2,
+  name:"陳測試",phone:"0912345678",items:["service-a"]
+ });
+});

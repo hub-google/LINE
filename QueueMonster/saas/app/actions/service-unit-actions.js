@@ -10,7 +10,7 @@ import {act,clearCustomerBookingRequest,customerBookingRequestId,rpc,val} from "
 import {render} from "./../staff-layout.js";
 import {customerNoticeSuffix,notifyLineCalled,sendLineNotice} from "./../line-session.js";
 import {selectedUnitSession,unitBookingFingerprint,unitNameForSession,unitSessionAvailable} from "./../service-units.js";
-import {normalizeBookingPhone,validBookingContact} from "./../customer-booking.js";
+import {bookingRequestDetails,normalizeBookingPhone,validBookingContact} from "./../customer-booking.js";
 import {showActionFeedback} from "./../shared-ui.js";
 
 export async function handleServiceUnitActions(ev,b,a,id){
@@ -82,8 +82,7 @@ if(a==="save-unit-mode"){
     if(!validBookingContact())throw Error("請填寫姓名及有效手機號碼");
     const party=Number(val("customer-party")),items=bookingState.bookingChosenItems.slice();
     if(!Number.isInteger(party)||party<1||party>20)throw Error("請填寫正確人數");
-    const requestId=customerBookingRequestId({merchant:routeState.slug,date:routeState.day,time:s.id,party,
-      name:bookingState.bookingContactName.trim(),phone:normalizeBookingPhone(bookingState.bookingContactPhone),items});
+    const requestId=customerBookingRequestId(bookingRequestDetails(s.id,party,items));
     const result=await rpc("so_unit_book_once",{p_slug:routeState.slug,p_session_id:s.id,
       p_name:bookingState.bookingContactName.trim(),p_phone:normalizeBookingPhone(bookingState.bookingContactPhone),
       p_party:party,p_items:items,p_request_id:requestId});

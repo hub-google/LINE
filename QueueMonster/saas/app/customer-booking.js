@@ -69,6 +69,26 @@ export function normalizeBookingPhone(v){let raw=String(v||"").replace(/[\s()-]/
 
 export function validBookingContact(){return !!bookingState.bookingContactName.trim()&&bookingState.bookingContactName.trim().length<=80&&!/[\r\n\u0000-\u001f]/.test(bookingState.bookingContactName)&&/^09\d{8}$/.test(normalizeBookingPhone(bookingState.bookingContactPhone))}
 
+export function bookingContactFields(mode="standard"){
+ const unit=mode==="unit";
+ const nameAttrs=unit?'maxlength="60" required autocomplete="name"':
+   'required maxlength="80" autocomplete="name" placeholder="請填寫現場方便稱呼的姓名"';
+ const phoneAttrs=unit?'required inputmode="tel" autocomplete="tel"':
+   'required inputmode="tel" autocomplete="tel" placeholder="0912345678 或 +886912345678"';
+ return '<div class="grid"><div>'+
+   field(unit?"預約姓名":"預約姓名（現場核對）","customer-book-name",bookingState.bookingContactName,"text",nameAttrs)+
+   '</div><div>'+field("聯絡手機","customer-book-phone",bookingState.bookingContactPhone,"tel",phoneAttrs)+'</div></div>'+
+   (unit?"":'<p class="small">為避免機器人或惡意假預約，預約前須綁定 LINE 身分。現場核對及預約聯繫使用上方姓名與電話，不使用 LINE 暱稱。資料供本次預約店家聯繫使用。</p>');
+}
+
+// Shared idempotency key input for all booking variants. Keep property order unchanged.
+export function bookingRequestDetails(time,party,items){
+ return {merchant:routeState.slug,date:routeState.day,time,party,
+   name:bookingState.bookingContactName.trim(),
+   phone:normalizeBookingPhone(bookingState.bookingContactPhone),items};
+}
+
+
 export function bookingConfirmationFingerprint(){return JSON.stringify({merchant:routeState.slug,date:routeState.day,time:bookingState.chosenSlot,party:bookingState.bookingParty,name:bookingState.bookingContactName.trim(),phone:normalizeBookingPhone(bookingState.bookingContactPhone),items:[...bookingState.bookingChosenItems].sort()});}
 
 
@@ -157,8 +177,7 @@ export function customerRender(){
     (bookingState.serviceSlotError?'<p class="alert">'+esc(bookingState.serviceSlotError)+'</p>':bookingState.serviceSlotPreview?.key===serviceSlotsKey()?"":'<p class="small">正在確認實際服務時間與資源剩餘名額…</p>')+
     '<div class="slots">'+currentBookingSlots().map(s=>'<button class="slot '+(bookingState.chosenSlot===s.time&&availableForParty(s)?"active":"")+'" data-slot="'+esc(s.time)+'" '+(!availableForParty(s)?"disabled aria-disabled=\"true\"":"")+'>'+esc(s.time)+'<small>'+(!availableForParty(s)?"名額不足・":"")+'剩 '+esc(s.available)+' 位</small></button>').join("")+'</div>'+
     menuSelectSection(t.menu_booking_mode||"DISABLED",catalogue,bookingState.bookingChosenItems,"booking")+
-    '<div class="grid"><div>'+field("預約姓名（現場核對）","customer-book-name",bookingState.bookingContactName,"text",'required maxlength="80" autocomplete="name" placeholder="請填寫現場方便稱呼的姓名"')+'</div><div>'+field("聯絡手機","customer-book-phone",bookingState.bookingContactPhone,"tel",'required inputmode="tel" autocomplete="tel" placeholder="0912345678 或 +886912345678"')+'</div></div>'+
-    '<p class="small">為避免機器人或惡意假預約，預約前須綁定 LINE 身分。現場核對及預約聯繫使用上方姓名與電話，不使用 LINE 暱稱。資料供本次預約店家聯繫使用。</p>'+
+    bookingContactFields()+
     '<div class="staff-actionbar">'+btn("重新整理服務時段","refresh-service-slots","outline")+'</div>'+
     '<div style="margin-top:15px">'+(confirming?
      '<div class="notice" role="group" aria-label="預約二次確認"><strong>請確認預約內容</strong>'+
