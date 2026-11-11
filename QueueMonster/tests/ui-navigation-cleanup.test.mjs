@@ -51,3 +51,18 @@ test("merchant guide mirrors unified settings navigation and avoids hidden mobil
  assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
  assert.doesNotMatch(css,/\.qm-admin \.qm-nav\{display:flex;gap:5px;overflow-x:auto/);
 });
+
+
+test("iPhone mobile branding links and menu close button have 44px touch targets",()=>{
+ const css=read("monster-world.css");
+ for(const rule of [
+  'body[data-monster-page="home"] .site-head .logo',
+  'body[data-monster-page="directory"] .page-header .brand',
+  'body[data-monster-page="merchant-register"] header .brand',
+  'body[data-monster-page="merchant-center"] .top-links .top-link',
+  'body[data-monster-page="index"] header a.brand',
+  'body[data-monster-page="directory"] footer a',
+  'body[data-monster-page="home"] .mobile-menu-close'
+ ])assert.ok(css.includes(rule),"missing mobile target for "+rule);
+ assert.match(css,/min-height:44px/);
+});

@@ -701,3 +701,27 @@ body[data-monster-page="directory"] .page-header .hero-heading h1.eyebrow{
  body[data-monster-page="board"] button,
  body:has(#single-board) button{min-height:44px;touch-action:manipulation}
 }
+
+
+/* Mobile touch targets: brand links and navigation controls must have an easy
+   44px hit area without widening the viewport or altering desktop layouts. */
+@media(max-width:620px){
+ body[data-monster-page="home"] .site-head .logo,
+ body[data-monster-page="directory"] .page-header .brand,
+ body[data-monster-page="merchant-register"] header .brand,
+ body[data-monster-page="merchant-center"] .top-links .top-link,
+ body[data-monster-page="index"] header a.brand,
+ body[data-monster-page="index"] header .headlinks a,
+ body[data-monster-page="directory"] footer a,
+ body[data-monster-page="index"] footer a{
+   min-height:44px;
+   box-sizing:border-box;
+   display:inline-flex;
+   align-items:center;
+   touch-action:manipulation;
+ }
+ body[data-monster-page="home"] .mobile-menu-close{
+   min-height:44px;
+   touch-action:manipulation;
+ }
+}
