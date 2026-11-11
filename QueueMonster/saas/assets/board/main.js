@@ -1,4 +1,5 @@
 import {safeMerchantLogoUrl} from "../../shared-customer-links.js";
+import {createStoreLiveSync} from "../../store-live-sync.js";
 import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
 
     import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
@@ -32,102 +33,14 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
     const validSlug=/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug);
     let lastSuccess=null,loading=false,refreshQueued=false;
     let lastData=null,staleFromFailure=false,disabled=false;
-    let realtimeConnected=false,eventTimer=null,lastEventRefreshAt=0;
-    let realtimeChannel=null,realtimeRetryTimer=null,realtimeFailureCount=0,realtimeEpoch=0;
-    function updateSyncMode(){
+    let liveSync=null;
+    const isRealtime=()=>liveSync?.connected===true;
+    function updateSyncMode(mode=liveSync?.mode||"api"){
       const label=$("board-update-mode");
       if(!label)return;
-      label.textContent=realtimeConnected&&navigator.onLine
-        ?"叫號變動即時更新":"每 10 秒更新一次叫號";
-      label.dataset.realtime=realtimeConnected&&navigator.onLine?"on":"fallback";
-    }
-    function publicQueueFingerprint(data){
-      // Compare only the PUBLIC fields that actually appear on this board.
-      // A difference found during periodic reconciliation without an event
-      // means push delivery was interrupted, even if the socket still says open.
-      if(data?.multi){
-        return JSON.stringify((data.sessions||[]).map(s=>[s.id,s.current,s.waiting,s.next]));
-      }
-      return JSON.stringify([data?.current,data?.upcoming]);
-    }
-    function stopRealtimeChannel(){
-      const channel=realtimeChannel;
-      realtimeChannel=null;
-      realtimeEpoch++; // ignore stale CLOSED callbacks from unsubscribe()
-      realtimeConnected=false;
-      updateSyncMode();
-      if(channel)void client.removeChannel(channel).catch(error=>{
-        console.warn("Queue board Realtime channel cleanup failed:",String(error?.message||error));
-      });
-    }
-    function realtimeErrorDetails(error){
-      return [error?.message,error?.name,error?.cause?.message,error?.cause?.code,
-        error?.cause?.reason,error?.code,error?.status,error?.reason]
-        .filter(Boolean).map(String).join(" ");
-    }
-    function scheduleRealtimeRetry(error){
-      if(realtimeRetryTimer||disabled||!validSlug||document.hidden||!navigator.onLine)return;
-      const details=realtimeErrorDetails(error);
-      // Supabase Free: the 201st websocket can fail with too_many_connections
-      // or HTTP 429. The monthly/throughput quota may instead report
-      // tenant_events or close the socket. Both paths use safe API fallback.
-      const quota=/too_many_connections|too many connected users|tenant_events|monthly|quota|rate.limit|\b429\b/i.test(details);
-      const baseMs=quota?120000:30000;
-      const backoffMs=Math.min(600000,baseMs*2**Math.min(realtimeFailureCount,4));
-      realtimeFailureCount++;
-      const delay=Math.round(backoffMs*(.85+Math.random()*.3));
-      realtimeRetryTimer=setTimeout(()=>{
-        realtimeRetryTimer=null;
-        if(!disabled&&!document.hidden&&navigator.onLine)subscribeQueueChanges();
-      },delay);
-    }
-    function handleRealtimeFailure(status,error){
-      if(!realtimeChannel)return;
-      const message=realtimeErrorDetails(error);
-      console.warn("Queue board Realtime "+status+"; falling back to 10s API polling:",message);
-      stopRealtimeChannel();
-      scheduleRealtimeRetry(error);
-    }
-    function requestEventRefresh(){
-      if(disabled||document.hidden||!navigator.onLine||eventTimer)return;
-      // Public channels carry only invalidation markers. Throttle even forged
-      // messages to prevent turning a public display into an RPC flood.
-      const wait=Math.max(250,1500-(Date.now()-lastEventRefreshAt));
-      eventTimer=setTimeout(()=>{
-        eventTimer=null;
-        lastEventRefreshAt=Date.now();
-        if(!disabled&&!document.hidden)void refresh();
-      },wait);
-    }
-    function subscribeQueueChanges(){
-      if(!validSlug||disabled||realtimeChannel||document.hidden||!navigator.onLine)return;
-      try{
-        const channel=client.channel("queue-board:"+slug,{config:{private:false,broadcast:{self:false}}});
-        const epoch=++realtimeEpoch;
-        realtimeChannel=channel;
-        channel.on("broadcast",{event:"invalidate"},requestEventRefresh)
-          .subscribe((status,error)=>{
-            if(epoch!==realtimeEpoch||realtimeChannel!==channel)return;
-            if(status==="SUBSCRIBED"){
-              const previouslyConnected=realtimeConnected;
-              realtimeConnected=true;
-              realtimeFailureCount=0;
-              if(realtimeRetryTimer){clearTimeout(realtimeRetryTimer);realtimeRetryTimer=null;}
-              updateSyncMode();
-              if(!previouslyConnected&&!disabled&&!document.hidden){
-                // Catch changes occurring between initial API read and subscribe.
-                void refresh();
-              }
-              return;
-            }
-            if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"||status==="CLOSED"){
-              handleRealtimeFailure(status,error);
-            }
-          });
-      }catch(error){
-        // Also handles the SDK throwing directly while all 200 slots are full.
-        handleRealtimeFailure("SUBSCRIBE_EXCEPTION",error);
-      }
+      label.textContent=mode==="realtime"?"叫號變動即時更新":"每 10 秒更新一次叫號";
+      label.dataset.realtime=mode==="realtime"?"on":"fallback";
+      if(lastSuccess)updateConnectionStatus();
     }
     function renderUpcoming(numbers){
       const list=$("upcoming");
@@ -149,14 +62,14 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
       if(!validSlug||disabled)return;
       if(!lastSuccess){health("正在取得最新叫號資料","loading");return;}
       const elapsed=Date.now()-lastSuccess.getTime();
-      if(staleFromFailure||!navigator.onLine||elapsed>(realtimeConnected?90000:30000)){
+      if(staleFromFailure||!navigator.onLine||elapsed>(isRealtime()?90000:30000)){
         health("連線中斷｜畫面為上次成功同步資料","error");
         $("notice").textContent="最後成功同步："+localTime(lastSuccess)+"。請檢查網路，勿將此畫面視為即時叫號。";
         return;
       }
-      health(realtimeConnected?"即時同步正常":"備援同步正常","ok");
+      health(isRealtime()?"即時同步正常":"備援同步正常","ok");
       $("notice").textContent="最後成功同步："+localTime(lastSuccess)+
-        (realtimeConnected?"；號碼變更即時更新，並定期核對。":"；每 10 秒自動同步，網路斷線會提示。");
+        (isRealtime()?"；號碼變更即時更新，並定期核對。":"；每 10 秒自動同步，網路斷線會提示。");
     }
     function renderUnits(sessions){
       const grid=$("unit-board");
@@ -241,6 +154,7 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
           // Do not poll a retired board every 12 seconds or keep showing stale called numbers.
           if(/找不到商家/.test(String(unitError.message||""))){
             disabled=true;lastData=null;lastSuccess=null;staleFromFailure=false;
+            liveSync?.stop();
             $("shop").textContent="門市暫停服務";
             $("current").textContent="暫停服務";$("current").classList.add("is-empty");renderUpcoming([]);
             $("single-board").hidden=false;$("unit-board").hidden=true;
@@ -252,10 +166,6 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
         }
         renderBoardBrand(units);
         if(units?.multi){
-          if(realtimeConnected&&reconcile&&lastData&&
-              publicQueueFingerprint(lastData)!==publicQueueFingerprint(units)){
-            handleRealtimeFailure("MISSED_CHANGE",new Error("Realtime event delivery did not match public queue snapshot"));
-          }
           disabled=false;staleFromFailure=false;lastData=units;lastSuccess=new Date();
           $("shop").textContent=String(units.shop||slug);
           const sessions=Array.isArray(units.sessions)?units.sessions:[];
@@ -275,10 +185,6 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
         const now=new Date();
         disabled=false;
         staleFromFailure=false;
-        if(realtimeConnected&&reconcile&&lastData&&
-            publicQueueFingerprint(lastData)!==publicQueueFingerprint(data)){
-          handleRealtimeFailure("MISSED_CHANGE",new Error("Realtime event delivery did not match public queue snapshot"));
-        }
         lastData=data;
         lastSuccess=now;
         $("shop").textContent=String(data.shop_name||slug);
@@ -314,42 +220,20 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
       $("fullscreen").textContent=document.fullscreenElement?"結束全螢幕":"全螢幕";
       boardFit.schedule();
     });
-    document.addEventListener("visibilitychange",()=>{
-      if(document.hidden){
-        // Hidden tabs must not occupy one of the Free plan's 200 sockets.
-        if(realtimeRetryTimer){clearTimeout(realtimeRetryTimer);realtimeRetryTimer=null;}
-        stopRealtimeChannel();
-      }else if(!disabled){
-        void refresh();
-        subscribeQueueChanges();
-      }
-    });
-    window.addEventListener("online",()=>{
-      if(disabled)return;
-      void refresh();
-      subscribeQueueChanges();
-    });
-    window.addEventListener("offline",()=>{
-      if(realtimeRetryTimer){clearTimeout(realtimeRetryTimer);realtimeRetryTimer=null;}
-      stopRealtimeChannel();
-      updateConnectionStatus();
-    });
     if(!validSlug){
       $("shop").textContent="未指定有效門市";
       health("請先選擇門市","error");
       $("notice").textContent="網址需包含正確的 merchant 門市代碼，例如 board.html?merchant=your-shop。";
     }else{
+      liveSync=createStoreLiveSync({
+        client,slug,
+        refresh:({reconcile})=>refresh({reconcile}),
+        isActive:()=>!disabled,
+        onModeChange:updateSyncMode
+      });
       updateSyncMode();
       void refresh();
-      subscribeQueueChanges();
-      // Realtime event notifications carry no customer details. Use a cheap
-      // periodic consistency check while connected and 10-second polling only
-      // when the WebSocket is unavailable or disconnected.
-      setInterval(()=>{
-        if(document.hidden||disabled)return;
-        if(!realtimeConnected||!lastSuccess)void refresh();
-        else if(Date.now()-lastSuccess.getTime()>=60000)void refresh({reconcile:true});
-      },10000);
+      liveSync.start();
       setInterval(updateConnectionStatus,5000);
     }
-  
+  }
