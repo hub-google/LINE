@@ -319,13 +319,18 @@ try{
   await form.waitFor({state:'visible'});
   await form.locator('[name="member_id"]').selectOption(member);
   await form.locator('[name="branch_id"]').selectOption(branch);
-  await form.locator('[name="starts_at"]').fill('2027-02-15T09:00');
-  await form.locator('[name="ends_at"]').fill('2027-02-15T17:00');
+  const shiftDay=new Date(Date.now()+75*86400000).toISOString().slice(0,10);
+  await form.locator('[name="starts_at"]').fill(shiftDay+'T09:00');
+  await form.locator('[name="ends_at"]').fill(shiftDay+'T17:00');
   await form.locator('[name="status"]').selectOption('published');
   await form.locator('[name="notes"]').fill('E2E manager shift '+run);
   await screenshot(managerPage,'06-manager-shift-form');
   await form.locator('button[type="submit"]').click();
-  await form.waitFor({state:'hidden'});
+  await Promise.race([
+   form.waitFor({state:'hidden',timeout:18000}),
+   managerPage.locator('#toast .toast.error').last().waitFor({state:'visible',timeout:18000})
+    .then(async()=>{throw Error('Shift API rejected: '+(await managerPage.locator('#toast').innerText()).slice(0,320));})
+  ]);
   const shifts=await rows('wm_shifts',users[2].token,'select=id,member_id,status&tenant_id=eq.'+tenant);
   assert.ok(shifts.some(x=>x.member_id===member&&x.status==='published'));
   return 'Manager UI published a real DB shift';
