@@ -71,6 +71,19 @@ export function validBookingContact(){return !!bookingState.bookingContactName.t
 
 export function bookingConfirmationFingerprint(){return JSON.stringify({merchant:routeState.slug,date:routeState.day,time:bookingState.chosenSlot,party:bookingState.bookingParty,name:bookingState.bookingContactName.trim(),phone:normalizeBookingPhone(bookingState.bookingContactPhone),items:[...bookingState.bookingChosenItems].sort()});}
 
+
+function applyCustomerBrand(tenant){
+ const accent=/^#[0-9a-fA-F]{6}$/.test(String(tenant?.accent||""))?tenant.accent.toUpperCase():"#693C8B";
+ const rgb=[1,3,5].map(i=>parseInt(accent.slice(i,i+2),16));
+ const linear=rgb.map(v=>{const n=v/255;return n<=0.04045?n/12.92:Math.pow((n+.055)/1.055,2.4)});
+ const luminance=linear[0]*.2126+linear[1]*.7152+linear[2]*.0722;
+ const contrast=luminance>.179?"#281B31":"#FFFFFF";
+ const ink="#"+rgb.map(v=>Math.round(v*.54).toString(16).padStart(2,"0")).join("").toUpperCase();
+ document.documentElement.style.setProperty("--merchant-accent",accent);
+ document.documentElement.style.setProperty("--merchant-contrast",contrast);
+ document.documentElement.style.setProperty("--merchant-ink",ink);
+}
+
 export function customerRender(){
   if(!routeState.slug){
     return lineState.lineLinkStatus==="linked"?
@@ -83,7 +96,7 @@ box("LINE 身分授權",'<p class="muted">為避免機器人或惡意假預約�
   if(!customerState.customer)return box("正在讀取顧客網站",'<p class="muted">正在確認企業設定與登入狀態...</p>');
   const t=customerState.customer.tenant,m=t.modules||{},items=customerState.customer.my_reservations||[],tickets=customerState.customer.my_tickets||[],live=tickets.find(x=>["WAITING","HOLD","CALLED","ARRIVED","ADMITTED","SERVING"].includes(x.status));
   const catalogue=customerState.customer.menu_items||[];
- document.documentElement.style.setProperty("--merchant-accent",/^#[a-fA-F0-9]{6}$/.test(t.accent)?t.accent:"#6A398A");
+ applyCustomerBrand(t);
  const menu=nav("首頁","home",routeState.customerTab,"customer")+(m.reservation?nav("線上預約","reserve",routeState.customerTab,"customer"):"")+(m.queue?nav("現場取號","queue",routeState.customerTab,"customer"):"")+nav("我的取號","progress",routeState.customerTab,"customer")+nav("我的紀錄","mine",routeState.customerTab,"customer");
  let html='';
  if(routeState.customerTab==="home"){

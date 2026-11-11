@@ -4,6 +4,7 @@ import {lineState} from "./state/lineState.js";
 import {routeState} from "./state/routeState.js";
 import {sharedUiState} from "./state/sharedUiState.js";
 import {staffState} from "./state/staffState.js";
+import {customerState} from "./state/customerState.js";
 
 
 
@@ -161,7 +162,19 @@ export function layout(title,subtitle,menu,body){
   nav("員工管理","members",staffState.staffTab,"staff")+
   
   '<a class="side-item guide-link" href="./merchant-center.html#guide">操作說明 ↗</a></div></details></nav>':"";
- return '<div class="toolbar"><div><div class="eyebrow">'+(routeState.view==="customer"?"排隊怪獸 · 顧客服務":routeState.view==="staff"?"排隊怪獸 · 門市管理":"排隊怪獸 · 平台管理")+'</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div></div><div class="layout'+(routeState.view==="customer"?" customer-layout":"")+'"><aside>'+menu+'</aside><section class="content">'+body+'</section></div>'+staffQuickNav;
+
+ const merchant=routeState.view==="customer"?customerState.customer?.tenant:null;
+ const logo=String(merchant?.logo_url||"").trim();
+ const safeLogo=/^https:\/\/[^\s<>"']{1,490}$/i.test(logo)?logo:"";
+ const customerHeading=merchant?
+  '<div class="customer-shop-identity">'+
+   '<div class="customer-shop-avatar">'+(safeLogo?
+    '<img src="'+esc(safeLogo)+'" alt="'+esc(title)+' 店家 LOGO" loading="eager" referrerpolicy="no-referrer">':
+    '<span class="customer-shop-avatar-fallback" aria-hidden="true">'+esc(String(title||"店家").slice(0,2))+'</span>')+'</div>'+
+   '<div class="customer-shop-title"><div class="customer-shop-overline">店家預約與取號</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div></div>':
+  '<div><div class="eyebrow">'+(routeState.view==="customer"?"排隊怪獸 · 顧客服務":routeState.view==="staff"?"排隊怪獸 · 門市管理":"排隊怪獸 · 平台管理")+'</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div>';
+ const poweredBy=merchant?'<div class="customer-platform-credit">預約及取號服務由 <a href="./home.html" aria-label="前往排隊怪獸平台首頁"><span class="customer-platform-icon" aria-hidden="true"></span>排隊怪獸</a> 提供</div>':"";
+ return '<div class="toolbar'+(merchant?' customer-shop-toolbar':'')+'">'+customerHeading+'</div><div class="layout'+(routeState.view==="customer"?" customer-layout":"")+'"><aside>'+menu+'</aside><section class="content">'+body+poweredBy+'</section></div>'+staffQuickNav;
 }
 
 export function head(){
