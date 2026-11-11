@@ -28,7 +28,7 @@ export function createStoreLiveSync({
   function retry(error){
     if(!canConnect()||retryTimer)return;
     const details=errorText(error);
-    const quota=/too_many_connections|too many connected users|tenant_events|monthly|quota|rate.limit|\\b429\\b/i.test(details);
+    const quota=/too_many_connections|too many connected users|tenant_events|monthly|quota|rate.limit|\b429\b/i.test(details);
     // The 201st viewer can use API immediately without competing for sockets.
     const base=quota?120000:30000;
     const delay=Math.round(Math.min(600000,base*2**Math.min(failures++,4))*(.85+Math.random()*.3));
