@@ -222,18 +222,21 @@ function reports(){
  heading('<button class="btn primary" data-action="exportCsv">⬇ 匯出 CSV</button>');
  const people=app.data.members||[];
  const start=app.date;const end=dayAdd(start,6);
+ // Reuse the exact same punch segmentation as the detailed attendance export.
+ // This deducts BREAK_START/END and safely groups cross-midnight shifts by IN date.
+ const sessions=attendanceRows(app.data.punches||[],start,end);
  const rows=people.map(m=>{
- const entries=(app.data.punches||[]).filter(p=>p.member_id===m.id&&taiDay(p.punched_at)>=start&&taiDay(p.punched_at)<=end).sort((a,b)=>a.punched_at.localeCompare(b.punched_at));
- let inAt=null,secs=0;
- entries.forEach(p=>{if(p.kind==='IN')inAt=p.punched_at;if(p.kind==='OUT'&&inAt){secs+=(new Date(p.punched_at)-new Date(inAt))/1000;inAt=null;}});
- const hours=Math.max(0,secs/3600);
- return {m,entries,hours};
+ const entries=(app.data.punches||[]).filter(p=>p.member_id===m.id&&taiDay(p.punched_at)>=start&&taiDay(p.punched_at)<=end);
+ const own=sessions.filter(r=>r.member_id===m.id);
+ const hours=own.reduce((sum,r)=>sum+r.workMinutes,0)/60;
+ const hasIncomplete=own.some(r=>r.incomplete)||entries.filter(e=>e.kind==='IN').length>entries.filter(e=>e.kind==='OUT').length;
+ return {m,entries,hours,hasIncomplete};
  });
  app.reportRows=rows;
- $('appContent').innerHTML='<div class="cards">'+stat('期間',start.slice(5)+'～'+end.slice(5),'統計起訖日')+stat('打卡筆數',rows.reduce((a,b)=>a+b.entries.length,0),'上下班與休息事件')+stat('核算工時',rows.reduce((a,b)=>a+b.hours,0).toFixed(1),'僅按成對 IN/OUT 計算')+stat('員工人數',people.length,'包含未打卡員工')+'</div>'+
+ $('appContent').innerHTML='<div class="cards">'+stat('期間',start.slice(5)+'～'+end.slice(5),'統計起訖日')+stat('打卡筆數',rows.reduce((a,b)=>a+b.entries.length,0),'上下班與休息事件')+stat('核算工時',rows.reduce((a,b)=>a+b.hours,0).toFixed(1),'上／下班配對，扣除實際休息')+stat('員工人數',people.length,'包含未打卡員工')+'</div>'+
  panel('期間打卡與工時','<div class="toolbar"><div class="field"><label>起始日期（7 日）</label><input type="date" class="filter" id="reportDate" value="'+esc(start)+'"></div><button class="btn" data-action="refreshReport">查詢</button></div>'+
- table(['員工','分店','打卡事件','已配對工時','未完成打卡'],rows.map(x=>tr([esc(x.m.display_name),esc(branch(x.m.branch_id)?.name||''),String(x.entries.length),x.hours.toFixed(2)+' 小時',x.entries.filter(e=>e.kind==='IN').length>x.entries.filter(e=>e.kind==='OUT').length?'有':'—'])))+
- '<div class="notice warning">這是以配對打卡計算的測試工時，不等於依法核認的加班、特休與薪資結算。跨日、休息及異常需要另外確認。</div>');
+ table(['員工','分店','打卡事件','已配對工時','未完成打卡'],rows.map(x=>tr([esc(x.m.display_name),esc(branch(x.m.branch_id)?.name||''),String(x.entries.length),x.hours.toFixed(2)+' 小時',x.hasIncomplete?'有':'—'])))+
+ '<div class="notice warning">這是按原始打卡配對、扣除休息後的行政試算，不等於依法核認的加班、特休與薪資結算。異常、跨日歸屬與缺卡仍需人工確認。</div>');
 }
 function settings(){
  heading();
