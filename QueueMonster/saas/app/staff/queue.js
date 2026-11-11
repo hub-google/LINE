@@ -20,7 +20,7 @@ export function renderStaffQueue({isManager,t,html}){
  const inQueue=x=>!unitMode||!!selected&&x.service_session_id===selected.id;
  const openTickets=allOpen.filter(inQueue);
  const otherOpen=unitMode?allOpen.filter(x=>!inQueue(x)):[];
- const active=openTickets.find(x=>["CALLED","ARRIVED","ADMITTED","SERVING"].includes(x.status));
+ const active=openTickets.find(x=>x.status==="CALLED");
  const waiting=openTickets.filter(x=>x.status==="WAITING");
  const passed=openTickets.filter(x=>x.status==="PASSED");
  const held=openTickets.filter(x=>x.status==="HOLD");
@@ -57,7 +57,7 @@ export function renderStaffQueue({isManager,t,html}){
    stat("已過號",passed.length)+stat("保留中",held.length)+stat("已結束",doneTickets.length)+'</div>'+
    box("叫號操作",
      '<p class="muted">'+(unitMode?"目前操作選取的場次；": "仍在候位的跨日號碼會繼續排隊。")+
-     '號碼狀態可直接勾選與更正；已叫號後可標記「已到場」、「已進場」，不代表服務完成。</p>'+
+     '號碼狀態可直接勾選與更正；標記「已到場」、「已進場」、「服務中」、「已過號」或「已取消」後，即可繼續叫下一位，無須等到服務完成。</p>'+
      '<div class="staff-actionbar">'+
      btn("叫下一位",unitMode?"unit-call":"call","primary",(canCall?"":"disabled")+callExtra)+
      btn("再叫一次",unitMode?"unit-recall":"recall","outline",(canRecall?"":"disabled")+recallExtra)+
