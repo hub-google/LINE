@@ -22,7 +22,7 @@ function taiDay(s){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei
 function taiTime(s){return new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(s));}
 function taiStamp(s){return new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date(s));}
 function tzIso(input){if(!input)return '';return new Date(input+':00+08:00').toISOString();}
-function status(v){const names={published:'已發布',draft:'草稿',cancelled:'已取消',pending:'待審核',approved:'已核准',rejected:'已駁回',active:'在職',inactive:'停用'};return '<span class="chip '+esc(v)+'">'+esc(names[v]||v)+'</span>';}
+function status(v){const names={published:'已發布',draft:'草稿',cancelled:'已取消',withdrawn:'已撤回',pending:'待審核',approved:'已核准',rejected:'已駁回',active:'在職',inactive:'停用'};return '<span class="chip '+esc(v)+'">'+esc(names[v]||v)+'</span>';}
 function kind(v){return ({IN:'上班',OUT:'下班',BREAK_START:'休息開始',BREAK_END:'休息結束',leave:'請假',correction:'補卡',overtime:'加班',swap:'換班',annual:'特休',sick:'病假',personal:'事假',other:'其他假'})[v]||v;}
 function person(id){return (app.data?.members||[]).find(x=>x.id===id);}
 function branch(id){return (app.data?.branches||[]).find(x=>x.id===id);}
@@ -67,7 +67,7 @@ async function reload(silent=false){
    if(!app.tenants.find(t=>t.id===app.tenantId))app.tenantId=app.tenants[0]?.id||'';
    if(!app.tenantId){app.data=null;}else{
     const p='tenant_id=eq.'+encodeURIComponent(app.tenantId);
-    const [branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections,leavePolicies,attendanceCases,attendanceRuleRows,requestDocs,scheduleRuleRows,memberBranches,qrSettings,leaveCancellations]=await Promise.all([
+    const [branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections,leavePolicies,attendanceCases,attendanceRuleRows,requestDocs,scheduleRuleRows,memberBranches,qrSettings,leaveCancellations,availabilityPolicy]=await Promise.all([
      query('wm_branches','select=*&'+p+'&order=name'),query('wm_members','select=id,tenant_id,branch_id,user_id,display_name,employee_code,role,employment_type,status,created_at,department_id,reports_to,job_title,hired_on,left_on,skills&'+p+'&order=employee_code'),
      query('wm_shifts','select=*&'+p+'&order=starts_at.desc&limit=600'),query('wm_punches','select=*&'+p+'&order=punched_at.desc&limit=600'),
      query('wm_requests','select=*&'+p+'&order=created_at.desc&limit=300'),query('wm_leave_entitlements','select=*&'+p),
@@ -81,7 +81,8 @@ async function reload(silent=false){
      query('wm_schedule_rules','select=*&'+p+'&order=effective_from.desc&limit=10'),
      query('wm_member_branches','select=*&'+p+'&order=active_from.desc'),
      query('wm_branch_qr_settings','select=*&'+p),
-     call('/rest/v1/rpc/wm_list_leave_cancellations','POST',{p_tenant:app.tenantId},app.token) ]);
+     call('/rest/v1/rpc/wm_list_leave_cancellations','POST',{p_tenant:app.tenantId},app.token),
+     call('/rest/v1/rpc/wm_get_availability_policy','POST',{p_tenant:app.tenantId},app.token) ]);
     if(members.some(m=>m.user_id===app.user?.id&&['owner','hr'].includes(m.role))){
       const wages=await call('/rest/v1/rpc/wm_staff_wages','POST',{p_tenant:app.tenantId},app.token);
       const lookup=new Map((wages||[]).map(w=>[w.member_id,w.hourly_rate]));
@@ -473,7 +474,11 @@ schedule=function(){
  const d=app.data||{};
  const availability=(d.availability||[]).slice(0,50).map(a=>tr([
   personLabel(a.member_id),taiStamp(a.starts_at),taiStamp(a.ends_at),
-  a.available?'可上班':'不可上班',esc(a.note||'—')]));
+  a.available?'可上班':'不可上班',esc(a.note||'—'),
+  status(app.mode==='demo'?'approved':(a.status||'pending')),
+  app.mode==='real'&&a.status==='pending'&&person(a.member_id)?.user_id===app.user?.id?
+   '<button class="btn small danger" data-wf-availability="withdraw" data-id="'+esc(a.id)+'">撤回</button>':'—'
+ ]));
  const templates=(d.templates||[]).map(t=>tr([
   esc(t.name),esc(String(t.starts_local).slice(0,5))+'—'+esc(String(t.ends_local).slice(0,5)),
   esc(t.break_minutes||0)+' 分鐘']));
@@ -483,7 +488,7 @@ schedule=function(){
   esc(String(x.starts_local).slice(0,5))+'—'+esc(String(x.ends_local).slice(0,5)),
   String(x.needed)+' 人']));
  $('appContent').insertAdjacentHTML('beforeend',
-  panel('可上班／不可上班時段',table(['員工','開始','結束','偏好','備註'],availability),
+  panel('可上班／不可上班時段',table(['員工','開始','結束','偏好','備註','審核','操作'],availability),
    '<button class="btn small" data-action="newAvailability">＋ 提供可上班時段</button>')+
   panel('班型範本',table(['名稱','時間','休息'],templates),
    manager()?'<div class="flex"><button class="btn small" data-action="newTemplate">＋ 新增班型</button><button class="btn small" data-action="copyWeek">複製本週至下週（草稿）</button></div>':'')+
@@ -656,7 +661,9 @@ action=async function(name,data){
 function showExtraForm(title,name,fields,submit){openModal(title,modalForm(name,fields,submit));}
 function showAvailability(){
  showExtraForm('提供可排班時段','availability',[
-  {name:'member_id',label:'員工',html:memberFilter(getSelected())},
+  {name:'member_id',label:'員工',html:app.mode==='demo'?memberFilter(getSelected()):
+   '<select name="member_id" required><option value="'+esc((app.data?.members||[]).find(m=>m.user_id===app.user?.id)?.id||'')+'">'+
+   esc((app.data?.members||[]).find(m=>m.user_id===app.user?.id)?.display_name||'本人')+'</option></select>'},
   {name:'available',label:'狀態',html:selectField('available','<option value="true">可上班</option><option value="false">不可上班／排休</option>')},
   {name:'starts_at',label:'開始',html:input('starts_at','datetime-local',today()+'T09:00')},
   {name:'ends_at',label:'結束',html:input('ends_at','datetime-local',today()+'T18:00')},
@@ -979,9 +986,11 @@ function proposeWorkforceWeek(){
        .reduce((sum,s)=>sum+(new Date(s.ends_at).getTime()-new Date(s.starts_at).getTime()),0);
      const conflicts=(d.requests||[]).some(r=>r.member_id===m.id&&r.kind==='leave'&&r.status==='approved'
        &&new Date(r.starts_at)<endMs&&new Date(r.ends_at)>startMs);
-     const availability=(d.availability||[]).filter(x=>x.member_id===m.id&&new Date(x.starts_at)<endMs&&new Date(x.ends_at)>startMs);
-     const blocked=availability.some(x=>!x.available);
-     const positive=(d.availability||[]).filter(x=>x.member_id===m.id&&x.available&&taiDay(x.starts_at)>=monday&&taiDay(x.starts_at)<=dayAdd(monday,6));
+     const availability=(d.availability||[]).filter(x=>x.member_id===m.id&&new Date(x.starts_at)<endMs&&new Date(x.ends_at)>startMs&&(app.mode==='demo'||x.status==='approved'));
+     // A not-yet-reviewed employee blackout is respected conservatively.
+     const pendingBlackout=(d.availability||[]).some(x=>x.member_id===m.id&&x.status==='pending'&&!x.available&&new Date(x.starts_at)<endMs&&new Date(x.ends_at)>startMs);
+     const blocked=availability.some(x=>!x.available)||pendingBlackout;
+     const positive=(d.availability||[]).filter(x=>x.member_id===m.id&&x.available&&(app.mode==='demo'||x.status==='approved')&&taiDay(x.starts_at)>=monday&&taiDay(x.starts_at)<=dayAdd(monday,6));
      const preferred=positive.some(x=>new Date(x.starts_at)<=startMs&&new Date(x.ends_at)>=endMs);
      const mustMatch=positive.length>0&&!preferred;
      return {m,weekMs,preferred,eligible:!overlaps&&!tooClose&&!conflicts&&!blocked&&!mustMatch&&weekMs+(endMs-startMs)<=40*3600000};
@@ -2401,4 +2410,82 @@ $('overlay').addEventListener('submit',async event=>{
   closeModal();await reload(true);
   banner('已由資料庫確認並儲存，歷程已保留');
  }catch(err){banner(err.message||'操作失敗',true);if(submit)submit.disabled=false;}
+},true);
+
+
+/* HR-SCH-03: existing availability table now has real supervisor decisions.
+   Approved preferences influence automatic drafts; pending blackout windows
+   block risky automatic scheduling until the employee request is reviewed. */
+const wfPriorAvailabilitySchedule=schedule;
+schedule=function(){
+ wfPriorAvailabilitySchedule();
+ if(app.mode!=='real'||!app.token)return;
+ const cutoff=Number(app.data?.availabilityPolicy?.cutoff_hours??0);
+ const isAdmin=['owner','hr'].includes(role());
+ const policy=panel('可排班時段提交截止時間',
+  '<p>員工需在可排班時段開始前至少 <strong>'+cutoff+' 小時</strong>送出（0 代表可在開始前提交）。</p>'+
+  '<p class="muted">主管必須核准後才視為正式偏好；尚未審核的不可上班區間也會暫時阻止自動排班。</p>',
+  isAdmin?'<button type="button" class="btn small" data-wf-availability="cutoff">設定截止時間</button>':'');
+ const pending=(app.data?.availability||[]).filter(x=>x.status==='pending'&&wfCanReview(x.member_id));
+ const rows=pending.map(a=>tr([
+  personLabel(a.member_id),taiStamp(a.starts_at),taiStamp(a.ends_at),
+  a.available?'可上班':'不可上班',esc(a.note||'—'),
+  '<button type="button" class="btn small primary" data-wf-availability="review" data-id="'+esc(a.id)+'" data-ok="true">核准</button> '+
+  '<button type="button" class="btn small danger" data-wf-availability="review" data-id="'+esc(a.id)+'" data-ok="false">駁回</button>'
+ ]));
+ $('appContent').insertAdjacentHTML('beforeend',
+  policy+(manager()?panel('待審核的可排班時段',table(['員工','開始','結束','偏好','原因','審核'],rows)):''));
+};
+function wfAvailabilityReviewModal(id,approved){
+ const item=(app.data?.availability||[]).find(x=>x.id===id&&x.status==='pending');
+ if(!item||!wfCanReview(item.member_id))throw Error('沒有審核此員工的權限');
+ openModal(approved?'核准可排班時段':'駁回可排班時段',
+  modalForm('wf_availability_review',[
+   {name:'p_availability',label:'申請內容',wide:true,html:'<input name="p_availability" type="hidden" value="'+esc(id)+'"><p>'+
+    personLabel(item.member_id)+' · '+taiStamp(item.starts_at)+'～'+taiStamp(item.ends_at)+'</p>'},
+   {name:'p_approved',label:'決定',html:'<input name="p_approved" type="hidden" value="'+String(approved)+'"><p>'+(approved?'核准':'駁回')+'</p>'},
+   {name:'p_note',label:'審核備註',wide:true,html:'<textarea name="p_note" maxlength="500" rows="3"></textarea>'}
+  ],approved?'確認核准':'確認駁回'));
+}
+function wfAvailabilityCutoffModal(){
+ if(!['owner','hr'].includes(role())||app.mode!=='real')throw Error('只有企業負責人或人資可設定');
+ openModal('設定可排班時段截止時間',
+  modalForm('wf_availability_cutoff',[
+   {name:'p_cutoff_hours',label:'提前多少小時截止（0–336）',
+    html:'<input name="p_cutoff_hours" type="number" min="0" max="336" step="1" required value="'+Number(app.data?.availabilityPolicy?.cutoff_hours??0)+'">'}
+  ],'儲存企業規則')+
+  '<p class="muted">只影響之後提交的時段；已送出的申請仍保留原審核紀錄。</p>');
+}
+document.addEventListener('click',async event=>{
+ const btn=event.target.closest('[data-wf-availability]');
+ if(!btn||!btn.closest('#appContent')||btn.disabled)return;
+ event.preventDefault();
+ try{
+  if(btn.dataset.wfAvailability==='review')wfAvailabilityReviewModal(btn.dataset.id,btn.dataset.ok==='true');
+  else if(btn.dataset.wfAvailability==='cutoff')wfAvailabilityCutoffModal();
+  else if(btn.dataset.wfAvailability==='withdraw'){
+   if(!confirm('確定撤回這筆尚未審核的可排班時段？'))return;
+   btn.disabled=true;
+   await call('/rest/v1/rpc/wm_withdraw_availability','POST',{p_availability:btn.dataset.id},app.token);
+   await reload(true);banner('已撤回時段申請');
+  }
+ }catch(err){banner(err.message,true);btn.disabled=false;}
+});
+$('overlay').addEventListener('submit',async event=>{
+ const form=event.target;
+ if(!['wf_availability_review','wf_availability_cutoff'].includes(form?.dataset?.form))return;
+ event.preventDefault();event.stopImmediatePropagation();
+ const submit=form.querySelector('[type="submit"]');if(submit)submit.disabled=true;
+ try{
+  if(app.mode!=='real'||!app.token)throw Error('請登入正式企業帳號');
+  const f=Object.fromEntries(new FormData(form).entries());
+  if(form.dataset.form==='wf_availability_review'){
+   await call('/rest/v1/rpc/wm_review_availability','POST',
+    {p_availability:f.p_availability,p_approved:f.p_approved==='true',p_note:f.p_note},app.token);
+  }else{
+   await call('/rest/v1/rpc/wm_set_availability_policy','POST',
+    {p_tenant:app.tenantId,p_cutoff_hours:Number(f.p_cutoff_hours)},app.token);
+  }
+  closeModal();await reload(true);banner('設定或審核結果已由資料庫確認');
+ }catch(err){banner(err.message,true);if(submit)submit.disabled=false;}
 },true);
