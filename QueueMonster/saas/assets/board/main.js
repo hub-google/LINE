@@ -197,7 +197,7 @@
         if(refreshQueued){refreshQueued=false;void refresh();}
       }
     }
-    $("refresh").addEventListener("click",()=>{disabled=false;void refresh();});
+    // Polling remains automatic; no manual reload button is necessary.
     $("fullscreen").addEventListener("click",async()=>{
       try{
         if(document.fullscreenElement)await document.exitFullscreen();

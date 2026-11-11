@@ -237,7 +237,7 @@ try{
    const main=document.getElementById("single-board");
    const cards=[...document.querySelectorAll("#unit-board .unit-card")];
    const nodes=[
-    ...document.querySelectorAll("body > header,body > footer,#single-board:not([hidden]),#unit-board:not([hidden]),#current,#upcoming li,#unit-board .unit-card,#board-page-indicator")
+    ...document.querySelectorAll("body > header,body > footer,#board-session-nav:not([hidden]),#single-board:not([hidden]),#unit-board:not([hidden]),#current,#upcoming li,#unit-board .unit-card,#board-page-indicator")
    ].filter(el=>el.getClientRects().length&&!el.closest("[hidden]")&&!el.hasAttribute("data-board-hidden"));
    const rects=nodes.map(el=>{
     const r=el.getBoundingClientRect();
@@ -284,7 +284,45 @@ try{
    for(const n of ["A124","A125","A126","A127","A128"]){
     const li=document.createElement("li");li.textContent=n;q.appendChild(li);
    }
+   // Fixture bypasses renderUpcoming(), which normally schedules the fitter.
+   // Notify the real fitter that data has changed, as the production path does.
+   window.dispatchEvent(new Event("resize"));
   });
+  // The board must already occupy the visible browser viewport, BEFORE fullscreen.
+  await page.waitForTimeout(180);
+  assert.equal(await page.locator("#refresh").count(),0,"Polling needs no manual refresh button");
+  const normal=await geometry();
+  assert.equal(normal.fullscreen,false);
+  assert.equal(normal.scale,1);
+  assert.equal(normal.layout,normal.mainRatio>=1.05?"side":"stack");
+  assert.ok(normal.documentHeight<=viewport.height+2&&normal.documentWidth<=viewport.width+2,
+   "Normal browser board must not need a scrollbar: "+JSON.stringify(normal));
+  assert.ok(normal.rects.every(r=>r.bottom<=viewport.height+2&&r.right<=viewport.width+2&&r.top>=-2&&r.left>=-2),
+   "The regular page must show every board region within the browser viewport: "+JSON.stringify(normal));
+  assert.deepEqual(normal.clipped,[],"Regular view must not clip queue numbers");
+  assert.equal(normal.rects.filter(r=>r.name==="LI").length,5);
+  // An individually selected service session introduces an additional nav row.
+  // It too must remain visible without asking the customer to press fullscreen.
+  await page.evaluate(()=>{
+   const nav=document.getElementById("board-session-nav");
+   nav.hidden=false;
+   document.getElementById("board-session-name").textContent="一般場次 · 上午場";
+   window.dispatchEvent(new Event("resize"));
+  });
+  await page.waitForTimeout(140);
+  const withSession=await geometry();
+  assert.ok(withSession.documentHeight<=viewport.height+2);
+  assert.ok(withSession.rects.some(r=>r.name==="board-session-nav"));
+  assert.ok(withSession.rects.every(r=>r.bottom<=viewport.height+2&&r.top>=-2),
+   "Session title, calling number and footer must share a single visible screen");
+  await page.evaluate(()=>{
+   document.getElementById("board-session-nav").hidden=true;
+   window.dispatchEvent(new Event("resize"));
+  });
+  await page.waitForTimeout(100);
+  console.log("Regular browser viewport queue:",JSON.stringify({viewport,
+   layout:normal.layout,currentFont:normal.currentFont,nextFont:normal.upcomingFont,
+   noScroll:true,sessionVisible:true}));
   await page.locator("#fullscreen").click();
   await page.waitForFunction(()=>!!document.fullscreenElement);
   await page.waitForTimeout(160);
@@ -353,6 +391,13 @@ try{
   }
   await page.evaluate(()=>document.exitFullscreen());
   await page.waitForFunction(()=>!document.fullscreenElement);
+  const afterFullscreen=await geometry();
+  assert.equal(afterFullscreen.fullscreen,false);
+  assert.equal(afterFullscreen.scale,1);
+  assert.ok(afterFullscreen.documentHeight<=viewport.height+2&&afterFullscreen.documentWidth<=viewport.width+2,
+   "Exiting fullscreen must retain the exact same fitted layout");
+  assert.ok(afterFullscreen.rects.every(r=>r.bottom<=viewport.height+2&&r.right<=viewport.width+2),
+   "Exiting fullscreen must not cause clipping or overflow");
  }
  assert.deepEqual(missing,[],'Missing local build assets');assert.deepEqual(errors,[],'Browser runtime errors');
  console.log('Browser smoke passed; no business writes were submitted.');

@@ -51,187 +51,196 @@
 /* True kiosk mode: every board region stays within one visible screen.
    Native Fullscreen targets <html>, not <body>. The JS fitter only reduces
    the display scale if an unusually short screen or many service units need it. */
-html:fullscreen{width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
-html:fullscreen body{
+html.board-fit{width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
+html.board-fit body{
   width:100%;height:100dvh;min-height:0;max-height:none;
   display:grid;grid-template-columns:minmax(0,1fr);
   grid-template-rows:auto auto minmax(0,1fr) auto;
   overflow:hidden;overscroll-behavior:none;
 }
-html:fullscreen body > header{
+html.board-fit body > header{
   grid-row:1;min-height:0;min-width:0;
   padding:clamp(6px,1vh,13px) clamp(12px,2vw,30px);gap:12px;
 }
-html:fullscreen header h1{font-size:clamp(18px,3.2vh,44px);line-height:1.15}
-html:fullscreen #clock{font-size:clamp(18px,3.3vh,42px)}
-html:fullscreen .shop-icon{width:clamp(30px,5vh,56px);height:clamp(30px,5vh,56px);border-width:2px}
-html:fullscreen body > #board-session-nav:not([hidden]){
+html.board-fit header h1{font-size:clamp(18px,3.2vh,44px);line-height:1.15}
+html.board-fit #clock{font-size:clamp(18px,3.3vh,42px)}
+html.board-fit .shop-icon{width:clamp(30px,5vh,56px);height:clamp(30px,5vh,56px);border-width:2px}
+html.board-fit body > #board-session-nav:not([hidden]){
   grid-row:2;min-width:0;min-height:0;
   padding:clamp(4px,.8vh,10px) clamp(12px,2vw,30px);font-size:clamp(12px,1.9vh,19px);
 }
-html:fullscreen #board-all-link{padding:5px 9px}
-html:fullscreen body > #single-board:not([hidden]),
-html:fullscreen body > #unit-board:not([hidden]){
+html.board-fit #board-all-link{padding:5px 9px}
+html.board-fit body > #single-board:not([hidden]),
+html.board-fit body > #unit-board:not([hidden]){
   grid-row:3;width:100%;height:100%;min-width:0;min-height:0;
   margin:0;overflow:hidden;
   padding:clamp(5px,1.1vh,14px) clamp(7px,1.4vw,22px);
 }
-html:fullscreen #single-board{
+html.board-fit #single-board{
   display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);
   grid-template-rows:minmax(0,1fr);gap:clamp(6px,1.2vw,18px);
 }
-html:fullscreen #single-board .panel{
+html.board-fit #single-board .panel{
   min-height:0;min-width:0;overflow:hidden;
   padding:clamp(7px,1.3vh,20px);border-radius:clamp(12px,2vh,27px);
 }
-html:fullscreen #single-board .label{
+html.board-fit #single-board .label{
   font-size:clamp(17px,3.2vh,42px);line-height:1.15;
 }
-html:fullscreen #single-board .underline{
+html.board-fit #single-board .underline{
   width:clamp(46px,6vw,85px);height:5px;
   margin:clamp(3px,.8vh,10px) auto clamp(6px,1vh,12px);
 }
-html:fullscreen #current{
+html.board-fit #current{
   font-size:clamp(60px,min(16vw,26vh),255px);
   line-height:1.06;max-height:100%;min-height:0;
 }
-html:fullscreen #current.is-empty{font-size:clamp(25px,min(4.7vw,6.2vh),67px)}
-html:fullscreen #upcoming{
+html.board-fit #current.is-empty{font-size:clamp(25px,min(4.7vw,6.2vh),67px)}
+html.board-fit #upcoming{
   flex:1;min-height:0;min-width:0;
   display:grid;grid-template-columns:minmax(0,1fr);
   grid-template-rows:repeat(var(--board-queue-count,5),minmax(0,1fr));
   gap:clamp(3px,.65vh,9px);
 }
-html:fullscreen #upcoming li{
+html.board-fit #upcoming li{
   min-height:0;min-width:0;
   padding:2px 5px;
   font-size:clamp(26px,min(4.5vw,7vh),76px);
   line-height:1.05;border-radius:clamp(8px,1.5vh,17px);
 }
-html:fullscreen #upcoming li.empty{font-size:clamp(13px,2.7vh,27px)}
-html:fullscreen #unit-board{
+html.board-fit #upcoming li.empty{font-size:clamp(13px,2.7vh,27px)}
+html.board-fit #unit-board{
   grid-template-columns:repeat(var(--board-unit-columns,3),minmax(0,1fr));
   grid-template-rows:repeat(var(--board-unit-rows,1),minmax(0,1fr));
   grid-auto-rows:minmax(0,1fr);align-content:stretch;
   gap:clamp(6px,1vh,16px);
 }
-html:fullscreen #unit-board .unit-card{
+html.board-fit #unit-board .unit-card{
   display:flex;flex-direction:column;justify-content:space-around;
   min-width:0;min-height:0;overflow:hidden;
   padding:clamp(7px,1.1vh,18px);border-radius:clamp(10px,1.8vh,20px);
 }
-html:fullscreen #unit-board .unit-card h2{font-size:clamp(15px,2.7vh,29px);line-height:1.12}
-html:fullscreen #unit-board .unit-card .group{font-size:clamp(11px,1.6vh,16px)}
-html:fullscreen #unit-board .unit-now{font-size:clamp(36px,min(7vw,12vh),115px);line-height:1.05}
-html:fullscreen #unit-board .unit-now.is-empty{font-size:clamp(18px,3.4vh,38px);padding:4px 0}
-html:fullscreen #unit-board .unit-next{font-size:clamp(12px,1.9vh,18px);padding-top:5px}
-html:fullscreen #unit-board .unit-open{margin-top:5px;padding:4px 8px;font-size:clamp(11px,1.6vh,15px)}
-html:fullscreen body > footer{
+html.board-fit #unit-board .unit-card h2{font-size:clamp(15px,2.7vh,29px);line-height:1.12}
+html.board-fit #unit-board .unit-card .group{font-size:clamp(11px,1.6vh,16px)}
+html.board-fit #unit-board .unit-now{font-size:clamp(36px,min(7vw,12vh),115px);line-height:1.05}
+html.board-fit #unit-board .unit-now.is-empty{font-size:clamp(18px,3.4vh,38px);padding:4px 0}
+html.board-fit #unit-board .unit-next{font-size:clamp(12px,1.9vh,18px);padding-top:5px}
+html.board-fit #unit-board .unit-open{margin-top:5px;padding:4px 8px;font-size:clamp(11px,1.6vh,15px)}
+html.board-fit body > footer{
   grid-row:4;min-height:0;min-width:0;
   padding:clamp(5px,.8vh,10px) clamp(10px,2vw,28px);
   gap:4px 12px;font-size:clamp(11px,1.7vh,17px);
 }
-html:fullscreen footer .footer-note{margin:0;padding:5px 12px}
-html:fullscreen footer #notice{font-size:clamp(10px,1.4vh,13px);line-height:1.2}
-html:fullscreen footer .board-controls{width:auto;gap:6px}
-html:fullscreen footer button{padding:5px 9px;font-size:clamp(11px,1.5vh,14px);min-height:36px}
+html.board-fit footer .footer-note{margin:0;padding:5px 12px}
+html.board-fit footer #notice{font-size:clamp(10px,1.4vh,13px);line-height:1.2}
+html.board-fit footer .board-controls{width:auto;gap:6px}
+html.board-fit footer button{padding:5px 9px;font-size:clamp(11px,1.5vh,14px);min-height:36px}
 @media(max-width:780px){
-  html:fullscreen #single-board{
+  html.board-fit #single-board{
     grid-template-columns:minmax(0,1fr);
     grid-template-rows:minmax(0,.65fr) minmax(0,1.35fr);
   }
-  html:fullscreen #upcoming{
+  html.board-fit #upcoming{
     grid-template-columns:repeat(2,minmax(0,1fr));
     grid-template-rows:repeat(var(--board-queue-mobile-rows,3),minmax(0,1fr));
   }
-  html:fullscreen #current{font-size:clamp(44px,14vh,130px)}
-  html:fullscreen body > footer{gap:3px 8px}
-  html:fullscreen .footer-note{padding:3px 7px}
+  html.board-fit #current{font-size:clamp(44px,14vh,130px)}
+  html.board-fit body > footer{gap:3px 8px}
+  html.board-fit .footer-note{padding:3px 7px}
 }
 @media(max-width:460px){
-  html:fullscreen body > header{padding:5px 9px}
-  html:fullscreen .shop-title{max-width:58%}
-  html:fullscreen #single-board .panel{padding:6px 10px}
-  html:fullscreen body > footer{padding:4px 7px}
+  html.board-fit body > header{padding:5px 9px}
+  html.board-fit .shop-title{max-width:58%}
+  html.board-fit #single-board .panel{padding:6px 10px}
+  html.board-fit body > footer{padding:4px 7px}
 }
 
 /* Fullscreen readability: never shrink the entire page to pass a no-scroll test.
    Keep the call number prominent and use actual waiting-item rows. */
-html:fullscreen body{zoom:1!important}
-html:fullscreen #single-board .panel.current{justify-content:center}
-html:fullscreen #single-board .panel.next{justify-content:flex-start}
-html:fullscreen #upcoming li{overflow-wrap:anywhere}
-html:fullscreen #unit-board .unit-card .unit-now{flex:1;display:grid;place-items:center;min-height:0}
-html:fullscreen body.board-compact > header{padding-top:4px;padding-bottom:4px}
-html:fullscreen body.board-compact > footer{padding-top:3px;padding-bottom:3px}
-html:fullscreen body.board-compact #single-board .panel{padding:6px 9px}
-html:fullscreen body.board-compact #single-board .underline{margin:2px auto 4px}
-html:fullscreen body.board-compact #unit-board .unit-card{padding:5px 7px;gap:0}
-html:fullscreen body.board-compact #unit-board .unit-open{margin-top:2px;padding:2px 5px}
+html.board-fit body{zoom:1!important}
+html.board-fit #single-board .panel.current{justify-content:center}
+html.board-fit #single-board .panel.next{justify-content:flex-start}
+html.board-fit #upcoming li{overflow-wrap:anywhere}
+html.board-fit #unit-board .unit-card .unit-now{flex:1;display:grid;place-items:center;min-height:0}
+html.board-fit body.board-compact > header{padding-top:4px;padding-bottom:4px}
+html.board-fit body.board-compact > footer{padding-top:3px;padding-bottom:3px}
+html.board-fit body.board-compact #single-board .panel{padding:6px 9px}
+html.board-fit body.board-compact #single-board .underline{margin:2px auto 4px}
+html.board-fit body.board-compact #unit-board .unit-card{padding:5px 7px;gap:0}
+html.board-fit body.board-compact #unit-board .unit-open{margin-top:2px;padding:2px 5px}
 
 /* Universal fullscreen board: ONE layout engine supplies measured container
    proportions. No screen-model, pixel-width or orientation breakpoints. */
-html:fullscreen body{zoom:1!important}
-html:fullscreen #single-board[data-board-layout="side"]{
+html.board-fit body{zoom:1!important}
+html.board-fit #single-board[data-board-layout="side"]{
   grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)!important;
   grid-template-rows:minmax(0,1fr)!important;
 }
-html:fullscreen #single-board[data-board-layout="stack"]{
+html.board-fit #single-board[data-board-layout="stack"]{
   grid-template-columns:minmax(0,1fr)!important;
   grid-template-rows:minmax(0,.9fr) minmax(0,1.1fr)!important;
 }
-html:fullscreen #single-board .panel.current,
-html:fullscreen #single-board .panel.next{min-height:0;min-width:0}
-html:fullscreen #single-board .label{
+html.board-fit #single-board .panel.current,
+html.board-fit #single-board .panel.next{min-height:0;min-width:0}
+html.board-fit #single-board .label{
   font-size:var(--board-current-label-font,3.2vh);
 }
-html:fullscreen #current,
-html:fullscreen #current.is-empty{
+html.board-fit #current,
+html.board-fit #current.is-empty{
   font-size:var(--board-current-font,18vh)!important;
   line-height:1.22;
   overflow-wrap:anywhere;
 }
-html:fullscreen #upcoming{
+html.board-fit #upcoming{
   grid-template-columns:repeat(var(--board-queue-columns,1),minmax(0,1fr))!important;
   grid-template-rows:repeat(var(--board-queue-rows,5),minmax(0,1fr))!important;
   gap:8px;
 }
-html:fullscreen #upcoming li,
-html:fullscreen #upcoming li.empty{
+html.board-fit #upcoming li,
+html.board-fit #upcoming li.empty{
   font-size:var(--board-next-font,4vh)!important;
   min-height:0;
   line-height:1.08;
   overflow:hidden;
   overflow-wrap:anywhere;
 }
-html:fullscreen #unit-board{
+html.board-fit #unit-board{
   grid-template-columns:repeat(var(--board-unit-columns,3),minmax(0,1fr))!important;
   grid-template-rows:repeat(var(--board-unit-rows,1),minmax(0,1fr))!important;
   grid-auto-rows:minmax(0,1fr);
   min-height:0;
 }
-html:fullscreen #unit-board .unit-card[data-board-hidden]{display:none!important}
-html:fullscreen #unit-board .unit-card{
+html.board-fit #unit-board .unit-card[data-board-hidden]{display:none!important}
+html.board-fit #unit-board .unit-card{
   display:flex;flex-direction:column;justify-content:space-around;
   min-height:0;min-width:0;
 }
-html:fullscreen #unit-board .unit-card .unit-now{
+html.board-fit #unit-board .unit-card .unit-now{
   flex:1;min-height:0;
   display:flex;align-items:center;justify-content:center;
   padding:0;
 }
-html:fullscreen #unit-board .unit-card .group,
-html:fullscreen #unit-board .unit-card .unit-next,
-html:fullscreen #unit-board .unit-card h2{line-height:1.1;min-height:0}
-html:fullscreen .footer-note{display:none}
-html:fullscreen #board-page-indicator{
+html.board-fit #unit-board .unit-card .group,
+html.board-fit #unit-board .unit-card .unit-next,
+html.board-fit #unit-board .unit-card h2{line-height:1.1;min-height:0}
+html.board-fit .footer-note{display:none}
+html.board-fit #board-page-indicator{
   font-size:clamp(12px,1.7vh,18px);
   font-weight:850;color:var(--merchant-board-ink,#462B52);
   white-space:nowrap;
 }
-html:fullscreen #board-page-indicator[hidden]{display:none!important}
+html.board-fit #board-page-indicator[hidden]{display:none!important}
 
 /* Read-only kiosk screens should not waste display area on account controls. */
-html:fullscreen #site-auth-root{display:none!important}
-html:fullscreen body > header .shop-title{min-width:0;flex:1}
-html:fullscreen body > header #clock{flex:0 0 auto}
+html.board-fit #site-auth-root{display:none!important}
+html.board-fit body > header .shop-title{min-width:0;flex:1}
+html.board-fit body > header #clock{flex:0 0 auto}
+
+/* Kiosk viewport is the default board canvas, even inside a normal browser tab.
+   Native fullscreen changes ONLY the browser chrome around this same canvas. */
+html.board-fit{width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
+html.board-fit body{height:100dvh;max-height:100dvh;overflow:hidden;min-height:0}
+html.board-fit body > header{min-width:0}
+html.board-fit body > #board-session-nav:not([hidden]){min-width:0}
+html.board-fit body > footer{min-width:0}
+html.board-fit #single-board .panel.next{min-height:0}
