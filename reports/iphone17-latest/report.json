@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-11T02:54:57.921Z",
+  "date": "2026-11-11T03:05:21.017Z",
   "device": "iPhone 17 simulated Chromium, 402x874 CSS pixels, DPR3",
   "note": "Read-only live website screenshots; no authentication, no writes; not physical Safari.",
   "screens": [
@@ -72,15 +72,15 @@
       "visibleTapCount": 16,
       "keyRects": {
         ".hero-cta": {
-          "top": -128,
-          "bottom": 58,
+          "top": -107,
+          "bottom": 79,
           "left": 20,
           "right": 382,
           "height": 186
         },
         ".hero-showcase": {
-          "top": 128,
-          "bottom": 986,
+          "top": 149,
+          "bottom": 1007,
           "left": 20,
           "right": 382,
           "height": 857
@@ -236,7 +236,7 @@
           "height": 28
         }
       },
-      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 找店家、查看叫號更簡單 搜尋店名或地點，直接查看可使用的服務。公開叫號看板無須登入；預約及取號才需 LINE 身分驗證。 熱門店家排行 近 30 天預約＋取號 · 前 10 名 ▤ #1 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 1 · 取號 1 簡介 地點：臺北市中正區北平西路3號 立即預約 現場取號 公開叫號看板 地圖位置 #2 測試1 餐飲 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 1 這是測試店家 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #3 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #4 專屬測試門市 其他 線上預約 現場取",
+      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 找店家、查看叫號更簡單 搜尋店名或地點，直接查看可使用的服務。公開叫號看板無須登入；預約及取號才需 LINE 身分驗證。 熱門店家排行 近 30 天預約＋取號 · 前 10 名 #1 測試1 餐飲 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 6 這是測試店家 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #2 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 1 · 取號 1 簡介 地點：臺北市中正區北平西路3號 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #3 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #4 專屬測試門市 其他 線上預約 現場取",
       "errors": [],
       "failedRequests": []
     },
@@ -255,63 +255,63 @@
       "visibleTapCount": 10,
       "keyRects": {
         ".page-header": {
-          "top": -609,
-          "bottom": -459,
+          "top": -588,
+          "bottom": -438,
           "left": 0,
           "right": 402,
           "height": 150
         },
         ".hero-heading": {
-          "top": -551,
-          "bottom": -480,
+          "top": -530,
+          "bottom": -459,
           "left": 14,
           "right": 388,
           "height": 71
         },
         ".main-panel": {
-          "top": -476,
-          "bottom": 4646,
+          "top": -455,
+          "bottom": 4667,
           "left": 14,
           "right": 388,
           "height": 5123
         },
         ".tabs": {
-          "top": -462,
-          "bottom": -406,
+          "top": -441,
+          "bottom": -385,
           "left": 28,
           "right": 374,
           "height": 56
         },
         "#keyword": {
-          "top": -317,
-          "bottom": -268,
+          "top": -296,
+          "bottom": -247,
           "left": 28,
           "right": 374,
           "height": 49
         },
         "#explore-filters": {
-          "top": -258,
-          "bottom": -212,
+          "top": -237,
+          "bottom": -191,
           "left": 28,
           "right": 374,
           "height": 46
         },
         "#results": {
-          "top": -90,
-          "bottom": 4622,
+          "top": -69,
+          "bottom": 4643,
           "left": 28,
           "right": 374,
           "height": 4713
         },
         "#results-heading": {
-          "top": -128,
-          "bottom": -100,
+          "top": -107,
+          "bottom": -79,
           "left": 28,
           "right": 127,
           "height": 28
         }
       },
-      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 找店家、查看叫號更簡單 搜尋店名或地點，直接查看可使用的服務。公開叫號看板無須登入；預約及取號才需 LINE 身分驗證。 熱門店家排行 近 30 天預約＋取號 · 前 10 名 ▤ #1 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 1 · 取號 1 簡介 地點：臺北市中正區北平西路3號 立即預約 現場取號 公開叫號看板 地圖位置 #2 測試1 餐飲 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 1 這是測試店家 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #3 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #4 專屬測試門市 其他 線上預約 現場取",
+      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 找店家、查看叫號更簡單 搜尋店名或地點，直接查看可使用的服務。公開叫號看板無須登入；預約及取號才需 LINE 身分驗證。 熱門店家排行 近 30 天預約＋取號 · 前 10 名 #1 測試1 餐飲 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 6 這是測試店家 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #2 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 1 · 取號 1 簡介 地點：臺北市中正區北平西路3號 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #3 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #4 專屬測試門市 其他 線上預約 現場取",
       "errors": [],
       "failedRequests": []
     },
@@ -536,7 +536,7 @@
           "height": 28
         }
       },
-      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 選擇提供現場取號的店家 公開看板可直接查看；實際取號時才需要 LINE 驗證。 熱門店家排行 近 30 天預約＋取號 · 前 10 名 ▤ #1 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 1 · 取號 1 簡介 地點：臺北市中正區北平西路3號 立即預約 現場取號 公開叫號看板 地圖位置 #2 測試1 餐飲 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 1 這是測試店家 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #3 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #4 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預",
+      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 選擇提供現場取號的店家 公開看板可直接查看；實際取號時才需要 LINE 驗證。 熱門店家排行 近 30 天預約＋取號 · 前 10 名 #1 測試1 餐飲 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 6 這是測試店家 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #2 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 1 · 取號 1 簡介 地點：臺北市中正區北平西路3號 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #3 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #4 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預",
       "errors": [],
       "failedRequests": []
     },
@@ -618,7 +618,7 @@
     {
       "id": "08-customer-reserve",
       "title": "排隊怪獸｜顧客預約、取號與門市管理",
-      "finalUrl": "https://hub-google.github.io/LINE/booking/?view=customer&merchant=qa-84b3ef9297eb470685a91a527ca499ca&tab=reserve",
+      "finalUrl": "https://hub-google.github.io/LINE/booking/?view=customer&merchant=qa-756950dfd52245b2aeb91fefa7912b3c&tab=reserve",
       "width": 402,
       "height": 874,
       "docWidth": 402,
@@ -644,7 +644,7 @@
     {
       "id": "08-customer-reserve-scroll",
       "title": "排隊怪獸｜顧客預約、取號與門市管理",
-      "finalUrl": "https://hub-google.github.io/LINE/booking/?view=customer&merchant=qa-84b3ef9297eb470685a91a527ca499ca&tab=reserve",
+      "finalUrl": "https://hub-google.github.io/LINE/booking/?view=customer&merchant=qa-756950dfd52245b2aeb91fefa7912b3c&tab=reserve",
       "width": 402,
       "height": 874,
       "docWidth": 402,
@@ -670,33 +670,33 @@
     {
       "id": "08-customer-reserve-after-12s",
       "title": "排隊怪獸｜顧客預約、取號與門市管理",
-      "finalUrl": "https://hub-google.github.io/LINE/booking/?view=customer&merchant=qa-84b3ef9297eb470685a91a527ca499ca&tab=reserve",
+      "finalUrl": "https://hub-google.github.io/LINE/booking/?view=customer&merchant=qa-756950dfd52245b2aeb91fefa7912b3c&tab=reserve",
       "width": 402,
       "height": 874,
       "docWidth": 402,
       "bodyWidth": 402,
-      "docHeight": 925,
+      "docHeight": 1022,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
-      "visibleTapCount": 9,
+      "visibleTapCount": 7,
       "keyRects": {
         "#root": {
           "top": 188,
-          "bottom": 908,
+          "bottom": 1005,
           "left": 0,
           "right": 402,
-          "height": 720
+          "height": 817
         }
       },
-      "bodyText": "排隊怪獸 搜尋店家 預約與取號 使用 LINE 登入 門市公開即時叫號 查看現在叫到幾號、後面等候順序，不必登入、不必綁定 LINE。 公開即時叫號看板 LINE 身分授權 為避免機器人或惡意假預約，預約前需綁定 LINE 身分。預約姓名及聯絡電話另行填寫，供現場核對與店家聯繫。 目前指定門市：qa-84b3ef9297eb470685a91a527ca499ca 請使用 LINE 登入後繼續預約或取號。 使用 LINE 登入 使用 LINE 登入（手機／電腦） 排隊怪獸服務 ・ 隱私權說明 ・ 使用條款",
+      "bodyText": "排隊怪獸 搜尋店家 預約與取號 使用 LINE 登入 店家預約與取號 測試1 由排隊怪獸提供預約與取號服務 門市公開即時叫號 查看現在叫到幾號、後面等候順序，不必登入、不必綁定 LINE。 公開即時叫號看板 LINE 身分授權 為避免機器人或惡意假預約，預約前需綁定 LINE 身分。預約姓名及聯絡電話另行填寫，供現場核對與店家聯繫。 目前指定門市：測試1 請使用 LINE 登入後繼續預約或取號。 使用 LINE 登入 使用 LINE 登入（手機／電腦） 排隊怪獸服務 ・ 隱私權說明 ・ 使用條款",
       "errors": [],
       "failedRequests": []
     },
     {
       "id": "09-customer-queue",
       "title": "排隊怪獸｜顧客預約、取號與門市管理",
-      "finalUrl": "https://hub-google.github.io/LINE/booking/?view=customer&merchant=qa-84b3ef9297eb470685a91a527ca499ca&tab=queue",
+      "finalUrl": "https://hub-google.github.io/LINE/booking/?view=customer&merchant=qa-756950dfd52245b2aeb91fefa7912b3c&tab=queue",
       "width": 402,
       "height": 874,
       "docWidth": 402,
@@ -722,7 +722,7 @@
     {
       "id": "09-customer-queue-scroll",
       "title": "排隊怪獸｜顧客預約、取號與門市管理",
-      "finalUrl": "https://hub-google.github.io/LINE/booking/?view=customer&merchant=qa-84b3ef9297eb470685a91a527ca499ca&tab=queue",
+      "finalUrl": "https://hub-google.github.io/LINE/booking/?view=customer&merchant=qa-756950dfd52245b2aeb91fefa7912b3c&tab=queue",
       "width": 402,
       "height": 874,
       "docWidth": 402,
@@ -748,26 +748,26 @@
     {
       "id": "09-customer-queue-after-12s",
       "title": "排隊怪獸｜顧客預約、取號與門市管理",
-      "finalUrl": "https://hub-google.github.io/LINE/booking/?view=customer&merchant=qa-84b3ef9297eb470685a91a527ca499ca&tab=queue",
+      "finalUrl": "https://hub-google.github.io/LINE/booking/?view=customer&merchant=qa-756950dfd52245b2aeb91fefa7912b3c&tab=queue",
       "width": 402,
       "height": 874,
       "docWidth": 402,
       "bodyWidth": 402,
-      "docHeight": 925,
+      "docHeight": 1022,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
-      "visibleTapCount": 9,
+      "visibleTapCount": 7,
       "keyRects": {
         "#root": {
           "top": 188,
-          "bottom": 908,
+          "bottom": 1005,
           "left": 0,
           "right": 402,
-          "height": 720
+          "height": 817
         }
       },
-      "bodyText": "排隊怪獸 搜尋店家 預約與取號 使用 LINE 登入 門市公開即時叫號 查看現在叫到幾號、後面等候順序，不必登入、不必綁定 LINE。 公開即時叫號看板 LINE 身分授權 為避免機器人或惡意假預約，預約前需綁定 LINE 身分。預約姓名及聯絡電話另行填寫，供現場核對與店家聯繫。 目前指定門市：qa-84b3ef9297eb470685a91a527ca499ca 請使用 LINE 登入後繼續預約或取號。 使用 LINE 登入 使用 LINE 登入（手機／電腦） 排隊怪獸服務 ・ 隱私權說明 ・ 使用條款",
+      "bodyText": "排隊怪獸 搜尋店家 預約與取號 使用 LINE 登入 店家預約與取號 測試1 由排隊怪獸提供預約與取號服務 門市公開即時叫號 查看現在叫到幾號、後面等候順序，不必登入、不必綁定 LINE。 公開即時叫號看板 LINE 身分授權 為避免機器人或惡意假預約，預約前需綁定 LINE 身分。預約姓名及聯絡電話另行填寫，供現場核對與店家聯繫。 目前指定門市：測試1 請使用 LINE 登入後繼續預約或取號。 使用 LINE 登入 使用 LINE 登入（手機／電腦） 排隊怪獸服務 ・ 隱私權說明 ・ 使用條款",
       "errors": [],
       "failedRequests": []
     },
@@ -839,12 +839,17 @@
       "keyRects": {},
       "bodyText": "排隊怪獸 商家操作指南 店家登入 店家登入 註冊店家 進入商家後台 給店主與門市人員的使用指南 第一次使用，也能 照著畫面完成。 不必懂技術。從店家註冊、LINE 顧客入口、預約與取號設定，到店員每天怎麼操作，依照實際商家流程逐步說明。下方以正式網站目前的版型、功能名稱及按鈕樣式呈現操作畫面，使用的門市名稱與數字均為範例，不含顧客個資。 01 註冊店家 → 02 完成設定 → 03 分享給顧客 → 04 每日營運 從第一步開始 → 直接看店員操作 操作目錄 · 選擇章節 01 先註冊店家帳號 商家負責人先註冊帳號，登入後即可設定專屬門市，完成店家資料後再對外開放。 排隊怪獸 登入 註冊 註冊店家帳號 註冊後門市資料保持空白，由你自行填寫。 電子信箱（登入帳號） shop@example.com 密碼（至少 8 字元） •••••••• 確認密碼 •••••••• 建立店家帳號 正式介面樣式對照｜店家帳號註冊頁（僅使用範例資料） 商家負責人操作 先建立帳號，再完成店家設定 點「註冊店家」，填寫電子信箱、密碼與確認密碼。 依註冊頁指示完成電子郵件驗證，再使用註冊信箱與密碼登入店家後台。 在",
       "errors": [],
-      "failedRequests": []
+      "failedRequests": [
+        {
+          "url": "https://hub-google.github.io/LINE/booking/release.json?_t=1794366311241",
+          "error": "net::ERR_ABORTED"
+        }
+      ]
     },
     {
       "id": "12-staff",
       "title": "排隊怪獸｜顧客預約、取號與門市管理",
-      "finalUrl": "https://hub-google.github.io/LINE/booking/?view=staff&merchant=qa-84b3ef9297eb470685a91a527ca499ca",
+      "finalUrl": "https://hub-google.github.io/LINE/booking/?view=staff&merchant=qa-756950dfd52245b2aeb91fefa7912b3c",
       "width": 402,
       "height": 874,
       "docWidth": 402,
@@ -853,24 +858,24 @@
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
-      "visibleTapCount": 4,
+      "visibleTapCount": 2,
       "keyRects": {
         "#root": {
-          "top": 83,
-          "bottom": 364,
+          "top": 144,
+          "bottom": 293,
           "left": 0,
           "right": 402,
-          "height": 281
+          "height": 149
         }
       },
-      "bodyText": "排隊怪獸 店家登入 店家登入 使用店家帳號管理預約及叫號。 店家登入 註冊店家",
+      "bodyText": "排隊怪獸 店家登入 資料更新中，請稍後",
       "errors": [],
       "failedRequests": []
     },
     {
       "id": "12-staff-scroll",
       "title": "排隊怪獸｜顧客預約、取號與門市管理",
-      "finalUrl": "https://hub-google.github.io/LINE/booking/?view=staff&merchant=qa-84b3ef9297eb470685a91a527ca499ca",
+      "finalUrl": "https://hub-google.github.io/LINE/booking/?view=staff&merchant=qa-756950dfd52245b2aeb91fefa7912b3c",
       "width": 402,
       "height": 874,
       "docWidth": 402,
@@ -948,7 +953,7 @@
     {
       "id": "14-public-board",
       "title": "排隊怪獸｜即時叫號看板",
-      "finalUrl": "https://hub-google.github.io/LINE/booking/board.html?merchant=qa-84b3ef9297eb470685a91a527ca499ca",
+      "finalUrl": "https://hub-google.github.io/LINE/booking/board.html?merchant=qa-756950dfd52245b2aeb91fefa7912b3c",
       "width": 402,
       "height": 874,
       "docWidth": 402,
@@ -956,10 +961,19 @@
       "docHeight": 874,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [],
-      "visibleTapCount": 3,
+      "smallTaps": [
+        {
+          "text": "由排隊怪獸提供服務",
+          "width": 117,
+          "height": 18,
+          "left": 263,
+          "right": 380,
+          "top": 422
+        }
+      ],
+      "visibleTapCount": 4,
       "keyRects": {},
-      "bodyText": "▤ 專屬測試門市 使用 LINE 登入 10:54 今天尚未設定開放場次 叫號順序將依現場狀況即時更新 重新整理 全螢幕 最後成功同步：10:54:56；資料每 12 秒自動核對，網路斷線會提示。",
+      "bodyText": "測試1 使用 LINE 登入 11:05 上午場 一般場次 — 接下來：2、3、4、5、6 等候 6 組 叫號順序將依現場狀況即時更新 由排隊怪獸提供服務 重新整理 全螢幕 最後成功同步：11:05:20；資料每 12 秒自動核對，網路斷線會提示。",
       "errors": [],
       "failedRequests": []
     }
