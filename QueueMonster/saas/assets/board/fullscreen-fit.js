@@ -11,6 +11,7 @@ export function installBoardFullscreenFit(){
     body.style.removeProperty("width");
     body.classList.remove("board-compact");
     queue?.style.removeProperty("--board-queue-count");
+    queue?.style.removeProperty("--board-queue-mobile-rows");
     units?.style.removeProperty("--board-unit-columns");
     units?.style.removeProperty("--board-unit-rows");
   }
@@ -29,6 +30,7 @@ export function installBoardFullscreenFit(){
     // should use the space rather than leaving three empty rows.
     const waiting=Math.max(1,queue?.children.length||0);
     queue?.style.setProperty("--board-queue-count",String(waiting));
+    queue?.style.setProperty("--board-queue-mobile-rows",String(Math.ceil(waiting/2)));
     const count=units?.hidden?0:units?.querySelectorAll(".unit-card").length||0;
     if(count){
       const cols=screenWidth>=1250
