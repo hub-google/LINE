@@ -142,7 +142,14 @@ try{
  }
  assert.ok(!fs.existsSync(path.join(dist,'poster.html')),'Retired poster must not be included in production output');
  console.log('Staff panels retain their workflows with consolidated Settings navigation.');
- // Exercise production bundles at both desktop and mobile sizes with actual network reads.
+ // Keep visual/route smoke deterministic if the remote Supabase Data API is unhealthy.
+ // This test verifies graceful unauthenticated UI without making production DB requests.
+ await page.route('https://unapiwajmgqqtdkixaab.supabase.co/**',route=>route.fulfill({
+  status:503,contentType:'application/json',
+  headers:{'access-control-allow-origin':'*','access-control-allow-headers':'*'},
+  body:JSON.stringify({message:'Browser smoke: remote API unavailable'})
+ }));
+ // Exercise production bundles at both desktop and mobile sizes with actual local asset reads.
  for(const width of [1280,390]){
   await page.setViewportSize({width,height:900});
   for(const name of ['home.html','directory.html?mode=search','merchant-register.html','platform-login.html','index.html?view=platform','index.html?view=staff&merchant=greenfield-salon','index.html?view=customer&merchant=greenfield-salon','board.html?merchant=greenfield-salon']){
