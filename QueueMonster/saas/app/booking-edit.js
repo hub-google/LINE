@@ -18,6 +18,12 @@ export function dateInThirtyDays(){
  return d.toISOString().slice(0,10);
 }
 
+// Session-based shops can create sessions 90 days ahead; keep the customer date picker in sync.
+export function dateInNinetyDays(){
+ const d=new Date(taipei()+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+90);
+ return d.toISOString().slice(0,10);
+}
+
 export async function fetchBookingEditSlots(){
  const id=bookingState.editingBookingId,lookup=bookingState.editDate;
  bookingState.editLoading=true;bookingState.editSlots=null;render();
