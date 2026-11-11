@@ -26,15 +26,17 @@ export function installBoardFullscreenFit(){
   // rendered line stack, not merely the width of the concatenated text.
   function unitNowFont(now,w,h){
     const lines=String(now?.textContent||"").split(/\r?\n/);
-    const lineCount=Math.max(1,lines.length);
-    const lineHeight=now?.classList?.contains("is-empty")?1.08:1.08;
     const availableH=Math.max(1,h-8);
     const availableW=Math.max(1,w*.84);
+    if(now?.classList?.contains("is-empty")){
+      // Never allow the two-line 尚未/叫號 placeholder to balloon to the
+      // size of a called number. Leave room for both text lines and padding.
+      return Math.max(16,Math.floor(Math.min(
+        42,availableW*.12,availableH/(Math.max(1,lines.length)*1.4)
+      )));
+    }
     const widthFit=Math.min(...lines.map(line=>textFit(line,availableW,availableH,950)));
-    const heightFit=availableH/(lineCount*lineHeight*1.08);
-    // Retain prominent single-line numbers, while keeping multi-line
-    // placeholders fully above the next-number separator at narrow widths.
-    return Math.max(12,Math.floor(Math.min(widthFit,heightFit,availableH*.69)));
+    return Math.max(18,Math.floor(Math.min(widthFit,availableH*.70)));
   }
   // Compare grids by the legibility their actual card dimensions support.
   // Narrow text cards favour rows; wide text cards can use more columns.
