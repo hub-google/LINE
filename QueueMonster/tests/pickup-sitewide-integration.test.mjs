@@ -12,7 +12,7 @@ test("pickup uses the original merchant settings, menu, tenant and live customer
  assert.match(pickup,/so_pickup_place/);
  assert.match(pickup,/so_pickup_staff/);
  assert.match(pickup,/so_pickup_history/);
- assert.match(pickup,/so_pickup_save_settings/);
+ assert.match(pickup,/so_pickup_save_capacity_settings/);
  assert.match(staff,/set-service-pickup/);
  assert.match(source("saas/app/actions/merchant-admin.js"),/so_set_all_merchant_services/);
  assert.match(source("saas/app/startup.js"),/createStoreLiveSync/);

@@ -54,7 +54,7 @@ begin
    'enabled',s.enabled,'schedule_mode',s.schedule_mode,
    'pickup_start',to_char(s.pickup_start,'HH24:MI'),
    'pickup_end',to_char(s.pickup_end,'HH24:MI'),
-   'interval_minutes',s.interval_minutes,'slot_capacity',s.slot_capacity,
+   'interval_minutes',s.interval_minutes,'slot_capacity',s.slot_capacity,'capacity_basis',s.capacity_basis,
    'min_notice_minutes',s.min_notice_minutes,'days_ahead',s.days_ahead,
    'prep_minutes',s.prep_minutes),'can_update',(
  private.so_role(t.id)<>'STAFF' or coalesce(private.so_platform(),false)
@@ -103,11 +103,20 @@ begin
  if o.scheduled and o.pickup_at>now()
     and o.status in ('REJECTED','CANCELLED')
     and p_status not in ('REJECTED','CANCELLED') then
-  select * into s from public.so_pickup_settings where tenant_id=t.id;
+  select * into s from public.so_pickup_settings where tenant_id=t.id for update;
   select count(*) into v_used from public.so_pickup_orders x
    where x.tenant_id=t.id and x.id<>o.id and x.scheduled
     and x.pickup_at=o.pickup_at and x.status not in ('REJECTED','CANCELLED');
-  if v_used >= coalesce(s.slot_capacity,5) then
+  if s.capacity_basis='ITEMS' then
+   select coalesce(sum((line.value->>'qty')::integer),0) into v_used
+   from public.so_pickup_orders x cross join lateral jsonb_array_elements(x.items) line
+   where x.tenant_id=t.id and x.id<>o.id and x.scheduled
+     and x.pickup_at=o.pickup_at and x.status not in ('REJECTED','CANCELLED');
+   v_used:=v_used+(select coalesce(sum((line.value->>'qty')::integer),0)
+     from jsonb_array_elements(o.items) line);
+  end if;
+  if (s.capacity_basis='ITEMS' and v_used>coalesce(s.slot_capacity,5))
+     or (s.capacity_basis<>'ITEMS' and v_used>=coalesce(s.slot_capacity,5)) then
    raise exception '原取餐時段目前已額滿，無法重新接單；請聯絡顧客調整取餐時間';
   end if;
  end if;

@@ -80,8 +80,8 @@ export function renderPickupSettings(isManager){
    esc(new URL("./index.html?view=customer&merchant="+encodeURIComponent(routeState.slug)+"&tab=order",location.href).href)+'</a></p>':'<p class="muted">尚未開放線上點餐</p>')+'</div>')+
    (isManager?box("店員訂餐操作權限",
     '<p class="small">只影響一般員工角色，負責人、管理者及平台管理員維持管理權限。已加入企業的員工不需要重複建立帳號。</p>'+
-    '<label class="checklist"><input id="pickup-staff-view" type="checkbox" '+(d.staff_can_view===false?"":"checked")+'>允許一般員工查看訂單與取餐日曆</label>'+
-    '<label class="checklist"><input id="pickup-staff-update" type="checkbox" '+(d.staff_can_update===false?"":"checked")+'>允許一般員工修改訂單狀態</label>'+
+    '<label class="checklist"><input id="pickup-staff-view" type="checkbox" '+(data.staff_can_view===false?"":"checked")+'>允許一般員工查看訂單與取餐日曆</label>'+
+    '<label class="checklist"><input id="pickup-staff-update" type="checkbox" '+(data.staff_can_update===false?"":"checked")+'>允許一般員工修改訂單狀態</label>'+
     btn("儲存訂餐員工權限","pickup-staff-permissions-save","primary")):"");
 }
 
