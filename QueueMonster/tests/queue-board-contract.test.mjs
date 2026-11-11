@@ -45,8 +45,14 @@ test("TV board subscribes to privacy-safe change markers and falls back to 10-se
   assert.match(board,/so_public_board/);
   assert.match(board,/client\.channel\("queue-board:"\+slug/);
   assert.match(board,/\.on\("broadcast",\{event:"invalidate"\},requestEventRefresh\)/);
-  assert.match(board,/\.subscribe\(status=>/);
-  assert.match(board,/realtimeConnected=status==="SUBSCRIBED"/);
+  assert.match(board,/\.subscribe\(\(status,error\)=>/);
+  assert.match(board,/if\(status==="SUBSCRIBED"\)/);
+  assert.match(board,/realtimeConnected=true/);
+  assert.match(board,/status==="CHANNEL_ERROR"\|\|status==="TIMED_OUT"\|\|status==="CLOSED"/);
+  assert.match(board,/too_many_connections/);
+  assert.match(board,/tenant_events/);
+  assert.match(board,/scheduleRealtimeRetry\(error\)/);
+  assert.match(board,/document\.hidden/);
   assert.match(board,/Date\.now\(\)-lastSuccess\.getTime\(\)>=60000/);
   assert.match(board,/\},10000\);/);
   assert.match(board,/setTimeout\(/);
