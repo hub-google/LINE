@@ -189,7 +189,7 @@ function requests(){
   [['all','全部'],['leave','請假'],['overtime','加班'],['correction','補卡']].map(([k,label])=>
   '<button type="button" class="request-filter '+(filter===k?'active':'')+'" aria-pressed="'+(filter===k)+'" data-action="filterRequests" data-kind="'+k+'">'+label+' <span>'+counts[k]+'</span></button>').join('')+'</div>';
  heading(requestShortcutButtons());
- const rows=req.map(x=>tr([personLabel(x.member_id),esc(kind(x.kind))+(x.kind==='leave'?' · '+esc(kind(x.leave_kind)):''),
+ const rows=req.map(x=>tr([personLabel(x.member_id),esc(kind(x.kind))+(x.kind==='leave'?' · '+esc(kind(x.leave_kind)):'')+(x.kind==='correction'?' · '+esc(x.correction_type||(String(x.reason||'').match(/^【([^】]+)】/)||[])[1]||'未分類'):'') ,
  taiStamp(x.starts_at),taiStamp(x.ends_at),status(x.status),esc(x.reason||'—')]));
  const verifiedBalances=(app.data.leaveBalances||{})[sel]||[];
  const balances=verifiedBalances.length?verifiedBalances.map(b=>
