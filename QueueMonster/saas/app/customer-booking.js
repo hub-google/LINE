@@ -90,9 +90,22 @@ export function customerRender(){
       box("已登入排隊怪獸",'<p class="muted">LINE 身分驗證完成。現在可以自由搜尋店家，選擇後再預約或取號。</p><p><a class="btn primary" href="./directory.html?mode=search">搜尋店家</a> <a class="btn outline" href="./directory.html?mode=mine">我的預約與取號</a></p>'):
       box("使用 LINE 登入排隊怪獸",'<p class="muted">不需要先選擇店家，登入後即可搜尋、預約及取號。</p>'+lineStatusBadge()+'<p><a href="./directory.html?mode=search">先搜尋店家</a></p>');
   }
-  if(lineState.lineLinkStatus!=="linked")return box("門市公開即時叫號",
+  if(lineState.lineLinkStatus!=="linked"){
+   const brand=customerState.publicBrand;
+   if(brand)applyCustomerBrand(brand);
+   const logo=String(brand?.logo_url||"").trim();
+   const safeLogo=/^https:\/\/[^\s<>"']{1,490}$/i.test(logo)?logo:"";
+   const brandHeader=brand?
+    '<section class="toolbar customer-shop-toolbar"><div class="customer-shop-identity">'+
+      '<div class="customer-shop-avatar">'+(safeLogo?
+       '<img src="'+esc(safeLogo)+'" alt="'+esc(brand.name)+' 店家 LOGO">':
+       '<span class="customer-shop-avatar-fallback" aria-hidden="true">'+esc(brand.name.slice(0,2))+'</span>')+'</div>'+
+      '<div class="customer-shop-title"><div class="customer-shop-overline">店家預約與取號</div><h1>'+esc(brand.name)+'</h1>'+
+      '<div class="muted">由排隊怪獸提供預約與取號服務</div></div></div></section>':"";
+   return brandHeader+box("門市公開即時叫號",
 '<p class="muted">查看現在叫到幾號、後面等候順序，不必登入、不必綁定 LINE。</p><p><a class="btn primary" href="./board.html?merchant='+encodeURIComponent(routeState.slug)+'">公開即時叫號看板</a></p>')+
-box("LINE 身分授權",'<p class="muted">為避免機器人或惡意假預約，預約前需綁定 LINE 身分。預約姓名及聯絡電話另行填寫，供現場核對與店家聯繫。</p><p class="small">目前指定門市：<strong>'+esc(routeState.slug)+'</strong></p>'+lineStatusBadge());
+box("LINE 身分授權",'<p class="muted">為避免機器人或惡意假預約，預約前需綁定 LINE 身分。預約姓名及聯絡電話另行填寫，供現場核對與店家聯繫。</p><p class="small">目前指定門市：<strong>'+esc(brand?.name||routeState.slug)+'</strong></p>'+lineStatusBadge());
+  }
   if(!customerState.customer)return box("正在讀取顧客網站",'<p class="muted">正在確認企業設定與登入狀態...</p>');
   const t=customerState.customer.tenant,m=t.modules||{},items=customerState.customer.my_reservations||[],tickets=customerState.customer.my_tickets||[],live=tickets.find(x=>["WAITING","HOLD","CALLED","ARRIVED","ADMITTED","SERVING"].includes(x.status));
   const catalogue=customerState.customer.menu_items||[];

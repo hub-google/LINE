@@ -70,6 +70,18 @@ export async function load(){feedbackState.err="";try{
  }
  if(routeState.view==="customer")await connectLineSession();
  if(routeState.view==="customer"&&lineState.lineLinkStatus==="linked"&&finishPublicHeaderLogin())return;
+
+ // Public shop identity is independent of LINE authentication, like a normal booking landing page.
+ if(routeState.view==="customer"&&routeState.slug&&customerState.publicBrandSlug!==routeState.slug){
+   customerState.publicBrandSlug=routeState.slug;customerState.publicBrand=null;
+   try{
+     const {data,error}=await lineState.supa.rpc("so_unit_public_board",{p_slug:routeState.slug,p_session_id:null});
+     if(!error&&data?.shop){
+       customerState.publicBrand={name:String(data.shop),logo_url:data.logo_url||"",accent:data.accent||""};
+     }
+   }catch(_error){/* Optional public branding must never block reservations or LINE login. */}
+ }
+
  // A platform-wide LINE login intentionally has no store until the customer chooses one.
  if(routeState.view==="customer"&&!routeState.slug){
    customerState.customer=null;
