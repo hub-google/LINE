@@ -24,7 +24,7 @@ try{
  const missing=[];page.on('response',r=>{if(r.url().startsWith(baseUrl)&&r.status()===404)missing.push(r.url());});
  const baseUrl='http://127.0.0.1:'+server.address().port;
  // Render the single approved brand image at a real browser origin, not just inspect SVG text.
- await page.goto(baseUrl+'/booking/home.html',{waitUntil:'networkidle'});
+ await page.goto(baseUrl+'/booking/home.html',{waitUntil:'domcontentloaded'});
  const mascot=await page.evaluate(async()=>{
   const img=new Image();
   img.src=new URL('./monster-mascot.svg',location.href).href;
@@ -146,7 +146,7 @@ try{
  for(const width of [1280,390]){
   await page.setViewportSize({width,height:900});
   for(const name of ['home.html','directory.html?mode=search','merchant-register.html','platform-login.html','index.html?view=platform','index.html?view=staff&merchant=greenfield-salon','index.html?view=customer&merchant=greenfield-salon','board.html?merchant=greenfield-salon']){
-   await page.goto(baseUrl+'/booking/'+name,{waitUntil:'networkidle',timeout:45000});
+   await page.goto(baseUrl+'/booking/'+name,{waitUntil:'domcontentloaded',timeout:45000});
    assert.ok((await page.locator('body').innerText()).trim().length>30,name);
    if(name==='home.html'){
     const rects=await page.locator('.hero-demo').evaluateAll(nodes=>nodes.map(n=>{
@@ -274,7 +274,7 @@ try{
  // Verify the real compiled board CSS and font fitter in Chromium.
  for(const viewport of [{width:360,height:780},{width:390,height:844},{width:412,height:915}]){
   await page.setViewportSize(viewport);
-  await page.goto(baseUrl+"/booking/board.html?merchant=greenfield-salon",{waitUntil:"networkidle",timeout:45000});
+  await page.goto(baseUrl+"/booking/board.html?merchant=greenfield-salon",{waitUntil:"domcontentloaded",timeout:45000});
   await page.evaluate(async()=>{
    document.getElementById("shop").textContent="測試1";
    const logo=document.getElementById("shop-logo");
@@ -347,7 +347,7 @@ try{
  for(const viewport of viewports){
   await page.setViewportSize(viewport);
   await page.goto(baseUrl+"/booking/board.html?merchant=greenfield-salon",
-   {waitUntil:"networkidle",timeout:45000});
+   {waitUntil:"domcontentloaded",timeout:45000});
   await page.evaluate(()=>{
    document.getElementById("shop").textContent="測試店家｜即時叫號";
    const current=document.getElementById("current");
