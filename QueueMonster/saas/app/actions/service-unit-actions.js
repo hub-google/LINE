@@ -47,14 +47,31 @@ if(a==="save-unit-mode"){
    });return true;
  }
  if(a==="unit-session-save"){
+   const editing=(serviceUnitsState.unitConfig?.sessions||[]).find(s=>s.id===serviceUnitsState.unitEditingSession);
+   const date=val("unit-session-date")||serviceUnitsState.unitAdminDate;
+   const unitId=val("unit-admin-unit")||null;
+   const newCapacity=Number(val("unit-session-capacity"));
+   const newActive=!!routeState.$("unit-session-active")?.checked;
+   if(editing){
+     const unit=(serviceUnitsState.unitConfig?.units||[]).find(u=>u.id===editing.unit_id);
+     const oldUnit=unit?.is_default?null:editing.unit_id;
+     const changed=editing.date!==date||oldUnit!==unitId||
+       editing.start!==val("unit-session-start")||editing.end!==val("unit-session-end")||
+       editing.capacity!==newCapacity||editing.active!==newActive;
+     const records=[...(serviceUnitsState.unitRecords?.reservations||[]),...(serviceUnitsState.unitRecords?.tickets||[])]
+       .filter(x=>x.session_id===editing.id);
+     if(changed&&(records.length>0||Number(editing.booked||0)>0)&&
+       !confirm("此場次已有預約或取號紀錄。修改後會保留原場次、預約和號碼牌，並同步相關資料。\n\n若更動日期、時間或服務窗口，請主動通知受影響顧客。確定儲存修改？"))return true;
+   }
    await act(async()=>{
     await rpc("so_unit_manage",{p_slug:routeState.slug,p_action:"session",p_data:{
-      id:serviceUnitsState.unitEditingSession||null,unit_id:val("unit-admin-unit")||null,date:serviceUnitsState.unitAdminDate,
+      id:serviceUnitsState.unitEditingSession||null,unit_id:unitId,date,
       name:val("unit-session-name"),start:val("unit-session-start"),
-      end:val("unit-session-end"),capacity:Number(val("unit-session-capacity")),
-      active:!!routeState.$("unit-session-active")?.checked
+      end:val("unit-session-end"),capacity:newCapacity,active:newActive
     }});
-    serviceUnitsState.unitEditingSession="";serviceUnitsState.unitAdminUnit="";serviceUnitsState.showSessionForm=false;return "場次設定已儲存";
+    serviceUnitsState.unitAdminDate=date;
+    serviceUnitsState.unitEditingSession="";serviceUnitsState.unitAdminUnit="";serviceUnitsState.showSessionForm=false;
+    return "場次設定已儲存";
    });return true;
  }
  if(a==="unit-call"||a==="unit-recall"){
