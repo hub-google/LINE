@@ -296,3 +296,27 @@ test('HR-SCH employee availability requires manager review and tenant cutoff',()
  assert.match(src,/const pendingBlackout=/);
  assert.match(src,/wm_get_availability_policy/);
 });
+
+
+test('HR-LVE-03 retains the original approved leave until date amendment final approval',()=>{
+ const sql=migration('20261111_workforce_approved_leave_amendment.sql');
+ for(const v of ['wm_leave_amendments','wm_leave_amendment_steps',
+  'wm_request_leave_amendment','wm_review_leave_amendment','wm_list_leave_amendments',
+  'wm_private.can_approve_member','wm_private.leave_balance_core',
+  'wm_period_closures','wm_request_actions','wm_audit',
+  'approved','rejected','pending'])assert.ok(sql.includes(v),v);
+ assert.match(sql,/original_starts_at timestamptz NOT NULL/);
+ assert.match(sql,/proposed_starts_at timestamptz NOT NULL/);
+ assert.match(sql,/UNIQUE\(amendment_id,reviewer_id\)/);
+ assert.match(sql,/status='pending'/);
+ assert.match(sql,/IF v_steps\+1<v_required THEN/);
+ assert.match(sql,/UPDATE public\.wm_requests\s+SET starts_at=a\.proposed_starts_at/);
+ assert.match(sql,/other\.id<>r\.id/);
+ assert.match(sql,/REVOKE ALL ON public\.wm_leave_amendments FROM PUBLIC,anon,authenticated/);
+ assert.match(sql,/auth\.uid\(\)/);
+ assert.match(src,/wm_list_leave_amendments/);
+ assert.match(src,/data-wf-leave-amend="submit"/);
+ assert.match(src,/data-wf-leave-amend="review"/);
+ assert.match(src,/wf_leave_amend_request/);
+ assert.match(src,/wf_leave_amend_review/);
+});
