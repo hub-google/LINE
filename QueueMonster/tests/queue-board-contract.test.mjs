@@ -84,3 +84,13 @@ test("public board displays the saved merchant logo, brand color and platform at
  assert.match(migration,/'logo_url',t\.logo_url/);
  assert.match(migration,/'accent',t\.accent/);
 });
+
+
+test("guest sees merchant identity before LINE authentication without exposing customer records",()=>{
+ const customer=read("saas/index.html");
+ const front=read("saas/app/customer-booking.js");
+ assert.match(customer,/so_unit_public_board/);
+ assert.match(front,/publicBrand/);
+ assert.match(front,/由排隊怪獸提供預約與取號服務/);
+ assert.match(front,/customer-shop-avatar/);
+});
