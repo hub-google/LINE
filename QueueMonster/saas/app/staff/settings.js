@@ -26,6 +26,7 @@ function serviceLink(kind,label,enabled){
    '<div data-service-url-active'+(enabled?'':' style="display:none"')+'>'+
      '<p style="overflow-wrap:anywhere"><a href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">'+esc(href)+'</a></p>'+
      btn("複製"+label,"copy-service-link","outline",'data-url="'+esc(href)+'" data-service-kind="'+kind+'"')+
+     btn("顯示 QR Code","show-service-qr","outline",'data-url="'+esc(href)+'"')+
    '</div>'+
    '<p class="muted" data-service-url-inactive'+(enabled?' style="display:none"':'')+'>未選擇此功能</p>'+
  '</div>';

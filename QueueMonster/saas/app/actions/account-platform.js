@@ -65,16 +65,45 @@ if(a==="customer-history-close"){
   try{await navigator.clipboard.writeText(u);return "已複製網址："+u;}
   catch(e){window.prompt("複製網址",u);return "請複製顯示的網址";}
  });return true;}
+ if(a==="show-service-qr"){
+  const link=b.dataset.url||"";
+  let url;
+  try{url=new URL(link);if(url.protocol!=="https:"||url.href.length>2000)throw Error("網址格式不正確");}
+  catch(e){showActionFeedback("無法建立 QR Code，網址無效","error");return true;}
+  const old=document.getElementById("pickup-share-qr-overlay");old?.remove();
+  if(!window.QRCode){
+    await new Promise((resolve,reject)=>{
+      const script=document.createElement("script");
+      script.src="./vendor/qrcode.min.js";script.async=true;
+      script.onload=resolve;script.onerror=()=>reject(Error("QR Code 模組載入失敗"));
+      document.head.append(script);
+    }).catch(error=>{showActionFeedback(error.message,"error");});
+  }
+  if(!window.QRCode)return true;
+  const overlay=document.createElement("div");overlay.id="pickup-share-qr-overlay";
+  overlay.style.cssText="position:fixed;inset:0;z-index:9999;background:rgba(24,14,31,.68);display:grid;place-items:center;padding:20px;";
+  const panel=document.createElement("section");panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");panel.setAttribute("aria-label","店家專屬 QR Code");
+  panel.style.cssText="background:#fff;padding:22px;border-radius:20px;width:min(100%,380px);box-shadow:0 15px 50px #0005;text-align:center;";
+  const title=document.createElement("h2");title.textContent="店家服務 QR Code";
+  const qr=document.createElement("div");qr.style.cssText="display:inline-block;margin:10px auto 18px;padding:14px;border:1px solid #ddd;background:#fff;";
+  const note=document.createElement("p");note.textContent=url.href;note.style.cssText="overflow-wrap:anywhere;font-size:12px;text-align:left;";
+  const close=document.createElement("button");close.textContent="關閉";close.className="btn outline";close.type="button";
+  close.addEventListener("click",()=>overlay.remove());
+  overlay.addEventListener("click",event=>{if(event.target===overlay)overlay.remove();});
+  panel.append(title,qr,note,close);overlay.append(panel);document.body.append(overlay);
+  new window.QRCode(qr,{text:url.href,width:256,height:256,correctLevel:window.QRCode.CorrectLevel.M});
+  close.focus();return true;
+ }
  if(a==="copy-service-link"){
    const link=b.dataset.url||"";
    const kind=b.dataset.serviceKind;
-   if(!link||!["board","queue","reserve","order"].includes(kind))return true;
+   if(!link||!["board","pickup-board","queue","reserve","order"].includes(kind))return true;
    let url;
    try{
      url=new URL(link);
      if(url.protocol!=="https:"&&url.origin!==location.origin)throw Error("網址格式不正確");
    }catch(_error){showActionFeedback("顧客網址無效，請重新整理","error");return true;}
-   const label=kind==="board"?"叫號看板":kind==="queue"?"抽號":kind==="order"?"點餐":"預約";
+   const label=kind==="board"?"叫號看板":kind==="pickup-board"?"取餐看板":kind==="queue"?"抽號":kind==="order"?"點餐":"預約";
    try{
      await navigator.clipboard.writeText(url.href);
      showActionFeedback("已複製"+label+"網址","success");
