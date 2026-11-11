@@ -15,13 +15,17 @@ export function renderStaffMenu({t,isManager,html}){
    '</div><div><label for="menu-queue-mode">現場取號</label>'+menuModeSelect("menu-queue-mode",t.menu_queue_mode||"DISABLED")+'</div></div>'+
    (isManager?'<div class="staff-actionbar">'+btn("儲存選擇規則","save-menu-modes","primary")+'</div>':'<p class="small">僅管理員可修改設定。</p>'))+
    box("菜單／服務項目（"+items.length+" 項）",
-    '<p class="muted">可設定餐點或服務、說明、價格、排序及是否上架。歷史預約會保留當時選擇的項目。</p>'+
-    (items.length?'<div class="scroll"><table class="rows"><thead><tr><th>類型</th><th>名稱與說明</th><th>價格</th><th>狀態</th><th>操作</th></tr></thead><tbody>'+
+    '<p class="muted">可設定共用餐點／服務、價格與排序；線上點餐可獨立設定開放或暫時售完，不影響預約／取號選擇規則，舊訂單保留當時價格。</p>'+
+    (items.length?'<div class="scroll"><table class="rows"><thead><tr><th>類型</th><th>名稱與說明</th><th>價格</th><th>上架狀態</th><th>線上點餐</th><th>操作</th></tr></thead><tbody>'+
       items.map(item=>'<tr><td>'+esc(item.kind==="MENU"?"餐點":item.kind==="SERVICE"?"服務":item.kind)+'</td><td><strong>'+esc(item.name)+'</strong>'+
        (item.description?'<div class="small">'+esc(item.description)+'</div>':'')+'</td>'+
        '<td>'+esc(menuPrice(item)||"未設定")+'</td><td>'+esc(item.active?"上架中":"已停用")+'</td><td>'+
+  (item.kind==="SERVICE"?"非餐點":!item.pickup_enabled?"未開放訂餐":item.pickup_sold_out?"暫時售完":"可訂餐")+'</td><td>'+
        (isManager?btn("編輯","menu-edit","outline",'data-id="'+esc(item.id)+'"')+' '+
-        btn(item.active?"停用":"重新上架","menu-toggle","secondary",'data-id="'+esc(item.id)+'"'):'—')+
+        btn(item.active?"停用":"重新上架","menu-toggle","secondary",'data-id="'+esc(item.id)+'"')+
+ (item.kind!=="SERVICE"?'<div class="staff-actionbar">'+
+ btn(item.pickup_enabled?"關閉訂餐":"開放訂餐","pickup-menu-enabled","outline",'data-id="'+esc(item.id)+'"')+
+ btn(item.pickup_sold_out?"恢復供應":"暫時售完","pickup-menu-sold-out","outline",'data-id="'+esc(item.id)+'"')+'</div>':""):'—')+
        '</td></tr>').join("")+'</tbody></table></div>':'<p class="muted">尚未建立餐點或服務。</p>'))+
    (isManager?box(selected?"修改餐點／服務":"新增餐點／服務",
     '<div class="grid"><div><label for="menu-kind">類型</label><select class="field" id="menu-kind">'+

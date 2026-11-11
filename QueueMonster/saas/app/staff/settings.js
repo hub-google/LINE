@@ -79,10 +79,10 @@ export function renderStaffSettings({t,isManager,html}){
     '<label class="checklist"><input id="policy-confirm-required" type="checkbox" '+(policy.require_confirmation!==false?"checked":"")+'>送出前顯示確認卡</label>'+
     '<div style="margin-top:14px">'+btn("儲存二次確認設定","save-booking-confirmation","primary")+'</div>'):"")],
 ["customers",(isManager?box("顧客簿、未到店紀錄與黑名單",
-    '<p class="small">本店顧客紀錄獨立，未驗證的同名或電話不會自動合併。黑名單可只記錄警示，也可選擇禁止新的預約。</p>'+
+    '<p class="small">本店將已驗證的同一 LINE 身分之預約與訂餐資料合併計算；未驗證的同名或電話不會自動合併。黑名單可只記錄警示，也可選擇禁止新的預約。</p>'+
     (staffState.staffCustomerBook.length?
-      '<div class="scroll"><table class="rows"><tr><th>顧客</th><th>歷史預約</th><th>未到店</th><th>狀態</th></tr>'+
-      staffState.staffCustomerBook.slice(0,40).map(x=>'<tr><td>'+esc(x.name||"LINE 顧客")+'</td><td><a class="customer-history-link" href="#customer-history" data-customer-history-id="'+esc(x.id)+'" aria-label="查看 '+esc(x.name||"LINE 顧客")+' 的所有歷史預約">'+esc(x.bookings)+' 筆</a></td><td>'+esc(x.no_shows)+'</td><td>'+esc(x.block_new_bookings?"禁止新預約":x.blacklisted?"觀察名單":"正常")+'</td></tr>').join("")+'</table></div>'+
+      '<div class="scroll"><table class="rows"><tr><th>顧客</th><th>歷史預約</th><th>有效訂單</th><th>訂餐金額</th><th>未到店</th><th>狀態</th></tr>'+
+      staffState.staffCustomerBook.slice(0,40).map(x=>'<tr><td>'+esc(x.name||"LINE 顧客")+'</td><td><a class="customer-history-link" href="#customer-history" data-customer-history-id="'+esc(x.id)+'" aria-label="查看 '+esc(x.name||"LINE 顧客")+' 的所有歷史預約">'+esc(x.bookings)+' 筆</a></td><td>'+esc(x.orders||0)+'</td><td>NT$ '+esc(Number(x.order_amount||0).toLocaleString("zh-TW"))+'</td><td>'+esc(x.no_shows)+'</td><td>'+esc(x.block_new_bookings?"禁止新預約":x.blacklisted?"觀察名單":"正常")+'</td></tr>').join("")+'</table></div>'+
       '<label for="customer-flag-picker">選擇顧客</label><select id="customer-flag-picker" class="field">'+
         staffState.staffCustomerBook.map(x=>'<option value="'+esc(x.id)+'" '+(selectedFlag?.id===x.id?"selected":"")+'>'+esc(x.name||"LINE 顧客")+' · '+esc(x.bookings)+' 筆預約'+(Number(x.no_shows)>0?" · 未到 "+esc(x.no_shows)+" 次":"")+'</option>').join("")+'</select>'+
       field("顧客標籤（逗號分隔，最多 10 個）","customer-flag-tags",(selectedFlag?.tags||[]).join("、"))+
@@ -90,7 +90,7 @@ export function renderStaffSettings({t,isManager,html}){
       '<label class="checklist"><input id="customer-flag-blacklisted" type="checkbox" '+(selectedFlag?.blacklisted?"checked":"")+'>標記黑名單／未到店警示</label>'+
       '<label class="checklist"><input id="customer-flag-block" type="checkbox" '+(selectedFlag?.block_new_bookings?"checked":"")+'>禁止此顧客建立新的預約</label>'+
       '<div class="staff-actionbar">'+btn("儲存顧客標籤與限制","save-customer-flags","primary")+'</div>':
-      '<p class="muted">本店目前還沒有可建立顧客簿的預約資料。</p>')):"")],
+      '<p class="muted">本店目前沒有預約或訂餐顧客資料。</p>')):"")],
 ["public",(isManager?box("門市公告與照片",
     '<p class="small">可以發布公告、價目表連結及最多 8 張可橫向滑動的照片。請使用可公開瀏覽的 HTTPS 圖片網址，勿貼個資或私密連結。</p>'+
     (staffState.staffAnnouncements.length?staffState.staffAnnouncements.map(a=>
