@@ -188,7 +188,7 @@ html:fullscreen #single-board .label{
 html:fullscreen #current,
 html:fullscreen #current.is-empty{
   font-size:var(--board-current-font,18vh)!important;
-  line-height:1.05;
+  line-height:1.22;
   overflow-wrap:anywhere;
 }
 html:fullscreen #upcoming{
