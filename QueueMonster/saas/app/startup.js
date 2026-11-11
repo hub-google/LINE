@@ -1,26 +1,9 @@
-import {crossStoreState} from "./state/crossStoreState.js";
-import {feedbackState} from "./state/feedbackState.js";
-import {queueState} from "./state/queueState.js";
-import {routeState} from "./state/routeState.js";
-import {staffState} from "./state/staffState.js";
-
 import {load} from "./data-loading.js";
-import {refreshQueueProgress} from "./queue-progress.js";
-import {refreshCrossStoreOverview} from "./cross-store.js";
 
-
-
-function allowBackgroundLoad(){
- // Do not overwrite unsaved merchant settings (including selected LOGO files).
- if(routeState.view==="staff"&&staffState.staffTab==="settings")return false;
- if(routeState.view==="platform"&&routeState.platformTab==="create")return false;
- return ["customer","staff","platform"].includes(routeState.view);
-}
-
+// Business data is fetched when the page first opens or a user action
+// explicitly calls load()/refresh. Do not poll Supabase in the background.
+// version-watch.js independently checks GitHub Pages release.json and keeps
+// the existing new-version notification, without polling Supabase.
 export function initializeStartup(){
-window.addEventListener("focus",()=>{if(!feedbackState.busy&&allowBackgroundLoad())load()});
-document.addEventListener("visibilitychange",()=>{if(!document.hidden&&routeState.view==="customer"&&routeState.customerTab==="progress"){if(queueState.progressTicketId||crossStoreState.crossCurrentStore)void refreshQueueProgress();else void refreshCrossStoreOverview();}});
-setInterval(()=>{if(!document.hidden&&!feedbackState.busy&&routeState.view==="customer"&&routeState.customerTab==="progress"&&(queueState.progressTicketId||crossStoreState.crossCurrentStore))void refreshQueueProgress();},6000);
-setInterval(()=>{if(!document.hidden&&!feedbackState.busy&&!document.activeElement?.matches("input,select,textarea")&&allowBackgroundLoad())load()},15000);
-load();
+  void load();
 }
