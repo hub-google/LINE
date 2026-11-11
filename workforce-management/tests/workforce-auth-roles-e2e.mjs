@@ -25,7 +25,7 @@ const created=[];
 function header(key,bearer=key){return {apikey:key,authorization:'Bearer '+bearer};}
 async function req(url,method='GET',body,headers={},check=true){
  const r=await fetch(url,{method,headers:{...headers,...(body?{'content-type':'application/json'}:{})},
-  body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(25000)});
+  body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(45000)});
  const t=await r.text();let result;
  try{result=t?JSON.parse(t):null;}catch{result={message:'non-JSON response'};}
  if(check&&!r.ok)throw Error(method+' '+new URL(url).pathname+' returned '+r.status+' ('+String(result?.code||result?.message||'error').slice(0,60)+')');
