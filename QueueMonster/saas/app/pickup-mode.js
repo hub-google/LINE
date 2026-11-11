@@ -73,7 +73,12 @@ export function renderPickupSettings(isManager){
    '<div class="staff-actionbar">'+btn("儲存取餐設定","pickup-save","primary")+'</div>')+
    '<div class="inset" style="margin-top:12px"><strong>點餐連結</strong><p class="small">服務啟用後，可把下方網址提供給顧客。</p>'+
    (s.enabled?'<p style="overflow-wrap:anywhere"><a target="_blank" rel="noopener noreferrer" href="'+esc(new URL("./index.html?view=customer&merchant="+encodeURIComponent(routeState.slug)+"&tab=order",location.href).href)+'">'+
-   esc(new URL("./index.html?view=customer&merchant="+encodeURIComponent(routeState.slug)+"&tab=order",location.href).href)+'</a></p>':'<p class="muted">尚未開放線上點餐</p>')+'</div>');
+   esc(new URL("./index.html?view=customer&merchant="+encodeURIComponent(routeState.slug)+"&tab=order",location.href).href)+'</a></p>':'<p class="muted">尚未開放線上點餐</p>')+'</div>')+
+   (isManager?box("店員訂餐操作權限",
+    '<p class="small">只影響一般員工角色，負責人、管理者及平台管理員維持管理權限。已加入企業的員工不需要重複建立帳號。</p>'+
+    '<label class="checklist"><input id="pickup-staff-view" type="checkbox" '+(d.staff_can_view===false?"":"checked")+'>允許一般員工查看訂單與取餐日曆</label>'+
+    '<label class="checklist"><input id="pickup-staff-update" type="checkbox" '+(d.staff_can_update===false?"":"checked")+'>允許一般員工修改訂單狀態</label>'+
+    btn("儲存訂餐員工權限","pickup-staff-permissions-save","primary")):"");
 }
 
 export function renderCustomerPickup(){
@@ -131,6 +136,7 @@ export function renderStaffPickup(){
  // 停用訂餐僅阻止新增訂單，不隱藏既有訂單或歷史紀錄。
  const orders=d.orders||[],active=orders.filter(o=>!["PICKED_UP","REJECTED","CANCELLED"].includes(o.status));
  const history=orders.filter(o=>["PICKED_UP","REJECTED","CANCELLED"].includes(o.status));
+ const canUpdate=d.can_update!==false;
  const staffStatusText={NEW:"待接單",ACCEPTED:"已接單",PREPARING:"製作中",
    READY:"待取",PICKED_UP:"已完成",REJECTED:"已拒單",CANCELLED:"已取消"};
  const action=(o,label,status,disabled=false,style="outline")=>btn(label,"pickup-status",style,
@@ -143,13 +149,14 @@ export function renderStaffPickup(){
   '<p class="small"><strong>約定取餐 '+esc(o.pickup_at)+'</strong> '+(o.scheduled?"（指定時間）":"（立即）")+'</p>'+
   '<p class="small">顧客：'+esc(o.customer_name||'未填寫')+' ・ '+esc(o.customer_phone||'未提供')+'</p><p class="small">建議開始製作：'+esc(o.prepare_at)+(o.can_prepare?"":" — 尚未到製作時間")+'</p>'+
   '<p>'+lines(o)+'</p><p class="small">'+(o.note?"備註："+esc(o.note):"無備註")+' ・ '+money(o.total)+'</p>'+
-  '<div class="staff-actionbar" role="group" aria-label="選擇訂單狀態">'+
-  choices.map(([label,status])=>action(o,label,status,o.status===status,o.status===status?"primary":"outline")).join("")+'</div>'+
-  '<details style="margin-top:8px"><summary class="small">其他操作（開始製作／取消／恢復待接單）</summary>'+
+  (canUpdate?'<div class="staff-actionbar" role="group" aria-label="選擇訂單狀態">'+
+  choices.map(([label,status])=>action(o,label,status,o.status===status,o.status===status?"primary":"outline")).join("")+'</div>':
+  '<p class="small">此員工角色僅可查看訂單，由管理者修改狀態。</p>')+
+  (canUpdate?'<details style="margin-top:8px"><summary class="small">其他操作（開始製作／取消／恢復待接單）</summary>'+
   '<div class="staff-actionbar" style="margin-top:10px">'+
   (o.status==="ACCEPTED"?action(o,"開始製作","PREPARING",!o.can_prepare):"")+
   (o.status!=="CANCELLED"?action(o,"取消訂單","CANCELLED"):"")+
-  (o.status!=="NEW"?action(o,"恢復待接單","NEW"):"")+'</div></details></div>';
+  (o.status!=="NEW"?action(o,"恢復待接單","NEW"):"")+'</div></details>':"")+'</div>';
  const h=pickupState.history||{},past=h.orders||[],maxPage=Math.max(1,Math.ceil(Number(h.total||0)/25));
  const choose=(f,label)=>btn(label,"pickup-history-filter",pickupState.historyFilter===f?"primary":"outline",'data-filter="'+f+'"');
  return box("取餐訂單管理",
@@ -193,6 +200,15 @@ export async function handlePickupAction(ev,b,a,id){
    const qty=Math.max(0,Math.min(20,(pickupState.cart[id]||0)+Number(b.dataset.delta||0)));
    if(qty)pickupState.cart[id]=qty;else delete pickupState.cart[id];
    pickupState.requestId="";pickupState.confirming=false;render();return true;
+ }
+ if(a==="pickup-staff-permissions-save"){
+   const canView=!!routeState.$("pickup-staff-view")?.checked;
+   const canUpdate=!!routeState.$("pickup-staff-update")?.checked;
+   if(!canView&&canUpdate){window.alert("若關閉訂單檢視權限，也必須關閉修改權限");return true;}
+   await act(async()=>{
+     await rpc("so_pickup_set_staff_permissions",{p_slug:routeState.slug,p_can_view:canView,p_can_update:canUpdate});
+     return "一般員工的訂餐權限已更新";
+   });return true;
  }
  if(a==="pickup-save"){
    await act(async()=>{
