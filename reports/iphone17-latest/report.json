@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-11T04:16:08.314Z",
+  "date": "2026-11-11T04:22:13.137Z",
   "device": "iPhone 17 simulated Chromium, 402x874 CSS pixels, DPR3",
   "note": "Read-only live website screenshots; no authentication, no writes; not physical Safari.",
   "screens": [
@@ -72,15 +72,15 @@
       "visibleTapCount": 16,
       "keyRects": {
         ".hero-cta": {
-          "top": -107,
-          "bottom": 79,
+          "top": -128,
+          "bottom": 58,
           "left": 20,
           "right": 382,
           "height": 186
         },
         ".hero-showcase": {
-          "top": 149,
-          "bottom": 1007,
+          "top": 128,
+          "bottom": 986,
           "left": 20,
           "right": 382,
           "height": 857
@@ -402,7 +402,7 @@
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
-      "visibleTapCount": 9,
+      "visibleTapCount": 14,
       "keyRects": {
         ".page-header": {
           "top": 0,
@@ -420,10 +420,10 @@
         },
         ".main-panel": {
           "top": 133,
-          "bottom": 594,
+          "bottom": 647,
           "left": 14,
           "right": 388,
-          "height": 462
+          "height": 514
         },
         ".tabs": {
           "top": 147,
@@ -433,35 +433,35 @@
           "height": 56
         },
         "#keyword": {
-          "top": 235,
-          "bottom": 284,
+          "top": 292,
+          "bottom": 341,
           "left": 28,
           "right": 374,
           "height": 49
         },
         "#explore-filters": {
-          "top": 0,
-          "bottom": 0,
-          "left": 0,
-          "right": 0,
-          "height": 0
-        },
-        "#results": {
-          "top": 383,
-          "bottom": 570,
+          "top": 351,
+          "bottom": 397,
           "left": 28,
           "right": 374,
-          "height": 187
+          "height": 46
+        },
+        "#results": {
+          "top": 500,
+          "bottom": 623,
+          "left": 28,
+          "right": 374,
+          "height": 122
         },
         "#results-heading": {
-          "top": 345,
-          "bottom": 373,
+          "top": 462,
+          "bottom": 490,
           "left": 28,
           "right": 94,
           "height": 28
         }
       },
-      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 搜尋店家名稱或地點 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 請先登入 LINE 請先使用 LINE 登入 登入後才能查詢自己的預約和號碼；未登入不代表沒有紀錄。 使用 LINE 登入後查看 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
+      "bodyText": "排隊怪獸 正在確認登入狀態 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 正在確認身分 正在確認 LINE 身分 確認後才會顯示與你綁定的預約及取號紀錄。 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
       "errors": [],
       "failedRequests": []
     },
@@ -849,13 +849,13 @@
       "height": 874,
       "docWidth": 402,
       "bodyWidth": 402,
-      "docHeight": 12513,
+      "docHeight": 12517,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
-      "visibleTapCount": 15,
+      "visibleTapCount": 16,
       "keyRects": {},
-      "bodyText": "排隊怪獸 商家操作指南 正在確認登入狀態 店家登入 註冊店家 進入商家後台 給店主與門市人員的使用指南 第一次使用，也能 照著畫面完成。 不必懂技術。從店家註冊、LINE 顧客入口、預約與取號設定，到店員每天怎麼操作，依照實際商家流程逐步說明。下方以正式網站目前的版型、功能名稱及按鈕樣式呈現操作畫面，使用的門市名稱與數字均為範例，不含顧客個資。 01 註冊店家 → 02 完成設定 → 03 分享給顧客 → 04 每日營運 從第一步開始 → 直接看店員操作 操作目錄 · 選擇章節 01 先註冊店家帳號 商家負責人先註冊帳號，登入後即可設定專屬門市，完成店家資料後再對外開放。 排隊怪獸 登入 註冊 註冊店家帳號 註冊後門市資料保持空白，由你自行填寫。 電子信箱（登入帳號） shop@example.com 密碼（至少 8 字元） •••••••• 確認密碼 •••••••• 建立店家帳號 正式介面樣式對照｜店家帳號註冊頁（僅使用範例資料） 商家負責人操作 先建立帳號，再完成店家設定 點「註冊店家」，填寫電子信箱、密碼與確認密碼。 依註冊頁指示完成電子郵件驗證，再使用註冊信箱與密碼登入店家後",
+      "bodyText": "排隊怪獸 商家操作指南 店家登入 店家登入 註冊店家 進入商家後台 給店主與門市人員的使用指南 第一次使用，也能 照著畫面完成。 不必懂技術。從店家註冊、LINE 顧客入口、預約與取號設定，到店員每天怎麼操作，依照實際商家流程逐步說明。下方以正式網站目前的版型、功能名稱及按鈕樣式呈現操作畫面，使用的門市名稱與數字均為範例，不含顧客個資。 01 註冊店家 → 02 完成設定 → 03 分享給顧客 → 04 每日營運 從第一步開始 → 直接看店員操作 操作目錄 · 選擇章節 01 先註冊店家帳號 商家負責人先註冊帳號，登入後即可設定專屬門市，完成店家資料後再對外開放。 排隊怪獸 登入 註冊 註冊店家帳號 註冊後門市資料保持空白，由你自行填寫。 電子信箱（登入帳號） shop@example.com 密碼（至少 8 字元） •••••••• 確認密碼 •••••••• 建立店家帳號 正式介面樣式對照｜店家帳號註冊頁（僅使用範例資料） 商家負責人操作 先建立帳號，再完成店家設定 點「註冊店家」，填寫電子信箱、密碼與確認密碼。 依註冊頁指示完成電子郵件驗證，再使用註冊信箱與密碼登入店家後台。 在",
       "errors": [],
       "failedRequests": []
     },
@@ -871,36 +871,19 @@
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
-      "visibleTapCount": 1,
+      "visibleTapCount": 4,
       "keyRects": {
         "#root": {
-          "top": 122,
-          "bottom": 271,
+          "top": 83,
+          "bottom": 364,
           "left": 0,
           "right": 402,
-          "height": 149
+          "height": 281
         }
       },
-      "bodyText": "排隊怪獸 正在確認登入狀態 資料更新中，請稍後",
+      "bodyText": "排隊怪獸 店家登入 店家登入 使用店家帳號管理預約及叫號。 店家登入 註冊店家",
       "errors": [],
-      "failedRequests": [
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        }
-      ]
+      "failedRequests": []
     },
     {
       "id": "12-staff-scroll",
@@ -914,36 +897,19 @@
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
-      "visibleTapCount": 1,
+      "visibleTapCount": 4,
       "keyRects": {
         "#root": {
-          "top": 122,
-          "bottom": 271,
+          "top": 83,
+          "bottom": 364,
           "left": 0,
           "right": 402,
-          "height": 149
+          "height": 281
         }
       },
-      "bodyText": "排隊怪獸 正在確認登入狀態 資料更新中，請稍後",
+      "bodyText": "排隊怪獸 店家登入 店家登入 使用店家帳號管理預約及叫號。 店家登入 註冊店家",
       "errors": [],
-      "failedRequests": [
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        }
-      ]
+      "failedRequests": []
     },
     {
       "id": "13-platform",
@@ -957,44 +923,19 @@
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
-      "visibleTapCount": 5,
+      "visibleTapCount": 6,
       "keyRects": {
         "#root": {
-          "top": 166,
-          "bottom": 480,
+          "top": 188,
+          "bottom": 502,
           "left": 0,
           "right": 402,
           "height": 314
         }
       },
-      "bodyText": "排隊怪獸 總部管理 正在確認登入狀態 總部管理員登入 請從總部專用入口登入，完成授權後才能使用總部管理功能。 前往總部登入 排隊怪獸服務 ・ 隱私權說明 ・ 使用條款",
+      "bodyText": "排隊怪獸 總部管理 總部登入 總部管理員登入 請從總部專用入口登入，完成授權後才能使用總部管理功能。 前往總部登入 排隊怪獸服務 ・ 隱私權說明 ・ 使用條款",
       "errors": [],
-      "failedRequests": [
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/line-bridge?action=config&merchant=qa-756950dfd52245b2aeb91fefa7912b3c",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        }
-      ]
+      "failedRequests": []
     },
     {
       "id": "13-platform-scroll",
@@ -1008,44 +949,19 @@
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
-      "visibleTapCount": 5,
+      "visibleTapCount": 6,
       "keyRects": {
         "#root": {
-          "top": 166,
-          "bottom": 480,
+          "top": 188,
+          "bottom": 502,
           "left": 0,
           "right": 402,
           "height": 314
         }
       },
-      "bodyText": "排隊怪獸 總部管理 正在確認登入狀態 總部管理員登入 請從總部專用入口登入，完成授權後才能使用總部管理功能。 前往總部登入 排隊怪獸服務 ・ 隱私權說明 ・ 使用條款",
+      "bodyText": "排隊怪獸 總部管理 總部登入 總部管理員登入 請從總部專用入口登入，完成授權後才能使用總部管理功能。 前往總部登入 排隊怪獸服務 ・ 隱私權說明 ・ 使用條款",
       "errors": [],
-      "failedRequests": [
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/line-bridge?action=config&merchant=qa-756950dfd52245b2aeb91fefa7912b3c",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        }
-      ]
+      "failedRequests": []
     },
     {
       "id": "14-public-board",
@@ -1055,7 +971,7 @@
       "height": 874,
       "docWidth": 402,
       "bodyWidth": 402,
-      "docHeight": 938,
+      "docHeight": 951,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [
@@ -1063,37 +979,16 @@
           "text": "由排隊怪獸提供服務",
           "width": 117,
           "height": 18,
-          "left": 22,
-          "right": 139,
-          "top": 817
+          "left": 263,
+          "right": 380,
+          "top": 803
         }
       ],
-      "visibleTapCount": 3,
+      "visibleTapCount": 6,
       "keyRects": {},
-      "bodyText": "▤ 正在讀取門市資料 正在確認登入狀態 12:16 目前叫號 資料更新中 接下來等候排序 資料更新中 資料更新中 叫號順序將依現場狀況即時更新 由排隊怪獸提供服務 重新整理 全螢幕 目前叫號與等待順序皆由門市資料同步，不顯示顧客個資。",
+      "bodyText": "測試1 使用 LINE 登入 12:22 診間 · 上午場 2診 尚未 叫號 接下來：目前無人等候 等候 0 組 單獨顯示此場次 上午場 一般場次 2 接下來：3、5、6、7 等候 4 組 單獨顯示此場次 叫號順序將依現場狀況即時更新 由排隊怪獸提供服務 重新整理 全螢幕 最後成功同步：12:22:12；資料每 12 秒自動核對，網路斷線會提示。",
       "errors": [],
-      "failedRequests": [
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        }
-      ]
+      "failedRequests": []
     }
   ]
 }
