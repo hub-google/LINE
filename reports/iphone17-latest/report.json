@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-11T02:34:40.299Z",
+  "date": "2026-11-11T02:39:25.295Z",
   "device": "iPhone 17 simulated Chromium, 402x874 CSS pixels, DPR3",
   "note": "Read-only live website screenshots; no authentication, no writes; not physical Safari.",
   "screens": [
@@ -72,15 +72,15 @@
       "visibleTapCount": 16,
       "keyRects": {
         ".hero-cta": {
-          "top": -107,
-          "bottom": 79,
+          "top": -128,
+          "bottom": 58,
           "left": 20,
           "right": 382,
           "height": 186
         },
         ".hero-showcase": {
-          "top": 149,
-          "bottom": 1007,
+          "top": 128,
+          "bottom": 986,
           "left": 20,
           "right": 382,
           "height": 857
@@ -959,7 +959,7 @@
       "smallTaps": [],
       "visibleTapCount": 3,
       "keyRects": {},
-      "bodyText": "▤ 專屬測試門市 使用 LINE 登入 10:34 今天尚未設定開放場次 叫號順序將依現場狀況即時更新 重新整理 全螢幕 最後成功同步：10:34:38；資料每 12 秒自動核對，網路斷線會提示。",
+      "bodyText": "▤ 專屬測試門市 使用 LINE 登入 10:39 今天尚未設定開放場次 叫號順序將依現場狀況即時更新 重新整理 全螢幕 最後成功同步：10:39:23；資料每 12 秒自動核對，網路斷線會提示。",
       "errors": [],
       "failedRequests": []
     }
