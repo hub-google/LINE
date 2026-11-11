@@ -66,3 +66,31 @@ test("iPhone mobile branding links and menu close button have 44px touch targets
  ])assert.ok(css.includes(rule),"missing mobile target for "+rule);
  assert.match(css,/min-height:44px/);
 });
+
+
+test("first-time customers see booking or queue before public board with one LINE action",()=>{
+ const source=read("app/customer-booking.js");
+ const style=read("monster-world.css");
+ assert.match(source,/routeState\.customerTab==="reserve"\?"線上預約"/);
+ assert.match(source,/routeState\.customerTab==="queue"\?"現場取號"/);
+ assert.match(source,/lineLoginUrl\(\)/);
+ assert.match(source,/LINE 登入<\/a>/);
+ assert.match(source,/為避免機器人或惡意假預約，請先透過 LINE 登入/);
+ assert.match(source,/customer-entry-card/);
+ assert.match(source,/customer-public-board-link/);
+ assert.ok(source.indexOf('customer-entry-card')<source.indexOf('customer-public-board-link'),"booking CTA should precede queue board");
+ assert.doesNotMatch(source,/box\("LINE 身分授權"/);
+ assert.doesNotMatch(source,/box\("門市公開即時叫號"/);
+ assert.match(style,/\.customer-entry-card/);
+ assert.match(style,/\.customer-public-board-link/);
+});
+test("returning verified LINE customers can open another platform-OA shop without another login",()=>{
+ const backend=readFileSync(fileURLToPath(new URL("../supabase/functions/line-bridge/index.ts",import.meta.url)),"utf8");
+ assert.match(backend,/reusablePlatformLineIdentity\(db,user\.id,expectedChannelId\)/);
+ assert.match(backend,/reusablePlatformLineIdentity\(db,user\.id,expectedChannel\)/);
+ assert.match(backend,/\.eq\("user_id",userId\)\.eq\("login_channel_id",channelId\)/);
+ assert.match(backend,/row\.line_sub!==candidate\.line_sub/);
+ assert.match(backend,/age<=30\*24\*60\*60\*1000/);
+ assert.match(backend,/if \(!ownOa && \(/);
+ assert.match(backend,/onConflict:"tenant_id,user_id"/);
+});

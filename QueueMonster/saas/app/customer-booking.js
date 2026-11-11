@@ -11,7 +11,7 @@ import {serviceUnitsState} from "./state/serviceUnitsState.js";
 import {render} from "./staff-layout.js";
 import {rpc} from "./data-loading.js";
 import {box,btn,esc,field,formatTaipeiCreated,layout,menuChoiceReady,menuSelectSection,nav,selectedItemsHtml,stat,tag,taipei} from "./shared-ui.js";
-import {lineStatusBadge} from "./line-session.js";
+import {lineStatusBadge,lineLoginUrl} from "./line-session.js";
 import {unitBookingPanel,unitList,unitQueuePanel} from "./service-units.js";
 import {renderBookings,renderMyTickets} from "./customer-records.js";
 import {queueProgressBoard} from "./queue-progress.js";
@@ -102,9 +102,25 @@ export function customerRender(){
        '<span class="customer-shop-avatar-fallback" aria-hidden="true">'+esc(brand.name.slice(0,2))+'</span>')+'</div>'+
       '<div class="customer-shop-title"><div class="customer-shop-overline">店家預約與取號</div><h1>'+esc(brand.name)+'</h1>'+
       '<div class="muted">由排隊怪獸提供預約與取號服務</div></div></div></section>':"";
-   return brandHeader+box("門市公開即時叫號",
-'<p class="muted">查看現在叫到幾號、後面等候順序，不必登入、不必綁定 LINE。</p><p><a class="btn primary" href="./board.html?merchant='+encodeURIComponent(routeState.slug)+'">公開即時叫號看板</a></p>')+
-box("LINE 身分授權",'<p class="muted">為避免機器人或惡意假預約，預約前需綁定 LINE 身分。預約姓名及聯絡電話另行填寫，供現場核對與店家聯繫。</p><p class="small">目前指定門市：<strong>'+esc(brand?.name||routeState.slug)+'</strong></p>'+lineStatusBadge());
+   // Primary action follows the customer's intent. The public board is optional,
+   // not the first screen for somebody opening a booking/number URL.
+   const entryTitle=routeState.customerTab==="reserve"?"線上預約":
+     routeState.customerTab==="queue"?"現場取號":
+     routeState.customerTab==="mine"?"我的預約與取號":
+     routeState.customerTab==="progress"?"我的取號進度":"線上預約與取號";
+   const loginHref=lineState.lineConfig?.liffId?lineLoginUrl():"";
+   const waiting=lineState.lineLinkStatus==="connecting"||
+     lineState.lineLinkStatus==="not-ready"&&lineState.lineLinkAttempted===false;
+   const prompt=waiting?
+     '<p class="muted" role="status">正在確認 LINE 登入狀態…</p>':
+     '<p class="muted">為避免機器人或惡意假預約，請先透過 LINE 登入，再進行預約或取號。</p>'+
+       (loginHref?
+         '<a class="btn primary" href="'+esc(loginHref)+'">LINE 登入</a>':
+         '<p class="alert">LINE 登入暫時無法使用，請稍後重新整理。</p>');
+   return brandHeader+
+     '<section class="card customer-entry-card"><h2>'+entryTitle+'</h2>'+prompt+'</section>'+
+     '<p class="customer-public-board-link"><a href="./board.html?merchant='+
+       encodeURIComponent(routeState.slug)+'">只想查看目前叫號？前往即時叫號看板</a></p>';
   }
   if(!customerState.customer)return box("正在讀取顧客網站",'<p class="muted">正在確認企業設定與登入狀態...</p>');
   const t=customerState.customer.tenant,m=t.modules||{},items=customerState.customer.my_reservations||[],tickets=customerState.customer.my_tickets||[],live=tickets.find(x=>["WAITING","HOLD","CALLED","ARRIVED","ADMITTED","SERVING"].includes(x.status));

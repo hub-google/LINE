@@ -42,6 +42,47 @@ async function merchantLineConfig(db: ReturnType<typeof service>, tenantId: stri
   return data && typeof data.token === "string" && typeof data.channelId === "string"
     ? data as MerchantLineConfig : null;
 }
+// Existing LINE Login may have been verified for another shop before the
+// platform-wide identity table was introduced. Reuse only server-verified
+// records on this same Supabase session and the same LINE Login channel.
+// Store-owned OA channels from a different Provider cannot be reused.
+type ReusableLineIdentity = {
+  line_sub: string; display_name: string; login_channel_id: string; updated_at: string;
+};
+function isReusableLineIdentity(profile: ReusableLineIdentity | null, channelId: string) {
+  const age=Date.now()-Date.parse(String(profile?.updated_at||""));
+  return !!channelId && !!profile &&
+    profile.login_channel_id===channelId &&
+    /^U[0-9a-f]{32}$/i.test(String(profile.line_sub||"")) &&
+    !!profile.display_name?.trim() && Number.isFinite(age) &&
+    age>=-60000 && age<=30*24*60*60*1000;
+}
+async function reusablePlatformLineIdentity(db: ReturnType<typeof service>, userId: string, channelId: string) {
+  if (!channelId) return null;
+  const {data:platform,error:platformError}=await db.from("so_platform_line_identities")
+    .select("line_sub,display_name,login_channel_id,updated_at")
+    .eq("user_id",userId).maybeSingle();
+  if(platformError)throw platformError;
+  if(isReusableLineIdentity(platform,channelId))return platform as ReusableLineIdentity;
+
+  // The header deliberately recognizes a recent, verified shop identity.
+  // The booking flow must recognize exactly the same trust boundary, too.
+  const {data:existingLinks,error:linksError}=await db.from("so_line_links")
+    .select("line_sub,display_name,login_channel_id,updated_at")
+    .eq("user_id",userId).eq("login_channel_id",channelId)
+    .order("updated_at",{ascending:false}).limit(100);
+  if(linksError)throw linksError;
+  const valid=(existingLinks||[]).filter(
+    (row: ReusableLineIdentity)=>isReusableLineIdentity(row,channelId)
+  );
+  if(!valid.length)return null;
+  const candidate=valid[0] as ReusableLineIdentity;
+  // Never silently switch an existing session between LINE accounts.
+  if((platform?.line_sub && platform.line_sub!==candidate.line_sub) ||
+      valid.some((row: ReusableLineIdentity)=>row.line_sub!==candidate.line_sub))return null;
+  return candidate;
+}
+
 async function lineVerify(idToken: string, accessToken?: string, options?: { channelId?: string; botToken?: string }) {
   // LINE Login ID tokens last one hour. A separate valid access token is
   // an official alternative to securely look up the same LINE user's profile.
@@ -1141,14 +1182,8 @@ Deno.serve(async (req: Request) => {
     }
     if (payload.action === "resume-platform") {
       const expectedChannel=/^([0-9]{8,})-[A-Za-z0-9]+$/.exec(Deno.env.get("LINE_LIFF_ID")||"")?.[1]||"";
-      const {data:profile,error:profileError}=await db.from("so_platform_line_identities")
-        .select("display_name,login_channel_id,updated_at").eq("user_id",user.id).maybeSingle();
-      if(profileError)throw profileError;
-      const age=Date.now()-Date.parse(String(profile?.updated_at||""));
-      if(!expectedChannel || profile?.login_channel_id!==expectedChannel ||
-          !profile.display_name?.trim() || !Number.isFinite(age) ||
-          age< -60000 || age>30*24*60*60*1000)
-        return reply(401,{error:"LINE_REAUTH_REQUIRED"},origin);
+      const profile=await reusablePlatformLineIdentity(db,user.id,expectedChannel);
+      if(!profile)return reply(401,{error:"LINE_REAUTH_REQUIRED"},origin);
       return reply(200,{ok:true,linked:true,displayName:profile.display_name,
         isFollowing:null,recipientReachability:"UNKNOWN",friendCheckStatus:"CACHED_PLATFORM_SESSION"},origin);
     }
@@ -1175,25 +1210,19 @@ Deno.serve(async (req: Request) => {
       if (!ownOa && (!linked?.display_name?.trim() ||
           linked.login_channel_id!==expectedChannelId ||
           Date.now()-Date.parse(String(linked.updated_at||""))>30*24*60*60*1000)) {
-        const {data:verified,error:identityError}=await db.from("so_platform_line_identities")
-          .select("line_sub,display_name,login_channel_id,updated_at")
-          .eq("user_id",user.id).maybeSingle();
-        if(identityError)throw identityError;
-        const age=Date.now()-Date.parse(String(verified?.updated_at||""));
-        if(verified?.login_channel_id===expectedChannelId &&
-           verified.display_name?.trim() && Number.isFinite(age) &&
-           age>= -60000 && age<=30*24*60*60*1000) {
+        const verified=await reusablePlatformLineIdentity(db,user.id,expectedChannelId);
+        if(verified) {
           if(linked?.line_sub && linked.line_sub!==verified.line_sub)
             return reply(409,{error:"LINE_ACCOUNT_CHANGED"},origin);
           const {error:upsertError}=await db.from("so_line_links").upsert({
             tenant_id:tenant.id,user_id:user.id,line_sub:verified.line_sub,
             login_channel_id:expectedChannelId,display_name:verified.display_name,
-            is_following:linked?.is_following??null,updated_at:new Date().toISOString(),
+            is_following:linked?.is_following??null,updated_at:verified.updated_at,
           },{onConflict:"tenant_id,user_id"});
           if(upsertError)throw upsertError;
           linked={display_name:verified.display_name,line_sub:verified.line_sub,
             login_channel_id:expectedChannelId,is_following:linked?.is_following??null,
-            updated_at:new Date().toISOString()};
+            updated_at:verified.updated_at};
         }
       }
       const verifiedAt = Date.parse(String(linked?.updated_at || ""));
