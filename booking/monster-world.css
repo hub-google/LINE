@@ -799,3 +799,45 @@ body[data-monster-page="board"] .board-platform-credit:hover{text-decoration:und
 @media(max-width:780px){
  body[data-monster-page="board"] .shop-icon:has(img:not([hidden])){display:grid;width:46px;height:46px;flex-basis:46px;border-width:2px}
 }
+
+
+/* Queue board merchant-brand specificity fix: override legacy :has(#single-board) rules. */
+/* The old body:has(#single-board) selector contains an ID and was overriding the merchant theme. */
+body[data-monster-page="board"]:has(#single-board)>header{
+ background:var(--merchant-board-accent,#462B52)!important;
+ border-color:var(--merchant-board-accent,#462B52)!important;
+ color:var(--merchant-board-contrast,#FFFFFF)!important;
+}
+body[data-monster-page="board"]:has(#single-board)>header :is(h1,#clock){
+ color:var(--merchant-board-contrast,#FFFFFF)!important;
+}
+body[data-monster-page="board"]:has(#single-board) .panel.current{
+ background:color-mix(in srgb,var(--merchant-board-accent,#693C8B) 14%,white)!important;
+ border-color:color-mix(in srgb,var(--merchant-board-accent,#693C8B) 34%,white)!important;
+}
+body[data-monster-page="board"]:has(#single-board) .panel.next{
+ background:#FFFFFF;
+ border-color:color-mix(in srgb,var(--merchant-board-accent,#693C8B) 24%,white);
+}
+body[data-monster-page="board"]:has(#single-board) :is(#current,.unit-now){
+ color:var(--merchant-board-ink,#462B52)!important;
+}
+body[data-monster-page="board"]:has(#single-board) .label{
+ color:var(--merchant-board-ink,#462B52);
+}
+body[data-monster-page="board"]:has(#single-board) .underline{
+ background:var(--merchant-board-accent,#693C8B)!important;
+}
+body[data-monster-page="board"]:has(#single-board) #upcoming li:not(.empty){
+ background:color-mix(in srgb,var(--merchant-board-accent,#693C8B) 19%,white);
+ border:1px solid color-mix(in srgb,var(--merchant-board-accent,#693C8B) 36%,white);
+ color:var(--merchant-board-ink,#462B52);
+}
+body[data-monster-page="board"]:has(#single-board) .unit-card{
+ background:color-mix(in srgb,var(--merchant-board-accent,#693C8B) 8%,white);
+ border-color:color-mix(in srgb,var(--merchant-board-accent,#693C8B) 27%,white);
+}
+body[data-monster-page="board"]:has(#single-board) footer{
+ background:color-mix(in srgb,var(--merchant-board-accent,#693C8B) 7%,white);
+ border-color:color-mix(in srgb,var(--merchant-board-accent,#693C8B) 21%,white);
+}
