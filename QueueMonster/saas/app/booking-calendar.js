@@ -129,13 +129,19 @@ export async function loadBookingCalendar(page=calendarState.calendarPage){
  const period=calendarPeriod(calendarState.calendarMode,calendarState.calendarAnchor);
  const key=period.start+"/"+period.end+"/"+calendarState.calendarStatus;
  calendarState.calendarLoading=true;calendarState.calendarError="";calendarState.calendarResult=null;
+ if(calendarState.pickupCalendarPeriod!==period.start+"/"+period.end){calendarState.pickupCalendarPage=1;calendarState.pickupCalendarResult=null;}
  render();
  try{
-  const data=await rpc("so_staff_reservation_calendar",{
+  const [data,pickup] = await Promise.all([
+  rpc("so_staff_reservation_calendar",{
    p_slug:merchant,p_start:period.start,p_end:period.end,
    p_status:calendarState.calendarStatus,p_page:page,p_page_size:100
-  });
+  }),
+  rpc("so_pickup_calendar",{p_slug:merchant,p_start:period.start,p_end:period.end,p_page:calendarState.pickupCalendarPage||1})
+    .then(data=>({data,error:""})).catch(e=>({data:null,error:e?.message||"無法讀取取餐日曆"}))
+ ]);
   if(request!==calendarState.calendarRequestToken||routeState.view!=="staff"||routeState.slug!==merchant||staffState.staffTab!=="calendar")return;
+  calendarState.pickupCalendarResult=pickup.data;calendarState.pickupCalendarError=pickup.error;calendarState.pickupCalendarPeriod=period.start+"/"+period.end;
   calendarState.calendarResult=data;calendarState.calendarPage=page;calendarState.calendarTenant=merchant;calendarState.calendarDataKey=key;
  }catch(e){
   if(request!==calendarState.calendarRequestToken||routeState.slug!==merchant)return;

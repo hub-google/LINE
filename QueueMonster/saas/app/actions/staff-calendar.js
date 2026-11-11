@@ -10,7 +10,14 @@ import {exportHistoricalBookings,searchHistoricalBookings,staffBookingMatches} f
 import {render} from "./../staff-layout.js";
 
 export async function handleStaffCalendar(ev,b,a,id){
-if(a==="calendar-mode"){
+if(a==="pickup-calendar-prev"||a==="pickup-calendar-next"){
+   if(calendarState.calendarLoading||!calendarState.pickupCalendarResult)return true;
+   const p=(calendarState.pickupCalendarPage||1)+(a==="pickup-calendar-next"?1:-1);
+   const max=Math.max(1,Math.ceil(Number(calendarState.pickupCalendarResult.total||0)/100));
+   if(p<1||p>max)return true;
+   calendarState.pickupCalendarPage=p;void loadBookingCalendar(calendarState.calendarPage);return true;
+ }
+ if(a==="calendar-mode"){
    const mode=b.dataset.mode;
    if(!["day","week","month"].includes(mode))return true;
    calendarState.calendarMode=mode;calendarState.calendarPage=1;void loadBookingCalendar(1);return true;
