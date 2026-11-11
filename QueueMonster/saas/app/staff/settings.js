@@ -104,7 +104,7 @@ export function renderStaffSettings({t,isManager,html}){
 ["public",box("LINE 官方帳號串接",
     '<p>目前通知來源：<strong>'+(lineState.lineConfig?.merchantOaConnected?"商家自己的 LINE OA":"平台 LINE OA")+'</strong></p>'+
     '<p class="small">串接店家的 Messaging API 只需要下方兩項資訊，<strong>不需要 Channel ID 或 LIFF ID</strong>。Channel ID 由系統自動向 LINE 查詢；進階的 LINE Login／LIFF 可另外設定。</p>'+
-    '<p><a href="./merchant-center.html#mode-own" target="_blank" rel="noopener noreferrer">查看 Messaging API 建立、取得憑證及 Webhook 設定教學 ↗</a></p>'+
+    '<p><a href="./merchant-center.html#mode-own" target="_blank" rel="noopener noreferrer">查看 Messaging API 建立及取得憑證教學 ↗</a></p>'+
     (lineState.lineConfig?.merchantOaConnected?
      '<p>已連接 LINE OA：<strong>'+esc(lineState.lineConfig.botBasicId||"")+'</strong></p>':"")+
     (isManager?
@@ -119,10 +119,7 @@ export function renderStaffSettings({t,isManager,html}){
        '<p class="small">這不是 Messaging API 的 Channel ID。只用店家 OA 發送訊息可以留空；若要讓顧客使用店家 Provider 登入，請在同一 Provider 的 LINE Login 頻道建立 LIFF。<a href="https://developers.line.biz/console/" target="_blank" rel="noopener noreferrer">開啟 LINE Developers ↗</a></p></div></details>'+
      '<p class="small">通過憑證驗證代表已連接店家 OA，不代表顧客一定收得到訊息。不同 Provider 的 LINE User ID 不同，顧客仍需完成店家 OA 的收訊身分配對。Token 與 secret 不會再回顯。</p>'+
      '<div class="staff-actionbar">'+btn("驗證並連接 Messaging API","connect-own-oa","primary")+
-       (lineState.lineConfig?.merchantOaConnected?btn("解除自有 OA 綁定","disconnect-own-oa","outline"):"")+'</div>'+
-     '<p class="small">連接後請於 LINE Developers → Messaging API 設定下列 Webhook URL，並開啟 Use webhook：</p>'+
-     '<p class="small" style="overflow-wrap:anywhere">'+esc(lineState.LINE_BRIDGE_URL+"?action=webhook&merchant="+encodeURIComponent(routeState.slug))+'</p>'+
-     btn("複製 Webhook URL","copy-own-oa-webhook","outline")
+       (lineState.lineConfig?.merchantOaConnected?btn("解除自有 OA 綁定","disconnect-own-oa","outline"):"")+'</div>'
      :'<p class="small">僅企業管理者可設定自己的 LINE OA。</p>'))],
 ["public",(isManager?box("排隊怪獸店家搜尋",t.onboarding_complete===false?
  '<p>填寫店名、電話、地址與分類並儲存後，門市會自動公開在排隊怪獸的搜尋清單。</p>':
