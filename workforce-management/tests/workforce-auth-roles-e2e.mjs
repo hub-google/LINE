@@ -164,6 +164,58 @@ try{
   assert.equal(await employeePage.locator('#appContent [data-action="approve"]').count(),0);
   await screenshot(employeePage,'03-employee-no-approval-controls');
  });
+ let availabilityId;
+ await step('Employee submits unavailable preference; requires supervisor approval',async()=>{
+  await employeePage.locator('#nav [data-tab="schedule"]').click();
+  await employeePage.locator('#appContent [data-action="newAvailability"]').click();
+  const form=employeePage.locator('#overlay form[data-form="availability"]');
+  await form.waitFor({state:'visible'});
+  assert.equal(await form.locator('[name="member_id"]').inputValue(),member);
+  const day=new Date(Date.now()+40*86400000).toISOString().slice(0,10);
+  await form.locator('[name="starts_at"]').fill(day+'T09:00');
+  await form.locator('[name="ends_at"]').fill(day+'T18:00');
+  await form.locator('[name="available"]').selectOption('false');
+  await form.locator('[name="note"]').fill('QA-'+run+'-不可上班');
+  await form.locator('button[type="submit"]').click();
+  await form.waitFor({state:'hidden'});
+  const list=await rows('wm_availability',users[0].token,
+   'select=id,status,note&tenant_id=eq.'+tenant+'&member_id=eq.'+member);
+  const saved=list.find(x=>x.note==='QA-'+run+'-不可上班');
+  assert.equal(saved?.status,'pending');
+  availabilityId=saved.id;
+ });
+ await step('Employee cannot self-approve availability and supervisor can review',async()=>{
+  const denied=await req(api+'/rest/v1/rpc/wm_review_availability','POST',
+   {p_availability:availabilityId,p_approved:true,p_note:'self'},header(publicKey,users[1].token),false);
+  assert.ok(denied.status>=400);
+  await managerPage.locator('#refreshBtn').click();
+  await managerPage.locator('#nav [data-tab="schedule"]').click();
+  const button=managerPage.locator('#appContent [data-wf-availability="review"][data-ok="true"][data-id="'+availabilityId+'"]');
+  await button.waitFor({state:'visible'});
+  await button.click();
+  const form=managerPage.locator('#overlay form[data-form="wf_availability_review"]');
+  await form.locator('[name="p_note"]').fill('主管核准排休');
+  await form.locator('button[type="submit"]').click();
+  await form.waitFor({state:'hidden'});
+  const list=await rows('wm_availability',users[0].token,'select=status&id=eq.'+availabilityId);
+  assert.equal(list[0]?.status,'approved');
+  await screenshot(managerPage,'08-reviewed-availability');
+ });
+ await step('Owner cutoff policy blocks late employee submissions',async()=>{
+  const policy=(await req(api+'/rest/v1/rpc/wm_set_availability_policy','POST',
+   {p_tenant:tenant,p_cutoff_hours:336},header(publicKey,users[0].token))).data;
+  assert.equal(policy.cutoff_hours,336);
+  const start=new Date(Date.now()+7*86400000),end=new Date(start.getTime()+3600000);
+  const denied=await req(api+'/rest/v1/wm_availability','POST',
+   {tenant_id:tenant,member_id:member,available:true,
+    starts_at:start.toISOString(),ends_at:end.toISOString(),note:'too late'},
+   {...header(publicKey,users[1].token),Prefer:'return=minimal'},false);
+  assert.ok(denied.status>=400);
+  const reset=(await req(api+'/rest/v1/rpc/wm_set_availability_policy','POST',
+   {p_tenant:tenant,p_cutoff_hours:0},header(publicKey,users[0].token))).data;
+  assert.equal(reset.cutoff_hours,0);
+ });
+
  const dateA=new Date(Date.now()+30*86400000).toISOString().slice(0,10);
  const dateB=new Date(Date.now()+31*86400000).toISOString().slice(0,10);
  let first;
@@ -326,7 +378,7 @@ try{
  if(tenant)try{
   const sql=[
    'begin;',
-   ...['wm_leave_cancellations','wm_request_actions','wm_audit','wm_request_documents','wm_period_adjustments','wm_attendance_adjustments','wm_shift_revisions','wm_qr_uses'].map(x=>"delete from public."+x+" where tenant_id='"+tenant+"';"),
+   ...['wm_availability','wm_availability_policies','wm_leave_cancellations','wm_request_actions','wm_audit','wm_request_documents','wm_period_adjustments','wm_attendance_adjustments','wm_shift_revisions','wm_qr_uses'].map(x=>"delete from public."+x+" where tenant_id='"+tenant+"';"),
    "delete from public.wm_requests where tenant_id='"+tenant+"';",
    "delete from public.wm_punches where tenant_id='"+tenant+"';",
    "delete from public.wm_shifts where tenant_id='"+tenant+"';",
