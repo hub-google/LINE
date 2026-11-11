@@ -142,7 +142,7 @@ html:fullscreen footer button{padding:5px 9px;font-size:clamp(11px,1.5vh,14px);m
   }
   html:fullscreen #upcoming{
     grid-template-columns:repeat(2,minmax(0,1fr));
-    grid-template-rows:repeat(3,minmax(0,1fr));
+    grid-template-rows:repeat(var(--board-queue-mobile-rows,3),minmax(0,1fr));
   }
   html:fullscreen #current{font-size:clamp(44px,14vh,130px)}
   html:fullscreen body > footer{gap:3px 8px}
