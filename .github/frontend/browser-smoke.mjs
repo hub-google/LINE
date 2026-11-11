@@ -284,6 +284,9 @@ try{
    for(const n of ["A124","A125","A126","A127","A128"]){
     const li=document.createElement("li");li.textContent=n;q.appendChild(li);
    }
+   // Fixture bypasses renderUpcoming(), which normally schedules the fitter.
+   // Notify the real fitter that data has changed, as the production path does.
+   window.dispatchEvent(new Event("resize"));
   });
   // The board must already occupy the visible browser viewport, BEFORE fullscreen.
   await page.waitForTimeout(180);
