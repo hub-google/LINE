@@ -230,3 +230,8 @@ html:fullscreen #board-page-indicator{
   white-space:nowrap;
 }
 html:fullscreen #board-page-indicator[hidden]{display:none!important}
+
+/* Read-only kiosk screens should not waste display area on account controls. */
+html:fullscreen #site-auth-root{display:none!important}
+html:fullscreen body > header .shop-title{min-width:0;flex:1}
+html:fullscreen body > header #clock{flex:0 0 auto}
