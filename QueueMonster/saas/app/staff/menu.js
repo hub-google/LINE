@@ -46,7 +46,7 @@ export function renderStaffMenu({t,isManager,html}){
    (isManager?'<div class="grid"><div>'+field("資源名稱","resource-name","")+'</div><div><label for="resource-kind">類型</label><select class="field" id="resource-kind">'+
       [["STAFF","員工"],["ROOM","房間"],["EQUIPMENT","設備"]].map(([v,n])=>'<option value="'+v+'">'+n+'</option>').join("")+
       '</select></div></div>'+btn("新增資源","resource-save","primary"):"")))+
-    box("服務時長與緩衝（預約資源排程）",
+    (services.length?box("服務時長與緩衝（預約資源排程）",
      '<p class="small">'+(serviceUnitsState.unitEnabled()?'服務窗口與場次請到「設定 → 場次與窗口」管理。':'可指定每項服務的時間及一個員工／房間／設備。')+'服務時間與緩衝仍沿用既有預約資源排程。</p>'+
      (services.length?'<div class="scroll"><table class="rows"><thead><tr><th>服務</th><th>分鐘＋緩衝</th><th>指定資源</th></tr></thead><tbody>'+
        services.map(x=>{const rule=rules.find(z=>z.item_id===x.id);const res=resources.find(z=>z.id===rule?.resource_id);
@@ -60,7 +60,7 @@ export function renderStaffMenu({t,isManager,html}){
         '</div><div><label for="rule-resource">指定服務資源</label><select id="rule-resource" class="field"><option value="">不指定</option>'+
         resources.filter(x=>x.active||x.id===firstRule?.resource_id).map(x=>'<option value="'+esc(x.id)+'" '+(x.id===firstRule?.resource_id?"selected":"")+'>'+esc(x.name)+'</option>').join("")+
         '</select><label class="checklist"><input type="checkbox" id="rule-show-duration" '+(firstRule?.show_duration_to_customer===false?"":"checked")+'>可向顧客顯示服務時長</label></div></div>'+
-        '<div class="staff-actionbar">'+btn("儲存服務排程","service-rule-save","primary")+'</div>':""));
+        '<div class="staff-actionbar">'+btn("儲存服務排程","service-rule-save","primary")+'</div>':""):"");
 
 return html;
 }
