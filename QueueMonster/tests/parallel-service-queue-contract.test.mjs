@@ -9,8 +9,8 @@ const queue=read("saas/app/staff/queue.js");
 const staffView=read("saas/app/staff-view.js");
 
 test("staff call gate checks only an outstanding CALLED ticket, not other ongoing services",()=>{
-  assert.match(nextCall,/status='CALLED'\)\) then raise exception '已有已叫號/);
-  assert.match(nextCall,/status='CALLED'\)\)\s+then raise exception '本場次仍有尚未確認/);
+  assert.match(nextCall,/status='CALLED'\) then raise exception '已有已叫號/);
+  assert.match(nextCall,/status='CALLED'\)\s+then raise exception '本場次仍有尚未確認/);
   assert.match(nextCall,/if p_status='CALLED' and exists \(/);
   assert.match(nextCall,/if p_status='CALLED' and exists\(/);
   assert.match(nextCall,/other\.status='CALLED'/);
