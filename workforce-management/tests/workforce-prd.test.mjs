@@ -279,3 +279,20 @@ test('weekly hours reuse break-aware session engine, including midnight shifts',
  assert.match(src,/const sessions=attendanceRows\(app\.data\.punches\|\|\[\],start,end\)/);
  assert.match(src,/hasIncomplete/);
 });
+
+
+test('HR-SCH employee availability requires manager review and tenant cutoff',()=>{
+ const sql=migration('20261111_workforce_availability_review_cutoff.sql');
+ for(const symbol of ['wm_availability_policies','wm_review_availability',
+  'wm_withdraw_availability','wm_get_availability_policy',
+  'wm_set_availability_policy','wm_availability_submit_guard',
+  'wm_private.can_approve_member','wm_private.guard_availability_submission'])
+  assert.ok(sql.includes(symbol),symbol);
+ assert.match(sql,/NEW\.status:='pending'/);
+ assert.match(sql,/wm_private\.my_role\(p_tenant\) NOT IN \('owner','hr'\)/);
+ assert.match(sql,/REVOKE UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER/);
+ assert.match(src,/data-wf-availability="review"/);
+ assert.match(src,/data-wf-availability="withdraw"/);
+ assert.match(src,/const pendingBlackout=/);
+ assert.match(src,/wm_get_availability_policy/);
+});
