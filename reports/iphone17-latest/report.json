@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-11T03:12:21.265Z",
+  "date": "2026-11-11T03:15:05.825Z",
   "device": "iPhone 17 simulated Chromium, 402x874 CSS pixels, DPR3",
   "note": "Read-only live website screenshots; no authentication, no writes; not physical Safari.",
   "screens": [
@@ -255,57 +255,57 @@
       "visibleTapCount": 10,
       "keyRects": {
         ".page-header": {
-          "top": -609,
-          "bottom": -459,
+          "top": -588,
+          "bottom": -438,
           "left": 0,
           "right": 402,
           "height": 150
         },
         ".hero-heading": {
-          "top": -551,
-          "bottom": -480,
+          "top": -530,
+          "bottom": -459,
           "left": 14,
           "right": 388,
           "height": 71
         },
         ".main-panel": {
-          "top": -476,
-          "bottom": 4646,
+          "top": -455,
+          "bottom": 4667,
           "left": 14,
           "right": 388,
           "height": 5123
         },
         ".tabs": {
-          "top": -462,
-          "bottom": -406,
+          "top": -441,
+          "bottom": -385,
           "left": 28,
           "right": 374,
           "height": 56
         },
         "#keyword": {
-          "top": -317,
-          "bottom": -268,
+          "top": -296,
+          "bottom": -247,
           "left": 28,
           "right": 374,
           "height": 49
         },
         "#explore-filters": {
-          "top": -258,
-          "bottom": -212,
+          "top": -237,
+          "bottom": -191,
           "left": 28,
           "right": 374,
           "height": 46
         },
         "#results": {
-          "top": -90,
-          "bottom": 4622,
+          "top": -69,
+          "bottom": 4643,
           "left": 28,
           "right": 374,
           "height": 4713
         },
         "#results-heading": {
-          "top": -128,
-          "bottom": -100,
+          "top": -107,
+          "bottom": -79,
           "left": 28,
           "right": 127,
           "height": 28
@@ -905,17 +905,17 @@
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
-      "visibleTapCount": 6,
+      "visibleTapCount": 2,
       "keyRects": {
         "#root": {
-          "top": 188,
-          "bottom": 502,
+          "top": 144,
+          "bottom": 293,
           "left": 0,
           "right": 402,
-          "height": 314
+          "height": 149
         }
       },
-      "bodyText": "排隊怪獸 總部管理 總部登入 總部管理員登入 請從總部專用入口登入，完成授權後才能使用總部管理功能。 前往總部登入 排隊怪獸服務 ・ 隱私權說明 ・ 使用條款",
+      "bodyText": "排隊怪獸 總部登入 資料更新中，請稍後",
       "errors": [],
       "failedRequests": []
     },
@@ -968,7 +968,7 @@
       ],
       "visibleTapCount": 4,
       "keyRects": {},
-      "bodyText": "測試1 使用 LINE 登入 11:12 上午場 一般場次 — 接下來：2、3、4、5、6 等候 6 組 叫號順序將依現場狀況即時更新 由排隊怪獸提供服務 重新整理 全螢幕 最後成功同步：11:12:19；資料每 12 秒自動核對，網路斷線會提示。",
+      "bodyText": "測試1 使用 LINE 登入 11:15 上午場 一般場次 — 接下來：2、3、4、5、6 等候 6 組 叫號順序將依現場狀況即時更新 由排隊怪獸提供服務 重新整理 全螢幕 最後成功同步：11:15:04；資料每 12 秒自動核對，網路斷線會提示。",
       "errors": [],
       "failedRequests": []
     }
