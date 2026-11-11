@@ -153,3 +153,16 @@ test("session based booking date picker agrees with the backend 90-day session l
  assert.match(ui,/max="'\+dateInNinetyDays\(\)\+'"/);
  assert.match(read("supabase/migrations/20261110175000_settings_sessions_optional_window.sql"),/interval '90 days'|\+90/);
 });
+
+test("QueueMonster FK performance migration is additive and retains board RLS semantics",()=>{
+ const sql=read("supabase/migrations/20261111090000_queue_monster_fk_index_performance.sql");
+ assert.equal((sql.match(/CREATE INDEX IF NOT EXISTS/g)||[]).length,15);
+ assert.doesNotMatch(sql,/\\b(?:TRUNCATE|DROP TABLE|DELETE FROM|UPDATE\\s+public\\.so_)\\b/i);
+ for(const table of ["so_audit","so_invites","so_line_links","so_members","so_membership_exits","so_reservations","so_service_rules","so_tenants","so_tickets"]){
+  assert.ok(sql.includes("ON public."+table+" ("),"missing covering index on "+table);
+ }
+ assert.match(sql,/ALTER POLICY so_queue_displays_active_read/);
+ assert.match(sql,/TO authenticated/);
+ assert.match(sql,/SELECT auth\.uid\(\)/);
+ assert.match(sql,/t\.status='ACTIVE'/);
+});
