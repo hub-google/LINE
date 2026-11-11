@@ -9,6 +9,7 @@ import {initializeDataLoading} from "./data-loading.js";
 import {initializeClickActions} from "./click-actions.js";
 import {initializeFormEvents} from "./form-events.js";
 import {initializeStartup} from "./startup.js";
+import {initializePickupMode} from "./pickup-mode.js";
 
 // Initialize each domain before registering listeners and starting network reads.
 initializeLineSession();
@@ -24,4 +25,5 @@ initializeDataLoading();
 
 initializeClickActions();
 initializeFormEvents();
+initializePickupMode();
 initializeStartup();
