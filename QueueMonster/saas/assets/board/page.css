@@ -244,3 +244,16 @@ html.board-fit body > header{min-width:0}
 html.board-fit body > #board-session-nav:not([hidden]){min-width:0}
 html.board-fit body > footer{min-width:0}
 html.board-fit #single-board .panel.next{min-height:0}
+
+/* The upper-right label reports the actual synchronization mechanism. */
+html.board-fit .board-header-status{
+  display:flex;flex:0 1 auto;min-width:0;max-width:38%;
+  flex-direction:column;align-items:flex-end;justify-content:center;gap:2px;
+}
+html.board-fit #board-update-mode{
+  font-size:clamp(10px,1.45vh,15px);font-weight:750;line-height:1.2;
+  max-width:100%;text-align:right;overflow-wrap:anywhere;
+  color:var(--merchant-board-contrast,#fff);opacity:.88;
+}
+html.board-fit #board-update-mode[data-realtime="on"]{opacity:1}
+html.board-fit .board-header-status #clock{line-height:1.12}
