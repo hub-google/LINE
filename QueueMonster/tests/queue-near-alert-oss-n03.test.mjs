@@ -69,3 +69,47 @@ test("OSS-N03: main inline customer script stays syntactically valid",()=>{
   assert.doesNotMatch(source,/^import\s/m);
   assert.doesNotThrow(()=>new vm.Script(source));
 });
+
+
+test("FR-104 reminder job schema, invalidation and minute cron match deployed backend",()=>{
+ const sql=readFileSync(new URL("../supabase/migrations/20261111091500_booking_reminders_fr104_sync.sql",import.meta.url),"utf8");
+ for(const event of ["RESERVATION_REMINDER_24H","RESERVATION_REMINDER_2H","TICKET_RESTORED"])
+  assert.match(sql,new RegExp(event));
+ assert.match(sql,/so_booking_reminder_jobs/);
+ assert.match(sql,/so_booking_reminder_sync/);
+ assert.match(sql,/BOOKING_SCHEDULE_CHANGED/);
+ assert.match(sql,/status='CANCELLED'/);
+ assert.match(sql,/so_booking_enqueue_reminders/);
+ assert.match(sql,/due_at>=now\(\)-interval '15 minutes'/);
+ assert.match(sql,/r\.status='CONFIRMED' and r\.deleted_at is null/);
+ assert.match(sql,/cron\.schedule\('line-saas-booking-reminders'/);
+});
+
+test("FR-104 worker handles both reminders with event-versioned booking and tenant checks",()=>{
+ assert.match(bridge,/job\.event_kind === "RESERVATION_REMINDER_24H"/);
+ assert.match(bridge,/job\.event_kind === "RESERVATION_REMINDER_2H"/);
+ assert.match(bridge,/from\("so_booking_reminder_jobs"\)/);
+ assert.match(bridge,/reminder\.status !== "QUEUED"/);
+ assert.match(bridge,/reminder\.reminder_kind !== expected/);
+ assert.match(bridge,/booking\.status !== "CONFIRMED"/);
+ assert.match(bridge,/\.eq\("tenant_id", tenant\.id\)\.eq\("id", reminder\.booking_id\)/);
+ assert.match(bridge,/reminderDeliveryWindow\(booking\.booking_date, booking\.booking_time/);
+ assert.match(bridge,/REMINDER_BOOKING_CANCELLED_OR_CHANGED/);
+ assert.match(bridge,/pushNotice\(db, tenant, booking\.user_id, job\.event_kind, job\.reference_id/);
+ assert.match(bridge,/so_line_push_log/);
+});
+
+test("FR-104 reminder delivery refuses early, stale and rescheduled booking events",()=>{
+ const match=bridge.match(/function reminderDeliveryWindow\([\s\S]*?\n\}/);
+ assert.ok(match,"reminder window guard must be present");
+ const js=match[0].replace(/:\s*(?:string|number|boolean)\b/g,"");
+ const guard=new Function(js+";return reminderDeliveryWindow;")();
+ const day="2026-11-12", start="2026-11-12T02:00:00Z", due="2026-11-11T02:00:00Z";
+ const t=Date.parse(due);
+ assert.equal(guard(day,"10:00:00",start,due,t),true,"send at scheduled due time");
+ assert.equal(guard(day,"10:00:00",start,due,t+14*60_000),true,"allow minute worker delay");
+ assert.equal(guard(day,"10:00:00",start,due,t-1),false,"never send early");
+ assert.equal(guard(day,"10:00:00",start,due,t+16*60_000),false,"never send after 15-minute window");
+ assert.equal(guard(day,"11:00:00",start,due,t),false,"never send stale reminder after time change");
+ assert.equal(guard(day,"10:00:00",start,"invalid",t),false,"reject invalid due timestamp");
+});
