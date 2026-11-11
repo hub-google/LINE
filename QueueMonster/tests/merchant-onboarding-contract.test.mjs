@@ -320,3 +320,14 @@ test("production release contains no customer-visible QA or infrastructure copy"
  assert.ok(!read("saas/merchant-register.html").includes("密碼由 Supabase Auth"),"account help stays customer-focused");
  assert.ok(read("saas/template.html").includes("merchant-center.html#setup"),"retired preview directs visitors to live merchant guide");
 });
+
+test("merchant LINE OA onboarding never requires or displays webhook configuration",()=>{
+ const settings=read("saas/app/staff/settings.js");
+ const actions=read("saas/app/actions/merchant-settings.js");
+ const guide=read("saas/merchant-center.html");
+ assert.match(settings,/驗證並連接 Messaging API/);
+ assert.match(settings,/own-oa-token/);
+ assert.doesNotMatch(settings,/複製 Webhook URL|copy-own-oa-webhook|Use webhook/);
+ assert.doesNotMatch(actions,/copy-own-oa-webhook|請設定 Webhook URL/);
+ assert.doesNotMatch(guide,/複製 Webhook URL|Use webhook|訊息回傳網址/);
+});
