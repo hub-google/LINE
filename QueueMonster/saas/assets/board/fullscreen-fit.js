@@ -22,6 +22,20 @@ export function installBoardFullscreenFit(){
     const measured=Math.max(1,ctx.measureText(String(text||" ")).width);
     return Math.max(1,Math.floor(Math.min(100*w/measured,h/.99)));
   };
+  // A multi-line placeholder (e.g. 尚未 / 叫號) must fit its ENTIRE
+  // rendered line stack, not merely the width of the concatenated text.
+  function unitNowFont(now,w,h){
+    const lines=String(now?.textContent||"").split(/\r?\n/);
+    const lineCount=Math.max(1,lines.length);
+    const lineHeight=now?.classList?.contains("is-empty")?1.08:1.08;
+    const availableH=Math.max(1,h-8);
+    const availableW=Math.max(1,w*.84);
+    const widthFit=Math.min(...lines.map(line=>textFit(line,availableW,availableH,950)));
+    const heightFit=availableH/(lineCount*lineHeight*1.08);
+    // Retain prominent single-line numbers, while keeping multi-line
+    // placeholders fully above the next-number separator at narrow widths.
+    return Math.max(12,Math.floor(Math.min(widthFit,heightFit,availableH*.69)));
+  }
   // Compare grids by the legibility their actual card dimensions support.
   // Narrow text cards favour rows; wide text cards can use more columns.
   function bestGrid(count,w,h,kind,texts=[]){
@@ -107,9 +121,7 @@ export function installBoardFullscreenFit(){
       // Flex gives the numeric line the height LEFT after title, next, and actions.
       // Size against that actual box, not against the whole card.
       const numericHeight=Math.max(1,size(now).h);
-      if(now)now.style.fontSize=Math.floor(Math.min(
-        textFit(now.textContent,w*.84,numericHeight*.73),numericHeight*.69
-      ))+"px";
+      if(now)now.style.fontSize=unitNowFont(now,w,numericHeight)+"px";
     }
     if(indicator){
       indicator.hidden=pageCount<=1;
