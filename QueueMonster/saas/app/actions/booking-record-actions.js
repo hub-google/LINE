@@ -64,12 +64,18 @@ if(a==="edit-book-contact"){
   if(!bookingId||!targetDate||!targetTime||!Number.isInteger(party)||party<1||party>20){
     showActionFeedback("請確認預約日期、時間及人數","error");return true;
   }
+  const record=(customerState.customer?.my_reservations||[]).find(x=>x.id===bookingId);
+  const sessionMode=!!record?.session_id;
+  const targetSession=sessionMode?(bookingState.editSlots||[]).find(x=>x.id===targetTime):null;
+  if(sessionMode&&!targetSession){showActionFeedback("請選擇有效的預約場次","error");return true;}
   await act(async()=>{
-    const result=await rpc("so_customer_edit_booking_with_items",{p_slug:routeState.slug,p_booking_id:bookingId,p_date:targetDate,p_time:targetTime,p_party:party,p_items:bookingState.editChosenItems.slice()});
+    const result=await rpc(sessionMode?"so_customer_edit_session_booking":"so_customer_edit_booking_with_items",
+      sessionMode?{p_slug:routeState.slug,p_booking_id:bookingId,p_session_id:targetTime,p_party:party,p_items:bookingState.editChosenItems.slice()}:
+       {p_slug:routeState.slug,p_booking_id:bookingId,p_date:targetDate,p_time:targetTime,p_party:party,p_items:bookingState.editChosenItems.slice()});
     bookingState.editingBookingId="";bookingState.editSlots=null;bookingState.editChosenItems=[];finishManageLink();
     if(!result.changed)return "預約資料沒有變更";
     const notice=await sendLineNotice("notify-reservation-updated",{reservationId:bookingId});
-    return "預約已更新："+targetDate+" "+targetTime+"，"+party+" 位"+customerNoticeSuffix(notice);
+    return "預約已更新："+targetDate+" "+(sessionMode?targetSession.label:targetTime)+"，"+party+" 位"+customerNoticeSuffix(notice);
   });return true;
  }
  if(a==="cancel-my-book"){
