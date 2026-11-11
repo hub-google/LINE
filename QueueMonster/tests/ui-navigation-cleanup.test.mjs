@@ -41,3 +41,13 @@ test("customer homepage has no forced marketing headings and merchants control t
  assert.match(settings,/save-customer-homepage/);
  assert.match(loading,/so_get_customer_homepage/);
 });
+
+test("merchant guide mirrors unified settings navigation and avoids hidden mobile nav items",()=>{
+ const guide=read("merchant-center.html");
+ const css=read("assets/merchant-center/page.css");
+ assert.equal((guide.match(/<aside class="qm-nav">/g)||[]).length,4);
+ assert.doesNotMatch(guide,/菜單及服務設定|多分店管理|服務單位與場次/);
+ assert.match(guide,/qm-nav-item active">設定/);
+ assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+ assert.doesNotMatch(css,/\.qm-admin \.qm-nav\{display:flex;gap:5px;overflow-x:auto/);
+});
