@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-11T03:09:22.994Z",
+  "date": "2026-11-11T03:12:21.265Z",
   "device": "iPhone 17 simulated Chromium, 402x874 CSS pixels, DPR3",
   "note": "Read-only live website screenshots; no authentication, no writes; not physical Safari.",
   "screens": [
@@ -968,7 +968,7 @@
       ],
       "visibleTapCount": 4,
       "keyRects": {},
-      "bodyText": "測試1 使用 LINE 登入 11:09 上午場 一般場次 — 接下來：2、3、4、5、6 等候 6 組 叫號順序將依現場狀況即時更新 由排隊怪獸提供服務 重新整理 全螢幕 最後成功同步：11:09:21；資料每 12 秒自動核對，網路斷線會提示。",
+      "bodyText": "測試1 使用 LINE 登入 11:12 上午場 一般場次 — 接下來：2、3、4、5、6 等候 6 組 叫號順序將依現場狀況即時更新 由排隊怪獸提供服務 重新整理 全螢幕 最後成功同步：11:12:19；資料每 12 秒自動核對，網路斷線會提示。",
       "errors": [],
       "failedRequests": []
     }
