@@ -80,6 +80,9 @@ test("booking main module still passes JavaScript syntax validation",()=>{
 
 test("pending merchant logo stays selected across DOM replacement and clears only on save",async()=>{
  const {runInNewContext}=await import("node:vm");
+ const sharedSource=readFileSync(path.join(root,"saas/shared-customer-links.js"),"utf8")
+  .replace(/\bexport\s+/g,"");
+ const {safeMerchantLogoUrl}=new Function(sharedSource+";return {safeMerchantLogoUrl};")();
  const source=readFileSync(path.join(root,"saas/app/merchant-brand.js"),"utf8")
   .replace(/^import .*?;\r?\n/gm,"").replace(/\bexport /g,"");
  const callbacks={};
@@ -99,7 +102,7 @@ test("pending merchant logo stays selected across DOM replacement and clears onl
  let revoked="";
  const modules=runInNewContext(source+
    "\n;({initializeMerchantBrand,merchantLogoControl,merchantLogoFile,merchantClearLogo,merchantLogoSaved})",{
-  authState:{},lineState:{},merchantBrandState:{},
+  authState:{},lineState:{},merchantBrandState:{},safeMerchantLogoUrl,
   routeState:{slug:"logo-persistence-test",$:id=>inputs[id]||null},
   authReady:()=>true,esc:text=>String(text||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;"),
   field:()=>"",showActionFeedback:()=>{},val:()=>"",document:doc,

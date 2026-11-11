@@ -1,5 +1,6 @@
 [
   "public-config.js",
+  "shared-customer-links.js",
   "app/line-session.js",
   "app/route-state.js",
   "app/service-units.js",

@@ -1,3 +1,4 @@
+import {safeMerchantLogoUrl} from "../shared-customer-links.js";
 import {authState} from "./state/authState.js";
 import {lineState} from "./state/lineState.js";
 import {merchantBrandState} from "./state/merchantBrandState.js";
@@ -8,10 +9,7 @@ import {routeState} from "./state/routeState.js";
 import {authReady,esc,field,showActionFeedback} from "./shared-ui.js";
 import {val} from "./data-loading.js";
 
-export function merchantSafeLogoUrl(url){
- const text=String(url||"").trim();
- return /^https:\/\/[^\s<>"']{1,490}$/i.test(text)?text:"";
-}
+export function merchantSafeLogoUrl(url){return safeMerchantLogoUrl(url);}
 
 
 function logoDraftKey(prefix){

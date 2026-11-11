@@ -1,3 +1,4 @@
+import {customerEntryUrl} from "../shared-customer-links.js";
 import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../public-config.js";
 import {requestBookingReply} from "./booking-line-reply.js";
 import {authState} from "./state/authState.js";
@@ -24,11 +25,10 @@ export async function bridgeConfig(){
 }
 
 export function customerUrl(merchant){
- const canonical=location.origin+sharedUiState.bookingPath+"?view=customer&merchant="+encodeURIComponent(merchant);
- // Other shops may use a different LINE provider. Never reuse this shop's LIFF ID.
- if(merchant!==routeState.slug)return canonical;
- const id=lineState.lineConfig?.liffId;
- return id?"https://liff.line.me/"+encodeURIComponent(id)+"/?view=customer&merchant="+encodeURIComponent(merchant):canonical;
+ return customerEntryUrl(merchant,{
+   currentSlug:routeState.slug,origin:location.origin,bookingPath:sharedUiState.bookingPath,
+   liffId:lineState.lineConfig?.liffId||""
+ });
 }
 
 export function lineLoginUrl(){

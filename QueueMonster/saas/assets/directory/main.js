@@ -1,3 +1,4 @@
+import {customerEntryUrl,safeMerchantLogoUrl} from "../../shared-customer-links.js";
 import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
 
 import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
@@ -58,11 +59,7 @@ function setupExploreFilters(){
 
 function e(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function customerUrl(slug,tab,oaMode="PLATFORM"){
- const qs="?view=customer&merchant="+encodeURIComponent(slug)+"&tab="+encodeURIComponent(tab);
- // Platform OA shops enter the merchant-specific website first.
- if(oaMode==="PLATFORM")return "./"+qs;
- // Keep existing own-OA LIFF routing for merchants that use their own OA.
- return liffId?"https://liff.line.me/"+encodeURIComponent(liffId)+"/"+qs:"./"+qs;
+ return customerEntryUrl(slug,{surface:"directory",tab,oaMode,liffId});
 }
 function badges(t){
  const m=t.modules||{};
@@ -171,9 +168,7 @@ function render(){
  }).join("");
 }
 function badgesForStore(t){return badges(t);}
-function safeLogo(src){
- try{const u=new URL(String(src||""));return u.protocol==="https:"?u.href:""}catch(_){return ""}
-}
+function safeLogo(src){return safeMerchantLogoUrl(src,{directory:true});}
 async function loadSearch(){
  if(mode==="mine")return render();
  const current=++searchRequest;

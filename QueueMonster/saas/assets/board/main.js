@@ -1,3 +1,4 @@
+import {safeMerchantLogoUrl} from "../../shared-customer-links.js";
 import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
 
     import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
@@ -150,8 +151,7 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
     }
 
     function renderBoardBrand(store){
-      const rawLogo=String(store?.logo_url||"").trim();
-      const safeLogo=/^https:\/\/[^\s<>"']{1,490}$/i.test(rawLogo)?rawLogo:"";
+      const safeLogo=safeMerchantLogoUrl(store?.logo_url);
       const img=$("shop-logo"),placeholder=$("shop-icon-fallback");
       if(img&&placeholder){
         img.hidden=!safeLogo;
