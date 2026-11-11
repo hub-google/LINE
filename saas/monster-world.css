@@ -725,3 +725,56 @@ body[data-monster-page="directory"] .page-header .hero-heading h1.eyebrow{
    touch-action:manipulation;
  }
 }
+
+
+/* Tenant branding is restricted to customer pages: platform and staff retain Queue Monster identity. */
+body[data-monster-page="index"][data-portal="customer"]{--primary:var(--merchant-accent,#693C8B)}
+body[data-monster-page="index"][data-portal="customer"] .customer-shop-toolbar{
+ padding:15px 18px;background:linear-gradient(120deg,color-mix(in srgb,var(--merchant-accent,#693C8B) 10%,white),#fff 85%);
+ border:1px solid color-mix(in srgb,var(--merchant-accent,#693C8B) 24%,white);
+ border-left:5px solid var(--merchant-accent,#693C8B);border-radius:19px;margin-bottom:20px;
+}
+body[data-monster-page="index"][data-portal="customer"] .customer-shop-identity{display:flex;align-items:center;gap:16px;min-width:0;width:100%}
+body[data-monster-page="index"][data-portal="customer"] .customer-shop-avatar{
+ width:76px;height:76px;flex:0 0 76px;display:grid;place-items:center;overflow:hidden;
+ border:1px solid color-mix(in srgb,var(--merchant-accent,#693C8B) 26%,white);border-radius:17px;background:white;
+}
+body[data-monster-page="index"][data-portal="customer"] .customer-shop-avatar img{width:100%;height:100%;object-fit:contain}
+body[data-monster-page="index"][data-portal="customer"] .customer-shop-avatar-fallback{font-size:18px;font-weight:850;color:var(--merchant-ink,#462B52)}
+body[data-monster-page="index"][data-portal="customer"] .customer-shop-title{min-width:0;flex:1}
+body[data-monster-page="index"][data-portal="customer"] .customer-shop-title h1{margin:2px 0 4px;color:#382341;font-size:clamp(23px,3.5vw,34px);overflow-wrap:anywhere}
+body[data-monster-page="index"][data-portal="customer"] .customer-shop-overline{font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--merchant-ink,#462B52)}
+body[data-monster-page="index"][data-portal="customer"] .customer-shop-title .muted{font-size:13px}
+body[data-monster-page="index"][data-portal="customer"] :is(.btn.primary,.slot.active){
+ background:var(--merchant-accent,#693C8B)!important;color:var(--merchant-contrast,#fff)!important;
+ border-color:var(--merchant-accent,#693C8B)!important;box-shadow:none;
+}
+body[data-monster-page="index"][data-portal="customer"] .btn.primary:hover:not(:disabled){filter:brightness(.95)}
+body[data-monster-page="index"][data-portal="customer"] :is(.side-item.active,.cross-tabs button.active){
+ background:color-mix(in srgb,var(--merchant-accent,#693C8B) 17%,white)!important;
+ border-color:var(--merchant-accent,#693C8B)!important;color:var(--merchant-ink,#462B52)!important;
+ box-shadow:inset 4px 0 0 var(--merchant-accent,#693C8B);
+}
+body[data-monster-page="index"][data-portal="customer"] :is(.routecard,.stat){
+ border-color:color-mix(in srgb,var(--merchant-accent,#693C8B) 19%,white);
+ background:linear-gradient(145deg,#fff 65%,color-mix(in srgb,var(--merchant-accent,#693C8B) 9%,white));
+}
+body[data-monster-page="index"][data-portal="customer"] :is(.routecard strong,.ticket,.call,.stat strong){color:var(--merchant-ink,#462B52)}
+body[data-monster-page="index"][data-portal="customer"] .routecard:before{background:var(--merchant-accent,#693C8B)!important}
+body[data-monster-page="index"][data-portal="customer"] .customer-platform-credit{
+ margin:22px 0 0;padding:16px 6px 4px;border-top:1px solid #E8D6EF;
+ display:flex;gap:5px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:12px;color:#786A81;
+}
+body[data-monster-page="index"][data-portal="customer"] .customer-platform-credit a{
+ display:inline-flex;align-items:center;gap:5px;font-weight:850;color:#62417B;text-decoration:none;
+}
+body[data-monster-page="index"][data-portal="customer"] .customer-platform-credit a:hover{text-decoration:underline}
+body[data-monster-page="index"][data-portal="customer"] .customer-platform-icon{
+ width:20px;height:20px;display:inline-block;background:#EDD6FB url("./monster-mascot.svg") center/95% no-repeat;border-radius:6px;
+}
+@media(max-width:620px){
+ body[data-monster-page="index"][data-portal="customer"] .customer-shop-toolbar{padding:12px 13px;margin-bottom:12px}
+ body[data-monster-page="index"][data-portal="customer"] .customer-shop-avatar{width:58px;height:58px;flex-basis:58px;border-radius:13px}
+ body[data-monster-page="index"][data-portal="customer"] .customer-shop-identity{gap:12px}
+ body[data-monster-page="index"][data-portal="customer"] .customer-shop-title h1{font-size:24px}
+}
