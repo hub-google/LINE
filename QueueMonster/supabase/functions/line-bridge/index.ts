@@ -224,7 +224,7 @@ function liffManageLink(shop: ShopInfo, kind: "reservation" | "ticket", refId: s
 }
 function liffPickupLink(shop: ShopInfo): string | null {
   const id = shop.liffId || Deno.env.get("LINE_LIFF_ID") || "";
-  if (!/^\\d{8,}-[A-Za-z0-9]+$/.test(id)) return null;
+  if (!/^\d{8,}-[A-Za-z0-9]+$/.test(id)) return null;
   const query = new URLSearchParams({ view: "customer", merchant: shop.slug, tab: "order" });
   return "https://liff.line.me/" + id + "/?" + query.toString();
 }
