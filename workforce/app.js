@@ -67,7 +67,7 @@ async function reload(silent=false){
    if(!app.tenants.find(t=>t.id===app.tenantId))app.tenantId=app.tenants[0]?.id||'';
    if(!app.tenantId){app.data=null;}else{
     const p='tenant_id=eq.'+encodeURIComponent(app.tenantId);
-    const [branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections,leavePolicies,attendanceCases,attendanceRuleRows,requestDocs,scheduleRuleRows,memberBranches,qrSettings]=await Promise.all([
+    const [branches,members,shifts,punches,requests,entitlements,availability,departments,templates,requirements,notifications,closures,adjustments,corrections,leavePolicies,attendanceCases,attendanceRuleRows,requestDocs,scheduleRuleRows,memberBranches,qrSettings,leaveCancellations]=await Promise.all([
      query('wm_branches','select=*&'+p+'&order=name'),query('wm_members','select=id,tenant_id,branch_id,user_id,display_name,employee_code,role,employment_type,status,created_at,department_id,reports_to,job_title,hired_on,left_on,skills&'+p+'&order=employee_code'),
      query('wm_shifts','select=*&'+p+'&order=starts_at.desc&limit=600'),query('wm_punches','select=*&'+p+'&order=punched_at.desc&limit=600'),
      query('wm_requests','select=*&'+p+'&order=created_at.desc&limit=300'),query('wm_leave_entitlements','select=*&'+p),
@@ -80,7 +80,8 @@ async function reload(silent=false){
      query('wm_attendance_rules','select=*&'+p+'&limit=1'),query('wm_request_documents','select=*&'+p+'&order=created_at.desc&limit=300'),
      query('wm_schedule_rules','select=*&'+p+'&order=effective_from.desc&limit=10'),
      query('wm_member_branches','select=*&'+p+'&order=active_from.desc'),
-     query('wm_branch_qr_settings','select=*&'+p) ]);
+     query('wm_branch_qr_settings','select=*&'+p),
+     call('/rest/v1/rpc/wm_list_leave_cancellations','POST',{p_tenant:app.tenantId},app.token) ]);
     if(members.some(m=>m.user_id===app.user?.id&&['owner','hr'].includes(m.role))){
       const wages=await call('/rest/v1/rpc/wm_staff_wages','POST',{p_tenant:app.tenantId},app.token);
       const lookup=new Map((wages||[]).map(w=>[w.member_id,w.hourly_rate]));
@@ -88,7 +89,7 @@ async function reload(silent=false){
     }
     app.data={tenant:app.tenants.find(t=>t.id===app.tenantId),branches,members,shifts,punches,requests,
       entitlements,availability,departments,templates,requirements,notifications,closures,
-      adjustments,corrections,leavePolicies,attendanceCases,attendanceRules:attendanceRuleRows[0]||null,requestDocs,scheduleRules:scheduleRuleRows.find(x=>x.effective_from<=today())||null,memberBranches,qrSettings,
+      adjustments,corrections,leavePolicies,attendanceCases,attendanceRules:attendanceRuleRows[0]||null,requestDocs,scheduleRules:scheduleRuleRows.find(x=>x.effective_from<=today())||null,memberBranches,qrSettings,leaveCancellations,
       leaveBalances:{},requestStages:[],server_at:new Date().toISOString()};
     const selected=getSelected();
     if(selected){
@@ -2262,3 +2263,139 @@ $('overlay').addEventListener('submit',async e=>{
  }catch(err){banner(err.message||'操作失敗',true);if(submit)submit.disabled=false;}
 },true);
 void wfReceiveRecoveryLink();
+
+
+/* HR-LVE-03/04 and HR-ORG-03:
+   Reviewed cancellation of approved leave; employee offboarding and return.
+   These are additional controls around the existing request/member models,
+   never a second implementation of requests, approvals or attendance. */
+const wfPriorLeaveCancelRequests=requests;
+requests=function(){
+ wfPriorLeaveCancelRequests();
+ if(app.mode!=='real'||!app.token)return;
+ const own=(app.data?.members||[]).find(m=>m.user_id===app.user?.id&&m.tenant_id===app.tenantId);
+ if(!own)return;
+ const cancels=(app.data.leaveCancellations||[]).filter(c=>c.member_id===own.id);
+ const pendingIds=new Set(cancels.filter(c=>c.status==='pending').map(c=>c.request_id));
+ const eligible=(app.data.requests||[]).filter(r=>
+  r.kind==='leave'&&r.member_id===own.id&&r.status==='approved'&&
+  Date.parse(r.ends_at)>Date.now()&&!pendingIds.has(r.id));
+ const requestRows=eligible.map(r=>tr([
+  esc(kind(r.leave_kind)),taiStamp(r.starts_at),taiStamp(r.ends_at),
+  '<button type="button" class="btn small" data-wf-lifecycle="requestCancel" data-id="'+esc(r.id)+'">申請取消</button>'
+ ]));
+ const history=cancels.map(c=>tr([
+  esc(kind(c.leave_kind)),taiStamp(c.starts_at),
+  c.status==='pending'?'<span class="chip pending">待審核</span>':
+   c.status==='approved'?'<span class="chip approved">已同意取消</span>':'<span class="chip rejected">取消遭駁回</span>',
+  esc(c.reason),esc(c.decision_note||'—')
+ ]));
+ $('appContent').insertAdjacentHTML('beforeend',
+  panel('已核准請假：申請取消',
+    '<div class="notice">只有本人可以申請取消。原請假在主管同意之前仍然有效，不能直接改動已月結的紀錄。</div>'+
+    table(['假別','開始','結束','操作'],requestRows))+
+  panel('我的請假取消申請歷史',
+    table(['假別','開始','結果','取消原因','審核備註'],history)));
+};
+const wfPriorLeaveCancelApprovals=approvals;
+approvals=function(){
+ wfPriorLeaveCancelApprovals();
+ if(app.mode!=='real'||!manager())return;
+ const pending=(app.data?.leaveCancellations||[]).filter(c=>
+  c.status==='pending'&&wfCanReview(c.member_id));
+ const rows=pending.map(c=>tr([
+  personLabel(c.member_id),esc(kind(c.leave_kind)),
+  taiStamp(c.starts_at)+'～'+taiStamp(c.ends_at),
+  esc(c.reason),
+  '<div class="flex">'+
+  '<button type="button" class="btn small primary" data-wf-lifecycle="decideCancel" data-ok="true" data-id="'+esc(c.id)+'">同意取消</button>'+
+  '<button type="button" class="btn small danger" data-wf-lifecycle="decideCancel" data-ok="false" data-id="'+esc(c.id)+'">駁回取消</button></div>'
+ ]));
+ $('appContent').insertAdjacentHTML('beforeend',
+  panel('待審核：已核准請假取消',table(['員工','假別','原請假期間','取消原因','處理'],rows))+
+  '<p class="muted">同意取消後才釋放假期額度；已月結案件不允許直接取消。審核人不得審核自己的請假。</p>');
+};
+const wfPriorLifecycleEmployees=employees;
+employees=function(){
+ wfPriorLifecycleEmployees();
+ if(app.mode!=='real'||!['owner','hr'].includes(role()))return;
+ const rows=(app.data?.members||[]).filter(m=>m.role!=='owner'&&(role()==='owner'||m.role!=='hr'))
+ .map(m=>tr([
+  esc(m.display_name),esc(m.job_title||''),status(m.status),
+  esc(m.hired_on||'—'),esc(m.left_on||'—'),
+  '<button type="button" class="btn small '+(m.status==='active'?'danger':'')+'" data-wf-lifecycle="employment" data-id="'+esc(m.id)+'" data-status="'+(m.status==='active'?'inactive':'active')+'">'+
+   (m.status==='active'?'停用／離職':'恢復在職')+'</button>'
+ ]));
+ $('appContent').insertAdjacentHTML('beforeend',
+  panel('員工在職狀態／復職',
+   '<div class="notice">異動需輸入原因並記入稽核。離職不會刪除任何歷史打卡、請假或月結資料；有未來已發布班次、未審申請或下屬的主管不能直接停用。</div>'+
+   table(['員工','職稱','狀態','到職日','離職日','操作'],rows)));
+};
+function wfOpenLeaveCancelRequest(id){
+ const r=(app.data?.requests||[]).find(x=>x.id===id);
+ const own=(app.data?.members||[]).find(m=>m.user_id===app.user?.id);
+ if(!r||!own||r.member_id!==own.id||r.status!=='approved'||r.kind!=='leave')
+  throw Error('只能取消自己已核准的請假');
+ openModal('申請取消已核准請假',modalForm('wf_leave_cancel',[
+  {name:'p_request',label:'原申請',wide:true,html:'<input name="p_request" type="hidden" value="'+esc(id)+'"><p>'+esc(kind(r.leave_kind))+' · '+taiStamp(r.starts_at)+'～'+taiStamp(r.ends_at)+'</p>'},
+  {name:'p_reason',label:'取消原因（3–500 字）',wide:true,html:'<textarea name="p_reason" required minlength="3" maxlength="500" rows="4"></textarea>'}
+ ],'送出取消申請')+'<p class="muted">送出後原請假仍為「已核准」，主管同意取消才會變更。</p>');
+}
+function wfOpenLeaveCancelDecision(id,approve){
+ const c=(app.data?.leaveCancellations||[]).find(x=>x.id===id&&x.status==='pending');
+ if(!c||!wfCanReview(c.member_id))throw Error('無權審核此取消申請');
+ openModal(approve?'同意取消已核准請假':'駁回取消申請',
+  modalForm('wf_leave_cancel_decision',[
+   {name:'p_cancellation',label:'取消案件',wide:true,html:'<input type="hidden" name="p_cancellation" value="'+esc(id)+'"><p>'+personLabel(c.member_id)+' · '+taiStamp(c.starts_at)+'～'+taiStamp(c.ends_at)+'</p>'},
+   {name:'p_note',label:'審核說明',wide:true,html:'<textarea name="p_note" maxlength="500" rows="3" placeholder="可留空"></textarea>'},
+   {name:'p_approve',label:'審核決定',wide:true,html:'<input name="p_approve" type="hidden" value="'+String(approve)+'"><p>'+(approve?'同意取消原請假':'維持原已核准請假')+'</p>'}
+  ],approve?'確認同意取消':'確認駁回'));
+}
+function wfOpenEmploymentChange(id,targetStatus){
+ const m=(app.data?.members||[]).find(x=>x.id===id);
+ if(!m||m.role==='owner'||(role()==='hr'&&m.role==='hr')||
+  !['owner','hr'].includes(role())||!['active','inactive'].includes(targetStatus))
+  throw Error('沒有權限調整員工在職狀態');
+ openModal(targetStatus==='inactive'?'停用／離職員工':'恢復員工在職',
+  modalForm('wf_employment_status',[
+  {name:'p_member',label:'對象',wide:true,html:'<input name="p_member" type="hidden" value="'+esc(id)+'"><p>'+esc(m.display_name)+'</p>'},
+  {name:'p_status',label:'目標狀態',wide:true,html:'<input name="p_status" type="hidden" value="'+esc(targetStatus)+'"><p>'+(targetStatus==='inactive'?'停用（保留歷史紀錄）':'恢復在職')+'</p>'},
+  {name:'p_reason',label:'人員異動原因（至少 5 字）',wide:true,html:'<textarea name="p_reason" required minlength="5" maxlength="500" rows="3"></textarea>'}
+  ],targetStatus==='inactive'?'確認停用':'確認恢復')+
+  '<p class="muted">如有未來已發布班表或待審申請，請先安排交接再停用。</p>');
+}
+document.addEventListener('click',event=>{
+ const btn=event.target.closest('[data-wf-lifecycle]');
+ if(!btn||!btn.closest('#appContent'))return;
+ event.preventDefault();
+ try{
+  if(btn.dataset.wfLifecycle==='requestCancel')wfOpenLeaveCancelRequest(btn.dataset.id);
+  else if(btn.dataset.wfLifecycle==='decideCancel')
+   wfOpenLeaveCancelDecision(btn.dataset.id,btn.dataset.ok==='true');
+  else if(btn.dataset.wfLifecycle==='employment')
+   wfOpenEmploymentChange(btn.dataset.id,btn.dataset.status);
+ }catch(err){banner(err.message,true);}
+});
+$('overlay').addEventListener('submit',async event=>{
+ const form=event.target;
+ if(!['wf_leave_cancel','wf_leave_cancel_decision','wf_employment_status'].includes(form?.dataset?.form))return;
+ event.preventDefault();event.stopImmediatePropagation();
+ if(app.mode!=='real'||!app.token){banner('請先登入企業帳號',true);return;}
+ const submit=form.querySelector('[type="submit"]');
+ if(submit)submit.disabled=true;
+ try{
+  const fields=Object.fromEntries(new FormData(form).entries());
+  if(form.dataset.form==='wf_leave_cancel'){
+   await call('/rest/v1/rpc/wm_request_leave_cancellation','POST',{
+    p_request:fields.p_request,p_reason:fields.p_reason},app.token);
+  }else if(form.dataset.form==='wf_leave_cancel_decision'){
+   await call('/rest/v1/rpc/wm_decide_leave_cancellation','POST',{
+    p_cancellation:fields.p_cancellation,p_approve:fields.p_approve==='true',p_note:fields.p_note},app.token);
+  }else{
+   await call('/rest/v1/rpc/wm_set_employment_status','POST',{
+    p_member:fields.p_member,p_status:fields.p_status,p_reason:fields.p_reason},app.token);
+  }
+  closeModal();await reload(true);
+  banner('已由資料庫確認並儲存，歷程已保留');
+ }catch(err){banner(err.message||'操作失敗',true);if(submit)submit.disabled=false;}
+},true);
