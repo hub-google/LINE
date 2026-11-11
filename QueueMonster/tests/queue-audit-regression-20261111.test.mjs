@@ -55,3 +55,15 @@ test("customer booking edit supports session UUID, date-scoped capacity and sing
  assert.match(customerRecords,/btn\("編輯預約","edit-book"/);
  assert.doesNotMatch(customerRecords,/x\.session_id\?'':btn\("編輯預約"/);
 });
+
+test("new and edited service-session bookings share the customer-facing 90-day window",()=>{
+ const booking=read("supabase/migrations/20261111064000_queue_session_booking_90_day_window.sql");
+ const edit=read("supabase/migrations/20261111063000_queue_audit_unified_behavior.sql");
+ const calendar=read("saas/app/booking-edit.js");
+ const unitUi=read("saas/app/service-units.js");
+ assert.match(booking,/s\.session_date>v_today\+90/);
+ assert.doesNotMatch(booking,/s\.session_date>v_today\+30/);
+ assert.match(edit,/s\.session_date>v_today\+90/);
+ assert.match(calendar,/dateInNinetyDays/);
+ assert.match(unitUi,/dateInNinetyDays\(\)/);
+});
