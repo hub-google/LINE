@@ -48,7 +48,11 @@
         const card=document.createElement("article");card.className="unit-card";
         const group=document.createElement("div");group.className="group";group.textContent=[s.group,s.name].filter(Boolean).join(" · ");
         const heading=document.createElement("h2");heading.textContent=s.unit||"服務單位";
-        const now=document.createElement("div");now.className="unit-now";now.textContent=s.current||"—";
+        const now=document.createElement("div");now.className="unit-now";
+        const unitCurrent=String(s.current??"").trim();
+        const unitNotCalled=!unitCurrent||["-","–","—"].includes(unitCurrent);
+        now.textContent=unitNotCalled?"尚未叫號":unitCurrent;
+        now.classList.toggle("is-empty",unitNotCalled);
         const next=document.createElement("div");next.className="unit-next";
         next.textContent="接下來："+(Array.isArray(s.next)&&s.next.length?s.next.join("、"):"目前無人等候");
         const count=document.createElement("div");count.className="group";count.textContent="等候 "+Number(s.waiting||0)+" 組";
@@ -95,7 +99,7 @@
           if(/找不到商家/.test(String(unitError.message||""))){
             disabled=true;lastData=null;lastSuccess=null;staleFromFailure=false;
             $("shop").textContent="門市暫停服務";
-            $("current").textContent="—";renderUpcoming([]);
+            $("current").textContent="暫停服務";$("current").classList.add("is-empty");renderUpcoming([]);
             $("single-board").hidden=false;$("unit-board").hidden=true;
             health("門市目前未開放叫號","error");
             $("notice").textContent="這間門市目前未啟用叫號服務。請確認店家狀態或重新取得連結。";
@@ -120,7 +124,10 @@
         lastData=data;
         lastSuccess=now;
         $("shop").textContent=String(data.shop_name||slug);
-        $("current").textContent=data.current==null||data.current===""?"—":String(data.current);
+        const rawCurrent=String(data.current??"").trim();
+        const notCalled=!rawCurrent||["-","–","—"].includes(rawCurrent);
+        $("current").textContent=notCalled?"尚未叫號":rawCurrent;
+        $("current").classList.toggle("is-empty",notCalled);
         renderUpcoming(data.upcoming);
         updateConnectionStatus();
       }catch(error){
