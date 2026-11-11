@@ -147,6 +147,10 @@ try{
   await page.setViewportSize({width,height:900});
   for(const name of ['home.html','directory.html?mode=search','merchant-register.html','platform-login.html','index.html?view=platform','index.html?view=staff&merchant=greenfield-salon','index.html?view=customer&merchant=greenfield-salon','board.html?merchant=greenfield-salon']){
    await page.goto(baseUrl+'/booking/'+name,{waitUntil:'domcontentloaded',timeout:45000});
+   // Check the rendered application header rather than racing deferred native modules.
+   if(name.startsWith('index.html?view=')){
+    await page.locator('#headlinks a').first().waitFor({state:'attached',timeout:20000});
+   }
    assert.ok((await page.locator('body').innerText()).trim().length>30,name);
    if(name==='home.html'){
     const rects=await page.locator('.hero-demo').evaluateAll(nodes=>nodes.map(n=>{
