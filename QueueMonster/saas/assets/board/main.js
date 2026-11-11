@@ -136,7 +136,7 @@
       $("notice").textContent="網址需包含正確的 merchant 門市代碼，例如 board.html?merchant=your-shop。";
     }else{
       void refresh();
-      setInterval(()=>{if(!document.hidden)void refresh();},12000);
+      setInterval(()=>{if(!document.hidden&&!disabled)void refresh();},12000);
       setInterval(updateConnectionStatus,5000);
     }
   
