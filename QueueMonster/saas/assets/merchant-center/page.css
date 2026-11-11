@@ -262,9 +262,9 @@ body[data-monster-page="merchant-center"] .section-tip a{color:#542A77}
 .qm-board .qm-board-footer span{border:1px solid #DEC7EB;background:#FFFDFE;border-radius:9px;padding:4px 7px;color:#462B52;font-weight:800}
 @container (max-width:550px){
  .qm-admin .qm-app-layout{display:block;padding:9px}
- .qm-admin .qm-nav{display:flex;gap:5px;overflow-x:auto;scrollbar-width:thin;padding:7px;white-space:nowrap;margin-bottom:10px}
+ .qm-admin .qm-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;overflow-x:visible;padding:7px;white-space:normal;margin-bottom:10px}
  .qm-admin .qm-nav-group{display:none}
- .qm-admin .qm-nav-item{flex:none;padding:7px 9px;white-space:nowrap}
+ .qm-admin .qm-nav-item{min-width:0;padding:7px 5px;white-space:normal;text-align:center}
  .qm-admin .qm-nav-item.active{border-left:0;border-bottom:3px solid #AC79CD;padding-left:9px;padding-bottom:4px}
  .qm-admin .qm-app-content{padding:0 1px}
  .qm-admin .qm-three{grid-template-columns:1fr}

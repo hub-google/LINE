@@ -67,7 +67,20 @@
         // Public read-only queue status: no LINE Login, Supabase anonymous sign-in,
         // customer booking data, or personal identifiers.
         const {data:units,error:unitError}=await client.rpc("so_unit_public_board",{p_slug:slug,p_session_id:selectedSession});
-        if(unitError)throw unitError;
+        if(unitError){
+          // A suspended or deleted merchant is a permanent business-state error, not a network outage.
+          // Do not poll a retired board every 12 seconds or keep showing stale called numbers.
+          if(/找不到商家/.test(String(unitError.message||""))){
+            disabled=true;lastData=null;lastSuccess=null;staleFromFailure=false;
+            $("shop").textContent="門市暫停服務";
+            $("current").textContent="—";renderUpcoming([]);
+            $("single-board").hidden=false;$("unit-board").hidden=true;
+            health("門市目前未開放叫號","error");
+            $("notice").textContent="這間門市目前未啟用叫號服務。請確認店家狀態或重新取得連結。";
+            return;
+          }
+          throw unitError;
+        }
         if(units?.multi){
           disabled=false;staleFromFailure=false;lastData=units;lastSuccess=new Date();
           $("shop").textContent=String(units.shop||slug);
@@ -102,7 +115,7 @@
         if(refreshQueued){refreshQueued=false;void refresh();}
       }
     }
-    $("refresh").addEventListener("click",()=>{void refresh();});
+    $("refresh").addEventListener("click",()=>{disabled=false;void refresh();});
     $("fullscreen").addEventListener("click",async()=>{
       try{
         if(document.fullscreenElement)await document.exitFullscreen();
@@ -113,9 +126,9 @@
       $("fullscreen").textContent=document.fullscreenElement?"結束全螢幕":"全螢幕";
     });
     document.addEventListener("visibilitychange",()=>{
-      if(!document.hidden)void refresh();
+      if(!document.hidden&&!disabled)void refresh();
     });
-    window.addEventListener("online",()=>{void refresh();});
+    window.addEventListener("online",()=>{if(!disabled)void refresh();});
     window.addEventListener("offline",updateConnectionStatus);
     if(!validSlug){
       $("shop").textContent="未指定有效門市";
@@ -123,7 +136,7 @@
       $("notice").textContent="網址需包含正確的 merchant 門市代碼，例如 board.html?merchant=your-shop。";
     }else{
       void refresh();
-      setInterval(()=>{if(!document.hidden)void refresh();},12000);
+      setInterval(()=>{if(!document.hidden&&!disabled)void refresh();},12000);
       setInterval(updateConnectionStatus,5000);
     }
   
