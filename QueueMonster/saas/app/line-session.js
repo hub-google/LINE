@@ -62,10 +62,10 @@ export function finishPublicHeaderLogin(){
   const recent=stored&&Number(stored.at)>0&&Date.now()-Number(stored.at)<15*60*1000;
   const target=incomingParam("site_return")||(recent?stored.target:"");
   if(typeof target!=="string"||target.length>600||
-     !/^(?:home|directory|board|poster|merchant-center|merchant-register|privacy|terms)\.html(?:\?[^#]*)?$/.test(target))return false;
+     !/^(?:home|directory|board|merchant-center|merchant-register|privacy|terms)\.html(?:\?[^#]*)?$/.test(target))return false;
   const destination=new URL(target,location.origin+sharedUiState.bookingPath);
   if(destination.origin!==location.origin||
-     !/^\/LINE\/(?:booking|saas)\/(?:home|directory|board|poster|merchant-center|merchant-register|privacy|terms)\.html$/.test(destination.pathname))return false;
+     !/^\/LINE\/(?:booking|saas)\/(?:home|directory|board|merchant-center|merchant-register|privacy|terms)\.html$/.test(destination.pathname))return false;
   try{sessionStorage.removeItem(key)}catch(_){}
   location.replace(destination.pathname+destination.search);
   return true;

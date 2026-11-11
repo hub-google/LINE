@@ -119,3 +119,37 @@ test("ordinary shops can create sessions without a window, and edit/delete actio
  assert.match(migration,/deleted_at is null/);
  assert.match(migration,/此場次仍有有效預約或候位號碼/);
 });
+
+
+test("no-window mode lists active sessions linked to real resource ids, including one-unit shops",()=>{
+ const ui=read("saas/app/service-units.js");
+ const first=ui.indexOf("export function unitList()");
+ const last=ui.indexOf("export function unitBookingFingerprint(");
+ assert.ok(first>=0&&last>first,"expected pure session selection functions");
+ const source=ui.slice(first,last).replaceAll("export function ","function ");
+ const factory=new Function("serviceUnitsState","bookingState","routeState","taipei",source+";return {sessionsOf,selectedUnitSession};");
+ const date="2099-12-01";
+ const s1={id:"session-a",unit_id:"unit-a",date,start:"09:00",end:"12:00",active:true,capacity:20,booked:1};
+ const s2={id:"session-b",unit_id:"unit-b",date,start:"10:00",end:"13:00",active:true,capacity:20,booked:0};
+ const state={unitConfig:{picker:false,units:[{id:"unit-a",active:true},{id:"unit-b",active:true}],sessions:[s1,s2]},unitChoice:"unit-a",unitCategory:"",unitSessionChoice:"session-b"};
+ const app=factory(state,{bookingParty:2},{customerTab:"reserve"},()=>date);
+ assert.equal(app.sessionsOf(null,"reserve").length,2,"null means all active sessions when no window picker");
+ assert.equal(app.selectedUnitSession("reserve").id,"session-b","explicit session remains selectable across named units");
+ state.unitConfig.picker=true;
+ assert.equal(app.selectedUnitSession("reserve").id,"session-a","picker limits sessions to chosen named unit");
+ state.unitConfig.units=[{id:"unit-a",active:true}];state.unitConfig.sessions=[s1];
+ assert.equal(app.selectedUnitSession("reserve").id,"session-a","single window works whether picker is on or off");
+ state.unitConfig.picker=false;
+ assert.equal(app.selectedUnitSession("reserve").id,"session-a","ordinary shop default unit still provides sessions");
+ assert.match(ui,/dateInNinetyDays\(\)/);
+});
+
+test("session based booking date picker agrees with the backend 90-day session limit",()=>{
+ const ui=read("saas/app/service-units.js"),dates=read("saas/app/booking-edit.js");
+ const match=dates.match(/export function dateInNinetyDays\(\)\{[\s\S]*?\n\}/);
+ assert.ok(match,"90-day helper exists");
+ const compute=new Function("taipei",match[0].replace("export ","")+";return dateInNinetyDays;")(()=> "2026-11-11");
+ assert.equal(compute(),"2027-02-09");
+ assert.match(ui,/max="'\+dateInNinetyDays\(\)\+'"/);
+ assert.match(read("supabase/migrations/20261110175000_settings_sessions_optional_window.sql"),/interval '90 days'|\+90/);
+});

@@ -9,7 +9,7 @@ import {staffState} from "./state/staffState.js";
 
 import {box,btn,esc,field,menuChoiceReady,menuSelectSection,staffStatusPicker,stat,taipei} from "./shared-ui.js";
 import {normalizeBookingPhone,validBookingContact} from "./customer-booking.js";
-import {dateInThirtyDays} from "./booking-edit.js";
+import {dateInNinetyDays} from "./booking-edit.js";
 import {renderBookings} from "./customer-records.js";
 
 export function unitList(){
@@ -31,7 +31,7 @@ export function unitSessionAvailable(s,mode=routeState.customerTab){
 }
 
 export function sessionsOf(unitId=serviceUnitsState.unitChoice,mode=routeState.customerTab){
- return (serviceUnitsState.unitConfig?.sessions||[]).filter(s=>s.unit_id===unitId&&unitSessionAvailable(s,mode));
+ return (serviceUnitsState.unitConfig?.sessions||[]).filter(s=>(unitId===null||s.unit_id===unitId)&&unitSessionAvailable(s,mode));
 }
 
 export function availableUnits(mode=routeState.customerTab){
@@ -40,8 +40,8 @@ export function availableUnits(mode=routeState.customerTab){
 
 
 export function selectedUnitSession(mode=routeState.customerTab){
- const useWindows=serviceUnitsState.unitConfig?.picker===true;
- const units=availableUnits(mode),actual=units.find(u=>u.id===serviceUnitsState.unitChoice)||units[0];
+ const units=availableUnits(mode),useWindows=serviceUnitsState.unitConfig?.picker===true&&units.length>1;
+ const actual=units.find(u=>u.id===serviceUnitsState.unitChoice)||units[0];
  const ss=useWindows?sessionsOf(actual?.id,mode):sessionsOf(null,mode);
  return ss.find(s=>s.id===serviceUnitsState.unitSessionChoice)||ss[0]||null;
 }
@@ -90,7 +90,7 @@ export function unitBookingPanel(){
  const confirming=customerState.customer?.booking_confirmation_required!==false&&serviceUnitsState.unitConfirmKey===unitBookingFingerprint(s,Number(bookingState.bookingParty));
  return box("選擇預約場次",
    '<p class="small">選擇可預約的場次；若店家有不同服務窗口，也可先選擇窗口。</p>'+
-   field("預約日期","customer-day",routeState.day,"date",'min="'+taipei()+'" max="'+dateInThirtyDays()+'"')+
+   field("預約日期","customer-day",routeState.day,"date",'min="'+taipei()+'" max="'+dateInNinetyDays()+'"')+
    unitChooseHtml("reserve")+
    '<div class="grid"><div>'+field("本次人數","customer-party",bookingState.bookingParty||1,"number",'min="1" max="20"')+'</div></div>'+
    menuSelectSection(customerState.customer?.tenant?.menu_booking_mode||"DISABLED",customerState.customer?.menu_items||[],bookingState.bookingChosenItems,"booking")+
