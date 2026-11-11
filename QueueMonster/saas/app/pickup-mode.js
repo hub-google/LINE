@@ -108,10 +108,19 @@ export function renderCustomerPickup(){
    '<div class="staff-actionbar">'+btn("－","pickup-qty","outline",'data-id="'+esc(i.id)+'" data-delta="-1" aria-label="減少 '+esc(i.name)+'"')+
    '<strong>'+esc(pickupState.cart[i.id]||0)+'</strong>'+
    btn("＋","pickup-qty","outline",'data-id="'+esc(i.id)+'" data-delta="1" aria-label="增加 '+esc(i.name)+'"')+'</div></div>').join("")+
-  '<div style="margin-top:12px">'+field("給店家的備註（最多 200 字）","pickup-note",pickupState.note,"text",'maxlength="200" placeholder="例如：不要加辣"')+'</div>'+
+  '<div class="grid" style="margin-top:12px"><div>'+field("取餐姓名","pickup-customer-name",pickupState.name,"text",'maxlength="60" autocomplete="name"')+'</div>'+
+   '<div>'+field("聯絡電話","pickup-customer-phone",pickupState.phone,"tel",'autocomplete="tel" placeholder="請填 8～15 位數字"')+'</div></div>'+
+   '<div style="margin-top:12px">'+field("給店家的備註（最多 200 字）","pickup-note",pickupState.note,"text",'maxlength="200" placeholder="例如：不要加辣"')+'</div>'+
   '<div class="listline"><strong>共 '+esc(count)+' 份</strong><strong>'+money(total)+'</strong></div>'+
   '<p class="small">此處僅建立訂單，不會線上收款；請依店家現場方式結帳。</p>'+
-  btn("確認送出訂單","pickup-submit","primary full",(!count||(!immediate&&!pickupState.slot))?"disabled":"")+
+  (pickupState.confirming?'<div class="inset" role="group" aria-label="確認訂餐內容"><strong>請核對送出前的訂餐內容</strong>'+
+    '<p>取餐人：'+esc(pickupState.name.trim())+' ・ '+esc(pickupState.phone.trim())+'</p>'+
+    '<p>預計取餐：'+(immediate?'立即取餐（以店家接單為準）':esc(pickupState.day)+' '+esc(pickupState.slot))+'</p>'+
+    '<p>餐點：'+(d.items||[]).filter(i=>pickupState.cart[i.id]>0).map(i=>esc(i.name)+' × '+esc(pickupState.cart[i.id])).join('、')+'</p>'+
+    '<p>金額：'+money(total)+'（以送出時店家菜單價格重新計算）</p>'+
+    '<p>備註：'+esc(pickupState.note||'無')+'</p><div class="staff-actionbar">'+
+    btn("返回修改","pickup-review-back","outline")+btn("確定送出訂單","pickup-submit","primary")+'</div></div>':
+    btn("下一步：確認訂單內容","pickup-review","primary full",(!count||(!immediate&&!pickupState.slot))?"disabled":""))+
   (d.orders?.length?'<h3 style="margin:20px 0 8px">我的取餐進度</h3>'+orderCards:
     '<p class="small">還沒有取餐訂單。</p>'));
 }
@@ -167,15 +176,23 @@ export async function handlePickupAction(ev,b,a,id){
   if(!["all","active","closed"].includes(b.dataset.filter))return true;
   pickupState.historyFilter=b.dataset.filter;pickupState.historyPage=1;await load();return true;
  }
+ if(a==="pickup-review"){
+   const name=pickupState.name.trim(),phone=pickupState.phone.trim().replace(/[\s()\-]/g,"");
+   if(!name||name.length>60||/[<>\u0000-\u001f]/.test(name)){window.alert("請填寫有效的取餐姓名");return true;}
+   if(!/^\+?[0-9]{8,15}$/.test(phone)){window.alert("請填寫有效的聯絡電話（8～15 位數字）");return true;}
+   if(!Object.values(pickupState.cart).some(n=>n>0)){window.alert("請先選擇餐點");return true;}
+   pickupState.confirming=true;render();return true;
+ }
+ if(a==="pickup-review-back"){pickupState.confirming=false;render();return true;}
  if(a==="pickup-method"){
-   pickupState.method=b.dataset.value==="immediate"?"immediate":"scheduled";render();return true;
+   pickupState.method=b.dataset.value==="immediate"?"immediate":"scheduled";pickupState.confirming=false;render();return true;
  }
  if(a==="pickup-qty"){
    const menu=pickupState.customer?.items||[];
    if(!menu.some(x=>x.id===id))return true;
    const qty=Math.max(0,Math.min(20,(pickupState.cart[id]||0)+Number(b.dataset.delta||0)));
    if(qty)pickupState.cart[id]=qty;else delete pickupState.cart[id];
-   pickupState.requestId="";render();return true;
+   pickupState.requestId="";pickupState.confirming=false;render();return true;
  }
  if(a==="pickup-save"){
    await act(async()=>{
@@ -191,17 +208,18 @@ export async function handlePickupAction(ev,b,a,id){
    });return true;
  }
  if(a==="pickup-submit"){
+   if(!pickupState.confirming){window.alert("請先確認訂單內容");return true;}
    const items=Object.entries(pickupState.cart).filter(([,qty])=>qty>0).map(([itemId,qty])=>({id:itemId,qty}));
    if(!items.length)return true;
    if(pickupState.method!=="immediate"&&!pickupState.slot)return true;
    try{if(!pickupState.requestId)pickupState.requestId=uuid();}catch(e){window.alert(e.message);return true;}
    await act(async()=>{
-     const res=await rpc("so_pickup_place",{p_slug:routeState.slug,
+     const res=await rpc("so_pickup_place_contact",{p_slug:routeState.slug,
        p_date:pickupState.method==="immediate"?null:pickupState.day,
        p_time:pickupState.method==="immediate"?null:pickupState.slot,
        p_items:items,p_note:pickupState.note,p_request_id:pickupState.requestId,
-       p_immediate:pickupState.method==="immediate"});
-     pickupState.cart={};pickupState.note="";pickupState.requestId="";
+       p_immediate:pickupState.method==="immediate",p_customer_name:pickupState.name.trim(),p_customer_phone:pickupState.phone.trim()});
+     pickupState.cart={};pickupState.note="";pickupState.requestId="";pickupState.confirming=false;
      return "訂單 "+res.number+" 已送出，請在我的取餐進度查看店家接單狀態";
    });return true;
  }
@@ -228,16 +246,18 @@ export async function handlePickupAction(ev,b,a,id){
 export function initializePickupMode(){
  pickupState.day=taipei();
  document.addEventListener("input",ev=>{
-  if(ev.target?.id==="pickup-note"){pickupState.note=ev.target.value;pickupState.requestId="";}
+  if(ev.target?.id==="pickup-note"){pickupState.note=ev.target.value;pickupState.requestId="";pickupState.confirming=false;}
+  if(ev.target?.id==="pickup-customer-name"){pickupState.name=ev.target.value;pickupState.requestId="";pickupState.confirming=false;}
+  if(ev.target?.id==="pickup-customer-phone"){pickupState.phone=ev.target.value;pickupState.requestId="";pickupState.confirming=false;}
  });
  document.addEventListener("change",async ev=>{
   if(ev.target?.id==="pickup-day"){
-   pickupState.day=ev.target.value;pickupState.slot="";pickupState.requestId="";
+   pickupState.day=ev.target.value;pickupState.slot="";pickupState.requestId="";pickupState.confirming=false;
    try{
      pickupState.customer=await rpc("so_pickup_public",{p_slug:routeState.slug,p_date:pickupState.day});
      render();
    }catch(err){window.alert(err.message);}
   }
-  if(ev.target?.id==="pickup-slot"){pickupState.slot=ev.target.value;pickupState.requestId="";render();}
+  if(ev.target?.id==="pickup-slot"){pickupState.slot=ev.target.value;pickupState.requestId="";pickupState.confirming=false;render();}
  });
 }
