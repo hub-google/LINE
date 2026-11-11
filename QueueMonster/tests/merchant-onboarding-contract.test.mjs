@@ -66,7 +66,7 @@ test("a signed-in platform admin still sees the merchant signup form",async()=>{
  const start=reg.indexOf('<script type="module">'),end=reg.indexOf('</script>',start);
  assert.ok(start>=0 && end>start);
  const module=reg.slice(start+'<script type="module">'.length,end).trimStart();
- const source=module.slice(module.indexOf("\n")+1);
+ const source=module.replace(/^import .*?;\s*$/gm,"");
  const elements=new Map();
  const element=id=>{
   if(!elements.has(id)){
