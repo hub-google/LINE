@@ -33,7 +33,9 @@ test("UX-11 queue displays cached snapshot warning, actual Taipei timestamp and 
  assert.match(source,/尚未成功同步/);
  assert.match(source,/btn\("重新整理進度","queue-refresh"/);
  assert.match(app,/if\(a==="queue-refresh"\)\{void refreshQueueProgress\(\);return true;\}/);
- assert.match(app,/document\.addEventListener\("visibilitychange"/);
+ // The customer page no longer polls Supabase in the background; the manual refresh remains.
+ assert.doesNotMatch(app,/setInterval\(\(\)=>\{if\(!document\.hidden/);
+ assert.doesNotMatch(app,/document\.addEventListener\("visibilitychange"/);
 });
 
 test("UX-11 cross-store sync timestamp scoped by merchant and manual refresh available",()=>{
