@@ -63,7 +63,7 @@ if(a==="undo-staff"){
  await act(async()=>{
   const nextBefore=x==="call"?(staffState.staff?.tickets||[]).find(k=>k.status==="WAITING"):null;
   const result=await rpc("so_staff_action",{p_slug:routeState.slug,p_action:x,p_ticket_id:["call","checkin","no_show","cancel_booking"].includes(x)?null:id,p_reservation_id:["checkin","no_show","cancel_booking"].includes(x)?id:null});
-  if(x==="call"&&result.number&&nextBefore)sharedUiState.lastStaffChange={kind:"ticket",id:nextBefore.id,label:result.number,before:"WAITING",after:"CALLED",slug:routeState.slug,day:routeState.day};
+  if(x==="call"&&result.number&&result.ticket_id)sharedUiState.lastStaffChange={kind:"ticket",id:result.ticket_id,label:result.number,before:"WAITING",after:"CALLED",slug:routeState.slug,day:routeState.day};
   if((x==="call"||x==="recall")&&result.number){
     const notice=await notifyLineCalled(result.number,result.ticket_id,result.line_call_event_id);
     return (x==="call"?"已叫號 ":"已重新呼叫 ")+result.number+"；"+notice;
