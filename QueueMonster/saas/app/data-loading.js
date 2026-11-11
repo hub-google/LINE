@@ -25,6 +25,7 @@ import {render} from "./staff-layout.js";
 import {searchHistoricalBookings} from "./staff-history.js";
 import {loadBookingCalendar} from "./booking-calendar.js";
 import {stopCrossQueueRealtime,syncCrossQueueRealtime} from "./cross-store.js";
+import {loadPickupData} from "./pickup-mode.js";
 import {refreshQueueProgress,stopQueueRealtime} from "./queue-progress.js";
 
 export function customerBookingRequestId(details){
@@ -200,6 +201,7 @@ export async function load(){feedbackState.err="";try{
       }
     }catch(unitError){serviceUnitsState.unitConfig=null;serviceUnitsState.unitRecords={reservations:[],tickets:[]};console.warn("Service-unit data unavailable",unitError);}
   }
+  await loadPickupData();
  }catch(e){feedbackState.err=customerFacingError(e)}render();
  if(routeState.view==="staff"&&staffState.staffTab==="bookings"&&staffHistoryState.historicalBookingResult&&staffHistoryState.historicalBookingTenant===routeState.slug)
    void searchHistoricalBookings(staffHistoryState.historicalBookingPage);
