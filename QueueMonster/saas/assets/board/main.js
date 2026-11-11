@@ -31,45 +31,6 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
     const validSlug=/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug);
     let lastSuccess=null,loading=false,refreshQueued=false;
     let lastData=null,staleFromFailure=false,disabled=false;
-    let realtimeConnected=false,eventTimer=null,lastEventRefreshAt=0;
-    function updateSyncMode(){
-      const label=$("board-update-mode");
-      if(!label)return;
-      label.textContent=realtimeConnected&&navigator.onLine
-        ?"叫號變動即時更新":"每 10 秒更新一次叫號";
-      label.dataset.realtime=realtimeConnected&&navigator.onLine?"on":"fallback";
-    }
-    function requestEventRefresh(){
-      if(disabled||document.hidden||!navigator.onLine||eventTimer)return;
-      // Public channels carry only invalidation markers. Throttle even forged
-      // messages to prevent turning a public display into an RPC flood.
-      const wait=Math.max(250,1500-(Date.now()-lastEventRefreshAt));
-      eventTimer=setTimeout(()=>{
-        eventTimer=null;
-        lastEventRefreshAt=Date.now();
-        if(!disabled&&!document.hidden)void refresh();
-      },wait);
-    }
-    function subscribeQueueChanges(){
-      if(!validSlug)return;
-      try{
-        client.channel("queue-board:"+slug,{config:{private:false,broadcast:{self:false}}})
-          .on("broadcast",{event:"invalidate"},requestEventRefresh)
-          .subscribe(status=>{
-            const previouslyConnected=realtimeConnected;
-            realtimeConnected=status==="SUBSCRIBED";
-            updateSyncMode();
-            if(realtimeConnected&&!previouslyConnected&&!disabled&&!document.hidden){
-              // Re-read once on connection/reconnection, closing the race
-              // between the initial RPC and the live subscription.
-              void refresh();
-            }
-          });
-      }catch(error){
-        realtimeConnected=false;updateSyncMode();
-        console.warn("Queue board Realtime unavailable; using 10-second polling:",String(error?.message||error));
-      }
-    }
     function renderUpcoming(numbers){
       const list=$("upcoming");
       list.replaceChildren();
@@ -90,14 +51,13 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
       if(!validSlug||disabled)return;
       if(!lastSuccess){health("正在取得最新叫號資料","loading");return;}
       const elapsed=Date.now()-lastSuccess.getTime();
-      if(staleFromFailure||!navigator.onLine||elapsed>(realtimeConnected?90000:30000)){
+      if(staleFromFailure||!navigator.onLine||elapsed>20000){
         health("連線中斷｜畫面為上次成功同步資料","error");
         $("notice").textContent="最後成功同步："+localTime(lastSuccess)+"。請檢查網路，勿將此畫面視為即時叫號。";
         return;
       }
-      health(realtimeConnected?"即時同步正常":"備援同步正常","ok");
-      $("notice").textContent="最後成功同步："+localTime(lastSuccess)+
-        (realtimeConnected?"；號碼變更即時更新，並定期核對。":"；每 10 秒自動同步，網路斷線會提示。");
+      health("自動更新正常","ok");
+      $("notice").textContent="最後成功同步："+localTime(lastSuccess)+"；每 5 秒自動同步，網路斷線會提示。";
     }
     function renderUnits(sessions){
       const grid=$("unit-board");
@@ -252,22 +212,20 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
       if(!document.hidden&&!disabled)void refresh();
     });
     window.addEventListener("online",()=>{if(!disabled)void refresh();});
-    window.addEventListener("offline",()=>{realtimeConnected=false;updateSyncMode();updateConnectionStatus();});
+    window.addEventListener("offline",updateConnectionStatus);
     if(!validSlug){
       $("shop").textContent="未指定有效門市";
       health("請先選擇門市","error");
       $("notice").textContent="網址需包含正確的 merchant 門市代碼，例如 board.html?merchant=your-shop。";
     }else{
-      updateSyncMode();
       void refresh();
-      subscribeQueueChanges();
-      // Realtime event notifications carry no customer details. Use a cheap
-      // periodic consistency check while connected and 10-second polling only
-      // when the WebSocket is unavailable or disconnected.
+      // One simple browser-driven polling loop for every public board.
+      // Hidden tabs, unavailable stores, offline browsers and in-flight calls
+      // do not make redundant requests. There are no WebSocket subscriptions.
       setInterval(()=>{
-        if(document.hidden||disabled)return;
-        if(!realtimeConnected||!lastSuccess||Date.now()-lastSuccess.getTime()>=60000)void refresh();
-      },10000);
+        if(document.hidden||disabled||!navigator.onLine||loading)return;
+        void refresh();
+      },5000);
       setInterval(updateConnectionStatus,5000);
     }
   
