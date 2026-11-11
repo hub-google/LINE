@@ -13,7 +13,6 @@
   "app/staff/analytics.js",
   "app/staff/bookings.js",
   "app/staff/calendar.js",
-  "app/staff/unit-queue.js",
   "app/staff/queue.js",
   "app/staff/menu.js",
   "app/staff/members.js",
