@@ -38,15 +38,13 @@ if(a==="copy-own-oa-webhook"){
   await act(async()=>{
    let payload={action:"disconnect-merchant-oa",slug:routeState.slug};
    if(a==="connect-own-oa"){
-     const channelId=val("own-oa-channel-id");
      const channelSecret=val("own-oa-secret");
      const botToken=val("own-oa-token");
      const liffId=val("own-oa-liff");
-     if(!/^[0-9]{8,}$/.test(channelId))throw Error("Channel ID 格式不正確：請輸入 Messaging API 的純數字頻道編號。");
      if(!/^[0-9a-fA-F]{32}$/.test(channelSecret))throw Error("Channel secret 格式不正確：必須為 32 位十六進位字元。");
      if(botToken.length<32)throw Error("Channel access token (long-lived) 尚未填寫或格式不完整。");
      if(liffId&&!/^[0-9]{8,}-[A-Za-z0-9]+$/.test(liffId))throw Error("LIFF ID 格式不正確：應為「數字-英數字」，不是 Messaging API Channel ID；不需要 LINE 登入可留空。");
-     payload={action:"connect-merchant-oa",slug:routeState.slug,messagingChannelId:channelId,liffId,botToken,channelSecret};
+     payload={action:"connect-merchant-oa",slug:routeState.slug,liffId,botToken,channelSecret};
    }
    if(!authState.session?.access_token)throw Error("請先登入企業管理者帳號");
    const res=await fetch(lineState.LINE_BRIDGE_URL,{
@@ -59,7 +57,6 @@ if(a==="copy-own-oa-webhook"){
      const message={
        LINE_CHANNEL_FIELDS_INVALID:"欄位格式不正確，請依 LINE Developers 的 Messaging API 設定重新確認。",
        LINE_BOT_TOKEN_INVALID:"Channel access token 無效、過期或已撤銷，請在 LINE Developers → Messaging API 重新取得。",
-       LINE_BOT_TOKEN_CHANNEL_MISMATCH:"Channel ID 與 Channel access token 不屬於同一個 Messaging API 頻道，請確認沒有複製到其他官方帳號。",
        LINE_BOT_PROFILE_INVALID:"LINE 官方帳號資料驗證失敗，請確認此頻道已啟用 Messaging API。",
        MERCHANT_OA_STORAGE_UNAVAILABLE:"目前無法安全儲存 LINE OA 設定，請聯絡平台管理員檢查後端部署。",
        MANAGER_REQUIRED:"只有店家管理者能綁定 LINE 官方帳號。"
