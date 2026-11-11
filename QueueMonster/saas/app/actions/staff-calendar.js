@@ -99,7 +99,7 @@ if(a==="calendar-mode"){
  if(a==="export-analytics"){
    const a=staffState.staffAnalytics;
    if(!a||!Array.isArray(a.daily)){showActionFeedback("統計資料尚未載入","error");return true;}
-   const csv="\uFEFF日期,預約筆數,取號筆數\r\n"+a.daily.map(d=>[String(d.date).slice(0,10),Number(d.reservations||0),Number(d.tickets||0)].join(",")).join("\r\n");
+   const csv="\uFEFF日期,預約筆數,取號筆數,有效訂餐筆數,有效訂餐金額（NTD）\r\n"+a.daily.map(d=>[String(d.date).slice(0,10),Number(d.reservations||0),Number(d.tickets||0),Number(d.orders||0),Number(d.order_amount||0)].join(",")).join("\r\n");
    const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
    const link=document.createElement("a");link.href=url;link.download="LINE_"+routeState.slug+"_"+staffState.analyticsDays+"days.csv";
    document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
