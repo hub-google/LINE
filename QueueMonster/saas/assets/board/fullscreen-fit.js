@@ -26,7 +26,7 @@ export function installBoardFullscreenFit(){
   function bestGrid(count,w,h,kind,texts=[]){
     count=Math.max(1,count);
     const minW=kind==="unit"?205:100;
-    const minH=kind==="unit"?145:65;
+    const minH=kind==="unit"?190:65;
     const maxCols=Math.min(count,Math.max(1,Math.floor((w+gap)/(minW+gap))));
     const maxRows=Math.max(1,Math.floor((h+gap)/(minH+gap)));
     const longest=Math.max(1,...texts.map(textLength));
