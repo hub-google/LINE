@@ -262,6 +262,7 @@ try{
   await page.evaluate(()=>{
    document.getElementById('shop').textContent='測試門市｜即時叫號';
    document.getElementById('current').textContent='3';
+   document.getElementById('current').classList.remove('is-empty');
    const list=document.getElementById('upcoming');
    list.replaceChildren();
    for(const n of ['2','4','5','6','7']){
