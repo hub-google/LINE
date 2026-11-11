@@ -65,12 +65,15 @@ export function installBoardFullscreenFit(){
       Math.floor(Math.min(44,Math.max(12,currentSize.h*.085)))+"px");
     const upcomingSize=size(queue);
     const numbers=Array.from(queue?.children||[]).map(x=>x.textContent||"");
-    const plan=bestGrid(numbers.length,upcomingSize.w,upcomingSize.h,"queue",numbers);
-    single.style.setProperty("--board-queue-columns",plan.cols);
-    single.style.setProperty("--board-queue-rows",plan.rows);
-    // Compute font from each card's actual dimensions rather than vw.
-    const cellW=(upcomingSize.w-gap*(plan.cols-1))/plan.cols;
-    const cellH=(upcomingSize.h-gap*(plan.rows-1))/plan.rows;
+    // The waiting list is always chronological from TOP to BOTTOM.
+    // Never apply the multi-column grid fitter to queue numbers: it makes
+    // the reading order ambiguous on wide or short screens.
+    const rows=Math.max(1,numbers.length);
+    single.style.setProperty("--board-queue-columns","1");
+    single.style.setProperty("--board-queue-rows",String(rows));
+    // Fit the text inside a single full-width row without changing order.
+    const cellW=upcomingSize.w;
+    const cellH=(upcomingSize.h-gap*(rows-1))/rows;
     const maxFont=Math.max(12,Math.min(cellH*.61,cellW*.60));
     const nextFont=Math.floor(Math.min(maxFont,...numbers.map(t=>textFit(t,cellW*.87,cellH*.61,900))));
     single.style.setProperty("--board-next-font",Math.max(10,nextFont)+"px");
