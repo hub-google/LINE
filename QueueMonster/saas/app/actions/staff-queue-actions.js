@@ -2,6 +2,7 @@ import {feedbackState} from "../state/feedbackState.js";
 import {routeState} from "../state/routeState.js";
 import {sharedUiState} from "../state/sharedUiState.js";
 import {staffState} from "../state/staffState.js";
+import {serviceUnitsState} from "../state/serviceUnitsState.js";
 
 
 import {jsStatus,showActionFeedback} from "./../shared-ui.js";
@@ -14,7 +15,10 @@ if(a==="undo-staff"){
   const previous=sharedUiState.lastStaffChange;
   if(!previous||previous.slug!==routeState.slug){feedbackState.err="沒有可還原的操作";showActionFeedback(feedbackState.err,"error");render();return true;}
   await act(async()=>{
-    const proc=previous.kind==="reservation"?"so_staff_set_reservation_status":"so_staff_set_ticket_status";
+    const unitTicket=previous.kind==="ticket"&&serviceUnitsState.unitEnabled()&&
+      (serviceUnitsState.unitRecords?.tickets||[]).some(x=>x.id===previous.id);
+    const proc=previous.kind==="reservation"?"so_staff_set_reservation_status":
+      unitTicket?"so_unit_set_ticket_status":"so_staff_set_ticket_status";
     const args=previous.kind==="reservation"?
       {p_slug:routeState.slug,p_reservation_id:previous.id,p_status:previous.before,p_expected_status:previous.after}:
       {p_slug:routeState.slug,p_ticket_id:previous.id,p_status:previous.before,p_expected_status:previous.after};
