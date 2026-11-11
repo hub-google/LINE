@@ -52,3 +52,20 @@ test("FoodRadar daily LINE report is explicit opt-in and never broadcasts arbitr
   assert.match(workflow, /No FoodRadar LINE subscriber/);
   assert.doesNotMatch(workflow, /\/v2\/bot\/message\/broadcast/);
 });
+
+test("merchant OA Messaging API form requires only token and secret, deriving Channel ID in backend", () => {
+  const settings=readFileSync(path.join(root,"saas/app/staff/settings.js"),"utf8");
+  const action=readFileSync(path.join(root,"saas/app/actions/merchant-settings.js"),"utf8");
+  const guide=readFileSync(path.join(root,"saas/merchant-center.html"),"utf8");
+  assert.match(settings,/Channel access token \(long-lived\)/);
+  assert.match(settings,/Channel secret/);
+  assert.doesNotMatch(settings,/own-oa-channel-id/);
+  assert.doesNotMatch(action,/own-oa-channel-id|messagingChannelId:channelId/);
+  assert.match(action,/connect-merchant-oa/);
+  assert.match(bridge,/fetch\("https:\/\/api\.line\.me\/v2\/oauth\/verify"/);
+  assert.match(bridge,/const messagingChannelId = String\(tokenDetails\.client_id/);
+  assert.doesNotMatch(bridge,/payload\.messagingChannelId/);
+  assert.match(bridge,/so_merchant_oa_save_messaging_secret/);
+  assert.match(guide,/https:\/\/developers\.line\.biz\/console\//);
+  assert.match(guide,/不需要先建立 LINE Login／LIFF/);
+});
