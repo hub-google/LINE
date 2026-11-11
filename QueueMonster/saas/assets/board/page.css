@@ -15,6 +15,7 @@
     .label{font-size:clamp(27px,3.5vw,54px);font-weight:900;line-height:1.4;letter-spacing:-.04em}
     .underline{width:112px;height:9px;border-radius:20px;background:#90dca4;margin:18px auto 24px}
     #current{font-size:clamp(110px,17vw,310px);font-weight:950;line-height:1.25;letter-spacing:-.05em;color:var(--dark);font-variant-numeric:tabular-nums;max-width:100%;overflow-wrap:anywhere}
+    #current.is-empty{font-size:clamp(36px,5.2vw,80px);line-height:1.35;letter-spacing:-.025em;overflow-wrap:normal}
     #upcoming{list-style:none;padding:0;margin:0;width:100%;display:grid;gap:clamp(8px,.8vw,14px)}
     #upcoming li{background:#fff;border-radius:clamp(14px,2vw,25px);min-height:clamp(58px,7.5vh,94px);display:flex;align-items:center;justify-content:center;font-weight:880;letter-spacing:-.03em;font-size:clamp(30px,3.6vw,62px);font-variant-numeric:tabular-nums}
     #upcoming li.empty{color:#647b6b;font-size:clamp(22px,2.4vw,36px)}
@@ -32,6 +33,7 @@
     .unit-card h2{font-size:clamp(20px,2.3vw,38px);margin:0 0 5px;color:var(--dark)}
     .unit-card .group{color:#52745e;font-size:clamp(13px,1.3vw,19px);font-weight:700}
     .unit-card .unit-now{font-size:clamp(72px,9vw,155px);font-weight:950;line-height:1.25;letter-spacing:-.045em;font-variant-numeric:tabular-nums;text-align:center}
+    .unit-card .unit-now.is-empty{font-size:clamp(26px,3vw,50px);line-height:1.4;letter-spacing:-.02em}
     .unit-card .unit-next{font-size:clamp(16px,1.5vw,25px);font-weight:750;border-top:1px solid #c8dfce;padding-top:13px;overflow-wrap:anywhere}
     @media(min-width:1200px){#unit-board{grid-template-columns:repeat(3,minmax(0,1fr))}}
     @media(max-width:780px){header{min-height:85px}.shop-icon{display:none}main{grid-template-columns:1fr}.panel.current{min-height:270px}.panel.next{min-height:320px}#current{font-size:clamp(85px,22vw,180px)}#upcoming{grid-template-columns:repeat(2,minmax(0,1fr))}}
