@@ -861,3 +861,26 @@ body[data-monster-page="board"]:has(#single-board) footer{
  background:color-mix(in srgb,var(--merchant-board-accent,#693C8B) 7%,white);
  border-color:color-mix(in srgb,var(--merchant-board-accent,#693C8B) 21%,white);
 }
+
+/* Customer portal: one quiet services entry, with subviews only inside the hub. */
+body[data-monster-page="index"][data-portal="customer"] .customer-service-nav{margin:0 0 18px}
+body[data-monster-page="index"][data-portal="customer"] .customer-service-title{margin:0 0 10px}
+body[data-monster-page="index"][data-portal="customer"] .customer-service-title h2{margin:0;font-size:19px;line-height:1.35}
+body[data-monster-page="index"][data-portal="customer"] .customer-service-title .small{margin:3px 0 0;font-size:13px}
+body[data-monster-page="index"][data-portal="customer"] .customer-service-switcher{
+ display:flex;flex-wrap:wrap;gap:5px;padding:5px;background:#F8F0FC;
+ border:1px solid #E8D9F2;border-radius:14px
+}
+body[data-monster-page="index"][data-portal="customer"] .customer-service-switcher button{
+ flex:1 1 120px;min-height:42px;border:1px solid transparent;border-radius:10px;
+ padding:9px 12px;background:transparent;color:#685477;font-size:14px;font-weight:750;
+ cursor:pointer;transition:background .15s,color .15s
+}
+body[data-monster-page="index"][data-portal="customer"] .customer-service-switcher button.active{
+ background:#fff;color:var(--merchant-ink,#462B52);
+ border-color:color-mix(in srgb,var(--merchant-accent,#693C8B) 30%,white);
+ box-shadow:0 2px 7px rgba(70,43,82,.08)
+}
+body[data-monster-page="index"][data-portal="customer"] .customer-service-switcher button:focus-visible{
+ outline:3px solid var(--merchant-accent,#693C8B);outline-offset:2px
+}
