@@ -184,8 +184,11 @@ export async function load(){feedbackState.err="";try{
           customerState.customer[name]=(customerState.customer[name]||[]).map(item=>({...item,...(map.get(item.id)||{})}));
         }
       }else{
-        const mr=new Map((serviceUnitsState.unitRecords.reservations||[]).map(item=>[item.id,item]));
-        const mt=new Map((serviceUnitsState.unitRecords.tickets||[]).map(item=>[item.id,item]));
+        // The unit-records RPC returns unit_id/session_id; staff views use service_unit_id/service_session_id.
+        // Normalize only the staff-side enrichment so queue controls and booking unit filters see the right records.
+        const staffUnitFields=item=>({...item,service_unit_id:item.unit_id,service_session_id:item.session_id});
+        const mr=new Map((serviceUnitsState.unitRecords.reservations||[]).map(item=>[item.id,staffUnitFields(item)]));
+        const mt=new Map((serviceUnitsState.unitRecords.tickets||[]).map(item=>[item.id,staffUnitFields(item)]));
         for(const key of ["pending_reservations","processed_reservations","deleted_reservations"]){
           staffState.staff[key]=(staffState.staff[key]||[]).map(item=>({...item,...(mr.get(item.id)||{})}));
         }
