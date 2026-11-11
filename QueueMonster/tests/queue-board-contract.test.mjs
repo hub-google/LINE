@@ -112,26 +112,33 @@ test("merchant color overrides the old high-specificity purple board theme",()=>
  assert.match(theme,/--merchant-board-contrast/);
 });
 
-test("fullscreen board fits every panel and service unit within one viewport",()=>{
+test("fullscreen board uses one measured-container layout for all aspect ratios",()=>{
  const css=read("saas/assets/board/page.css");
  const script=read("saas/assets/board/main.js");
  const fit=read("saas/assets/board/fullscreen-fit.js");
  assert.match(css,/html:fullscreen body\s*\{/);
  assert.match(css,/grid-template-rows:auto auto minmax\(0,1fr\) auto/);
- assert.match(css,/html:fullscreen #upcoming/);
- assert.match(css,/repeat\(var\(--board-queue-count,5\),minmax\(0,1fr\)\)/);
- assert.match(css,/html:fullscreen #unit-board/);
- assert.match(css,/grid-auto-rows:minmax\(0,1fr\)/);
- assert.match(css,/overflow:hidden/);
+ assert.match(css,/html:fullscreen #single-board\[data-board-layout="side"\]/);
+ assert.match(css,/html:fullscreen #single-board\[data-board-layout="stack"\]/);
+ assert.match(css,/--board-queue-columns/);
+ assert.match(css,/--board-queue-rows/);
+ assert.match(css,/--board-current-font/);
+ assert.match(css,/--board-next-font/);
+ assert.match(css,/--board-unit-columns/);
+ assert.match(css,/--board-unit-rows/);
+ assert.match(css,/data-board-hidden/);
+ assert.match(board,/id="board-page-indicator"/);
  assert.match(script,/installBoardFullscreenFit\(\)/);
  assert.match(script,/boardFit\.schedule\(\)/);
- assert.match(fit,/document\.addEventListener\("fullscreenchange"/);
- assert.match(fit,/window\.addEventListener\("resize"/);
+ assert.match(fit,/new ResizeObserver/);
+ assert.match(fit,/getBoundingClientRect\(\)/);
+ assert.match(fit,/bestGrid\(/);
+ assert.match(fit,/area\.w\/area\.h/);
+ assert.match(fit,/textFit\(/);
+ assert.match(fit,/setInterval\(/);
+ assert.doesNotMatch(fit,/screenWidth\s*[<>]=?\s*\d+/);
+ assert.doesNotMatch(fit,/window\.innerWidth\s*[<>]=?\s*\d+/);
  assert.doesNotMatch(fit,/body\.style\.zoom\s*=/);
- assert.match(fit,/body\.style\.removeProperty\("zoom"\)/);
- assert.match(fit,/--board-queue-count/);
- assert.match(fit,/--board-unit-columns/);
- assert.match(fit,/\.unit-card/);
  const js=spawnSync(process.execPath,["--input-type=module","--check"],{input:fit,encoding:"utf8"});
  assert.equal(js.status,0,js.stderr);
 });
