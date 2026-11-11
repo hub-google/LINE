@@ -4,7 +4,7 @@ import { chromium } from './node_modules/playwright/index.mjs';
 
 // Read-only mobile visual QA: no sign-in and no booking/queue submissions.
 const BASE = 'https://hub-google.github.io/LINE/booking/';
-const OUT = 'reports/iphone17-20261110';
+const OUT = 'reports/iphone17-latest';
 fs.mkdirSync(OUT,{recursive:true});
 const browser = await chromium.launch({headless:true,args:['--no-sandbox']});
 const context = await browser.newContext({
@@ -73,6 +73,12 @@ try{
   if(await menu.isVisible()){await menu.click();await page.waitForTimeout(200);await shot('02-home-menu');}
  }catch(e){console.log('menu operation:',String(e));}
  await visit('03-directory-search',BASE+'directory.html?mode=search',{scroll:true,wait:2400});
+ // Use a currently public ACTIVE merchant instead of an old, intentionally suspended demo URL.
+ const publicBoardHref=await page.locator('#results a[href*="board.html?merchant="]').first().getAttribute('href',{timeout:8000});
+ const activeMerchant=new URL(publicBoardHref,BASE).searchParams.get('merchant');
+ if(!/^[a-z0-9][a-z0-9-]{2,39}$/.test(activeMerchant||''))throw Error('No active public merchant available for mobile audit');
+ console.log('Public merchant used for browser snapshots:',activeMerchant);
+
  try{
   const search=page.locator('#keyword');
   if(await search.isVisible()){await search.fill('診所');await page.waitForTimeout(1700);await shot('04-directory-typed-search');}
@@ -80,15 +86,15 @@ try{
  await visit('05-directory-mine',BASE+'directory.html?mode=mine');
  await visit('06-directory-queue',BASE+'directory.html?mode=queue');
  await visit('07-directory-game',BASE+'directory.html?mode=game');
- await visit('08-customer-reserve',BASE+'?view=customer&merchant=greenfield-salon&tab=reserve',{scroll:true,wait:2200});
+ await visit('08-customer-reserve',BASE+'?view=customer&merchant='+encodeURIComponent(activeMerchant)+'&tab=reserve',{scroll:true,wait:2200});
  await page.waitForTimeout(9000);await shot('08-customer-reserve-after-12s');
- await visit('09-customer-queue',BASE+'?view=customer&merchant=greenfield-salon&tab=queue',{scroll:true,wait:2200});
+ await visit('09-customer-queue',BASE+'?view=customer&merchant='+encodeURIComponent(activeMerchant)+'&tab=queue',{scroll:true,wait:2200});
  await page.waitForTimeout(9000);await shot('09-customer-queue-after-12s');
  await visit('10-merchant-register',BASE+'merchant-register.html',{scroll:true});
  await visit('11-merchant-center',BASE+'merchant-center.html');
- await visit('12-staff',BASE+'?view=staff&merchant=greenfield-salon',{scroll:true});
+ await visit('12-staff',BASE+'?view=staff&merchant='+encodeURIComponent(activeMerchant),{scroll:true});
  await visit('13-platform',BASE+'?view=platform',{scroll:true});
- await visit('14-public-board',BASE+'board.html?merchant=greenfield-salon');
+ await visit('14-public-board',BASE+'board.html?merchant='+encodeURIComponent(activeMerchant));
 } finally {
  fs.writeFileSync(path.join(OUT,'report.json'),JSON.stringify({date:new Date().toISOString(),device:'iPhone 17 simulated Chromium, 402x874 CSS pixels, DPR3',note:'Read-only live website screenshots; no authentication, no writes; not physical Safari.',screens:report},null,2));
  await browser.close();
