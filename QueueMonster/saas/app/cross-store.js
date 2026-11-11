@@ -2,6 +2,7 @@ import {crossStoreState} from "./state/crossStoreState.js";
 import {lineState} from "./state/lineState.js";
 import {queueState} from "./state/queueState.js";
 import {routeState} from "./state/routeState.js";
+import {sharedUiState} from "./state/sharedUiState.js";
 
 
 import {rpc} from "./data-loading.js";
@@ -77,6 +78,7 @@ export function crossTicketCards(){
 export function crossRecords(){
  const bookings=crossStoreState.customerActivity?.reservations||[];
  const tickets=crossStoreState.customerActivity?.tickets||[];
+ const orders=crossStoreState.customerActivity?.orders||[];
  const errMessage=crossStoreState.customerActivityError?'<p class="alert">'+esc(crossStoreState.customerActivityError)+'</p>':"";
  const bookingHtml=bookings.length?bookings.slice(0,80).map(x=>
    '<article class="cross-record"><div class="cross-ticket-head"><strong>'+esc(x.shop_name)+'</strong>'+tag(x.status)+'</div>'+
@@ -94,5 +96,11 @@ export function crossRecords(){
    '<div class="staff-actionbar">'+btn("查看該店進度","open-cross-ticket","secondary",
      'data-merchant="'+esc(x.slug)+'" data-ticket="'+esc(x.id)+'"')+'</div></article>'
  ).join(""):'<p class="muted">目前沒有號碼紀錄。</p>';
- return errMessage+box("我的跨店預約紀錄",bookingHtml)+box("我的跨店取號紀錄",ticketHtml);
+ const orderHtml=orders.length?orders.slice(0,80).map(x=>
+    '<article class="cross-record"><div class="cross-ticket-head"><strong>'+esc(x.shop_name)+'</strong><span>'+esc(x.status)+'</span></div>'+
+    '<strong>訂單 '+esc(x.number)+'</strong><div>取餐：'+esc(x.pickup_at)+'</div>'+
+    '<div class="small">'+esc((x.items||[]).map(i=>i.name+" × "+i.qty).join("、"))+' ・ NT$ '+esc(Number(x.total||0).toLocaleString("zh-TW"))+'</div>'+
+    '<div class="staff-actionbar"><a class="btn secondary" href="'+esc(sharedUiState.route("customer",x.slug,"order"))+'">查看店家取餐進度</a></div></article>'
+  ).join(""):'<p class="muted">目前沒有訂餐紀錄。</p>';
+  return errMessage+box("我的跨店預約紀錄",bookingHtml)+box("我的跨店取號紀錄",ticketHtml)+box("我的跨店訂餐紀錄",orderHtml);
 }

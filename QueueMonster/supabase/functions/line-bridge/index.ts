@@ -222,6 +222,12 @@ function liffManageLink(shop: ShopInfo, kind: "reservation" | "ticket", refId: s
   });
   return "https://liff.line.me/" + id + "/?" + query.toString();
 }
+function liffPickupLink(shop: ShopInfo): string | null {
+  const id = shop.liffId || Deno.env.get("LINE_LIFF_ID") || "";
+  if (!/^\d{8,}-[A-Za-z0-9]+$/.test(id)) return null;
+  const query = new URLSearchParams({ view: "customer", merchant: shop.slug, tab: "order" });
+  return "https://liff.line.me/" + id + "/?" + query.toString();
+}
 function liffQueueProgressLink(shop: ShopInfo, ticketId: string): string | null {
   const id=shop.liffId || Deno.env.get("LINE_LIFF_ID") || "";
   if (!/^\d{8,}-[A-Za-z0-9]+$/.test(id)) return null;
@@ -419,7 +425,7 @@ async function pushNotice(
   db: ReturnType<typeof service>,
   tenant: { id: string; name: string },
   recipient: string,
-  eventKind: "CALLED" | "RESERVED" | "TICKET_CREATED" | "TICKET_CANCELLED" | "RESERVATION_CANCELLED" | "RESERVATION_UPDATED" | "RESERVATION_RESTORED" | "TICKET_RESTORED" | "QUEUE_NEAR" | "RESERVATION_REMINDER_24H" | "RESERVATION_REMINDER_2H",
+  eventKind: "CALLED" | "RESERVED" | "TICKET_CREATED" | "TICKET_CANCELLED" | "RESERVATION_CANCELLED" | "RESERVATION_UPDATED" | "RESERVATION_RESTORED" | "TICKET_RESTORED" | "QUEUE_NEAR" | "RESERVATION_REMINDER_24H" | "RESERVATION_REMINDER_2H" | "PICKUP_EVENT",
   referenceId: string,
   message: string | Record<string, unknown>,
   origin: string | null,
@@ -490,7 +496,7 @@ type NoticeJob = {
   id: number;
   tenant_id: string;
   event_kind: "CALLED" | "RESERVED" | "TICKET_CREATED" | "TICKET_CANCELLED" |
-    "RESERVATION_CANCELLED" | "RESERVATION_UPDATED" | "RESERVATION_RESTORED" | "TICKET_RESTORED" | "QUEUE_NEAR" | "RESERVATION_REMINDER_24H" | "RESERVATION_REMINDER_2H";
+    "RESERVATION_CANCELLED" | "RESERVATION_UPDATED" | "RESERVATION_RESTORED" | "TICKET_RESTORED" | "QUEUE_NEAR" | "RESERVATION_REMINDER_24H" | "RESERVATION_REMINDER_2H" | "PICKUP_EVENT";
   reference_id: string;
   attempts: number;
   status: string;
@@ -504,7 +510,46 @@ async function dispatchOutboxItem(
   if (tenantErr) throw tenantErr;
   if (!tenant || tenant.status !== "ACTIVE") return { status: "SKIPPED", reason: "TENANT_INACTIVE" };
   let result: Response;
-  if (job.event_kind === "RESERVATION_REMINDER_24H" ||
+  if (job.event_kind === "PICKUP_EVENT") {
+    const { data: event, error: eventError } = await db.from("so_pickup_notice_events")
+      .select("id,tenant_id,order_id,status,created_at")
+      .eq("tenant_id", tenant.id).eq("id", job.reference_id).maybeSingle();
+    if (eventError) throw eventError;
+    if (!event) return { status: "SKIPPED", reason: "PICKUP_EVENT_MISSING" };
+    const { data: order, error: orderError } = await db.from("so_pickup_orders")
+      .select("id,user_id,order_no,status,pickup_at,items,total,scheduled")
+      .eq("tenant_id", tenant.id).eq("id", event.order_id).maybeSingle();
+    if (orderError) throw orderError;
+    if (!order || order.status !== event.status)
+      return { status: "SKIPPED", reason: "PICKUP_EVENT_SUPERSEDED" };
+    const { data: newest, error: newestError } = await db.from("so_pickup_notice_events")
+      .select("id").eq("tenant_id", tenant.id).eq("order_id", order.id)
+      .order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (newestError) throw newestError;
+    if (newest?.id !== event.id)
+      return { status: "SKIPPED", reason: "PICKUP_EVENT_OLDER_THAN_LATEST" };
+    const states: Record<string,string> = {
+      NEW:"訂單已送出，等待店家接單",ACCEPTED:"店家已接單",PREPARING:"店家製作中",
+      READY:"餐點可取餐",PICKED_UP:"已取餐",REJECTED:"店家已拒單",CANCELLED:"訂單已取消",
+    };
+    const statusText = states[event.status] || event.status;
+    const itemLines = Array.isArray(order.items)
+      ? order.items.slice(0, 12).map((x: {name?:string;qty?:number}) =>
+          String(x.name || "餐點").slice(0, 50) + " × " + String(x.qty || 1)) : [];
+    const pickupDate = new Date(order.pickup_at).toLocaleString("zh-TW",{
+      timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false,
+    });
+    result = await pushNotice(db, tenant, order.user_id, "PICKUP_EVENT", job.reference_id,
+      flexNotice(event.status === "NEW" ? "訂餐已成立" : "訂餐進度更新", [
+        "店家：" + tenant.name,
+        "訂單號碼：P" + String(order.order_no).padStart(5,"0"),
+        "取餐時間：" + pickupDate,
+        "目前狀態：" + statusText,
+        ...(itemLines.length ? ["餐點：" + itemLines.join("、")] : []),
+        "訂單金額：NT$ " + Number(order.total || 0).toLocaleString("zh-TW"),
+        ...shopDetails(tenant),
+      ], [{label:"查看取餐進度",uri:liffPickupLink(await shopLinkContext(db, tenant))}]), origin);
+  } else if (job.event_kind === "RESERVATION_REMINDER_24H" ||
       job.event_kind === "RESERVATION_REMINDER_2H") {
     const { data: reminder, error: reminderError } = await db.from("so_booking_reminder_jobs")
       .select("id,tenant_id,booking_id,reminder_kind,due_at,booking_start_at,status")

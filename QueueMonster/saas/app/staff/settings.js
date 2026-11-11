@@ -40,13 +40,14 @@ export function renderStaffSettings({t,isManager,html}){
       .map(([day,title])=>'<label class="checklist"><input type="checkbox" class="policy-closed-day" value="'+day+'" '+((policy.closed_weekdays||[]).includes(Number(day))?"checked":"")+'> '+title+'</label>').join("");
   const serviceModules=t.modules||{};
   const cards=[["operations",box("顧客服務開放設定",
-    '<p class="muted">店家可自行決定提供線上預約、現場取號，或同時提供兩種服務。關閉後顧客不再能建立新預約／新號碼，原有紀錄與已發出的號碼仍保留。</p>'+
+    '<p class="muted">店家可自行決定開放線上預約、現場取號與線上點餐；可單獨啟用或任意組合。關閉後顧客不再能建立新預約／新號碼，原有紀錄與已發出的號碼仍保留。</p>'+
     (isManager?
       '<div class="grid"><label class="checklist"><input id="set-service-reservation" type="checkbox" '+(serviceModules.reservation?'checked':'')+'> 開放線上預約</label>'+
-      '<label class="checklist"><input id="set-service-queue" type="checkbox" '+(serviceModules.queue?'checked':'')+'> 開放現場取號</label></div>'+
-      '<p class="small">只勾預約＝僅預約；只勾取號＝僅取號；都勾＝兩種服務；都不勾＝暫停接收新顧客。</p>'+
+      '<label class="checklist"><input id="set-service-queue" type="checkbox" '+(serviceModules.queue?'checked':'')+'> 開放現場取號</label>'+
+       '<label class="checklist"><input id="set-service-pickup" type="checkbox" '+(pickupState.staff?.settings?.enabled?'checked':'')+'> 開放線上點餐</label></div>'+
+      '<p class="small">三項服務獨立控制；都不勾表示暫停新預約、新取號與新訂單，既有資料與已成立訂單仍保留。取餐時段請到「線上點餐」設定。</p>'+
       '<div class="staff-actionbar">'+btn("儲存服務開關","save-service-modes","primary")+'</div>':
-      '<p class="small">目前：預約 '+(serviceModules.reservation?'已開放':'未開放')+'，現場取號 '+(serviceModules.queue?'已開放':'未開放')+'。只有店家管理者可以修改。</p>'))],
+      '<p class="small">目前：預約 '+(serviceModules.reservation?'已開放':'未開放')+'，現場取號 '+(serviceModules.queue?'已開放':'未開放')+'，線上點餐 '+(pickupState.staff?.settings?.enabled?'已開放':'未開放')+'。只有店家管理者可以修改。</p>'))],
 ["profile",box("企業基本設定",!isManager?'<p class="muted">只有管理者可以修改設定。</p>':
    merchantProfileFields("set",t)+
    '<div class="merchant-profile-actions">'+btn("儲存企業設定","update-settings","primary")+'</div>')],

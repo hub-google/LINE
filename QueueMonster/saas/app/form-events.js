@@ -47,8 +47,8 @@ document.addEventListener("change",async ev=>{
    if(flow==="booking"){bookingState.chosenSlot="";bookingState.serviceSlotPreview=null;serviceUnitsState.unitConfirmKey="";if(!serviceUnitsState.unitEnabled())void refreshServiceSlots();}
    render();return;
  }
- if(el.id==="set-service-reservation"||el.id==="set-service-queue"){
-   const kind=el.id==="set-service-reservation"?"reserve":"queue";
+ if(["set-service-reservation","set-service-queue","set-service-pickup"].includes(el.id)){
+   const kind=el.id==="set-service-reservation"?"reserve":el.id==="set-service-queue"?"queue":"order";
    const section=document.querySelector('[data-service-url-kind="'+kind+'"]');
    if(section){
      const active=section.querySelector("[data-service-url-active]");

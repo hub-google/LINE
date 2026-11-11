@@ -10,7 +10,7 @@ import {render} from "./staff-layout.js";
 // This module owns only pickup-specific presentation and form state.
 export const pickupState={
   customer:null,staff:null,customerSlug:"",staffSlug:"",
-  day:"",slot:"",method:"scheduled",cart:{},note:"",requestId:""
+  day:"",slot:"",method:"scheduled",cart:{},note:"",requestId:"",history:null,historyPage:1,historyFilter:"all"
 };
 const statusText={NEW:"待店家接單",ACCEPTED:"已接單・待製作",PREPARING:"製作中",
   READY:"可取餐",PICKED_UP:"已取餐",REJECTED:"店家已拒單",CANCELLED:"已取消"};
@@ -34,10 +34,14 @@ export async function loadPickupData(){
     if(pickupState.customer?.settings?.schedule_mode==="REQUIRED")pickupState.method="scheduled";
     if(!pickupState.customer?.slots?.some(x=>x.time===pickupState.slot&&x.left>0))pickupState.slot="";
   }else if(routeState.view==="customer"){pickupState.customer=null;}
-  if(routeState.view==="staff"&&staffState.staff&&["orders","settings"].includes(staffState.staffTab)){
+  if(routeState.view==="staff"&&staffState.staff&&["orders","settings","dashboard","calendar"].includes(staffState.staffTab)){
     if(pickupState.staffSlug!==routeState.slug){pickupState.staff=null;pickupState.staffSlug=routeState.slug;}
     try{pickupState.staff=await rpc("so_pickup_staff",{p_slug:routeState.slug});}
     catch(err){console.warn("取餐店家資料不可用",err);pickupState.staff=null;}
+    if(staffState.staffTab==="orders"){
+      try{pickupState.history=await rpc("so_pickup_history",{p_slug:routeState.slug,p_page:pickupState.historyPage,p_filter:pickupState.historyFilter});}
+      catch(err){console.warn("訂餐歷史暫時不可用",err);pickupState.history=null;}
+    }
   }
 }
 
@@ -72,7 +76,7 @@ export function renderCustomerPickup(){
  const d=pickupState.customer;
  if(!d)return box("線上點餐",'<p class="muted">正在讀取店家菜單，若持續無法載入請重新整理。</p>');
  const s=d.settings||{};
- if(!s.enabled)return box("尚未開放線上點餐",'<p>店家目前尚未啟用此功能。</p>');
+ 
  const immediate=pickupState.method==="immediate";
  const total=(d.items||[]).reduce((sum,x)=>sum+Number(x.price||0)*(pickupState.cart[x.id]||0),0);
  const count=Object.values(pickupState.cart).reduce((a,b)=>a+b,0);
@@ -81,6 +85,7 @@ export function renderCustomerPickup(){
   '<p class="small">取餐：'+esc(o.pickup_at)+(o.scheduled?"（預約）":"（即時）")+'</p>'+
   '<p>'+lines(o)+'</p><p><strong>'+money(o.total)+'</strong></p>'+
   (["NEW","ACCEPTED"].includes(o.status)?btn("取消這筆訂單","pickup-cancel","outline",'data-id="'+esc(o.id)+'"'):"")+'</div>').join("");
+ if(!s.enabled)return box("尚未開放線上點餐",'<p>店家暫停接受新訂單，既有訂單仍可查看。</p>'+(orderCards||'<p>目前沒有訂餐紀錄。</p>'));
  const available=(d.slots||[]).filter(x=>x.left>0);
  return box("線上點餐",
   '<p class="muted">直接使用本店上架菜單，送出後可在此追蹤接單、製餐、可取餐與已取餐進度。</p>'+
@@ -110,7 +115,7 @@ export function renderCustomerPickup(){
 export function renderStaffPickup(){
  const d=pickupState.staff;
  if(!d)return box("取餐訂單",'<p class="muted">目前無法讀取取餐訂單，請重新整理。</p>');
- if(!d.settings?.enabled)return box("取餐訂單",'<p>尚未啟用線上點餐。請在「設定 → 線上點餐」開放服務。</p>');
+ // 停用訂餐僅阻止新增訂單，不隱藏既有訂單或歷史紀錄。
  const orders=d.orders||[],active=orders.filter(o=>!["PICKED_UP","REJECTED","CANCELLED"].includes(o.status));
  const history=orders.filter(o=>["PICKED_UP","REJECTED","CANCELLED"].includes(o.status));
  const staffStatusText={NEW:"待接單",ACCEPTED:"已接單",PREPARING:"製作中",
@@ -132,16 +137,32 @@ export function renderStaffPickup(){
   (o.status==="ACCEPTED"?action(o,"開始製作","PREPARING",!o.can_prepare):"")+
   (o.status!=="CANCELLED"?action(o,"取消訂單","CANCELLED"):"")+
   (o.status!=="NEW"?action(o,"恢復待接單","NEW"):"")+'</div></details></div>';
+ const h=pickupState.history||{},past=h.orders||[],maxPage=Math.max(1,Math.ceil(Number(h.total||0)/25));
+ const choose=(f,label)=>btn(label,"pickup-history-filter",pickupState.historyFilter===f?"primary":"outline",'data-filter="'+f+'"');
  return box("取餐訂單管理",
-  '<p class="small">依約定取餐時間排序。可直接切換「接單、待取、拒單、已完成」；即使按錯或已完成，也能在下方更正，顧客進度會同步更新。</p>'+
+  '<p class="small">依約定取餐時間排序。可切換接單、待取、拒單或已完成；誤操作可以更正，所有變更均保留稽核紀錄。</p>'+
   '<p><strong>待處理 '+active.length+' 筆</strong></p>'+
   (active.length?active.map(card).join(""):'<p class="muted">目前沒有待處理訂單。</p>')+
-  '<details open><summary>已結束的訂單（'+history.length+'，可更正狀態）</summary><div style="margin-top:10px">'+
-  (history.length?history.map(card).join(""):'<p>尚無已結束訂單。</p>')+'</div></details>');
+  '<details class="pickup-history-panel" open><summary>歷史訂單（'+Number(h.total??history.length)+' 筆，可更正狀態）</summary>'+
+  '<div class="staff-actionbar" style="margin-top:12px">'+choose("all","全部")+choose("active","進行中")+choose("closed","已結束")+'</div>'+
+  (past.length?past.map(card).join(""):'<p class="muted">目前沒有符合條件的訂單。</p>')+
+  '<div class="staff-actionbar">'+btn("上一頁","pickup-history-page","outline",'data-page="'+(pickupState.historyPage-1)+'"'+(pickupState.historyPage<=1?' disabled':''))+
+  '<span>第 '+pickupState.historyPage+'／'+maxPage+' 頁</span>'+
+  btn("下一頁","pickup-history-page","outline",'data-page="'+(pickupState.historyPage+1)+'"'+(pickupState.historyPage>=maxPage?' disabled':''))+'</div></details>');
+
 }
 
 export async function handlePickupAction(ev,b,a,id){
  if(!a.startsWith("pickup-"))return false;
+ if(a==="pickup-history-page"){
+  const page=Number(b.dataset.page),max=Math.max(1,Math.ceil(Number(pickupState.history?.total||0)/25));
+  if(Number.isInteger(page)&&page>=1&&page<=max){pickupState.historyPage=page;await load();}
+  return true;
+ }
+ if(a==="pickup-history-filter"){
+  if(!["all","active","closed"].includes(b.dataset.filter))return true;
+  pickupState.historyFilter=b.dataset.filter;pickupState.historyPage=1;await load();return true;
+ }
  if(a==="pickup-method"){
    pickupState.method=b.dataset.value==="immediate"?"immediate":"scheduled";render();return true;
  }

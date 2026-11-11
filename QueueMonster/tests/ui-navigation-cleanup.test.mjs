@@ -34,7 +34,7 @@ test("customer homepage has no forced marketing headings and merchants control t
  assert.match(source,/const homepage=customerState\.customer\.homepage\|\|\{\}/);
  assert.match(source,/homepage\.show_intro!==true/);
  assert.match(source,/esc\(displayTitle\)/);
- assert.match(source,/return layout\(t\.name,"預約與取號・即時資料"/);
+ assert.match(source,/return layout\(t\.name,"預約、取號與點餐・即時資料"/);
  assert.match(settings,/homepage-title/);
  assert.match(settings,/homepage-subtitle/);
  assert.match(settings,/homepage-show-label/);

@@ -244,13 +244,18 @@ test("customer, merchant and headquarters views never mix login and navigation l
  assert.ok(auth.includes('return lineIdentity'));
  assert.ok(auth.includes("return operatorIdentity"));
 });
-test("merchant can independently enable reservation and queue in their own settings",()=>{
+test("merchant can independently enable reservation, queue and pickup via shared service controls",()=>{
  const modes=read("supabase/migrations/20261109093000_merchant_service_mode_switch.sql");
  const guide=read("saas/merchant-center.html");
  assert.ok(index.includes('id="set-service-reservation"'));
  assert.ok(index.includes('id="set-service-queue"'));
  assert.ok(index.includes('if(a==="save-service-modes")'));
- assert.ok(index.includes('rpc("so_set_merchant_services"'));
+ assert.ok(index.includes('rpc("so_set_all_merchant_services"'));
+  assert.ok(index.includes('id="set-service-pickup"'));
+  assert.ok(index.includes("p_pickup:pickup"));
+  const unified=read("supabase/migrations/20261111171500_pickup_atomic_services_and_popular.sql");
+  assert.ok(unified.includes("so_set_merchant_services(p_slug,p_reservation,p_queue)"));
+  assert.ok(unified.includes("insert into public.so_pickup_settings"));
  assert.ok(index.includes("p_reservation:reservation,p_queue:queue"));
  assert.ok(guide.includes("儲存服務開關"));
  assert.ok(modes.includes("private.so_role(v_t.id)"));

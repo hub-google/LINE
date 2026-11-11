@@ -10,7 +10,14 @@ import {exportHistoricalBookings,searchHistoricalBookings,staffBookingMatches} f
 import {render} from "./../staff-layout.js";
 
 export async function handleStaffCalendar(ev,b,a,id){
-if(a==="calendar-mode"){
+if(a==="pickup-calendar-prev"||a==="pickup-calendar-next"){
+   if(calendarState.calendarLoading||!calendarState.pickupCalendarResult)return true;
+   const p=(calendarState.pickupCalendarPage||1)+(a==="pickup-calendar-next"?1:-1);
+   const max=Math.max(1,Math.ceil(Number(calendarState.pickupCalendarResult.total||0)/100));
+   if(p<1||p>max)return true;
+   calendarState.pickupCalendarPage=p;void loadBookingCalendar(calendarState.calendarPage);return true;
+ }
+ if(a==="calendar-mode"){
    const mode=b.dataset.mode;
    if(!["day","week","month"].includes(mode))return true;
    calendarState.calendarMode=mode;calendarState.calendarPage=1;void loadBookingCalendar(1);return true;
@@ -99,7 +106,7 @@ if(a==="calendar-mode"){
  if(a==="export-analytics"){
    const a=staffState.staffAnalytics;
    if(!a||!Array.isArray(a.daily)){showActionFeedback("統計資料尚未載入","error");return true;}
-   const csv="\uFEFF日期,預約筆數,取號筆數\r\n"+a.daily.map(d=>[String(d.date).slice(0,10),Number(d.reservations||0),Number(d.tickets||0)].join(",")).join("\r\n");
+   const csv="\uFEFF日期,預約筆數,取號筆數,有效訂餐筆數,有效訂餐金額（NTD）\r\n"+a.daily.map(d=>[String(d.date).slice(0,10),Number(d.reservations||0),Number(d.tickets||0),Number(d.orders||0),Number(d.order_amount||0)].join(",")).join("\r\n");
    const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
    const link=document.createElement("a");link.href=url;link.download="LINE_"+routeState.slug+"_"+staffState.analyticsDays+"days.csv";
    document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
