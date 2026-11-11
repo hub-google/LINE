@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-11T06:39:40.121Z",
+  "date": "2026-11-11T06:58:04.142Z",
   "device": "iPhone 17 simulated Chromium, 402x874 CSS pixels, DPR3",
   "note": "Read-only live website screenshots; no authentication, no writes; not physical Safari.",
   "screens": [
@@ -72,15 +72,15 @@
       "visibleTapCount": 16,
       "keyRects": {
         ".hero-cta": {
-          "top": -107,
-          "bottom": 79,
+          "top": -128,
+          "bottom": 58,
           "left": 20,
           "right": 382,
           "height": 186
         },
         ".hero-showcase": {
-          "top": 149,
-          "bottom": 1007,
+          "top": 128,
+          "bottom": 986,
           "left": 20,
           "right": 382,
           "height": 857
@@ -402,7 +402,7 @@
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
-      "visibleTapCount": 9,
+      "visibleTapCount": 8,
       "keyRects": {
         ".page-header": {
           "top": 0,
@@ -461,7 +461,7 @@
           "height": 28
         }
       },
-      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 搜尋店家名稱或地點 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 請先登入 LINE 請先使用 LINE 登入 登入後才能查詢自己的預約和號碼；未登入不代表沒有紀錄。 使用 LINE 登入後查看 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
+      "bodyText": "排隊怪獸 正在確認登入狀態 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 搜尋店家名稱或地點 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 請先登入 LINE 請先使用 LINE 登入 登入後才能查詢自己的預約和號碼；未登入不代表沒有紀錄。 使用 LINE 登入後查看 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
       "errors": [],
       "failedRequests": []
     },
@@ -986,7 +986,7 @@
       ],
       "visibleTapCount": 4,
       "keyRects": {},
-      "bodyText": "測試1 叫號變動即時更新 14:39 診間 · 上午場 2診 尚未 叫號 接下來：目前無人等候 等候 0 組 單獨顯示此場次 上午場 一般場次 2 接下來：3、5、6、7 等候 4 組 單獨顯示此場次 由排隊怪獸提供服務 全螢幕 最後成功同步：14:39:38；號碼變更即時更新，並定期核對。",
+      "bodyText": "測試1 叫號變動即時更新 14:58 診間 · 上午場 2診 尚未 叫號 接下來：目前無人等候 等候 0 組 單獨顯示此場次 上午場 一般場次 2 接下來：3、5、6、7 等候 4 組 單獨顯示此場次 由排隊怪獸提供服務 全螢幕 最後成功同步：14:58:02；號碼變更即時更新，並定期核對。",
       "errors": [],
       "failedRequests": []
     }
