@@ -109,7 +109,7 @@ export function renderStaffSettings({t,isManager,html}){
      '<p>已連接 LINE OA：<strong>'+esc(lineState.lineConfig.botBasicId||"")+'</strong></p>':"")+
     (isManager?
      '<div class="grid"><div>'+
-       field("Channel ID（Messaging API 頻道編號）","own-oa-channel-id","","text",'inputmode="numeric" autocomplete="off" placeholder="例如：1234567890"')+
+       field("Channel ID（Messaging API 頻道編號）","own-oa-channel-id",lineState.lineConfig?.messagingChannelId||"","text",'inputmode="numeric" autocomplete="off" placeholder="例如：1234567890"')+
        '<p class="small">LINE Developers → Messaging API 頻道 → Basic settings。</p>'+
        field("Channel access token (long-lived)（長效存取權杖）","own-oa-token","","password",'autocomplete="new-password" placeholder="Messaging API 頁籤 → Issue"')+
      '</div><div>'+
@@ -117,7 +117,7 @@ export function renderStaffSettings({t,isManager,html}){
        '<p class="small">Channel secret 為 32 位十六進位字元。這三個值必須屬於同一個 Messaging API 頻道。</p>'+
      '</div></div>'+
      '<details style="margin:14px 0"><summary>進階選填：使用店家自己的 LINE Login／LIFF</summary>'+
-       '<div style="margin-top:12px">'+field("LIFF ID（LINE 登入網頁應用程式編號）","own-oa-liff",lineState.lineConfig?.merchantOaConnected?(lineState.lineConfig.liffId||""):"","text",'autocomplete="off" placeholder="例如：1234567890-AbcdEfgh"')+
+       '<div style="margin-top:12px">'+field("LIFF ID（LINE 登入網頁應用程式編號）","own-oa-liff",lineState.lineConfig?.merchantOaConnected?(lineState.lineConfig.merchantLiffId||""):"","text",'autocomplete="off" placeholder="例如：1234567890-AbcdEfgh"')+
        '<p class="small">這不是 Messaging API 的 Channel ID。只用店家 OA 發送訊息可以留空；若要讓顧客使用店家 Provider 登入，請在同一 Provider 的 LINE Login 頻道建立 LIFF。<a href="https://developers.line.biz/console/" target="_blank" rel="noopener noreferrer">開啟 LINE Developers ↗</a></p></div></details>'+
      '<p class="small">通過憑證驗證代表已連接店家 OA，不代表顧客一定收得到訊息。不同 Provider 的 LINE User ID 不同，顧客仍需完成店家 OA 的收訊身分配對。Token 與 secret 不會再回顯。</p>'+
      '<div class="staff-actionbar">'+btn("驗證並連接 Messaging API","connect-own-oa","primary")+
