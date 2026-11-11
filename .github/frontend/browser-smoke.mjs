@@ -228,119 +228,129 @@ try{
   }
  }
 
- // Reproduce the reported TV screenshot with five waiting numbers, including
- // desktop, short display and phone-sized fullscreen viewports. Unlike a
- // screenshot of a scrolled page, assert that EVERY visible card fits.
- async function fullscreenGeometry(){
+
+ // Drive the SAME board engine through many arbitrary shapes: landscape,
+ // portrait, square, ultra-wide, and narrow. These are TEST INPUTS, not CSS modes.
+ async function geometry(){
   return await page.evaluate(()=>{
    const viewport={width:innerWidth,height:innerHeight};
-   const selectors=['body > header','body > footer','#single-board:not([hidden])',
-    '#unit-board:not([hidden])','#current','#upcoming li','#unit-board .unit-card',
-    '#board-session-nav:not([hidden])'];
-   const nodes=selectors.flatMap(selector=>[...document.querySelectorAll(selector)]);
-   const rects=nodes.filter(el=>el.getClientRects().length&&
-    !el.closest('[hidden]')).map(el=>{
-     const r=el.getBoundingClientRect();
-     return {name:el.id||el.className||el.tagName,bottom:r.bottom,right:r.right,top:r.top,left:r.left};
-    });
-   return {fullscreen:!!document.fullscreenElement,
-    viewport,scale:Number(document.body.style.zoom||'1'),
+   const main=document.getElementById("single-board");
+   const cards=[...document.querySelectorAll("#unit-board .unit-card")];
+   const nodes=[
+    ...document.querySelectorAll("body > header,body > footer,#single-board:not([hidden]),#unit-board:not([hidden]),#current,#upcoming li,#unit-board .unit-card,#board-page-indicator")
+   ].filter(el=>el.getClientRects().length&&!el.closest("[hidden]")&&!el.hasAttribute("data-board-hidden"));
+   const rects=nodes.map(el=>{
+    const r=el.getBoundingClientRect();
+    return {name:el.id||el.className||el.tagName,
+      top:r.top,left:r.left,right:r.right,bottom:r.bottom};
+   });
+   const clipped=[...document.querySelectorAll("#current,#upcoming li,#unit-board .unit-now,#unit-board h2,#unit-board .unit-next")]
+    .filter(el=>el.getClientRects().length&&!el.closest("[hidden]")&&!el.closest("[data-board-hidden]"))
+    .filter(el=>el.scrollWidth>el.clientWidth+3||el.scrollHeight>el.clientHeight+3)
+    .map(el=>({name:el.className||el.id||el.tagName,
+      sw:el.scrollWidth,cw:el.clientWidth,sh:el.scrollHeight,ch:el.clientHeight}));
+   const q=document.getElementById("upcoming");
+   const g=getComputedStyle(q);
+   return {viewport,fullscreen:!!document.fullscreenElement,
+    scale:Number(document.body.style.zoom||"1"),
+    layout:main.dataset.boardLayout||"",
+    mainRatio:main.getBoundingClientRect().width/Math.max(1,main.getBoundingClientRect().height),
+    currentFont:parseFloat(getComputedStyle(document.getElementById("current")).fontSize),
+    upcomingFont:parseFloat(getComputedStyle(q.firstElementChild).fontSize),
+    queueRows:g.gridTemplateRows.split(" ").length,
+    queueCols:g.gridTemplateColumns.split(" ").length,
     documentHeight:document.documentElement.scrollHeight,
     documentWidth:document.documentElement.scrollWidth,
-    currentFont:parseFloat(getComputedStyle(document.getElementById('current')).fontSize),
-    upcomingFont:parseFloat(getComputedStyle(document.querySelector('#upcoming li')).fontSize),
-    unitFont:parseFloat(getComputedStyle(document.querySelector('#unit-board .unit-now')||document.getElementById('current')).fontSize),
-    queueRows:getComputedStyle(document.getElementById('upcoming')).gridTemplateRows.split(' ').length,
-    bodyHeight:document.body.scrollHeight,
-    bodyClientHeight:document.body.clientHeight,
-    rects};
+    unitCount:cards.length,
+    visibleUnits:cards.filter(c=>!c.hasAttribute("data-board-hidden")).length,
+    pageIndicator:document.getElementById("board-page-indicator").textContent,
+    rects,clipped};
   });
  }
- for(const viewport of [{width:1649,height:927},{width:1280,height:720},{width:390,height:844}]){
+ const viewports=[
+  {width:1920,height:1080},{width:1080,height:1920},
+  {width:3840,height:1080},{width:800,height:800},
+  {width:390,height:844},{width:320,height:568}
+ ];
+ for(const viewport of viewports){
   await page.setViewportSize(viewport);
-  await page.goto(baseUrl+'/booking/board.html?merchant=greenfield-salon',{waitUntil:'networkidle'});
+  await page.goto(baseUrl+"/booking/board.html?merchant=greenfield-salon",
+   {waitUntil:"networkidle",timeout:45000});
   await page.evaluate(()=>{
-   document.getElementById('shop').textContent='測試門市｜即時叫號';
-   document.getElementById('current').textContent='3';
-   document.getElementById('current').classList.remove('is-empty');
-   const list=document.getElementById('upcoming');
-   list.replaceChildren();
-   for(const n of ['2','4','5','6','7']){
-    const li=document.createElement('li');li.textContent=n;list.appendChild(li);
+   document.getElementById("shop").textContent="測試店家｜即時叫號";
+   const current=document.getElementById("current");
+   current.textContent="A123";current.classList.remove("is-empty");
+   const q=document.getElementById("upcoming");q.replaceChildren();
+   for(const n of ["A124","A125","A126","A127","A128"]){
+    const li=document.createElement("li");li.textContent=n;q.appendChild(li);
    }
   });
-  await page.locator('#fullscreen').click();
-  await page.waitForFunction(()=>!!document.fullscreenElement,{timeout:5000});
-  await page.waitForTimeout(220);
-  const result=await fullscreenGeometry();
-  assert.equal(result.fullscreen,true,'Fullscreen API should actually activate');
-  assert.equal(result.scale,1,'Fullscreen must not shrink the entire page');
-  assert.ok(result.currentFont>=(viewport.width>=1000?120:65),
-   'Current number must remain readable, not 10px after fullscreen scaling: '+JSON.stringify(result));
-  assert.ok(result.upcomingFont>=(viewport.width>=1000?38:22),
-   'Next-number cards must use readable text: '+JSON.stringify(result));
-  assert.ok(result.documentHeight<=result.viewport.height+2,
-   'Fullscreen board must not have a vertical scroll area: '+JSON.stringify(result));
-  assert.ok(result.documentWidth<=result.viewport.width+2,
-   'Fullscreen board must not have horizontal overflow');
-  assert.ok(result.rects.filter(x=>x.name==='LI').length>=5,
-   'All five waiting tickets must remain in the display');
-  assert.ok(result.rects.every(x=>x.bottom<=result.viewport.height+2&&x.right<=result.viewport.width+2&&x.top>=-2),
-   'The header, current ticket, waiting order and footer must all be visible: '+JSON.stringify(result));
-  console.log('Fullscreen queue geometry:',JSON.stringify({viewport,scale:result.scale,
-   height:result.documentHeight,visible:result.rects.length}));
-
-  // Regression for the actual screenshot: only two waiting numbers must fill
-  // the next-queue panel, not use a five-row grid with three phantom blanks.
+  await page.locator("#fullscreen").click();
+  await page.waitForFunction(()=>!!document.fullscreenElement);
+  await page.waitForTimeout(160);
+  const first=await geometry();
+  assert.equal(first.fullscreen,true);
+  assert.equal(first.scale,1,"Do not zoom the entire kiosk");
+  assert.equal(first.layout,first.mainRatio>=1.05?"side":"stack",
+   "Orientation must derive from usable container ratio");
+  assert.ok(first.currentFont>=Math.min(viewport.width,viewport.height)*.1,
+   "Current number should use its available space: "+JSON.stringify(first));
+  assert.ok(first.upcomingFont>=Math.min(viewport.width,viewport.height)*.03,
+   "Waiting numbers should be readable: "+JSON.stringify(first));
+  assert.equal(first.rects.filter(r=>r.name==="LI").length,5);
+  assert.ok(first.documentHeight<=viewport.height+2&&first.documentWidth<=viewport.width+2,
+   "Fullscreen must not scroll: "+JSON.stringify(first));
+  assert.ok(first.rects.every(r=>r.bottom<=viewport.height+2&&r.right<=viewport.width+2&&r.top>=-2&&r.left>=-2),
+   "Every full-screen element must be visible: "+JSON.stringify(first));
+  assert.deepEqual(first.clipped,[],"Queue text must not be clipped: "+JSON.stringify(first));
+  console.log("Universal fullscreen five tickets:",JSON.stringify({viewport,
+   layout:first.layout,currentFont:first.currentFont,nextFont:first.upcomingFont}));
   await page.evaluate(()=>{
-   const list=document.getElementById('upcoming');
-   list.replaceChildren();
-   for(const n of ['6','7']){
-    const item=document.createElement('li');item.textContent=n;list.appendChild(item);
-   }
-   document.dispatchEvent(new Event('fullscreenchange'));
+   const q=document.getElementById("upcoming");q.replaceChildren();
+   for(const n of ["6","7"]){const li=document.createElement("li");li.textContent=n;q.appendChild(li);}
+   document.dispatchEvent(new Event("fullscreenchange"));
   });
-  await page.waitForTimeout(140);
-  const twoNumbers=await fullscreenGeometry();
-  assert.equal(twoNumbers.queueRows,viewport.width<=780?1:2,
-    'Only the real two queue numbers should occupy grid rows: '+JSON.stringify(twoNumbers));
-  assert.ok(twoNumbers.upcomingFont>=(viewport.width>=1000?38:22),
-    'Two waiting numbers must remain large');
-  assert.equal(twoNumbers.scale,1);
-  console.log('Fullscreen 2-ticket readability:',JSON.stringify({
-   viewport,currentFont:twoNumbers.currentFont,upcomingFont:twoNumbers.upcomingFont,
-   queueRows:twoNumbers.queueRows,scale:twoNumbers.scale
-  }));
-
-  // A multi-service board must also show each individual unit in kiosk mode.
-  await page.evaluate(()=>{
-   const grid=document.getElementById('unit-board');
-   grid.replaceChildren();
+  await page.waitForTimeout(120);
+  const two=await geometry();
+  assert.ok(two.queueCols*two.queueRows>=2&&two.queueCols*two.queueRows<=3,
+   "Two waiting numbers must not waste five grid slots");
+  assert.ok(two.rects.every(r=>r.bottom<=viewport.height+2&&r.right<=viewport.width+2));
+  const latest=await page.evaluate(()=>{
+   const grid=document.getElementById("unit-board");grid.replaceChildren();
    for(let i=1;i<=12;i++){
-    const card=document.createElement('article');card.className='unit-card';
+    const card=document.createElement("article");card.className="unit-card";
     for(const [tag,cls,value] of [
-     ['div','group','第 '+i+' 場'],['h2','','服務單位 '+i],
-     ['div','unit-now',String(i)],['div','unit-next','接下來：'+(i+1)+'、'+(i+2)],
-     ['span','unit-open','單獨顯示此場次']
+     ["div","group","第 "+i+" 場"],["h2","","服務單位 "+i],
+     ["div","unit-now",String(i)],["div","unit-next","接下來："+(i+1)+"、"+(i+2)],
+     ["span","unit-open","單獨顯示此場次"]
     ]){
-     const child=document.createElement(tag);child.className=cls;child.textContent=value;card.append(child);
+     const el=document.createElement(tag);el.className=cls;el.textContent=value;card.append(el);
     }
     grid.append(card);
    }
-   document.getElementById('single-board').hidden=true;grid.hidden=false;
-   document.dispatchEvent(new Event('fullscreenchange'));
+   document.getElementById("single-board").hidden=true;grid.hidden=false;
+   document.dispatchEvent(new Event("fullscreenchange"));
   });
-  await page.waitForTimeout(220);
-  const multiple=await fullscreenGeometry();
-  assert.equal(multiple.rects.filter(r=>r.name==='unit-card').length,12);
-  assert.equal(multiple.scale,1,'Even a multi-service board must not miniaturize the whole page');
-  assert.ok(multiple.unitFont>=20,'Service-unit numbers should remain legible');
-  assert.ok(multiple.documentHeight<=multiple.viewport.height+2,
-   'Twelve service-unit cards must not create a fullscreen scroll bar');
-  assert.ok(multiple.rects.every(r=>r.bottom<=multiple.viewport.height+2&&r.right<=multiple.viewport.width+2&&r.top>=-2),
-   'All service-unit cards must fit within the fullscreen display: '+JSON.stringify(multiple));
-  console.log('Fullscreen 12-unit geometry:',JSON.stringify({viewport,scale:multiple.scale,
-   height:multiple.documentHeight,visible:multiple.rects.length}));
+  await page.waitForTimeout(160);
+  const multi=await geometry();
+  assert.equal(multi.unitCount,12);
+  assert.ok(multi.visibleUnits>=1&&multi.visibleUnits<=12);
+  assert.equal(multi.scale,1);
+  assert.ok(multi.documentHeight<=viewport.height+2&&multi.documentWidth<=viewport.width+2);
+  assert.ok(multi.rects.every(r=>r.bottom<=viewport.height+2&&r.right<=viewport.width+2&&r.top>=-2),
+   "Visible unit cards cannot overflow: "+JSON.stringify(multi));
+  assert.deepEqual(multi.clipped,[],"Service-unit text must fit");
+  if(multi.visibleUnits<12)assert.match(multi.pageIndicator,/第 \d+\/\d+ 頁/);
+  console.log("Universal fullscreen 12 units:",JSON.stringify({viewport,
+   visible:multi.visibleUnits,page:multi.pageIndicator}));
+  if(viewport.width===390){
+   const initial=multi.pageIndicator;
+   assert.ok(initial,"Portrait phone must show paging when units exceed readable capacity");
+   await page.waitForTimeout(9100);
+   const rotated=await geometry();
+   assert.notEqual(rotated.pageIndicator,initial,"Every service unit must cycle through pages");
+   assert.ok(rotated.rects.every(r=>r.bottom<=viewport.height+2&&r.right<=viewport.width+2));
+  }
   await page.evaluate(()=>document.exitFullscreen());
   await page.waitForFunction(()=>!document.fullscreenElement);
  }
