@@ -2,6 +2,7 @@
   "app/line-session.js",
   "app/route-state.js",
   "app/service-units.js",
+  "app/auth-errors.js",
   "app/shared-ui.js",
   "app/merchant-brand.js",
   "app/platform-view.js",

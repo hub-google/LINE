@@ -132,11 +132,13 @@ test("retired QA entry points and customer-facing test copy are absent",()=>{
 test("customer-facing login and registration errors are always shown in Chinese",()=>{
  const source=read("saas/assets/merchant-register/main.js");
  const begin=source.indexOf("function customerFacingError(");
- const end=source.indexOf("\nconst $=",begin);
+ const end=source.indexOf("\n}",begin)+2;
  assert.ok(begin>=0&&end>begin);
  const method=source.slice(begin,end);
- const translated=(error,operation="general")=>vm.runInNewContext(method+"\ncustomerFacingError("+JSON.stringify(error)+","+JSON.stringify(operation)+")");
+ const sharedFormatter=read("saas/app/auth-errors.js").replace("export function formatAuthError","function formatAuthError");
+ const translated=(error,operation="general")=>vm.runInNewContext(sharedFormatter+"\n"+method+"\ncustomerFacingError("+JSON.stringify(error)+","+JSON.stringify(operation)+")");
  assert.equal(translated({message:"Invalid login credentials"}),"電子信箱或密碼不正確，請重新輸入。");
+ assert.equal(translated({code:"weak_password"}),"密碼不符合目前登入服務設定，請重新輸入。");
  assert.match(translated({code:"email_not_confirmed",message:"Email not confirmed"}),/電子信箱尚未完成驗證/);
  assert.match(translated({code:"user_already_exists",message:"User already registered"}),/已經註冊/);
  assert.match(translated({message:"Email rate limit exceeded"}),/操作太頻繁/);
@@ -150,6 +152,7 @@ test("customer-facing login and registration errors are always shown in Chinese"
  const app=read("saas/app/data-loading.js");
  const line=read("saas/app/line-session.js");
  assert.ok(shared.includes("export function customerFacingError("));
+ assert.match(shared,/formatAuthError\(error,operation\)/);
  assert.ok(app.includes("feedbackState.err=customerFacingError(e)"));
  assert.ok(app.includes("throw Error(customerFacingError(r.error))"));
  assert.ok(line.includes('customerFacingError(e,"line")'));
