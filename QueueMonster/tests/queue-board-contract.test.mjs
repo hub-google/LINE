@@ -38,17 +38,38 @@ test("TV board reads privacy-safe store numbers publicly without LINE/Supabase s
   assert.doesNotMatch(publicSql,/auth\.uid\(\)|customer_name|customer_phone|line_sub/i);
 });
 
-test("TV board polls the safe public read with stale indication and no sign-in",()=>{
+test("TV board subscribes to privacy-safe change markers and falls back to 10-second checks",()=>{
+  const migration=read("supabase/migrations/20261111133000_queue_board_realtime_broadcast.sql");
   assert.match(publicSql,/so_queue_displays/);
   assert.match(publicSql,/k\.status=\x27WAITING\x27/);
-  assert.match(publicSql,/coalesce\(k\.number_prefix,\x27\x27\)/);
   assert.match(board,/so_public_board/);
-  assert.match(board,/setInterval\(\(\)=>\{if\(!document\.hidden&&!disabled\)void refresh\(\);\},12000\)/);
+  assert.match(board,/client\.channel\("queue-board:"\+slug/);
+  assert.match(board,/\.on\("broadcast",\{event:"invalidate"\},requestEventRefresh\)/);
+  assert.match(board,/\.subscribe\(status=>/);
+  assert.match(board,/realtimeConnected=status==="SUBSCRIBED"/);
+  assert.match(board,/Date\.now\(\)-lastSuccess\.getTime\(\)>=60000/);
+  assert.match(board,/\},10000\);/);
+  assert.match(board,/setTimeout\(/);
+  assert.match(board,/1500-\(Date\.now\(\)-lastEventRefreshAt\)/);
+  assert.match(board,/每 10 秒更新一次叫號/);
+  assert.match(board,/叫號變動即時更新/);
+  assert.match(board,/id="board-update-mode"/);
+  assert.doesNotMatch(board,/id="refresh"|12 秒自動核對/);
   assert.match(board,/staleFromFailure/);
   assert.match(board,/lastSuccess/);
   assert.match(board,/requestFullscreen/);
   assert.match(board,/prefers-reduced-motion/);
   assert.match(board,/document\.addEventListener\("visibilitychange"/);
+  // The trigger sends only an anonymous marker, never ticket rows or PII.
+  assert.match(migration,/private\.so_notify_queue_board_realtime\(\)/);
+  assert.match(migration,/after insert or update or delete on public\.so_tickets/);
+  assert.match(migration,/jsonb_build_object\('changed',true\)/);
+  assert.match(migration,/'queue-board:' \|\| v_slug/);
+  assert.match(migration,/'invalidate'/);
+  assert.match(migration,/realtime\.send\(/);
+  assert.match(migration,/\n      false\n/);
+  assert.match(migration,/revoke all on function private\.so_notify_queue_board_realtime\(\)/);
+  assert.doesNotMatch(migration,/jsonb_build_object\([^)]*customer_name|to_jsonb\(new\)|realtime\.broadcast_changes/);
 });
 
 test("public board links bypass LINE login on the homepage, directory and merchant customer portal",()=>{
@@ -72,7 +93,8 @@ test("inactive merchant board shows a stable unavailable state without repeated 
  assert.match(board,/disabled=true;lastData=null;lastSuccess=null/);
  assert.match(board,/門市目前未開放叫號/);
  assert.doesNotMatch(board,/id="refresh"/);
- assert.match(board,/setInterval\(\(\)=>\{if\(!document\.hidden&&!disabled\)void refresh\(\);\},12000\)/);
+ assert.match(board,/if\(document\.hidden\|\|disabled\)return/);
+ assert.match(board,/\},10000\);/);
 });
 
 
