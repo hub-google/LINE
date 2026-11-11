@@ -1,73 +1,28 @@
-# Queue Monster｜排隊怪獸
+# 排隊怪獸｜Queue Monster
 
-完整專案由 `store-operations/` 更名為 `QueueMonster/`，包含網站、後端、資料庫遷移、測試與既有 Next.js 程式。
+**正式網站：** https://hub-google.github.io/LINE/booking/
 
-- [正式網站](https://hub-google.github.io/LINE/booking/)
-- [網站程式與整合說明](./saas/README.md)
-- [專案完整網址清單](./URLS.md)
+排隊怪獸是以 LINE 為入口的多店家預約、取號與現場叫號平台。商家可使用平台 LINE OA，或自有 LINE OA 的 Messaging API 進行通知；服務包含店家公開搜尋、個別預約／取號網址、公開叫號看板、店員與管理者權限、菜單／服務與場次設定、顧客本人預約與候位紀錄。
 
-> 依據 [PRD.md](./PRD.md) 規劃之企業級門市營運系統。
+> **2026-11-11 已確認的產品範圍：排隊怪獸不開發信用卡、LINE Pay、訂金、收款、退款、帳務對帳或其他金流功能。** 舊原型、PRD 與競品研究中出現的金流段落屬歷史草案，不是目前產品需求。不得據此宣稱已支援付款，亦不得自行建立付款資料表、收費介面、付款 API 或要求金流憑證。點餐／服務項目僅供預約選擇與營運，不含收款。
 
----
+## 實際部署的程式
 
-## 快速啟動 (Quick Start)
+- **顧客入口**：[`/booking/`](https://hub-google.github.io/LINE/booking/) 與 [搜尋店家](https://hub-google.github.io/LINE/booking/directory.html)。
+- **店家註冊／登入**：[`merchant-register.html`](https://hub-google.github.io/LINE/booking/merchant-register.html)，登入後使用店家後台設定與管理。
+- **公開叫號看板**：`board.html?merchant=<店家代號>`，由每間店提供自己的網址。
+- **操作說明**：[`merchant-center.html`](https://hub-google.github.io/LINE/booking/merchant-center.html)。
+- **前端**：`QueueMonster/saas/`，GitHub Actions 以 versioned assets 發布到 GitHub Pages。
+- **後端**：Supabase Postgres、RLS/RPC 與 `QueueMonster/supabase/functions/line-bridge/index.ts`；帳號權限與資料持久化不依賴靜態網頁。
+- **回歸測試**：`QueueMonster/tests/`，主要 PR 驗證與正式站部署於 `.github/workflows/line-saas-*.yml`。
 
-### 1. 安裝相依套件與生成 Prisma Client
-```bash
-npm install
-npx prisma generate
-```
+`QueueMonster/src/`、`prisma/` 與早期 `docs/` 留有未完整部署的 Next.js 原型。這些原型的 `/c/order`、`/s/orders`、LINE Pay、付款／帳單描述，**不是正式站已上線的功能，也不在這次開發範圍**。不要以 `npm run dev` 原型畫面或本地模擬模式推論 GitHub Pages 已實作的功能。
 
-### 2. 環境變數設定 (`.env`)
-本專案已備妥完整說明與範例設定檔：
-- `.env`：本地開發預設配置（預設啟用 `MOCK_LINE_SERVICES=true`，本機可直接測試所有流程）。
-- `.env.example`：詳細列出所有 LINE 官方與金流權限申請步驟。
+## 驗收與開發規則
 
-> 💡 **零摩擦上線**：只要您於 LINE Developers 與 LINE Pay 取得憑證，將 `.env` 中的各項 Key 填入並設定 `MOCK_LINE_SERVICES=false`，系統立即無縫對接 LINE 官方真實 API！
+1. 每次修改先查最新 `main` 及同時開發的 PR；使用獨立分支、PR、CI，不覆蓋其他視窗的修改。
+2. 任何預約／取號／取消／權限變更都以 Supabase 交易、認證與跨店授權為準；匿名可用的公開看板不代表個人資料可公開。
+3. 真實 LINE 收訊、兩個不同顧客／商家帳號的權限驗證、iOS/Android LIFF 與外部服務 OAuth，必須有實際測試證據才算完成。
+4. 不清除既有正式與 QA 店家、顧客、預約、號碼及歷史資料。
 
-### 3. 資料庫遷移與寫入示範資料
-```bash
-# 推送 Schema 至 PostgreSQL 資料庫 (需先設定 DATABASE_URL)
-npm run db:push
-
-# 寫入示範門市、菜單品項、營業時間與預約時段
-npm run db:seed
-```
-
-### 4. 啟動開發伺服器
-```bash
-npm run dev
-```
-瀏覽器開啟：`http://localhost:3000`
-
----
-
-## 核心功能與頁面入口
-
-### 📱 消費者端 (Customer LIFF / Mobile UI)
-- **`/c` (首頁)**：門市營業狀態、即時叫號快照、快捷導覽。
-- **`/c/queue` (現場取號與看號)**：一鍵領取流水號、前方組數即時更新、預估等待時間。
-- **`/c/reserve` (預約時段)**：分店預約日曆、時段容量防超賣即時鎖定。
-- **`/c/order` (點餐與 LINE Pay)**：菜單選單、即時購物車、呼叫 LINE Pay Online API v4 支付。
-- **`/c/my` (我的票夾與帳單)**：個人號碼牌進度、項目級 (Item-Level) 付款與待付款狀態明細。
-
-### 💻 門市店員與管理端 (Staff & Admin Portal)
-- **`/s` (叫號控制台)**：大按鈕觸控面板（叫下一位、再叫一次、開始服務、完成服務、過號）。
-- **`/s/orders` (訂單細項與現場收款)**：即時檢視各項目未付款/已付款標籤、現場追加服務、現金收取與自動分配。
-- **`/s/reservations` (預約報到核銷)**：客人到店一鍵報到 (Check-in)，系統自動產生號碼牌並合流至叫號佇列。
-- **`/s/staff` (員工安全邀請)**：生成 48 小時一次性密碼學隨機 Token 與邀請連結，支援指定角色 (`STAFF` 或 `MANAGER`)。
-- **`/s/invite/[token]` (邀請預覽與接受)**：受邀人員以 LINE 登入並接受加入，背景自動同步 Per-user Rich Menu。
-
----
-
-## 關鍵架構文件 (Section 100 交付物)
-
-- [`docs/architecture.md`](file:///c:/Users/ET/%E6%88%91%E7%9A%84%E9%9B%B2%E7%AB%AF%E7%A1%AC%E7%A2%9F/%E4%BD%9C%E5%93%81/LINE%E7%BE%A4%E7%B5%84%E7%AE%A1%E7%90%86/docs/architecture.md)：高階架構、領域邊界與多租戶資料流。
-- [`docs/rbac-matrix.md`](file:///c:/Users/ET/%E6%88%91%E7%9A%84%E9%9B%B2%E7%AB%AF%E7%A1%AC%E7%A2%9F/%E4%BD%9C%E5%93%81/LINE%E7%BE%A4%E7%B5%84%E7%AE%A1%E7%90%86/docs/rbac-matrix.md)：角色與細粒度權限映射矩陣。
-- [`docs/queue-state-machine.md`](file:///c:/Users/ET/%E6%88%91%E7%9A%84%E9%9B%B2%E7%AB%AF%E7%A1%AC%E7%A2%9F/%E4%BD%9C%E5%93%81/LINE%E7%BE%A4%E7%B5%84%E7%AE%A1%E7%90%86/docs/queue-state-machine.md)：號碼與服務順序解耦狀態機模型。
-- [`docs/payment-state-machine.md`](file:///c:/Users/ET/%E6%88%91%E7%9A%84%E9%9B%B2%E7%AB%AF%E7%A1%AC%E7%A2%9F/%E4%BD%9C%E5%93%81/LINE%E7%BE%A4%E7%B5%84%E7%AE%A1%E7%90%86/docs/payment-state-machine.md)：項目級支付分配與 LINE Pay v4 簽章架構。
-- [`docs/api-routes.md`](file:///c:/Users/ET/%E6%88%91%E7%9A%84%E9%9B%B2%E7%AB%AF%E7%A1%AC%E7%A2%9F/%E4%BD%9C%E5%93%81/LINE%E7%BE%A4%E7%B5%84%E7%AE%A1%E7%90%86/docs/api-routes.md)：完整 `/api/v1` RESTful 端點規格。
-- **ADR 架構決策記錄**：
-  - [`docs/adr/ADR-001-line-auth-strategy.md`](file:///c:/Users/ET/%E6%88%91%E7%9A%84%E9%9B%B2%E7%AB%AF%E7%A1%AC%E7%A2%9F/%E4%BD%9C%E5%93%81/LINE%E7%BE%A4%E7%B5%84%E7%AE%A1%E7%90%86/docs/adr/ADR-001-line-auth-strategy.md)
-  - [`docs/adr/ADR-002-queue-ordering-strategy.md`](file:///c:/Users/ET/%E6%88%91%E7%9A%84%E9%9B%B2%E7%AB%AF%E7%A1%AC%E7%A2%9F/%E4%BD%9C%E5%93%81/LINE%E7%BE%A4%E7%B5%84%E7%AE%A1%E7%90%86/docs/adr/ADR-002-queue-ordering-strategy.md)
-  - [`docs/adr/ADR-003-payment-idempotency-strategy.md`](file:///c:/Users/ET/%E6%88%91%E7%9A%84%E9%9B%B2%E7%AB%AF%E7%A1%AC%E7%A2%9F/%E4%BD%9C%E5%93%81/LINE%E7%BE%A4%E7%B5%84%E7%AE%A1%E7%90%86/docs/adr/ADR-003-payment-idempotency-strategy.md)
+詳細需求與最新決策見 [PRD.md](./PRD.md)；已完成與尚待驗收部分見 [IMPLEMENTATION-STATUS.md](./IMPLEMENTATION-STATUS.md)；網址清單見 [URLS.md](./URLS.md)。

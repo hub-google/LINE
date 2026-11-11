@@ -1,4 +1,8 @@
-# LINE 預約 SaaS：最新版 PRD 交付現況與未完成清單
+# 排隊怪獸：產品交付現況與尚待驗收項目
+
+> **2026-11-11 使用者最新決策：金流一律排除。** 排隊怪獸只開發預約、取號、叫號、店家與顧客相關功能。舊文件中的信用卡、LINE Pay、訂金、收款、退款、對帳、發票、訂閱扣款，均非本專案需求，也不是「待補缺口」。不得創建金流功能、金流 API、金流資料表或索取金流憑證。所有舊版「全部功能都要開發」均以**非金流**為前提。
+
+> **2026-11-11 實際交付補充：** [#69](https://github.com/hub-google/LINE/pull/69) 修場次篩選／預約 90 天／舊回跳；[#70](https://github.com/hub-google/LINE/pull/70) 停用店家看板及商家操作指南；[#71](https://github.com/hub-google/LINE/pull/71) 外鍵索引與 RLS 效能（資料庫已執行）；[#72](https://github.com/hub-google/LINE/pull/72) 重新以啟用店家進行手機視覺驗收；[#74](https://github.com/hub-google/LINE/pull/74) 與 [#76](https://github.com/hub-google/LINE/pull/76) 修手機觸控區；[#77](https://github.com/hub-google/LINE/pull/77) 預約前 24h/2h 通知事件後端（Supabase Edge 已部署）；[#78](https://github.com/hub-google/LINE/pull/78) 將提醒回歸測試加入 LINE 後端部署前檢查。CI／網站／排程運作與真實 LINE 收件、跨店實機權限測試為不同驗收層級；沒有外部帳號或設備的端到端證據不得標記完成。
 
 
 > **2026-11-09 重構與部署追蹤（新於以下 11/04 盤點）：** [PR #38](https://github.com/hub-google/LINE/pull/38) 已合併至 main（commit `d20c5ea6c99f65d8ed4dc92ffd807f5660569cc7`），完成 GitHub Pages 使用的前端 ES modules 分檔、後台畫面與操作處理拆分、狀態管理、esbuild 正式打包及 Chromium 冒煙驗證。原 PR 記錄 160 項自動化測試通過；[部署 Actions](https://github.com/hub-google/LINE/actions/runs/42560718713) 成功，`/booking/release.json` 的 build 與主線 commit 一致。這些證據**只證明這一輪前端重構與自動測試／部署**，不等於整體 PRD、LINE 實機、跨租戶資安及金流端到端完成。
@@ -7,7 +11,7 @@
 
 > 更新基準：2026-11-04，主 PRD `QueueMonster/PRD.md` 第 0–103 章，及 `saas/PRD-20261104-DoYouBook-benchmark-and-solutions.md`。程式比對至 main commit `36c35a1ce803dabdb7fb42201d1793f76094dac6`。本文件是**實作狀態盤點**，**不得當作功能已驗收或刪除原 PRD 的依據**。
 >
-> 總結：**尚未完成全部 PRD**。第 102 章規定 DoYouBook C01–C58 與 CallMeBack K01–K32 均須納入，且 A/B/C 波次全部必做。現有 GitHub Pages + Supabase SaaS 主要完成現行核心預約／取號／叫號，完整資源排程、CRM、商業化、PWA、Calendar、多窗口、設備合作等沒有達到 PRD 全範圍。另有未部署／未逐一 E2E 驗收的 Next.js 程式骨架，不可算正式可用功能。
+> 總結：**尚未完成全部 PRD**。第 102 章規定 DoYouBook C01–C58 與 CallMeBack K01–K32 均須納入，且非金流的 A/B/C 波次仍須依實際需求驗收。現有 GitHub Pages + Supabase SaaS 已完成核心預約／取號／叫號及部分 CRM、PWA、場次；非金流項目的完整資源排程、Calendar、推播、設備合作等仍須按最新程式及實測紀錄驗收。另有未部署／未逐一 E2E 驗收的 Next.js 程式骨架，不可算正式可用功能。
 
 ## 狀態定義
 
@@ -36,7 +40,7 @@
 | #21 | UX-11 單店／跨店叫號最後成功同步時間、失聯警示與手動更新 | [#21](https://github.com/hub-google/LINE/pull/21) | 多裝置與斷線情境實機 E2E 未完成 |
 | #23 | PRD §103 預約憑證與個人取號歷史改用資料庫永久 21 碼 `reference_code`；既有 LINE-linked 顧客資料查詢保持相同權限範圍 | [#23](https://github.com/hub-google/LINE/pull/23)、[CI PASS](https://github.com/hub-google/LINE/actions/runs/41799705278)；Supabase 函式已套用，現存短碼格式查核 0 筆異常 | 尚缺手機／電腦顧客實機 E2E；不得據此宣稱整份 §103 或全 PRD 已驗收 |
 
-正式網站：https://hub-google.github.io/LINE/booking/ 。實際已執行的 GitHub Actions CI/Pages 部署，**不等於**已完成 LINE 手機、真實收款、裝置／商家實測。
+正式網站：https://hub-google.github.io/LINE/booking/ 。實際已執行的 GitHub Actions CI/Pages 部署，**不等於**已完成 LINE 手機或所有裝置／商家實測。
 
 ## PRD §102.8 NR-01～NR-26 验收對照（全部要完成）
 
@@ -61,10 +65,10 @@
 | NR-17 | 部分完成 | 商家申請、審核及 OA 串接介面存在；完整一步步精靈、自有 Provider 實體 E2E、切換/撤權仍缺 |
 | NR-18 | 部分完成 | 顧客單筆 ICS 匯出已做；ICS 訂閱、GCal 單向及安全雙向提案／衝突審核未完成 |
 | NR-19 | 部分完成 | PWA 安裝與靜態離線提示已部署；Web Push、員工撤權、訂閱／取消訂閱、實機驗收仍缺 |
-| NR-20 | 部分完成 | 顧客改期／取消與店員狀態修正存在；店員直接改時段服務、提醒重排、已付款差額和退款未完整 |
+| NR-20 | 部分完成 | 顧客改期／取消與店員狀態修正存在；店員直接改時段／服務及提醒重排仍需完整驗收（不包含付款或退款） |
 | NR-21 | 部分完成 | 本店完整歷史查詢與管理者批次 CSV 已上線（單次 20,000 筆上限）；完整客戶簿、黑名單／申訴、OTP 身分關聯、超量報表服務仍缺 |
 | NR-22 | 部分完成 | 公開 opt-in 店家目錄可搜尋；縣市地理／距離／地圖與 2D 像素風商店街未交付 |
-| NR-23 | 尚未完成 | 真實 LINE Pay/信用卡/合規轉帳、訂金、逐品項支付、退款對帳、商家 SaaS 月費／試用兩套帳 |
+| NR-23 | **排除需求** | 付款、訂金、退款、對帳、訂閱扣款等金流功能依 2026-11-11 最新使用者決策不開發、不列為缺口 |
 | NR-24 | 尚未完成 | POS/第三方設備 API、限權 token、簽章 webhook、可撤銷設備配對、sandbox／廠商整合 |
 | NR-25 | 部分完成 | 保留 `/saas/`、非破壞性部署、測試店恢復路徑；部署前後 QA UUID/筆數、備份還原、各裝置回歸未完整驗收 |
 | NR-26 | 部分完成 | 預約歷史已有後端分頁與權限模擬 SQL 測試；仍缺真實萬筆資料性能／壓測、安全滲透測試、多裝置跨商家越權 E2E、監控／災難復原 |
@@ -86,24 +90,24 @@
 **C 波：商業化與加值**
 1. 店家公開搜尋的完整分類、附近位置、地圖與 2D 像素風探店。
 2. Google Calendar 可選安全雙向（衝突提案，不直接改正式預約）；POS／設備 API、sandbox。
-3. 顧客付款與商家訂閱分帳：LINE Pay／信用卡／轉帳／訂金／部分付款／退款／對帳／試用／發票。
+3. 非金流的商家進階營運、提醒設定、可驗證分析與客服紀錄；舊版收款與 SaaS 扣款需求已排除。
 4. 進階數據與 ESG 可驗證指標、客服問題紀錄、完整日誌/監控、負載/災難復原。
 
 ## 必須由外部提供／驗證的條件
 
 - **店家自有 OA**：每個商家需有自己的有效 LINE Official Account、LINE Login/Messaging Provider、可授權的憑證、設定與真實測試帳號。平台可先做介面與安全儲存，但不能替任意店家自動取得憑證。
 - **Google Calendar**：正式商家需要同意 Google OAuth 權限；雙向亦須依本地資料庫版本／容量審核。
-- **金流**：實際 LINE Pay/信用卡/第三方收款要有合適的商家資格、正式金流帳號與授權；不能以模擬付款宣稱正式收款。
+- **金流**：非產品範圍；不啟用、不開發，也不向店家索取此類憑證。
 - **電話 OTP**：要有合法可用的簡訊／驗證供應管道或替代驗證機制，並處理個資。
 - **POS/叫號設備**：平台可先製作公開 API 與沙盒；要宣稱與特定廠商相容，需要該廠商 API/設備及測試認證。
 - **實機驗收**：要有至少兩位不同 LINE 用戶、兩位授權店員、不同門市，以及 iOS/Android/desktop 真實操作情境；沒有這些不可標記全案 Done。
 
 ## 並行開發與驗收紀律
 
-- 主需求書 `PRD.md` 不改寫、不刪功能；本文件可持續追加進度，但不得用「延後」取代 PRD 的最終必做要求。
+- 主需求書 `PRD.md` 的非金流需求照最新版保留；使用者已明確排除金流，舊版付款章節不得被重新列為必做。
 - 寫入前讀最新 main、open PR、gh-pages、已執行 Supabase migration。獨立 branch+PR、逐批 CI、main 快照核對，不強制 push、不清測試資料。
 - SQL 必須 additive、備份/驗證舊 QA/正式商家筆數；前端與後端共用同一商家/UUID/權限判斷，不能只用 UI 存在宣稱功能成功。
-- **Definition of Done**：功能可實際操作、後端授權/持久化、通知/付款相依成功或安全降級、單元+整合+E2E 與多裝置證據完整。現階段不符合「全部 PRD 開發完成」。
+- **Definition of Done**：功能可實際操作、後端授權/持久化、通知流程成功或安全降級、單元+整合+E2E 與多裝置證據完整。現階段不符合「全部 PRD 開發完成」。
 
 ## 風險註記
 
@@ -128,7 +132,7 @@
 | 佈署驗證 | 2026-11-04 已從 `gh-pages/booking/index.html` 與 `gh-pages/saas/index.html` 讀到新版程式；`booking/release.json` 顯示 build `335c4fb876cad3f1e74897527e3575d4a6e7e3f3` |
 | 尚缺 | 尚無真實 iOS／Android LINE LIFF、多人競爭最後一個名額、取消返回的瀏覽器實機 E2E 記錄；FR-112 的全面正式驗收須補足 |
 
-**相容與回滾：** 關閉確認只影響 UI 層，不改變後端容量驗證或冪等。若需回滾 UI，還原單次變更的 `saas/index.html`；保留可向前相容的 `require_confirmation` 欄位與 RPC，不得刪除表或既有資料。無外部商家 OA 或付款憑證時，仍可在既有測試店的預約入口驗證基本操作。
+**相容與回滾：** 關閉確認只影響 UI 層，不改變後端容量驗證或冪等。若需回滾 UI，還原單次變更的 `saas/index.html`；保留可向前相容的 `require_confirmation` 欄位與 RPC，不得刪除表或既有資料。無外部商家 OA 憑證時，仍可在既有測試店的預約入口驗證基本操作。
 
 
 ## 2026-11-04 本輪後續交付：FR-110、FR-108／109（原 PRD 範圍）
@@ -146,12 +150,12 @@
 - `QueueMonster/supabase/migrations/20261104_store_announcements_fr110.sql`：已實際套用到 Supabase。
 - `QueueMonster/supabase/migrations/20261104_tenant_customer_book_fr109.sql`：已實際套用到 Supabase。
 - `QueueMonster/tests/store-announcements-fr110.test.mjs` 與 `customer-ledger-blacklist-fr109.test.mjs`：原有 CI 清單已加入新增契約測試。
-- `gh-pages/booking/index.html` 與 `gh-pages/saas/index.html`：已能讀取到 FR-112、FR-110、FR-108／109 前端代碼；但**沒有實際手機 LINE E2E、不同門市安全滲測或付款驗收，勿宣稱整份 PRD Done**。
+- `gh-pages/booking/index.html` 與 `gh-pages/saas/index.html`：已能讀取到 FR-112、FR-110、FR-108／109 前端代碼；但**沒有完整實際手機 LINE E2E、不同門市安全滲測，勿宣稱整份非金流 PRD Done**。
 
 ### 尚需完成（保留原需求，不刪除）
 
 - NR-05/06 服務與資源時段防撞、容量重複利用：另有既存開發 PR #30，應驗收其最終合併結果，不並行覆寫。
-- C01–58／K01–32／其餘 NR、FR、UX：尚需逐項依本文件前述表格補齊，特別是 LINE 多 OA 實機、資源排程、OTP、完整 CRM、Calendar、Web Push、多窗口、看板、金流及第三方 POS/設備。
-- 本輪有前端語法檢查、DB transaction 操作及資料庫/Pages 檔案核查，**尚無所有既有合約測試在本輪完整 PASS 的證據**。正式 LIFF、消費者與兩店員端到端操作、企業真實金流仍須經各自帳號/授權及實機驗證。
+- C01–58／K01–32／其餘 NR、FR、UX：尚需逐項依本文件前述表格補齊，特別是 LINE 多 OA 實機、資源排程、OTP、完整 CRM、Calendar、Web Push、多窗口、看板及第三方 POS/設備。
+- 本輪有前端語法檢查、DB transaction 操作及資料庫/Pages 檔案核查，**尚無所有既有合約測試在本輪完整 PASS 的證據**。正式 LIFF、消費者與兩店員端到端操作仍須經各自帳號/授權及實機驗證。
 
 **2026-11-04 本輪補充驗收證據：** FR-112、FR-110、FR-108/109 三份針對性程式契約測試共 10 項，在讀取最新 GitHub 檔案後逐一執行相同 JavaScript assertion，**10/10 通過**（非全專案 Node CI 或實機 E2E）。再查 Supabase 權限：匿名角色對公告、顧客標籤表及寫入 RPC 均無權限；建立公告／標籤／核准的 QA 驗收修改均 rollback。部署檔案 `gh-pages/booking/index.html`、`gh-pages/saas/index.html` 同時含本輪三項功能，`booking/release.json` build `ec9f6fc06e5f1c2b8628faa867afca288f1203ae`（2026-11-04 19:24 臺灣時間）。
