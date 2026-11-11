@@ -99,3 +99,13 @@ try{
  fs.writeFileSync(path.join(OUT,'report.json'),JSON.stringify({date:new Date().toISOString(),device:'iPhone 17 simulated Chromium, 402x874 CSS pixels, DPR3',note:'Read-only live website screenshots; no authentication, no writes; not physical Safari.',screens:report},null,2));
  await browser.close();
 }
+
+
+const hardLayoutFailures=report.filter(item=>
+ item.hasHorizontalOverflow||item.errors.length>0||
+ (item.id==='11-merchant-center'&&item.overflowElements.some(x=>x.selector.includes('qm-nav-item')))
+);
+if(hardLayoutFailures.length){
+ console.error('Mobile visual audit regressions:',hardLayoutFailures.map(x=>({page:x.id,overflow:x.hasHorizontalOverflow,errors:x.errors,navOverflow:x.overflowElements.filter(e=>e.selector.includes('qm-nav-item')).length})));
+ process.exitCode=1;
+}
