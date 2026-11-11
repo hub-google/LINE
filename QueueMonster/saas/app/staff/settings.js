@@ -103,18 +103,16 @@ export function renderStaffSettings({t,isManager,html}){
        (staffState.announcementEditId?btn("取消編輯","announcement-edit-cancel","outline"):"")+'</div></div>'):"")],
 ["public",box("LINE 官方帳號串接",
     '<p>目前通知來源：<strong>'+(lineState.lineConfig?.merchantOaConnected?"商家自己的 LINE OA":"平台 LINE OA")+'</strong></p>'+
-    '<p class="small">串接店家的 Messaging API 只需下方三項資訊，<strong>不需要 LIFF ID</strong>。若另外使用店家自己的 LINE 登入，才需設定 LIFF。</p>'+
+    '<p class="small">串接店家的 Messaging API 只需要下方兩項資訊，<strong>不需要 Channel ID 或 LIFF ID</strong>。Channel ID 由系統自動向 LINE 查詢；進階的 LINE Login／LIFF 可另外設定。</p>'+
     '<p><a href="./merchant-center.html#mode-own" target="_blank" rel="noopener noreferrer">查看 Messaging API 建立、取得憑證及 Webhook 設定教學 ↗</a></p>'+
     (lineState.lineConfig?.merchantOaConnected?
      '<p>已連接 LINE OA：<strong>'+esc(lineState.lineConfig.botBasicId||"")+'</strong></p>':"")+
     (isManager?
      '<div class="grid"><div>'+
-       field("Channel ID（Messaging API 頻道編號）","own-oa-channel-id",lineState.lineConfig?.messagingChannelId||"","text",'inputmode="numeric" autocomplete="off" placeholder="例如：1234567890"')+
-       '<p class="small">LINE Developers → Messaging API 頻道 → Basic settings。</p>'+
        field("Channel access token (long-lived)（長效存取權杖）","own-oa-token","","password",'autocomplete="new-password" placeholder="Messaging API 頁籤 → Issue"')+
      '</div><div>'+
        field("Channel secret（頻道驗證金鑰）","own-oa-secret","","password",'autocomplete="new-password" placeholder="Basic settings 頁籤"')+
-       '<p class="small">Channel secret 為 32 位十六進位字元。這三個值必須屬於同一個 Messaging API 頻道。</p>'+
+       '<p class="small">Channel secret 為 32 位十六進位字元。系統會自動從 Access Token 取得 Channel ID，無須額外輸入。</p>'+
      '</div></div>'+
      '<details style="margin:14px 0"><summary>進階選填：使用店家自己的 LINE Login／LIFF</summary>'+
        '<div style="margin-top:12px">'+field("LIFF ID（LINE 登入網頁應用程式編號）","own-oa-liff",lineState.lineConfig?.merchantOaConnected?(lineState.lineConfig.merchantLiffId||""):"","text",'autocomplete="off" placeholder="例如：1234567890-AbcdEfgh"')+
