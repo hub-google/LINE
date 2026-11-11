@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-11T06:34:26.430Z",
+  "date": "2026-11-11T06:39:40.121Z",
   "device": "iPhone 17 simulated Chromium, 402x874 CSS pixels, DPR3",
   "note": "Read-only live website screenshots; no authentication, no writes; not physical Safari.",
   "screens": [
@@ -986,7 +986,7 @@
       ],
       "visibleTapCount": 4,
       "keyRects": {},
-      "bodyText": "測試1 叫號變動即時更新 14:34 診間 · 上午場 2診 尚未 叫號 接下來：目前無人等候 等候 0 組 單獨顯示此場次 上午場 一般場次 2 接下來：3、5、6、7 等候 4 組 單獨顯示此場次 由排隊怪獸提供服務 全螢幕 最後成功同步：14:34:25；號碼變更即時更新，並定期核對。",
+      "bodyText": "測試1 叫號變動即時更新 14:39 診間 · 上午場 2診 尚未 叫號 接下來：目前無人等候 等候 0 組 單獨顯示此場次 上午場 一般場次 2 接下來：3、5、6、7 等候 4 組 單獨顯示此場次 由排隊怪獸提供服務 全螢幕 最後成功同步：14:39:38；號碼變更即時更新，並定期核對。",
       "errors": [],
       "failedRequests": []
     }
