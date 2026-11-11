@@ -1,5 +1,5 @@
 [
-  "app/public-config.js",
+  "public-config.js",
   "app/line-session.js",
   "app/route-state.js",
   "app/service-units.js",
