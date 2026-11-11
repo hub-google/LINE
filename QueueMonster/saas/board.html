@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="./site-auth.css"><script defer src="./site-auth.js"></script><link rel="stylesheet" href="./monster-world.css?build=__LINE_SAAS_BUILD__"><link rel="icon" type="image/svg+xml" href="./monster-mascot.svg"></head>
 <body data-monster-page="board">
   <header>
-    <div class="shop-title"><span class="shop-icon" aria-hidden="true">▤</span><h1 id="shop">正在讀取門市資料</h1></div>
+    <div class="shop-title"><span class="shop-icon" aria-hidden="true"><img id="shop-logo" alt="" hidden><span id="shop-icon-fallback">▤</span></span><h1 id="shop">正在讀取門市資料</h1></div>
     <div class="site-auth-slot site-auth-dark" id="site-auth-root" aria-label="使用者登入狀態"><a class="site-auth-button site-auth-login" href="./directory.html?mode=search">使用 LINE 登入</a></div><time id="clock" aria-label="目前時間">--:--</time>
   </header>
   <section id="unit-board" hidden aria-label="多服務單位即時叫號"></section>
@@ -31,6 +31,7 @@
   <footer>
     <span id="health" data-state="loading" role="status" aria-live="polite">資料更新中</span>
     <span class="footer-note">叫號順序將依現場狀況即時更新</span>
+    <a class="board-platform-credit" href="./home.html">由排隊怪獸提供服務</a>
     <div class="board-controls"><button type="button" id="refresh">重新整理</button><button type="button" id="fullscreen">全螢幕</button></div>
     <span id="notice">目前叫號與等待順序皆由門市資料同步，不顯示顧客個資。</span>
   </footer>

@@ -59,6 +59,28 @@
       }
       $("single-board").hidden=true;grid.hidden=false;
     }
+
+    function renderBoardBrand(store){
+      const rawLogo=String(store?.logo_url||"").trim();
+      const safeLogo=/^https:\/\/[^\s<>"']{1,490}$/i.test(rawLogo)?rawLogo:"";
+      const img=$("shop-logo"),placeholder=$("shop-icon-fallback");
+      if(img&&placeholder){
+        img.hidden=!safeLogo;
+        placeholder.hidden=!!safeLogo;
+        if(safeLogo&&img.src!==safeLogo)img.src=safeLogo;
+      }
+      const accent=/^#[\da-fA-F]{6}$/.test(String(store?.accent||""))?store.accent.toUpperCase():"#462B52";
+      const rgb=[1,3,5].map(i=>parseInt(accent.slice(i,i+2),16));
+      const linear=rgb.map(v=>{const n=v/255;return n<=.04045?n/12.92:Math.pow((n+.055)/1.055,2.4)});
+      const lum=linear[0]*.2126+linear[1]*.7152+linear[2]*.0722;
+      document.documentElement.style.setProperty("--merchant-board-accent",accent);
+      document.documentElement.style.setProperty("--merchant-board-contrast",lum>.179?"#281B31":"#FFFFFF");
+      document.documentElement.style.setProperty("--merchant-board-ink","#"+rgb.map(v=>Math.round(v*.54).toString(16).padStart(2,"0")).join("").toUpperCase());
+    }
+    $("shop-logo")?.addEventListener("error",()=>{
+      $("shop-logo").hidden=true;
+      $("shop-icon-fallback").hidden=false;
+    });
     async function refresh(){
       if(!validSlug)return;
       if(loading){refreshQueued=true;return;}
@@ -81,6 +103,7 @@
           }
           throw unitError;
         }
+        renderBoardBrand(units);
         if(units?.multi){
           disabled=false;staleFromFailure=false;lastData=units;lastSuccess=new Date();
           $("shop").textContent=String(units.shop||slug);

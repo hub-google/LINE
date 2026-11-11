@@ -68,3 +68,17 @@ test("inactive merchant board shows a stable unavailable state without repeated 
  assert.match(board,/門市目前未開放叫號/);
  assert.match(board,/click",\(\)=>\{disabled=false;void refresh\(\);\}/);
 });
+
+
+test("public board displays the saved merchant logo, brand color and platform attribution",()=>{
+ const script=read("saas/assets/board/main.js");
+ const theme=read("saas/monster-world.css");
+ const migration=read("supabase/migrations/20261111103000_public_board_branding.sql");
+ assert.match(board,/id="shop-logo"/);
+ assert.match(board,/由排隊怪獸提供服務/);
+ assert.match(script,/renderBoardBrand\(units\)/);
+ assert.match(script,/--merchant-board-accent/);
+ assert.match(theme,/Shop-powered queue board/);
+ assert.match(migration,/'logo_url',t\.logo_url/);
+ assert.match(migration,/'accent',t\.accent/);
+});
