@@ -34,7 +34,7 @@ export async function loadPickupData(){
     if(pickupState.customer?.settings?.schedule_mode==="REQUIRED")pickupState.method="scheduled";
     if(!pickupState.customer?.slots?.some(x=>x.time===pickupState.slot&&x.left>0))pickupState.slot="";
   }else if(routeState.view==="customer"){pickupState.customer=null;}
-  if(routeState.view==="staff"&&staffState.staff&&["orders","settings","dashboard"].includes(staffState.staffTab)){
+  if(routeState.view==="staff"&&staffState.staff&&["orders","settings","dashboard","calendar"].includes(staffState.staffTab)){
     if(pickupState.staffSlug!==routeState.slug){pickupState.staff=null;pickupState.staffSlug=routeState.slug;}
     try{pickupState.staff=await rpc("so_pickup_staff",{p_slug:routeState.slug});}
     catch(err){console.warn("取餐店家資料不可用",err);pickupState.staff=null;}
