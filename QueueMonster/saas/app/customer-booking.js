@@ -127,8 +127,8 @@ export function customerRender(){
    // not the first screen for somebody opening a booking/number URL.
    const entryTitle=routeState.customerTab==="reserve"?"線上預約":
      routeState.customerTab==="queue"?"現場取號":
-     routeState.customerTab==="mine"?"我的預約與取號":
-     routeState.customerTab==="progress"?"我的取號進度":"線上預約與取號";
+     routeState.customerTab==="order"?"線上點餐":
+     ["mine","progress"].includes(routeState.customerTab)?"我的服務":"線上預約與取號";
    const loginHref=lineState.lineConfig?.liffId?lineLoginUrl():"";
    const waiting=lineState.lineLinkStatus==="connecting"||
      lineState.lineLinkStatus==="not-ready"&&lineState.lineLinkAttempted===false;
@@ -147,7 +147,23 @@ export function customerRender(){
   const t=customerState.customer.tenant,m=t.modules||{},items=customerState.customer.my_reservations||[],tickets=customerState.customer.my_tickets||[],live=tickets.find(x=>["WAITING","HOLD","CALLED","ARRIVED","ADMITTED","SERVING"].includes(x.status));
   const catalogue=customerState.customer.menu_items||[];
  applyCustomerBrand(t);
- const menu=nav("首頁","home",routeState.customerTab,"customer")+(m.reservation?nav("線上預約","reserve",routeState.customerTab,"customer"):"")+(m.queue?nav("現場取號","queue",routeState.customerTab,"customer"):"")+(pickupState.customer?.settings?.enabled?nav("線上點餐","order",routeState.customerTab,"customer"):"")+nav("我的取號","progress",routeState.customerTab,"customer")+nav("我的紀錄","mine",routeState.customerTab,"customer");
+ // One customer menu entry owns ordering, queue progress, and previous records.
+ // Keep the original tab values for LINE deep links and existing actions.
+ const serviceView=["order","progress","mine"].includes(routeState.customerTab);
+ const menu=nav("首頁","home",routeState.customerTab,"customer")+
+   (m.reservation?nav("線上預約","reserve",routeState.customerTab,"customer"):"")+
+   (m.queue?nav("現場取號","queue",routeState.customerTab,"customer"):"")+
+   nav("我的服務","mine",serviceView?"mine":routeState.customerTab,"customer");
+ const serviceTabButton=(tab,label)=>'<button type="button" data-nav="customer" data-tab="'+tab+
+    '" class="'+(routeState.customerTab===tab?"active":"")+
+    '" aria-pressed="'+(routeState.customerTab===tab?"true":"false")+'">'+label+'</button>';
+ const serviceNav=serviceView?
+   '<section class="customer-service-nav" aria-label="我的服務">'+
+     '<div class="customer-service-title"><h2>我的服務</h2><p class="small">點餐、查看叫號進度及過往紀錄</p></div>'+
+     '<nav class="customer-service-switcher" aria-label="我的服務功能">'+
+       (pickupState.customer?.settings?.enabled?serviceTabButton("order","線上點餐"):"")+
+       serviceTabButton("progress","我的取號")+
+       serviceTabButton("mine","我的紀錄")+'</nav></section>':"";
  let html='';
  if(routeState.customerTab==="home"){
   const homepage=customerState.customer.homepage||{};
@@ -161,7 +177,7 @@ export function customerRender(){
    (t.address?'<p class="muted" style="font-size:13px;margin:0">'+esc(t.address)+'</p>':"")+'</section>')+
  '<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",customerState.customer.current||"—")+stat("現場候位",customerState.customer.waiting+" 組")+stat("我的有效預約",items.filter(x=>x.status==="CONFIRMED").length)+'</div>'+
  '<div class="grid">'+(m.reservation?'<button class="routecard" data-nav="customer" data-tab="reserve"><h2>線上預約</h2><p class="muted">選擇日期與時段，完成預約</p><strong>立即預約 →</strong></button>':"")+
- (m.queue?'<button class="routecard" data-nav="customer" data-tab="queue"><h2>現場取號</h2><p class="muted">直接取得候位號碼與查看進度</p><strong>立即取號 →</strong></button>':"")+(pickupState.customer?.settings?.enabled?'<button class="routecard" data-nav="customer" data-tab="order"><h2>線上點餐</h2><p class="muted">預訂取餐時間、查詢製餐進度</p><strong>開始點餐 →</strong></button>':"")+
+ (m.queue?'<button class="routecard" data-nav="customer" data-tab="queue"><h2>現場取號</h2><p class="muted">直接取得候位號碼與查看進度</p><strong>立即取號 →</strong></button>':"")+'<button class="routecard" data-nav="customer" data-tab="mine"><h2>我的服務</h2><p class="muted">點餐、叫號進度與預約紀錄集中管理</p><strong>查看我的服務 →</strong></button>'+
 (m.queue&&m.calling?'<a class="routecard" href="./board.html?merchant='+encodeURIComponent(routeState.slug)+'"><h2>公開即時叫號看板</h2><p class="muted">直接查看目前叫號及接下來的順序。</p><strong>查看公開看板 →</strong></a>':"")+'</div>';
  }
  else if(routeState.customerTab==="order"){
@@ -236,5 +252,5 @@ export function customerRender(){
          a.images.map(u=>'<img loading="lazy" alt="'+esc(a.title)+' 門市照片" src="'+esc(u)+'" style="width:220px;height:150px;flex:none;object-fit:cover;border-radius:9px;scroll-snap-align:start">').join("")+
         '</div>':"")+'</article>').join(""));
  }
- return layout(t.name,"預約與取號・即時資料",menu,lineStatusBadge()+html);
+ return layout(t.name,"預約與取號・即時資料",menu,lineStatusBadge()+serviceNav+html);
 }

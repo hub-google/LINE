@@ -94,3 +94,20 @@ test("returning verified LINE customers can open another platform-OA shop withou
  assert.match(backend,/if \(!ownOa && \(/);
  assert.match(backend,/onConflict:"tenant_id,user_id"/);
 });
+
+test("customer services have one sidebar entry without removing existing deep links",()=>{
+ const source=read("app/customer-booking.js");
+ const route=read("app/route-state.js");
+ const css=read("monster-world.css");
+ assert.match(source,/nav\("我的服務","mine",serviceView\?"mine":routeState\.customerTab,"customer"\)/);
+ for(const label of ["線上點餐","我的取號","我的紀錄"]){
+   assert.doesNotMatch(source,new RegExp('nav\\("'+label+'"'));
+ }
+ for(const [tab,label] of [["order","線上點餐"],["progress","我的取號"],["mine","我的紀錄"]]){
+   assert.ok(source.includes('serviceTabButton("'+tab+'","'+label+'")'));
+   assert.ok(route.includes('"'+tab+'"'),"must retain existing tab deep link "+tab);
+ }
+ assert.match(source,/customer-service-switcher/);
+ assert.match(css,/\.customer-service-switcher button:focus-visible/);
+ assert.match(source,/serviceNav\+html/);
+});
