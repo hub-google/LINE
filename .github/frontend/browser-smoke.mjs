@@ -227,6 +227,89 @@ try{
    console.log(width,name,await page.title());
   }
  }
+
+ // Reproduce the reported TV screenshot with five waiting numbers, including
+ // desktop, short display and phone-sized fullscreen viewports. Unlike a
+ // screenshot of a scrolled page, assert that EVERY visible card fits.
+ async function fullscreenGeometry(){
+  return await page.evaluate(()=>{
+   const viewport={width:innerWidth,height:innerHeight};
+   const selectors=['body > header','body > footer','#single-board:not([hidden])',
+    '#unit-board:not([hidden])','#current','#upcoming li','#unit-board .unit-card',
+    '#board-session-nav:not([hidden])'];
+   const nodes=selectors.flatMap(selector=>[...document.querySelectorAll(selector)]);
+   const rects=nodes.filter(el=>el.getClientRects().length&&
+    !el.closest('[hidden]')).map(el=>{
+     const r=el.getBoundingClientRect();
+     return {name:el.id||el.className||el.tagName,bottom:r.bottom,right:r.right,top:r.top,left:r.left};
+    });
+   return {fullscreen:!!document.fullscreenElement,
+    viewport,scale:Number(document.body.style.zoom||'1'),
+    documentHeight:document.documentElement.scrollHeight,
+    documentWidth:document.documentElement.scrollWidth,
+    bodyHeight:document.body.scrollHeight,
+    bodyClientHeight:document.body.clientHeight,
+    rects};
+  });
+ }
+ for(const viewport of [{width:1649,height:927},{width:1280,height:720},{width:390,height:844}]){
+  await page.setViewportSize(viewport);
+  await page.goto(baseUrl+'/booking/board.html?merchant=greenfield-salon',{waitUntil:'networkidle'});
+  await page.evaluate(()=>{
+   document.getElementById('shop').textContent='測試門市｜即時叫號';
+   document.getElementById('current').textContent='3';
+   const list=document.getElementById('upcoming');
+   list.replaceChildren();
+   for(const n of ['2','4','5','6','7']){
+    const li=document.createElement('li');li.textContent=n;list.appendChild(li);
+   }
+  });
+  await page.locator('#fullscreen').click();
+  await page.waitForFunction(()=>!!document.fullscreenElement,{timeout:5000});
+  await page.waitForTimeout(220);
+  const result=await fullscreenGeometry();
+  assert.equal(result.fullscreen,true,'Fullscreen API should actually activate');
+  assert.ok(result.documentHeight<=result.viewport.height+2,
+   'Fullscreen board must not have a vertical scroll area: '+JSON.stringify(result));
+  assert.ok(result.documentWidth<=result.viewport.width+2,
+   'Fullscreen board must not have horizontal overflow');
+  assert.ok(result.rects.filter(x=>x.name==='LI').length>=5,
+   'All five waiting tickets must remain in the display');
+  assert.ok(result.rects.every(x=>x.bottom<=result.viewport.height+2&&x.right<=result.viewport.width+2&&x.top>=-2),
+   'The header, current ticket, waiting order and footer must all be visible: '+JSON.stringify(result));
+  console.log('Fullscreen queue geometry:',JSON.stringify({viewport,scale:result.scale,
+   height:result.documentHeight,visible:result.rects.length}));
+
+  // A multi-service board must also show each individual unit in kiosk mode.
+  await page.evaluate(()=>{
+   const grid=document.getElementById('unit-board');
+   grid.replaceChildren();
+   for(let i=1;i<=12;i++){
+    const card=document.createElement('article');card.className='unit-card';
+    for(const [tag,cls,value] of [
+     ['div','group','第 '+i+' 場'],['h2','','服務單位 '+i],
+     ['div','unit-now',String(i)],['div','unit-next','接下來：'+(i+1)+'、'+(i+2)],
+     ['span','unit-open','單獨顯示此場次']
+    ]){
+     const child=document.createElement(tag);child.className=cls;child.textContent=value;card.append(child);
+    }
+    grid.append(card);
+   }
+   document.getElementById('single-board').hidden=true;grid.hidden=false;
+   document.dispatchEvent(new Event('fullscreenchange'));
+  });
+  await page.waitForTimeout(220);
+  const multiple=await fullscreenGeometry();
+  assert.equal(multiple.rects.filter(r=>r.name==='unit-card').length,12);
+  assert.ok(multiple.documentHeight<=multiple.viewport.height+2,
+   'Twelve service-unit cards must not create a fullscreen scroll bar');
+  assert.ok(multiple.rects.every(r=>r.bottom<=multiple.viewport.height+2&&r.right<=multiple.viewport.width+2&&r.top>=-2),
+   'All service-unit cards must fit within the fullscreen display: '+JSON.stringify(multiple));
+  console.log('Fullscreen 12-unit geometry:',JSON.stringify({viewport,scale:multiple.scale,
+   height:multiple.documentHeight,visible:multiple.rects.length}));
+  await page.evaluate(()=>document.exitFullscreen());
+  await page.waitForFunction(()=>!document.fullscreenElement);
+ }
  assert.deepEqual(missing,[],'Missing local build assets');assert.deepEqual(errors,[],'Browser runtime errors');
  console.log('Browser smoke passed; no business writes were submitted.');
 }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}
