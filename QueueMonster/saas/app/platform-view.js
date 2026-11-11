@@ -26,9 +26,14 @@ export function platformRender(){
     box("平台跨企業即時營運",'<p class="muted">以下顯示各門市最新營運資訊。員工總數 '+esc(staffCount)+' 人，今日已完成 '+esc(completed)+' 組，僅在重新載入頁面時更新。</p><div class="scroll"><table class="rows"><thead><tr><th>企業</th><th>狀態</th><th>員工</th><th>今日預約</th><th>候位</th><th>今日有效訂單</th><th>待接單</th><th>待取餐</th><th>訂單金額</th><th>目前叫號</th><th>已完成</th><th>操作</th></tr></thead><tbody>'+
     routeState.overview.map(t=>'<tr><td><strong>'+esc(t.name)+'</strong></td><td>'+tag(t.status)+'</td><td>'+esc(t.staff)+'</td><td>'+esc(t.today_reservations||0)+'</td><td>'+esc(t.today_waiting||0)+'</td><td>'+esc(t.today_orders||0)+'</td><td>'+esc(t.today_pending_orders||0)+'</td><td>'+esc(t.today_ready_orders||0)+'</td><td>NT$ '+esc(Number(t.today_order_amount||0).toLocaleString("zh-TW"))+'</td><td>'+esc(t.current_number||"—")+'</td><td>'+esc(t.today_completed||0)+'</td><td><a href="'+esc(sharedUiState.route("staff",t.slug))+'">店員後台</a> ・ <a href="'+esc((customerUrl(t.slug)||(customerUrl(t.slug)||sharedUiState.route("customer",t.slug))))+'">顧客頁</a></td></tr>').join("")+'</tbody></table></div>');
   }else if(routeState.platformTab==="list"){
-   html='<div class="toolbar"><h2>已開通企業（'+routeState.overview.length+'）</h2>'+btn("＋ 新增企業","new-tenant","primary")+'</div>'+
+   const pickupFilter=routeState.platformPickupFilter||"all";
+   const filtered=routeState.overview.filter(t=>pickupFilter==="all"||(pickupFilter==="enabled"?!!t.pickup_enabled:!t.pickup_enabled));
+   html='<div class="toolbar"><h2>已開通企業（'+filtered.length+'／'+routeState.overview.length+'）</h2>'+btn("＋ 新增企業","new-tenant","primary")+'</div>'+
+    '<div class="grid"><div><label for="platform-pickup-filter">線上點餐功能篩選</label><select class="field" id="platform-pickup-filter">'+
+    [["all","全部企業"],["enabled","已啟用線上點餐"],["disabled","未啟用線上點餐"]].map(([v,label])=>
+    '<option value="'+v+'" '+(pickupFilter===v?"selected":"")+'>'+label+'</option>').join("")+'</select></div></div>'+
     '<div class="card scroll"><table class="rows"><thead><tr><th>企業</th><th>啟用功能</th><th>狀態</th><th>員工</th><th>操作</th></tr></thead><tbody>'+
-    (routeState.overview.map(t=>'<tr><td><strong>'+esc(t.name)+'</strong><div class="small">'+esc(t.slug)+'</div></td><td>'+[...sharedUiState.features.filter(f=>t.modules?.[f[0]]).map(f=>esc(f[1])),...(t.pickup_enabled?["線上點餐"]:[])].join("、")+'</td><td>'+tag(t.status)+'</td><td>'+esc(t.staff)+'</td><td><div class="platform-row-actions" role="group" aria-label="'+esc(t.name)+' 操作">'+
+    (filtered.map(t=>'<tr><td><strong>'+esc(t.name)+'</strong><div class="small">'+esc(t.slug)+'</div></td><td>'+[...sharedUiState.features.filter(f=>t.modules?.[f[0]]).map(f=>esc(f[1])),...(t.pickup_enabled?["線上點餐"]:[])].join("、")+'</td><td>'+tag(t.status)+'</td><td>'+esc(t.staff)+'</td><td><div class="platform-row-actions" role="group" aria-label="'+esc(t.name)+' 操作">'+
       '<a class="btn outline" href="'+esc(sharedUiState.route("staff",t.slug)+"&tab=settings")+'">設定</a>'+
       '<a class="btn outline" href="'+esc(sharedUiState.route("customer",t.slug))+'" target="_blank" rel="noopener">顧客頁</a>'+
       btn(t.status==="ACTIVE"?"暫停":"恢復","toggle-company","outline",'data-slug="'+esc(t.slug)+'"')+

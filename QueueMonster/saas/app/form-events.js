@@ -76,6 +76,10 @@ document.addEventListener("change",async ev=>{
  }
  if(el.id==="staff-history-days"){staffHistoryState.staffHistoryDays=Number(el.value);await load();return;}
  if(el.id==="analytics-days"){staffState.analyticsDays=Number(el.value);await load();return;}
+ if(el.id==="platform-pickup-filter"){
+   if(!["all","enabled","disabled"].includes(el.value))return;
+   routeState.platformPickupFilter=el.value;render();return;
+ }
  if(el.id==="calendar-status"){
    if(!["ALL","CONFIRMED","CHECKED_IN","COMPLETED","CANCELLED","NO_SHOW"].includes(el.value))return;
    calendarState.calendarStatus=el.value;calendarState.calendarPage=1;void loadBookingCalendar(1);return;
