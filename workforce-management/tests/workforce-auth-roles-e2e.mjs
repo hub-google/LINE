@@ -378,6 +378,57 @@ try{
   assert.ok(resp.status>=400);
  });
 
+ await step('Overtime API rejects inconsistent advance/retroactive timing',async()=>{
+  const prior=new Date(Date.now()-3*86400000);
+  const start=prior.toISOString(),end=new Date(prior.getTime()+3600000).toISOString();
+  const advance=await req(api+'/rest/v1/rpc/wm_submit_overtime_request','POST',{
+   p_member:member,p_start:start,p_end:end,p_reason:'E2E incorrect advance timing',p_timing:'advance'},
+   header(publicKey,users[1].token),false);
+  assert.ok(advance.status>=400);
+  const future=new Date(Date.now()+5*86400000);
+  const retroactive=await req(api+'/rest/v1/rpc/wm_submit_overtime_request','POST',{
+   p_member:member,p_start:future.toISOString(),
+   p_end:new Date(future.getTime()+3600000).toISOString(),
+   p_reason:'E2E incorrect retroactive timing',p_timing:'retroactive'},
+   header(publicKey,users[1].token),false);
+  assert.ok(retroactive.status>=400);
+  const impersonation=await req(api+'/rest/v1/rpc/wm_submit_overtime_request','POST',{
+   p_member:managerMember,p_start:future.toISOString(),
+   p_end:new Date(future.getTime()+3600000).toISOString(),
+   p_reason:'E2E employee cannot submit manager overtime',p_timing:'advance'},
+   header(publicKey,users[1].token),false);
+  assert.ok(impersonation.status>=400);
+ });
+ await step('Employee submits a retroactive overtime request through actual browser',async()=>{
+  await employeePage.locator('#refreshBtn').click();
+  await employeePage.locator('#nav [data-tab="requests"]').click();
+  await employeePage.locator('#pageActions [data-action="newOvertimeRequest"]').click();
+  const form=employeePage.locator('#overlay form[data-form="request"]');
+  await form.waitFor({state:'visible'});
+  await form.locator('[name="overtime_timing"]').selectOption('retroactive');
+  const priorDate=new Date(Date.now()-3*86400000).toISOString().slice(0,10);
+  await form.locator('[name="starts_at"]').fill(priorDate+'T18:00');
+  await form.locator('[name="ends_at"]').fill(priorDate+'T20:00');
+  await form.locator('[name="reason"]').fill('E2E-'+run+'-RETRO-OVERTIME');
+  await screenshot(employeePage,'11-employee-retroactive-overtime');
+  await form.locator('button[type="submit"]').click();
+  await Promise.race([
+   form.waitFor({state:'hidden',timeout:20000}),
+   employeePage.locator('#toast .toast.error').last().waitFor({state:'visible',timeout:20000})
+    .then(async()=>{throw Error('Retroactive overtime form rejected: '+(await employeePage.locator('#toast').innerText()).slice(0,220));})
+  ]);
+  const result=await rows('wm_requests',users[0].token,
+   'select=id,status,overtime_timing&tenant_id=eq.'+tenant+'&reason=eq.'+encodeURIComponent('E2E-'+run+'-RETRO-OVERTIME'));
+  assert.equal(result.length,1);
+  assert.equal(result[0].overtime_timing,'retroactive');
+  assert.equal(result[0].status,'pending');
+  const punches=await rows('wm_punches',users[0].token,'select=id&tenant_id=eq.'+tenant);
+  assert.equal(punches.length,0,'Overtime request MUST NOT fabricate clock punches');
+  assert.equal(await decide(result[0].id,'approve'),'approved');
+  const after=await rows('wm_punches',users[0].token,'select=id&tenant_id=eq.'+tenant);
+  assert.equal(after.length,0,'Overtime approval MUST NOT fabricate actual attendance');
+ });
+
  await step('Real notifications are visible only to the intended employee and manager',async()=>{
   const employeeNotes=await rows('wm_notifications',users[1].token,'select=recipient_member_id,event_key,body&tenant_id=eq.'+tenant);
   assert.ok(employeeNotes.some(x=>x.event_key.endsWith(':rejected')&&x.body.includes('駁回')),'Missing rejected notice');
