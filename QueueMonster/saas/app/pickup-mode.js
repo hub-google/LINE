@@ -159,7 +159,7 @@ export async function handlePickupAction(ev,b,a,id){
    const items=Object.entries(pickupState.cart).filter(([,qty])=>qty>0).map(([itemId,qty])=>({id:itemId,qty}));
    if(!items.length)return true;
    if(pickupState.method!=="immediate"&&!pickupState.slot)return true;
-   try{if(!pickupState.requestId)pickupState.requestId=uuid();}catch(e){alert(e.message);return true;}
+   try{if(!pickupState.requestId)pickupState.requestId=uuid();}catch(e){window.alert(e.message);return true;}
    await act(async()=>{
      const res=await rpc("so_pickup_place",{p_slug:routeState.slug,
        p_date:pickupState.method==="immediate"?null:pickupState.day,
@@ -200,7 +200,7 @@ export function initializePickupMode(){
    try{
      pickupState.customer=await rpc("so_pickup_public",{p_slug:routeState.slug,p_date:pickupState.day});
      render();
-   }catch(err){alert(err.message);}
+   }catch(err){window.alert(err.message);}
   }
   if(ev.target?.id==="pickup-slot"){pickupState.slot=ev.target.value;pickupState.requestId="";render();}
  });
