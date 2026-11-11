@@ -33,6 +33,7 @@ begin
  select coalesce(jsonb_agg(jsonb_build_object(
   'id',o.id,'number','P'||lpad(o.order_no::text,5,'0'),
   'scheduled',o.scheduled,'status',o.status,'items',o.items,
+  'customer_name',o.customer_name,'customer_phone',o.customer_phone,
   'total',o.total,'note',o.note,
   'pickup_at',to_char(o.pickup_at at time zone 'Asia/Taipei','YYYY-MM-DD HH24:MI'),
   'prepare_at',to_char((o.pickup_at-make_interval(mins=>s.prep_minutes)) at time zone 'Asia/Taipei','YYYY-MM-DD HH24:MI'),
