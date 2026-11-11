@@ -34,11 +34,20 @@ if(a==="copy-own-oa-webhook"){
   return true;
  }
  if(a==="connect-own-oa"||a==="disconnect-own-oa"){
-  if(a==="disconnect-own-oa"&&!confirm("確定改回平台 LINE OA？商家自己的 LIFF 與通知將停止；原預約和取號不會刪除。"))return true;
+  if(a==="disconnect-own-oa"&&!confirm("確定改回平台 LINE OA？商家自己的 LINE 通知將停止；原預約和取號不會刪除。"))return true;
   await act(async()=>{
-   const payload=a==="connect-own-oa"
-    ?{action:"connect-merchant-oa",slug:routeState.slug,liffId:val("own-oa-liff"),botToken:val("own-oa-token"),channelSecret:val("own-oa-secret")}
-    :{action:"disconnect-merchant-oa",slug:routeState.slug};
+   let payload={action:"disconnect-merchant-oa",slug:routeState.slug};
+   if(a==="connect-own-oa"){
+     const channelId=val("own-oa-channel-id");
+     const channelSecret=val("own-oa-secret");
+     const botToken=val("own-oa-token");
+     const liffId=val("own-oa-liff");
+     if(!/^[0-9]{8,}$/.test(channelId))throw Error("Channel ID 格式不正確：請輸入 Messaging API 的純數字頻道編號。");
+     if(!/^[0-9a-fA-F]{32}$/.test(channelSecret))throw Error("Channel secret 格式不正確：必須為 32 位十六進位字元。");
+     if(botToken.length<32)throw Error("Channel access token (long-lived) 尚未填寫或格式不完整。");
+     if(liffId&&!/^[0-9]{8,}-[A-Za-z0-9]+$/.test(liffId))throw Error("LIFF ID 格式不正確：應為「數字-英數字」，不是 Messaging API Channel ID；不需要 LINE 登入可留空。");
+     payload={action:"connect-merchant-oa",slug:routeState.slug,messagingChannelId:channelId,liffId,botToken,channelSecret};
+   }
    if(!authState.session?.access_token)throw Error("請先登入企業管理者帳號");
    const res=await fetch(lineState.LINE_BRIDGE_URL,{
     method:"POST",
@@ -46,9 +55,21 @@ if(a==="copy-own-oa-webhook"){
     body:JSON.stringify(payload)
    });
    const data=await res.json().catch(()=>({}));
-   if(!res.ok||!data.ok)throw Error(data.error||"LINE OA 串接失敗");
+   if(!res.ok||!data.ok){
+     const message={
+       LINE_CHANNEL_FIELDS_INVALID:"欄位格式不正確，請依 LINE Developers 的 Messaging API 設定重新確認。",
+       LINE_BOT_TOKEN_INVALID:"Channel access token 無效、過期或已撤銷，請在 LINE Developers → Messaging API 重新取得。",
+       LINE_BOT_TOKEN_CHANNEL_MISMATCH:"Channel ID 與 Channel access token 不屬於同一個 Messaging API 頻道，請確認沒有複製到其他官方帳號。",
+       LINE_BOT_PROFILE_INVALID:"LINE 官方帳號資料驗證失敗，請確認此頻道已啟用 Messaging API。",
+       MERCHANT_OA_STORAGE_UNAVAILABLE:"目前無法安全儲存 LINE OA 設定，請聯絡平台管理員檢查後端部署。",
+       MANAGER_REQUIRED:"只有店家管理者能綁定 LINE 官方帳號。"
+     }[data.error];
+     throw Error(message||"LINE OA 綁定失敗（"+(data.error||"HTTP "+res.status)+"），請確認 LINE 設定與管理權限。");
+   }
    lineState.lineConfig=null;lineState.lineConfigSlug="";
-   return a==="connect-own-oa"?"LINE OA 已驗證並連接，請設定上方 Webhook URL，並確認 Login 與 Messaging API 同屬 Provider":"已解除自有 LINE OA，恢復平台服務";
+   return a==="connect-own-oa"
+     ?"Messaging API 已驗證連接。請設定 Webhook URL，並使用店家 LINE OA 測試顧客身分配對與收訊；LIFF 為選填。"
+     :"已解除自有 LINE OA，恢復平台服務";
   });return true;
  }
  if(a==="save-directory"){await act(async()=>{const enabled=!!routeState.$("directory-enabled")?.checked;await rpc("so_set_directory_listing",{p_slug:routeState.slug,p_enabled:enabled,p_oa_mode:"PLATFORM"});return enabled?"門市已開放在排隊怪獸平台搜尋":"門市已取消公開搜尋（原有專屬連結仍可使用）";});return true;}
