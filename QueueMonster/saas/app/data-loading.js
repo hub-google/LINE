@@ -151,8 +151,13 @@ export async function load(){feedbackState.err="";try{
  staffState.staff={...meta,...work,bookingPolicy:policy,reservations:(work.pending_reservations||[]).concat(work.processed_reservations||[]),
    tickets:(work.active_tickets||[]).concat(work.processed_tickets||[])};
  if(staffState.staffTab==="menu"||(staffState.staffTab==="settings"&&staffState.settingsSection==="catalog"))staffState.staff.resourceContext=await rpc("so_staff_resource_context",{p_slug:routeState.slug});
- if(staffState.staffTab==="analytics"&&["OWNER","MANAGER","PLATFORM"].includes(staffState.staff.role))
-   staffState.staffAnalytics=await rpc("so_staff_analytics",{p_slug:routeState.slug,p_days:staffState.analyticsDays});
+ if(staffState.staffTab==="analytics"&&["OWNER","MANAGER","PLATFORM"].includes(staffState.staff.role)){
+   const [summary,pickupDetail]=await Promise.all([
+     rpc("so_staff_analytics",{p_slug:routeState.slug,p_days:staffState.analyticsDays}),
+     rpc("so_pickup_analytics",{p_slug:routeState.slug,p_days:staffState.analyticsDays})
+   ]);
+   staffState.staffAnalytics={...summary,pickupDetail};
+ }
  if(staffState.staffTab==="dashboard"&&["OWNER","MANAGER","PLATFORM"].includes(staffState.staff.role)){
    try{staffState.staffNoticeHealth=await rpc("so_line_notice_health",{p_slug:routeState.slug})}
    catch(e){console.warn("LINE notification diagnostics unavailable")}
