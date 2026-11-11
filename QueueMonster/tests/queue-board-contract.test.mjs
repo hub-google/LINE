@@ -52,16 +52,19 @@ test("TV board polls the safe public read with stale indication and no sign-in",
 });
 
 test("public board links bypass LINE login on the homepage, directory and merchant customer portal",()=>{
-  const home=read("saas/home.html"),directory=read("saas/directory.html"),customer=read("saas/index.html");
+  const home=read("saas/home.html"),directory=read("saas/directory.html"),customer=read("saas/app/customer-booking.js");
   assert.match(home,/公開叫號看板/);
   assert.match(home,/directory\.html\?mode=queue/);
   assert.match(directory,/公開叫號看板/);
   assert.match(directory,/board\.html\?merchant=/);
   assert.match(directory,/original\.searchParams\.get\("view"\)!=="customer"\)return/);
-  assert.match(customer,/if\(lineLinkStatus!=="linked"\)/);
-  assert.match(customer,/門市公開即時叫號/);
+  assert.match(customer,/if\(lineState\.lineLinkStatus!=="linked"\)/);
   assert.match(customer,/brandHeader/);
-  assert.match(customer,/公開即時叫號看板/);
+  assert.match(customer,/customer-entry-card/);
+  assert.match(customer,/customer-public-board-link/);
+  assert.match(customer,/\.\/board\.html\?merchant=/);
+  assert.ok(customer.indexOf("customer-entry-card")<customer.indexOf("customer-public-board-link"));
+  assert.doesNotMatch(customer,/box\("門市公開即時叫號"/);
 });
 
 test("inactive merchant board shows a stable unavailable state without repeated failing polls",()=>{
