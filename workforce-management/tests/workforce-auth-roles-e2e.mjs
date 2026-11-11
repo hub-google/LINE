@@ -302,6 +302,82 @@ try{
   await screenshot(managerPage,'07-reviewed-leave-cancellation');
  });
 
+ let amendmentRequestId,amendmentId,amendmentBefore;
+ await step('Employee submits future leave to amend; manager approves via original workflow',async()=>{
+  const startDate=new Date(Date.now()+62*86400000).toISOString().slice(0,10);
+  const original=await apply('reject','E2E-'+run+'-AMEND',startDate);
+  amendmentRequestId=original.id;
+  assert.equal(await decide(amendmentRequestId,'approve'),'approved');
+  amendmentBefore=(await rows('wm_requests',users[0].token,
+   'select=starts_at,ends_at,status&id=eq.'+amendmentRequestId))[0];
+  assert.equal(amendmentBefore.status,'approved');
+ });
+ await step('Employee requests a date amendment for approved leave through actual browser',async()=>{
+  await employeePage.locator('#refreshBtn').click();
+  await employeePage.locator('#nav [data-tab="requests"]').click();
+  const button=employeePage.locator('#appContent [data-wf-leave-amend="submit"][data-id="'+amendmentRequestId+'"]');
+  await button.waitFor({state:'visible',timeout:20000});
+  await button.click();
+  const form=employeePage.locator('#overlay form[data-form="wf_leave_amend_request"]');
+  await form.waitFor({state:'visible'});
+  const nextDate=new Date(new Date(amendmentBefore.starts_at).getTime()+86400000).toISOString().slice(0,10);
+  await form.locator('[name="p_start"]').fill(nextDate+'T18:00');
+  await form.locator('[name="p_end"]').fill(nextDate+'T20:00');
+  await form.locator('[name="p_reason"]').fill('E2E 班別變動，需調整已核准的請假日期');
+  await screenshot(employeePage,'09-employee-date-amendment-form');
+  await form.locator('button[type="submit"]').click();
+  await Promise.race([
+   form.waitFor({state:'hidden',timeout:20000}),
+   employeePage.locator('#toast .toast.error').last().waitFor({state:'visible',timeout:20000})
+    .then(async()=>{throw Error('Amendment API rejected: '+(await employeePage.locator('#toast').innerText()).slice(0,220));})
+  ]);
+  const original=(await rows('wm_requests',users[0].token,
+   'select=starts_at,ends_at,status&id=eq.'+amendmentRequestId))[0];
+  assert.deepEqual(original,amendmentBefore,'The approved leave MUST remain unchanged pending approval');
+  const amendments=(await req(api+'/rest/v1/rpc/wm_list_leave_amendments','POST',
+    {p_tenant:tenant},header(publicKey,users[1].token))).data;
+  const a=amendments.find(x=>x.request_id===amendmentRequestId);
+  assert.equal(a?.status,'pending');
+  amendmentId=a.id;
+ });
+ await step('Employee cannot review own amendment; manager approves and preserves versioned audit',async()=>{
+  const denied=await req(api+'/rest/v1/rpc/wm_review_leave_amendment','POST',
+   {p_amendment:amendmentId,p_approved:true,p_note:'self'},header(publicKey,users[1].token),false);
+  assert.ok(denied.status>=400,'Employee must not approve own leave change');
+  await managerPage.locator('#refreshBtn').click();
+  await managerPage.locator('#nav [data-tab="approvals"]').click();
+  const button=managerPage.locator('#appContent [data-wf-leave-amend="review"][data-ok="true"][data-id="'+amendmentId+'"]');
+  await button.waitFor({state:'visible',timeout:20000});
+  await button.click();
+  const form=managerPage.locator('#overlay form[data-form="wf_leave_amend_review"]');
+  await form.locator('[name="p_note"]').fill('同意員工修改已核准假單日期');
+  await form.locator('button[type="submit"]').click();
+  await Promise.race([
+   form.waitFor({state:'hidden',timeout:20000}),
+   managerPage.locator('#toast .toast.error').last().waitFor({state:'visible',timeout:20000})
+    .then(async()=>{throw Error('Amendment review failed: '+(await managerPage.locator('#toast').innerText()).slice(0,220));})
+  ]);
+  const current=(await rows('wm_requests',users[0].token,
+   'select=starts_at,ends_at,status&id=eq.'+amendmentRequestId))[0];
+  assert.equal(current.status,'approved','Approved status and request identifier remain intact');
+  assert.notEqual(current.starts_at,amendmentBefore.starts_at,'Approved date must change');
+  assert.notEqual(current.ends_at,amendmentBefore.ends_at);
+  const amendment=(await req(api+'/rest/v1/rpc/wm_list_leave_amendments','POST',
+   {p_tenant:tenant},header(publicKey,users[1].token))).data.find(x=>x.id===amendmentId);
+  assert.equal(amendment.status,'approved');
+  assert.equal(amendment.original_starts_at,amendmentBefore.starts_at);
+  const audit=await rows('wm_audit',users[0].token,
+   'select=action&tenant_id=eq.'+tenant+'&target_id=eq.'+amendmentRequestId);
+  assert.ok(audit.some(x=>x.action==='leave_amendment_decided'));
+  await screenshot(managerPage,'10-manager-reviewed-leave-amendment');
+ });
+ await step('Reusing an approved amendment is rejected by the server',async()=>{
+  const resp=await req(api+'/rest/v1/rpc/wm_review_leave_amendment','POST',
+   {p_amendment:amendmentId,p_approved:true,p_note:'duplicate'},
+    header(publicKey,users[2].token),false);
+  assert.ok(resp.status>=400);
+ });
+
  await step('Real notifications are visible only to the intended employee and manager',async()=>{
   const employeeNotes=await rows('wm_notifications',users[1].token,'select=recipient_member_id,event_key,body&tenant_id=eq.'+tenant);
   assert.ok(employeeNotes.some(x=>x.event_key.endsWith(':rejected')&&x.body.includes('駁回')),'Missing rejected notice');
@@ -383,7 +459,7 @@ try{
  if(tenant)try{
   const sql=[
    'begin;',
-   ...['wm_availability','wm_availability_policies','wm_leave_cancellations','wm_request_actions','wm_audit','wm_request_documents','wm_period_adjustments','wm_attendance_adjustments','wm_shift_revisions','wm_qr_uses'].map(x=>"delete from public."+x+" where tenant_id='"+tenant+"';"),
+   ...['wm_leave_amendment_steps','wm_leave_amendments','wm_availability','wm_availability_policies','wm_leave_cancellations','wm_request_actions','wm_audit','wm_request_documents','wm_period_adjustments','wm_attendance_adjustments','wm_shift_revisions','wm_qr_uses'].map(x=>"delete from public."+x+" where tenant_id='"+tenant+"';"),
    "delete from public.wm_requests where tenant_id='"+tenant+"';",
    "delete from public.wm_punches where tenant_id='"+tenant+"';",
    "delete from public.wm_shifts where tenant_id='"+tenant+"';",
