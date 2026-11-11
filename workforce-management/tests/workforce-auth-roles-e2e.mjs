@@ -195,6 +195,61 @@ try{
   await employeePage.locator('#appContent .chip.approved').first().waitFor({state:'visible',timeout:20000});
   await screenshot(employeePage,'05-employee-approved');
  });
+ let cancellationId;
+ await step('Employee submits a future annual leave and manager approves it',async()=>{
+  const leaveDay=new Date(Date.now()+33*86400000).toISOString().slice(0,10);
+  const original=await apply('reject','E2E-'+run+'-LEAVE-CANCEL',leaveDay);
+  await decide(original.id,'approve');
+  cancellationId=original.id;
+ });
+ await step('Employee uses browser to request cancellation; original remains approved',async()=>{
+  await employeePage.locator('#refreshBtn').click();
+  await employeePage.locator('#nav [data-tab="requests"]').click();
+  const button=employeePage.locator('#appContent [data-wf-lifecycle="requestCancel"][data-id="'+cancellationId+'"]');
+  await button.waitFor({state:'visible'});
+  await button.click();
+  const form=employeePage.locator('#overlay form[data-form="wf_leave_cancel"]');
+  await form.locator('[name="p_reason"]').fill('E2E 行程變更，取消已核准的請假');
+  await form.locator('button[type="submit"]').click();
+  await form.waitFor({state:'hidden'});
+  const data=await rows('wm_requests',users[0].token,'select=status&id=eq.'+cancellationId);
+  assert.equal(data[0]?.status,'approved');
+  const cancel=(await req(api+'/rest/v1/rpc/wm_list_leave_cancellations','POST',
+    {p_tenant:tenant},header(publicKey,users[1].token))).data;
+  assert.equal(cancel.find(x=>x.request_id===cancellationId)?.status,'pending');
+ });
+ await step('Employee cannot approve own leave cancellation',async()=>{
+  const list=(await req(api+'/rest/v1/rpc/wm_list_leave_cancellations','POST',
+   {p_tenant:tenant},header(publicKey,users[1].token))).data;
+  const c=list.find(x=>x.request_id===cancellationId);
+  assert.ok(c?.id);
+  const response=await req(api+'/rest/v1/rpc/wm_decide_leave_cancellation','POST',
+    {p_cancellation:c.id,p_approve:true,p_note:'Self-approval not authorized'},
+    header(publicKey,users[1].token),false);
+  assert.ok(response.status>=400);
+ });
+ await step('Manager approves cancellation and original leave becomes cancelled',async()=>{
+  await managerPage.locator('#refreshBtn').click();
+  await managerPage.locator('#nav [data-tab="approvals"]').click();
+  const cancel=(await req(api+'/rest/v1/rpc/wm_list_leave_cancellations','POST',
+    {p_tenant:tenant},header(publicKey,users[2].token))).data;
+  const c=cancel.find(x=>x.request_id===cancellationId);
+  assert.equal(c?.status,'pending');
+  const button=managerPage.locator('#appContent [data-wf-lifecycle="decideCancel"][data-ok="true"][data-id="'+c.id+'"]');
+  await button.waitFor({state:'visible'});
+  await button.click();
+  const form=managerPage.locator('#overlay form[data-form="wf_leave_cancel_decision"]');
+  await form.locator('[name="p_note"]').fill('批准取消，依稽核規則保留紀錄');
+  await form.locator('button[type="submit"]').click();
+  await form.waitFor({state:'hidden'});
+  const original=await rows('wm_requests',users[0].token,'select=status&id=eq.'+cancellationId);
+  assert.equal(original[0]?.status,'cancelled');
+  const audit=await rows('wm_audit',users[0].token,
+   'select=action&tenant_id=eq.'+tenant+'&target_id=eq.'+cancellationId);
+  assert.ok(audit.some(x=>x.action==='leave_cancellation_decided'));
+  await screenshot(managerPage,'07-reviewed-leave-cancellation');
+ });
+
  await step('Real notifications are visible only to the intended employee and manager',async()=>{
   const employeeNotes=await rows('wm_notifications',users[1].token,'select=recipient_member_id,event_key,body&tenant_id=eq.'+tenant);
   assert.ok(employeeNotes.some(x=>x.event_key.endsWith(':rejected')&&x.body.includes('駁回')),'Missing rejected notice');
@@ -223,6 +278,39 @@ try{
   assert.ok(shifts.some(x=>x.member_id===member&&x.status==='published'));
   return 'Manager UI published a real DB shift';
  });
+ await step('Employee lifecycle rejects deactivation while a published future shift exists',async()=>{
+  const response=await req(api+'/rest/v1/rpc/wm_set_employment_status','POST',
+   {p_member:member,p_status:'inactive',p_reason:'E2E 申請停用員工及交接'},
+   header(publicKey,users[0].token),false);
+  assert.ok(response.status>=400);
+  const list=await rows('wm_members',users[0].token,'select=status&id=eq.'+member);
+  assert.equal(list[0]?.status,'active');
+ });
+ await step('After cancelling future shift Owner can deactivate and reactivate employee',async()=>{
+  const shifts=await rows('wm_shifts',users[0].token,'select=id,status,starts_at&tenant_id=eq.'+tenant+'&member_id=eq.'+member);
+  for(const s of shifts.filter(x=>x.status==='published'&&new Date(x.starts_at).getTime()>Date.now())){
+   await req(api+'/rest/v1/wm_shifts?id=eq.'+s.id+'&tenant_id=eq.'+tenant,'PATCH',
+    {status:'cancelled'}, {...header(publicKey,users[2].token),Prefer:'return=minimal'});
+  }
+  const result=(await req(api+'/rest/v1/rpc/wm_set_employment_status','POST',
+   {p_member:member,p_status:'inactive',p_reason:'E2E 測試離職保留資料'},
+   header(publicKey,users[0].token))).data;
+  assert.equal(result.status,'inactive');
+  const denied=await req(api+'/rest/v1/rpc/wm_submit_request','POST',
+   {p_member:member,p_kind:'overtime',p_start:new Date(Date.now()+86400000).toISOString(),
+    p_end:new Date(Date.now()+90000000).toISOString(),p_reason:'Inactive must fail',p_leave_kind:null,p_target_member:null},
+    header(publicKey,users[1].token),false);
+  assert.ok(denied.status>=400);
+  const back=(await req(api+'/rest/v1/rpc/wm_set_employment_status','POST',
+   {p_member:member,p_status:'active',p_reason:'E2E 測試復職恢復身份'},
+   header(publicKey,users[0].token))).data;
+  assert.equal(back.status,'active');
+  const audit=await rows('wm_audit',users[0].token,'select=action&tenant_id=eq.'+tenant+'&target_id=eq.'+member);
+  assert.ok(audit.some(x=>x.action==='employee_deactivated'));
+  assert.ok(audit.some(x=>x.action==='employee_reactivated'));
+  return 'Employee was disabled without deleting history; Auth access blocked; return succeeded';
+ });
+
  await step('Employee cannot create manager-only shift through REST',async()=>{
   const r=await req(api+'/rest/v1/wm_shifts','POST',{
    tenant_id:tenant,member_id:member,branch_id:branch,status:'published',created_by:users[1].id,
@@ -238,7 +326,7 @@ try{
  if(tenant)try{
   const sql=[
    'begin;',
-   ...['wm_request_actions','wm_audit','wm_request_documents','wm_period_adjustments','wm_attendance_adjustments','wm_shift_revisions','wm_qr_uses'].map(x=>"delete from public."+x+" where tenant_id='"+tenant+"';"),
+   ...['wm_leave_cancellations','wm_request_actions','wm_audit','wm_request_documents','wm_period_adjustments','wm_attendance_adjustments','wm_shift_revisions','wm_qr_uses'].map(x=>"delete from public."+x+" where tenant_id='"+tenant+"';"),
    "delete from public.wm_requests where tenant_id='"+tenant+"';",
    "delete from public.wm_punches where tenant_id='"+tenant+"';",
    "delete from public.wm_shifts where tenant_id='"+tenant+"';",
