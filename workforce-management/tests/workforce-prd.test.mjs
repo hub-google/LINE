@@ -243,7 +243,7 @@ test('HR-LVE approved leave cancellation and lifecycle have audited RPCs',()=>{
   'ENABLE ROW LEVEL SECURITY','REVOKE ALL ON TABLE public.wm_leave_cancellations'])assert.ok(sql.includes(m),m);
  assert.match(sql,/m\.user_id=v_actor/);
  assert.match(sql,/m\.role='owner'/);
- assert.match(sql,/r\.status='approved'/);
+ assert.match(sql,/r\.status<>'approved'/);
  assert.match(src,/data-wf-lifecycle="requestCancel"/);
  assert.match(src,/data-wf-lifecycle="decideCancel"/);
  assert.match(src,/data-wf-lifecycle="employment"/);
