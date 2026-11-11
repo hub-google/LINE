@@ -82,11 +82,14 @@
     h3{font-size:21px;color:var(--forest);line-height:1.4;letter-spacing:-.025em;margin-bottom:11px}
     .card p{font-size:14px;line-height:1.8;color:#65786c;margin:0}
     .two-sides{background:#edf3ec}
-    .dual{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+    .dual{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
     .showcase{border-radius:30px;overflow:hidden;background:#fff;min-height:420px;display:flex;flex-direction:column;box-shadow:var(--shadow);border:1px solid var(--line)}
     .showcase .visual{height:210px;padding:30px;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
     .showcase.booking .visual{background:linear-gradient(120deg,#d9eddf,#edf8df)}
     .showcase.queue .visual{background:linear-gradient(120deg,#ffeadf,#fff4e6)}
+    .showcase.pickup .visual{background:linear-gradient(120deg,#efe9ff,#e4f4ff)}
+    .pickup-demo-time{font-size:34px;font-weight:850;color:#462b52;line-height:1.1;margin:10px 0}
+    .pickup-demo-status{display:inline-block;background:#e5f6eb;color:#24734c;font-size:13px;border-radius:999px;padding:7px 13px;margin-top:6px}
     .visual::after{content:"";position:absolute;width:280px;height:280px;border:32px solid #ffffff40;border-radius:50%;right:-45px;top:-65px}
     .ui-card{position:relative;z-index:1;background:#fff;border-radius:17px;padding:20px 24px;width:min(100%,320px);box-shadow:0 14px 35px #244e331e;transform:rotate(-3deg)}
     .ui-card p{font-size:12px;color:#789082;margin:0 0 12px}
@@ -125,7 +128,7 @@
     .footer-top{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
     .footer-nav{display:flex;gap:23px;flex-wrap:wrap;color:#567263;font-size:13px;font-weight:750}
     .footer-note{font-size:12px;color:#718477;margin-top:20px;line-height:1.75}
-    @media(max-width:1060px){.nav-group{gap:12px}.nav-group--external{margin-left:10px;padding-left:10px}.hero-grid{gap:25px}.float-a{left:-3px}.float-b{right:-5px}.wrap{padding:0 23px}}
+    @media(max-width:1060px){.dual{grid-template-columns:repeat(2,minmax(0,1fr))}.nav-group{gap:12px}.nav-group--external{margin-left:10px;padding-left:10px}.hero-grid{gap:25px}.float-a{left:-3px}.float-b{right:-5px}.wrap{padding:0 23px}}
     @media(max-width:850px){
       .navlinks,.nav-actions{display:none}
       .mobile-menu{display:block;margin-left:auto;position:relative;border:0!important;border-radius:0!important;background:transparent!important;padding:0!important;box-shadow:none!important}
