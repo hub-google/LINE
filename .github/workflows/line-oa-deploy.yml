@@ -41,7 +41,7 @@ jobs:
         with:
           version: latest
       - name: Check LINE OA command and webhook contract
-        run: node --test QueueMonster/tests/line-oa-bot-contract.test.mjs QueueMonster/tests/booking-line-reply.test.mjs
+        run: node --test QueueMonster/tests/line-oa-bot-contract.test.mjs QueueMonster/tests/booking-line-reply.test.mjs QueueMonster/tests/queue-near-alert-oss-n03.test.mjs
       - name: Deploy backend and sync encrypted LINE configuration
         shell: bash
         run: |
