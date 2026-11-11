@@ -119,7 +119,7 @@ test("fullscreen board fits every panel and service unit within one viewport",()
  assert.match(css,/html:fullscreen body\s*\{/);
  assert.match(css,/grid-template-rows:auto auto minmax\(0,1fr\) auto/);
  assert.match(css,/html:fullscreen #upcoming/);
- assert.match(css,/repeat\(5,minmax\(0,1fr\)\)/);
+ assert.match(css,/repeat\(var\(--board-queue-count,5\),minmax\(0,1fr\)\)/);
  assert.match(css,/html:fullscreen #unit-board/);
  assert.match(css,/grid-auto-rows:minmax\(0,1fr\)/);
  assert.match(css,/overflow:hidden/);
@@ -127,8 +127,10 @@ test("fullscreen board fits every panel and service unit within one viewport",()
  assert.match(script,/boardFit\.schedule\(\)/);
  assert.match(fit,/document\.addEventListener\("fullscreenchange"/);
  assert.match(fit,/window\.addEventListener\("resize"/);
- assert.match(fit,/body\.style\.zoom/);
- assert.match(fit,/area\.scrollHeight/);
+ assert.doesNotMatch(fit,/body\.style\.zoom\s*=/);
+ assert.match(fit,/body\.style\.removeProperty\("zoom"\)/);
+ assert.match(fit,/--board-queue-count/);
+ assert.match(fit,/--board-unit-columns/);
  assert.match(fit,/\.unit-card/);
  const js=spawnSync(process.execPath,["--input-type=module","--check"],{input:fit,encoding:"utf8"});
  assert.equal(js.status,0,js.stderr);

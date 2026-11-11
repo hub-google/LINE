@@ -247,6 +247,10 @@ try{
     viewport,scale:Number(document.body.style.zoom||'1'),
     documentHeight:document.documentElement.scrollHeight,
     documentWidth:document.documentElement.scrollWidth,
+    currentFont:parseFloat(getComputedStyle(document.getElementById('current')).fontSize),
+    upcomingFont:parseFloat(getComputedStyle(document.querySelector('#upcoming li')).fontSize),
+    unitFont:parseFloat(getComputedStyle(document.querySelector('#unit-board .unit-now')||document.getElementById('current')).fontSize),
+    queueRows:getComputedStyle(document.getElementById('upcoming')).gridTemplateRows.split(' ').length,
     bodyHeight:document.body.scrollHeight,
     bodyClientHeight:document.body.clientHeight,
     rects};
@@ -258,6 +262,7 @@ try{
   await page.evaluate(()=>{
    document.getElementById('shop').textContent='測試門市｜即時叫號';
    document.getElementById('current').textContent='3';
+   document.getElementById('current').classList.remove('is-empty');
    const list=document.getElementById('upcoming');
    list.replaceChildren();
    for(const n of ['2','4','5','6','7']){
@@ -269,6 +274,11 @@ try{
   await page.waitForTimeout(220);
   const result=await fullscreenGeometry();
   assert.equal(result.fullscreen,true,'Fullscreen API should actually activate');
+  assert.equal(result.scale,1,'Fullscreen must not shrink the entire page');
+  assert.ok(result.currentFont>=(viewport.width>=1000?120:65),
+   'Current number must remain readable, not 10px after fullscreen scaling: '+JSON.stringify(result));
+  assert.ok(result.upcomingFont>=(viewport.width>=1000?38:22),
+   'Next-number cards must use readable text: '+JSON.stringify(result));
   assert.ok(result.documentHeight<=result.viewport.height+2,
    'Fullscreen board must not have a vertical scroll area: '+JSON.stringify(result));
   assert.ok(result.documentWidth<=result.viewport.width+2,
@@ -279,6 +289,28 @@ try{
    'The header, current ticket, waiting order and footer must all be visible: '+JSON.stringify(result));
   console.log('Fullscreen queue geometry:',JSON.stringify({viewport,scale:result.scale,
    height:result.documentHeight,visible:result.rects.length}));
+
+  // Regression for the actual screenshot: only two waiting numbers must fill
+  // the next-queue panel, not use a five-row grid with three phantom blanks.
+  await page.evaluate(()=>{
+   const list=document.getElementById('upcoming');
+   list.replaceChildren();
+   for(const n of ['6','7']){
+    const item=document.createElement('li');item.textContent=n;list.appendChild(item);
+   }
+   document.dispatchEvent(new Event('fullscreenchange'));
+  });
+  await page.waitForTimeout(140);
+  const twoNumbers=await fullscreenGeometry();
+  assert.equal(twoNumbers.queueRows,viewport.width<=780?1:2,
+    'Only the real two queue numbers should occupy grid rows: '+JSON.stringify(twoNumbers));
+  assert.ok(twoNumbers.upcomingFont>=(viewport.width>=1000?38:22),
+    'Two waiting numbers must remain large');
+  assert.equal(twoNumbers.scale,1);
+  console.log('Fullscreen 2-ticket readability:',JSON.stringify({
+   viewport,currentFont:twoNumbers.currentFont,upcomingFont:twoNumbers.upcomingFont,
+   queueRows:twoNumbers.queueRows,scale:twoNumbers.scale
+  }));
 
   // A multi-service board must also show each individual unit in kiosk mode.
   await page.evaluate(()=>{
@@ -301,6 +333,8 @@ try{
   await page.waitForTimeout(220);
   const multiple=await fullscreenGeometry();
   assert.equal(multiple.rects.filter(r=>r.name==='unit-card').length,12);
+  assert.equal(multiple.scale,1,'Even a multi-service board must not miniaturize the whole page');
+  assert.ok(multiple.unitFont>=20,'Service-unit numbers should remain legible');
   assert.ok(multiple.documentHeight<=multiple.viewport.height+2,
    'Twelve service-unit cards must not create a fullscreen scroll bar');
   assert.ok(multiple.rects.every(r=>r.bottom<=multiple.viewport.height+2&&r.right<=multiple.viewport.width+2&&r.top>=-2),
