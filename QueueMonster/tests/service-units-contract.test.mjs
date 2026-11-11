@@ -114,7 +114,8 @@ test("ordinary shops can create sessions without a window, and edit/delete actio
  assert.match(ui,/unit-session-delete/);
  assert.match(ui,/unit-session-start",editing\?\.start\|\|"09:00","time"\)/);
  assert.match(actions,/p_action:"session_delete"/);
- assert.match(actions,/unit_id:val\("unit-admin-unit"\)\|\|null/);
+ assert.match(actions,/const unitId=val\("unit-admin-unit"\)\|\|null/);
+ assert.match(actions,/unit_id:unitId,date/);
  assert.match(migration,/is_default_session_unit/);
  assert.match(migration,/deleted_at is null/);
  assert.match(migration,/此場次仍有有效預約或候位號碼/);
@@ -291,4 +292,19 @@ test("legacy settings tabs route to the one settings page, with no duplicate uni
  assert.match(settings,/if\(section==="branches"\)html=renderStaffBranches/);
  assert.doesNotMatch(view,/renderStaffUnits|renderStaffMenu|renderStaffBranches/);
  assert.doesNotMatch(manifest,/app\/staff\/units\.js/);
+});
+
+test("established sessions permit changing their window and schedule without dropping records",()=>{
+ const ui=read("saas/app/service-units.js");
+ const actions=read("saas/app/actions/service-unit-actions.js");
+ const migration=read("supabase/migrations/20261111145500_allow_edit_session_fields_and_move_window.sql");
+ assert.match(ui,/id="unit-admin-unit"/);
+ assert.doesNotMatch(ui,/editing\?'disabled':'/);
+ assert.match(ui,/field\("場次日期","unit-session-date"/);
+ assert.match(actions,/date=val\("unit-session-date"\)/);
+ assert.match(actions,/unit_id:unitId,date/);
+ assert.match(migration,/update public\.so_service_sessions set unit_id=v_unit,session_date=v_day/);
+ assert.match(migration,/update public\.so_reservations set service_unit_id=v_unit/);
+ assert.match(migration,/update public\.so_tickets set service_unit_id=v_unit,business_date=v_day/);
+ assert.doesNotMatch(migration,/既有場次不能更換服務窗口，請另建場次/);
 });
