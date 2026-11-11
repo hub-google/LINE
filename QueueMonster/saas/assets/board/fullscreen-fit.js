@@ -120,11 +120,15 @@ export function installBoardFullscreenFit(){
       const group=card.querySelector(".group");
       const heading=card.querySelector("h2");
       const next=card.querySelector(".unit-next");
-      const numericHeight=Math.max(20,h*.42);
-      if(now)now.style.fontSize=Math.floor(Math.min(textFit(now.textContent,w*.84,numericHeight),numericHeight*.92))+"px";
       if(heading)heading.style.fontSize=Math.floor(Math.min(30,textFit(heading.textContent,w*.92,h*.11)))+"px";
       if(group)group.style.fontSize=Math.floor(Math.min(19,textFit(group.textContent,w*.92,h*.08)))+"px";
       if(next)next.style.fontSize=Math.floor(Math.min(19,textFit(next.textContent,w*.92,h*.09)))+"px";
+      // Flex gives the numeric line the height LEFT after title, next, and actions.
+      // Size against that actual box, not against the whole card.
+      const numericHeight=Math.max(1,size(now).h);
+      if(now)now.style.fontSize=Math.floor(Math.min(
+        textFit(now.textContent,w*.84,numericHeight*.73),numericHeight*.69
+      ))+"px";
     }
     if(indicator){
       indicator.hidden=pageCount<=1;
