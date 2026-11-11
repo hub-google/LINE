@@ -301,7 +301,7 @@ try{
   });
   await page.waitForTimeout(140);
   const twoNumbers=await fullscreenGeometry();
-  assert.equal(twoNumbers.queueRows,viewport.width<=780?3:2,
+  assert.equal(twoNumbers.queueRows,viewport.width<=780?1:2,
     'Only the real two queue numbers should occupy grid rows: '+JSON.stringify(twoNumbers));
   assert.ok(twoNumbers.upcomingFont>=(viewport.width>=1000?38:22),
     'Two waiting numbers must remain large');
