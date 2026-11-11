@@ -233,3 +233,49 @@ test('evidence RLS invokes only a granted, identity-checked private predicate',(
  assert.match(sql,/TO authenticated/);
  assert.doesNotMatch(sql,/TO anon\b|TO PUBLIC\b/i);
 });
+
+
+test('HR-LVE approved leave cancellation and lifecycle have audited RPCs',()=>{
+ const sql=migration('20261111_workforce_leave_cancel_lifecycle.sql');
+ for(const m of ['wm_leave_cancellations','wm_request_leave_cancellation','wm_decide_leave_cancellation',
+  'wm_list_leave_cancellations','wm_set_employment_status','wm_request_actions',
+  'wm_private.can_approve_member','wm_period_closures',
+  'ENABLE ROW LEVEL SECURITY','REVOKE ALL ON TABLE public.wm_leave_cancellations'])assert.ok(sql.includes(m),m);
+ assert.match(sql,/m\.user_id=v_actor/);
+ assert.match(sql,/m\.role='owner'/);
+ assert.match(sql,/r\.status='approved'/);
+ assert.match(src,/data-wf-lifecycle="requestCancel"/);
+ assert.match(src,/data-wf-lifecycle="decideCancel"/);
+ assert.match(src,/data-wf-lifecycle="employment"/);
+ assert.match(src,/wm_list_leave_cancellations/);
+});
+test('HR-LVE correction subtype persists independently from display text',()=>{
+ const sql=migration('20261111_workforce_structured_correction_type.sql');
+ for(const key of ['correction_type','漏上班卡','漏下班卡','上下班皆漏卡',
+  '出勤時間更正','未分類','wm_request_correction_type'])assert.ok(sql.includes(key),key);
+ assert.match(src,/x\.correction_type/);
+});
+test('weekly hours reuse break-aware session engine, including midnight shifts',()=>{
+ const begin=src.indexOf('function attendanceRows('),end=src.indexOf('async function runAttendanceDetail()',begin);
+ assert.ok(begin>0&&end>begin);
+ const taiDay=s=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(s));
+ const taiStamp=s=>new Date(s).toISOString();
+ const fn=new Function('person','taiDay','taiStamp',src.slice(begin,end)+';return attendanceRows;')(
+  id=>({id,employee_code:'E01',display_name:'Test Staff',branch_id:'B',department_id:'D'}),taiDay,taiStamp);
+ const punches=[
+  {member_id:'M',kind:'IN',punched_at:'2026-11-11T14:00:00Z'},
+  {member_id:'M',kind:'BREAK_START',punched_at:'2026-11-11T16:00:00Z'},
+  {member_id:'M',kind:'BREAK_END',punched_at:'2026-11-11T16:30:00Z'},
+  {member_id:'M',kind:'OUT',punched_at:'2026-11-11T22:00:00Z'}
+ ];
+ const rows=fn(punches,'2026-11-11','2026-11-17');
+ assert.equal(rows.length,1);
+ assert.equal(rows[0].day,'2026-11-11');
+ assert.equal(rows[0].workMinutes,450); // 8 hours elapsed less 30 minutes break
+ assert.equal(rows[0].incomplete,false);
+ const unpaired=fn(punches.slice(0,3),'2026-11-11','2026-11-17');
+ assert.equal(unpaired[0].incomplete,true);
+ assert.equal(unpaired[0].workMinutes,0);
+ assert.match(src,/const sessions=attendanceRows\(app\.data\.punches\|\|\[\],start,end\)/);
+ assert.match(src,/hasIncomplete/);
+});
