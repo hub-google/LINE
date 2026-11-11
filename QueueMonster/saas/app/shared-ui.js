@@ -138,6 +138,7 @@ export function layout(title,subtitle,menu,body){
  const staffQuickNav=routeState.view==="staff"?'<nav class="staff-mobile-nav" aria-label="門市功能快速導覽">'+nav("設定","settings",staffState.staffTab,"staff")+
   nav("預約","bookings",staffState.staffTab,"staff")+
   nav("叫號","queue",staffState.staffTab,"staff")+
+   nav("訂餐","orders",staffState.staffTab,"staff")+
   '<details class="staff-mobile-more"><summary aria-label="開啟更多管理功能">更多</summary><div class="staff-mobile-popup">'+nav("工作台","dashboard",staffState.staffTab,"staff")+
   nav("預約日曆","calendar",staffState.staffTab,"staff")+nav("營運分析","analytics",staffState.staffTab,"staff")+
   nav("員工管理","members",staffState.staffTab,"staff")+

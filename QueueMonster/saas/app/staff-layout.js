@@ -30,7 +30,7 @@ export function enhanceStaffUI(){
  }
  // Booking and queue items are operational worklists: show status, call and delete controls immediately.
  // Do not put their controls behind a second click on either desktop or mobile.
- if(staffState.staffTab==="bookings"||staffState.staffTab==="queue")return;
+ if(["bookings","queue","orders"].includes(staffState.staffTab))return;
  for(const card of root.querySelectorAll(".staff-record")){
   const heading=card.querySelector(":scope > .staff-record-head");
   if(!heading)continue;

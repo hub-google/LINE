@@ -43,7 +43,7 @@ const cityNames=["基隆市","臺北市","台北市","新北市","桃園市","�
 function areaOf(shop){return (cityNames.find(x=>String(shop.address||"").includes(x))||"線上商圈").replace(/^臺/,"台")}
 function serviceMatches(shop,service){
  const m=shop.modules||{};
- return service==="全部"||(service==="預約"&&!!m.reservation)||(service==="取號"&&!!m.queue)||(service==="看板"&&!!(m.queue&&m.calling));
+ return service==="全部"||(service==="預約"&&!!m.reservation)||(service==="取號"&&!!m.queue)||(service==="點餐"&&!!m.pickup)||(service==="看板"&&!!(m.queue&&m.calling));
 }
 function setupExploreFilters(){
  const options=(id,items,allText)=>{
@@ -64,7 +64,7 @@ function customerUrl(slug,tab,oaMode="PLATFORM"){
 function badges(t){
  const m=t.modules||{};
  return '<span class="badge">'+e(t.category||"其他")+'</span>'+
- (m.reservation?'<span class="badge">線上預約</span>':"")+(m.queue?'<span class="badge">現場取號</span>':"")+
+ (m.reservation?'<span class="badge">線上預約</span>':"")+(m.queue?'<span class="badge">現場取號</span>':"")+(m.pickup?'<span class="badge">線上點餐</span>':"")+
  (t.oa_mode==="PLATFORM"?'<span class="badge">平台 LINE 服務</span>':"");
 }
 function render(){
@@ -106,7 +106,7 @@ function render(){
  heading.textContent=mode==="mine"?"我的紀錄":searching?"搜尋結果":"熱門店家排行";
  document.getElementById("result-count").textContent=searchLoading&&searching?"搜尋中…":
    searchError&&searching?"搜尋失敗":
-   !searching&&mode!=="mine"?"近 30 天預約＋取號 · 前 "+count+" 名":
+   !searching&&mode!=="mine"?"近 30 天預約＋取號＋訂餐 · 前 "+count+" 名":
    searching?count+" 個結果":count+" 個店家";
  const paging=document.getElementById("result-pages");
  paging.classList.toggle("hidden",!searching||searchLoading||Boolean(searchError)||searchTotal<=50);
@@ -136,23 +136,26 @@ function render(){
   const boardHref="./board.html?merchant="+encodeURIComponent(t.slug);
   const reserveHref=customerUrl(t.slug,"reserve",t.oa_mode);
   const queueHref=customerUrl(t.slug,"queue",t.oa_mode);
+   const orderHref=customerUrl(t.slug,"order",t.oa_mode);
   const mineHref=customerUrl(t.slug,"mine",t.oa_mode);
   let actions="",primaryHref="";
   if(mode==="mine"){
     primaryHref=mineHref;
     actions='<a class="btn" href="'+e(mineHref)+'">查看我的紀錄</a>'+
       (services.queue?'<a class="btn secondary" href="'+e(queueHref)+'">查看號碼</a>':"")+
+      (services.pickup?'<a class="btn secondary" href="'+e(orderHref)+'">查看取餐進度</a>':"")+
       (services.queue&&services.calling?'<a class="btn secondary" href="'+boardHref+'">公開叫號看板</a>':"");
   }else{
-    primaryHref=services.reservation?reserveHref:services.queue?queueHref:"";
+    primaryHref=services.reservation?reserveHref:services.queue?queueHref:services.pickup?orderHref:"";
     actions=(services.reservation?'<a class="btn" href="'+e(reserveHref)+'">立即預約</a>':"")+
       (services.queue?'<a class="btn'+(services.reservation?" secondary":"")+'" href="'+e(queueHref)+'">現場取號</a>':"")+
+      (services.pickup?'<a class="btn secondary" href="'+e(orderHref)+'">立即點餐</a>':"")+
       (services.queue&&services.calling?'<a class="btn secondary" href="'+boardHref+'">公開叫號看板</a>':"");
   }
   const badges=badgesForStore(t);
   const rank=mode!=="mine"&&!searching&&Number(t.popularity_rank)>0?
     '<span class="rank-number'+(Number(t.popularity_rank)<=3?' leading':'')+'">#'+Number(t.popularity_rank)+'</span>':"";
-  const metric=rank?'<p class="popularity-metrics">近30天 · 預約 '+Number(t.booking_count||0)+' · 取號 '+Number(t.ticket_count||0)+'</p>':"";
+  const metric=rank?'<p class="popularity-metrics">近30天 · 預約 '+Number(t.booking_count||0)+' · 取號 '+Number(t.ticket_count||0)+' · 訂餐 '+Number(t.order_count||0)+'</p>':"";
   const cover=primaryHref?'<a class="card-cover" href="'+e(primaryHref)+'" aria-label="開啟 '+name+'"></a>':"";
   return '<article class="merchant-card">'+cover+
    '<div class="card-content"><div class="card-top"><span class="shop-icon" aria-hidden="true">'+

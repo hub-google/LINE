@@ -177,7 +177,8 @@ export function customerRender(){
    (t.address?'<p class="muted" style="font-size:13px;margin:0">'+esc(t.address)+'</p>':"")+'</section>')+
  '<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",customerState.customer.current||"—")+stat("現場候位",customerState.customer.waiting+" 組")+stat("我的有效預約",items.filter(x=>x.status==="CONFIRMED").length)+'</div>'+
  '<div class="grid">'+(m.reservation?'<button class="routecard" data-nav="customer" data-tab="reserve"><h2>線上預約</h2><p class="muted">選擇日期與時段，完成預約</p><strong>立即預約 →</strong></button>':"")+
- (m.queue?'<button class="routecard" data-nav="customer" data-tab="queue"><h2>現場取號</h2><p class="muted">直接取得候位號碼與查看進度</p><strong>立即取號 →</strong></button>':"")+'<button class="routecard" data-nav="customer" data-tab="mine"><h2>我的服務</h2><p class="muted">點餐、叫號進度與預約紀錄集中管理</p><strong>查看我的服務 →</strong></button>'+
+ (m.queue?'<button class="routecard" data-nav="customer" data-tab="queue"><h2>現場取號</h2><p class="muted">直接取得候位號碼與查看進度</p><strong>立即取號 →</strong></button>':"")+(pickupState.customer?.settings?.enabled?'<button class="routecard" data-nav="customer" data-tab="order"><h2>線上點餐</h2><p class="muted">選擇餐點和取餐時間，查看店家進度</p><strong>立即點餐 →</strong></button>':"")+
+ '<button class="routecard" data-nav="customer" data-tab="mine"><h2>我的服務</h2><p class="muted">點餐、叫號進度與預約紀錄集中管理</p><strong>查看我的服務 →</strong></button>'+
 (m.queue&&m.calling?'<a class="routecard" href="./board.html?merchant='+encodeURIComponent(routeState.slug)+'"><h2>公開即時叫號看板</h2><p class="muted">直接查看目前叫號及接下來的順序。</p><strong>查看公開看板 →</strong></a>':"")+'</div>';
  }
  else if(routeState.customerTab==="order"){
@@ -252,5 +253,5 @@ export function customerRender(){
          a.images.map(u=>'<img loading="lazy" alt="'+esc(a.title)+' 門市照片" src="'+esc(u)+'" style="width:220px;height:150px;flex:none;object-fit:cover;border-radius:9px;scroll-snap-align:start">').join("")+
         '</div>':"")+'</article>').join(""));
  }
- return layout(t.name,"預約與取號・即時資料",menu,lineStatusBadge()+serviceNav+html);
+ return layout(t.name,"預約、取號與點餐・即時資料",menu,lineStatusBadge()+serviceNav+html);
 }
