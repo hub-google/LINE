@@ -709,7 +709,11 @@ body[data-monster-page="directory"] .page-header .hero-heading h1.eyebrow{
  body[data-monster-page="home"] .site-head .logo,
  body[data-monster-page="directory"] .page-header .brand,
  body[data-monster-page="merchant-register"] header .brand,
- body[data-monster-page="merchant-center"] .top-links .top-link{
+ body[data-monster-page="merchant-center"] .top-links .top-link,
+ body[data-monster-page="index"] header a.brand,
+ body[data-monster-page="index"] header .headlinks a,
+ body[data-monster-page="directory"] footer a,
+ body[data-monster-page="index"] footer a{
    min-height:44px;
    box-sizing:border-box;
    display:inline-flex;
