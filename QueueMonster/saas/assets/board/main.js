@@ -236,4 +236,3 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
       liveSync.start();
       setInterval(updateConnectionStatus,5000);
     }
-  }
