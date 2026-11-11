@@ -71,7 +71,8 @@ test("inactive merchant board shows a stable unavailable state without repeated 
  assert.match(board,/if\(\/找不到商家\/\.test\(/);
  assert.match(board,/disabled=true;lastData=null;lastSuccess=null/);
  assert.match(board,/門市目前未開放叫號/);
- assert.match(board,/click",\(\)=>\{disabled=false;void refresh\(\);\}/);
+ assert.doesNotMatch(board,/id="refresh"/);
+ assert.match(board,/setInterval\(\(\)=>\{if\(!document\.hidden&&!disabled\)void refresh\(\);\},12000\)/);
 });
 
 
@@ -112,14 +113,15 @@ test("merchant color overrides the old high-specificity purple board theme",()=>
  assert.match(theme,/--merchant-board-contrast/);
 });
 
-test("fullscreen board uses one measured-container layout for all aspect ratios",()=>{
+test("board always fits the viewport using one measured-container layout",()=>{
  const css=read("saas/assets/board/page.css");
  const script=read("saas/assets/board/main.js");
  const fit=read("saas/assets/board/fullscreen-fit.js");
- assert.match(css,/html:fullscreen body\s*\{/);
+ assert.match(board,/<html lang="zh-Hant" class="board-fit">/);
+ assert.match(css,/html\.board-fit body\s*\{/);
  assert.match(css,/grid-template-rows:auto auto minmax\(0,1fr\) auto/);
- assert.match(css,/html:fullscreen #single-board\[data-board-layout="side"\]/);
- assert.match(css,/html:fullscreen #single-board\[data-board-layout="stack"\]/);
+ assert.match(css,/html\.board-fit #single-board\[data-board-layout="side"\]/);
+ assert.match(css,/html\.board-fit #single-board\[data-board-layout="stack"\]/);
  assert.match(css,/--board-queue-columns/);
  assert.match(css,/--board-queue-rows/);
  assert.match(css,/--board-current-font/);
@@ -139,6 +141,9 @@ test("fullscreen board uses one measured-container layout for all aspect ratios"
  assert.doesNotMatch(fit,/screenWidth\s*[<>]=?\s*\d+/);
  assert.doesNotMatch(fit,/window\.innerWidth\s*[<>]=?\s*\d+/);
  assert.doesNotMatch(fit,/body\.style\.zoom\s*=/);
+ assert.doesNotMatch(fit,/if\(!document\.fullscreenElement\)/);
+ assert.match(fit,/document\.addEventListener\("fullscreenchange",schedule\)/);
+ assert.match(fit,/\bschedule\(\);\s*return \{schedule\}/);
  const js=spawnSync(process.execPath,["--input-type=module","--check"],{input:fit,encoding:"utf8"});
  assert.equal(js.status,0,js.stderr);
 });
