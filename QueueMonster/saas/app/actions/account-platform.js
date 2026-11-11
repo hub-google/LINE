@@ -46,7 +46,13 @@ if(a==="customer-history-close"){
   const result=await rpc("so_create_tenant",{p_name:patch.name,
    p_slug:code,
    p_modules:checked("create-feature"),p_owner_email:email||null});
-  try{await rpc("so_update_tenant",{p_slug:result.slug,p_patch:patch});}
+  try{
+     await rpc("so_update_tenant",{p_slug:result.slug,p_patch:patch});
+     if(document.getElementById("create-pickup-enabled")?.checked){
+       await rpc("so_pickup_save_settings",{p_slug:result.slug,p_enabled:true,p_mode:"OPTIONAL",
+         p_start:"05:30",p_end:"20:00",p_interval:15,p_capacity:5,p_notice:20,p_days:7,p_prep:20});
+     }
+   }
   catch(error){routeState.platformTab="list";throw Error("企業已建立，但部分設定未儲存（"+result.slug+"）："+error.message);}
   merchantLogoSaved("create");
   routeState.platformTab="list";
@@ -62,13 +68,13 @@ if(a==="customer-history-close"){
  if(a==="copy-service-link"){
    const link=b.dataset.url||"";
    const kind=b.dataset.serviceKind;
-   if(!link||!["board","queue","reserve"].includes(kind))return true;
+   if(!link||!["board","queue","reserve","order"].includes(kind))return true;
    let url;
    try{
      url=new URL(link);
      if(url.protocol!=="https:"&&url.origin!==location.origin)throw Error("網址格式不正確");
    }catch(_error){showActionFeedback("顧客網址無效，請重新整理","error");return true;}
-   const label=kind==="board"?"叫號看板":kind==="queue"?"抽號":"預約";
+   const label=kind==="board"?"叫號看板":kind==="queue"?"抽號":kind==="order"?"點餐":"預約";
    try{
      await navigator.clipboard.writeText(url.href);
      showActionFeedback("已複製"+label+"網址","success");
