@@ -40,7 +40,7 @@ export async function refreshQueueProgress(){
   const alertTicketId=data?.mine?.id||queueTicketToDisplay();
   if(alertTicketId){
     try{
-      // Refresh with every explicit reload or realtime update, including
+      // Refresh only on a user-requested reload, including
       // preference changes made on the customer's other device.
       const pref=await rpc("so_customer_get_queue_near_alert",{p_ticket_id:alertTicketId});
       queueState.queueNearAlertSettings[alertTicketId]=[0,3,5].includes(pref.threshold)?pref.threshold:null;
@@ -50,14 +50,6 @@ export async function refreshQueueProgress(){
     }
   }
   render();
-  if(data?.tenant_id&&queueState.queueRealtimeTenant!==data.tenant_id){
-    stopQueueRealtime();
-    queueState.queueRealtimeTenant=data.tenant_id;
-    queueState.queueRealtimeChannel=lineState.supa.channel("queue-display-"+data.tenant_id)
-      .on("postgres_changes",{event:"UPDATE",schema:"public",table:"so_queue_displays",
-        filter:"tenant_id=eq."+data.tenant_id},()=>{void refreshQueueProgress();})
-      .subscribe();
-  }
  }catch(e){
   if(routeState.view==="customer"&&routeState.customerTab==="progress"&&routeState.slug===shop){
     queueState.queueLiveError="進度暫時無法同步，請點重新整理。";
@@ -91,7 +83,7 @@ export function queueProgressBoard(){
  const ownNumber=own?.number||fallbackTicket?.number||"—";
  const ownStatus=own?.status||fallbackTicket?.status||"";
  const ownParty=own?.party||fallbackTicket?.party||1;
- let note="號碼與候位組數會隨店員叫號自動更新。";
+ let note="顯示的是上次查詢的叫號進度；如需最新資料，請點「重新整理進度」。";
  if(ownStatus==="CALLED")note="已叫到您的號碼，請依現場人員指示報到。";
  else if(ownStatus==="ARRIVED")note="門市已確認您到場，請依現場指示等待進場。";
   else if(ownStatus==="ADMITTED")note="門市已確認您進場，請依現場人員指示。";
@@ -115,7 +107,7 @@ export function queueProgressBoard(){
    '<p class="queue-board-note">'+esc(note)+'</p>'+
    '<p class="small" role="status">'+
       (notLive?"<strong>最新進度無法確認：</strong>"+(navigator.onLine===false?"目前離線。":esc(queueState.queueLiveError))+"以下為最後取得的資料，請重新連線再確認。":
-        "已連線；進度在畫面開啟期間自動更新。")+
+        "目前顯示上次查詢結果；請點「重新整理進度」取得最新資訊。")+
       " 最後成功更新："+(lastSync?esc(formatTaipeiCreated(lastSync)):"尚未成功同步")+
       "（台灣時間）。"+'</p>'+
    queueNearAlertControls(own||fallbackTicket,ownStatus)+
