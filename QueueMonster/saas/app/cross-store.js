@@ -78,6 +78,7 @@ export function crossTicketCards(){
 export function crossRecords(){
  const bookings=crossStoreState.customerActivity?.reservations||[];
  const tickets=crossStoreState.customerActivity?.tickets||[];
+ const orders=crossStoreState.customerActivity?.orders||[];
  const errMessage=crossStoreState.customerActivityError?'<p class="alert">'+esc(crossStoreState.customerActivityError)+'</p>':"";
  const bookingHtml=bookings.length?bookings.slice(0,80).map(x=>
    '<article class="cross-record"><div class="cross-ticket-head"><strong>'+esc(x.shop_name)+'</strong>'+tag(x.status)+'</div>'+

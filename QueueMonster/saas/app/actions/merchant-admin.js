@@ -13,8 +13,8 @@ if(a==="save-service-modes"){await act(async()=>{
   const queue=document.getElementById("set-service-queue")?.checked;
    const pickup=document.getElementById("set-service-pickup")?.checked;
   if(typeof reservation!=="boolean"||typeof queue!=="boolean"||typeof pickup!=="boolean")throw Error("請在企業設定中調整服務開關");
-  await rpc("so_set_merchant_services",{p_slug:routeState.slug,p_reservation:reservation,p_queue:queue});
-  return reservation&&queue?"已開放預約與取號":reservation?"已切換為僅提供線上預約":queue?"已切換為僅提供現場取號":"已暫停接受新預約及新取號";
+  await rpc("so_set_all_merchant_services",{p_slug:routeState.slug,p_reservation:reservation,p_queue:queue,p_pickup:pickup});
+  return "預約、取號、訂餐三項服務開關已同步儲存，既有紀錄不受影響";
  });return true;}
  if(a==="update-settings"){await act(async()=>{
  const initial=staffState.staff?.tenant?.onboarding_complete===false;
