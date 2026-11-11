@@ -95,7 +95,8 @@ test("a signed-in platform admin still sees the merchant signup form",async()=>{
  };
  const document={getElementById:element,querySelectorAll:()=>[]};
  const location={href:"https://hub-google.github.io/LINE/booking/merchant-register.html?mode=signup"};
- vm.runInNewContext(source,{createClient,document,location,URL,history:{replaceState(){}}});
+ vm.runInNewContext(source,{createClient,document,location,URL,history:{replaceState(){}},
+  SUPABASE_URL:"https://test.supabase.co",SUPABASE_PUBLISHABLE_KEY:"test-publishable-key"});
  await Promise.resolve();
  await Promise.resolve();
  assert.equal(sessionReads,0,"signup must not inspect the existing admin session");

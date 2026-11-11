@@ -3,8 +3,7 @@
 "use strict";
 const mount=document.getElementById("site-auth-root");
 if(!mount)return;
-const SB_URL="https://unapiwajmgqqtdkixaab.supabase.co";
-const SB_KEY="sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy";
+const {SUPABASE_URL:SB_URL,SUPABASE_PUBLISHABLE_KEY:SB_KEY}=await import("./public-config.js");
 const RETURN_KEY="line-site-auth-return-v1";
 const CUSTOMER_KEY="line-saas-customer-session-v2";
 const current=new URL(location.href);

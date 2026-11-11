@@ -28,6 +28,7 @@ await copyFile(path.join(src, "explore-game.css"), path.join(dest, "explore-game
 await copyFile(path.join(src, "explore-game.js"), path.join(dest, "explore-game.js"));
 await copyFile(path.join(src, "site-auth.css"), path.join(dest, "site-auth.css"));
 await copyFile(path.join(src, "site-auth.js"), path.join(dest, "site-auth.js"));
+await copyFile(path.join(src, "public-config.js"), path.join(dest, "public-config.js"));
 
 await copyFile(path.join(src, "manifest.webmanifest"), path.join(dest, "manifest.webmanifest"));
 await copyFile(path.join(src, "offline.html"), path.join(dest, "offline.html"));

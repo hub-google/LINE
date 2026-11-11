@@ -29,6 +29,8 @@ test("all pages share a real user identity with clickable login/logout",()=>{
  assert.match(style,/\.site-auth-login/);
  assert.match(style,/@media\(max-width:420px\)/);
  assert.match(build,/copyFile\(path\.join\(src, "site-auth\.js"/);
+ assert.match(build,/copyFile\(path\.join\(src, "public-config\.js"/);
+ assert.match(workflow,/site-auth\.css site-auth\.js public-config\.js/);
  assert.match(build,/copyFile\(path\.join\(src, "site-auth\.css"/);
  assert.match(workflow,/site-auth-contract\.test\.mjs/);
  assert.match(workflow,/site-auth\.css site-auth\.js/);
@@ -104,7 +106,9 @@ function createScenario({lineName="",customerSession=false,staffName="",url="htt
  let index=0;
  const createClient=()=>clients[index++];
  const sandbox={createClient,document:doc,window,location,localStorage,sessionStorage,URL,URLSearchParams,Date,Promise,console};
- const executable=code.replace('const {createClient}=await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");','const createClient=globalThis.__siteAuthCreateClient;');
+ const executable=code.replace('const {createClient}=await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");','const createClient=globalThis.__siteAuthCreateClient;')
+   .replace('const {SUPABASE_URL:SB_URL,SUPABASE_PUBLISHABLE_KEY:SB_KEY}=await import("./public-config.js");',
+     'const SB_URL="https://test.supabase.co";const SB_KEY="test-publishable-key";');
  vm.runInNewContext(executable,{...sandbox,__siteAuthCreateClient:createClient},{filename:"site-auth.js",timeout:1500});
  return {rootNode,state,memory};
 }
@@ -287,4 +291,26 @@ test("privacy and terms pages share one legal CSS source",()=>{
  for(const page of [privacy,terms])
   assert.match(page,/assets\/privacy\/page\.css\?build=__LINE_SAAS_BUILD__/);
  assert.equal(existsSync(path.join(root,"saas/assets/terms/page.css")),false);
+});
+
+
+test("all frontends use one public Supabase URL and publishable-key definition",()=>{
+ const config=read("saas/public-config.js");
+ const basename="unapiwajmgqqtdkixaab.supabase.co";
+ assert.match(config,/export const SUPABASE_URL=/);
+ assert.match(config,/export const SUPABASE_PUBLISHABLE_KEY=/);
+ assert.equal((config.match(new RegExp(basename,"g"))||[]).length,1);
+ const modules=[
+  "saas/site-auth.js",
+  "saas/app/line-session.js",
+  "saas/assets/directory/main.js",
+  "saas/assets/board/main.js",
+  "saas/assets/merchant-register/main.js",
+  "saas/assets/platform-login/main.js",
+ ];
+ for(const file of modules){
+  const source=read(file);
+  assert.doesNotMatch(source,/unapiwajmgqqtdkixaab|sb_publishable_L09/,file+" still duplicates public config");
+  assert.match(source,/public-config\.js/,file+" must use the shared configuration");
+ }
 });

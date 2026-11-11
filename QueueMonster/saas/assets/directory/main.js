@@ -1,7 +1,8 @@
+import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
 
 import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-const SB_URL="https://unapiwajmgqqtdkixaab.supabase.co";
-const SB_KEY="sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy";
+const SB_URL=SUPABASE_URL;
+const SB_KEY=SUPABASE_PUBLISHABLE_KEY;
 const bridge=SB_URL+"/functions/v1/line-bridge?action=config";
 const sb=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"line-saas-customer-session-v2"}});
 const params=new URLSearchParams(location.search),mode=["search","queue","mine","game"].includes(params.get("mode"))?params.get("mode"):"search";

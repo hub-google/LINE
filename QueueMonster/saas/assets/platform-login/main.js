@@ -1,5 +1,6 @@
+import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
 import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-const sb=createClient("https://unapiwajmgqqtdkixaab.supabase.co","sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy",{
+const sb=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{
  auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
 });
 const $=id=>document.getElementById(id);
@@ -50,8 +51,8 @@ $("hq-login-form").addEventListener("submit",async event=>{
   const email=$("hq-email").value.trim().toLowerCase();
   const password=$("hq-password").value;
   if(password.length===1){
-   const response=await fetch("https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/qm-admin-login",{
-    method:"POST",headers:{"Content-Type":"application/json","apikey":"sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy"},
+   const response=await fetch(SUPABASE_URL+"/functions/v1/qm-admin-login",{
+    method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY},
     body:JSON.stringify({email,pin:password})
    });
    if(!response.ok)throw Error("無法登入總部，請確認帳號及密碼。");

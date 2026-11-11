@@ -1,3 +1,4 @@
+import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../public-config.js";
 import {requestBookingReply} from "./booking-line-reply.js";
 import {authState} from "./state/authState.js";
 import {bookingState} from "./state/bookingState.js";
@@ -285,8 +286,8 @@ export function lineStatusBadge(){
 }
 
 export function initializeLineSession(){
-lineState.SB_URL="https://unapiwajmgqqtdkixaab.supabase.co";
-lineState.SB_KEY="sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy";
+lineState.SB_URL=SUPABASE_URL;
+lineState.SB_KEY=SUPABASE_PUBLISHABLE_KEY;
 lineState.routeBeforeAuth=new URLSearchParams(location.search);
 lineState.initialViews=lineState.routeBeforeAuth.getAll("view");
 lineState.initialView=lineState.initialViews[lineState.initialViews.length-1]||"customer";

@@ -1,8 +1,8 @@
+import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
 
     import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
     import {installBoardFullscreenFit} from "./fullscreen-fit.js";
-    const SUPABASE_URL="https://unapiwajmgqqtdkixaab.supabase.co";
-    const SUPABASE_ANON_KEY="sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy";
+    const SUPABASE_ANON_KEY=SUPABASE_PUBLISHABLE_KEY;
     // Independent browser session: opening a TV board never signs out a customer or staff.
     const client=createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{
       auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}

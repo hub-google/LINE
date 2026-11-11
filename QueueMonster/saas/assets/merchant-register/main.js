@@ -1,8 +1,9 @@
+import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
 import {formatAuthError} from "../../app/auth-errors.js";
 
 import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-const supabaseUrl="https://unapiwajmgqqtdkixaab.supabase.co";
-const publishableKey="sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy";
+const supabaseUrl=SUPABASE_URL;
+const publishableKey=SUPABASE_PUBLISHABLE_KEY;
 const sb=createClient(supabaseUrl,publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 // Registration must not take over the platform administrator's existing browser session.
 const signupSb=createClient(supabaseUrl,publishableKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
