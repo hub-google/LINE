@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "./helpers/source-fs.mjs";
 import {fileURLToPath} from "node:url";
 import path from "node:path";
+import {existsSync,readFileSync as rawReadFile} from "node:fs";
 import vm from "node:vm";
 import {spawnSync} from "node:child_process";
 
@@ -277,4 +278,13 @@ test("personal records show an identity pending state before network and resolve
  const identityStart=load.indexOf('if(mode==="mine"){\n  render();');
  const fetchStart=load.indexOf('const confPromise=fetch(bridge');
  assert.ok(identityStart>=0 && identityStart<fetchStart,"pending UI must render before LINE bridge fetch");
+});
+
+
+test("privacy and terms pages share one legal CSS source",()=>{
+ const privacy=rawReadFile(path.join(root,"saas/privacy.html"),"utf8");
+ const terms=rawReadFile(path.join(root,"saas/terms.html"),"utf8");
+ for(const page of [privacy,terms])
+  assert.match(page,/assets\/privacy\/page\.css\?build=__LINE_SAAS_BUILD__/);
+ assert.equal(existsSync(path.join(root,"saas/assets/terms/page.css")),false);
 });
