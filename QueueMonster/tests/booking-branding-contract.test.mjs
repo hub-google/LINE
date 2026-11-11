@@ -51,7 +51,8 @@ test("staff backoffice keeps compact mobile controls and progressive records",()
  assert.match(app,/function enhanceStaffUI\(\)/);
  assert.match(app,/function staffListPage\(items,key,renderItem\)/);
  assert.match(app,/staffListPage\(visibleOpen,"booking-open",card\)/);
- assert.match(app,/staffListPage\(openTickets,"ticket-open",card\)/);
+  assert.match(app,/listing\(openTickets,unitMode\?"unit-queue-open-"/);
+  assert.match(app,/staffListPage\(records,key,card\)/);
  assert.match(app,/staffSecondaryByTab/);
  assert.match(css,/body\[data-portal="staff"\] \.staff-mobile-nav/);
  assert.match(css,/@media\(max-width:950px\)/);
