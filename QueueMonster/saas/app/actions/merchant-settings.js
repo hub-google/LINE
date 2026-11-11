@@ -68,7 +68,7 @@ if(a==="copy-own-oa-webhook"){
    }
    lineState.lineConfig=null;lineState.lineConfigSlug="";
    return a==="connect-own-oa"
-     ?"Messaging API 已驗證連接。請設定 Webhook URL，並使用店家 LINE OA 測試顧客身分配對與收訊；LIFF 為選填。"
+     ?"Messaging API 已驗證連接。請設定 Webhook URL，再以店家 LINE OA 確認顧客身分配對及通知是否送達；LIFF 為選填。"
      :"已解除自有 LINE OA，恢復平台服務";
   });return true;
  }
