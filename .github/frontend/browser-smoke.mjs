@@ -237,7 +237,7 @@ try{
    const main=document.getElementById("single-board");
    const cards=[...document.querySelectorAll("#unit-board .unit-card")];
    const nodes=[
-    ...document.querySelectorAll("body > header,body > footer,#board-session-nav:not([hidden]),#single-board:not([hidden]),#unit-board:not([hidden]),#current,#upcoming li,#unit-board .unit-card,#board-page-indicator")
+    ...document.querySelectorAll("body > header,body > footer,#board-update-mode,#board-session-nav:not([hidden]),#single-board:not([hidden]),#unit-board:not([hidden]),#current,#upcoming li,#unit-board .unit-card,#board-page-indicator")
    ].filter(el=>el.getClientRects().length&&!el.closest("[hidden]")&&!el.hasAttribute("data-board-hidden"));
    const rects=nodes.map(el=>{
     const r=el.getBoundingClientRect();
@@ -290,7 +290,10 @@ try{
   });
   // The board must already occupy the visible browser viewport, BEFORE fullscreen.
   await page.waitForTimeout(180);
-  assert.equal(await page.locator("#refresh").count(),0,"Polling needs no manual refresh button");
+  assert.equal(await page.locator("#refresh").count(),0,"Event-driven queue board needs no manual refresh button");
+  const modeText=(await page.locator("#board-update-mode").textContent()).trim();
+  assert.ok(["叫號變動即時更新","每 10 秒更新一次叫號"].includes(modeText),
+   "The board must explain realtime or exact ten-second fallback");
   const normal=await geometry();
   assert.equal(normal.fullscreen,false);
   assert.equal(normal.scale,1);
