@@ -2,6 +2,7 @@
 import {routeState} from "./state/routeState.js";
 import {customerState} from "./state/customerState.js";
 import {staffState} from "./state/staffState.js";
+import {lineState} from "./state/lineState.js";
 import {box,btn,esc,field,taipei} from "./shared-ui.js";
 import {rpc,act,load} from "./data-loading.js";
 import {render} from "./staff-layout.js";
@@ -10,7 +11,7 @@ import {render} from "./staff-layout.js";
 // This module owns only pickup-specific presentation and form state.
 export const pickupState={
   customer:null,staff:null,customerSlug:"",staffSlug:"",
-  day:"",slot:"",method:"scheduled",cart:{},note:"",requestId:"",history:null,historyPage:1,historyFilter:"all"
+  day:"",slot:"",method:"scheduled",cart:{},note:"",requestId:"",history:null,historyPage:1,historyFilter:"all",name:"",phone:"",confirming:false
 };
 const statusText={NEW:"待店家接單",ACCEPTED:"已接單・待製作",PREPARING:"製作中",
   READY:"可取餐",PICKED_UP:"已取餐",REJECTED:"店家已拒單",CANCELLED:"已取消"};
@@ -24,8 +25,9 @@ export async function loadPickupData(){
     if(!pickupState.day)pickupState.day=taipei();
     if(pickupState.customerSlug!==routeState.slug){
       pickupState.customer=null;pickupState.customerSlug=routeState.slug;
-      pickupState.cart={};pickupState.slot="";pickupState.requestId="";pickupState.method="scheduled";
+      pickupState.cart={};pickupState.slot="";pickupState.requestId="";pickupState.method="scheduled";pickupState.confirming=false;pickupState.name="";pickupState.phone="";
     }
+    if(!pickupState.name&&lineState.lineDisplayName)pickupState.name=String(lineState.lineDisplayName).slice(0,60);
     if(!pickupState.customer||routeState.customerTab==="order"){
       try{pickupState.customer=await rpc("so_pickup_public",{p_slug:routeState.slug,p_date:pickupState.day});}
       catch(err){console.warn("取餐服務資料不可用",err);pickupState.customer=null;}
@@ -61,11 +63,13 @@ export function renderPickupSettings(isManager){
    '<div class="grid"><div>'+field("每天最早取餐時間","pickup-start",s.pickup_start||"05:30","time")+
    field("每天最後取餐截止","pickup-end",s.pickup_end||"14:00","time")+
    '<label for="pickup-interval">取餐時段間隔</label>'+select("pickup-interval",[[5,"5 分鐘"],[10,"10 分鐘"],[15,"15 分鐘"],[20,"20 分鐘"],[30,"30 分鐘"],[60,"60 分鐘"]],s.interval_minutes)+'</div>'+
-   '<div>'+field("每時段最多接單數","pickup-capacity",s.slot_capacity||5,"number",'min="1" max="300"')+
+   '<div>'+'<label for="pickup-capacity-basis">取餐時段容量計算方式</label>'+
+   select("pickup-capacity-basis",[["ORDERS","每時段訂單筆數"],["ITEMS","每時段餐點總份數"]],s.capacity_basis||"ORDERS")+
+   field("每時段最多可接數量（依上方單位）","pickup-capacity",s.slot_capacity||5,"number",'min="1" max="300"')+
    field("至少提前幾分鐘下單","pickup-notice",s.min_notice_minutes??20,"number",'min="0" max="1440"')+
    field("可提前預訂天數（0～30）","pickup-days",s.days_ahead??7,"number",'min="0" max="30"')+'</div></div>'+
    field("預估製作時間（分鐘）","pickup-prep",s.prep_minutes??20,"number",'min="1" max="180"')+
-   '<p class="small">例如 08:00 取餐、預估製作 20 分鐘，需到 07:40 才可點「開始製作」；05:30 取餐的訂單不受影響。既有訂單的取餐時間不會因設定變更而被修改。</p>'+
+   '<p class="small">取餐時段容量可選「訂單數」或「餐點份數」。選擇份數後，08:00 的 20 份漢堡會占用 20 份容量；已成立訂單的取餐時間不變。</p>'+
    '<div class="staff-actionbar">'+btn("儲存取餐設定","pickup-save","primary")+'</div>')+
    '<div class="inset" style="margin-top:12px"><strong>點餐連結</strong><p class="small">服務啟用後，可把下方網址提供給顧客。</p>'+
    (s.enabled?'<p style="overflow-wrap:anywhere"><a target="_blank" rel="noopener noreferrer" href="'+esc(new URL("./index.html?view=customer&merchant="+encodeURIComponent(routeState.slug)+"&tab=order",location.href).href)+'">'+
@@ -95,7 +99,7 @@ export function renderCustomerPickup(){
   (immediate?'<p class="notice">預估製作時間約 '+esc(s.prep_minutes)+' 分鐘，實際以店家接單進度為準。</p>':
    '<div class="grid"><div>'+field("取餐日期","pickup-day",pickupState.day||taipei(),"date",'min="'+taipei()+'"')+
    '</div><div><label for="pickup-slot">取餐時間</label><select class="field" id="pickup-slot"><option value="">請選擇取餐時間</option>'+
-   available.map(x=>'<option value="'+esc(x.time)+'" '+(pickupState.slot===x.time?"selected":"")+'>'+esc(x.time)+'（剩 '+esc(x.left)+' 單）</option>').join("")+
+   available.map(x=>'<option value="'+esc(x.time)+'" '+(pickupState.slot===x.time?"selected":"")+'>'+esc(x.time)+'（可接 '+esc(x.left)+(s.capacity_basis==='ITEMS'?' 份':' 單')+'）</option>').join("")+
    '</select></div></div>'+
    (available.length?"":'<p class="alert">本日沒有可預約時段，請更換日期或稍後再試。</p>'))+
   '<h3 style="margin:18px 0 10px">選擇餐點</h3>'+
@@ -128,7 +132,7 @@ export function renderStaffPickup(){
  const card=o=>'<div class="inset" style="margin:0 0 12px;padding:14px"><div class="listline"><strong>'+
   esc(o.number)+'</strong><strong>'+esc(staffStatusText[o.status]||o.status)+'</strong></div>'+
   '<p class="small"><strong>約定取餐 '+esc(o.pickup_at)+'</strong> '+(o.scheduled?"（指定時間）":"（立即）")+'</p>'+
-  '<p class="small">建議開始製作：'+esc(o.prepare_at)+(o.can_prepare?"":" — 尚未到製作時間")+'</p>'+
+  '<p class="small">顧客：'+esc(o.customer_name||'未填寫')+' ・ '+esc(o.customer_phone||'未提供')+'</p><p class="small">建議開始製作：'+esc(o.prepare_at)+(o.can_prepare?"":" — 尚未到製作時間")+'</p>'+
   '<p>'+lines(o)+'</p><p class="small">'+(o.note?"備註："+esc(o.note):"無備註")+' ・ '+money(o.total)+'</p>'+
   '<div class="staff-actionbar" role="group" aria-label="選擇訂單狀態">'+
   choices.map(([label,status])=>action(o,label,status,o.status===status,o.status===status?"primary":"outline")).join("")+'</div>'+
@@ -175,14 +179,14 @@ export async function handlePickupAction(ev,b,a,id){
  }
  if(a==="pickup-save"){
    await act(async()=>{
-     await rpc("so_pickup_save_settings",{p_slug:routeState.slug,
+     await rpc("so_pickup_save_capacity_settings",{p_slug:routeState.slug,
        p_enabled:!!routeState.$("pickup-enabled")?.checked,p_mode:routeState.$("pickup-mode")?.value,
        p_start:routeState.$("pickup-start")?.value,p_end:routeState.$("pickup-end")?.value,
        p_interval:Number(routeState.$("pickup-interval")?.value),
        p_capacity:Number(routeState.$("pickup-capacity")?.value),
        p_notice:Number(routeState.$("pickup-notice")?.value),
        p_days:Number(routeState.$("pickup-days")?.value),
-       p_prep:Number(routeState.$("pickup-prep")?.value)});
+       p_prep:Number(routeState.$("pickup-prep")?.value),p_capacity_basis:routeState.$("pickup-capacity-basis")?.value});
      pickupState.customer=null;return "取餐服務與時段容量設定已儲存";
    });return true;
  }
