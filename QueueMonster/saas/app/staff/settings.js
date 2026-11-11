@@ -103,19 +103,28 @@ export function renderStaffSettings({t,isManager,html}){
        (staffState.announcementEditId?btn("取消編輯","announcement-edit-cancel","outline"):"")+'</div></div>'):"")],
 ["public",box("LINE 官方帳號串接",
     '<p>目前通知來源：<strong>'+(lineState.lineConfig?.merchantOaConnected?"商家自己的 LINE OA":"平台 LINE OA")+'</strong></p>'+
-    '<p class="small">若要使用自己的 LINE 官方帳號，請確認登入服務與訊息通知使用同一組 LINE 管理者設定；沒有自有官方帳號也可使用平台提供的服務。</p>'+
+    '<p class="small">串接店家的 Messaging API 只需下方三項資訊，<strong>不需要 LIFF ID</strong>。若另外使用店家自己的 LINE 登入，才需設定 LIFF。</p>'+
+    '<p><a href="./merchant-center.html#mode-own" target="_blank" rel="noopener noreferrer">查看 Messaging API 建立、取得憑證及 Webhook 設定教學 ↗</a></p>'+
     (lineState.lineConfig?.merchantOaConnected?
      '<p>已連接 LINE OA：<strong>'+esc(lineState.lineConfig.botBasicId||"")+'</strong></p>':"")+
     (isManager?
-     '<div class="grid"><div>'+field("LINE 登入應用程式編號（LIFF ID）","own-oa-liff",lineState.lineConfig?.merchantOaConnected?lineState.lineConfig.liffId:"")+
-      field("官方帳號存取憑證（Channel Access Token）","own-oa-token","","password",'autocomplete="new-password"')+
-     '</div><div>'+field("官方帳號驗證金鑰（Channel Secret）","own-oa-secret","","password",'autocomplete="new-password"')+
-     '<p class="small">Channel Secret 需為 32 位十六進位字元。憑證會由系統向 LINE 驗證，成功後將安全保存，後台不會再次顯示完整憑證。</p></div></div>'+
-     '<div class="staff-actionbar">'+btn("驗證並連接自有 LINE OA","connect-own-oa","primary")+
+     '<div class="grid"><div>'+
+       field("Channel ID（Messaging API 頻道編號）","own-oa-channel-id","","text",'inputmode="numeric" autocomplete="off" placeholder="例如：1234567890"')+
+       '<p class="small">LINE Developers → Messaging API 頻道 → Basic settings。</p>'+
+       field("Channel access token (long-lived)（長效存取權杖）","own-oa-token","","password",'autocomplete="new-password" placeholder="Messaging API 頁籤 → Issue"')+
+     '</div><div>'+
+       field("Channel secret（頻道驗證金鑰）","own-oa-secret","","password",'autocomplete="new-password" placeholder="Basic settings 頁籤"')+
+       '<p class="small">Channel secret 為 32 位十六進位字元。這三個值必須屬於同一個 Messaging API 頻道。</p>'+
+     '</div></div>'+
+     '<details style="margin:14px 0"><summary>進階選填：使用店家自己的 LINE Login／LIFF</summary>'+
+       '<div style="margin-top:12px">'+field("LIFF ID（LINE 登入網頁應用程式編號）","own-oa-liff",lineState.lineConfig?.merchantOaConnected?(lineState.lineConfig.liffId||""):"","text",'autocomplete="off" placeholder="例如：1234567890-AbcdEfgh"')+
+       '<p class="small">這不是 Messaging API 的 Channel ID。只用店家 OA 發送訊息可以留空；若要讓顧客使用店家 Provider 登入，請在同一 Provider 的 LINE Login 頻道建立 LIFF。<a href="https://developers.line.biz/console/" target="_blank" rel="noopener noreferrer">開啟 LINE Developers ↗</a></p></div></details>'+
+     '<p class="small">通過憑證驗證代表已連接店家 OA，不代表顧客一定收得到訊息。不同 Provider 的 LINE User ID 不同，顧客仍需完成店家 OA 的收訊身分配對。Token 與 secret 不會再回顯。</p>'+
+     '<div class="staff-actionbar">'+btn("驗證並連接 Messaging API","connect-own-oa","primary")+
        (lineState.lineConfig?.merchantOaConnected?btn("解除自有 OA 綁定","disconnect-own-oa","outline"):"")+'</div>'+
-     '<p class="small">請在 LINE 官方帳號管理介面設定下列訊息回傳網址（Webhook URL）：</p>'+
+     '<p class="small">連接後請於 LINE Developers → Messaging API 設定下列 Webhook URL，並開啟 Use webhook：</p>'+
      '<p class="small" style="overflow-wrap:anywhere">'+esc(lineState.LINE_BRIDGE_URL+"?action=webhook&merchant="+encodeURIComponent(routeState.slug))+'</p>'+
-     btn("複製訊息回傳網址","copy-own-oa-webhook","outline")
+     btn("複製 Webhook URL","copy-own-oa-webhook","outline")
      :'<p class="small">僅企業管理者可設定自己的 LINE OA。</p>'))],
 ["public",(isManager?box("排隊怪獸店家搜尋",t.onboarding_complete===false?
  '<p>填寫店名、電話、地址與分類並儲存後，門市會自動公開在排隊怪獸的搜尋清單。</p>':
