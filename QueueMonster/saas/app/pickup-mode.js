@@ -13,7 +13,7 @@ export const pickupState={
   day:"",slot:"",method:"scheduled",cart:{},note:"",requestId:""
 };
 const statusText={NEW:"待店家接單",ACCEPTED:"已接單・待製作",PREPARING:"製作中",
-  READY:"可取餐",PICKED_UP:"已取餐",REJECTED:"店家未接單",CANCELLED:"已取消"};
+  READY:"可取餐",PICKED_UP:"已取餐",REJECTED:"店家已拒單",CANCELLED:"已取消"};
 const money=n=>"NT$ "+Number(n||0).toLocaleString("zh-TW",{maximumFractionDigits:2});
 const modeName={DISABLED:"僅立即取餐",OPTIONAL:"顧客可選立即或預約取餐",REQUIRED:"必須選擇取餐時間"};
 const uuid=()=>{if(!globalThis.crypto?.randomUUID)throw Error("瀏覽器不支援安全訂單識別");return crypto.randomUUID();};
@@ -113,20 +113,30 @@ export function renderStaffPickup(){
  if(!d.settings?.enabled)return box("取餐訂單",'<p>尚未啟用線上點餐。請在「設定 → 線上點餐」開放服務。</p>');
  const orders=d.orders||[],active=orders.filter(o=>!["PICKED_UP","REJECTED","CANCELLED"].includes(o.status));
  const history=orders.filter(o=>["PICKED_UP","REJECTED","CANCELLED"].includes(o.status));
- const action=(o,label,status,disabled=false)=>btn(label,"pickup-status","outline",'data-id="'+esc(o.id)+'" data-status="'+status+'" data-expected="'+esc(o.status)+'"'+(disabled?' disabled title="尚未到建議製作時間"':''));
- const card=o=>'<div class="inset" style="margin:0 0 12px;padding:14px"><div class="listline"><strong>'+esc(o.number)+'</strong><strong>'+esc(statusText[o.status]||o.status)+'</strong></div>'+
+ const staffStatusText={NEW:"待接單",ACCEPTED:"已接單",PREPARING:"製作中",
+   READY:"待取",PICKED_UP:"已完成",REJECTED:"已拒單",CANCELLED:"已取消"};
+ const action=(o,label,status,disabled=false,style="outline")=>btn(label,"pickup-status",style,
+   'data-id="'+esc(o.id)+'" data-status="'+status+'" data-expected="'+esc(o.status)+'"'+
+   (disabled?' disabled title="目前狀態或尚未到建議製作時間"':''));
+ // These choices remain available for every order, including rejected and finished orders.
+ const choices=[["接單","ACCEPTED"],["待取","READY"],["拒單","REJECTED"],["已完成","PICKED_UP"]];
+ const card=o=>'<div class="inset" style="margin:0 0 12px;padding:14px"><div class="listline"><strong>'+
+  esc(o.number)+'</strong><strong>'+esc(staffStatusText[o.status]||o.status)+'</strong></div>'+
   '<p class="small"><strong>約定取餐 '+esc(o.pickup_at)+'</strong> '+(o.scheduled?"（指定時間）":"（立即）")+'</p>'+
   '<p class="small">建議開始製作：'+esc(o.prepare_at)+(o.can_prepare?"":" — 尚未到製作時間")+'</p>'+
   '<p>'+lines(o)+'</p><p class="small">'+(o.note?"備註："+esc(o.note):"無備註")+' ・ '+money(o.total)+'</p>'+
-  '<div class="staff-actionbar">'+(o.status==="NEW"?action(o,"接單","ACCEPTED")+action(o,"拒單","REJECTED"):
-  o.status==="ACCEPTED"?action(o,"開始製作","PREPARING",!o.can_prepare)+action(o,"取消","CANCELLED"):
-  o.status==="PREPARING"?action(o,"完成，可取餐","READY")+action(o,"取消","CANCELLED"):
-  o.status==="READY"?action(o,"已取餐","PICKED_UP")+action(o,"返回製作中","PREPARING"):
-  o.status==="PICKED_UP"?action(o,"恢復可取餐","READY"):"")+'</div></div>';
- return box("取餐訂單管理",'<p class="small">依約定取餐時間排序。完成製餐後按「完成，可取餐」，顧客的進度會即時更新。</p>'+
+  '<div class="staff-actionbar" role="group" aria-label="選擇訂單狀態">'+
+  choices.map(([label,status])=>action(o,label,status,o.status===status,o.status===status?"primary":"outline")).join("")+'</div>'+
+  '<details style="margin-top:8px"><summary class="small">其他操作（開始製作／取消／恢復待接單）</summary>'+
+  '<div class="staff-actionbar" style="margin-top:10px">'+
+  (o.status==="ACCEPTED"?action(o,"開始製作","PREPARING",!o.can_prepare):"")+
+  (o.status!=="CANCELLED"?action(o,"取消訂單","CANCELLED"):"")+
+  (o.status!=="NEW"?action(o,"恢復待接單","NEW"):"")+'</div></details></div>';
+ return box("取餐訂單管理",
+  '<p class="small">依約定取餐時間排序。可直接切換「接單、待取、拒單、已完成」；即使按錯或已完成，也能在下方更正，顧客進度會同步更新。</p>'+
   '<p><strong>待處理 '+active.length+' 筆</strong></p>'+
   (active.length?active.map(card).join(""):'<p class="muted">目前沒有待處理訂單。</p>')+
-  '<details><summary>已結束的訂單（'+history.length+'）</summary><div style="margin-top:10px">'+
+  '<details open><summary>已結束的訂單（'+history.length+'，可更正狀態）</summary><div style="margin-top:10px">'+
   (history.length?history.map(card).join(""):'<p>尚無已結束訂單。</p>')+'</div></details>');
 }
 
@@ -173,7 +183,8 @@ export async function handlePickupAction(ev,b,a,id){
  if(a==="pickup-status"){
    if(!id)return true;
    const desired=b.dataset.status,expected=b.dataset.expected;
-   if(["REJECTED","CANCELLED"].includes(desired)&&!confirm("確定要取消或拒絕這筆訂單？"))return true;
+   if(desired===expected)return true;
+   if(["REJECTED","CANCELLED","PICKED_UP"].includes(desired)&&!confirm(desired==="PICKED_UP"?"確定將訂單標記為「已完成」？之後仍可更正。":"確定要取消或拒絕這筆訂單？"))return true;
    await act(async()=>{
      await rpc("so_pickup_update",{p_slug:routeState.slug,p_order_id:id,p_expected:expected,p_status:desired});
      return "訂單狀態已更新為："+(statusText[desired]||desired);
