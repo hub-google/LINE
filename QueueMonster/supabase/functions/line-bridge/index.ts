@@ -962,13 +962,13 @@ Deno.serve(async (req: Request) => {
   }
   if (req.method === "GET" && url.searchParams.get("action") === "config") {
     const merchant = url.searchParams.get("merchant") || "";
-    let own: { liff_id: string; bot_basic_id: string | null } | null = null;
+    let own: { liff_id: string; bot_basic_id: string | null; messaging_channel_id: string | null } | null = null;
     if (/^[a-z0-9][a-z0-9-]{2,39}$/.test(merchant)) {
       const db = service();
       const { data: tenant } = await db.from("so_tenants").select("id").eq("slug", merchant).eq("status", "ACTIVE").maybeSingle();
       if (tenant) {
         const { data: config } = await db.from("so_line_merchant_oas")
-          .select("liff_id,bot_basic_id").eq("tenant_id", tenant.id).eq("status", "ACTIVE").maybeSingle();
+          .select("liff_id,bot_basic_id,messaging_channel_id").eq("tenant_id", tenant.id).eq("status", "ACTIVE").maybeSingle();
         own = config;
       }
     }
@@ -976,7 +976,8 @@ Deno.serve(async (req: Request) => {
     const expectedChannelId = /^([0-9]{8,})-[A-Za-z0-9]+$/.exec(liffId)?.[1] || null;
     const platformFriendUrl = own ? null : await oaAddFriendUrl();
     return reply(200, {
-      liffId: liffId || null, merchantOaConnected: !!own,
+      liffId: liffId || null, merchantLiffId: own?.liff_id || null,
+      messagingChannelId: own?.messaging_channel_id || null, merchantOaConnected: !!own,
       botBasicId: own?.bot_basic_id || platformFriendUrl?.split("/").pop() || null,
       loginReady: !!expectedChannelId,
       messagingReady: !!own || !!Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN"),
