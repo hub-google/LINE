@@ -278,3 +278,17 @@ test("booking variants reuse one contact field and idempotency payload implement
   name:"陳測試",phone:"0912345678",items:["service-a"]
  });
 });
+
+
+test("legacy settings tabs route to the one settings page, with no duplicate units renderer",()=>{
+ const view=read("saas/app/staff-view.js");
+ const settings=read("saas/app/staff/settings.js");
+ const manifest=read("tests/helpers/application-sources.json");
+ assert.match(view,/if\(\["units","menu","branches"\]\.includes\(staffState\.staffTab\)\)/);
+ assert.match(view,/staffState\.staffTab="settings"/);
+ assert.match(settings,/if\(section==="sessions"\)html\+=unitSettingsPanel\(isManager\)/);
+ assert.match(settings,/if\(section==="catalog"\)html=renderStaffMenu/);
+ assert.match(settings,/if\(section==="branches"\)html=renderStaffBranches/);
+ assert.doesNotMatch(view,/renderStaffUnits|renderStaffMenu|renderStaffBranches/);
+ assert.doesNotMatch(manifest,/app\/staff\/units\.js/);
+});

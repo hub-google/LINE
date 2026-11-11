@@ -18,7 +18,6 @@
   "app/staff/menu.js",
   "app/staff/members.js",
   "app/staff/branches.js",
-  "app/staff/units.js",
   "app/staff/settings.js",
   "app/staff-view.js",
   "app/booking-edit.js",

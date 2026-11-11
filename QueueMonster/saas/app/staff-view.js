@@ -3,10 +3,7 @@ import {renderStaffAnalytics} from "./staff/analytics.js";
 import {renderStaffBookings} from "./staff/bookings.js";
 import {renderStaffCalendar} from "./staff/calendar.js";
 import {renderStaffQueue} from "./staff/queue.js";
-import {renderStaffMenu} from "./staff/menu.js";
 import {renderStaffMembers} from "./staff/members.js";
-import {renderStaffBranches} from "./staff/branches.js";
-import {renderStaffUnits} from "./staff/units.js";
 import {renderStaffSettings} from "./staff/settings.js";
 import {authState} from "./state/authState.js";
 
@@ -58,17 +55,8 @@ export function staffRender(){
  else if(staffState.staffTab==="queue"){
   html=renderStaffQueue({isManager,t,html});
  }
- else if(staffState.staffTab==="menu"){
-  html=renderStaffMenu({t,isManager,html});
- }
  else if(staffState.staffTab==="members"){
   html=renderStaffMembers({isManager,html});
- }
- else if(staffState.staffTab==="branches"){
-  html=renderStaffBranches({role,html});
- }
- else if(staffState.staffTab==="units"){
-  html=renderStaffUnits({isManager,html});
  }
  else if(staffState.staffTab==="settings"){
   html=renderStaffSettings({t,isManager,html});
