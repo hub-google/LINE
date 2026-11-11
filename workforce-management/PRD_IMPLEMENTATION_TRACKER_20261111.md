@@ -51,3 +51,16 @@
 2. 金流需要實際付款服務商與簽章 webhook，未串接前不能宣稱訂閱付費完成。
 3. 臺灣勞基法中的變形工時、休息、補休及不同聘僱制度需要人工法遵驗收；不得用一般工時門檻推論每一公司都合法。
 4. 不得為了測試重置正式企業、共用其他產品資料表或自行製作測試 LINE 收件成功證據。
+
+## 2026-11-11 第二輪：嚴格對照 PRD
+
+| PRD 需求 | 本輪變更 | 資料庫實際狀態 | 驗收 |
+|---|---|---|---|
+| **HR-LVE-03／04／06／08** | [已核准假單日期變更](./supabase/migrations/20261111_workforce_approved_leave_amendment.sql)：員工提出變更，多關不同主管核准後原單才改日期；保存前後版本、重算假額、鎖住已月結期間、檢查重疊與權限；沿用既有假單表與審核體系 | **已成功套用**，新增日期變更表、簽核歷程及三支權限 RPC | 靜態 PRD 合約已通過；新增真人角色 E2E 遭 Supabase Auth 504／連線逾時阻擋，**尚未全數通過** |
+| **HR-LVE-05** | [事前／事後加班](./supabase/migrations/20261111_workforce_overtime_advance_retroactive.sql)：原假勤申請表新增分類，獨立加班表單可選時點；後端檢查是否開始／結束、月結與跨人送件，絕不修改原打卡紀錄 | **已成功套用** | 靜態 PRD 合約已通過；新增正式 Auth E2E 未全數完成，**未宣稱 PASS** |
+| **HR-ATT-10／HR-RPT-05** | [多年度原始出勤匯出 SQL 草稿](./supabase/migrations/20261111_workforce_attendance_history_export.sql)：範圍、授權、稽核與事件筆數核對 | **尚未套用**：Supabase DB migration 兩次連線逾時，未成功進入 migration | **BLOCKED**，未上線無法使用的前端假按鈕 |
+| **NFR 程式部署／測試區分** | [Pages 工作流程](https://github.com/hub-google/LINE/blob/main/.github/workflows/line-workforce-pages.yml) 調整為靜態檢查通過可繼續部署；遠端 API Smoke 失敗最後仍標紅燈 | 設定已送入 GitHub main | 以最新 Actions 與實際 gh-pages commit 為準 |
+
+**不能標為全數完成的部分**：已核准假期修改仍須真實跨角色、多層、月結、額度與衝突端到端驗收；加班的補休帳本、法定工時計算尚未交付；長期原始出勤資料、離職員工法定查閱、備份復原尚未交付。原 PRD 其他 HR-ORG／HR-SCH／HR-ATT／HR-LINE／HR-RPT／HR-OPS 要求沒有刪改。
+
+**外部阻礙證據**：2026-11-11 的獨立 Auth E2E Run [43000150739](https://github.com/hub-google/LINE/actions/runs/43000150739) 在建立虛構 Owner 帳號時得到 504；Supabase migration 初始化又回報 Connection terminated due to connection timeout。這是尚未消除的 BLOCKED 狀態，不以程式存在取代實際測試。
