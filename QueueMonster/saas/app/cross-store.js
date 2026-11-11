@@ -14,24 +14,11 @@ export function stopCrossQueueRealtime(){
  void lineState.supa.removeChannel(ch);
 }
 
+// Keep the public call contract for other modules. All customer pages now
+// update records only on first load or explicit user action; the public board
+// is the sole screen permitted to hold a queue Realtime subscription.
 export function syncCrossQueueRealtime(){
- if(routeState.view!=="customer"||routeState.customerTab!=="progress"||(queueState.progressTicketId||crossStoreState.crossCurrentStore)||lineState.lineLinkStatus!=="linked"){
-   stopCrossQueueRealtime();return;
- }
- const ids=[...new Set((crossStoreState.customerActivity?.tickets||[])
-   .filter(x=>["WAITING","HOLD","CALLED","ARRIVED","ADMITTED","SERVING"].includes(x.status))
-   .map(x=>x.tenant_id).filter(x=>/^[0-9a-f-]{36}$/i.test(x||"")))].sort().slice(0,20);
- const nextKey=ids.join(",");
- if(nextKey===crossStoreState.crossRealtimeKey)return;
- stopCrossQueueRealtime();
- if(!ids.length)return;
- crossStoreState.crossRealtimeKey=nextKey;
- const ch=lineState.supa.channel("customer-cross-store-queues");
- for(const id of ids){
-   ch.on("postgres_changes",{event:"UPDATE",schema:"public",table:"so_queue_displays",
-      filter:"tenant_id=eq."+id},()=>{void refreshCrossStoreOverview();});
- }
- crossStoreState.crossRealtimeChannel=ch.subscribe();
+  stopCrossQueueRealtime();
 }
 
 export async function refreshCrossStoreOverview(){
@@ -61,7 +48,7 @@ export function crossTicketCards(){
  const shown=crossStoreState.crossFilter==="active"?active:crossStoreState.crossFilter==="history"?history:all;
  const tabs=[["active","進行中",active.length],["history","已完成／過號",history.length],["all","全部紀錄",all.length]];
  return '<p class="muted">同一個 LINE 帳號在不同門市取得的號碼，統一顯示於此。各門市叫號進度互不影響。</p>'+
-   '<p class="small" role="status">'+(crossStale?"跨店進度未即時同步，以下紀錄可能不是最新狀態。":"跨店紀錄已同步。")+
+   '<p class="small" role="status">'+(crossStale?"跨店進度未即時同步，以下紀錄可能不是最新狀態。":"目前顯示上次取得的跨店紀錄。")+
     " 最後成功更新："+(lastCrossSync?esc(formatTaipeiCreated(lastCrossSync)):"尚未成功同步")+"（台灣時間）。"+'</p>'+
    '<div class="cross-tabs" role="group" aria-label="取號狀態">'+
    tabs.map(x=>'<button type="button" data-act="cross-filter" data-filter="'+x[0]+'" class="'+(crossStoreState.crossFilter===x[0]?'active':'')+'">'+x[1]+'（'+x[2]+'）</button>').join("")+'</div>'+
@@ -84,7 +71,7 @@ export function crossTicketCards(){
    (shown.length>crossStoreState.crossPageSize?'<div class="staff-actionbar">'+btn("顯示更多（剩餘 "+(shown.length-crossStoreState.crossPageSize)+" 筆）","cross-more","outline")+'</div>':"")+
    '<div class="staff-actionbar">'+btn("手動更新跨店進度","cross-refresh","outline")+
     btn("查看目前門市叫號","cross-current-store","outline")+'</div>'+
-   '<p class="small">進度會在頁面開啟期間更新；進入單店後可查看該店的即時叫號。</p>';
+   '<p class="small">此頁不會自動更新資料；請按重新整理查看最新紀錄，或開啟商家的公開叫號看板。</p>';
 }
 
 export function crossRecords(){
