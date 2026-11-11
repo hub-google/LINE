@@ -90,7 +90,7 @@ async function reload(silent=false){
     }
     app.data={tenant:app.tenants.find(t=>t.id===app.tenantId),branches,members,shifts,punches,requests,
       entitlements,availability,departments,templates,requirements,notifications,closures,
-      adjustments,corrections,leavePolicies,attendanceCases,attendanceRules:attendanceRuleRows[0]||null,requestDocs,scheduleRules:scheduleRuleRows.find(x=>x.effective_from<=today())||null,memberBranches,qrSettings,leaveCancellations,
+      adjustments,corrections,leavePolicies,attendanceCases,attendanceRules:attendanceRuleRows[0]||null,requestDocs,scheduleRules:scheduleRuleRows.find(x=>x.effective_from<=today())||null,memberBranches,qrSettings,leaveCancellations,availabilityPolicy,
       leaveBalances:{},requestStages:[],server_at:new Date().toISOString()};
     const selected=getSelected();
     if(selected){
