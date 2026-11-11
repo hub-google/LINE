@@ -62,7 +62,7 @@ test("iPhone mobile branding links and menu close button have 44px touch targets
   'body[data-monster-page="merchant-center"] .top-links .top-link',
   'body[data-monster-page="index"] header a.brand',
   'body[data-monster-page="directory"] footer a',
-  'body[data-monster-page="home"] .mobile-menu-close'
+  'body[data-monster-page="home"] .menu-panel .mobile-menu-close'
  ])assert.ok(css.includes(rule),"missing mobile target for "+rule);
  assert.match(css,/min-height:44px/);
 });
