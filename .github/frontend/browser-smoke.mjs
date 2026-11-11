@@ -267,6 +267,77 @@ try{
     rects,clipped};
   });
  }
+
+ // Regression: a merchant's very large uploaded logo and a two-line
+ // 尚未/叫號 label must not escape the header or overlap waiting controls.
+ // Verify the real compiled board CSS and font fitter in Chromium.
+ for(const viewport of [{width:360,height:780},{width:390,height:844},{width:412,height:915}]){
+  await page.setViewportSize(viewport);
+  await page.goto(baseUrl+"/booking/board.html?merchant=greenfield-salon",{waitUntil:"networkidle",timeout:45000});
+  await page.evaluate(async()=>{
+   document.getElementById("shop").textContent="測試1";
+   const logo=document.getElementById("shop-logo");
+   const svg='<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048" viewBox="0 0 2048 2048"><rect width="2048" height="2048" fill="white"/><circle cx="1024" cy="1024" r="780" fill="#ffd637"/></svg>';
+   logo.src="data:image/svg+xml,"+encodeURIComponent(svg);
+   logo.hidden=false;
+   document.getElementById("shop-icon-fallback").hidden=true;
+   await logo.decode();
+   const board=document.getElementById("unit-board");
+   board.replaceChildren();
+   for(const [unit,current,next,count] of [
+    ["1診","2","接下來：3、5、6、7","等候 4 組"],
+    ["2診","尚未\\n叫號","接下來：目前無人等候","等候 0 組"]
+   ]){
+    const card=document.createElement("a");card.className="unit-card unit-card-link";
+    for(const [tag,className,value] of [
+     ["div","group","診間 · 上午場"],["h2","",unit],
+     ["div","unit-now"+(current.includes("\\n")?" is-empty":""),current],
+     ["div","unit-next",next],["div","group",count],
+     ["span","unit-open","單獨顯示此場次"]
+    ]){
+     const el=document.createElement(tag);el.className=className;el.textContent=value;card.append(el);
+    }
+    board.append(card);
+   }
+   document.getElementById("single-board").hidden=true;board.hidden=false;
+   window.dispatchEvent(new Event("resize"));
+  });
+  await page.waitForTimeout(260);
+  const check=await page.evaluate(()=>{
+   const box=node=>{const r=node.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
+   const header=box(document.querySelector("body>header"));
+   const logo=box(document.querySelector(".shop-icon"));
+   const image=box(document.getElementById("shop-logo"));
+   const cards=[...document.querySelectorAll("#unit-board .unit-card:not([data-board-hidden])")];
+   const pairs=cards.map(c=>({
+    card:box(c),now:box(c.querySelector(".unit-now")),
+    next:box(c.querySelector(".unit-next")),
+    nowClipped:c.querySelector(".unit-now").scrollHeight>c.querySelector(".unit-now").clientHeight+2,
+    font:parseFloat(getComputedStyle(c.querySelector(".unit-now")).fontSize)
+   }));
+   return {viewport:{width:innerWidth,height:innerHeight},
+    pageWidth:document.documentElement.scrollWidth,pageHeight:document.documentElement.scrollHeight,
+    header,logo,image,cards:pairs,footer:box(document.querySelector("body>footer")),
+    naturalWidth:document.getElementById("shop-logo").naturalWidth};
+  });
+  assert.equal(check.naturalWidth,2048,"Fixture must simulate an oversized uploaded logo");
+  assert.ok(check.header.height<=85,"Mobile logo must not enlarge the header: "+JSON.stringify(check));
+  assert.ok(check.logo.width<=60&&check.logo.height<=60,"Merchant logo holder must remain a small square");
+  assert.ok(check.image.width<=check.logo.width+2&&check.image.height<=check.logo.height+2,
+   "Uploaded image must fit inside logo holder: "+JSON.stringify(check));
+  assert.ok(check.image.left>=check.logo.left-1&&check.image.top>=check.logo.top-1,
+   "Uploaded image cannot bleed into the board: "+JSON.stringify(check));
+  assert.equal(check.cards.length,2,"Both clinic sessions should remain visible on portrait phones");
+  assert.ok(check.cards[0].card.bottom<=check.cards[1].card.top+2,"Session cards should be vertically ordered");
+  assert.ok(check.cards.every(c=>c.now.bottom<=c.next.top+2&&!c.nowClipped),
+   "Called/uncalled text cannot collide with the waiting list: "+JSON.stringify(check));
+  assert.ok(check.cards[1].font<=43,"Two-line uncalled label must be smaller than a called number");
+  assert.ok(check.pageWidth<=viewport.width+2&&check.pageHeight<=viewport.height+2,
+   "Mobile queue board must fit its viewport without horizontal/vertical scroll");
+  assert.ok(check.footer.bottom<=viewport.height+2,"Footer must remain visible");
+  console.log("Mobile merchant board large-logo and no-overlap regression:",JSON.stringify({viewport,
+   logo:check.logo,uncalledFont:check.cards[1].font}));
+ }
  const viewports=[
   {width:1920,height:1080},{width:1080,height:1920},
   {width:3840,height:1080},{width:800,height:800},
