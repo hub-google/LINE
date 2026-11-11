@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-11T01:19:36.386Z",
+  "date": "2026-11-11T01:33:23.097Z",
   "device": "iPhone 17 simulated Chromium, 402x874 CSS pixels, DPR3",
   "note": "Read-only live website screenshots; no authentication, no writes; not physical Safari.",
   "screens": [
@@ -90,15 +90,15 @@
       "visibleTapCount": 16,
       "keyRects": {
         ".hero-cta": {
-          "top": -128,
-          "bottom": 58,
+          "top": -107,
+          "bottom": 79,
           "left": 20,
           "right": 382,
           "height": 186
         },
         ".hero-showcase": {
-          "top": 128,
-          "bottom": 986,
+          "top": 149,
+          "bottom": 1007,
           "left": 20,
           "right": 382,
           "height": 857
@@ -279,60 +279,60 @@
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
-      "visibleTapCount": 9,
+      "visibleTapCount": 10,
       "keyRects": {
         ".page-header": {
-          "top": -588,
-          "bottom": -438,
+          "top": -609,
+          "bottom": -459,
           "left": 0,
           "right": 402,
           "height": 150
         },
         ".hero-heading": {
-          "top": -530,
-          "bottom": -459,
+          "top": -551,
+          "bottom": -480,
           "left": 14,
           "right": 388,
           "height": 71
         },
         ".main-panel": {
-          "top": -455,
-          "bottom": 4667,
+          "top": -476,
+          "bottom": 4646,
           "left": 14,
           "right": 388,
           "height": 5123
         },
         ".tabs": {
-          "top": -441,
-          "bottom": -385,
+          "top": -462,
+          "bottom": -406,
           "left": 28,
           "right": 374,
           "height": 56
         },
         "#keyword": {
-          "top": -296,
-          "bottom": -247,
+          "top": -317,
+          "bottom": -268,
           "left": 28,
           "right": 374,
           "height": 49
         },
         "#explore-filters": {
-          "top": -237,
-          "bottom": -191,
+          "top": -258,
+          "bottom": -212,
           "left": 28,
           "right": 374,
           "height": 46
         },
         "#results": {
-          "top": -69,
-          "bottom": 4643,
+          "top": -90,
+          "bottom": 4622,
           "left": 28,
           "right": 374,
           "height": 4713
         },
         "#results-heading": {
-          "top": -107,
-          "bottom": -79,
+          "top": -128,
+          "bottom": -100,
           "left": 28,
           "right": 127,
           "height": 28
@@ -429,7 +429,7 @@
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
-      "visibleTapCount": 9,
+      "visibleTapCount": 15,
       "keyRects": {
         ".page-header": {
           "top": 0,
@@ -447,10 +447,10 @@
         },
         ".main-panel": {
           "top": 133,
-          "bottom": 594,
+          "bottom": 647,
           "left": 14,
           "right": 388,
-          "height": 462
+          "height": 514
         },
         ".tabs": {
           "top": 147,
@@ -460,35 +460,35 @@
           "height": 56
         },
         "#keyword": {
-          "top": 235,
-          "bottom": 284,
+          "top": 292,
+          "bottom": 341,
           "left": 28,
           "right": 374,
           "height": 49
         },
         "#explore-filters": {
-          "top": 0,
-          "bottom": 0,
-          "left": 0,
-          "right": 0,
-          "height": 0
-        },
-        "#results": {
-          "top": 383,
-          "bottom": 570,
+          "top": 351,
+          "bottom": 397,
           "left": 28,
           "right": 374,
-          "height": 187
+          "height": 46
+        },
+        "#results": {
+          "top": 500,
+          "bottom": 623,
+          "left": 28,
+          "right": 374,
+          "height": 122
         },
         "#results-heading": {
-          "top": 345,
-          "bottom": 373,
+          "top": 462,
+          "bottom": 490,
           "left": 28,
           "right": 94,
           "height": 28
         }
       },
-      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 搜尋店家名稱或地點 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 請先登入 LINE 請先使用 LINE 登入 登入後才能查詢自己的預約和號碼；未登入不代表沒有紀錄。 使用 LINE 登入後查看 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
+      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 正在確認身分 正在確認 LINE 身分 確認後才會顯示與你綁定的預約及取號紀錄。 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
       "errors": [],
       "failedRequests": []
     },
@@ -565,7 +565,12 @@
       },
       "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 選擇提供現場取號的店家 公開看板可直接查看；實際取號時才需要 LINE 驗證。 熱門店家排行 近 30 天預約＋取號 · 前 10 名 ▤ #1 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 1 · 取號 1 簡介 地點：臺北市中正區北平西路3號 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #2 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #3 專屬測試門市 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #4 專屬",
       "errors": [],
-      "failedRequests": []
+      "failedRequests": [
+        {
+          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
+          "error": "net::ERR_ABORTED"
+        }
+      ]
     },
     {
       "id": "07-directory-game",
@@ -880,17 +885,17 @@
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
-      "visibleTapCount": 4,
+      "visibleTapCount": 2,
       "keyRects": {
         "#root": {
-          "top": 83,
-          "bottom": 364,
+          "top": 144,
+          "bottom": 293,
           "left": 0,
           "right": 402,
-          "height": 281
+          "height": 149
         }
       },
-      "bodyText": "排隊怪獸 店家登入 店家登入 使用店家帳號管理預約及叫號。 店家登入 註冊店家",
+      "bodyText": "排隊怪獸 店家登入 資料更新中，請稍後",
       "errors": [],
       "failedRequests": []
     },
@@ -986,7 +991,7 @@
       "smallTaps": [],
       "visibleTapCount": 3,
       "keyRects": {},
-      "bodyText": "▤ 專屬測試門市 使用 LINE 登入 09:19 今天尚未設定開放場次 叫號順序將依現場狀況即時更新 重新整理 全螢幕 最後成功同步：09:19:35；資料每 12 秒自動核對，網路斷線會提示。",
+      "bodyText": "▤ 專屬測試門市 使用 LINE 登入 09:33 今天尚未設定開放場次 叫號順序將依現場狀況即時更新 重新整理 全螢幕 最後成功同步：09:33:21；資料每 12 秒自動核對，網路斷線會提示。",
       "errors": [],
       "failedRequests": []
     }
