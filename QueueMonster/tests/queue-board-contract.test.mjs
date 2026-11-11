@@ -43,7 +43,7 @@ test("TV board polls the safe public read with stale indication and no sign-in",
   assert.match(publicSql,/k\.status=\x27WAITING\x27/);
   assert.match(publicSql,/coalesce\(k\.number_prefix,\x27\x27\)/);
   assert.match(board,/so_public_board/);
-  assert.match(board,/setInterval\(\(\)=>\{if\(!document\.hidden\)void refresh\(\);\},12000\)/);
+  assert.match(board,/setInterval\(\(\)=>\{if\(!document\.hidden&&!disabled\)void refresh\(\);\},12000\)/);
   assert.match(board,/staleFromFailure/);
   assert.match(board,/lastSuccess/);
   assert.match(board,/requestFullscreen/);
@@ -60,4 +60,11 @@ test("public board links bypass LINE login on the homepage, directory and mercha
   assert.match(directory,/original\.searchParams\.get\("view"\)!=="customer"\)return/);
   assert.match(customer,/if\(lineLinkStatus!=="linked"\)return box\("門市公開即時叫號"/);
   assert.match(customer,/公開即時叫號看板/);
+});
+
+test("inactive merchant board shows a stable unavailable state without repeated failing polls",()=>{
+ assert.match(board,/if\(\/找不到商家\/\.test\(/);
+ assert.match(board,/disabled=true;lastData=null;lastSuccess=null/);
+ assert.match(board,/門市目前未開放叫號/);
+ assert.match(board,/click",\(\)=>\{disabled=false;void refresh\(\);\}/);
 });
