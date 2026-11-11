@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-11T03:05:21.017Z",
+  "date": "2026-11-11T03:09:22.994Z",
   "device": "iPhone 17 simulated Chromium, 402x874 CSS pixels, DPR3",
   "note": "Read-only live website screenshots; no authentication, no writes; not physical Safari.",
   "screens": [
@@ -72,15 +72,15 @@
       "visibleTapCount": 16,
       "keyRects": {
         ".hero-cta": {
-          "top": -107,
-          "bottom": 79,
+          "top": -128,
+          "bottom": 58,
           "left": 20,
           "right": 382,
           "height": 186
         },
         ".hero-showcase": {
-          "top": 149,
-          "bottom": 1007,
+          "top": 128,
+          "bottom": 986,
           "left": 20,
           "right": 382,
           "height": 857
@@ -255,57 +255,57 @@
       "visibleTapCount": 10,
       "keyRects": {
         ".page-header": {
-          "top": -588,
-          "bottom": -438,
+          "top": -609,
+          "bottom": -459,
           "left": 0,
           "right": 402,
           "height": 150
         },
         ".hero-heading": {
-          "top": -530,
-          "bottom": -459,
+          "top": -551,
+          "bottom": -480,
           "left": 14,
           "right": 388,
           "height": 71
         },
         ".main-panel": {
-          "top": -455,
-          "bottom": 4667,
+          "top": -476,
+          "bottom": 4646,
           "left": 14,
           "right": 388,
           "height": 5123
         },
         ".tabs": {
-          "top": -441,
-          "bottom": -385,
+          "top": -462,
+          "bottom": -406,
           "left": 28,
           "right": 374,
           "height": 56
         },
         "#keyword": {
-          "top": -296,
-          "bottom": -247,
+          "top": -317,
+          "bottom": -268,
           "left": 28,
           "right": 374,
           "height": 49
         },
         "#explore-filters": {
-          "top": -237,
-          "bottom": -191,
+          "top": -258,
+          "bottom": -212,
           "left": 28,
           "right": 374,
           "height": 46
         },
         "#results": {
-          "top": -69,
-          "bottom": 4643,
+          "top": -90,
+          "bottom": 4622,
           "left": 28,
           "right": 374,
           "height": 4713
         },
         "#results-heading": {
-          "top": -107,
-          "bottom": -79,
+          "top": -128,
+          "bottom": -100,
           "left": 28,
           "right": 127,
           "height": 28
@@ -839,12 +839,7 @@
       "keyRects": {},
       "bodyText": "排隊怪獸 商家操作指南 店家登入 店家登入 註冊店家 進入商家後台 給店主與門市人員的使用指南 第一次使用，也能 照著畫面完成。 不必懂技術。從店家註冊、LINE 顧客入口、預約與取號設定，到店員每天怎麼操作，依照實際商家流程逐步說明。下方以正式網站目前的版型、功能名稱及按鈕樣式呈現操作畫面，使用的門市名稱與數字均為範例，不含顧客個資。 01 註冊店家 → 02 完成設定 → 03 分享給顧客 → 04 每日營運 從第一步開始 → 直接看店員操作 操作目錄 · 選擇章節 01 先註冊店家帳號 商家負責人先註冊帳號，登入後即可設定專屬門市，完成店家資料後再對外開放。 排隊怪獸 登入 註冊 註冊店家帳號 註冊後門市資料保持空白，由你自行填寫。 電子信箱（登入帳號） shop@example.com 密碼（至少 8 字元） •••••••• 確認密碼 •••••••• 建立店家帳號 正式介面樣式對照｜店家帳號註冊頁（僅使用範例資料） 商家負責人操作 先建立帳號，再完成店家設定 點「註冊店家」，填寫電子信箱、密碼與確認密碼。 依註冊頁指示完成電子郵件驗證，再使用註冊信箱與密碼登入店家後台。 在",
       "errors": [],
-      "failedRequests": [
-        {
-          "url": "https://hub-google.github.io/LINE/booking/release.json?_t=1794366311241",
-          "error": "net::ERR_ABORTED"
-        }
-      ]
+      "failedRequests": []
     },
     {
       "id": "12-staff",
@@ -858,17 +853,17 @@
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
-      "visibleTapCount": 2,
+      "visibleTapCount": 4,
       "keyRects": {
         "#root": {
-          "top": 144,
-          "bottom": 293,
+          "top": 83,
+          "bottom": 364,
           "left": 0,
           "right": 402,
-          "height": 149
+          "height": 281
         }
       },
-      "bodyText": "排隊怪獸 店家登入 資料更新中，請稍後",
+      "bodyText": "排隊怪獸 店家登入 店家登入 使用店家帳號管理預約及叫號。 店家登入 註冊店家",
       "errors": [],
       "failedRequests": []
     },
@@ -973,7 +968,7 @@
       ],
       "visibleTapCount": 4,
       "keyRects": {},
-      "bodyText": "測試1 使用 LINE 登入 11:05 上午場 一般場次 — 接下來：2、3、4、5、6 等候 6 組 叫號順序將依現場狀況即時更新 由排隊怪獸提供服務 重新整理 全螢幕 最後成功同步：11:05:20；資料每 12 秒自動核對，網路斷線會提示。",
+      "bodyText": "測試1 使用 LINE 登入 11:09 上午場 一般場次 — 接下來：2、3、4、5、6 等候 6 組 叫號順序將依現場狀況即時更新 由排隊怪獸提供服務 重新整理 全螢幕 最後成功同步：11:09:21；資料每 12 秒自動核對，網路斷線會提示。",
       "errors": [],
       "failedRequests": []
     }
