@@ -30,6 +30,6 @@ jobs:
           python3 -m py_compile .github/scripts/publish_rich_menu.py
           python3 -m unittest discover -s .github/scripts -p 'test_rich_menu.py' -v
       - name: Verify platform OA intent routing and friend-state constraints
-        run: node --test QueueMonster/tests/line-oa-bot-contract.test.mjs
+        run: node --test QueueMonster/tests/line-oa-bot-contract.test.mjs QueueMonster/tests/queue-near-alert-oss-n03.test.mjs
       - name: Existing domain regression
         run: npm --prefix QueueMonster test
