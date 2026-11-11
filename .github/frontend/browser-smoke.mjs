@@ -42,7 +42,8 @@ try{
  assert.ok(mascot.painted>1500,'Mascot must actually render rather than showing a broken/blank SVG');
  console.log('Shared mascot rendered in Chromium:',JSON.stringify(mascot));
  // Execute the real source graph; these checks do not use the legacy lexical adapter.
- await page.goto(baseUrl+'/LINE/booking/index.html?view=staff&merchant=greenfield-salon',{waitUntil:'networkidle'});
+ // Native-module smoke must not depend on external Supabase or LINE services reaching network-idle.
+ await page.goto(baseUrl+'/LINE/booking/index.html?view=staff&merchant=greenfield-salon',{waitUntil:'domcontentloaded'});
  const result=await page.evaluate(async()=>{
   const {bookingState}=await import('./app/state/bookingState.js');
   const {queueState}=await import('./app/state/queueState.js');
