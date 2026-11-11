@@ -8,7 +8,22 @@
     });
     const params=new URLSearchParams(location.search);
     const slug=params.get("merchant")||"";
-    const selectedSession=/^[0-9a-f-]{36}$/i.test(params.get("session")||"")?params.get("session"):null;
+    const sessionIdPattern=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
+    const selectedSession=sessionIdPattern.test(params.get("session")||"")?params.get("session"):null;
+    function sessionBoardLink(id){
+      const url=new URL(location.href);
+      if(id)url.searchParams.set("session",id);
+      else url.searchParams.delete("session");
+      return url.toString();
+    }
+    function setSessionNavigation(session){
+      const nav=$("board-session-nav");
+      nav.hidden=!session;
+      if(session){
+        $("board-all-link").href=sessionBoardLink(null);
+        $("board-session-name").textContent=[session.unit,session.name].filter(Boolean).join(" · ")||"場次叫號";
+      }
+    }
     const $=id=>document.getElementById(id);
     const localTime=date=>new Intl.DateTimeFormat("zh-TW",{timeZone:"Asia/Taipei",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(date);
     const validSlug=/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug);
@@ -44,24 +59,50 @@
     function renderUnits(sessions){
       const grid=$("unit-board");
       grid.replaceChildren();
+      setSessionNavigation(null);
       for(const s of sessions){
-        const card=document.createElement("article");card.className="unit-card";
+        const id=String(s.id||"");
+        const canOpen=sessionIdPattern.test(id);
+        const card=document.createElement(canOpen?"a":"article");
+        card.className="unit-card"+(canOpen?" unit-card-link":"");
+        if(canOpen){
+          card.href=sessionBoardLink(id);
+          card.setAttribute("aria-label","單獨顯示 "+([s.unit,s.name].filter(Boolean).join(" · ")||"此場次")+" 的叫號");
+        }
         const group=document.createElement("div");group.className="group";group.textContent=[s.group,s.name].filter(Boolean).join(" · ");
         const heading=document.createElement("h2");heading.textContent=s.unit||"服務單位";
         const now=document.createElement("div");now.className="unit-now";
         const unitCurrent=String(s.current??"").trim();
         const unitNotCalled=!unitCurrent||["-","–","—"].includes(unitCurrent);
-        now.textContent=unitNotCalled?"尚未叫號":unitCurrent;
+        now.textContent=unitNotCalled?"尚未\n叫號":unitCurrent;
         now.classList.toggle("is-empty",unitNotCalled);
         const next=document.createElement("div");next.className="unit-next";
         next.textContent="接下來："+(Array.isArray(s.next)&&s.next.length?s.next.join("、"):"目前無人等候");
         const count=document.createElement("div");count.className="group";count.textContent="等候 "+Number(s.waiting||0)+" 組";
-        card.append(group,heading,now,next,count);grid.append(card);
+        card.append(group,heading,now,next,count);
+        if(canOpen){
+          const action=document.createElement("span");
+          action.className="unit-open";
+          action.textContent="單獨顯示此場次";
+          card.appendChild(action);
+        }
+        grid.append(card);
       }
       if(!sessions.length){
         const empty=document.createElement("article");empty.className="unit-card";empty.textContent="今天尚未設定開放場次";grid.append(empty);
       }
       $("single-board").hidden=true;grid.hidden=false;
+    }
+
+    function renderSelectedSession(session){
+      $("unit-board").hidden=true;
+      $("single-board").hidden=false;
+      setSessionNavigation(session||{name:"此場次目前未開放"});
+      const rawCurrent=String(session?.current??"").trim();
+      const notCalled=!rawCurrent||["-","–","—"].includes(rawCurrent);
+      $("current").textContent=session?(notCalled?"尚未叫號":rawCurrent):"場次未開放";
+      $("current").classList.toggle("is-empty",notCalled||!session);
+      renderUpcoming(Array.isArray(session?.next)?session.next:[]);
     }
 
     function renderBoardBrand(store){
@@ -111,9 +152,16 @@
         if(units?.multi){
           disabled=false;staleFromFailure=false;lastData=units;lastSuccess=new Date();
           $("shop").textContent=String(units.shop||slug);
-          renderUnits(Array.isArray(units.sessions)?units.sessions:[]);
+          const sessions=Array.isArray(units.sessions)?units.sessions:[];
+          if(selectedSession){
+            // RPC filters by service_session_id, never mix another session's queue.
+            renderSelectedSession(sessions.find(s=>s.id===selectedSession)||null);
+          }else{
+            renderUnits(sessions);
+          }
           updateConnectionStatus();return;
         }
+        setSessionNavigation(null);
         $("single-board").hidden=false;$("unit-board").hidden=true;
         const {data,error}=await client.rpc("so_public_board",{p_slug:slug,p_limit:5});
         if(error)throw error;
