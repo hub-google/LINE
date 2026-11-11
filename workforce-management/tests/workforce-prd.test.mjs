@@ -320,3 +320,20 @@ test('HR-LVE-03 retains the original approved leave until date amendment final a
  assert.match(src,/wf_leave_amend_request/);
  assert.match(src,/wf_leave_amend_review/);
 });
+
+
+test('HR-LVE-05 labels overtime advance/retroactive without altering attendance',()=>{
+ const sql=migration('20261111_workforce_overtime_advance_retroactive.sql');
+ for(const symbol of ['overtime_timing','advance','retroactive',
+ 'wm_submit_overtime_request','wm_period_closures','wm_submit_request',
+ 'wm_private.autofill_workforce_overtime_timing','wm_audit',
+ 'REVOKE ALL ON FUNCTION public.wm_submit_overtime_request'])
+ assert.ok(sql.includes(symbol),symbol);
+ assert.match(sql,/p_end>p_start\+interval '24 hours'/);
+ assert.match(sql,/p_timing='advance' AND p_start<=clock_timestamp\(\)/);
+ assert.match(sql,/p_timing='retroactive' AND p_end>clock_timestamp\(\)/);
+ assert.doesNotMatch(sql,/UPDATE public\.wm_punches|DELETE FROM public\.wm_punches/i);
+ assert.match(src,/name:'overtime_timing',label:'加班申請時點'/);
+ assert.match(src,/name==='request'&&data.kind==='overtime'/);
+ assert.match(src,/wm_submit_overtime_request/);
+});
