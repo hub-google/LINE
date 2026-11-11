@@ -236,7 +236,7 @@ function reports(){
  $('appContent').innerHTML='<div class="cards">'+stat('期間',start.slice(5)+'～'+end.slice(5),'統計起訖日')+stat('打卡筆數',rows.reduce((a,b)=>a+b.entries.length,0),'上下班與休息事件')+stat('核算工時',rows.reduce((a,b)=>a+b.hours,0).toFixed(1),'上／下班配對，扣除實際休息')+stat('員工人數',people.length,'包含未打卡員工')+'</div>'+
  panel('期間打卡與工時','<div class="toolbar"><div class="field"><label>起始日期（7 日）</label><input type="date" class="filter" id="reportDate" value="'+esc(start)+'"></div><button class="btn" data-action="refreshReport">查詢</button></div>'+
  table(['員工','分店','打卡事件','已配對工時','未完成打卡'],rows.map(x=>tr([esc(x.m.display_name),esc(branch(x.m.branch_id)?.name||''),String(x.entries.length),x.hours.toFixed(2)+' 小時',x.hasIncomplete?'有':'—'])))+
- '<div class="notice warning">這是按原始打卡配對、扣除休息後的行政試算，不等於依法核認的加班、特休與薪資結算。異常、跨日歸屬與缺卡仍需人工確認。</div>');
+ '<div class="notice warning">這是按原始打卡配對、扣除休息後的行政試算，不等於依法核認的加班、特休與薪資結算。缺卡或未配對的時段不計入試算，需先完成補卡及人工確認。</div>');
 }
 function settings(){
  heading();
@@ -1832,7 +1832,7 @@ function attendanceRows(events,from,to){
     member_id:memberId,code:member.employee_code,name:member.display_name,
     branch_id:member.branch_id,department_id:member.department_id,
     day,inAt:taiStamp(started),outAt:last?taiStamp(last):'',
-    workMinutes:Math.round(minutes),incomplete
+    workMinutes:incomplete?0:Math.round(minutes),incomplete
    });
    started=null;segment=null;minutes=0;
   };
