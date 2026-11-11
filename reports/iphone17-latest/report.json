@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-11T07:23:21.369Z",
+  "date": "2026-11-11T08:25:13.917Z",
   "device": "iPhone 17 simulated Chromium, 402x874 CSS pixels, DPR3",
   "note": "Read-only live website screenshots; no authentication, no writes; not physical Safari.",
   "screens": [
@@ -255,57 +255,57 @@
       "visibleTapCount": 9,
       "keyRects": {
         ".page-header": {
-          "top": -609,
-          "bottom": -459,
+          "top": -588,
+          "bottom": -438,
           "left": 0,
           "right": 402,
           "height": 150
         },
         ".hero-heading": {
-          "top": -551,
-          "bottom": -480,
+          "top": -530,
+          "bottom": -459,
           "left": 14,
           "right": 388,
           "height": 71
         },
         ".main-panel": {
-          "top": -476,
-          "bottom": 881,
+          "top": -455,
+          "bottom": 902,
           "left": 14,
           "right": 388,
           "height": 1357
         },
         ".tabs": {
-          "top": -462,
-          "bottom": -406,
+          "top": -441,
+          "bottom": -385,
           "left": 28,
           "right": 374,
           "height": 56
         },
         "#keyword": {
-          "top": -317,
-          "bottom": -268,
+          "top": -296,
+          "bottom": -247,
           "left": 28,
           "right": 374,
           "height": 49
         },
         "#explore-filters": {
-          "top": -258,
-          "bottom": -212,
+          "top": -237,
+          "bottom": -191,
           "left": 28,
           "right": 374,
           "height": 46
         },
         "#results": {
-          "top": -90,
-          "bottom": 857,
+          "top": -69,
+          "bottom": 878,
           "left": 28,
           "right": 374,
           "height": 947
         },
         "#results-heading": {
-          "top": -128,
-          "bottom": -100,
+          "top": -107,
+          "bottom": -79,
           "left": 28,
           "right": 127,
           "height": 28
@@ -871,17 +871,17 @@
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
-      "visibleTapCount": 2,
+      "visibleTapCount": 4,
       "keyRects": {
         "#root": {
-          "top": 144,
-          "bottom": 293,
+          "top": 83,
+          "bottom": 364,
           "left": 0,
           "right": 402,
-          "height": 149
+          "height": 281
         }
       },
-      "bodyText": "排隊怪獸 店家登入 資料更新中，請稍後",
+      "bodyText": "排隊怪獸 店家登入 店家登入 使用店家帳號管理預約及叫號。 店家登入 註冊店家",
       "errors": [],
       "failedRequests": []
     },
@@ -986,7 +986,7 @@
       ],
       "visibleTapCount": 4,
       "keyRects": {},
-      "bodyText": "測試1 叫號變動即時更新 15:23 診間 · 上午場 1診 2 接下來：3、5、6、7 等候 4 組 單獨顯示此場次 診間 · 上午場 2診 尚未 叫號 接下來：目前無人等候 等候 0 組 單獨顯示此場次 由排隊怪獸提供服務 全螢幕 最後成功同步：15:23:20；號碼變更即時更新，並定期核對。",
+      "bodyText": "測試1 叫號變動即時更新 16:25 診間 · 上午場 1診 2 接下來：3、5、6、7 等候 4 組 單獨顯示此場次 診間 · 上午場 2診 尚未 叫號 接下來：目前無人等候 等候 0 組 單獨顯示此場次 由排隊怪獸提供服務 全螢幕 最後成功同步：16:25:13；號碼變更即時更新，並定期核對。",
       "errors": [],
       "failedRequests": []
     }
