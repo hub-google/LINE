@@ -72,3 +72,25 @@
 2026-11-11 查詢正式專案 `unapiwajmgqqtdkixaab` 的 `pg_proc`：`public` 下的 `so_*/qm_*` 共 **118 支函式／118 個唯一名稱**，不存在同名多載及完全相同 `prosrc` 主體的函式組。這**不等於**沒有業務邏輯相似的程序，上面兩組叫號 RPC 即是未完成合併的具體案例。正式資料庫中未找到 `so_demo_*` RPC，不應把舊 Demo 的操作視為已連接正式系統。
 
 本輪共用公開設定的發布 commit `037ec913` 已通過 Actions `42966906122`，並核對 `gh-pages/booking/release.json`。
+
+
+## 核心整併完成記錄（2026-11-11）
+
+以下項目現已完成正式環境部署，保留原本的公開 RPC、參數、輸出及通知事件欄位：
+
+- 叫號狀態修改：`private.so_ticket_set_status_core` 為唯一更新核心。`so_staff_set_ticket_status`、`so_unit_set_ticket_status` 為相容入口，依是否為獨立場次保留叫號衝突和 HOLD 規則。
+- 下一位／重叫／服務／過號：`private.so_ticket_queue_action_core` 為唯一核心。`so_staff_action` 仍負責原有預約報到、取消預約、未到場的非叫號業務；`so_unit_call` 相容多場次 API。
+- 顧客進度：前端統一讀取 `so_queue_live`；正式 DB 根據票券是否有 `service_session_id` 決定輸出普通或分場次視圖。
+- 看板「目前叫號」：`private.so_queue_current_number` 統一實作最新叫號排序，供普通公開看板、分場次公開看板及分場次顧客進度共用。
+- 顧客入口網址：`saas/shared-customer-links.js` 統一產生連結；保留平台 OA／自有 OA、跨店與登入端點的原路由行為。
+- LOGO 網址：同一個 `safeMerchantLogoUrl` 產生安全網址；搜尋頁原有較寬鬆的 HTTPS URL 接受方式仍保留為明確參數，編輯器與電視看板維持 490 字上限。
+- 新增 `unified-queue-core.test.mjs`、`shared-customer-links.test.mjs`，與 PR／部署測試同步執行。
+
+**驗證**：正式 Supabase 在交易回滾後確認一般重叫、多場次叫下一位、一般／多場次狀態不變操作。相關 migration 版本：
+`20261111055605`、`20261111060007`、`20261111060343`。
+這些測試不等於所有 LINE 真實手機通知及多人並發情境已全部驗收。
+
+**保留之非重複業務差異**：
+- `so_queue_session_state` 是早場／午場／晚場／休場控制；`so_service_sessions` 是實際日期與窗口的場次；兩者語意不同。
+- `so_unit_public_board` 回傳多個隊列的聚合結果；`so_public_board` 是單隊列看板。兩者共享目前叫號核心，外層回傳格式保留。
+- Next.js／Prisma 原型保留在正式 Pages 部署之外，不能直接刪除尚未移轉的訂單／付款程式。

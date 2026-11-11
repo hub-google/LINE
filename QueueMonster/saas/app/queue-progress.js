@@ -30,10 +30,8 @@ export async function refreshQueueProgress(){
  queueState.queueLiveLoading=true;
  try{
   const ticket=queueTicketToDisplay();
-  const unitRecord=(serviceUnitsState.unitRecords?.tickets||[]).find(x=>x.id===ticket);
-  const data=serviceUnitsState.unitEnabled()&&unitRecord
-   ?await rpc("so_unit_progress",{p_slug:shop,p_ticket_id:ticket})
-   :await rpc("so_queue_live",{p_slug:shop,p_ticket_id:ticket});
+  // The backend resolves the ticket's session; both queue modes use the same public RPC.
+  const data=await rpc("so_queue_live",{p_slug:shop,p_ticket_id:ticket});
   if(routeState.view!=="customer"||routeState.customerTab!=="progress"||routeState.slug!==shop)return;
   queueState.queueLive=data;queueState.queueLiveShop=shop;queueState.queueLiveError="";
   queueState.queueLastSuccessAt=new Date().toISOString();queueState.queueLastSuccessShop=shop;
