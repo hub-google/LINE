@@ -1,4 +1,6 @@
-# LINE OA 預約／現場取號／叫號／點餐與服務／LINE Pay 整合系統需求書
+# 排隊怪獸｜LINE 預約／取號／叫號／店家管理需求書
+
+> **2026-11-11 使用者最新範圍決策（最高優先，覆蓋全文所有舊版付款需求）**：排隊怪獸是**預約、取號、叫號及店家營運管理平台，不是金流或收款平台**。本專案**不開發、不宣稱支援**信用卡、LINE Pay、現金或轉帳收款、訂金、逐品項付款、退款、對帳、發票、商家 SaaS 訂閱扣款等金流系統。全文第 20～23 章、80、85 章、NR-23、FR-302／FR-307、競品功能 C54／C58、付款狀態及所有相似段落，僅保留為**歷史舊稿／排除需求**，不得作為開發、上線、測試或擴充授權。菜單／服務選項僅為客人預約與店員管理，不得因此新增收款流程。原文「全部功能必做」僅適用**非金流**項目。未來若使用者未另行明確提出需求，任何 Agent 都不得重新引入上述項目。
 
 > **2026-11-10 最新決策（覆蓋以下舊規格）**：使用者明確取消額外的 QR 立牌製作頁面 `/booking/poster.html` 及相容路徑 `/saas/poster.html`，不得重新建立；一併取消該頁 A4/PNG/PDF 匯出、後台「製作 QR 立牌」入口與 LINE 選單的「QR 立牌」名稱。**保留**既有門市專屬預約/取號連結、LINE 身分驗證、直接掃 QR Code 進入服務的功能。下方舊版 NR-16、K20 等立牌描述均以本決策為準，不應作為重新開發授權。
 
@@ -7,9 +9,9 @@
 > 文件日期：2026-09-03  
 > 主要語言：繁體中文  
 > 目標讀者：產品經理、後端工程師、前端工程師、AI Coding Agent、QA、DevOps  
-> 關鍵字：LINE Official Account、LIFF、LINE MINI App、Messaging API、Rich Menu、LINE Pay、Reservation、Queue、Order、RBAC
+> 關鍵字：LINE Official Account、LIFF、LINE MINI App、Messaging API、Rich Menu、Reservation、Queue、Service、RBAC
 
-> **2026-11-04 LINE 多企業 SaaS 現行 PRD 增補（僅規劃、未開發）**：請先閱讀 [DoYouBook 競品對照、完整解法與驗收規格](./saas/PRD-20261104-DoYouBook-benchmark-and-solutions.md)。本文件原為 2026-09-03 全方位門市架構需求書；涉及現在 SaaS 的預約/叫號分離、編號前綴與手動重置、LINE-first 登入、通知、商家 OA、預約產業模式與防衝突作業，以增補 PRD 最新決策為準。其他未衝突之既有安全、RBAC、金流與稽核要求繼續有效。
+> **2026-11-04 LINE 多企業 SaaS 現行 PRD 增補（僅規劃、未開發）**：請先閱讀 [DoYouBook 競品對照、完整解法與驗收規格](./saas/PRD-20261104-DoYouBook-benchmark-and-solutions.md)。本文件原為 2026-09-03 全方位門市架構需求書；涉及現在 SaaS 的預約/叫號分離、編號前綴與手動重置、LINE-first 登入、通知、商家 OA、預約產業模式與防衝突作業，以增補 PRD 最新決策為準。其他未衝突之既有安全、RBAC 與稽核要求繼續有效；金流需求已依 2026-11-11 最新決策全部排除。
 > **並行開發注意**：另有對話可能正在更新 GitHub。本次只新增/調整 Markdown 需求，未修改原始碼、資料庫、Secrets、Action、測試資料或部署；實作者須以最新 main/PR 比對需求 ID，避免覆蓋另一個對話工作。
 
 ---
