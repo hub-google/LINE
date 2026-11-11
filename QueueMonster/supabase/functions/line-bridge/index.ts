@@ -1011,16 +1011,14 @@ Deno.serve(async (req: Request) => {
         return reply(200,{ok:true,disconnected:true},origin);
       }
       const liffId = typeof payload.liffId === "string" ? payload.liffId.trim() : "";
-      const messagingChannelId = typeof payload.messagingChannelId === "string" ? payload.messagingChannelId.trim() : "";
       const botToken = typeof payload.botToken === "string" ? payload.botToken.trim() : "";
       const channelSecret = typeof payload.channelSecret === "string" ? payload.channelSecret.trim() : "";
-      if (!/^\d{8,}$/.test(messagingChannelId) ||
-          (liffId !== "" && !/^\d{8,}-[A-Za-z0-9]+$/.test(liffId)) ||
+      if ((liffId !== "" && !/^\d{8,}-[A-Za-z0-9]+$/.test(liffId)) ||
           botToken.length<32 || botToken.length>4096 ||
           !/^[0-9a-f]{32}$/i.test(channelSecret))
         return reply(400,{error:"LINE_CHANNEL_FIELDS_INVALID"},origin);
-      // Verify the long-lived token's actual Messaging API channel before storing it.
-      // Bot info alone proves the token works, not that the entered Channel ID matches.
+      // Verify the token and derive the Messaging API Channel ID from LINE directly.
+      // Merchants only need to enter the access token and channel secret.
       let tokenVerification: Response;
       try {
         tokenVerification = await fetch("https://api.line.me/v2/oauth/verify", {
@@ -1034,8 +1032,9 @@ Deno.serve(async (req: Request) => {
       if (!tokenVerification.ok)
         return reply(400,{error:"LINE_BOT_TOKEN_INVALID"},origin);
       const tokenDetails = await tokenVerification.json().catch(()=>({}));
-      if (String(tokenDetails.client_id||"") !== messagingChannelId)
-        return reply(400,{error:"LINE_BOT_TOKEN_CHANNEL_MISMATCH"},origin);
+      const messagingChannelId = String(tokenDetails.client_id||"");
+      if (!/^\d{8,}$/.test(messagingChannelId))
+        return reply(400,{error:"LINE_BOT_TOKEN_INVALID"},origin);
       const verified = await fetch("https://api.line.me/v2/bot/info", {
         headers:{authorization:"Bearer "+botToken}
       }).catch(()=>null);
