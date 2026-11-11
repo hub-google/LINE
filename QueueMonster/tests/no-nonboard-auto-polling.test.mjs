@@ -14,8 +14,8 @@ function sourceFiles(dir=root){
   });
 }
 
-test("only the public queue board polls data; other pages have no periodic refresh",()=>{
-  const exceptions=new Set(["version-watch.js","assets/board/main.js","assets/board/fullscreen-fit.js"]);
+test("only store-scoped customer, merchant and public board pages can poll business data",()=>{
+  const exceptions=new Set(["version-watch.js","store-live-sync.js","assets/board/main.js","assets/board/fullscreen-fit.js"]);
   const unwanted=sourceFiles().flatMap(file=>{
     const relative=path.relative(root,file).replaceAll(path.sep,"/");
     if(exceptions.has(relative))return [];
@@ -24,7 +24,7 @@ test("only the public queue board polls data; other pages have no periodic refre
   });
   assert.deepEqual(unwanted,[],"Non-board pages must not schedule periodic polling");
   const startup=read("app/startup.js");
-  assert.match(startup,/void load\(\)/);
+  assert.match(startup,/void load\(\)\.finally\(/);
   assert.doesNotMatch(startup,/setInterval|addEventListener\(["']focus|visibilitychange/);
   const progress=read("app/queue-progress.js");
   const crossStore=read("app/cross-store.js");
@@ -43,15 +43,29 @@ test("new-version toast remains active and checks GitHub Pages, not Supabase",()
   assert.doesNotMatch(watch,/supabase\.co|\.rpc\(/i);
 });
 
-test("the public board alone uses realtime capacity and API fallback",()=>{
+test("customer and merchant share the public board's Realtime/10s API fallback",()=>{
   const board=read("assets/board/main.js");
-  assert.match(board,/client\.channel\("queue-board:"\+slug/);
-  assert.match(board,/too_many_connections/);
-  assert.match(board,/tenant_events/);
-  assert.match(board,/status==="CHANNEL_ERROR"\|\|status==="TIMED_OUT"\|\|status==="CLOSED"/);
-  assert.match(board,/stopRealtimeChannel\(\)/);
-  assert.match(board,/subscribeQueueChanges\(\)/);
-  assert.match(board,/\},10000\)/);
+  const startup=read("app/startup.js");
+  const sync=read("store-live-sync.js");
+  assert.match(board,/createStoreLiveSync/);
+  assert.match(startup,/createStoreLiveSync/);
+  assert.match(startup,/routeState.view==="customer"/);
+  assert.match(startup,/routeState.view==="staff"/);
+  assert.match(startup,/routeState.slug===merchant/);
+  assert.match(startup,/feedbackState.busy/);
+  assert.match(startup,/staffState.staffTab/);
+  assert.match(startup,/refreshQueueProgress/);
+  assert.match(startup,/refreshCrossStoreOverview/);
+  assert.match(sync,/client.channel/);
+  assert.match(sync,/too_many_connections/);
+  assert.match(sync,/tenant_events/);
+  assert.match(sync,/fallbackMs=10000,reconcileMs=60000/);
+  assert.match(sync,/setInterval/);
   assert.match(board,/每 10 秒更新一次叫號/);
   assert.match(read("board.html"),/id="board-update-mode"/);
+  // The merchant landing page, directory and HQ use different entrypoints
+  // and must not import this controller.
+  for(const html of ["home.html","directory.html","platform-login.html"]){
+    assert.doesNotMatch(read(html),/store-live-sync|createStoreLiveSync/);
+  }
 });
