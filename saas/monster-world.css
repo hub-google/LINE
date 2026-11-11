@@ -745,6 +745,26 @@ body[data-monster-page="index"][data-portal="customer"] .customer-shop-title{min
 body[data-monster-page="index"][data-portal="customer"] .customer-shop-title h1{margin:2px 0 4px;color:#382341;font-size:clamp(23px,3.5vw,34px);overflow-wrap:anywhere}
 body[data-monster-page="index"][data-portal="customer"] .customer-shop-overline{font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--merchant-ink,#462B52)}
 body[data-monster-page="index"][data-portal="customer"] .customer-shop-title .muted{font-size:13px}
+
+/* Booking/queue first: login occupies the primary card; the public board is secondary. */
+body[data-monster-page="index"][data-portal="customer"] .customer-entry-card{
+ padding:26px 28px;margin:0 0 10px;border-radius:20px;
+ border:1px solid color-mix(in srgb,var(--merchant-accent,#693C8B) 25%,white);
+}
+body[data-monster-page="index"][data-portal="customer"] .customer-entry-card h2{margin:0 0 12px;font-size:clamp(23px,3vw,30px)}
+body[data-monster-page="index"][data-portal="customer"] .customer-entry-card p{margin:0 0 18px;max-width:50em;line-height:1.65}
+body[data-monster-page="index"][data-portal="customer"] .customer-entry-card .btn{
+ min-height:46px;display:inline-flex;align-items:center;justify-content:center;padding:11px 22px;
+}
+body[data-monster-page="index"][data-portal="customer"] .customer-public-board-link{margin:12px 0 28px;font-size:14px}
+body[data-monster-page="index"][data-portal="customer"] .customer-public-board-link a{
+ color:var(--merchant-ink,#462B52);text-decoration:underline;text-underline-offset:3px;
+}
+@media(max-width:620px){
+ body[data-monster-page="index"][data-portal="customer"] .customer-entry-card{padding:20px 18px}
+ body[data-monster-page="index"][data-portal="customer"] .customer-entry-card .btn{width:100%;box-sizing:border-box}
+}
+
 body[data-monster-page="index"][data-portal="customer"] :is(.btn.primary,.slot.active){
  background:var(--merchant-accent,#693C8B)!important;color:var(--merchant-contrast,#fff)!important;
  border-color:var(--merchant-accent,#693C8B)!important;box-shadow:none;
