@@ -1,6 +1,7 @@
-// A single content-aware full-screen layout engine for landscape, portrait,
+// A single content-aware board layout engine for landscape, portrait,
 // ultra-wide and unusual displays. No device names or resolution breakpoints.
-// Responsive layout uses the ACTUAL size of each content container.
+// Responsive layout ALWAYS uses the ACTUAL size of each content container.
+// The Fullscreen API only hides browser chrome; it does not switch layout mode.
 export function installBoardFullscreenFit(){
   const el=id=>document.getElementById(id);
   const body=document.body;
@@ -48,29 +49,6 @@ export function installBoardFullscreenFit(){
       if(!best||score>best.score)best={cols,rows,capacity:maxPage,pages,score};
     }
     return best||{cols:1,rows:count,capacity:count,pages:1,score:0};
-  }
-  function reset(){
-    body.style.removeProperty("zoom");
-    body.style.removeProperty("height");
-    body.style.removeProperty("width");
-    body.classList.remove("board-compact");
-    single?.removeAttribute("data-board-layout");
-    for(const prop of ["--board-queue-columns","--board-queue-rows","--board-current-font","--board-current-label-font","--board-next-font"]){
-      single?.style.removeProperty(prop);
-    }
-    for(const prop of ["--board-unit-columns","--board-unit-rows"]){
-      units?.style.removeProperty(prop);
-    }
-    queue?.style.removeProperty("--board-queue-count");
-    queue?.style.removeProperty("--board-queue-mobile-rows");
-    for(const card of units?.querySelectorAll(".unit-card")||[]){
-      card.removeAttribute("data-board-hidden");
-      for(const child of card.querySelectorAll(".unit-now,.unit-next,.group,h2")){
-        child.style.removeProperty("font-size");
-      }
-    }
-    if(indicator){indicator.hidden=true;indicator.textContent="";}
-    page=0;pageCount=1;visiblePerPage=0;
   }
   function layoutQueue(){
     const area=size(single);
@@ -139,7 +117,6 @@ export function installBoardFullscreenFit(){
   }
   function arrange(){
     frame=0;
-    if(!document.fullscreenElement){reset();return;}
     body.style.removeProperty("zoom");
     document.documentElement.scrollTop=0;
     body.scrollTop=0;
@@ -147,14 +124,10 @@ export function installBoardFullscreenFit(){
     else if(single&&!single.hidden)layoutQueue();
   }
   function schedule(){
-    if(!document.fullscreenElement)return;
     if(frame)cancelAnimationFrame(frame);
     frame=requestAnimationFrame(arrange);
   }
-  document.addEventListener("fullscreenchange",()=>{
-    if(document.fullscreenElement)schedule();
-    else{if(frame)cancelAnimationFrame(frame);frame=0;reset();}
-  });
+  document.addEventListener("fullscreenchange",schedule);
   window.addEventListener("resize",schedule);
   window.addEventListener("orientationchange",schedule);
   if(typeof ResizeObserver!=="undefined"){
@@ -164,8 +137,9 @@ export function installBoardFullscreenFit(){
   // When there are more unit cards than can stay readable, use familiar
   // digital-signage rotation. Every page fits; no card disappears permanently.
   setInterval(()=>{
-    if(!document.fullscreenElement||pageCount<=1||units?.hidden)return;
+    if(document.hidden||pageCount<=1||units?.hidden)return;
     page=(page+1)%pageCount;schedule();
   },9000);
+  schedule();
   return {schedule};
 }
