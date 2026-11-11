@@ -94,3 +94,17 @@ test("guest sees merchant identity before LINE authentication without exposing c
  assert.match(front,/由排隊怪獸提供預約與取號服務/);
  assert.match(front,/customer-shop-avatar/);
 });
+
+
+test("merchant color overrides the old high-specificity purple board theme",()=>{
+ const theme=read("saas/monster-world.css");
+ const legacy="body:has(#single-board)>header";
+ const override='body[data-monster-page="board"]:has(#single-board)>header';
+ assert.ok(theme.includes(legacy),"legacy CSS regression check cannot locate the old rule");
+ assert.ok(theme.includes(override),"merchant header must match the old ID specificity");
+ assert.ok(theme.indexOf(override)>theme.indexOf(legacy),"merchant-specific override must come after the platform rule");
+ assert.match(theme,/body\[data-monster-page="board"\]:has\(#single-board\)>header :is\(h1,#clock\)/);
+ assert.match(theme,/body\[data-monster-page="board"\]:has\(#single-board\) \.panel\.current/);
+ assert.match(theme,/body\[data-monster-page="board"\]:has\(#single-board\) #upcoming li:not\(\.empty\)/);
+ assert.match(theme,/--merchant-board-contrast/);
+});
