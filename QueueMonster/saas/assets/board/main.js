@@ -33,12 +33,60 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
     let lastSuccess=null,loading=false,refreshQueued=false;
     let lastData=null,staleFromFailure=false,disabled=false;
     let realtimeConnected=false,eventTimer=null,lastEventRefreshAt=0;
+    let realtimeChannel=null,realtimeRetryTimer=null,realtimeFailureCount=0,realtimeEpoch=0;
     function updateSyncMode(){
       const label=$("board-update-mode");
       if(!label)return;
       label.textContent=realtimeConnected&&navigator.onLine
         ?"叫號變動即時更新":"每 10 秒更新一次叫號";
       label.dataset.realtime=realtimeConnected&&navigator.onLine?"on":"fallback";
+    }
+    function publicQueueFingerprint(data){
+      // Compare only the PUBLIC fields that actually appear on this board.
+      // A difference found during periodic reconciliation without an event
+      // means push delivery was interrupted, even if the socket still says open.
+      if(data?.multi){
+        return JSON.stringify((data.sessions||[]).map(s=>[s.id,s.current,s.waiting,s.next]));
+      }
+      return JSON.stringify([data?.current,data?.upcoming]);
+    }
+    function stopRealtimeChannel(){
+      const channel=realtimeChannel;
+      realtimeChannel=null;
+      realtimeEpoch++; // ignore stale CLOSED callbacks from unsubscribe()
+      realtimeConnected=false;
+      updateSyncMode();
+      if(channel)void client.removeChannel(channel).catch(error=>{
+        console.warn("Queue board Realtime channel cleanup failed:",String(error?.message||error));
+      });
+    }
+    function realtimeErrorDetails(error){
+      return [error?.message,error?.name,error?.cause?.message,error?.cause?.code,
+        error?.cause?.reason,error?.code,error?.status,error?.reason]
+        .filter(Boolean).map(String).join(" ");
+    }
+    function scheduleRealtimeRetry(error){
+      if(realtimeRetryTimer||disabled||!validSlug||document.hidden||!navigator.onLine)return;
+      const details=realtimeErrorDetails(error);
+      // Supabase Free: the 201st websocket can fail with too_many_connections
+      // or HTTP 429. The monthly/throughput quota may instead report
+      // tenant_events or close the socket. Both paths use safe API fallback.
+      const quota=/too_many_connections|too many connected users|tenant_events|monthly|quota|rate.limit|\b429\b/i.test(details);
+      const baseMs=quota?120000:30000;
+      const backoffMs=Math.min(600000,baseMs*2**Math.min(realtimeFailureCount,4));
+      realtimeFailureCount++;
+      const delay=Math.round(backoffMs*(.85+Math.random()*.3));
+      realtimeRetryTimer=setTimeout(()=>{
+        realtimeRetryTimer=null;
+        if(!disabled&&!document.hidden&&navigator.onLine)subscribeQueueChanges();
+      },delay);
+    }
+    function handleRealtimeFailure(status,error){
+      if(!realtimeChannel)return;
+      const message=realtimeErrorDetails(error);
+      console.warn("Queue board Realtime "+status+"; falling back to 10s API polling:",message);
+      stopRealtimeChannel();
+      scheduleRealtimeRetry(error);
     }
     function requestEventRefresh(){
       if(disabled||document.hidden||!navigator.onLine||eventTimer)return;
@@ -52,23 +100,33 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
       },wait);
     }
     function subscribeQueueChanges(){
-      if(!validSlug)return;
+      if(!validSlug||disabled||realtimeChannel||document.hidden||!navigator.onLine)return;
       try{
-        client.channel("queue-board:"+slug,{config:{private:false,broadcast:{self:false}}})
-          .on("broadcast",{event:"invalidate"},requestEventRefresh)
-          .subscribe(status=>{
-            const previouslyConnected=realtimeConnected;
-            realtimeConnected=status==="SUBSCRIBED";
-            updateSyncMode();
-            if(realtimeConnected&&!previouslyConnected&&!disabled&&!document.hidden){
-              // Re-read once on connection/reconnection, closing the race
-              // between the initial RPC and the live subscription.
-              void refresh();
+        const channel=client.channel("queue-board:"+slug,{config:{private:false,broadcast:{self:false}}});
+        const epoch=++realtimeEpoch;
+        realtimeChannel=channel;
+        channel.on("broadcast",{event:"invalidate"},requestEventRefresh)
+          .subscribe((status,error)=>{
+            if(epoch!==realtimeEpoch||realtimeChannel!==channel)return;
+            if(status==="SUBSCRIBED"){
+              const previouslyConnected=realtimeConnected;
+              realtimeConnected=true;
+              realtimeFailureCount=0;
+              if(realtimeRetryTimer){clearTimeout(realtimeRetryTimer);realtimeRetryTimer=null;}
+              updateSyncMode();
+              if(!previouslyConnected&&!disabled&&!document.hidden){
+                // Catch changes occurring between initial API read and subscribe.
+                void refresh();
+              }
+              return;
+            }
+            if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"||status==="CLOSED"){
+              handleRealtimeFailure(status,error);
             }
           });
       }catch(error){
-        realtimeConnected=false;updateSyncMode();
-        console.warn("Queue board Realtime unavailable; using 10-second polling:",String(error?.message||error));
+        // Also handles the SDK throwing directly while all 200 slots are full.
+        handleRealtimeFailure("SUBSCRIBE_EXCEPTION",error);
       }
     }
     function renderUpcoming(numbers){
@@ -170,7 +228,7 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
       $("shop-logo").hidden=true;
       $("shop-icon-fallback").hidden=false;
     });
-    async function refresh(){
+    async function refresh({reconcile=false}={}){
       if(!validSlug)return;
       if(loading){refreshQueued=true;return;}
       loading=true;
@@ -194,6 +252,10 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
         }
         renderBoardBrand(units);
         if(units?.multi){
+          if(realtimeConnected&&reconcile&&lastData&&
+              publicQueueFingerprint(lastData)!==publicQueueFingerprint(units)){
+            handleRealtimeFailure("MISSED_CHANGE",new Error("Realtime event delivery did not match public queue snapshot"));
+          }
           disabled=false;staleFromFailure=false;lastData=units;lastSuccess=new Date();
           $("shop").textContent=String(units.shop||slug);
           const sessions=Array.isArray(units.sessions)?units.sessions:[];
@@ -213,6 +275,10 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
         const now=new Date();
         disabled=false;
         staleFromFailure=false;
+        if(realtimeConnected&&reconcile&&lastData&&
+            publicQueueFingerprint(lastData)!==publicQueueFingerprint(data)){
+          handleRealtimeFailure("MISSED_CHANGE",new Error("Realtime event delivery did not match public queue snapshot"));
+        }
         lastData=data;
         lastSuccess=now;
         $("shop").textContent=String(data.shop_name||slug);
@@ -249,10 +315,25 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
       boardFit.schedule();
     });
     document.addEventListener("visibilitychange",()=>{
-      if(!document.hidden&&!disabled)void refresh();
+      if(document.hidden){
+        // Hidden tabs must not occupy one of the Free plan's 200 sockets.
+        if(realtimeRetryTimer){clearTimeout(realtimeRetryTimer);realtimeRetryTimer=null;}
+        stopRealtimeChannel();
+      }else if(!disabled){
+        void refresh();
+        subscribeQueueChanges();
+      }
     });
-    window.addEventListener("online",()=>{if(!disabled)void refresh();});
-    window.addEventListener("offline",()=>{realtimeConnected=false;updateSyncMode();updateConnectionStatus();});
+    window.addEventListener("online",()=>{
+      if(disabled)return;
+      void refresh();
+      subscribeQueueChanges();
+    });
+    window.addEventListener("offline",()=>{
+      if(realtimeRetryTimer){clearTimeout(realtimeRetryTimer);realtimeRetryTimer=null;}
+      stopRealtimeChannel();
+      updateConnectionStatus();
+    });
     if(!validSlug){
       $("shop").textContent="未指定有效門市";
       health("請先選擇門市","error");
@@ -266,7 +347,8 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
       // when the WebSocket is unavailable or disconnected.
       setInterval(()=>{
         if(document.hidden||disabled)return;
-        if(!realtimeConnected||!lastSuccess||Date.now()-lastSuccess.getTime()>=60000)void refresh();
+        if(!realtimeConnected||!lastSuccess)void refresh();
+        else if(Date.now()-lastSuccess.getTime()>=60000)void refresh({reconcile:true});
       },10000);
       setInterval(updateConnectionStatus,5000);
     }
