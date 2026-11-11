@@ -1010,31 +1010,54 @@ Deno.serve(async (req: Request) => {
         return reply(200,{ok:true,disconnected:true},origin);
       }
       const liffId = typeof payload.liffId === "string" ? payload.liffId.trim() : "";
+      const messagingChannelId = typeof payload.messagingChannelId === "string" ? payload.messagingChannelId.trim() : "";
       const botToken = typeof payload.botToken === "string" ? payload.botToken.trim() : "";
       const channelSecret = typeof payload.channelSecret === "string" ? payload.channelSecret.trim() : "";
-      if (!/^\d{8,}-[A-Za-z0-9]+$/.test(liffId) ||
+      if (!/^\d{8,}$/.test(messagingChannelId) ||
+          (liffId !== "" && !/^\d{8,}-[A-Za-z0-9]+$/.test(liffId)) ||
           botToken.length<32 || botToken.length>4096 ||
           !/^[0-9a-f]{32}$/i.test(channelSecret))
         return reply(400,{error:"LINE_CHANNEL_FIELDS_INVALID"},origin);
+      // Verify the long-lived token's actual Messaging API channel before storing it.
+      // Bot info alone proves the token works, not that the entered Channel ID matches.
+      let tokenVerification: Response;
+      try {
+        tokenVerification = await fetch("https://api.line.me/v2/oauth/verify", {
+          method:"POST",
+          headers:{"content-type":"application/x-www-form-urlencoded"},
+          body:new URLSearchParams({access_token:botToken}),
+        });
+      } catch {
+        return reply(503,{error:"LINE_API_UNAVAILABLE"},origin);
+      }
+      if (!tokenVerification.ok)
+        return reply(400,{error:"LINE_BOT_TOKEN_INVALID"},origin);
+      const tokenDetails = await tokenVerification.json().catch(()=>({}));
+      if (String(tokenDetails.client_id||"") !== messagingChannelId)
+        return reply(400,{error:"LINE_BOT_TOKEN_CHANNEL_MISMATCH"},origin);
       const verified = await fetch("https://api.line.me/v2/bot/info", {
         headers:{authorization:"Bearer "+botToken}
-      });
+      }).catch(()=>null);
+      if (!verified) return reply(503,{error:"LINE_API_UNAVAILABLE"},origin);
       if (!verified.ok) return reply(400,{error:"LINE_BOT_TOKEN_INVALID"},origin);
       const bot = await verified.json();
       if (!/^U[0-9a-f]{32}$/i.test(String(bot.userId||"")))
         return reply(400,{error:"LINE_BOT_PROFILE_INVALID"},origin);
-      const { error } = await db.rpc("so_merchant_oa_save_secret",{
-        p_tenant_id:tenant.id,p_liff_id:liffId,
+      const { error } = await db.rpc("so_merchant_oa_save_messaging_secret",{
+        p_tenant_id:tenant.id,p_messaging_channel_id:messagingChannelId,p_liff_id:liffId,
         p_bot_user_id:bot.userId,p_basic_id:String(bot.basicId||""),
         p_display_name:String(bot.displayName||""),
         p_token:botToken,p_channel_secret:channelSecret,p_actor:user.id,
       });
-      if (error) throw error;
+      if (error) {
+        console.error("Merchant OA vault write failed",error.code||"UNKNOWN");
+        return reply(503,{error:"MERCHANT_OA_STORAGE_UNAVAILABLE"},origin);
+      }
       return reply(200,{
-        ok:true, connected:true, displayName:String(bot.displayName||""),
-        basicId:String(bot.basicId||""), liffId,
+        ok:true,connected:true,displayName:String(bot.displayName||""),
+        basicId:String(bot.basicId||""),messagingChannelId,liffEnabled:!!liffId,
         webhookUrl:"https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/line-bridge?action=webhook&merchant="+encodeURIComponent(slug),
-        note:"LINE Login and Messaging API channels must share a Provider",
+        note:liffId?"Messaging API connected; verify LINE Login and Messaging API share a Provider":"Messaging API connected; LINE Login uses platform LIFF until merchant LIFF is configured",
       },origin);
     }
     // A customer can verify their LINE identity for Queue Monster itself.
