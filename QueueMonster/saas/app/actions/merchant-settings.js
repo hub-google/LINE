@@ -27,12 +27,6 @@ if(a==="save-customer-homepage"){
   });
   return true;
 }
-if(a==="copy-own-oa-webhook"){
-  const webhook=lineState.LINE_BRIDGE_URL+"?action=webhook&merchant="+encodeURIComponent(routeState.slug);
-  try{await navigator.clipboard.writeText(webhook);showActionFeedback("已複製 Webhook URL","success");}
-  catch(e){window.prompt("複製 Webhook URL",webhook);}
-  return true;
- }
  if(a==="connect-own-oa"||a==="disconnect-own-oa"){
   if(a==="disconnect-own-oa"&&!confirm("確定改回平台 LINE OA？商家自己的 LINE 通知將停止；原預約和取號不會刪除。"))return true;
   await act(async()=>{
@@ -65,7 +59,7 @@ if(a==="copy-own-oa-webhook"){
    }
    lineState.lineConfig=null;lineState.lineConfigSlug="";
    return a==="connect-own-oa"
-     ?"Messaging API 已驗證連接。請設定 Webhook URL，再以店家 LINE OA 確認顧客身分配對及通知是否送達；LIFF 為選填。"
+     ?"Messaging API 已驗證連接。請以店家 LINE OA 測試顧客身分配對及通知是否送達；LIFF 為選填。"
      :"已解除自有 LINE OA，恢復平台服務";
   });return true;
  }
