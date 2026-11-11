@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-11T02:50:03.476Z",
+  "date": "2026-11-11T02:54:57.921Z",
   "device": "iPhone 17 simulated Chromium, 402x874 CSS pixels, DPR3",
   "note": "Read-only live website screenshots; no authentication, no writes; not physical Safari.",
   "screens": [
@@ -72,15 +72,15 @@
       "visibleTapCount": 16,
       "keyRects": {
         ".hero-cta": {
-          "top": -107,
-          "bottom": 79,
+          "top": -128,
+          "bottom": 58,
           "left": 20,
           "right": 382,
           "height": 186
         },
         ".hero-showcase": {
-          "top": 149,
-          "bottom": 1007,
+          "top": 128,
+          "bottom": 986,
           "left": 20,
           "right": 382,
           "height": 857
@@ -255,57 +255,57 @@
       "visibleTapCount": 10,
       "keyRects": {
         ".page-header": {
-          "top": -588,
-          "bottom": -438,
+          "top": -609,
+          "bottom": -459,
           "left": 0,
           "right": 402,
           "height": 150
         },
         ".hero-heading": {
-          "top": -530,
-          "bottom": -459,
+          "top": -551,
+          "bottom": -480,
           "left": 14,
           "right": 388,
           "height": 71
         },
         ".main-panel": {
-          "top": -455,
-          "bottom": 4667,
+          "top": -476,
+          "bottom": 4646,
           "left": 14,
           "right": 388,
           "height": 5123
         },
         ".tabs": {
-          "top": -441,
-          "bottom": -385,
+          "top": -462,
+          "bottom": -406,
           "left": 28,
           "right": 374,
           "height": 56
         },
         "#keyword": {
-          "top": -296,
-          "bottom": -247,
+          "top": -317,
+          "bottom": -268,
           "left": 28,
           "right": 374,
           "height": 49
         },
         "#explore-filters": {
-          "top": -237,
-          "bottom": -191,
+          "top": -258,
+          "bottom": -212,
           "left": 28,
           "right": 374,
           "height": 46
         },
         "#results": {
-          "top": -69,
-          "bottom": 4643,
+          "top": -90,
+          "bottom": 4622,
           "left": 28,
           "right": 374,
           "height": 4713
         },
         "#results-heading": {
-          "top": -107,
-          "bottom": -79,
+          "top": -128,
+          "bottom": -100,
           "left": 28,
           "right": 127,
           "height": 28
@@ -959,7 +959,7 @@
       "smallTaps": [],
       "visibleTapCount": 3,
       "keyRects": {},
-      "bodyText": "▤ 專屬測試門市 使用 LINE 登入 10:50 今天尚未設定開放場次 叫號順序將依現場狀況即時更新 重新整理 全螢幕 最後成功同步：10:50:01；資料每 12 秒自動核對，網路斷線會提示。",
+      "bodyText": "▤ 專屬測試門市 使用 LINE 登入 10:54 今天尚未設定開放場次 叫號順序將依現場狀況即時更新 重新整理 全螢幕 最後成功同步：10:54:56；資料每 12 秒自動核對，網路斷線會提示。",
       "errors": [],
       "failedRequests": []
     }
