@@ -37,3 +37,13 @@ test("Pages deployment deletes existing public copies of the retired page",()=>{
  assert.ok(deploy.includes("poster-removal-contract.test.mjs"));
  assert.ok(pr.includes("poster-removal-contract.test.mjs"));
 });
+
+
+test("LINE OAuth and page login never return to a deleted poster URL",()=>{
+ const site=read("QueueMonster/saas/site-auth.js");
+ const oauth=read("QueueMonster/saas/app/line-session.js");
+ for(const source of [site,oauth]){
+  assert.doesNotMatch(source,/board\|poster|poster\|merchant-center/);
+  assert.match(source,/board\|merchant-center/);
+ }
+});
