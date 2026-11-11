@@ -28,7 +28,7 @@ export function staffRender(){
  if(staffState.staff.tenant?.onboarding_complete===false)staffState.staffTab="settings";
  const t=staffState.staff.tenant,openBookings=staffState.staff.pending_reservations||[],doneBookings=staffState.staff.processed_reservations||[],openTickets=staffState.staff.active_tickets||[],doneTickets=staffState.staff.processed_tickets||[],deletedBookings=staffState.staff.deleted_reservations||[],deletedTickets=staffState.staff.deleted_tickets||[];
  const r=openBookings.concat(doneBookings),q=openTickets.concat(doneTickets);
- const active=openTickets.find(x=>["CALLED","ARRIVED","ADMITTED","SERVING"].includes(x.status)),waiting=openTickets.filter(x=>x.status==="WAITING"),passed=openTickets.filter(x=>x.status==="PASSED"),held=openTickets.filter(x=>x.status==="HOLD");
+ const active=openTickets.find(x=>x.status==="CALLED"),waiting=openTickets.filter(x=>x.status==="WAITING"),passed=openTickets.filter(x=>x.status==="PASSED"),held=openTickets.filter(x=>x.status==="HOLD");
  const pendingBookings=openBookings.filter(x=>x.status==="CONFIRMED"), finishedBookings=doneBookings.filter(x=>x.status==="COMPLETED");
  const role=staffState.staff.role,isManager=["OWNER","MANAGER","PLATFORM"].includes(role);
  const menu=nav("設定","settings",staffState.staffTab,"staff")+'<div class="staff-side-label">日常作業</div>'+
