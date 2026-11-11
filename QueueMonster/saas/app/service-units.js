@@ -2,17 +2,13 @@ import {bookingState} from "./state/bookingState.js";
 import {customerState} from "./state/customerState.js";
 import {queueState} from "./state/queueState.js";
 import {routeState} from "./state/routeState.js";
-import {sharedUiState} from "./state/sharedUiState.js";
 import {serviceUnitsState} from "./state/serviceUnitsState.js";
-import {staffState} from "./state/staffState.js";
 
 
-import {box,btn,esc,field,formatTaipeiCreated,menuChoiceReady,menuSelectSection,selectedItemsHtml,staffDeletePicker,staffStatusPicker,stat,tag,taipei} from "./shared-ui.js";
+import {box,btn,esc,field,menuChoiceReady,menuSelectSection,taipei} from "./shared-ui.js";
 import {normalizeBookingPhone,validBookingContact} from "./customer-booking.js";
 import {dateInNinetyDays} from "./booking-edit.js";
 import {renderBookings} from "./customer-records.js";
-import {staffHistoryState} from "./state/staffHistoryState.js";
-import {staffListPage} from "./staff-list.js";
 
 export function unitList(){
  let data=(serviceUnitsState.unitConfig?.units||[]).filter(x=>x.active);
@@ -177,53 +173,6 @@ export function unitSettingsPanel(isManager){
  return sessionCard+windowsCard;
 }
 
-export function unitStaffQueuePanel(){
- const ss=(serviceUnitsState.unitConfig?.sessions||[]).filter(s=>s.active);
- const selected=ss.find(x=>x.id===serviceUnitsState.unitStaffSession)||ss[0];
- const tickets=(staffState.staff?.tickets||[]).filter(k=>k.service_session_id===selected?.id&&!k.deleted_at);
- const open=tickets.filter(k=>['WAITING','HOLD','CALLED','ARRIVED','ADMITTED','SERVING','PASSED'].includes(k.status));
- const waiting=open.filter(k=>k.status==='WAITING');
- const current=open.find(k=>['CALLED','ARRIVED','ADMITTED','SERVING'].includes(k.status));
-
- const historical=(staffState.staff?.processed_tickets||[]).filter(k=>!k.deleted_at);
- const otherOpen=(staffState.staff?.active_tickets||[]).filter(k=>!k.deleted_at&&k.service_session_id!==selected?.id);
- const deleted=(staffState.staff?.deleted_tickets||[]);
- const historyCard=k=>'<article class="staff-record'+(k.deleted_at?' staff-deleted-record':'')+'">'+
-   '<div class="staff-record-head"><div><div class="staff-record-title">'+esc(k.number||"—")+'　'+esc(k.name||"顧客")+'</div>'+
-   '<div class="small">'+esc(k.day||"")+' ・ '+esc(k.unit||"一般場次")+' ・ '+esc(k.session||"")+' ・ '+esc(k.party||1)+' 人／組</div>'+
-   '<div class="small">取號時間：'+esc(formatTaipeiCreated(k.created_at))+'</div>'+
-   selectedItemsHtml(k.selected_items)+'</div>'+tag(k.status)+'</div>'+
-   (k.deleted_at?'<p class="staff-help">這筆已從顧客端隱藏；取消勾選刪除即可恢復。</p>':staffStatusPicker("ticket",k,true))+
-   staffDeletePicker("ticket",k)+'</article>';
- const historyList=(records,key,empty)=>records.length?staffListPage(records,key,historyCard):'<p class="muted">'+empty+'</p>';
-
- return box("按場次獨立叫號",
-   '<p class="small">各場次可獨立叫號；無需設定服務窗口也可使用。</p>'+
-   '<div class="staff-actionbar"><a class="btn outline" href="'+esc(sharedUiState.route("staff",routeState.slug)+"&tab=settings&section=sessions")+'">前往設定場次</a></div>'+
-   '<label for="staff-unit-session">操作隊列</label><select id="staff-unit-session" class="field">'+
-   ss.map(s=>'<option value="'+esc(s.id)+'" '+(s.id===selected?.id?'selected':'')+'>'+esc(unitNameForSession(s.id))+' · '+esc(s.name)+' '+esc(s.start)+'</option>').join("")+'</select>'+
-   (selected?'<div class="grid3" style="margin:12px 0">'+stat("目前叫號",current?.number||"—")+
-     stat("候位中",waiting.length)+stat("已過號",open.filter(k=>k.status==="PASSED").length)+'</div>'+
-     '<div class="staff-actionbar">'+btn("叫下一位","unit-call","primary",(!waiting.length||current?'disabled':'')+' data-session="'+esc(selected.id)+'"')+
-     btn("再叫一次","unit-recall","outline",(!current||current.status!=="CALLED"?'disabled':'')+
-       ' data-session="'+esc(selected.id)+'" data-id="'+esc(current?.id||'')+'"')+
-     (sharedUiState.lastStaffChange&&sharedUiState.lastStaffChange.slug===routeState.slug?btn("還原上一步","undo-staff","secondary"):"")+
-     '<a class="btn outline" href="./board.html?merchant='+encodeURIComponent(routeState.slug)+'&session='+encodeURIComponent(selected.id)+'" target="_blank" rel="noopener noreferrer">本隊列看板</a></div>'+
-     '<div style="margin-top:14px">'+open.map(k=>'<article class="staff-record">'+
-       '<div class="staff-record-title">'+esc(k.number)+'　'+esc(k.name)+'</div>'+
-       '<div class="small">'+esc(k.unit||"")+' · '+esc(k.session||"")+'</div>'+
-       staffStatusPicker("ticket",k,true)+'</article>').join("")+'</div>':
-     '<p class="muted">目前沒有可操作的場次，請前往設定新增場次；下方仍可查閱先前的顧客。</p>'))+
-   (otherOpen.length?box("其他場次未結案（"+otherOpen.length+" 筆）",
-      '<p class="staff-help">其他日期或已關閉場次仍有未結案客戶，可在這裡修改狀態。</p>'+
-      historyList(otherOpen,"unit-other-open","沒有其他未結案號碼牌。")):"")+
-   box("已處理號碼牌（最近 "+staffHistoryState.staffHistoryDays+" 天，"+historical.length+" 筆）",
-      '<p class="staff-help">包含所有場次的「已完成」、「已取消」客戶（含之前日期）。選擇新的狀態即可復原，不會刪除原始紀錄。</p>'+
-      historyList(historical,"unit-processed","這段期間沒有已處理號碼牌。"))+
-   box("已刪除號碼牌（最近 "+staffHistoryState.staffHistoryDays+" 天，"+deleted.length+" 筆）",
-      '<p class="staff-help">已刪除的票券仍保留供店員查閱；取消勾選「刪除」即可恢復。</p>'+
-      historyList(deleted,"unit-deleted","這段期間沒有已刪除號碼牌。"));
-}
 
 export function initializeServiceUnits(){
 serviceUnitsState.unitEnabled=()=>serviceUnitsState.unitConfig?.multi===true;

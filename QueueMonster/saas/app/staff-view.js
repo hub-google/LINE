@@ -2,7 +2,6 @@ import {renderStaffDashboard} from "./staff/dashboard.js";
 import {renderStaffAnalytics} from "./staff/analytics.js";
 import {renderStaffBookings} from "./staff/bookings.js";
 import {renderStaffCalendar} from "./staff/calendar.js";
-import {renderStaffUnitQueue} from "./staff/unit-queue.js";
 import {renderStaffQueue} from "./staff/queue.js";
 import {renderStaffMenu} from "./staff/menu.js";
 import {renderStaffMembers} from "./staff/members.js";
@@ -11,7 +10,6 @@ import {renderStaffUnits} from "./staff/units.js";
 import {renderStaffSettings} from "./staff/settings.js";
 import {authState} from "./state/authState.js";
 
-import {serviceUnitsState} from "./state/serviceUnitsState.js";
 import {sharedUiState} from "./state/sharedUiState.js";
 import {staffHistoryState} from "./state/staffHistoryState.js";
 import {staffState} from "./state/staffState.js";
@@ -57,11 +55,8 @@ export function staffRender(){
  else if(staffState.staffTab==="calendar"){
   html=renderStaffCalendar({html});
  }
- else if(staffState.staffTab==="queue"&&serviceUnitsState.unitEnabled()){
-  html=renderStaffUnitQueue({html});
- }
  else if(staffState.staffTab==="queue"){
-  html=renderStaffQueue({isManager,active,waiting,passed,held,doneTickets,t,openTickets,deletedTickets,html});
+  html=renderStaffQueue({isManager,t,html});
  }
  else if(staffState.staffTab==="menu"){
   html=renderStaffMenu({t,isManager,html});

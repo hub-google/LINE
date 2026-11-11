@@ -166,3 +166,78 @@ test("QueueMonster FK performance migration is additive and retains board RLS se
  assert.match(sql,/SELECT auth\.uid\(\)/);
  assert.match(sql,/t\.status='ACTIVE'/);
 });
+
+
+test("one renderer powers ordinary queues and independent sessions without losing history",()=>{
+ const queue=read("saas/app/staff/queue.js");
+ const view=read("saas/app/staff-view.js");
+ const unit=read("saas/app/service-units.js");
+ assert.equal((view.match(/renderStaffQueue\(/g)||[]).length,1,"one queue rendering entrypoint");
+ assert.doesNotMatch(view,/renderStaffUnitQueue/);
+ assert.doesNotMatch(unit,/unitStaffQueuePanel/);
+ assert.doesNotMatch(view,/staff\/unit-queue/);
+ assert.match(queue,/unitMode\?"unit-call":"call"/);
+ assert.match(queue,/unitMode\?"unit-recall":"recall"/);
+ const source=queue.slice(queue.indexOf("export function renderStaffQueue("))
+   .replace("export function renderStaffQueue","function renderStaffQueue");
+ const dependencies=["routeState","sharedUiState","staffHistoryState","staffState","serviceUnitsState",
+   "box","btn","esc","formatTaipeiCreated","queueSessionName","selectedItemsHtml",
+   "staffDeletePicker","staffStatusPicker","stat","tag","numberSettingsPanel","staffListPage","unitNameForSession"];
+ const factory=new Function(...dependencies,source+";return renderStaffQueue;");
+ const c=(id,status,session,name)=>({id,status,service_session_id:session,number:id,name,
+   day:"2026-11-11",party:1,created_at:"2026-11-11T02:00:00Z"});
+ const working=c("w1","WAITING","session-a","等待客戶");
+ const older=c("old","PASSED","session-previous","跨場次客戶");
+ const finished=c("d1","COMPLETED","session-a","已完成客戶");
+ const cancelled=c("c1","CANCELLED","session-previous","已取消客戶");
+ const deleted={...c("x1","COMPLETED","session-a","已刪除客戶"),deleted_at:"2026-11-11T02:00:00Z"};
+ const state={mode:false,unitStaffSession:"session-a",unitConfig:{sessions:[
+   {id:"session-a",name:"上午場",start:"09:00",active:true}]}};
+ const data={staff:{active_tickets:[working,older],processed_tickets:[finished,cancelled],
+   deleted_tickets:[deleted],queue_session:{code:"MORNING"}}};
+ const ui=factory({slug:"test-store"},{
+   route:()=>"?view=staff&merchant=test-store",lastStaffChange:{slug:"test-store"}
+ },{staffHistoryDays:30},data,{unitEnabled:()=>state.mode,
+   get unitConfig(){return state.unitConfig},get unitStaffSession(){return state.unitStaffSession}},
+   (heading,inner)=>"<section><h2>"+heading+"</h2>"+inner+"</section>",
+   (label,action,style="",attrs="")=>'<button data-act="'+action+'" '+attrs+'>'+label+'</button>',
+   x=>String(x??""),x=>x||"無",x=>x||"早場",()=>"",
+   (_,item)=>'<status data-ticket="'+item.id+'">'+item.status+'</status>',
+   (_,item)=>'<delete data-ticket="'+item.id+'"></delete>',
+   (label,value)=>label+"="+value,
+   status=>"<tag>"+status+"</tag>",
+   ()=>"NUMBER SETTINGS",
+   (items,key,render)=>items.map(render).join(""),
+   ()=>"一般場次");
+ const plain=ui({isManager:true,t:{modules:{calling:true}},html:""});
+ assert.match(plain,/取號場次管理/);
+ assert.match(plain,/NUMBER SETTINGS/);
+ assert.match(plain,/data-act="call"/);
+ assert.match(plain,/已結束號碼牌/);
+ assert.match(plain,/已完成客戶/);
+ assert.match(plain,/已取消客戶/);
+ assert.match(plain,/已刪除客戶/);
+ state.mode=true;
+ const multi=ui({isManager:true,t:{modules:{calling:true}},html:""});
+ assert.match(multi,/按場次獨立叫號/);
+ assert.match(multi,/data-act="unit-call"/);
+ assert.match(multi,/data-act="unit-recall"/);
+ assert.match(multi,/本隊列看板/);
+ assert.match(multi,/已處理號碼牌/);
+ assert.match(multi,/已完成客戶/);
+ assert.match(multi,/已取消客戶/);
+ assert.match(multi,/跨場次客戶/);
+ assert.match(multi,/已刪除客戶/);
+ assert.match(multi,/data-act="undo-staff"/);
+ assert.doesNotMatch(multi,/NUMBER SETTINGS/);
+ state.unitConfig.sessions=[];
+ const closed=ui({isManager:true,t:{modules:{calling:true}},html:""});
+ assert.match(closed,/沒有可操作的場次/);
+ assert.match(closed,/已完成客戶/,"closing a session never hides its history");
+ const actions=read("saas/app/actions/staff-queue-actions.js");
+ const form=read("saas/app/form-events.js");
+ assert.match(actions,/export function ticketStatusRpc\(id\)/);
+ assert.match(actions,/ticketStatusRpc\(previous\.id\)/);
+ assert.match(form,/ticketStatusRpc\(id\)/);
+ assert.doesNotMatch(form,/unitRelated\?"so_unit_set_ticket_status"/);
+});

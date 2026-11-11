@@ -17,6 +17,7 @@ import {render} from "./staff-layout.js";
 import {act,load,rpc} from "./data-loading.js";
 import {loadBookingCalendar} from "./booking-calendar.js";
 import {availableUnits} from "./service-units.js";
+import {ticketStatusRpc} from "./actions/staff-queue-actions.js";
 import {fetchBookingEditSlots} from "./booking-edit.js";
 import {customerNoticeSuffix,notifyLineCalled,sendLineNotice} from "./line-session.js";
 
@@ -121,7 +122,7 @@ document.addEventListener("change",async ev=>{
      const result=await rpc("so_unit_checkin",{p_slug:routeState.slug,p_reservation_id:id});
      return "已報到並加入對應叫號隊列："+result.number;
    }
-   const procedure=kind==="reservation"?"so_staff_set_reservation_status":unitRelated?"so_unit_set_ticket_status":"so_staff_set_ticket_status";
+   const procedure=kind==="reservation"?"so_staff_set_reservation_status":ticketStatusRpc(id);
    const args=kind==="reservation"?
     {p_slug:routeState.slug,p_reservation_id:id,p_status:desired,p_expected_status:previous}:
     {p_slug:routeState.slug,p_ticket_id:id,p_status:desired,p_expected_status:previous};

@@ -10,15 +10,21 @@ import {render} from "./../staff-layout.js";
 import {act,rpc} from "./../data-loading.js";
 import {customerNoticeSuffix,notifyLineCalled,sendLineNotice} from "./../line-session.js";
 
+// One RPC selector for every staff ticket correction, including undo.
+// Session-specific tickets use their session's collision rules; ordinary tickets keep legacy semantics.
+export function ticketStatusRpc(id){
+ const ticket=(staffState.staff?.tickets||[]).find(x=>x.id===id);
+ const isUnitTicket=serviceUnitsState.unitEnabled()&&
+   (!!ticket?.service_session_id||(serviceUnitsState.unitRecords?.tickets||[]).some(x=>x.id===id));
+ return isUnitTicket?"so_unit_set_ticket_status":"so_staff_set_ticket_status";
+}
+
 export async function handleStaffQueueActions(ev,b,a,id){
 if(a==="undo-staff"){
   const previous=sharedUiState.lastStaffChange;
   if(!previous||previous.slug!==routeState.slug){feedbackState.err="沒有可還原的操作";showActionFeedback(feedbackState.err,"error");render();return true;}
   await act(async()=>{
-    const unitTicket=previous.kind==="ticket"&&serviceUnitsState.unitEnabled()&&
-      (serviceUnitsState.unitRecords?.tickets||[]).some(x=>x.id===previous.id);
-    const proc=previous.kind==="reservation"?"so_staff_set_reservation_status":
-      unitTicket?"so_unit_set_ticket_status":"so_staff_set_ticket_status";
+    const proc=previous.kind==="reservation"?"so_staff_set_reservation_status":ticketStatusRpc(previous.id);
     const args=previous.kind==="reservation"?
       {p_slug:routeState.slug,p_reservation_id:previous.id,p_status:previous.before,p_expected_status:previous.after}:
       {p_slug:routeState.slug,p_ticket_id:previous.id,p_status:previous.before,p_expected_status:previous.after};
