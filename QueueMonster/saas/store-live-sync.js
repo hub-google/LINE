@@ -111,13 +111,22 @@ export function createStoreLiveSync({
       connect();
     }
   }
+  function pageHide(){
+    // Release a Free-plan socket when navigating away, including bfcache.
+    clearRetry();close();
+  }
+  function pageShow(){
+    // bfcache restores JavaScript without rerunning the module entrypoint.
+    visibility();
+  }
   function start(){
     if(running||!valid)return;
     running=true;lastRequestAt=Date.now();modeChange();onModeChange(mode);
     document.addEventListener("visibilitychange",visibility);
     window.addEventListener("online",visibility);
     window.addEventListener("offline",visibility);
-    window.addEventListener("pagehide",stop);
+    window.addEventListener("pagehide",pageHide);
+    window.addEventListener("pageshow",pageShow);
     pollTimer=setInterval(tick,fallbackMs);
     connect();
   }
@@ -131,7 +140,8 @@ export function createStoreLiveSync({
     document.removeEventListener("visibilitychange",visibility);
     window.removeEventListener("online",visibility);
     window.removeEventListener("offline",visibility);
-    window.removeEventListener("pagehide",stop);
+    window.removeEventListener("pagehide",pageHide);
+    window.removeEventListener("pageshow",pageShow);
   }
   return {start,stop,tick,get mode(){return mode;},get connected(){return connected;}};
 }
