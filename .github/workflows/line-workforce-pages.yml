@@ -33,13 +33,6 @@ jobs:
         run: |
           node --test workforce-management/tests/workforce-prd.test.mjs
           node --test workforce-management/tests/workforce-button-clicks.test.mjs
-      # A remote Supabase outage must not suppress a locally validated front-end build.
-      # Keep the run failed if the live API is genuinely inaccessible; deploy independently.
-      - name: Verify deployed Supabase APIs
-        id: live_api_smoke
-        continue-on-error: true
-        run: |
-          node --test workforce-management/tests/workforce-live.test.mjs
       - name: Deploy only workforce to existing gh-pages branch
         shell: bash
         run: |
@@ -63,6 +56,14 @@ jobs:
           git -C "$pubdir" -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "deploy: workforce $GITHUB_SHA"
           git -C "$pubdir" push origin HEAD:gh-pages
           echo "Deployment target: https://hub-google.github.io/LINE/workforce/"
+      # A remote Supabase outage must not suppress a locally validated front-end build.
+      # Keep the run failed if the live API is genuinely inaccessible; deploy independently.
+      - name: Verify deployed Supabase APIs
+        id: live_api_smoke
+        timeout-minutes: 3
+        continue-on-error: true
+        run: |
+          node --test workforce-management/tests/workforce-live.test.mjs
       - name: Mark remote API smoke failure without concealing deployment
         if: ${{ steps.live_api_smoke.outcome == 'failure' }}
         run: |
