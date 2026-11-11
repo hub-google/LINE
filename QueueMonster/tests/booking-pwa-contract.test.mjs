@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "./helpers/source-fs.mjs";
 import {fileURLToPath} from "node:url";
 import path from "node:path";
+import {existsSync,readFileSync as rawReadFile} from "node:fs";
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
 const pwa=readFileSync(path.join(root,"saas/pwa-sw.js"),"utf8");
@@ -57,4 +58,13 @@ test("versioned deploy produces all static PWA assets without modifying unrelate
  assert.match(build,/worker\.replaceAll\(placeholder,sha\)/);
  assert.match(build,/await copyFile\(path\.join\(src, "manifest\.webmanifest"\)/);
  assert.match(build,/await copyFile\(path\.join\(src, "offline\.html"\)/);
+});
+
+
+test("both pages import one PWA registration source instead of copied scripts",()=>{
+ const directIndex=rawReadFile(path.join(root,"saas/index.html"),"utf8");
+ const directHome=rawReadFile(path.join(root,"saas/home.html"),"utf8");
+ for(const html of [directIndex,directHome])
+  assert.match(html,/assets\/home\/register-pwa\.js\?build=__LINE_SAAS_BUILD__/);
+ assert.equal(existsSync(path.join(root,"saas/assets/index/register-pwa.js")),false);
 });
