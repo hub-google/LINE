@@ -8,6 +8,7 @@ import {serviceUnitsState} from "./state/serviceUnitsState.js";
 import {staffHistoryState} from "./state/staffHistoryState.js";
 import {staffState} from "./state/staffState.js";
 import {staffViewState} from "./state/staffViewState.js";
+import {isStaffListKey} from "./staff-list.js";
 import {handleAccountPlatform} from "./actions/account-platform.js";
 import {handleMerchantSettings} from "./actions/merchant-settings.js";
 import {handleStaffCalendar} from "./actions/staff-calendar.js";
@@ -52,7 +53,7 @@ document.addEventListener("click",async ev=>{
  if(b.dataset.act==="dismiss-feedback"){dismissActionFeedback();feedbackState.flash="";feedbackState.err="";render();return;}
  if(b.dataset.act==="staff-show-more"){
   const key=b.dataset.listKey||"";
-  if(!/^(booking|ticket)-(open|done|deleted)$/.test(key))return;
+  if(!isStaffListKey(key))return;
   staffViewState.staffVisibleLimits.set(key,Math.min(500,(staffViewState.staffVisibleLimits.get(key)||12)+12));
   render();return;
  }
