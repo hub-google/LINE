@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-11T05:33:19.423Z",
+  "date": "2026-11-11T05:39:36.397Z",
   "device": "iPhone 17 simulated Chromium, 402x874 CSS pixels, DPR3",
   "note": "Read-only live website screenshots; no authentication, no writes; not physical Safari.",
   "screens": [
@@ -402,7 +402,7 @@
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
-      "visibleTapCount": 14,
+      "visibleTapCount": 9,
       "keyRects": {
         ".page-header": {
           "top": 0,
@@ -420,10 +420,10 @@
         },
         ".main-panel": {
           "top": 133,
-          "bottom": 647,
+          "bottom": 594,
           "left": 14,
           "right": 388,
-          "height": 514
+          "height": 462
         },
         ".tabs": {
           "top": 147,
@@ -433,35 +433,35 @@
           "height": 56
         },
         "#keyword": {
-          "top": 292,
-          "bottom": 341,
+          "top": 235,
+          "bottom": 284,
           "left": 28,
           "right": 374,
           "height": 49
         },
         "#explore-filters": {
-          "top": 351,
-          "bottom": 397,
-          "left": 28,
-          "right": 374,
-          "height": 46
+          "top": 0,
+          "bottom": 0,
+          "left": 0,
+          "right": 0,
+          "height": 0
         },
         "#results": {
-          "top": 500,
-          "bottom": 623,
+          "top": 383,
+          "bottom": 570,
           "left": 28,
           "right": 374,
-          "height": 122
+          "height": 187
         },
         "#results-heading": {
-          "top": 462,
-          "bottom": 490,
+          "top": 345,
+          "bottom": 373,
           "left": 28,
           "right": 94,
           "height": 28
         }
       },
-      "bodyText": "排隊怪獸 正在確認登入狀態 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 正在確認身分 正在確認 LINE 身分 確認後才會顯示與你綁定的預約及取號紀錄。 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
+      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 搜尋店家名稱或地點 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 請先登入 LINE 請先使用 LINE 登入 登入後才能查詢自己的預約和號碼；未登入不代表沒有紀錄。 使用 LINE 登入後查看 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
       "errors": [],
       "failedRequests": []
     },
@@ -538,16 +538,7 @@
       },
       "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 選擇提供現場取號的店家 公開看板可直接查看；實際取號時才需要 LINE 驗證。 熱門店家排行 近 30 天預約＋取號 · 前 2 名 #1 測試1 餐飲 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 6 這是測試店家 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 ▤ #2 測試2 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 1 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
       "errors": [],
-      "failedRequests": [
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_site_header_identity",
-          "error": "net::ERR_ABORTED"
-        }
-      ]
+      "failedRequests": []
     },
     {
       "id": "07-directory-game",
@@ -995,7 +986,7 @@
       ],
       "visibleTapCount": 4,
       "keyRects": {},
-      "bodyText": "測試1 13:33 診間 · 上午場 2診 尚未 叫號 接下來：目前無人等候 等候 0 組 單獨顯示此場次 上午場 一般場次 2 接下來：3、5、6、7 等候 4 組 單獨顯示此場次 由排隊怪獸提供服務 全螢幕 最後成功同步：13:33:17；資料每 12 秒自動核對，網路斷線會提示。",
+      "bodyText": "測試1 13:39 診間 · 上午場 2診 尚未 叫號 接下來：目前無人等候 等候 0 組 單獨顯示此場次 上午場 一般場次 2 接下來：3、5、6、7 等候 4 組 單獨顯示此場次 由排隊怪獸提供服務 全螢幕 最後成功同步：13:39:34；資料每 12 秒自動核對，網路斷線會提示。",
       "errors": [],
       "failedRequests": []
     }
