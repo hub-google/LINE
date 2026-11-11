@@ -71,3 +71,35 @@ test("LINE pickup notifications reuse outbox, verified order status and push ded
  for(const token of ["job.event_kind === \"PICKUP_EVENT\"","PICKUP_EVENT_SUPERSEDED","PICKUP_EVENT_OLDER_THAN_LATEST","pushNotice(db, tenant, order.user_id","liffPickupLink"])
    assert.ok(edge.includes(token),"missing secure LINE notification handler "+token);
 });
+
+test("pickup calendar queries all scheduled orders by date with tenant ACL and server pagination",()=>{
+ const sql=source("supabase/migrations/20261111173500_pickup_calendar.sql");
+ const query=source("saas/app/booking-calendar.js");
+ const view=source("saas/app/staff/calendar.js");
+ const handler=source("saas/app/actions/staff-calendar.js");
+ for(const token of ["so_pickup_calendar","private.so_role(t.id)","p_start date","p_end date","limit 100 offset","p_page"])
+  assert.ok(sql.includes(token),"pickup calendar SQL missing "+token);
+ for(const token of ["rpc(\"so_pickup_calendar\"","pickupCalendarPage","pickupCalendarPeriod"])
+  assert.ok(query.includes(token),"calendar loader missing "+token);
+ assert.match(view,/pickupCalendarResult/);
+ assert.match(view,/pickup-calendar-prev/);
+ assert.match(view,/pickup-calendar-next/);
+ assert.match(handler,/pickup-calendar-prev/);
+ assert.match(handler,/pickup-calendar-next/);
+ assert.doesNotMatch(view,/pickupState\.staff/);
+});
+
+test("cross-store pickup history filters authorized LINE identity before order limits",()=>{
+ const sql=source("supabase/migrations/20261111174000_pickup_cross_store_history_bound.sql");
+ assert.match(sql,/linked0\.line_sub=v_line_sub/);
+ assert.match(sql,/linked0\.user_id=o0\.user_id/);
+ assert.match(sql,/linked0\.tenant_id=o0\.tenant_id/);
+ assert.match(sql,/limit 150/);
+});
+
+test("operating statistics CSV includes pickup volume and order amount",()=>{
+ const analytics=source("saas/app/actions/staff-calendar.js");
+ assert.ok(analytics.includes("有效訂餐筆數"));
+ assert.ok(analytics.includes("有效訂餐金額（NTD）"));
+ assert.ok(analytics.includes("d.order_amount"));
+});
