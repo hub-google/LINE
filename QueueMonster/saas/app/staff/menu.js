@@ -60,7 +60,7 @@ export function renderStaffMenu({t,isManager,html}){
         '</div><div><label for="rule-resource">指定服務資源</label><select id="rule-resource" class="field"><option value="">不指定</option>'+
         resources.filter(x=>x.active||x.id===firstRule?.resource_id).map(x=>'<option value="'+esc(x.id)+'" '+(x.id===firstRule?.resource_id?"selected":"")+'>'+esc(x.name)+'</option>').join("")+
         '</select><label class="checklist"><input type="checkbox" id="rule-show-duration" '+(firstRule?.show_duration_to_customer===false?"":"checked")+'>可向顧客顯示服務時長</label></div></div>'+
-        '<div class="staff-actionbar">'+btn("儲存服務排程","service-rule-save","primary")+'</div>':""):"");
+        '<div class="staff-actionbar">'+btn("儲存服務排程","service-rule-save","primary")+'</div>':"")):"");
 
 return html;
 }
