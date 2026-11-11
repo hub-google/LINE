@@ -5,6 +5,7 @@ import {renderStaffCalendar} from "./staff/calendar.js";
 import {renderStaffQueue} from "./staff/queue.js";
 import {renderStaffMembers} from "./staff/members.js";
 import {renderStaffSettings} from "./staff/settings.js";
+import {renderStaffPickup} from "./pickup-mode.js";
 import {authState} from "./state/authState.js";
 
 import {sharedUiState} from "./state/sharedUiState.js";
@@ -30,7 +31,7 @@ export function staffRender(){
  const role=staffState.staff.role,isManager=["OWNER","MANAGER","PLATFORM"].includes(role);
  const menu=nav("設定","settings",staffState.staffTab,"staff")+'<div class="staff-side-label">日常作業</div>'+
  nav("工作台","dashboard",staffState.staffTab,"staff")+nav("預約管理","bookings",staffState.staffTab,"staff")+
- nav("叫號管理","queue",staffState.staffTab,"staff")+nav("預約日曆","calendar",staffState.staffTab,"staff")+
+ nav("叫號管理","queue",staffState.staffTab,"staff")+nav("取餐訂單","orders",staffState.staffTab,"staff")+nav("預約日曆","calendar",staffState.staffTab,"staff")+
  '<div class="staff-side-label">營運管理</div>'+
  nav("營運分析","analytics",staffState.staffTab,"staff")+
  nav("員工管理","members",staffState.staffTab,"staff")+ '<div class="staff-side-label">使用支援</div><a class="side-item guide-link" href="./merchant-center.html#guide">操作說明 ↗</a>';
@@ -54,6 +55,9 @@ export function staffRender(){
  }
  else if(staffState.staffTab==="queue"){
   html=renderStaffQueue({isManager,t,html});
+ }
+ else if(staffState.staffTab==="orders"){
+  html=renderStaffPickup();
  }
  else if(staffState.staffTab==="members"){
   html=renderStaffMembers({isManager,html});

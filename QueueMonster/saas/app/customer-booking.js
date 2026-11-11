@@ -9,6 +9,7 @@ import {serviceUnitsState} from "./state/serviceUnitsState.js";
 
 
 import {render} from "./staff-layout.js";
+import {renderCustomerPickup,pickupState} from "./pickup-mode.js";
 import {rpc} from "./data-loading.js";
 import {box,btn,esc,field,formatTaipeiCreated,layout,menuChoiceReady,menuSelectSection,nav,selectedItemsHtml,stat,tag,taipei} from "./shared-ui.js";
 import {lineStatusBadge,lineLoginUrl} from "./line-session.js";
@@ -146,7 +147,7 @@ export function customerRender(){
   const t=customerState.customer.tenant,m=t.modules||{},items=customerState.customer.my_reservations||[],tickets=customerState.customer.my_tickets||[],live=tickets.find(x=>["WAITING","HOLD","CALLED","ARRIVED","ADMITTED","SERVING"].includes(x.status));
   const catalogue=customerState.customer.menu_items||[];
  applyCustomerBrand(t);
- const menu=nav("首頁","home",routeState.customerTab,"customer")+(m.reservation?nav("線上預約","reserve",routeState.customerTab,"customer"):"")+(m.queue?nav("現場取號","queue",routeState.customerTab,"customer"):"")+nav("我的取號","progress",routeState.customerTab,"customer")+nav("我的紀錄","mine",routeState.customerTab,"customer");
+ const menu=nav("首頁","home",routeState.customerTab,"customer")+(m.reservation?nav("線上預約","reserve",routeState.customerTab,"customer"):"")+(m.queue?nav("現場取號","queue",routeState.customerTab,"customer"):"")+(pickupState.customer?.settings?.enabled?nav("線上點餐","order",routeState.customerTab,"customer"):"")+nav("我的取號","progress",routeState.customerTab,"customer")+nav("我的紀錄","mine",routeState.customerTab,"customer");
  let html='';
  if(routeState.customerTab==="home"){
   const homepage=customerState.customer.homepage||{};
@@ -160,10 +161,13 @@ export function customerRender(){
    (t.address?'<p class="muted" style="font-size:13px;margin:0">'+esc(t.address)+'</p>':"")+'</section>')+
  '<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",customerState.customer.current||"—")+stat("現場候位",customerState.customer.waiting+" 組")+stat("我的有效預約",items.filter(x=>x.status==="CONFIRMED").length)+'</div>'+
  '<div class="grid">'+(m.reservation?'<button class="routecard" data-nav="customer" data-tab="reserve"><h2>線上預約</h2><p class="muted">選擇日期與時段，完成預約</p><strong>立即預約 →</strong></button>':"")+
- (m.queue?'<button class="routecard" data-nav="customer" data-tab="queue"><h2>現場取號</h2><p class="muted">直接取得候位號碼與查看進度</p><strong>立即取號 →</strong></button>':"")+
+ (m.queue?'<button class="routecard" data-nav="customer" data-tab="queue"><h2>現場取號</h2><p class="muted">直接取得候位號碼與查看進度</p><strong>立即取號 →</strong></button>':"")+(pickupState.customer?.settings?.enabled?'<button class="routecard" data-nav="customer" data-tab="order"><h2>線上點餐</h2><p class="muted">預訂取餐時間、查詢製餐進度</p><strong>開始點餐 →</strong></button>':"")+
 (m.queue&&m.calling?'<a class="routecard" href="./board.html?merchant='+encodeURIComponent(routeState.slug)+'"><h2>公開即時叫號看板</h2><p class="muted">直接查看目前叫號及接下來的順序。</p><strong>查看公開看板 →</strong></a>':"")+'</div>';
  }
- else if(routeState.customerTab==="reserve"){
+ else if(routeState.customerTab==="order"){
+   html=renderCustomerPickup();
+  }
+  else if(routeState.customerTab==="reserve"){
   if(!m.reservation)html=box("未開放預約",'<p>企業目前沒有啟用此功能。</p>');
   else if(serviceUnitsState.unitEnabled())html=unitBookingPanel();
   else {

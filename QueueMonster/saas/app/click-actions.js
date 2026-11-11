@@ -20,6 +20,7 @@ import {handleBookingRecordActions} from "./actions/booking-record-actions.js";
 import {handleCrossStoreActions} from "./actions/cross-store-actions.js";
 import {handleQueueLineActions} from "./actions/queue-line-actions.js";
 import {handleStaffQueueActions} from "./actions/staff-queue-actions.js";
+import {handlePickupAction} from "./pickup-mode.js";
 
 
 
@@ -59,7 +60,7 @@ document.addEventListener("click",async ev=>{
  }
  if(b.dataset.act==="settings-section"){
    const section=b.dataset.section;
-   if(!["profile","operations","sessions","catalog","branches","customers","public"].includes(section))return;
+   if(!["profile","operations","sessions","catalog","pickup","branches","customers","public"].includes(section))return;
    staffState.settingsSection=section;
    if(routeState.view==="staff")staffState.staffTab="settings";
    void load();return;
@@ -81,6 +82,7 @@ document.addEventListener("click",async ev=>{
  }
  if(b.dataset.nav){const v=b.dataset.nav;const tab=b.dataset.tab;if(v==="customer"){
   routeState.customerTab=tab;queueState.progressTicketId="";crossStoreState.crossCurrentStore=false;
+  if(tab==="order"){void load();return;}
   if(["reserve","queue"].includes(tab)&&!customerState.customer?.tenant.modules[tab==="reserve"?"reservation":"queue"])routeState.customerTab="home";
   stopQueueRealtime();
   if(serviceUnitsState.unitEnabled()&&["queue","reserve"].includes(routeState.customerTab)){
@@ -94,6 +96,7 @@ document.addEventListener("click",async ev=>{
  }
  if(v==="staff"){
    staffState.staffTab=tab;
+   if(tab==="orders"){void load();return;}
    if(["analytics","branches","menu","settings","units"].includes(tab)){if(tab==="settings")staffState.settingsSection="profile";void load();return;}
     if(tab==="bookings"){feedbackState.err="";feedbackState.flash="";render();void searchHistoricalBookings(1);return;}
     if(tab==="calendar"){feedbackState.err="";feedbackState.flash="";render();void loadBookingCalendar(1);return;}
@@ -109,7 +112,7 @@ document.addEventListener("click",async ev=>{
  const a=b.dataset.act,id=b.dataset.id;
  if(!a)return;
 
- for(const handler of [handleAccountPlatform,handleMerchantSettings,handleStaffCalendar,handleQueueSettings,handleServiceUnitActions,handleMerchantAdmin,handleBookingSubmit,handleBookingRecordActions,handleCrossStoreActions,handleQueueLineActions,handleStaffQueueActions]){if(await handler(ev,b,a,id))return;}
+ for(const handler of [handlePickupAction,handleAccountPlatform,handleMerchantSettings,handleStaffCalendar,handleQueueSettings,handleServiceUnitActions,handleMerchantAdmin,handleBookingSubmit,handleBookingRecordActions,handleCrossStoreActions,handleQueueLineActions,handleStaffQueueActions]){if(await handler(ev,b,a,id))return;}
 });
 }
 

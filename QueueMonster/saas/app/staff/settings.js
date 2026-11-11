@@ -10,6 +10,7 @@ import {box,btn,esc,field,tag} from "../shared-ui.js";
 import {merchantProfileFields} from "../merchant-brand.js";
 import {unitSettingsPanel} from "../service-units.js";
 import {renderStaffMenu} from "./menu.js";
+import {renderPickupSettings,pickupState} from "../pickup-mode.js";
 import {renderStaffBranches} from "./branches.js";
 import {customerUrl} from "../line-session.js";
 import {closedDatesPickerMarkup,installClosedDatesPicker} from "../closed-dates-picker.js";
@@ -128,11 +129,11 @@ export function renderStaffSettings({t,isManager,html}){
     '<p class="small">新門市預設勾選公開；若取消勾選，仍可透過專屬預約網址使用服務。</p>'+
     '<p class="small">通知將依本店已連接的 LINE 官方帳號設定提供。</p>'+
     '<div style="margin-top:12px">'+btn("儲存公開設定","save-directory","primary")+'</div>'):"")],
-["operations",box("顧客專屬網址（電腦與手機皆可使用）",'<p class="small">叫號看板網址固定顯示；抽號與預約網址依上方服務開關即時顯示，按下「儲存服務開關」後正式生效。</p>'+serviceLink("board","叫號看板網址",true)+serviceLink("queue","抽號網址",!!serviceModules.queue)+serviceLink("reserve","預約網址",!!serviceModules.reservation))]];
+["operations",box("顧客專屬網址（電腦與手機皆可使用）",'<p class="small">叫號看板網址固定顯示；抽號與預約網址依上方服務開關即時顯示，按下「儲存服務開關」後正式生效。</p>'+serviceLink("board","叫號看板網址",true)+serviceLink("queue","抽號網址",!!serviceModules.queue)+serviceLink("reserve","預約網址",!!serviceModules.reservation)+serviceLink("order","點餐網址",!!pickupState.staff?.settings?.enabled))]];
   const section=staffState.settingsSection||"profile";
   const choices=[
    ["profile","店家資料"],["operations","營業與預約"],["sessions","場次與窗口"],
-   ["catalog","菜單與服務"],["branches","分店管理"],["customers","顧客管理"],["public","通知與公開"]
+   ["catalog","菜單與服務"],["pickup","線上點餐"],["branches","分店管理"],["customers","顧客管理"],["public","通知與公開"]
   ];
   const tabs='<nav class="settings-hub-tabs" aria-label="設定分類">'+choices.map(([key,label])=>
     btn(label,"settings-section",section===key?"primary":"outline",'data-section="'+key+'" aria-current="'+(section===key?"page":"false")+'"')).join("")+'</nav>';
@@ -140,6 +141,7 @@ export function renderStaffSettings({t,isManager,html}){
   html+=cards.filter(([key])=>key===section).map(([,markup])=>markup).join("");
   if(section==="sessions")html+=unitSettingsPanel(isManager);
   if(section==="catalog")html=renderStaffMenu({t,isManager,html});
+   if(section==="pickup")html+=renderPickupSettings(isManager);
   if(section==="branches")html=renderStaffBranches({role:staffState.staff.role,html});
   return html;
 }

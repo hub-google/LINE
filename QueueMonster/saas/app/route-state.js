@@ -27,7 +27,7 @@ export function refreshLiffRoute(){
  const nextView=lastParam(stateQuery,"view")||lastParam(live,"view");
  if(["customer","staff","platform","home"].includes(nextView))routeState.view=nextView;
  const nextTab=lastParam(stateQuery,"tab")||lastParam(live,"tab");
- if(["home","reserve","queue","mine","progress"].includes(nextTab))routeState.customerTab=nextTab;
+ if(["home","reserve","queue","order","mine","progress"].includes(nextTab))routeState.customerTab=nextTab;
  const newTicket=lastParam(stateQuery,"ticket")||lastParam(live,"ticket");
  if(/^[0-9a-f-]{36}$/i.test(newTicket||"")){
    queueState.progressTicketId=newTicket;
@@ -125,9 +125,9 @@ queueState.queuePartySize=2;
 bookingState.bookingContactName="";
 bookingState.bookingContactPhone="";
 bookingState.bookingContactDirty=false;
-routeState.customerTab=["home","reserve","queue","mine","progress"].includes(incomingParam("tab"))?incomingParam("tab"):"home";
-staffState.staffTab=["dashboard","bookings","queue","calendar","units","analytics","menu","members","branches","settings"].includes(incomingParam("tab"))?incomingParam("tab"):"dashboard";
- staffState.settingsSection=["profile","operations","sessions","catalog","branches","customers","public"].includes(incomingParam("section"))?incomingParam("section"):"profile";
+routeState.customerTab=["home","reserve","queue","order","mine","progress"].includes(incomingParam("tab"))?incomingParam("tab"):"home";
+staffState.staffTab=["dashboard","bookings","queue","orders","calendar","units","analytics","menu","members","branches","settings"].includes(incomingParam("tab"))?incomingParam("tab"):"dashboard";
+ staffState.settingsSection=["profile","operations","sessions","catalog","pickup","branches","customers","public"].includes(incomingParam("section"))?incomingParam("section"):"profile";
 routeState.platformTab="dashboard";
 bookingState.chosenSlot="";
 routeState.registration=false;

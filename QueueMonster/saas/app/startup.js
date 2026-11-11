@@ -21,7 +21,7 @@ function canReloadBusinessData(){
   // A live booking update must never discard form input in progress.
   if(feedbackState.busy||document.documentElement.dataset.unsavedMerchantLogo==="true")return false;
   if(document.activeElement?.matches("input,select,textarea,[contenteditable='true']"))return false;
-  if(routeState.view==="staff"&&!["dashboard","queue","bookings","calendar"].includes(staffState.staffTab))return false;
+  if(routeState.view==="staff"&&!["dashboard","queue","bookings","calendar","orders"].includes(staffState.staffTab))return false;
   return true;
 }
 async function updateVisibleRecords(){
