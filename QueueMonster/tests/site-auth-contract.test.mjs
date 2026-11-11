@@ -231,7 +231,7 @@ test("platform LINE identity is verified independently from store selection",()=
  assert.match(edge,/so_platform_line_identities/);
  assert.match(edge,/identity\(req, db\)/);
  assert.match(edge,/reusablePlatformLineIdentity\(db,user\.id,expectedChannelId\)/);
- assert.match(edge,/isReusableLineIdentity\(profile,channelId\)/);
+ assert.match(edge,/isReusableLineIdentity\(platform,channelId\)/);
  assert.match(edge,/\.eq\("user_id",userId\)\.eq\("login_channel_id",channelId\)/);
  assert.match(edge,/if \(!ownOa/);
  assert.match(migration,/create table if not exists public\.so_platform_line_identities/);
