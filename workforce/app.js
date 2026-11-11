@@ -129,6 +129,8 @@ async function action(name,data){
    else if(name==='shift')result=await call('/rest/v1/wm_shifts','POST',{tenant_id,member_id:data.member_id,branch_id:data.branch_id,starts_at:data.starts_at,ends_at:data.ends_at,status:data.status||'published',notes:data.notes||'',created_by:app.user.id},app.token);
    else if(name==='shift_status')result=await call('/rest/v1/wm_shifts?id=eq.'+encodeURIComponent(data.id)+'&tenant_id=eq.'+encodeURIComponent(tenant_id),'PATCH',{status:data.status,updated_at:new Date().toISOString()},app.token);
    else if(name==='clock')result=await call('/rest/v1/rpc/wm_clock','POST',{p_member:data.member_id,p_kind:data.kind,p_key:data.key,p_lat:data.latitude||null,p_lng:data.longitude||null,p_accuracy:data.accuracy||null},app.token);
+   else if(name==='request'&&data.kind==='overtime')result=await call('/rest/v1/rpc/wm_submit_overtime_request','POST',
+    {p_member:data.member_id,p_start:data.starts_at,p_end:data.ends_at,p_reason:data.reason||'',p_timing:data.overtime_timing},app.token);
    else if(name==='request')result=await call('/rest/v1/rpc/wm_submit_request','POST',{p_member:data.member_id,p_kind:data.kind,p_start:data.starts_at,p_end:data.ends_at,p_reason:data.reason||'',p_leave_kind:data.leave_kind||null,p_target_member:null},app.token);
    else if(name==='decide')result=await call('/rest/v1/rpc/wm_decide_request','POST',{p_request:data.id,p_decision:data.status,p_note:data.note||''},app.token);
    else if(name==='availability')result=await call('/rest/v1/wm_availability','POST',{tenant_id,member_id:data.member_id,starts_at:data.starts_at,ends_at:data.ends_at,available:data.available,note:data.note||''},app.token);
@@ -191,7 +193,7 @@ function requests(){
   [['all','全部'],['leave','請假'],['overtime','加班'],['correction','補卡']].map(([k,label])=>
   '<button type="button" class="request-filter '+(filter===k?'active':'')+'" aria-pressed="'+(filter===k)+'" data-action="filterRequests" data-kind="'+k+'">'+label+' <span>'+counts[k]+'</span></button>').join('')+'</div>';
  heading(requestShortcutButtons());
- const rows=req.map(x=>tr([personLabel(x.member_id),esc(kind(x.kind))+(x.kind==='leave'?' · '+esc(kind(x.leave_kind)):'')+(x.kind==='correction'?' · '+esc(x.correction_type||(String(x.reason||'').match(/^【([^】]+)】/)||[])[1]||'未分類'):'') ,
+ const rows=req.map(x=>tr([personLabel(x.member_id),esc(kind(x.kind))+(x.kind==='leave'?' · '+esc(kind(x.leave_kind)):'')+(x.kind==='overtime'?' · '+(x.overtime_timing==='advance'?'事前申請':x.overtime_timing==='retroactive'?'事後補提':'未分類'):'')+(x.kind==='correction'?' · '+esc(x.correction_type||(String(x.reason||'').match(/^【([^】]+)】/)||[])[1]||'未分類'):'') ,
  taiStamp(x.starts_at),taiStamp(x.ends_at),status(x.status),esc(x.reason||'—')]));
  const verifiedBalances=(app.data.leaveBalances||{})[sel]||[];
  const balances=verifiedBalances.length?verifiedBalances.map(b=>
@@ -299,6 +301,8 @@ function showRequest(requestKind='leave'){
   '<option value="annual">特休</option><option value="sick">病假</option><option value="personal">事假</option><option value="other">其他假</option>';
  const fields=[{name:'member_id',label:'申請員工',html:memberFilter(getSelected())}];
  if(requestKind==='leave')fields.push({name:'leave_kind',label:'請假假別',html:selectField('leave_kind',leaveOptions)});
+ if(requestKind==='overtime')fields.push({name:'overtime_timing',label:'加班申請時點',html:selectField('overtime_timing',
+  '<option value="advance">事前申請（尚未開始的時段）</option><option value="retroactive">事後補提（已經結束的時段）</option>')});
  if(requestKind==='correction')fields.push({name:'correction_type',label:'補卡類型',html:selectField('correction_type',
   '<option value="漏上班卡">漏上班卡</option><option value="漏下班卡">漏下班卡</option><option value="上下班皆漏卡">上下班皆漏卡</option><option value="出勤時間更正">出勤時間更正</option>')});
  fields.push(
@@ -306,7 +310,7 @@ function showRequest(requestKind='leave'){
   {name:'ends_at',label:config.end,html:input('ends_at','datetime-local',day+'T'+(requestKind==='overtime'?'20:00':'18:00'))},
   {name:'reason',label:config.reason,wide:true,html:'<textarea id="reason" name="reason" required maxlength="500" rows="3" placeholder="'+esc(requestKind==='overtime'?'請說明加班工作內容':requestKind==='correction'?'請說明漏卡或更正原因':'請填寫請假原因')+'"></textarea>'}
  );
- const tip=requestKind==='overtime'?'<p class="request-hint">請填寫預計加班的起訖時間。核准加班申請不等於完成出勤打卡或薪資結算。</p><p id="requestDuration" class="request-duration" aria-live="polite"></p>':
+ const tip=requestKind==='overtime'?'<p class="request-hint">事前申請須未開始；事後補提須已完成，已月結期間需走歷史更正。核准加班申請不等於完成出勤打卡、核認加班或薪資結算。</p><p id="requestDuration" class="request-duration" aria-live="polite"></p>':
   requestKind==='correction'?'<p class="request-hint">填寫要補正的班次時間與原因。核准後仍保留原始打卡紀錄。</p>':
   '<p class="request-hint">請依實際請假時段填寫，額度以公司規則和審核結果為準。</p>';
  const body='<form data-form="request" data-request-kind="'+esc(requestKind)+'"><input type="hidden" name="kind" value="'+esc(requestKind)+'">'+
