@@ -85,6 +85,17 @@ if(a==="save-customer-homepage"){
      return "「"+result.name+"」已儲存";
    });return true;
  }
+ if(a==="pickup-menu-enabled"||a==="pickup-menu-sold-out"){
+   const item=(staffState.staff?.menu_items||[]).find(x=>x.id===id);
+   if(!item||item.kind==="SERVICE"){showActionFeedback("找不到可訂餐的商品","error");return true;}
+   const enabled=a==="pickup-menu-enabled"?!item.pickup_enabled:item.pickup_enabled;
+   const soldOut=a==="pickup-menu-sold-out"?!item.pickup_sold_out:item.pickup_sold_out;
+   await act(async()=>{
+     await rpc("so_pickup_menu_control",{p_slug:routeState.slug,p_item_id:item.id,
+       p_enabled:enabled,p_sold_out:soldOut});
+     return "「"+item.name+"」的訂餐供應狀態已更新";
+   });return true;
+ }
  if(a==="menu-toggle"){
    const item=(staffState.staff?.menu_items||[]).find(x=>x.id===id);
    if(!item){showActionFeedback("找不到這個項目","error");return true;}

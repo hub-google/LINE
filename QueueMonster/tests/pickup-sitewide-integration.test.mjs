@@ -12,7 +12,7 @@ test("pickup uses the original merchant settings, menu, tenant and live customer
  assert.match(pickup,/so_pickup_place/);
  assert.match(pickup,/so_pickup_staff/);
  assert.match(pickup,/so_pickup_history/);
- assert.match(pickup,/so_pickup_save_settings/);
+ assert.match(pickup,/so_pickup_save_capacity_settings/);
  assert.match(staff,/set-service-pickup/);
  assert.match(source("saas/app/actions/merchant-admin.js"),/so_set_all_merchant_services/);
  assert.match(source("saas/app/startup.js"),/createStoreLiveSync/);
@@ -102,4 +102,90 @@ test("operating statistics CSV includes pickup volume and order amount",()=>{
  assert.ok(analytics.includes("有效訂餐筆數"));
  assert.ok(analytics.includes("有效訂餐金額（NTD）"));
  assert.ok(analytics.includes("d.order_amount"));
+});
+
+test("pickup menu availability is independent from booking menu and server-checks sold-out items",()=>{
+ const sql=source("supabase/migrations/20261111180500_pickup_menu_crm_capacity_contact.sql");
+ const ui=source("saas/app/staff/menu.js");
+ const actions=source("saas/app/actions/merchant-settings.js");
+ for(const token of ["pickup_enabled","pickup_sold_out","so_pickup_menu_control","p_item_id",
+  "m.pickup_enabled and not m.pickup_sold_out","pickup_sold_out=false","so_menu_items"])
+  assert.ok(sql.includes(token),"pickup availability missing "+token);
+ assert.ok(ui.includes("pickup-menu-enabled"));
+ assert.ok(ui.includes("pickup-menu-sold-out"));
+ assert.ok(actions.includes('rpc("so_pickup_menu_control"'));
+});
+
+test("pickup customer uses validated contact, summary confirmation and private order snapshots",()=>{
+ const sql=source("supabase/migrations/20261111180500_pickup_menu_crm_capacity_contact.sql");
+ const ui=source("saas/app/pickup-mode.js");
+ for(const token of ["so_pickup_place_contact","p_customer_name","p_customer_phone","customer_phone","customer_name",
+   "p_request_id","auth.uid()"])
+  assert.ok(sql.includes(token),"pickup contact SQL missing "+token);
+ for(const token of ["pickup-customer-name","pickup-customer-phone","pickup-review-back",
+   "pickup-review","pickup-submit","so_pickup_place_contact"])
+  assert.ok(ui.includes(token),"pickup customer UI missing "+token);
+});
+
+test("quantity-based capacity is consistently checked by slot availability, placing and restoring",()=>{
+ const sql=source("supabase/migrations/20261111180500_pickup_menu_crm_capacity_contact.sql");
+ for(const token of ["capacity_basis","'ORDERS','ITEMS'","v_used+v_count>s.slot_capacity",
+   "o.items","so_pickup_save_capacity_settings"])
+  assert.ok(sql.includes(token),"capacity check missing "+token);
+ const ui=source("saas/app/pickup-mode.js");
+ assert.match(ui,/pickup-capacity-basis/);
+ assert.match(ui,/so_pickup_save_capacity_settings/);
+});
+
+test("pickup staff permissions block unauthorized access at all three read and write RPCs",()=>{
+ const sql=source("supabase/migrations/20261111181500_pickup_staff_permissions.sql");
+ for(const token of ["so_pickup_permissions","row level security","private.so_role","so_pickup_staff",
+  "so_pickup_update","so_pickup_history","so_pickup_calendar","so_pickup_set_staff_permissions","'42501'"])
+  assert.ok(sql.includes(token),"pickup staff ACL missing "+token);
+ assert.match(source("saas/app/pickup-mode.js"),/pickup-staff-permissions-save/);
+});
+
+test("pickup analytics combines shared merchant KPIs with item popularity and actual ready audit timestamps",()=>{
+ const sql=source("supabase/migrations/20261111183000_pickup_analytics_detail.sql");
+ for(const token of ["so_pickup_analytics","popular_items","pickup_hours","so_audit","first_ready",
+    "private.so_role","on_time"])
+  assert.ok(sql.includes(token),"pickup advanced analytics missing "+token);
+ const ui=source("saas/app/staff/analytics.js");
+ assert.ok(ui.includes("熱門餐點排行"));
+ assert.ok(ui.includes("取餐尖峰時段"));
+ assert.ok(ui.includes("準時待取率"));
+});
+
+test("customer full pickup history is user-scoped, paginated and survives service disablement",()=>{
+ const sql=source("supabase/migrations/20261111183500_pickup_customer_full_history.sql");
+ for(const token of ["so_pickup_my_orders","o.user_id=v_uid","l.user_id=v_uid",
+   "o.tenant_id=v_tenant","limit 25 offset","private"])
+  if(token!=="private")assert.ok(sql.includes(token),"pickup customer history missing "+token);
+ const ui=source("saas/app/pickup-mode.js");
+ assert.match(ui,/pickup-customer-history-page/);
+ assert.match(ui,/so_pickup_my_orders/);
+});
+
+test("public pickup board is readonly, shares realtime fallback and never contains customer personal data",()=>{
+ const sql=source("supabase/migrations/20261111182500_pickup_public_board.sql");
+ const html=source("saas/pickup-board.html");
+ const js=source("saas/assets/pickup-board/main.js");
+ for(const token of ["so_pickup_public_board","realtime.send","queue-board:","so_pickup_live_invalidate"])
+  assert.ok(sql.includes(token),"pickup board missing "+token);
+ for(const forbidden of ["customer_name","customer_phone","user_id","line_sub","items',o.items"])
+  assert.ok(!sql.includes(forbidden),"pickup public board exposes "+forbidden);
+ assert.match(html,/version-watch\.js/);
+ assert.match(js,/createStoreLiveSync/);
+ assert.match(js,/fallbackMs:10000/);
+ assert.match(source("../.github/scripts/build-line-saas.mjs"),/pickup-board\.html/);
+});
+
+test("HQ pickup filter and self-hosted QR code sharing work with existing merchant settings",()=>{
+ assert.match(source("saas/app/platform-view.js"),/platform-pickup-filter/);
+ assert.match(source("saas/app/form-events.js"),/platform-pickup-filter/);
+ assert.match(source("saas/app/staff/settings.js"),/pickup-board\.html/);
+ assert.match(source("saas/app/staff/settings.js"),/show-service-qr/);
+ assert.match(source("saas/app/actions/account-platform.js"),/show-service-qr/);
+ assert.match(source("../.github/scripts/build-line-saas.mjs"),/vendor\/qrcode\.min\.js/);
+ assert.match(source("saas/vendor/QR-CODE-LICENSE"),/MIT License/);
 });

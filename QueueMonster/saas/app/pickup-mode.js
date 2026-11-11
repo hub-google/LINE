@@ -2,6 +2,7 @@
 import {routeState} from "./state/routeState.js";
 import {customerState} from "./state/customerState.js";
 import {staffState} from "./state/staffState.js";
+import {lineState} from "./state/lineState.js";
 import {box,btn,esc,field,taipei} from "./shared-ui.js";
 import {rpc,act,load} from "./data-loading.js";
 import {render} from "./staff-layout.js";
@@ -10,7 +11,7 @@ import {render} from "./staff-layout.js";
 // This module owns only pickup-specific presentation and form state.
 export const pickupState={
   customer:null,staff:null,customerSlug:"",staffSlug:"",
-  day:"",slot:"",method:"scheduled",cart:{},note:"",requestId:"",history:null,historyPage:1,historyFilter:"all"
+  day:"",slot:"",method:"scheduled",cart:{},note:"",requestId:"",history:null,historyPage:1,historyFilter:"all",customerHistory:null,customerHistoryPage:1,name:"",phone:"",confirming:false
 };
 const statusText={NEW:"待店家接單",ACCEPTED:"已接單・待製作",PREPARING:"製作中",
   READY:"可取餐",PICKED_UP:"已取餐",REJECTED:"店家已拒單",CANCELLED:"已取消"};
@@ -24,11 +25,16 @@ export async function loadPickupData(){
     if(!pickupState.day)pickupState.day=taipei();
     if(pickupState.customerSlug!==routeState.slug){
       pickupState.customer=null;pickupState.customerSlug=routeState.slug;
-      pickupState.cart={};pickupState.slot="";pickupState.requestId="";pickupState.method="scheduled";
+      pickupState.cart={};pickupState.slot="";pickupState.requestId="";pickupState.method="scheduled";pickupState.confirming=false;pickupState.name="";pickupState.phone="";pickupState.customerHistory=null;pickupState.customerHistoryPage=1;
     }
+    if(!pickupState.name&&lineState.lineDisplayName)pickupState.name=String(lineState.lineDisplayName).slice(0,60);
     if(!pickupState.customer||routeState.customerTab==="order"){
       try{pickupState.customer=await rpc("so_pickup_public",{p_slug:routeState.slug,p_date:pickupState.day});}
       catch(err){console.warn("取餐服務資料不可用",err);pickupState.customer=null;}
+    }
+    if(routeState.customerTab==="order"){
+      try{pickupState.customerHistory=await rpc("so_pickup_my_orders",{p_slug:routeState.slug,p_page:pickupState.customerHistoryPage});}
+      catch(e){console.warn("無法讀取訂餐完整歷史",e);pickupState.customerHistory=null;}
     }
     if(pickupState.customer?.settings?.schedule_mode==="DISABLED")pickupState.method="immediate";
     if(pickupState.customer?.settings?.schedule_mode==="REQUIRED")pickupState.method="scheduled";
@@ -61,15 +67,22 @@ export function renderPickupSettings(isManager){
    '<div class="grid"><div>'+field("每天最早取餐時間","pickup-start",s.pickup_start||"05:30","time")+
    field("每天最後取餐截止","pickup-end",s.pickup_end||"14:00","time")+
    '<label for="pickup-interval">取餐時段間隔</label>'+select("pickup-interval",[[5,"5 分鐘"],[10,"10 分鐘"],[15,"15 分鐘"],[20,"20 分鐘"],[30,"30 分鐘"],[60,"60 分鐘"]],s.interval_minutes)+'</div>'+
-   '<div>'+field("每時段最多接單數","pickup-capacity",s.slot_capacity||5,"number",'min="1" max="300"')+
+   '<div>'+'<label for="pickup-capacity-basis">取餐時段容量計算方式</label>'+
+   select("pickup-capacity-basis",[["ORDERS","每時段訂單筆數"],["ITEMS","每時段餐點總份數"]],s.capacity_basis||"ORDERS")+
+   field("每時段最多可接數量（依上方單位）","pickup-capacity",s.slot_capacity||5,"number",'min="1" max="300"')+
    field("至少提前幾分鐘下單","pickup-notice",s.min_notice_minutes??20,"number",'min="0" max="1440"')+
    field("可提前預訂天數（0～30）","pickup-days",s.days_ahead??7,"number",'min="0" max="30"')+'</div></div>'+
    field("預估製作時間（分鐘）","pickup-prep",s.prep_minutes??20,"number",'min="1" max="180"')+
-   '<p class="small">例如 08:00 取餐、預估製作 20 分鐘，需到 07:40 才可點「開始製作」；05:30 取餐的訂單不受影響。既有訂單的取餐時間不會因設定變更而被修改。</p>'+
+   '<p class="small">取餐時段容量可選「訂單數」或「餐點份數」。選擇份數後，08:00 的 20 份漢堡會占用 20 份容量；已成立訂單的取餐時間不變。</p>'+
    '<div class="staff-actionbar">'+btn("儲存取餐設定","pickup-save","primary")+'</div>')+
    '<div class="inset" style="margin-top:12px"><strong>點餐連結</strong><p class="small">服務啟用後，可把下方網址提供給顧客。</p>'+
    (s.enabled?'<p style="overflow-wrap:anywhere"><a target="_blank" rel="noopener noreferrer" href="'+esc(new URL("./index.html?view=customer&merchant="+encodeURIComponent(routeState.slug)+"&tab=order",location.href).href)+'">'+
-   esc(new URL("./index.html?view=customer&merchant="+encodeURIComponent(routeState.slug)+"&tab=order",location.href).href)+'</a></p>':'<p class="muted">尚未開放線上點餐</p>')+'</div>');
+   esc(new URL("./index.html?view=customer&merchant="+encodeURIComponent(routeState.slug)+"&tab=order",location.href).href)+'</a></p>':'<p class="muted">尚未開放線上點餐</p>')+'</div>')+
+   (isManager?box("店員訂餐操作權限",
+    '<p class="small">只影響一般員工角色，負責人、管理者及平台管理員維持管理權限。已加入企業的員工不需要重複建立帳號。</p>'+
+    '<label class="checklist"><input id="pickup-staff-view" type="checkbox" '+(data.staff_can_view===false?"":"checked")+'>允許一般員工查看訂單與取餐日曆</label>'+
+    '<label class="checklist"><input id="pickup-staff-update" type="checkbox" '+(data.staff_can_update===false?"":"checked")+'>允許一般員工修改訂單狀態</label>'+
+    btn("儲存訂餐員工權限","pickup-staff-permissions-save","primary")):"");
 }
 
 export function renderCustomerPickup(){
@@ -80,12 +93,21 @@ export function renderCustomerPickup(){
  const immediate=pickupState.method==="immediate";
  const total=(d.items||[]).reduce((sum,x)=>sum+Number(x.price||0)*(pickupState.cart[x.id]||0),0);
  const count=Object.values(pickupState.cart).reduce((a,b)=>a+b,0);
- const orderCards=(d.orders||[]).map(o=>
+ const customerOrders=pickupState.customerHistory?.orders||d.orders||[];
+ const historyTotal=Number(pickupState.customerHistory?.total??customerOrders.length);
+ const historyMax=Math.max(1,Math.ceil(historyTotal/25));
+ const historyControls=historyTotal>25?
+   '<div class="staff-actionbar">'+
+   btn("上一頁","pickup-customer-history-page","outline",'data-page="'+(pickupState.customerHistoryPage-1)+'"'+(pickupState.customerHistoryPage<=1?' disabled':''))+
+   '<span>第 '+pickupState.customerHistoryPage+'／'+historyMax+' 頁</span>'+
+   btn("下一頁","pickup-customer-history-page","outline",'data-page="'+(pickupState.customerHistoryPage+1)+'"'+(pickupState.customerHistoryPage>=historyMax?' disabled':''))+
+   '</div>':"";
+ const orderCards=customerOrders.map(o=>
   '<div class="inset" style="margin-top:10px"><div class="listline"><strong>'+esc(o.number)+'</strong><span>'+esc(statusText[o.status]||o.status)+'</span></div>'+
   '<p class="small">取餐：'+esc(o.pickup_at)+(o.scheduled?"（預約）":"（即時）")+'</p>'+
   '<p>'+lines(o)+'</p><p><strong>'+money(o.total)+'</strong></p>'+
   (["NEW","ACCEPTED"].includes(o.status)?btn("取消這筆訂單","pickup-cancel","outline",'data-id="'+esc(o.id)+'"'):"")+'</div>').join("");
- if(!s.enabled)return box("尚未開放線上點餐",'<p>店家暫停接受新訂單，既有訂單仍可查看。</p>'+(orderCards||'<p>目前沒有訂餐紀錄。</p>'));
+ if(!s.enabled)return box("尚未開放線上點餐",'<p>店家暫停接受新訂單，既有訂單仍可查看。</p>'+(orderCards||'<p>目前沒有訂餐紀錄。</p>')+historyControls);
  const available=(d.slots||[]).filter(x=>x.left>0);
  return box("線上點餐",
   '<p class="muted">直接使用本店上架菜單，送出後可在此追蹤接單、製餐、可取餐與已取餐進度。</p>'+
@@ -95,7 +117,7 @@ export function renderCustomerPickup(){
   (immediate?'<p class="notice">預估製作時間約 '+esc(s.prep_minutes)+' 分鐘，實際以店家接單進度為準。</p>':
    '<div class="grid"><div>'+field("取餐日期","pickup-day",pickupState.day||taipei(),"date",'min="'+taipei()+'"')+
    '</div><div><label for="pickup-slot">取餐時間</label><select class="field" id="pickup-slot"><option value="">請選擇取餐時間</option>'+
-   available.map(x=>'<option value="'+esc(x.time)+'" '+(pickupState.slot===x.time?"selected":"")+'>'+esc(x.time)+'（剩 '+esc(x.left)+' 單）</option>').join("")+
+   available.map(x=>'<option value="'+esc(x.time)+'" '+(pickupState.slot===x.time?"selected":"")+'>'+esc(x.time)+'（可接 '+esc(x.left)+(s.capacity_basis==='ITEMS'?' 份':' 單')+'）</option>').join("")+
    '</select></div></div>'+
    (available.length?"":'<p class="alert">本日沒有可預約時段，請更換日期或稍後再試。</p>'))+
   '<h3 style="margin:18px 0 10px">選擇餐點</h3>'+
@@ -104,11 +126,20 @@ export function renderCustomerPickup(){
    '<div class="staff-actionbar">'+btn("－","pickup-qty","outline",'data-id="'+esc(i.id)+'" data-delta="-1" aria-label="減少 '+esc(i.name)+'"')+
    '<strong>'+esc(pickupState.cart[i.id]||0)+'</strong>'+
    btn("＋","pickup-qty","outline",'data-id="'+esc(i.id)+'" data-delta="1" aria-label="增加 '+esc(i.name)+'"')+'</div></div>').join("")+
-  '<div style="margin-top:12px">'+field("給店家的備註（最多 200 字）","pickup-note",pickupState.note,"text",'maxlength="200" placeholder="例如：不要加辣"')+'</div>'+
+  '<div class="grid" style="margin-top:12px"><div>'+field("取餐姓名","pickup-customer-name",pickupState.name,"text",'maxlength="60" autocomplete="name"')+'</div>'+
+   '<div>'+field("聯絡電話","pickup-customer-phone",pickupState.phone,"tel",'autocomplete="tel" placeholder="請填 8～15 位數字"')+'</div></div>'+
+   '<div style="margin-top:12px">'+field("給店家的備註（最多 200 字）","pickup-note",pickupState.note,"text",'maxlength="200" placeholder="例如：不要加辣"')+'</div>'+
   '<div class="listline"><strong>共 '+esc(count)+' 份</strong><strong>'+money(total)+'</strong></div>'+
   '<p class="small">此處僅建立訂單，不會線上收款；請依店家現場方式結帳。</p>'+
-  btn("確認送出訂單","pickup-submit","primary full",(!count||(!immediate&&!pickupState.slot))?"disabled":"")+
-  (d.orders?.length?'<h3 style="margin:20px 0 8px">我的取餐進度</h3>'+orderCards:
+  (pickupState.confirming?'<div class="inset" role="group" aria-label="確認訂餐內容"><strong>請核對送出前的訂餐內容</strong>'+
+    '<p>取餐人：'+esc(pickupState.name.trim())+' ・ '+esc(pickupState.phone.trim())+'</p>'+
+    '<p>預計取餐：'+(immediate?'立即取餐（以店家接單為準）':esc(pickupState.day)+' '+esc(pickupState.slot))+'</p>'+
+    '<p>餐點：'+(d.items||[]).filter(i=>pickupState.cart[i.id]>0).map(i=>esc(i.name)+' × '+esc(pickupState.cart[i.id])).join('、')+'</p>'+
+    '<p>金額：'+money(total)+'（以送出時店家菜單價格重新計算）</p>'+
+    '<p>備註：'+esc(pickupState.note||'無')+'</p><div class="staff-actionbar">'+
+    btn("返回修改","pickup-review-back","outline")+btn("確定送出訂單","pickup-submit","primary")+'</div></div>':
+    btn("下一步：確認訂單內容","pickup-review","primary full",(!count||(!immediate&&!pickupState.slot))?"disabled":""))+
+  (customerOrders.length?'<h3 style="margin:20px 0 8px">我的取餐進度（'+historyTotal+' 筆）</h3>'+orderCards+historyControls:
     '<p class="small">還沒有取餐訂單。</p>'));
 }
 
@@ -118,6 +149,7 @@ export function renderStaffPickup(){
  // 停用訂餐僅阻止新增訂單，不隱藏既有訂單或歷史紀錄。
  const orders=d.orders||[],active=orders.filter(o=>!["PICKED_UP","REJECTED","CANCELLED"].includes(o.status));
  const history=orders.filter(o=>["PICKED_UP","REJECTED","CANCELLED"].includes(o.status));
+ const canUpdate=d.can_update!==false;
  const staffStatusText={NEW:"待接單",ACCEPTED:"已接單",PREPARING:"製作中",
    READY:"待取",PICKED_UP:"已完成",REJECTED:"已拒單",CANCELLED:"已取消"};
  const action=(o,label,status,disabled=false,style="outline")=>btn(label,"pickup-status",style,
@@ -128,15 +160,16 @@ export function renderStaffPickup(){
  const card=o=>'<div class="inset" style="margin:0 0 12px;padding:14px"><div class="listline"><strong>'+
   esc(o.number)+'</strong><strong>'+esc(staffStatusText[o.status]||o.status)+'</strong></div>'+
   '<p class="small"><strong>約定取餐 '+esc(o.pickup_at)+'</strong> '+(o.scheduled?"（指定時間）":"（立即）")+'</p>'+
-  '<p class="small">建議開始製作：'+esc(o.prepare_at)+(o.can_prepare?"":" — 尚未到製作時間")+'</p>'+
+  '<p class="small">顧客：'+esc(o.customer_name||'未填寫')+' ・ '+esc(o.customer_phone||'未提供')+'</p><p class="small">建議開始製作：'+esc(o.prepare_at)+(o.can_prepare?"":" — 尚未到製作時間")+'</p>'+
   '<p>'+lines(o)+'</p><p class="small">'+(o.note?"備註："+esc(o.note):"無備註")+' ・ '+money(o.total)+'</p>'+
-  '<div class="staff-actionbar" role="group" aria-label="選擇訂單狀態">'+
-  choices.map(([label,status])=>action(o,label,status,o.status===status,o.status===status?"primary":"outline")).join("")+'</div>'+
-  '<details style="margin-top:8px"><summary class="small">其他操作（開始製作／取消／恢復待接單）</summary>'+
+  (canUpdate?'<div class="staff-actionbar" role="group" aria-label="選擇訂單狀態">'+
+  choices.map(([label,status])=>action(o,label,status,o.status===status,o.status===status?"primary":"outline")).join("")+'</div>':
+  '<p class="small">此員工角色僅可查看訂單，由管理者修改狀態。</p>')+
+  (canUpdate?'<details style="margin-top:8px"><summary class="small">其他操作（開始製作／取消／恢復待接單）</summary>'+
   '<div class="staff-actionbar" style="margin-top:10px">'+
   (o.status==="ACCEPTED"?action(o,"開始製作","PREPARING",!o.can_prepare):"")+
   (o.status!=="CANCELLED"?action(o,"取消訂單","CANCELLED"):"")+
-  (o.status!=="NEW"?action(o,"恢復待接單","NEW"):"")+'</div></details></div>';
+  (o.status!=="NEW"?action(o,"恢復待接單","NEW"):"")+'</div></details>':"")+'</div>';
  const h=pickupState.history||{},past=h.orders||[],maxPage=Math.max(1,Math.ceil(Number(h.total||0)/25));
  const choose=(f,label)=>btn(label,"pickup-history-filter",pickupState.historyFilter===f?"primary":"outline",'data-filter="'+f+'"');
  return box("取餐訂單管理",
@@ -154,6 +187,11 @@ export function renderStaffPickup(){
 
 export async function handlePickupAction(ev,b,a,id){
  if(!a.startsWith("pickup-"))return false;
+ if(a==="pickup-customer-history-page"){
+    const page=Number(b.dataset.page),max=Math.max(1,Math.ceil(Number(pickupState.customerHistory?.total||0)/25));
+    if(Number.isInteger(page)&&page>=1&&page<=max){pickupState.customerHistoryPage=page;await load();}
+    return true;
+ }
  if(a==="pickup-history-page"){
   const page=Number(b.dataset.page),max=Math.max(1,Math.ceil(Number(pickupState.history?.total||0)/25));
   if(Number.isInteger(page)&&page>=1&&page<=max){pickupState.historyPage=page;await load();}
@@ -163,41 +201,59 @@ export async function handlePickupAction(ev,b,a,id){
   if(!["all","active","closed"].includes(b.dataset.filter))return true;
   pickupState.historyFilter=b.dataset.filter;pickupState.historyPage=1;await load();return true;
  }
+ if(a==="pickup-review"){
+   const name=pickupState.name.trim(),phone=pickupState.phone.trim().replace(/[\s()\-]/g,"");
+   if(!name||name.length>60||/[<>\u0000-\u001f]/.test(name)){window.alert("請填寫有效的取餐姓名");return true;}
+   if(!/^\+?[0-9]{8,15}$/.test(phone)){window.alert("請填寫有效的聯絡電話（8～15 位數字）");return true;}
+   if(!Object.values(pickupState.cart).some(n=>n>0)){window.alert("請先選擇餐點");return true;}
+   pickupState.confirming=true;render();return true;
+ }
+ if(a==="pickup-review-back"){pickupState.confirming=false;render();return true;}
  if(a==="pickup-method"){
-   pickupState.method=b.dataset.value==="immediate"?"immediate":"scheduled";render();return true;
+   pickupState.method=b.dataset.value==="immediate"?"immediate":"scheduled";pickupState.confirming=false;render();return true;
  }
  if(a==="pickup-qty"){
    const menu=pickupState.customer?.items||[];
    if(!menu.some(x=>x.id===id))return true;
    const qty=Math.max(0,Math.min(20,(pickupState.cart[id]||0)+Number(b.dataset.delta||0)));
    if(qty)pickupState.cart[id]=qty;else delete pickupState.cart[id];
-   pickupState.requestId="";render();return true;
+   pickupState.requestId="";pickupState.confirming=false;render();return true;
+ }
+ if(a==="pickup-staff-permissions-save"){
+   const canView=!!routeState.$("pickup-staff-view")?.checked;
+   const canUpdate=!!routeState.$("pickup-staff-update")?.checked;
+   if(!canView&&canUpdate){window.alert("若關閉訂單檢視權限，也必須關閉修改權限");return true;}
+   await act(async()=>{
+     await rpc("so_pickup_set_staff_permissions",{p_slug:routeState.slug,p_can_view:canView,p_can_update:canUpdate});
+     return "一般員工的訂餐權限已更新";
+   });return true;
  }
  if(a==="pickup-save"){
    await act(async()=>{
-     await rpc("so_pickup_save_settings",{p_slug:routeState.slug,
+     await rpc("so_pickup_save_capacity_settings",{p_slug:routeState.slug,
        p_enabled:!!routeState.$("pickup-enabled")?.checked,p_mode:routeState.$("pickup-mode")?.value,
        p_start:routeState.$("pickup-start")?.value,p_end:routeState.$("pickup-end")?.value,
        p_interval:Number(routeState.$("pickup-interval")?.value),
        p_capacity:Number(routeState.$("pickup-capacity")?.value),
        p_notice:Number(routeState.$("pickup-notice")?.value),
        p_days:Number(routeState.$("pickup-days")?.value),
-       p_prep:Number(routeState.$("pickup-prep")?.value)});
+       p_prep:Number(routeState.$("pickup-prep")?.value),p_capacity_basis:routeState.$("pickup-capacity-basis")?.value});
      pickupState.customer=null;return "取餐服務與時段容量設定已儲存";
    });return true;
  }
  if(a==="pickup-submit"){
+   if(!pickupState.confirming){window.alert("請先確認訂單內容");return true;}
    const items=Object.entries(pickupState.cart).filter(([,qty])=>qty>0).map(([itemId,qty])=>({id:itemId,qty}));
    if(!items.length)return true;
    if(pickupState.method!=="immediate"&&!pickupState.slot)return true;
    try{if(!pickupState.requestId)pickupState.requestId=uuid();}catch(e){window.alert(e.message);return true;}
    await act(async()=>{
-     const res=await rpc("so_pickup_place",{p_slug:routeState.slug,
+     const res=await rpc("so_pickup_place_contact",{p_slug:routeState.slug,
        p_date:pickupState.method==="immediate"?null:pickupState.day,
        p_time:pickupState.method==="immediate"?null:pickupState.slot,
        p_items:items,p_note:pickupState.note,p_request_id:pickupState.requestId,
-       p_immediate:pickupState.method==="immediate"});
-     pickupState.cart={};pickupState.note="";pickupState.requestId="";
+       p_immediate:pickupState.method==="immediate",p_customer_name:pickupState.name.trim(),p_customer_phone:pickupState.phone.trim()});
+     pickupState.cart={};pickupState.note="";pickupState.requestId="";pickupState.confirming=false;
      return "訂單 "+res.number+" 已送出，請在我的取餐進度查看店家接單狀態";
    });return true;
  }
@@ -224,16 +280,18 @@ export async function handlePickupAction(ev,b,a,id){
 export function initializePickupMode(){
  pickupState.day=taipei();
  document.addEventListener("input",ev=>{
-  if(ev.target?.id==="pickup-note"){pickupState.note=ev.target.value;pickupState.requestId="";}
+  if(ev.target?.id==="pickup-note"){pickupState.note=ev.target.value;pickupState.requestId="";pickupState.confirming=false;}
+  if(ev.target?.id==="pickup-customer-name"){pickupState.name=ev.target.value;pickupState.requestId="";pickupState.confirming=false;}
+  if(ev.target?.id==="pickup-customer-phone"){pickupState.phone=ev.target.value;pickupState.requestId="";pickupState.confirming=false;}
  });
  document.addEventListener("change",async ev=>{
   if(ev.target?.id==="pickup-day"){
-   pickupState.day=ev.target.value;pickupState.slot="";pickupState.requestId="";
+   pickupState.day=ev.target.value;pickupState.slot="";pickupState.requestId="";pickupState.confirming=false;
    try{
      pickupState.customer=await rpc("so_pickup_public",{p_slug:routeState.slug,p_date:pickupState.day});
      render();
    }catch(err){window.alert(err.message);}
   }
-  if(ev.target?.id==="pickup-slot"){pickupState.slot=ev.target.value;pickupState.requestId="";render();}
+  if(ev.target?.id==="pickup-slot"){pickupState.slot=ev.target.value;pickupState.requestId="";pickupState.confirming=false;render();}
  });
 }

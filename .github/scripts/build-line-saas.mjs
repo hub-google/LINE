@@ -7,7 +7,7 @@ const sha = (process.env.GITHUB_SHA || "").trim();
 if (!/^[0-9a-f]{40}$/i.test(sha)) throw Error("GITHUB_SHA must be the deployment commit SHA");
 const src = path.resolve("QueueMonster/saas");
 const dest = path.resolve(process.argv[2] || "line-saas-dist");
-const pages = ["index.html", "template.html", "home.html", "board.html", "directory.html", "merchant-register.html", "platform-login.html", "merchant-center.html", "privacy.html", "terms.html"];
+const pages = ["index.html", "template.html", "home.html", "board.html", "pickup-board.html", "directory.html", "merchant-register.html", "platform-login.html", "merchant-center.html", "privacy.html", "terms.html"];
 const placeholder = "__LINE_SAAS_BUILD__";
 
 await mkdir(dest, {recursive:true});
@@ -29,6 +29,9 @@ await copyFile(path.join(src, "explore-game.js"), path.join(dest, "explore-game.
 await copyFile(path.join(src, "site-auth.css"), path.join(dest, "site-auth.css"));
 await copyFile(path.join(src, "site-auth.js"), path.join(dest, "site-auth.js"));
 await copyFile(path.join(src, "public-config.js"), path.join(dest, "public-config.js"));
+await mkdir(path.join(dest,"vendor"),{recursive:true});
+await copyFile(path.join(src,"vendor/qrcode.min.js"),path.join(dest,"vendor/qrcode.min.js"));
+await copyFile(path.join(src,"vendor/QR-CODE-LICENSE"),path.join(dest,"vendor/QR-CODE-LICENSE"));
 
 await copyFile(path.join(src, "manifest.webmanifest"), path.join(dest, "manifest.webmanifest"));
 await copyFile(path.join(src, "offline.html"), path.join(dest, "offline.html"));

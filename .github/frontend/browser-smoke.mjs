@@ -24,7 +24,7 @@ try{
  const missing=[];page.on('response',r=>{if(r.url().startsWith(baseUrl)&&r.status()===404)missing.push(r.url());});
  const baseUrl='http://127.0.0.1:'+server.address().port;
  // Render the single approved brand image at a real browser origin, not just inspect SVG text.
- await page.goto(baseUrl+'/booking/home.html',{waitUntil:'networkidle'});
+ await page.goto(baseUrl+'/booking/home.html',{waitUntil:'domcontentloaded'});
  const mascot=await page.evaluate(async()=>{
   const img=new Image();
   img.src=new URL('./monster-mascot.svg',location.href).href;
@@ -42,7 +42,8 @@ try{
  assert.ok(mascot.painted>1500,'Mascot must actually render rather than showing a broken/blank SVG');
  console.log('Shared mascot rendered in Chromium:',JSON.stringify(mascot));
  // Execute the real source graph; these checks do not use the legacy lexical adapter.
- await page.goto(baseUrl+'/LINE/booking/index.html?view=staff&merchant=greenfield-salon',{waitUntil:'networkidle'});
+ // Native-module smoke must not depend on external Supabase or LINE services reaching network-idle.
+ await page.goto(baseUrl+'/LINE/booking/index.html?view=staff&merchant=greenfield-salon',{waitUntil:'domcontentloaded'});
  const result=await page.evaluate(async()=>{
   const {bookingState}=await import('./app/state/bookingState.js');
   const {queueState}=await import('./app/state/queueState.js');
@@ -141,11 +142,22 @@ try{
  }
  assert.ok(!fs.existsSync(path.join(dist,'poster.html')),'Retired poster must not be included in production output');
  console.log('Staff panels retain their workflows with consolidated Settings navigation.');
- // Exercise production bundles at both desktop and mobile sizes with actual network reads.
+ // Keep visual/route smoke deterministic if the remote Supabase Data API is unhealthy.
+ // This test verifies graceful unauthenticated UI without making production DB requests.
+ await page.route('https://unapiwajmgqqtdkixaab.supabase.co/**',route=>route.fulfill({
+  status:503,contentType:'application/json',
+  headers:{'access-control-allow-origin':'*','access-control-allow-headers':'*'},
+  body:JSON.stringify({message:'Browser smoke: remote API unavailable'})
+ }));
+ // Exercise production bundles at both desktop and mobile sizes with actual local asset reads.
  for(const width of [1280,390]){
   await page.setViewportSize({width,height:900});
   for(const name of ['home.html','directory.html?mode=search','merchant-register.html','platform-login.html','index.html?view=platform','index.html?view=staff&merchant=greenfield-salon','index.html?view=customer&merchant=greenfield-salon','board.html?merchant=greenfield-salon']){
-   await page.goto(baseUrl+'/booking/'+name,{waitUntil:'networkidle',timeout:45000});
+   await page.goto(baseUrl+'/booking/'+name,{waitUntil:'domcontentloaded',timeout:45000});
+   // Check the rendered application header rather than racing deferred native modules.
+   if(name.startsWith('index.html?view=')){
+    await page.locator('#headlinks a').first().waitFor({state:'attached',timeout:20000});
+   }
    assert.ok((await page.locator('body').innerText()).trim().length>30,name);
    if(name==='home.html'){
     const rects=await page.locator('.hero-demo').evaluateAll(nodes=>nodes.map(n=>{
@@ -273,7 +285,7 @@ try{
  // Verify the real compiled board CSS and font fitter in Chromium.
  for(const viewport of [{width:360,height:780},{width:390,height:844},{width:412,height:915}]){
   await page.setViewportSize(viewport);
-  await page.goto(baseUrl+"/booking/board.html?merchant=greenfield-salon",{waitUntil:"networkidle",timeout:45000});
+  await page.goto(baseUrl+"/booking/board.html?merchant=greenfield-salon",{waitUntil:"domcontentloaded",timeout:45000});
   await page.evaluate(async()=>{
    document.getElementById("shop").textContent="測試1";
    const logo=document.getElementById("shop-logo");
@@ -346,7 +358,7 @@ try{
  for(const viewport of viewports){
   await page.setViewportSize(viewport);
   await page.goto(baseUrl+"/booking/board.html?merchant=greenfield-salon",
-   {waitUntil:"networkidle",timeout:45000});
+   {waitUntil:"domcontentloaded",timeout:45000});
   await page.evaluate(()=>{
    document.getElementById("shop").textContent="測試店家｜即時叫號";
    const current=document.getElementById("current");

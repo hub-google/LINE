@@ -16,16 +16,17 @@ import {customerUrl} from "../line-session.js";
 import {closedDatesPickerMarkup,installClosedDatesPicker} from "../closed-dates-picker.js";
 
 function serviceLink(kind,label,enabled){
- const url=kind==="board"
-   ?new URL(sharedUiState.bookingPath+"board.html?merchant="+encodeURIComponent(routeState.slug),location.origin)
+ const url=["board","pickup-board"].includes(kind)
+   ?new URL(sharedUiState.bookingPath+(kind==="board"?"board.html":"pickup-board.html")+"?merchant="+encodeURIComponent(routeState.slug),location.origin)
    :new URL(customerUrl(routeState.slug)||new URL(sharedUiState.route("customer",routeState.slug),location.href).href,location.href);
- if(kind!=="board")url.searchParams.set("tab",kind);
+ if(!["board","pickup-board"].includes(kind))url.searchParams.set("tab",kind);
  const href=url.href;
  return '<div class="inset" data-service-url-kind="'+kind+'" style="margin-top:12px">'+
    '<strong>'+label+'</strong>'+
    '<div data-service-url-active'+(enabled?'':' style="display:none"')+'>'+
      '<p style="overflow-wrap:anywhere"><a href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">'+esc(href)+'</a></p>'+
      btn("複製"+label,"copy-service-link","outline",'data-url="'+esc(href)+'" data-service-kind="'+kind+'"')+
+     btn("顯示 QR Code","show-service-qr","outline",'data-url="'+esc(href)+'"')+
    '</div>'+
    '<p class="muted" data-service-url-inactive'+(enabled?' style="display:none"':'')+'>未選擇此功能</p>'+
  '</div>';
@@ -79,10 +80,10 @@ export function renderStaffSettings({t,isManager,html}){
     '<label class="checklist"><input id="policy-confirm-required" type="checkbox" '+(policy.require_confirmation!==false?"checked":"")+'>送出前顯示確認卡</label>'+
     '<div style="margin-top:14px">'+btn("儲存二次確認設定","save-booking-confirmation","primary")+'</div>'):"")],
 ["customers",(isManager?box("顧客簿、未到店紀錄與黑名單",
-    '<p class="small">本店顧客紀錄獨立，未驗證的同名或電話不會自動合併。黑名單可只記錄警示，也可選擇禁止新的預約。</p>'+
+    '<p class="small">本店將已驗證的同一 LINE 身分之預約與訂餐資料合併計算；未驗證的同名或電話不會自動合併。黑名單可只記錄警示，也可選擇禁止新的預約。</p>'+
     (staffState.staffCustomerBook.length?
-      '<div class="scroll"><table class="rows"><tr><th>顧客</th><th>歷史預約</th><th>未到店</th><th>狀態</th></tr>'+
-      staffState.staffCustomerBook.slice(0,40).map(x=>'<tr><td>'+esc(x.name||"LINE 顧客")+'</td><td><a class="customer-history-link" href="#customer-history" data-customer-history-id="'+esc(x.id)+'" aria-label="查看 '+esc(x.name||"LINE 顧客")+' 的所有歷史預約">'+esc(x.bookings)+' 筆</a></td><td>'+esc(x.no_shows)+'</td><td>'+esc(x.block_new_bookings?"禁止新預約":x.blacklisted?"觀察名單":"正常")+'</td></tr>').join("")+'</table></div>'+
+      '<div class="scroll"><table class="rows"><tr><th>顧客</th><th>歷史預約</th><th>有效訂單</th><th>訂餐金額</th><th>未到店</th><th>狀態</th></tr>'+
+      staffState.staffCustomerBook.slice(0,40).map(x=>'<tr><td>'+esc(x.name||"LINE 顧客")+'</td><td><a class="customer-history-link" href="#customer-history" data-customer-history-id="'+esc(x.id)+'" aria-label="查看 '+esc(x.name||"LINE 顧客")+' 的所有歷史預約">'+esc(x.bookings)+' 筆</a></td><td>'+esc(x.orders||0)+'</td><td>NT$ '+esc(Number(x.order_amount||0).toLocaleString("zh-TW"))+'</td><td>'+esc(x.no_shows)+'</td><td>'+esc(x.block_new_bookings?"禁止新預約":x.blacklisted?"觀察名單":"正常")+'</td></tr>').join("")+'</table></div>'+
       '<label for="customer-flag-picker">選擇顧客</label><select id="customer-flag-picker" class="field">'+
         staffState.staffCustomerBook.map(x=>'<option value="'+esc(x.id)+'" '+(selectedFlag?.id===x.id?"selected":"")+'>'+esc(x.name||"LINE 顧客")+' · '+esc(x.bookings)+' 筆預約'+(Number(x.no_shows)>0?" · 未到 "+esc(x.no_shows)+" 次":"")+'</option>').join("")+'</select>'+
       field("顧客標籤（逗號分隔，最多 10 個）","customer-flag-tags",(selectedFlag?.tags||[]).join("、"))+
@@ -90,7 +91,7 @@ export function renderStaffSettings({t,isManager,html}){
       '<label class="checklist"><input id="customer-flag-blacklisted" type="checkbox" '+(selectedFlag?.blacklisted?"checked":"")+'>標記黑名單／未到店警示</label>'+
       '<label class="checklist"><input id="customer-flag-block" type="checkbox" '+(selectedFlag?.block_new_bookings?"checked":"")+'>禁止此顧客建立新的預約</label>'+
       '<div class="staff-actionbar">'+btn("儲存顧客標籤與限制","save-customer-flags","primary")+'</div>':
-      '<p class="muted">本店目前還沒有可建立顧客簿的預約資料。</p>')):"")],
+      '<p class="muted">本店目前沒有預約或訂餐顧客資料。</p>')):"")],
 ["public",(isManager?box("門市公告與照片",
     '<p class="small">可以發布公告、價目表連結及最多 8 張可橫向滑動的照片。請使用可公開瀏覽的 HTTPS 圖片網址，勿貼個資或私密連結。</p>'+
     (staffState.staffAnnouncements.length?staffState.staffAnnouncements.map(a=>
@@ -130,7 +131,7 @@ export function renderStaffSettings({t,isManager,html}){
     '<p class="small">新門市預設勾選公開；若取消勾選，仍可透過專屬預約網址使用服務。</p>'+
     '<p class="small">通知將依本店已連接的 LINE 官方帳號設定提供。</p>'+
     '<div style="margin-top:12px">'+btn("儲存公開設定","save-directory","primary")+'</div>'):"")],
-["operations",box("顧客專屬網址（電腦與手機皆可使用）",'<p class="small">叫號看板網址固定顯示；抽號與預約網址依上方服務開關即時顯示，按下「儲存服務開關」後正式生效。</p>'+serviceLink("board","叫號看板網址",true)+serviceLink("queue","抽號網址",!!serviceModules.queue)+serviceLink("reserve","預約網址",!!serviceModules.reservation)+serviceLink("order","點餐網址",!!pickupState.staff?.settings?.enabled))]];
+["operations",box("顧客專屬網址（電腦與手機皆可使用）",'<p class="small">叫號看板網址固定顯示；抽號與預約網址依上方服務開關即時顯示，按下「儲存服務開關」後正式生效。</p>'+serviceLink("board","叫號看板網址",true)+serviceLink("pickup-board","取餐進度看板網址",true)+serviceLink("queue","抽號網址",!!serviceModules.queue)+serviceLink("reserve","預約網址",!!serviceModules.reservation)+serviceLink("order","點餐網址",!!pickupState.staff?.settings?.enabled))]];
   const section=staffState.settingsSection||"profile";
   const choices=[
    ["profile","店家資料"],["operations","營業與預約"],["sessions","場次與窗口"],
