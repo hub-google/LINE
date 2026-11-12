@@ -608,7 +608,7 @@ body[data-portal="staff"] .customer-history-link:focus-visible{
 .settings-hub-head h2 { margin: 0 0 5px; font-size: 1.45rem; }
 .settings-hub-head p { margin: 0; }
 .settings-hub-tabs {
- display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 22px;
+ display: flex; flex-wrap: nowrap; gap: 8px; margin: 0 0 22px; overflow-x: auto; -webkit-overflow-scrolling: touch;
  padding: 10px; border-radius: 16px;
  background: color-mix(in srgb, var(--surface, #ffffff) 90%, #8052aa 10%);
  border: 1px solid #e9d8f4;
