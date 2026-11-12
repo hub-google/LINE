@@ -224,11 +224,11 @@ try{
     assert.ok(layout.items.every(r=>r.width>150&&r.left>=layout.panel.left&&r.right<=layout.panel.right),'Account buttons must stay inside the panel');
    }
    if(name==='home.html'||name.startsWith('directory.html')){
+    await page.waitForFunction(()=>{const el=document.querySelector('.site-auth-login');return !!el&&getComputedStyle(el,'::before').backgroundImage.includes('line-app-icon.svg')},null,{timeout:15000});
     const logo=await page.locator('.site-auth-login').first().evaluate(el=>{
      const css=getComputedStyle(el,'::before');
      return {image:css.backgroundImage,width:parseFloat(css.width),height:parseFloat(css.height)};
     });
-    console.log('LINE icon diagnostics:',width,name,JSON.stringify(await page.locator('.site-auth-login').first().evaluate(el=>({tag:el.tagName,html:el.outerHTML,display:getComputedStyle(el).display,ancestor:el.parentElement?.outerHTML.slice(0,250),pseudo:{image:getComputedStyle(el,'::before').backgroundImage,content:getComputedStyle(el,'::before').content,display:getComputedStyle(el,'::before').display}}))));
     assert.match(logo.image,/line-app-icon\.svg/,'LINE login must display the original icon');
     assert.ok(logo.width>=20&&logo.height>=20,'LINE icon must remain visible at all widths');
     const icon=await page.evaluate(async()=>{
