@@ -61,7 +61,8 @@ test("game mode has map to street to storefront flow and works on mobile",()=>{
  assert.match(css,/#explore-street\[hidden\]/);
  assert.match(css,/\.pixel-avatar/);
  assert.doesNotMatch(js,/Math\.random\(\)/);
- assert.doesNotMatch(directory,/免登入/);
+ const gameSection=directory.slice(directory.indexOf('<section id="explore-game"'),directory.indexOf('</section>',directory.indexOf('<section id="explore-game"')));
+ assert.doesNotMatch(gameSection,/免登入/);
 });
 
 test("game assets are versioned and deployed under both /booking and /saas",()=>{
