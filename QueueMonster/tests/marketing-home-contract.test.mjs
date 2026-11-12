@@ -145,68 +145,88 @@ test("homepage SEO stays in metadata, provides meaningful structured data, and p
 });
 
 
-test("four-scenario login-free demo is versioned and deployed to Pages",()=>{
+test("demo uses actual product styles, matches real customer/merchant layouts and is Pages published",()=>{
  const html=read("saas/demo.html");
+ const source=read("saas/assets/demo/real-flow.js");
  assert.match(html,/meta name="line-saas-build" content="__LINE_SAAS_BUILD__"/);
  assert.match(html,/version-watch\.js\?build=__LINE_SAAS_BUILD__/);
+ for(const css of ["assets/index/page.css","booking-theme.css","monster-world.css"]) assert.ok(html.includes(css),"missing production stylesheet "+css);
+ assert.match(html,/assets\/demo\/real-flow\.js/);
  assert.match(build,/"demo\.html"/);
  assert.match(publish,/home\.html demo\.html board\.html/);
  assert.match(landing,/href="\.\/demo\.html"/);
  for(const id of ["breakfast","salon","repair","clinic"])assert.match(html,new RegExp('data-scene="'+id+'"'));
- for(const name of ["早餐店","美髮店","維修店","診所","顧客端","店員端","接單","待取","拒單","已報到","過號"])assert.ok(html.includes(name),"missing demo: "+name);
- const source=html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
- assert.ok(source,"demo interaction script missing");
+ for(const name of ["早餐店","美髮店","維修店","診所","顧客端","店家端"])assert.ok(html.includes(name),"missing scenario "+name);
+ assert.doesNotMatch(html,/店員端/);
+ for(const originalClass of ["customer-shop-identity","customer-shop-toolbar","customer-layout","staff-record","staff-picker","side-item","unit-card-grid","queue-board","staff-actionbar"]){
+  assert.ok(source.includes(originalClass),"demo missing production markup class "+originalClass);
+ }
+ for(const action of ["order-submit","reserve-submit","take-number","order-status","next","recall","toggle-notify","reset"])assert.ok(source.includes(action),"missing demo action "+action);
  const syntax=spawnSync(process.execPath,["--check"],{input:source,encoding:"utf8"});
  assert.equal(syntax.status,0,syntax.stderr);
- for(const prohibited of ["localStorage","sessionStorage","XMLHttpRequest","createClient(","fetch(","line-bridge","so_staff_action"])assert.ok(!source.includes(prohibited),"demo must not access production: "+prohibited);
+ for(const prohibited of ["localStorage","sessionStorage","XMLHttpRequest","createClient(","fetch(","line-bridge","so_staff_action"])assert.ok(!source.includes(prohibited),"demo accesses production: "+prohibited);
+ assert.match(source,/LINE 通知示意/);
+ assert.match(source,/取號成功/);
+ assert.match(source,/預約成功/);
+ assert.match(source,/輪到您的號碼/);
+ assert.match(html,/不是真實 LINE 推播|模擬/);
 });
 
-test("demo guest and staff interactions work on isolated in-memory state",()=>{
- const html=read("saas/demo.html");
- const source=html.match(/<script>([\s\S]*?)<\/script>/)[1];
+test("real-flow demo reproduces guest creation, merchant status changes and LINE preview without backend",()=>{
+ const source=read("saas/assets/demo/real-flow.js");
  const handlers={},elements=new Map();
- const el=(id)=>{if(!elements.has(id))elements.set(id,{id,value:"",textContent:"",innerHTML:"",hidden:false,classList:{toggle(){}},setAttribute(){}});return elements.get(id);};
- const doc={
-  getElementById:el,
-  querySelectorAll:()=>[],
-  addEventListener:(type,callback)=>{handlers[type]=callback;}
+ const el=id=>{
+  if(!elements.has(id))elements.set(id,{id,value:"",textContent:"",innerHTML:"",hidden:false,classList:{toggle(){}},setAttribute(){},scrollIntoView(){}});
+  return elements.get(id);
  };
- runInNewContext(source,{document:doc});
+ const doc={
+  getElementById:el,querySelectorAll:()=>[],
+  addEventListener:(name,cb)=>{handlers[name]=cb}
+ };
+ runInNewContext(source,{document:doc,Intl,Date});
  const click=(selector,data)=>handlers.click({target:{closest:s=>s===selector?{dataset:data}:null}});
- const submit=(type)=>handlers.submit({target:{closest:s=>s==="form[data-form]"?{dataset:{form:type}}:null},preventDefault(){}});
- assert.match(el("demo-app").innerHTML,/火腿蛋吐司/);
- el("b-name").value="小明";el("b-item").value="培根蛋餅";el("b-qty").value="2";el("b-time").value="08:00";
- submit("breakfast");
- assert.match(el("notice").textContent,/B003/);
+ const change=(data)=>handlers.change({target:data});
+ assert.match(el("root").innerHTML,/首頁/);
+ click("[data-tab]",{tab:"order"});
+ assert.match(el("root").innerHTML,/選擇餐點/);
+ click("[data-act]",{act:"qty",id:"egg",delta:"1"});
+ click("[data-act]",{act:"review-order"});
+ assert.match(el("root").innerHTML,/請核對送出前的訂餐內容/);
+ click("[data-act]",{act:"order-submit"});
+ assert.match(el("root").innerHTML,/B003/);
+ assert.match(el("notifications").innerHTML,/訂餐已送出/);
  click("[data-role]",{role:"staff"});
- assert.match(el("demo-app").innerHTML,/小明/);
- click("[data-action]",{action:"order-status",id:"B003",value:"接單"});
- assert.match(el("demo-app").innerHTML,/B003[\s\S]*?接單/);
- click("[data-action]",{action:"order-status",id:"B003",value:"拒單"});
- assert.match(el("notice").textContent,/拒單/);
+ assert.match(el("root").innerHTML,/取餐訂單管理/);
+ click("[data-act]",{act:"order-status",id:"B003",value:"ACCEPTED"});
+ assert.match(el("notifications").innerHTML,/已接單/);
+ click("[data-act]",{act:"order-status",id:"B003",value:"REJECTED"});
+ assert.match(el("root").innerHTML,/已拒單/);
  click("[data-scene]",{scene:"repair"});
- el("r-name").value="維修顧客";el("r-issue").value="手機維修";submit("repair");
- assert.match(el("notice").textContent,/R015/);
+ click("[data-tab]",{tab:"queue"});
+ click("[data-act]",{act:"take-number"});
+ assert.match(el("root").innerHTML,/R015/);
+ assert.match(el("notifications").innerHTML,/取號成功/);
  click("[data-role]",{role:"staff"});
- click("[data-action]",{action:"repair-next"});
- assert.match(el("notice").textContent,/R013/);
- click("[data-action]",{action:"repair-status",id:"R013",value:"過號"});
- assert.match(el("notice").textContent,/過號/);
- click("[data-action]",{action:"repair-status",id:"R013",value:"等候中"});
- assert.match(el("notice").textContent,/等候中/);
- click("[data-scene]",{scene:"clinic"});
- el("c-name").value="試用病患";el("c-room").value="1診";el("c-time").value="今天 09:30";submit("clinic");
- assert.match(el("notice").textContent,/P003/);
- click("[data-role]",{role:"staff"});
- click("[data-action]",{action:"clinic-checkin",id:"P003"});
- assert.match(el("notice").textContent,/C1-003/);
- click("[data-action]",{action:"clinic-next"});
- assert.match(el("notice").textContent,/C1-003/);
+ click("[data-act]",{act:"next"});
+ assert.match(el("notifications").innerHTML,/輪到您的號碼/);
+ change({dataset:{statusKind:"ticket",id:"R013"},value:"PASSED",matches:s=>s==="[data-status-kind]"});
+ assert.match(el("root").innerHTML,/已過號/);
  click("[data-scene]",{scene:"salon"});
- el("s-name").value="試用預約";el("s-service").value="洗剪";el("s-stylist").value="Ken";el("s-time").value="明天 10:00";submit("salon");
- assert.match(el("notice").textContent,/S003/);
+ click("[data-tab]",{tab:"reserve"});
+ click("[data-act]",{act:"unit",value:"Ken"});
+ click("[data-act]",{act:"review-reserve"});
+ click("[data-act]",{act:"reserve-submit"});
+ assert.match(el("notifications").innerHTML,/預約成功/);
  click("[data-role]",{role:"staff"});
- assert.match(el("demo-app").innerHTML,/試用預約/);
- click("[data-action]",{action:"salon-status",id:"S003",value:"已完成"});
- assert.match(el("notice").textContent,/已完成/);
+ assert.match(el("root").innerHTML,/預約管理/);
+ click("[data-scene]",{scene:"clinic"});
+ click("[data-tab]",{tab:"reserve"});
+ click("[data-act]",{act:"unit",value:"2診"});
+ click("[data-act]",{act:"review-reserve"});
+ click("[data-act]",{act:"reserve-submit"});
+ assert.match(el("root").innerHTML,/P003/);
+ click("[data-role]",{role:"staff"});
+ change({dataset:{statusKind:"reservation",id:"P003"},value:"CHECKED_IN",matches:s=>s==="[data-status-kind]"});
+ assert.match(el("root").innerHTML,/C2-003/);
+ assert.match(el("notifications").innerHTML,/已完成報到/);
 });
