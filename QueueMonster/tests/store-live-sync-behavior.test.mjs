@@ -89,3 +89,17 @@ test("shared live-sync receives events and falls back to API on the 201st connec
     }
   }
 });
+
+test("no-OA shops are skipped and HTTP backup is exactly five seconds",()=>{
+  const notices=readFileSync(new URL("../supabase/functions/line-bridge/index.ts",import.meta.url),"utf8");
+  const board=readFileSync(new URL("../saas/assets/board/main.js",import.meta.url),"utf8");
+  const pickup=readFileSync(new URL("../saas/assets/pickup-board/main.js",import.meta.url),"utf8");
+  const progress=readFileSync(new URL("../saas/app/queue-progress.js",import.meta.url),"utf8");
+  assert.match(notices,/\["MERCHANT_OA_NOT_CONNECTED", "CUSTOMER_NOT_LINKED"/);
+  assert.match(raw,/fallbackMs=5000,reconcileMs=60000/);
+  assert.match(pickup,/fallbackMs:5000,reconcileMs:60000/);
+  for(const source of [raw,board,pickup,progress])assert.doesNotMatch(source,/每 10 秒|10s API/);
+  assert.match(board,/每 5 秒更新一次叫號/);
+  assert.match(pickup,/每 5 秒備援同步/);
+  assert.match(progress,/叫號進度約每 5 秒更新一次/);
+});

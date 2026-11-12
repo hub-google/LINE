@@ -178,7 +178,7 @@ test("public pickup board is readonly, shares realtime fallback and never contai
   assert.ok(!sql.includes(forbidden),"pickup public board exposes "+forbidden);
  assert.match(html,/version-watch\.js/);
  assert.match(js,/createStoreLiveSync/);
- assert.match(js,/fallbackMs:10000/);
+ assert.match(js,/fallbackMs:5000/);
  assert.match(source("../.github/scripts/build-line-saas.mjs"),/pickup-board\.html/);
 });
 

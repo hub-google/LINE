@@ -3,7 +3,7 @@
 // Broadcasts only invalidate a store snapshot; consumers use existing RPCs.
 export function createStoreLiveSync({
   client,slug,refresh,isActive=()=>true,canRefresh=()=>true,onModeChange=()=>{},
-  fallbackMs=10000,reconcileMs=60000
+  fallbackMs=5000,reconcileMs=60000
 }){
   const valid=/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug||"");
   let running=false,connected=false,channel=null,epoch=0,failures=0;
@@ -36,7 +36,7 @@ export function createStoreLiveSync({
   }
   function fail(reason,error){
     if(!running)return;
-    console.warn("Store live sync unavailable; using 10s API:",reason,errorText(error));
+    console.warn("Store live sync unavailable; using 5s API:",reason,errorText(error));
     close();retry(error);
   }
   async function read(reason="event"){

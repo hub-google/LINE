@@ -696,7 +696,7 @@ async function dispatchOutboxItem(
   // Permanent recipient failures must not consume 14 retries and six-hour polling slots.
   // A later LINE account link/follow only affects future events, not an already-stale push.
   const reason = String(data.reason || data.error || "DELIVERY_FAILED").slice(0, 150);
-  if (result.ok && ["CUSTOMER_NOT_LINKED", "OA_CANNOT_REACH_CUSTOMER", "REPLY_REQUIRED"].includes(reason)) {
+  if (result.ok && ["MERCHANT_OA_NOT_CONNECTED", "CUSTOMER_NOT_LINKED", "OA_CANNOT_REACH_CUSTOMER", "REPLY_REQUIRED"].includes(reason)) {
     return { status: "SKIPPED", reason };
   }
   // HTTP 429, network problems and a temporarily unavailable OA profile stay retryable.
