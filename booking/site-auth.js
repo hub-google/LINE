@@ -34,14 +34,35 @@ function draw(status,message){
   const caption=el("span","site-auth-name","正在確認登入狀態");
   caption.setAttribute("role","status");holder.append(caption);
  }else if(status==="linked"){
-  const name=el("span","site-auth-name");
+  const profile=el("details","site-auth-profile");
+  const name=el("summary","site-auth-name");
   const avatar=el("span","site-auth-avatar","L");
   const label=el("span","site-auth-label",currentIdentity?.displayName||"LINE 使用者");
   name.title=currentIdentity?.displayName||"LINE 使用者";
+  name.setAttribute("aria-label","開啟帳號選單："+(currentIdentity?.displayName||"LINE 使用者"));
   name.append(avatar,label);
+  const menu=el("div","site-auth-menu");
+  menu.append(el("div","site-auth-menu-heading","帳號設定"));
+  menu.append(el("div","site-auth-menu-email",currentIdentity?.displayName||"LINE 使用者"));
+  const change=el("button","site-auth-menu-item",
+   currentIdentity?.needsPasswordSetup?"設定登入密碼":"修改密碼");
+  change.type="button";change.disabled=busy;
+  change.addEventListener("click",()=>{profile.open=false;showPasswordDialog()});
+  menu.append(change);
+  profile.append(name,menu);
   const logout=el("button","site-auth-button","登出");
   logout.type="button";logout.disabled=busy;logout.addEventListener("click",()=>{void logOut()});
-  holder.append(name,logout);
+  if(currentIdentity?.canChangePassword){
+   holder.append(profile,logout);
+  }else{
+   // Google and LINE accounts have no Queue Monster password to change.
+   const plain=el("span","site-auth-name");
+   plain.title=currentIdentity?.displayName||"已登入";
+   const icon=el("span","site-auth-avatar","L");
+   const text=el("span","site-auth-label",currentIdentity?.displayName||"已登入");
+   plain.append(icon,text);
+   holder.append(plain,logout);
+  }
  }else{
   const mode=portalMode();
   const login=el("button",mode==="customer"?"site-auth-button site-auth-login":"site-auth-button");
@@ -57,6 +78,109 @@ function draw(status,message){
  }
  if(message){const hint=el("div","site-auth-feedback",message);hint.setAttribute("role","alert");holder.append(hint);}
  mount.append(holder);
+}
+// Account menu is shared by marketing, customer, staff and headquarters headers.
+document.addEventListener("pointerdown",event=>{
+ const open=mount.querySelector(".site-auth-profile[open]");
+ if(open&&!open.contains(event.target))open.open=false;
+});
+document.addEventListener("keydown",event=>{
+ if(event.key!=="Escape")return;
+ const open=mount.querySelector(".site-auth-profile[open]");
+ if(open){open.open=false;open.querySelector("summary")?.focus();}
+});
+
+function showPasswordDialog(){
+ if(busy||currentIdentity?.type!=="operator"||!currentIdentity?.canChangePassword)return;
+ document.querySelector(".site-auth-password-backdrop")?.remove();
+ const originalFocus=document.activeElement;
+ const backdrop=el("div","site-auth-password-backdrop");
+ const dialog=el("section","site-auth-password-dialog");
+ dialog.setAttribute("role","dialog");
+ dialog.setAttribute("aria-modal","true");
+ dialog.setAttribute("aria-labelledby","site-auth-password-title");
+ const head=el("div","site-auth-password-head");
+ const title=el("h2","site-auth-password-title",currentIdentity?.needsPasswordSetup?"設定登入密碼":"修改密碼");
+ title.id="site-auth-password-title";
+ const dismiss=el("button","site-auth-password-close","×");
+ dismiss.type="button";dismiss.setAttribute("aria-label","關閉修改密碼");
+ head.append(title,dismiss);
+ const note=el("p","site-auth-password-hint","為了帳號安全，請設定至少 8 個字元的新密碼。");
+ const form=el("form","site-auth-password-form");
+ function addField(labelText,autocomplete){
+  const label=el("label","site-auth-password-field");
+  const text=el("span","",labelText);
+  const input=el("input","site-auth-password-input");
+  input.type="password";input.required=true;input.minLength=8;
+  input.autocomplete=autocomplete;
+  label.append(text,input);form.append(label);
+  return input;
+ }
+ const password=addField("新密碼","new-password");
+ const confirmation=addField("確認新密碼","new-password");
+ const feedback=el("p","site-auth-password-feedback");
+ feedback.setAttribute("role","status");feedback.setAttribute("aria-live","polite");
+ const actions=el("div","site-auth-password-actions");
+ const cancel=el("button","site-auth-password-secondary","取消");
+ cancel.type="button";
+ const save=el("button","site-auth-password-primary","儲存新密碼");
+ save.type="submit";
+ actions.append(cancel,save);form.append(feedback,actions);
+ dialog.append(head,note,form);backdrop.append(dialog);
+ document.body.append(backdrop);
+ function close(){
+  if(cancel.disabled)return;
+  backdrop.remove();
+  document.removeEventListener("keydown",onKey);
+  if(originalFocus?.isConnected)originalFocus.focus();
+ }
+ function onKey(event){
+  if(event.key==="Escape"){event.preventDefault();close();return}
+  if(event.key!=="Tab")return;
+  const focusables=[...dialog.querySelectorAll("button:not([disabled]),input:not([disabled])")];
+  if(!focusables.length)return;
+  if(event.shiftKey&&document.activeElement===focusables[0]){
+   event.preventDefault();focusables[focusables.length-1].focus();
+  }else if(!event.shiftKey&&document.activeElement===focusables[focusables.length-1]){
+   event.preventDefault();focusables[0].focus();
+  }
+ }
+ document.addEventListener("keydown",onKey);
+ dismiss.addEventListener("click",close);
+ cancel.addEventListener("click",close);
+ backdrop.addEventListener("pointerdown",event=>{if(event.target===backdrop)close()});
+ form.addEventListener("submit",event=>{event.preventDefault();void(async()=>{
+  feedback.classList.remove("error","success");
+  if(password.value.length<8){feedback.textContent="新密碼至少需要 8 個字元。";feedback.classList.add("error");return}
+  if(password.value!==confirmation.value){feedback.textContent="兩次輸入的密碼不一致。";feedback.classList.add("error");return}
+  save.disabled=true;cancel.disabled=true;dismiss.disabled=true;
+  feedback.textContent="正在驗證帳號並更新密碼…";
+  try{
+   // Always revalidate the session before applying a sensitive account change.
+   const verified=await operator.auth.getUser();
+   if(verified.error||!verified.data?.user||verified.data.user.id!==currentIdentity?.userId)
+    throw Error("登入狀態已失效，請重新登入後再試。");
+   const liveProvider=verified.data.user.app_metadata?.provider;
+   const hasEmailProvider=liveProvider==="email" ||
+    (!liveProvider && verified.data.user.identities?.some(item=>item.provider==="email")===true);
+   if(!hasEmailProvider)throw Error("此帳號以 Google 或 LINE 登入，沒有需要修改的平台密碼。");
+   const result=await operator.auth.updateUser({password:password.value});
+   if(result.error)throw result.error;
+   password.value="";confirmation.value="";
+   feedback.classList.add("success");
+   feedback.textContent="密碼已更新成功。下次登入請使用新密碼。";
+   save.textContent="已更新";save.disabled=true;
+   cancel.textContent="完成";cancel.disabled=false;dismiss.disabled=false;
+  }catch(error){
+   const detail=String(error?.message||"");
+   feedback.classList.add("error");
+   feedback.textContent=/reauth|nonce|authentication/i.test(detail)
+    ?"請先完成安全驗證。如無法更新，可從登入頁使用「忘記密碼」重設。"
+    :(/password/i.test(detail)?"密碼不符合安全規則，請設定較長且不同於舊密碼的組合。":"修改密碼失敗："+(detail||"請稍後重試。"));
+   save.disabled=false;cancel.disabled=false;dismiss.disabled=false;
+  }
+ })()});
+ password.focus();
 }
 function isReturnAllowed(candidate){
  if(typeof candidate!=="string"||!candidate||candidate.length>600)return false;
@@ -112,7 +236,17 @@ async function getIdentity(){
  }
  const staffUser=operatorSession?.user;
  if(staffUser&&!staffUser.is_anonymous){
-  operatorIdentity={type:"operator",displayName:staffUser.email||"商家使用者",client:operator};
+  // Supabase Auth exposes the account's provider in app_metadata.
+  // The Google OAuth provider does not create a Queue Monster password.
+  const provider=staffUser.app_metadata?.provider;
+  const emailAccount=provider==="email" ||
+   (!provider && staffUser.identities?.some(item=>item.provider==="email")===true);
+  operatorIdentity={
+   type:"operator",displayName:staffUser.email||"商家使用者",
+   userId:staffUser.id,client:operator,
+   canChangePassword:emailAccount,
+   needsPasswordSetup:emailAccount && staffUser.user_metadata?.queue_monster_password_pending===true
+  };
  }
  if(!preferOperator)return lineIdentity;
  if(!operatorIdentity)return null;
