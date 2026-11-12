@@ -173,7 +173,7 @@ export function renderScheduleSettings(isManager){
   '<select id="schedule-special-mode" class="field">'+
    [["CLOSED","不營業（休假／裝修）"],["TEMPLATE","改套用其他場次模板"],["CUSTOM","臨時調整營業時間"]].map(([v,label])=>
     '<option value="'+v+'"'+(e.mode===v?" selected":"")+'>'+label+'</option>').join("")+'</select>'+
-  '<div data-schedule-template-choice style="'+(e.mode==="TEMPLATE"?"":"display:none;")+'">'+
+  '<div data-schedule-template-choice style="'+(e.mode==="CLOSED"?"display:none;":"")+'">'+
    '<label for="schedule-special-template">套用場次模板</label>'+
    '<select id="schedule-special-template" class="field">'+templateOptions(d.templates,e.template_key)+'</select></div>'+
    '<div data-schedule-custom style="'+(e.mode==="CUSTOM"?"":"display:none;")+'">'+
