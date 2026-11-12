@@ -1,4 +1,5 @@
 import test from "node:test";
+import {readFileSync as rawReadFileSync} from "node:fs";
 import assert from "node:assert/strict";
 import {readFileSync} from "./helpers/source-fs.mjs";
 import {fileURLToPath} from "node:url";
@@ -146,7 +147,7 @@ test("homepage SEO stays in metadata, provides meaningful structured data, and p
 
 
 test("demo uses actual product styles, matches real customer/merchant layouts and is Pages published",()=>{
- const html=read("saas/demo.html");
+ const html=rawReadFileSync(path.join(root,"saas/demo.html"),"utf8");
  const source=read("saas/assets/demo/real-flow.js");
  assert.match(html,/meta name="line-saas-build" content="__LINE_SAAS_BUILD__"/);
  assert.match(html,/version-watch\.js\?build=__LINE_SAAS_BUILD__/);
@@ -180,6 +181,7 @@ test("real-flow demo reproduces guest creation, merchant status changes and LINE
   return elements.get(id);
  };
  const doc={
+  body:{dataset:{}},
   getElementById:el,querySelectorAll:()=>[],
   addEventListener:(name,cb)=>{handlers[name]=cb}
  };
