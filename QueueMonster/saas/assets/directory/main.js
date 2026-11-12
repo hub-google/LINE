@@ -6,7 +6,7 @@ const SB_URL=SUPABASE_URL;
 const SB_KEY=SUPABASE_PUBLISHABLE_KEY;
 const bridge=SB_URL+"/functions/v1/line-bridge?action=config";
 const sb=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"line-saas-customer-session-v2"}});
-const params=new URLSearchParams(location.search),mode=["search","queue","mine","game"].includes(params.get("mode"))?params.get("mode"):"search";
+const params=new URLSearchParams(location.search),mode=["search","queue","mine","game","last-board"].includes(params.get("mode"))?params.get("mode"):"search";
 // LINE OA service links open the matching real-store filter, never a demo or blank search.
 const requestedService=mode==="search"&&["預約","取號","點餐","看板"].includes(params.get("service"))?params.get("service"):"";
 if(requestedService)document.getElementById("explore-service").value=requestedService;
@@ -30,12 +30,14 @@ function updateFilterSummary(){
 });
 updateFilterSummary();
 
-document.getElementById("tab-"+(mode==="game"?"search":mode)).classList.add("active");
+document.getElementById("tab-"+(mode==="game"?"search":mode==="last-board"?"mine":mode)).classList.add("active");
 let all=[],popular=[],searchResults=[],searchTotal=0,searchPage=1;
 let searchLoading=false,searchError="",searchRequest=0,searchTimer=null;
 let liffId="";
 let mineIdentityState="loading";
-const searchCriteria=()=>mode!=="mine"&&(
+let lastBoardResult=null;
+const needsIdentity=mode==="mine"||mode==="last-board";
+const searchCriteria=()=>!needsIdentity&&(
  Boolean(els.keyword.value.trim())||
  document.getElementById("explore-category").value!=="全部"||
  document.getElementById("explore-area").value!=="全部"||
@@ -56,8 +58,9 @@ function setupExploreFilters(){
  };
  options("explore-category",[...new Set(all.map(x=>x.category||"其他"))].sort((a,b)=>a.localeCompare(b,"zh-Hant")),"全部類別");
  options("explore-area",[...new Set(all.map(areaOf))].sort((a,b)=>a.localeCompare(b,"zh-Hant")),"所有地區");
- document.querySelector(".explore-view-switch").hidden=mode==="mine";
- document.getElementById("explore-filters").classList.toggle("hidden",mode==="mine");
+ document.querySelector(".explore-view-switch").hidden=needsIdentity;
+ document.getElementById("explore-filters").classList.toggle("hidden",needsIdentity);
+ document.querySelector(".search-wrap")?.classList.toggle("hidden",mode==="last-board");
 }
 
 function e(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
@@ -71,6 +74,38 @@ function badges(t){
  (t.oa_mode==="PLATFORM"?'<span class="badge">平台 LINE 服務</span>':"");
 }
 function render(){
+ if(mode==="last-board"){
+  const heading=document.getElementById("results-heading");
+  heading.textContent="上次預約門市的叫號看板";
+  document.getElementById("result-pages").classList.add("hidden");
+  let message="";
+  let count="";
+  if(mineIdentityState==="loading"){
+    count="查詢中";
+    message='<strong>正在確認 LINE 身分</strong><p>取得最近一次預約後，會自動前往該店的叫號看板。</p>';
+  }else if(mineIdentityState==="guest"||lastBoardResult?.status==="LOGIN_REQUIRED"){
+    count="需要 LINE 登入";
+    message='<strong>請先使用 LINE 登入</strong><p>只有完成 LINE 身分驗證，才能安全地找出你的最近一次預約門市。</p>'+
+      '<p><a class="btn" href="./?view=customer&tab=mine&site_login=1&site_return=directory.html%3Fmode%3Dlast-board">使用 LINE 登入並繼續</a></p>';
+  }else if(mineIdentityState==="error"){
+    count="暫時無法查詢";
+    message='<strong>目前無法查詢預約紀錄</strong><p>請稍後重新整理，或從我的紀錄選擇店家。</p>';
+  }else if(lastBoardResult?.status==="BOARD_UNAVAILABLE"){
+    count="該店未開啟叫號";
+    message='<strong>'+e(lastBoardResult.name||"最近預約的店家")+'目前未開放叫號看板</strong><p>這間店可能只提供線上預約；請到我的紀錄查看預約資訊。</p>';
+  }else if(lastBoardResult?.status==="NO_BOOKING"){
+    count="尚無有效預約";
+    message='<strong>目前找不到可對應的預約紀錄</strong><p>可以先搜尋店家預約，再從這裡快速查看該店看板。</p>';
+  }else{
+    count="請重新查詢";
+    message='<strong>沒有找到可開啟的看板</strong><p>請從我的紀錄查看門市，或搜尋提供叫號的店家。</p>';
+  }
+  document.getElementById("result-count").textContent=count;
+  els.results.innerHTML='<div class="empty" role="status">'+message+
+    '<p><a class="btn secondary" href="./directory.html?mode=mine">我的紀錄</a> '+
+    '<a class="btn secondary" href="./directory.html?mode=search">搜尋店家</a></p></div>';
+  return;
+ }
  if(mode==="mine"&&mineIdentityState!=="ready"){
   document.getElementById("results-heading").textContent="我的紀錄";
   document.getElementById("result-count").textContent=mineIdentityState==="loading"?"正在確認身分":mineIdentityState==="guest"?"請先登入 LINE":"目前無法取得紀錄";
@@ -268,7 +303,7 @@ document.addEventListener("click",async event=>{
  }
 });
 function publishGameDirectory(){
- if(mode==="mine")return;
+ if(needsIdentity)return;
  window.LineExploreGame?.setData({
   shops:all.map(shop=>({...shop,
     reserve_href:customerUrl(shop.slug,"reserve",shop.oa_mode),
@@ -280,7 +315,7 @@ function publishGameDirectory(){
 async function load(){
  // Render identity-loading before the first network request, not "popular stores".
  let identityTimer=null;
- if(mode==="mine"){
+ if(needsIdentity){
   render();
   identityTimer=setTimeout(()=>{
    if(mineIdentityState==="loading"){mineIdentityState="error";render();}
@@ -289,8 +324,10 @@ async function load(){
  try{
   // Parallelize LINE config and identity; guests can see the sign-in CTA without config.
   const confPromise=fetch(bridge,{cache:"no-store"}).then(r=>r.ok?r.json():{}).catch(()=>({}));
-  if(mode==="mine"){
-    els.intro.innerHTML='<strong>我的預約與取號紀錄</strong><p>查詢自己已綁定 LINE 身分的預約與號碼紀錄。</p>';
+  if(needsIdentity){
+    els.intro.innerHTML=mode==="last-board"?
+     '<strong>快速開啟上次預約的叫號看板</strong><p>以 LINE 身分確認最近一次有效預約；只有店家開放叫號時才會自動進入。</p>':
+     '<strong>我的預約與取號紀錄</strong><p>查詢自己已綁定 LINE 身分的預約與號碼紀錄。</p>';
     const s=await sb.auth.getSession();
     if(s.error)throw s.error;
     if(!s.data.session){const x=await sb.auth.signInAnonymously();if(x.error)throw x.error}
@@ -299,6 +336,17 @@ async function load(){
     if(!String(linked.data?.display_name||"").trim()){
       mineIdentityState="guest";
       all=[];
+    }else if(mode==="last-board"){
+      const {data,error}=await sb.rpc("so_my_last_booking_board");
+      if(error)throw error;
+      mineIdentityState="ready";
+      lastBoardResult=data||null;
+      if(lastBoardResult?.status==="FOUND"&&/^[a-z0-9][a-z0-9-]{2,39}$/.test(String(lastBoardResult.slug||""))){
+        const board=new URL("./board.html",location.href);
+        board.searchParams.set("merchant",lastBoardResult.slug);
+        location.replace(board.href);
+        return;
+      }
     }else{
       const {data,error}=await sb.rpc("so_my_merchant_activity");
       if(error)throw error;
@@ -336,7 +384,7 @@ async function load(){
   else render();
  }catch(error){
   console.warn("Store discovery unavailable",error);
-  if(mode==="mine"){mineIdentityState="error";render();}
+  if(needsIdentity){mineIdentityState="error";render();}
   els.intro.innerHTML='<strong>暫時無法取得店家資訊</strong><p>請稍後重新整理頁面。</p>';
   els.results.innerHTML='<div class="empty"><strong>資料暫時無法載入</strong><p>請稍後重新整理頁面。</p></div>';
  }finally{
