@@ -22,7 +22,9 @@ test("staff call gate checks only an outstanding CALLED ticket, not other ongoin
 
 test("front-end next call is not disabled for ARRIVED, ADMITTED or SERVING",()=>{
   assert.match(queue,/const active=openTickets\.find\(x=>x\.status==="CALLED"\)/);
-  assert.match(queue,/const canCall=!!waiting\.length&&!active/);
+  assert.match(queue,/const canCall=!!waiting\.length&&\(unitMode\?!!selected:!!t\.modules\.calling\)/);
+  const autoPass=read("supabase/migrations/20261112_queue_next_call_auto_pass.sql");
+  assert.match(autoPass,/auto_pass_before_next_call/);
   assert.match(staffView,/const active=openTickets\.find\(x=>x\.status==="CALLED"\)/);
   assert.match(queue,/服務中/);
 });
