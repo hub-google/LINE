@@ -1,0 +1,25 @@
+/* Optional signup CTA appears only after a successfully completed demo operation. */
+body.mobile-demo .demo-conversion[hidden]{display:none!important}
+body.mobile-demo .demo-conversion{position:fixed;right:22px;bottom:max(18px,env(safe-area-inset-bottom));z-index:60;display:flex;align-items:center;gap:15px;max-width:min(580px,calc(100vw - 32px));padding:17px 49px 17px 19px;border:1px solid #e1d4ea;border-radius:18px;background:#fff;box-shadow:0 15px 52px #2b203b30}
+body.mobile-demo .demo-conversion-copy{flex:1;min-width:0}
+body.mobile-demo .demo-conversion-copy span{display:block;color:#7552a0;font-size:11px;font-weight:900;margin-bottom:3px}
+body.mobile-demo .demo-conversion-copy strong{display:block;font-size:16px;line-height:1.4;color:#2d2638;font-weight:900}
+body.mobile-demo .demo-conversion-copy p{margin:4px 0 0;font-size:11px;line-height:1.5;color:#77707f}
+body.mobile-demo .demo-conversion-link{display:inline-flex;align-items:center;justify-content:center;gap:9px;flex:none;min-height:45px;padding:10px 15px;border-radius:11px;background:#62478c;color:#fff;font-weight:850;font-size:12px;white-space:nowrap}
+body.mobile-demo .demo-conversion-link:hover{background:#49336e}
+body.mobile-demo .demo-conversion-close{position:absolute;right:10px;top:8px;display:grid;place-items:center;width:29px;height:29px;border:0;border-radius:9px;background:transparent;color:#81788b;font-size:21px;line-height:1;cursor:pointer}
+body.mobile-demo .demo-conversion-close:hover{background:#f3eff7}
+@media(max-width:620px){
+ body.mobile-demo .demo-conversion{left:12px;right:12px;bottom:max(10px,env(safe-area-inset-bottom));max-width:none;padding:13px 38px 14px 14px;gap:10px;flex-wrap:wrap;border-radius:15px}
+ body.mobile-demo .demo-conversion-copy{flex:1 1 100%}
+ body.mobile-demo .demo-conversion-copy strong{font-size:15px}
+ body.mobile-demo .demo-conversion-copy p{font-size:11px}
+ body.mobile-demo .demo-conversion-link{width:100%;min-height:41px;font-size:13px}
+}
+
+/* Only shown to visitors who arrived from the anonymous interactive demo. */
+.demo-origin[hidden]{display:none!important}
+.demo-origin{margin:0 0 25px;padding:17px 18px;border:1px solid #e3d7ee;border-radius:15px;background:#f4eff9}
+.demo-origin span{display:block;color:#725293;font-size:12px;font-weight:850;letter-spacing:.015em}
+.demo-origin strong{display:block;margin:5px 0 0;color:#3b2d4c;font-size:17px;font-weight:900;line-height:1.5}
+.demo-origin p{margin:7px 0 0!important;font-size:13px!important;line-height:1.7;color:#736a7c!important}
