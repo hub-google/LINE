@@ -20,7 +20,7 @@ export function staffRender(){
  if(!staffState.staff){return box("企業員工後台",'<p class="muted">請先加入企業或由公司平台管理員核發邀請。'+(memberships.length?"請從下列企業進入：":"")+'</p>'+memberships.map(m=>'<p><a href="'+esc(sharedUiState.route("staff",m.slug))+'">'+esc(m.name)+'（'+esc(m.role)+'）→</a></p>').join("")+
     (authState.context?.invitations||[]).map(i=>'<div class="listline"><div>'+esc(i.tenant)+'－'+esc(i.role)+'</div>'+btn("接受邀請","accept-invite","primary",'data-id="'+esc(i.id)+'"')+'</div>').join("")); }
  if(["units","menu","branches"].includes(staffState.staffTab)){
-   staffState.settingsSection=({units:"sessions",menu:"catalog",branches:"branches"})[staffState.staffTab];
+   staffState.settingsSection=({units:"operations",menu:"catalog",branches:"profile"})[staffState.staffTab];
    staffState.staffTab="settings";
  }
  if(staffState.staff.tenant?.onboarding_complete===false)staffState.staffTab="settings";
@@ -33,7 +33,7 @@ export function staffRender(){
  nav("工作台","dashboard",staffState.staffTab,"staff")+nav("預約管理","bookings",staffState.staffTab,"staff")+
  nav("叫號管理","queue",staffState.staffTab,"staff")+nav("取餐訂單","orders",staffState.staffTab,"staff")+nav("預約日曆","calendar",staffState.staffTab,"staff")+
  '<div class="staff-side-label">營運管理</div>'+
- nav("營運分析","analytics",staffState.staffTab,"staff")+
+ nav("營運分析","analytics",staffState.staffTab,"staff")+nav("顧客管理","customers",staffState.staffTab,"staff")+
  nav("員工管理","members",staffState.staffTab,"staff")+ '<div class="staff-side-label">使用支援</div><a class="side-item guide-link" href="./merchant-center.html#guide">操作說明 ↗</a>';
  let html=(["bookings","queue"].includes(staffState.staffTab)?
   '<div class="staff-context-bar staff-context-compact"><div class="staff-history-controls">'+
@@ -64,6 +64,9 @@ export function staffRender(){
  }
  else if(staffState.staffTab==="settings"){
   html=renderStaffSettings({t,isManager,html});
+ }
+ else if(staffState.staffTab==="customers"){
+  html=renderStaffSettings({t,isManager,html,customersOnly:true});
  }
  return layout(t.onboarding_complete===false?"填寫店家資料":t.name,"企業員工營運後台",menu,html);
 }
