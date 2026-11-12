@@ -59,7 +59,7 @@ function isReusableLineIdentity(profile: ReusableLineIdentity | null, channelId:
 }
 async function reusablePlatformLineIdentity(db: ReturnType<typeof service>, userId: string, channelId: string) {
   if (!channelId) return null;
-  const {data:platform,error:platformError}=await db.from("so_platform_line_identities")
+  const {data:platform,error:platformError}=await db.from("qm_platform_line_identities")
     .select("line_sub,display_name,login_channel_id,updated_at")
     .eq("user_id",userId).maybeSingle();
   if(platformError)throw platformError;
@@ -67,7 +67,7 @@ async function reusablePlatformLineIdentity(db: ReturnType<typeof service>, user
 
   // The header deliberately recognizes a recent, verified shop identity.
   // The booking flow must recognize exactly the same trust boundary, too.
-  const {data:existingLinks,error:linksError}=await db.from("so_line_links")
+  const {data:existingLinks,error:linksError}=await db.from("qm_line_links")
     .select("line_sub,display_name,login_channel_id,updated_at")
     .eq("user_id",userId).eq("login_channel_id",channelId)
     .order("updated_at",{ascending:false}).limit(100);
@@ -306,10 +306,10 @@ async function serviceSessionNoticeLines(
   db: ReturnType<typeof service>, tenant: ShopInfo, sessionId?: string | null,
 ): Promise<string[]> {
   if (!sessionId) return [];
-  const { data: session } = await db.from("so_service_sessions").select("name,unit_id,start_time,end_time")
+  const { data: session } = await db.from("qm_service_sessions").select("name,unit_id,start_time,end_time")
     .eq("tenant_id",tenant.id).eq("id",sessionId).maybeSingle();
   if (!session) return [];
-  const { data: unit } = await db.from("so_booking_resources").select("name,group_label")
+  const { data: unit } = await db.from("qm_booking_resources").select("name,group_label")
     .eq("tenant_id",tenant.id).eq("id",session.unit_id).maybeSingle();
   return [
     "服務單位：" + [unit?.group_label,unit?.name].filter(Boolean).join(" · "),
@@ -328,18 +328,18 @@ async function ticketProgressNotice(
   const scope = (query: any) => ticket.service_session_id
     ? query.eq("service_session_id",ticket.service_session_id) : query;
   const [waitingBefore, activeCount, activeTicket, lastCalled] = await Promise.all([
-    scope(db.from("so_tickets").select("id", { count: "exact", head: true })
+    scope(db.from("qm_tickets").select("id", { count: "exact", head: true })
       .eq("tenant_id", tenant.id).eq("business_date", ticket.business_date)
       .eq("status", "WAITING").is("deleted_at", null)
       .lt("queue_joined_at",ticket.queue_joined_at || ticket.created_at)),
-    scope(db.from("so_tickets").select("id", { count: "exact", head: true })
+    scope(db.from("qm_tickets").select("id", { count: "exact", head: true })
       .eq("tenant_id", tenant.id).eq("business_date", ticket.business_date)
       .in("status", ["CALLED", "SERVING"]).is("deleted_at", null)),
-    scope(db.from("so_tickets").select("ticket_no,number_prefix,business_date")
+    scope(db.from("qm_tickets").select("ticket_no,number_prefix,business_date")
       .eq("tenant_id", tenant.id).eq("business_date", ticket.business_date)
       .in("status", ["CALLED", "SERVING"]).is("deleted_at", null)
       .order("updated_at", { ascending: false }).limit(1).maybeSingle()),
-    scope(db.from("so_tickets").select("ticket_no,number_prefix,last_called_at")
+    scope(db.from("qm_tickets").select("ticket_no,number_prefix,last_called_at")
       .eq("tenant_id", tenant.id).eq("business_date", ticket.business_date).is("deleted_at", null)
       .not("last_called_at", "is", null)
       .order("last_called_at", { ascending: false }).limit(1).maybeSingle()),
@@ -409,15 +409,15 @@ async function canManageRecipient(
   db: ReturnType<typeof service>, shopId: string, actor: string, recipient: string,
 ): Promise<boolean> {
   if (actor === recipient) return true;
-  const { data: membership } = await db.from("so_members")
+  const { data: membership } = await db.from("qm_members")
     .select("role").eq("tenant_id", shopId).eq("user_id", actor).maybeSingle();
   if (membership) return true;
-  const { data: platform } = await db.from("so_platform_admins")
+  const { data: platform } = await db.from("qm_platform_admins")
     .select("user_id").eq("user_id", actor).maybeSingle();
   if (platform) return true;
   const [a, r] = await Promise.all([
-    db.from("so_line_links").select("line_sub").eq("tenant_id", shopId).eq("user_id", actor).maybeSingle(),
-    db.from("so_line_links").select("line_sub").eq("tenant_id", shopId).eq("user_id", recipient).maybeSingle(),
+    db.from("qm_line_links").select("line_sub").eq("tenant_id", shopId).eq("user_id", actor).maybeSingle(),
+    db.from("qm_line_links").select("line_sub").eq("tenant_id", shopId).eq("user_id", recipient).maybeSingle(),
   ]);
   return !a.error && !r.error && !!a.data?.line_sub && a.data.line_sub === r.data?.line_sub;
 }
@@ -435,7 +435,7 @@ async function pushNotice(
   const merchantOa = await merchantLineConfig(db, tenant.id);
   const token = merchantOa?.token || Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
   if (!token) return reply(503, { error: "LINE_MESSAGING_NOT_CONFIGURED" }, origin);
-  const { data: linked, error: linkError } = await db.from("so_line_links")
+  const { data: linked, error: linkError } = await db.from("qm_line_links")
     .select("line_sub,is_following").eq("tenant_id", tenant.id).eq("user_id", recipient).maybeSingle();
   if (linkError) throw linkError;
   if (!linked) return reply(200, { ok: true, sent: false, reason: "CUSTOMER_NOT_LINKED" }, origin);
@@ -451,11 +451,11 @@ async function pushNotice(
 
   // A single database claim per real booking/ticket event prevents duplicated push charges.
   const claim = { tenant_id: tenant.id, event_kind: eventKind, reference_id: referenceId };
-  const { error: claimError } = await db.from("so_line_push_log").insert(claim);
+  const { error: claimError } = await db.from("qm_line_push_log").insert(claim);
   if (claimError?.code === "23505") return reply(200, { ok: true, sent: false, reason: "ALREADY_SENT" }, origin);
   if (claimError) throw claimError;
   const releaseClaim = async () => {
-    const { error } = await db.from("so_line_push_log").delete()
+    const { error } = await db.from("qm_line_push_log").delete()
       .eq("tenant_id", tenant.id).eq("event_kind", eventKind).eq("reference_id", referenceId);
     if (error) console.error("Could not release failed LINE push claim", error.code || "unknown");
   };
@@ -505,24 +505,24 @@ async function dispatchOutboxItem(
   db: ReturnType<typeof service>, job: NoticeJob, origin: string | null,
 ): Promise<{ status: "SENT" | "SKIPPED" | "RETRY"; reason?: string }> {
   if (job.event_kind === "RESERVED") return {status:"SKIPPED",reason:"REPLY_REQUIRED"};
-  const { data: tenant, error: tenantErr } = await db.from("so_tenants")
+  const { data: tenant, error: tenantErr } = await db.from("qm_tenants")
     .select("id,slug,name,status,address,phone").eq("id", job.tenant_id).maybeSingle();
   if (tenantErr) throw tenantErr;
   if (!tenant || tenant.status !== "ACTIVE") return { status: "SKIPPED", reason: "TENANT_INACTIVE" };
   let result: Response;
   if (job.event_kind === "PICKUP_EVENT") {
-    const { data: event, error: eventError } = await db.from("so_pickup_notice_events")
+    const { data: event, error: eventError } = await db.from("qm_pickup_notice_events")
       .select("id,tenant_id,order_id,status,created_at")
       .eq("tenant_id", tenant.id).eq("id", job.reference_id).maybeSingle();
     if (eventError) throw eventError;
     if (!event) return { status: "SKIPPED", reason: "PICKUP_EVENT_MISSING" };
-    const { data: order, error: orderError } = await db.from("so_pickup_orders")
+    const { data: order, error: orderError } = await db.from("qm_pickup_orders")
       .select("id,user_id,order_no,status,pickup_at,items,total,scheduled")
       .eq("tenant_id", tenant.id).eq("id", event.order_id).maybeSingle();
     if (orderError) throw orderError;
     if (!order || order.status !== event.status)
       return { status: "SKIPPED", reason: "PICKUP_EVENT_SUPERSEDED" };
-    const { data: newest, error: newestError } = await db.from("so_pickup_notice_events")
+    const { data: newest, error: newestError } = await db.from("qm_pickup_notice_events")
       .select("id").eq("tenant_id", tenant.id).eq("order_id", order.id)
       .order("created_at", { ascending: false }).limit(1).maybeSingle();
     if (newestError) throw newestError;
@@ -551,14 +551,14 @@ async function dispatchOutboxItem(
       ], [{label:"查看取餐進度",uri:liffPickupLink(await shopLinkContext(db, tenant))}]), origin);
   } else if (job.event_kind === "RESERVATION_REMINDER_24H" ||
       job.event_kind === "RESERVATION_REMINDER_2H") {
-    const { data: reminder, error: reminderError } = await db.from("so_booking_reminder_jobs")
+    const { data: reminder, error: reminderError } = await db.from("qm_booking_reminder_jobs")
       .select("id,tenant_id,booking_id,reminder_kind,due_at,booking_start_at,status")
       .eq("id", job.reference_id).eq("tenant_id", tenant.id).maybeSingle();
     if (reminderError) throw reminderError;
     const expected = job.event_kind === "RESERVATION_REMINDER_24H" ? "24H" : "2H";
     if (!reminder || reminder.status !== "QUEUED" || reminder.reminder_kind !== expected)
       return { status: "SKIPPED", reason: "REMINDER_NO_LONGER_CURRENT" };
-    const { data: booking, error: bookingError } = await db.from("so_reservations")
+    const { data: booking, error: bookingError } = await db.from("qm_reservations")
       .select("id,tenant_id,user_id,status,booking_date,booking_time,party_size,selected_items")
       .eq("tenant_id", tenant.id).eq("id", reminder.booking_id)
       .is("deleted_at", null).maybeSingle();
@@ -582,7 +582,7 @@ async function dispatchOutboxItem(
         uri: liffManageLink(await shopLinkContext(db, tenant), "reservation", booking.id, "view"),
       }]), origin);
   } else if (job.event_kind === "QUEUE_NEAR") {
-    const { data: ticket, error } = await db.from("so_tickets")
+    const { data: ticket, error } = await db.from("qm_tickets")
       .select("id,tenant_id,user_id,status,ticket_no,number_prefix,queue_near_alert_threshold")
       .eq("tenant_id", tenant.id).eq("id", job.reference_id)
       .is("deleted_at", null).maybeSingle();
@@ -614,7 +614,7 @@ async function dispatchOutboxItem(
   } else if (job.event_kind === "CALLED" || job.event_kind.startsWith("TICKET_")) {
     const isCreated = job.event_kind === "TICKET_CREATED";
     const isRestored = job.event_kind === "TICKET_RESTORED";
-    const { data: ticket, error } = await db.from("so_tickets")
+    const { data: ticket, error } = await db.from("qm_tickets")
       .select("id,tenant_id,user_id,status,ticket_no,number_prefix,created_at,business_date,selected_items,line_call_event_id,line_cancel_event_id,line_restore_event_id")
       .eq("tenant_id", tenant.id).is("deleted_at", null)
       .eq(isCreated ? "id" : job.event_kind === "CALLED" ? "line_call_event_id" : isRestored ? "line_restore_event_id" : "line_cancel_event_id", job.reference_id)
@@ -654,7 +654,7 @@ async function dispatchOutboxItem(
       : job.event_kind === "RESERVATION_RESTORED" ? "line_restore_event_id"
       : job.event_kind === "RESERVATION_CANCELLED" ? "line_cancel_event_id"
       : "line_update_event_id";
-    const { data: booking, error } = await db.from("so_reservations")
+    const { data: booking, error } = await db.from("qm_reservations")
       .select("id,user_id,status,booking_date,booking_time,party_size,customer_name,customer_phone,selected_items,service_session_id,line_restore_event_id,line_cancel_event_id,line_update_event_id")
       .eq("tenant_id", tenant.id).is("deleted_at", null).eq(field, job.reference_id).maybeSingle();
     if (error) throw error;
@@ -694,7 +694,7 @@ async function dispatchOutboxItem(
 }
 async function dispatchPendingNotices(req: Request, origin: string | null): Promise<Response> {
   const db = service();
-  const { data: secret, error: secretError } = await db.from("so_line_worker_keys")
+  const { data: secret, error: secretError } = await db.from("qm_line_worker_keys")
     .select("secret").eq("name", "notices").maybeSingle();
   if (secretError || !secret?.secret) return reply(503, { error: "WORKER_KEY_UNAVAILABLE" }, origin);
   const sentKey = req.headers.get("x-line-worker-key") || "";
@@ -704,14 +704,14 @@ async function dispatchPendingNotices(req: Request, origin: string | null): Prom
   let mismatch = expected.length ^ actual.length;
   for (let i = 0; i < expected.length; i++) mismatch |= expected[i] ^ (actual[i] ?? 0);
   if (mismatch !== 0) return reply(403, { error: "WORKER_UNAUTHORIZED" }, origin);
-  const { data: due, error: dueError } = await db.from("so_line_notice_outbox")
+  const { data: due, error: dueError } = await db.from("qm_line_notice_outbox")
     .select("id,tenant_id,event_kind,reference_id,status,attempts")
     .in("status", ["PENDING", "RETRY"])
     .lte("next_attempt_at", new Date().toISOString()).order("created_at", { ascending: true }).limit(20);
   if (dueError) throw dueError;
   let sent = 0, deferred = 0, skipped = 0;
   for (const candidate of due || []) {
-    const { data: claimed, error: claimError } = await db.from("so_line_notice_outbox")
+    const { data: claimed, error: claimError } = await db.from("qm_line_notice_outbox")
       .update({ status: "PROCESSING", processing_at: new Date().toISOString(), attempts: candidate.attempts + 1 })
       .eq("id", candidate.id).eq("status", candidate.status)
       .select("id,tenant_id,event_kind,reference_id,attempts,status").maybeSingle();
@@ -730,7 +730,7 @@ async function dispatchPendingNotices(req: Request, origin: string | null): Prom
     const retryMinutes = Math.min(360, Math.max(1, 2 ** Math.min(claimed.attempts, 8)));
     const expired = claimed.attempts >= 14;
     const next = status === "RETRY" && expired ? "FAILED" : status === "RETRY" ? "RETRY" : status;
-    const { error: finishedError } = await db.from("so_line_notice_outbox").update({
+    const { error: finishedError } = await db.from("qm_line_notice_outbox").update({
       status: next, processing_at: null,
       last_error: reason || null,
       sent_at: next === "SENT" ? new Date().toISOString() : null,
@@ -811,20 +811,20 @@ async function replyToLine(token: string, replyToken: string,
 async function bookingReplyMessage(db: ReturnType<typeof service>, bookingId: string,
   lineSub: string, merchantTenantId: string | null): Promise<Record<string, unknown>> {
   const unavailable = {type:"text",text:"無法取得這筆預約，請至我的預約確認，或重新傳送正確的預約編號。"};
-  const {data:booking,error} = await db.from("so_reservations")
+  const {data:booking,error} = await db.from("qm_reservations")
     .select("id,tenant_id,user_id,status,booking_date,booking_time,party_size,customer_name,customer_phone,selected_items,service_session_id")
     .eq("id",bookingId).is("deleted_at",null).maybeSingle();
   if (error) throw error;
   if (!booking || booking.status !== "CONFIRMED" ||
       (merchantTenantId && booking.tenant_id !== merchantTenantId)) return unavailable;
-  const {data:link,error:linkError} = await db.from("so_line_links").select("user_id")
+  const {data:link,error:linkError} = await db.from("qm_line_links").select("user_id")
     .eq("tenant_id",booking.tenant_id).eq("user_id",booking.user_id).eq("line_sub",lineSub).maybeSingle();
   if (linkError) throw linkError;
   if (!link) return unavailable;
   // A platform event cannot retrieve bookings belonging to a different merchant OA.
   const own = await merchantLineConfig(db,booking.tenant_id);
   if (!merchantTenantId && own) return unavailable;
-  const {data:tenant,error:tenantError} = await db.from("so_tenants")
+  const {data:tenant,error:tenantError} = await db.from("qm_tenants")
     .select("id,slug,name,status,address,phone").eq("id",booking.tenant_id).eq("status","ACTIVE").maybeSingle();
   if (tenantError) throw tenantError;
   return tenant ? await reservationConfirmationNotice(db,tenant,booking) : unavailable;
@@ -837,7 +837,7 @@ async function webhook(req: Request, origin: string | null, merchantSlug = "") {
     if (!/^[a-z0-9][a-z0-9-]{2,39}$/.test(merchantSlug))
       return reply(400, {error:"INVALID_MERCHANT"}, origin);
     const db = service();
-    const { data: tenant } = await db.from("so_tenants")
+    const { data: tenant } = await db.from("qm_tenants")
       .select("id").eq("slug", merchantSlug).eq("status", "ACTIVE").maybeSingle();
     if (!tenant) return reply(404, {error:"TENANT_NOT_FOUND"}, origin);
     merchantTenantId = tenant.id;
@@ -896,7 +896,7 @@ async function webhook(req: Request, origin: string | null, merchantSlug = "") {
         }
         const entry=/^開始預約 ([a-z0-9][a-z0-9-]{2,39})$/.exec(message.text.trim());
         if (entry) {
-          const {data:tenant,error}=await db.from("so_tenants").select("id,slug,name")
+          const {data:tenant,error}=await db.from("qm_tenants").select("id,slug,name")
             .eq("slug",entry[1]).eq("status","ACTIVE").maybeSingle();
           if (error) throw error;
           let notice: Record<string,unknown>={type:"text",text:"找不到這間店家，請確認門市預約入口。"};
@@ -946,7 +946,7 @@ async function webhook(req: Request, origin: string | null, merchantSlug = "") {
         const replyToken = event.replyToken;
         if (!validUUID(ticketId) || typeof replyToken !== "string" ||
             !replyToken || replyToken.length > 512) continue;
-        const { data: ticket, error: ticketError } = await db.from("so_tickets")
+        const { data: ticket, error: ticketError } = await db.from("qm_tickets")
           .select("id,tenant_id,user_id,status,ticket_no,number_prefix,created_at,business_date,selected_items")
           .eq("id", ticketId).is("deleted_at", null).maybeSingle();
         if (ticketError) throw ticketError;
@@ -957,10 +957,10 @@ async function webhook(req: Request, origin: string | null, merchantSlug = "") {
           // A signed LINE event identifies the person, but a ticket ID is
           // never authority: match both tenant and linked ticket owner.
           const [linkResult, tenantResult] = await Promise.all([
-            db.from("so_line_links").select("user_id")
+            db.from("qm_line_links").select("user_id")
               .eq("tenant_id", ticket.tenant_id).eq("user_id", ticket.user_id)
               .eq("line_sub", source.userId).limit(1),
-            db.from("so_tenants").select("id,slug,name,status,address,phone")
+            db.from("qm_tenants").select("id,slug,name,status,address,phone")
               .eq("id", ticket.tenant_id).eq("status", "ACTIVE").maybeSingle(),
           ]);
           if (linkResult.error) throw linkResult.error;
@@ -1097,9 +1097,9 @@ Deno.serve(async (req: Request) => {
     let own: { liff_id: string; bot_basic_id: string | null; messaging_channel_id: string | null } | null = null;
     if (/^[a-z0-9][a-z0-9-]{2,39}$/.test(merchant)) {
       const db = service();
-      const { data: tenant } = await db.from("so_tenants").select("id").eq("slug", merchant).eq("status", "ACTIVE").maybeSingle();
+      const { data: tenant } = await db.from("qm_tenants").select("id").eq("slug", merchant).eq("status", "ACTIVE").maybeSingle();
       if (tenant) {
-        const { data: config } = await db.from("so_line_merchant_oas")
+        const { data: config } = await db.from("qm_line_merchant_oas")
           .select("liff_id,bot_basic_id,messaging_channel_id").eq("tenant_id", tenant.id).eq("status", "ACTIVE").maybeSingle();
         own = config;
       }
@@ -1126,12 +1126,12 @@ Deno.serve(async (req: Request) => {
     if (payload.action === "connect-merchant-oa" || payload.action === "disconnect-merchant-oa") {
       const slug = String(payload.slug || "");
       if (!/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug)) return reply(400, { error: "BAD_REQUEST" }, origin);
-      const { data: tenant } = await db.from("so_tenants")
+      const { data: tenant } = await db.from("qm_tenants")
         .select("id,slug,status").eq("slug",slug).eq("status","ACTIVE").maybeSingle();
       if (!tenant) return reply(404, { error:"TENANT_NOT_FOUND" }, origin);
-      const { data: member } = await db.from("so_members")
+      const { data: member } = await db.from("qm_members")
         .select("role").eq("tenant_id",tenant.id).eq("user_id",user.id).maybeSingle();
-      const { data: platform } = await db.from("so_platform_admins")
+      const { data: platform } = await db.from("qm_platform_admins")
         .select("user_id").eq("user_id",user.id).maybeSingle();
       if (!["OWNER","MANAGER"].includes(member?.role || "") && !platform)
         return reply(403,{error:"MANAGER_REQUIRED"},origin);
@@ -1203,19 +1203,19 @@ Deno.serve(async (req: Request) => {
       const platformChannel=/^([0-9]{8,})-[A-Za-z0-9]+$/.exec(Deno.env.get("LINE_LIFF_ID")||"")?.[1]||"";
       if (!platformChannel)return reply(503,{error:"LINE_LOGIN_NOT_CONFIGURED"},origin);
       const profile=await lineVerify(idToken,accessToken,{channelId:platformChannel});
-      const {data:existing,error:readError}=await db.from("so_platform_line_identities")
+      const {data:existing,error:readError}=await db.from("qm_platform_line_identities")
         .select("line_sub").eq("user_id",user.id).maybeSingle();
       if(readError)throw readError;
       if(existing && existing.line_sub!==profile.sub)
         return reply(409,{error:"LINE_ACCOUNT_CHANGED"},origin);
       // A Supabase session already linked to a different LINE ID for any shop
       // must not silently adopt another identity.
-      const {data:shopLinks,error:shopError}=await db.from("so_line_links")
+      const {data:shopLinks,error:shopError}=await db.from("qm_line_links")
         .select("line_sub").eq("user_id",user.id).limit(100);
       if(shopError)throw shopError;
       if((shopLinks||[]).some((r)=>r.line_sub!==profile.sub))
         return reply(409,{error:"LINE_ACCOUNT_CHANGED"},origin);
-      const {error:writeError}=await db.from("so_platform_line_identities").upsert({
+      const {error:writeError}=await db.from("qm_platform_line_identities").upsert({
         user_id:user.id,line_sub:profile.sub,display_name:profile.name,
         login_channel_id:platformChannel,updated_at:new Date().toISOString(),
       },{onConflict:"user_id"});
@@ -1238,14 +1238,14 @@ Deno.serve(async (req: Request) => {
     if (payload.action === "resume") {
       const slug = String(payload.slug || "");
       if (!/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug)) return reply(400, { error: "BAD_REQUEST" }, origin);
-      const { data: tenant, error: tenantError } = await db.from("so_tenants")
+      const { data: tenant, error: tenantError } = await db.from("qm_tenants")
         .select("id").eq("slug", slug).eq("status", "ACTIVE").maybeSingle();
       if (tenantError) throw tenantError;
       if (!tenant) return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
       const ownOa = await merchantLineConfig(db, tenant.id);
       const expectedChannelId = ownOa?.channelId ||
         /^([0-9]{8,})-[A-Za-z0-9]+$/.exec(Deno.env.get("LINE_LIFF_ID") || "")?.[1] || "";
-      let { data: linked, error: linkError } = await db.from("so_line_links")
+      let { data: linked, error: linkError } = await db.from("qm_line_links")
         .select("display_name,line_sub,is_following,updated_at,login_channel_id")
         .eq("tenant_id", tenant.id).eq("user_id", user.id).maybeSingle();
       if (linkError) throw linkError;
@@ -1259,7 +1259,7 @@ Deno.serve(async (req: Request) => {
         if(verified) {
           if(linked?.line_sub && linked.line_sub!==verified.line_sub)
             return reply(409,{error:"LINE_ACCOUNT_CHANGED"},origin);
-          const {error:upsertError}=await db.from("so_line_links").upsert({
+          const {error:upsertError}=await db.from("qm_line_links").upsert({
             tenant_id:tenant.id,user_id:user.id,line_sub:verified.line_sub,
             login_channel_id:expectedChannelId,display_name:verified.display_name,
             is_following:linked?.is_following??null,updated_at:verified.updated_at,
@@ -1289,7 +1289,7 @@ Deno.serve(async (req: Request) => {
       const accessToken = typeof payload.accessToken === "string" && payload.accessToken.length <= 10000
         ? payload.accessToken : undefined;
       if (!idToken && !accessToken) return reply(400, { error: "LINE_LOGIN_TOKEN_REQUIRED" }, origin);
-      const { data: tenant, error: te } = await db.from("so_tenants")
+      const { data: tenant, error: te } = await db.from("qm_tenants")
         .select("id,slug,status").eq("slug", slug).eq("status", "ACTIVE").single();
       if (te || !tenant) return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
       const ownOa = await merchantLineConfig(db, tenant.id);
@@ -1324,7 +1324,7 @@ Deno.serve(async (req: Request) => {
         oaRecipientReachability(line.sub,ownOa?.token),
         oaAddFriendUrl(ownOa?.token),
       ]);
-      const { data: previous, error: previousError } = await db.from("so_line_links")
+      const { data: previous, error: previousError } = await db.from("qm_line_links")
         .select("line_sub,login_channel_id").eq("tenant_id", tenant.id).eq("user_id", user.id).maybeSingle();
       if (previousError) throw previousError;
       const link: Record<string, unknown> = { tenant_id: tenant.id, user_id: user.id,
@@ -1341,9 +1341,9 @@ Deno.serve(async (req: Request) => {
         link.is_following = null;
         link.friendship_updated_at = null;
       }
-      const { error } = await db.from("so_line_links").upsert(link, { onConflict: "tenant_id,user_id" });
+      const { error } = await db.from("qm_line_links").upsert(link, { onConflict: "tenant_id,user_id" });
       if (error) throw error;
-      const { data: linked, error: linkedError } = await db.from("so_line_links")
+      const { data: linked, error: linkedError } = await db.from("qm_line_links")
         .select("is_following").eq("tenant_id", tenant.id).eq("user_id", user.id).single();
       if (linkedError) throw linkedError;
       return reply(200, {
@@ -1359,11 +1359,11 @@ Deno.serve(async (req: Request) => {
       const slug = String(payload.slug || "");
       const number = String(payload.number || "");
       if (number.length > 40 || !slug) return reply(400, { error: "BAD_REQUEST" }, origin);
-      const { data: tenant } = await db.from("so_tenants").select("id,name,status").eq("slug", slug).single();
+      const { data: tenant } = await db.from("qm_tenants").select("id,name,status").eq("slug", slug).single();
       if (!tenant || tenant.status !== "ACTIVE") return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
-      const { data: member } = await db.from("so_members").select("role")
+      const { data: member } = await db.from("qm_members").select("role")
         .eq("tenant_id", tenant.id).eq("user_id", user.id).maybeSingle();
-      const { data: admin } = await db.from("so_platform_admins").select("user_id")
+      const { data: admin } = await db.from("qm_platform_admins").select("user_id")
         .eq("user_id", user.id).maybeSingle();
       if (!member && !admin) return reply(403, { error: "STAFF_REQUIRED" }, origin);
       // Ticket UUID is authoritative; ticket numbers can repeat across calendar dates.
@@ -1371,7 +1371,7 @@ Deno.serve(async (req: Request) => {
       const eventId = String(payload.eventId || "");
       if (!validUUID(ticketId) || !validUUID(eventId))
         return reply(400, { error: "CALL_EVENT_ID_REQUIRED" }, origin);
-      const { data: ticket } = await db.from("so_tickets")
+      const { data: ticket } = await db.from("qm_tickets")
         .select("id,user_id,status,updated_at,ticket_no,number_prefix,line_call_event_id")
         .eq("tenant_id", tenant.id).eq("id", ticketId).is("deleted_at", null).maybeSingle();
       if (!ticket || ticket.status !== "CALLED" || ticket.line_call_event_id !== eventId ||
@@ -1386,9 +1386,9 @@ Deno.serve(async (req: Request) => {
       const restored = payload.action === "notify-reservation-restored";
       const slug = String(payload.slug || "");
       if (!slug || !validUUID(payload.reservationId)) return reply(400, { error: "BAD_REQUEST" }, origin);
-      const { data: tenant } = await db.from("so_tenants").select("id,slug,name,status,address,phone").eq("slug", slug).maybeSingle();
+      const { data: tenant } = await db.from("qm_tenants").select("id,slug,name,status,address,phone").eq("slug", slug).maybeSingle();
       if (!tenant || tenant.status !== "ACTIVE") return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
-      const { data: booking } = await db.from("so_reservations")
+      const { data: booking } = await db.from("qm_reservations")
         .select("id,user_id,status,created_at,booking_date,booking_time,party_size,customer_name,customer_phone,selected_items,service_session_id,line_restore_event_id")
         .eq("id", payload.reservationId).eq("tenant_id", tenant.id).is("deleted_at", null).maybeSingle();
       if (!booking || booking.status !== "CONFIRMED")
@@ -1409,9 +1409,9 @@ Deno.serve(async (req: Request) => {
     if (payload.action === "notify-ticket") {
       const slug = String(payload.slug || "");
       if (!slug || !validUUID(payload.ticketId)) return reply(400, { error: "BAD_REQUEST" }, origin);
-      const { data: tenant } = await db.from("so_tenants").select("id,slug,name,status,address,phone").eq("slug", slug).maybeSingle();
+      const { data: tenant } = await db.from("qm_tenants").select("id,slug,name,status,address,phone").eq("slug", slug).maybeSingle();
       if (!tenant || tenant.status !== "ACTIVE") return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
-      const { data: ticket } = await db.from("so_tickets")
+      const { data: ticket } = await db.from("qm_tickets")
         .select("id,user_id,status,created_at,ticket_no,number_prefix,business_date,selected_items,service_session_id,queue_joined_at")
         .eq("id", payload.ticketId).eq("tenant_id", tenant.id).eq("user_id", user.id).is("deleted_at", null).maybeSingle();
       if (!ticket || ticket.status !== "WAITING" || !recently(ticket.created_at, 300_000))
@@ -1423,9 +1423,9 @@ Deno.serve(async (req: Request) => {
     if(payload.action==="notify-ticket-restored"){
       const slug=String(payload.slug||""),ticketId=String(payload.ticketId||""),eventId=String(payload.eventId||"");
       if(!slug||!validUUID(ticketId)||!validUUID(eventId))return reply(400,{error:"INVALID_RESTORE_EVENT"},origin);
-      const {data:tenant}=await db.from("so_tenants").select("id,slug,name,status,address,phone").eq("slug",slug).maybeSingle();
+      const {data:tenant}=await db.from("qm_tenants").select("id,slug,name,status,address,phone").eq("slug",slug).maybeSingle();
       if(!tenant||tenant.status!=="ACTIVE")return reply(404,{error:"TENANT_NOT_FOUND"},origin);
-      const {data:ticket}=await db.from("so_tickets")
+      const {data:ticket}=await db.from("qm_tickets")
         .select("id,user_id,status,ticket_no,number_prefix,line_restore_event_id")
         .eq("id",ticketId).eq("tenant_id",tenant.id).is("deleted_at",null).maybeSingle();
       if(!ticket||!["WAITING","HOLD"].includes(ticket.status)||ticket.line_restore_event_id!==eventId)
@@ -1446,11 +1446,11 @@ Deno.serve(async (req: Request) => {
       const isTicket = payload.action === "notify-ticket-cancel";
       const refId = isTicket ? payload.ticketId : payload.reservationId;
       if (!slug || !validUUID(refId)) return reply(400, { error: "BAD_REQUEST" }, origin);
-      const { data: tenant } = await db.from("so_tenants")
+      const { data: tenant } = await db.from("qm_tenants")
         .select("id,slug,name,status,address,phone").eq("slug", slug).maybeSingle();
       if (!tenant || tenant.status !== "ACTIVE") return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
       if (isTicket) {
-        const { data: ticket } = await db.from("so_tickets")
+        const { data: ticket } = await db.from("qm_tickets")
           .select("id,user_id,status,ticket_no,number_prefix,line_cancel_event_id")
           .eq("id", refId).eq("tenant_id", tenant.id).is("deleted_at", null).maybeSingle();
         if (!ticket || ticket.status !== "CANCELLED" || !ticket.line_cancel_event_id)
@@ -1465,7 +1465,7 @@ Deno.serve(async (req: Request) => {
             ...shopDetails(tenant),
           ], [{ label: "查看我的紀錄", uri: liffManageLink(await shopLinkContext(db, tenant), "ticket", ticket.id, "view") }]), origin);
       }
-      const { data: booking } = await db.from("so_reservations")
+      const { data: booking } = await db.from("qm_reservations")
         .select("id,user_id,status,booking_date,booking_time,party_size,customer_name,customer_phone,line_cancel_event_id,line_update_event_id,selected_items")
         .eq("id", refId).eq("tenant_id", tenant.id).is("deleted_at", null).maybeSingle();
       if (!booking || !await canManageRecipient(db, tenant.id, user.id, booking.user_id))
