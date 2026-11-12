@@ -325,6 +325,38 @@ document.addEventListener("click",e=>{
  const navBtn=e.target.closest("[data-tab]");if(navBtn){tab=navBtn.dataset.tab;newNotice="";review=false;render();return;}
  const button=e.target.closest("[data-act]");if(!button)return;
  const a=button.dataset.act,id=button.dataset.id,value=button.dataset.value,d=current();
+ if(a==="demo-detail-back"){tab="mine";detailEditing=false;inform("已返回歷史紀錄，可以點開任一筆服務。");return;}
+ if(a==="demo-open-detail"){
+  const kind=button.dataset.kind,list=kind==="reservation"?d.bookings:kind==="order"?d.orders:d.tickets;
+  if(!["reservation","order","ticket"].includes(kind)||!list?.some(o=>o.id===id&&ownedIds[scene].has(id)))return;
+  detailKind=kind;detailId=id;detailEditing=false;tab="detail";inform("已開啟這筆服務的專屬詳細頁面。");return;
+ }
+ if(a==="demo-linked-ticket"){
+  if(!d.tickets?.some(x=>x.id===id&&ownedIds[scene].has(id)))return;
+  detailKind="ticket";detailId=id;detailEditing=false;tab="detail";render();return;
+ }
+ if(a==="demo-edit-booking"){detailEditing=true;render();return;}
+ if(a==="demo-close-edit"){detailEditing=false;render();return;}
+ if(a==="demo-cancel-booking"){
+  const b=d.bookings?.find(x=>x.id===detailId&&ownedIds[scene].has(x.id));
+  if(!b||b.status!=="CONFIRMED")return;
+  if(typeof window.confirm==="function"&&!window.confirm("確定取消這筆示範預約？"))return;
+  b.status="CANCELLED";detailEditing=false;inform("此筆示範預約已取消。");return;
+ }
+ if(a==="demo-save-booking"){
+  const b=d.bookings?.find(x=>x.id===detailId&&ownedIds[scene].has(x.id));
+  if(!b||b.status!=="CONFIRMED")return;
+  const date=$("demo-edit-date")?.value,time=$("demo-edit-time")?.value;
+  const party=Number($("demo-edit-party")?.value),name=$("demo-edit-name")?.value.trim(),phone=$("demo-edit-phone")?.value.trim();
+  if(!date||!/^\\d{2}:\\d{2}$/.test(time||"")||!Number.isInteger(party)||party<1||party>20||
+     !name||!/^09\\d{8}$/.test(phone)||Date.parse(date+"T"+time+":00+08:00")<Date.now()){
+     inform("請確認未過期的日期時間、1～20 人、姓名及 09 開頭十碼手機。");return;
+  }
+  const capacity=scene==="clinic"?5:1;
+  const taken=d.bookings.filter(x=>x.id!==b.id&&x.unit===b.unit&&x.date===date&&x.time===time&&!["COMPLETED","CANCELLED","NO_SHOW"].includes(x.status)).reduce((n,x)=>n+Number(x.party||1),0);
+  if(taken+party>capacity){inform("選擇時段名額不足，請改其他時間。");return;}
+  Object.assign(b,{date,time,party,name,phone});detailEditing=false;inform("示範預約已修改，以下顯示最新資料。");return;
+ }
  if(a==="go-reserve"){tab="reserve";inform("請先完成預約；報到後會出現在候診名單");return;}
   if(a==="clear-filter"){bookingFilter="";render();return;}
  if(a==="reset"){data[scene]=make()[scene];lastOwn="";notes=[];ownedIds[scene].clear();showBoard=false;bookingFilter="";detailKind="";detailId="";detailEditing=false;newNotice="已重設本產業的示範資料";resetDraft();render();return;}
@@ -338,7 +370,7 @@ document.addEventListener("click",e=>{
   if(!validPickupPhone()||!pickupWindowValid()){review=false;inform("聯絡電話、取餐日期或時間不正確，請返回確認。");return;}
   const lines=food.filter(i=>cart[i.id]>0).map(i=>({name:i.name,qty:cart[i.id],price:i.price}));if(!lines.length)return;
   const o={id:"B"+pad(d.seq++),phone:pickupPhone(),lines,time:method==="immediate"?"立即":draft.day+" "+draft.time,immediate:method==="immediate",createdAt:Date.now(),status:"NEW",total:lines.reduce((sum,i)=>sum+i.qty*i.price,0)};
-  d.orders.unshift(o);lastOwn=o.id;ownedIds[scene].add(o.id);cart={};review=false;notifyFor("order",o);tab="order";
+  d.orders.unshift(o);lastOwn=o.id;ownedIds[scene].add(o.id);cart={};review=false;notifyFor("order",o);tab="detail";detailKind="order";detailId=o.id;detailEditing=false;
   inform("已送出示範訂單 "+o.id+"。15 秒內可取消，之後店家才會收到。");return;
  }
   if(a==="unit"){draft.unit=value;if(scene==="clinic")room=value;review=false;render();return;}
@@ -355,13 +387,13 @@ document.addEventListener("click",e=>{
    const taken=bookings.filter(x=>x.unit===draft.unit&&x.date===draft.day&&x.time===slot&&!["CANCELLED","COMPLETED","NO_SHOW"].includes(x.status)).reduce((n,x)=>n+Number(x.party||1),0);
    if(taken+requested>(scene==="clinic"?5:1)){review=false;inform("此時段可預約名額不足，請選擇其他時段或服務窗口。");return;}
   const o={id:(scene==="clinic"?"P":"S")+pad(scene==="clinic"?d.bookingSeq++:d.seq++),name:draft.name||"示範顧客",phone:draft.phone||"（試用未填）",unit:draft.unit,service:draft.service,date:draft.day,time:slot,party:Number(draft.party),status:"CONFIRMED",ticket:""};
-  bookings.unshift(o);lastOwn=o.id;ownedIds[scene].add(o.id);review=false;notifyFor("booking",o);tab="reserve";inform("示範預約 "+o.id+" 已建立；可到店家端「預約管理」報到。");return;
+  bookings.unshift(o);lastOwn=o.id;ownedIds[scene].add(o.id);review=false;notifyFor("booking",o);tab="detail";detailKind="reservation";detailId=o.id;detailEditing=false;inform("示範預約 "+o.id+" 已建立；可到店家端「預約管理」報到。");return;
  }
  if(a==="take-number"){
   if(scene==="clinic"){inform("診所取號需先由店家進行預約報到。");return;}
   if(d.tickets.some(t=>ownedIds[scene].has(t.id)&&!["COMPLETED","CANCELLED"].includes(t.status))){inform("已有有效號碼牌，不可重複取號。");return;}
   if(!Number.isInteger(Number(draft.party))||Number(draft.party)<1||Number(draft.party)>20){inform("候位人數請輸入 1～20 人");return;}
-  const o={id:"R"+pad(d.seq++),name:draft.name||"示範顧客",service:draft.service||"手機維修",status:"WAITING",party:Number(draft.party)||1};d.tickets.push(o);lastOwn=o.id;ownedIds[scene].add(o.id);notifyFor("ticket",o);inform("已取得示範號碼 "+o.id+"，切換店家端體驗叫號。");return;
+  const o={id:"R"+pad(d.seq++),name:draft.name||"示範顧客",service:draft.service||"手機維修",status:"WAITING",party:Number(draft.party)||1};d.tickets.push(o);lastOwn=o.id;ownedIds[scene].add(o.id);notifyFor("ticket",o);tab="detail";detailKind="ticket";detailId=o.id;detailEditing=false;inform("已取得示範號碼 "+o.id+"，切換店家端體驗叫號。");return;
  }
  if(a==="room"){room=value;draft.unit=value;render();return;}
  if(a==="cancel-order"){const o=find("orders",id);
