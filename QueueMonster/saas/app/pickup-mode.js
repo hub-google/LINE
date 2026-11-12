@@ -93,6 +93,7 @@ export function renderCustomerPickup(){
  const s=d.settings||{};
  
  const immediate=pickupState.method==="immediate";
+ const openNow=s.open_now!==false;
  const total=(d.items||[]).reduce((sum,x)=>sum+Number(x.price||0)*(pickupState.cart[x.id]||0),0);
  const count=Object.values(pickupState.cart).reduce((a,b)=>a+b,0);
  const customerOrders=pickupState.customerHistory?.orders||d.orders||[];
@@ -131,8 +132,9 @@ export function renderCustomerPickup(){
   (featuredCancelCard?'<section role="region" aria-label="新訂單取消倒數" style="margin:10px 0 18px"><h3>訂單已送出</h3>'+featuredCancelCard+'</section>':
   '<p class="notice"><strong>下單後 15 秒內可取消。</strong>送出訂單後會顯示倒數；倒數結束，訂單才會交給店家接單，之後無法自行取消。</p>')+
   (s.schedule_mode==="OPTIONAL"?'<div class="staff-actionbar">'+
-   btn("立即取餐","pickup-method",immediate?"primary":"outline",'data-value="immediate"')+
+   btn("立即取餐","pickup-method",immediate?"primary":"outline",'data-value="immediate" '+(openNow?"":'disabled'))+
    btn("預約指定時間","pickup-method",!immediate?"primary":"outline",'data-value="scheduled"')+'</div>':"")+
+  (immediate&&!openNow?'<p class="alert">目前不在營業時間內，無法立即取餐；可切換預約取餐日期查看開放時段。</p>':"")+
   (immediate?'<p class="notice">預估製作時間約 '+esc(s.prep_minutes)+' 分鐘，實際以店家接單進度為準。</p>':
    '<div class="grid"><div>'+field("取餐日期","pickup-day",pickupState.day||taipei(),"date",'min="'+taipei()+'"')+
    '</div><div><label for="pickup-slot">取餐時間</label><select class="field" id="pickup-slot"><option value="">請選擇取餐時間</option>'+
@@ -164,7 +166,7 @@ export function renderCustomerPickup(){
     '<p>金額：'+money(total)+'（以送出時店家菜單價格重新計算）</p>'+
     '<p>備註：'+esc(pickupState.note||'無')+'</p><div class="staff-actionbar">'+
     btn("返回修改","pickup-review-back","outline")+btn("確定送出訂單","pickup-submit","primary")+'</div></div>':
-    btn("下一步：確認訂單內容","pickup-review","primary full",(!count||(!immediate&&!pickupState.slot))?"disabled":""))+
+    btn("下一步：確認訂單內容","pickup-review","primary full",(!count||(immediate&&!openNow)||(!immediate&&!pickupState.slot))?"disabled":""))+
   (customerOrders.length>(featuredCancelCard?1:0)?
     '<h3 style="margin:20px 0 8px">我的取餐進度（'+historyTotal+' 筆）</h3>'+otherOrderCards+historyControls:
     (featuredCancelCard?historyControls:'<p class="small">還沒有取餐訂單。</p>')));
