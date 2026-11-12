@@ -485,6 +485,59 @@ try{
   assert.ok(afterFullscreen.rects.every(r=>r.bottom<=viewport.height+2&&r.right<=viewport.width+2),
    "Exiting fullscreen must not cause clipping or overflow");
  }
+
+ // Queue Monster public DEMO must behave like a mobile app, not a desktop panel squeezed into a phone.
+ for(const viewport of [{width:320,height:720},{width:390,height:844},{width:1280,height:820}]){
+  await page.setViewportSize(viewport);
+  await page.goto(baseUrl+'/booking/demo.html',{waitUntil:'load'});
+  await page.locator('#root .mobile-bottom-nav').waitFor();
+  const ui=await page.evaluate(()=>{
+   const phone=document.querySelector('.mobile-device');
+   const nav=document.querySelector('#root .mobile-bottom-nav');
+   const root=document.querySelector('#root');
+   return {
+    width:document.documentElement.scrollWidth,
+    viewport:document.documentElement.clientWidth,
+    phoneWidth:Math.round(phone.getBoundingClientRect().width),
+    navPosition:getComputedStyle(nav).position,
+    navItems:nav.querySelectorAll('[data-tab]').length,
+    rootVisible:root.getBoundingClientRect().height>400,
+    scenes:document.querySelectorAll('[data-scene]').length,
+    hasDeskSideMenu:!!document.querySelector('#root .layout > aside')
+   };
+  });
+  assert.ok(ui.width<=viewport.width+1,'DEMO horizontal overflow at '+viewport.width+': '+JSON.stringify(ui));
+  assert.ok(ui.phoneWidth<=viewport.width+1,'DEMO handset exceeds viewport: '+JSON.stringify(ui));
+  assert.ok(ui.rootVisible,'DEMO app did not render: '+JSON.stringify(ui));
+  assert.equal(ui.scenes,4);
+  assert.ok(ui.navItems>=2);
+  assert.equal(ui.hasDeskSideMenu,false,'Mobile demo must never show desktop left sidebar');
+  if(viewport.width<=390)assert.equal(ui.navPosition,'fixed','Phone mode must use thumb-reachable fixed bottom navigation');
+  else assert.notEqual(ui.navPosition,'fixed','Desktop phone preview must keep navigation inside device');
+  await page.locator('[data-scene="clinic"]').click();
+  await page.locator('[data-role="staff"]').click();
+  await page.locator('.mobile-bottom-nav [data-tab="queue"]').click();
+  assert.match(await page.locator('#root').innerText(),/叫號操作/);
+  const clinicWidth=await page.evaluate(()=>document.documentElement.scrollWidth);
+  assert.ok(clinicWidth<=viewport.width+1,'Clinic manager flow overflows viewport '+viewport.width);
+  console.log('Mobile-first demo geometry:',JSON.stringify({viewport,...ui}));
+ }
+ await page.setViewportSize({width:390,height:844});
+ await page.goto(baseUrl+'/booking/demo.html',{waitUntil:'load'});
+ await page.locator('.mobile-bottom-nav [data-tab="order"]').click();
+ await page.locator('[data-act="qty"][data-delta="1"]').first().click();
+ await page.locator('#customer-name').fill('示範顧客');
+ await page.locator('#customer-phone').fill('0912345678');
+ await page.locator('[data-act="review-order"]').click();
+ await page.locator('[data-act="order-submit"]').click();
+ assert.match(await page.locator('#root').innerText(),/B003/);
+ assert.match(await page.locator('#notifications').innerText(),/訂餐已送出/);
+ await page.locator('[data-role="staff"]').click();
+ assert.match(await page.locator('#root').innerText(),/取餐訂單管理/);
+ await page.locator('[data-act="order-status"][data-id="B003"][data-value="READY"]').click();
+ assert.match(await page.locator('#notifications').innerText(),/待取/);
+ console.log('Mobile DEMO order and merchant notification preview passed.');
+
  assert.deepEqual(missing,[],'Missing local build assets');assert.deepEqual(errors,[],'Browser runtime errors');
  console.log('Browser smoke passed; no business writes were submitted.');
 }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}
