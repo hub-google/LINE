@@ -97,7 +97,7 @@ test("pastel directory header keeps WCAG AA contrast on mobile",()=>{
  assert.ok(ratio(hex(login,"background"),"#FFFFFF")>=4.5,"LINE login needs readable white type");
  assert.match(directory,/<header class="page-header">/);
  assert.match(directory,/id="marketing-header"/);
- assert.match(directory,/assets\/marketing\/shared-header\.css/);
+ assert.match(directory,/\.qm-public-header/,"shared public header styles are included");
  assert.doesNotMatch(directory,/class="site-auth-slot site-auth-dark"/);
  const shared=read("saas/assets/marketing/shared-header.css");
  const sharedNav=shared.match(/\.qm-public-header a\{[^}]+\}/)?.[0]||"";
