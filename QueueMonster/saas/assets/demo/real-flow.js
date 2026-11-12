@@ -21,6 +21,11 @@ const landlineRules={"02":/^[235678]\d{7}$/,"03":/^[2-689]\d{6}$/,"037":/^[2-9]\
 const landlineExamples={"02":"23456789","03":"2123456","037":"234567","04":"22345678","049":"2345678","05":"2345678","06":"2345678","07":"2345678","08":"4123456","082":"234567","0826":"61234","0836":"21234","089":"234567"};
 function pickupPhone(){return draft.phoneType==="landline"?draft.phoneArea+draft.phoneLocal:draft.phone;}
 function validPickupPhone(){return draft.phoneType==="mobile"?/^09\d{8}$/.test(draft.phone):landlineRules[draft.phoneArea]?.test(draft.phoneLocal)===true;}
+function canPrepareDemo(o){
+ if(o.immediate||!o.createdAt)return true;
+ const at=Date.parse(o.time.replace(" ","T")+":00+08:00");
+ return Number.isFinite(at)&&Date.now()>=at-20*60*1000;
+}
 function pickupWindowValid(){
  if(method==="immediate")return true; // Demo simulates an open shop, not the shop's actual live hours.
  if(!/^\d{4}-\d{2}-\d{2}$/.test(draft.day)||!/^\d{2}:\d{2}$/.test(draft.time))return false;
@@ -162,7 +167,7 @@ function staffOrder(){
   '<p class="small">聯絡電話：'+esc(o.phone)+'</p><p>'+esc(o.lines.map(x=>x.name+" × "+x.qty).join("、"))+'</p><p class="small">'+money(o.total)+'</p>'+
   '<div class="staff-actionbar" role="group" aria-label="選擇訂單狀態">'+choices(o).map(([name,v])=>btn(name,"order-status",v===o.status?"primary":"outline",'data-id="'+esc(o.id)+'" data-value="'+v+'"'+(v===o.status?" disabled":""))).join("")+'</div>'+
   '<details><summary class="small">其他操作（誤操作更正）</summary><div class="staff-actionbar">'+
-  (o.status==="ACCEPTED"?btn("開始製作","order-status","outline",'data-id="'+esc(o.id)+'" data-value="PREPARING"'):"")+
+  (o.status==="ACCEPTED"?btn("開始製作","order-status","outline",'data-id="'+esc(o.id)+'" data-value="PREPARING"'+(canPrepareDemo(o)?"":' disabled title="尚未到建議製作時間"')):"")+
   (o.status!=="CANCELLED"?btn("更正為顧客取消","order-status","outline",'data-id="'+esc(o.id)+'" data-value="CANCELLED"'):"")+
   (o.status!=="NEW"?btn("恢復待接單","order-status","outline",'data-id="'+esc(o.id)+'" data-value="NEW"'):"")+'</div></details>');
  return box("取餐訂單管理",'<p class="small">新訂單送出後 15 秒內由顧客自行取消，倒數結束才顯示給店家。主操作為接單、已完成待取及取消訂單；狀態可更正。</p>'+
@@ -317,7 +322,7 @@ document.addEventListener("click",e=>{
   }
   if(a==="order-status"){const o=find("orders",id);
    if(!o||o.createdAt&&Date.now()-o.createdAt<15000){inform("此訂單仍在顧客取消期，店家暫時無法操作。");return;}
-   if(o.status===value)return;o.status=value;notifyFor("order-status",o);
+   if(o.status===value)return;if(value==="PREPARING"&&!canPrepareDemo(o)){inform("尚未到建議製作時間，無法開始製作。");return;}o.status=value;notifyFor("order-status",o);
    inform(o.id+" 已更新為 "+statusName[value]+"；顧客可從我的服務查看狀態。");return;
   }
  if(a==="next"){
