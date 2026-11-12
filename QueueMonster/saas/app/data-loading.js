@@ -163,6 +163,10 @@ export async function load(){feedbackState.err="";try{
    catch(e){console.warn("LINE notification diagnostics unavailable")}
  }
  if(staffState.staffTab==="branches"||(staffState.staffTab==="settings"&&["profile","branches"].includes(staffState.settingsSection)))staffState.businessGroups=await rpc("so_my_business_groups");
+  if(staffState.staffTab==="settings" && ["operations","sessions"].includes(staffState.settingsSection)){
+    try{serviceUnitsState.scheduleConfig=await rpc("so_schedule_config",{p_slug:routeState.slug});}
+    catch(error){console.warn("營業排程讀取失敗",error);serviceUnitsState.scheduleConfig=null;}
+  }
   if(staffState.staffTab==="settings"){
     try{staffState.customerHomepageCopy=await rpc("so_get_customer_homepage",{p_slug:routeState.slug});}
     catch(error){console.warn("顧客首頁顯示設定讀取失敗",error);staffState.customerHomepageCopy=null;}
