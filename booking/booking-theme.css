@@ -623,3 +623,12 @@ body[data-portal="staff"] .customer-history-link:focus-visible{
  .settings-hub-tabs .btn { min-height: 42px; font-size: .91rem; }
  .settings-hub-tabs + .card .scroll { overflow-x: auto; }
 }
+
+/* Show pickup phone/notes examples as hints, not saved input. */
+#pickup-customer-phone::placeholder,
+#pickup-customer-local::placeholder,
+#pickup-note::placeholder{
+ color:#a1a7b1;
+ opacity:1;
+ font-weight:400;
+}
