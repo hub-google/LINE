@@ -1,12 +1,6 @@
 name: QueueMonster OA | FoodRadar daily two-method report
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/foodradar-daily-line-report.yml'
-  schedule:
-    # 06:15 Taiwan time, after FoodRadar 04:00 audit and before 06:30 crawl
-    - cron: '15 22 * * *'
+  # Manual only. No scheduled or push-triggered LINE FoodRadar audit messages.
   workflow_dispatch:
 permissions:
   contents: read
