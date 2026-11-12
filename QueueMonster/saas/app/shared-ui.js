@@ -85,11 +85,14 @@ export function menuChoiceReady(mode,ids,items){
 export function staffStatusPicker(kind,item,editable){
  const choices=kind==="reservation"?
   [["CONFIRMED","已預約"],["CHECKED_IN","已報到"],["COMPLETED","已完成"],["NO_SHOW","未到"],["CANCELLED","已取消"]]:
-  [["WAITING","候位中"],["HOLD","保留中"],["CALLED","已叫號"],["ARRIVED","已到場"],["ADMITTED","已進場"],["SERVING","服務中"],["COMPLETED","已完成"],["PASSED","已過號"],["CANCELLED","已取消"]];
- const label=kind==="reservation"?"預約":"號碼牌";
+  [["WAITING","候位中"],["HOLD","保留中"],["CALLED","已叫號"],["PASSED","已過號"],["COMPLETED","已完成"]];
+ const option=([value,title])=>'<label class="staff-choice"><input type="radio" name="'+kind+'-'+esc(item.id)+'" data-status-kind="'+kind+'" data-id="'+esc(item.id)+'" data-previous="'+esc(item.status)+'" value="'+value+'" '+(value===item.status?'checked ':'')+((Array.isArray(editable)?editable.includes(value):editable)?'':'disabled ')+'><span>'+title+'</span></label>';
+ // Historical ARRIVED/ADMITTED/SERVING records can still be moved into a primary status.
+ // Cancellation is reversible, but kept apart from the five primary choices.
+ const extra=kind==="ticket"?'<details class="ticket-secondary-status"><summary>其他操作</summary>'+
+   '<div class="staff-picker-secondary">'+option(["CANCELLED","取消號碼牌"])+'</div></details>':"";
  return '<fieldset class="staff-picker"><legend>點選狀態即儲存（可重新選擇修正）</legend>'+
-  choices.map(([value,title])=>'<label class="staff-choice"><input type="radio" name="'+kind+'-'+esc(item.id)+'" data-status-kind="'+kind+'" data-id="'+esc(item.id)+'" data-previous="'+esc(item.status)+'" value="'+value+'" '+(value===item.status?'checked ':'')+((Array.isArray(editable)?editable.includes(value):editable)?'':'disabled ')+'><span>'+title+'</span></label>').join("")+
- '</fieldset>';
+  choices.map(option).join("")+'</fieldset>'+extra;
 }
 
 export function staffDeletePicker(kind,item,parentHidden=false){
