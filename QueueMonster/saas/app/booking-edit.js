@@ -56,7 +56,7 @@ export async function beginBookingEdit(id){
  if(!record||record.status!=="CONFIRMED"){showActionFeedback("這筆預約目前無法編輯","error");return;}
  bookingState.editingBookingId=id;bookingState.editDate=String(record.day);bookingState.editTime=String(record.session_id||record.time);bookingState.editParty=Number(record.party);
  bookingState.editChosenItems=Array.isArray(record.selected_items)?record.selected_items.map(x=>x.id):[];
- routeState.customerTab="mine";bookingState.manageMode="edit";bookingState.manageKind="reservation";bookingState.manageItem=id;
+ if(routeState.customerTab!=="detail")routeState.customerTab="mine";bookingState.manageMode="edit";bookingState.manageKind="reservation";bookingState.manageItem=id;
  await fetchBookingEditSlots();
 }
 
