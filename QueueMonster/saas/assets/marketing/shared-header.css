@@ -30,3 +30,9 @@
 @media(max-width:1240px){.qm-public-header .qm-public-nav,.qm-public-header .qm-public-search{display:none}.qm-public-header .qm-public-mobile{display:block}.qm-public-header .qm-public-inner{min-height:65px}}
 @media(max-width:620px){.qm-public-header .qm-public-inner{padding:8px 10px;min-height:60px;gap:7px}.qm-public-header .qm-public-logo{font-size:16px;gap:5px}.qm-public-header .qm-public-logo img{width:33px;height:33px}.qm-public-header .qm-public-auth{max-width:calc(100% - 213px)}.qm-public-header .site-auth-label{display:none}.qm-public-header .site-auth-inner{gap:4px;flex-wrap:nowrap}.qm-public-header .site-auth-button{font-size:11px;min-height:38px!important;padding:6px 8px!important}.qm-public-header .qm-public-mobile>summary{min-height:38px;font-size:12px;padding:7px 9px}}
 @media(max-width:360px){.qm-public-header .qm-public-logo{font-size:14px}.qm-public-header .site-auth-button.site-auth-login{font-size:0}.qm-public-header .site-auth-button.site-auth-login::before{width:23px;height:23px}}
+
+/* Keep the shared bar sticky even though its mounting node wraps the header. */
+#marketing-header{position:sticky;top:0;z-index:95}
+#marketing-header .qm-public-header{position:relative;top:auto}
+/* The public icon is part of the shared header, not dependent on another page's CSS. */
+#marketing-header .site-auth-button.site-auth-login::before{content:"";display:block;flex:0 0 23px;width:23px;height:23px;background:url("/LINE/booking/line-app-icon.svg") center/contain no-repeat}
