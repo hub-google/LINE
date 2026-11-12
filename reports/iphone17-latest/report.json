@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-12T04:38:34.141Z",
+  "date": "2026-11-12T05:32:39.625Z",
   "device": "iPhone 17 simulated Chromium, 402x874 CSS pixels, DPR3",
   "note": "Read-only live website screenshots; no authentication, no writes; not physical Safari.",
   "screens": [
@@ -92,15 +92,15 @@
       "visibleTapCount": 11,
       "keyRects": {
         ".hero-cta": {
-          "top": -199,
-          "bottom": -13,
+          "top": -220,
+          "bottom": -34,
           "left": 20,
           "right": 382,
           "height": 186
         },
         ".hero-showcase": {
-          "top": 58,
-          "bottom": 915,
+          "top": 37,
+          "bottom": 894,
           "left": 20,
           "right": 382,
           "height": 857
@@ -125,70 +125,87 @@
       "height": 874,
       "docWidth": 402,
       "bodyWidth": 402,
-      "docHeight": 1705,
+      "docHeight": 1777,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [],
-      "visibleTapCount": 17,
+      "smallTaps": [
+        {
+          "text": "排隊怪獸",
+          "width": 102,
+          "height": 33,
+          "left": 10,
+          "right": 112,
+          "top": 14
+        },
+        {
+          "text": "關閉 ×",
+          "width": 67,
+          "height": 35,
+          "left": 313,
+          "right": 380,
+          "top": 69
+        }
+      ],
+      "visibleTapCount": 25,
       "keyRects": {
         ".page-header": {
-          "top": 0,
-          "bottom": 150,
+          "top": 61,
+          "bottom": 198,
           "left": 0,
           "right": 402,
-          "height": 150
+          "height": 137
         },
         ".hero-heading": {
-          "top": 58,
-          "bottom": 129,
+          "top": 106,
+          "bottom": 177,
           "left": 14,
           "right": 388,
           "height": 71
         },
         ".main-panel": {
-          "top": 133,
-          "bottom": 1541,
+          "top": 181,
+          "bottom": 1589,
           "left": 14,
           "right": 388,
           "height": 1408
         },
         ".tabs": {
-          "top": 147,
-          "bottom": 203,
+          "top": 195,
+          "bottom": 251,
           "left": 28,
           "right": 374,
           "height": 56
         },
         "#keyword": {
-          "top": 292,
-          "bottom": 341,
+          "top": 340,
+          "bottom": 389,
           "left": 28,
           "right": 374,
           "height": 49
         },
         "#explore-filters": {
-          "top": 351,
-          "bottom": 397,
+          "top": 399,
+          "bottom": 445,
           "left": 28,
           "right": 374,
           "height": 46
         },
         "#results": {
-          "top": 519,
-          "bottom": 1517,
+          "top": 567,
+          "bottom": 1565,
           "left": 28,
           "right": 374,
           "height": 998
         },
         "#results-heading": {
-          "top": 481,
-          "bottom": 509,
+          "top": 529,
+          "bottom": 557,
           "left": 28,
           "right": 127,
           "height": 28
         }
       },
-      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 找店家、查看叫號更簡單 搜尋店名或地點，直接查看可使用的服務。公開叫號看板無須登入；預約及取號才需 LINE 身分驗證。 熱門店家排行 近 30 天預約＋取號＋訂餐 · 前 2 名 #1 測試1 餐飲 線上預約 現場取號 線上點餐 平台 LINE 服務 近30天 · 預約 0 · 取號 6 · 訂餐 1 這是測試店家 地點：測試用途，無實體地址 立即預約 現場取號 立即點餐 公開叫號看板 地圖位置 ▤ #2 測試2 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 1 · 訂餐 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
+      "bodyText": "排隊怪獸 使用 LINE 登入 選單 ⌄ 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 找店家、查看叫號更簡單 搜尋店名或地點，直接查看可使用的服務。公開叫號看板無須登入；預約及取號才需 LINE 身分驗證。 熱門店家排行 近 30 天預約＋取號＋訂餐 · 前 2 名 #1 測試1 餐飲 線上預約 現場取號 線上點餐 平台 LINE 服務 近30天 · 預約 0 · 取號 6 · 訂餐 1 這是測試店家 地點：測試用途，無實體地址 立即預約 現場取號 立即點餐 公開叫號看板 地圖位置 ▤ #2 測試2 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 1 · 訂餐 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 預約與取號將使用 LINE 驗證身分，叫號看板不需登入。 隱私權說明 · 服務條款",
       "errors": [],
       "failedRequests": []
     },
@@ -200,70 +217,87 @@
       "height": 874,
       "docWidth": 402,
       "bodyWidth": 402,
-      "docHeight": 1705,
+      "docHeight": 1777,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [],
-      "visibleTapCount": 10,
+      "smallTaps": [
+        {
+          "text": "排隊怪獸",
+          "width": 102,
+          "height": 33,
+          "left": 10,
+          "right": 112,
+          "top": 14
+        },
+        {
+          "text": "關閉 ×",
+          "width": 67,
+          "height": 35,
+          "left": 313,
+          "right": 380,
+          "top": 69
+        }
+      ],
+      "visibleTapCount": 20,
       "keyRects": {
         ".page-header": {
-          "top": -588,
-          "bottom": -438,
+          "top": -527,
+          "bottom": -390,
           "left": 0,
           "right": 402,
-          "height": 150
+          "height": 137
         },
         ".hero-heading": {
-          "top": -530,
-          "bottom": -459,
+          "top": -482,
+          "bottom": -411,
           "left": 14,
           "right": 388,
           "height": 71
         },
         ".main-panel": {
-          "top": -455,
-          "bottom": 953,
+          "top": -407,
+          "bottom": 1001,
           "left": 14,
           "right": 388,
           "height": 1408
         },
         ".tabs": {
-          "top": -441,
-          "bottom": -385,
+          "top": -393,
+          "bottom": -337,
           "left": 28,
           "right": 374,
           "height": 56
         },
         "#keyword": {
-          "top": -296,
-          "bottom": -247,
+          "top": -248,
+          "bottom": -199,
           "left": 28,
           "right": 374,
           "height": 49
         },
         "#explore-filters": {
-          "top": -237,
-          "bottom": -191,
+          "top": -189,
+          "bottom": -143,
           "left": 28,
           "right": 374,
           "height": 46
         },
         "#results": {
-          "top": -69,
-          "bottom": 929,
+          "top": -21,
+          "bottom": 977,
           "left": 28,
           "right": 374,
           "height": 998
         },
         "#results-heading": {
-          "top": -107,
-          "bottom": -79,
+          "top": -59,
+          "bottom": -31,
           "left": 28,
           "right": 127,
           "height": 28
         }
       },
-      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 找店家、查看叫號更簡單 搜尋店名或地點，直接查看可使用的服務。公開叫號看板無須登入；預約及取號才需 LINE 身分驗證。 熱門店家排行 近 30 天預約＋取號＋訂餐 · 前 2 名 #1 測試1 餐飲 線上預約 現場取號 線上點餐 平台 LINE 服務 近30天 · 預約 0 · 取號 6 · 訂餐 1 這是測試店家 地點：測試用途，無實體地址 立即預約 現場取號 立即點餐 公開叫號看板 地圖位置 ▤ #2 測試2 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 1 · 訂餐 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
+      "bodyText": "排隊怪獸 使用 LINE 登入 選單 ⌄ 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 找店家、查看叫號更簡單 搜尋店名或地點，直接查看可使用的服務。公開叫號看板無須登入；預約及取號才需 LINE 身分驗證。 熱門店家排行 近 30 天預約＋取號＋訂餐 · 前 2 名 #1 測試1 餐飲 線上預約 現場取號 線上點餐 平台 LINE 服務 近30天 · 預約 0 · 取號 6 · 訂餐 1 這是測試店家 地點：測試用途，無實體地址 立即預約 現場取號 立即點餐 公開叫號看板 地圖位置 ▤ #2 測試2 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 1 · 訂餐 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 預約與取號將使用 LINE 驗證身分，叫號看板不需登入。 隱私權說明 · 服務條款",
       "errors": [],
       "failedRequests": []
     },
@@ -275,70 +309,87 @@
       "height": 874,
       "docWidth": 402,
       "bodyWidth": 402,
-      "docHeight": 874,
+      "docHeight": 901,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [],
-      "visibleTapCount": 15,
+      "smallTaps": [
+        {
+          "text": "排隊怪獸",
+          "width": 102,
+          "height": 33,
+          "left": 10,
+          "right": 112,
+          "top": 14
+        },
+        {
+          "text": "關閉 ×",
+          "width": 67,
+          "height": 35,
+          "left": 313,
+          "right": 380,
+          "top": 69
+        }
+      ],
+      "visibleTapCount": 24,
       "keyRects": {
         ".page-header": {
-          "top": 0,
-          "bottom": 150,
+          "top": 34,
+          "bottom": 171,
           "left": 0,
           "right": 402,
-          "height": 150
+          "height": 137
         },
         ".hero-heading": {
-          "top": 58,
-          "bottom": 129,
+          "top": 79,
+          "bottom": 150,
           "left": 14,
           "right": 388,
           "height": 71
         },
         ".main-panel": {
-          "top": 133,
-          "bottom": 665,
+          "top": 154,
+          "bottom": 686,
           "left": 14,
           "right": 388,
           "height": 533
         },
         ".tabs": {
-          "top": 147,
-          "bottom": 203,
+          "top": 168,
+          "bottom": 224,
           "left": 28,
           "right": 374,
           "height": 56
         },
         "#keyword": {
-          "top": 292,
-          "bottom": 341,
+          "top": 313,
+          "bottom": 362,
           "left": 28,
           "right": 374,
           "height": 49
         },
         "#explore-filters": {
-          "top": 351,
-          "bottom": 397,
+          "top": 372,
+          "bottom": 418,
           "left": 28,
           "right": 374,
           "height": 46
         },
         "#results": {
-          "top": 519,
-          "bottom": 641,
+          "top": 540,
+          "bottom": 662,
           "left": 28,
           "right": 374,
           "height": 122
         },
         "#results-heading": {
-          "top": 481,
-          "bottom": 509,
+          "top": 502,
+          "bottom": 530,
           "left": 28,
           "right": 94,
           "height": 28
         }
       },
-      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 找店家、查看叫號更簡單 搜尋店名或地點，直接查看可使用的服務。公開叫號看板無須登入；預約及取號才需 LINE 身分驗證。 搜尋結果 0 個結果 找不到符合條件的店家 試試其他店名、地點或篩選條件。 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
+      "bodyText": "排隊怪獸 使用 LINE 登入 選單 ⌄ 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 找店家、查看叫號更簡單 搜尋店名或地點，直接查看可使用的服務。公開叫號看板無須登入；預約及取號才需 LINE 身分驗證。 搜尋結果 0 個結果 找不到符合條件的店家 試試其他店名、地點或篩選條件。 預約與取號將使用 LINE 驗證身分，叫號看板不需登入。 隱私權說明 · 服務條款",
       "errors": [],
       "failedRequests": []
     },
@@ -350,70 +401,87 @@
       "height": 874,
       "docWidth": 402,
       "bodyWidth": 402,
-      "docHeight": 874,
+      "docHeight": 883,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [],
-      "visibleTapCount": 9,
+      "smallTaps": [
+        {
+          "text": "排隊怪獸",
+          "width": 102,
+          "height": 33,
+          "left": 10,
+          "right": 112,
+          "top": 14
+        },
+        {
+          "text": "關閉 ×",
+          "width": 67,
+          "height": 35,
+          "left": 313,
+          "right": 380,
+          "top": 69
+        }
+      ],
+      "visibleTapCount": 24,
       "keyRects": {
         ".page-header": {
-          "top": 0,
-          "bottom": 150,
+          "top": 61,
+          "bottom": 198,
           "left": 0,
           "right": 402,
-          "height": 150
+          "height": 137
         },
         ".hero-heading": {
-          "top": 58,
-          "bottom": 129,
+          "top": 106,
+          "bottom": 177,
           "left": 14,
           "right": 388,
           "height": 71
         },
         ".main-panel": {
-          "top": 133,
-          "bottom": 594,
+          "top": 181,
+          "bottom": 695,
           "left": 14,
           "right": 388,
-          "height": 462
+          "height": 514
         },
         ".tabs": {
-          "top": 147,
-          "bottom": 203,
+          "top": 195,
+          "bottom": 251,
           "left": 28,
           "right": 374,
           "height": 56
         },
         "#keyword": {
-          "top": 235,
-          "bottom": 284,
+          "top": 340,
+          "bottom": 389,
           "left": 28,
           "right": 374,
           "height": 49
         },
         "#explore-filters": {
-          "top": 0,
-          "bottom": 0,
-          "left": 0,
-          "right": 0,
-          "height": 0
-        },
-        "#results": {
-          "top": 383,
-          "bottom": 570,
+          "top": 399,
+          "bottom": 445,
           "left": 28,
           "right": 374,
-          "height": 187
+          "height": 46
+        },
+        "#results": {
+          "top": 548,
+          "bottom": 671,
+          "left": 28,
+          "right": 374,
+          "height": 122
         },
         "#results-heading": {
-          "top": 345,
-          "bottom": 373,
+          "top": 510,
+          "bottom": 538,
           "left": 28,
           "right": 94,
           "height": 28
         }
       },
-      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 搜尋店家名稱或地點 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 請先登入 LINE 請先使用 LINE 登入 登入後才能查詢自己的預約和號碼；未登入不代表沒有紀錄。 使用 LINE 登入後查看 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
+      "bodyText": "排隊怪獸 使用 LINE 登入 選單 ⌄ 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 正在確認身分 正在確認 LINE 身分 確認後才會顯示與你綁定的預約及取號紀錄。 預約與取號將使用 LINE 驗證身分，叫號看板不需登入。 隱私權說明 · 服務條款",
       "errors": [],
       "failedRequests": []
     },
@@ -425,70 +493,87 @@
       "height": 874,
       "docWidth": 402,
       "bodyWidth": 402,
-      "docHeight": 1686,
+      "docHeight": 1758,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [],
-      "visibleTapCount": 17,
+      "smallTaps": [
+        {
+          "text": "排隊怪獸",
+          "width": 102,
+          "height": 33,
+          "left": 10,
+          "right": 112,
+          "top": 14
+        },
+        {
+          "text": "關閉 ×",
+          "width": 67,
+          "height": 35,
+          "left": 313,
+          "right": 380,
+          "top": 69
+        }
+      ],
+      "visibleTapCount": 25,
       "keyRects": {
         ".page-header": {
-          "top": 0,
-          "bottom": 150,
+          "top": 61,
+          "bottom": 198,
           "left": 0,
           "right": 402,
-          "height": 150
+          "height": 137
         },
         ".hero-heading": {
-          "top": 58,
-          "bottom": 129,
+          "top": 106,
+          "bottom": 177,
           "left": 14,
           "right": 388,
           "height": 71
         },
         ".main-panel": {
-          "top": 133,
-          "bottom": 1522,
+          "top": 181,
+          "bottom": 1570,
           "left": 14,
           "right": 388,
           "height": 1390
         },
         ".tabs": {
-          "top": 147,
-          "bottom": 203,
+          "top": 195,
+          "bottom": 251,
           "left": 28,
           "right": 374,
           "height": 56
         },
         "#keyword": {
-          "top": 292,
-          "bottom": 341,
+          "top": 340,
+          "bottom": 389,
           "left": 28,
           "right": 374,
           "height": 49
         },
         "#explore-filters": {
-          "top": 351,
-          "bottom": 397,
+          "top": 399,
+          "bottom": 445,
           "left": 28,
           "right": 374,
           "height": 46
         },
         "#results": {
-          "top": 500,
-          "bottom": 1498,
+          "top": 548,
+          "bottom": 1546,
           "left": 28,
           "right": 374,
           "height": 998
         },
         "#results-heading": {
-          "top": 462,
-          "bottom": 490,
+          "top": 510,
+          "bottom": 538,
           "left": 28,
           "right": 127,
           "height": 28
         }
       },
-      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 選擇提供現場取號的店家 公開看板可直接查看；實際取號時才需要 LINE 驗證。 熱門店家排行 近 30 天預約＋取號＋訂餐 · 前 2 名 #1 測試1 餐飲 線上預約 現場取號 線上點餐 平台 LINE 服務 近30天 · 預約 0 · 取號 6 · 訂餐 1 這是測試店家 地點：測試用途，無實體地址 立即預約 現場取號 立即點餐 公開叫號看板 地圖位置 ▤ #2 測試2 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 1 · 訂餐 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
+      "bodyText": "排隊怪獸 使用 LINE 登入 選單 ⌄ 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 選擇提供現場取號的店家 公開看板可直接查看；實際取號時才需要 LINE 驗證。 熱門店家排行 近 30 天預約＋取號＋訂餐 · 前 2 名 #1 測試1 餐飲 線上預約 現場取號 線上點餐 平台 LINE 服務 近30天 · 預約 0 · 取號 6 · 訂餐 1 這是測試店家 地點：測試用途，無實體地址 立即預約 現場取號 立即點餐 公開叫號看板 地圖位置 ▤ #2 測試2 其他 線上預約 現場取號 平台 LINE 服務 近30天 · 預約 0 · 取號 1 · 訂餐 0 真正讀寫 Supabase 的隔離測試環境，LINE 通知使用測試官方帳號。 地點：測試用途，無實體地址 立即預約 現場取號 公開叫號看板 地圖位置 預約與取號將使用 LINE 驗證身分，叫號看板不需登入。 隱私權說明 · 服務條款",
       "errors": [],
       "failedRequests": []
     },
@@ -500,36 +585,53 @@
       "height": 874,
       "docWidth": 402,
       "bodyWidth": 402,
-      "docHeight": 916,
+      "docHeight": 988,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [],
-      "visibleTapCount": 11,
+      "smallTaps": [
+        {
+          "text": "排隊怪獸",
+          "width": 102,
+          "height": 33,
+          "left": 10,
+          "right": 112,
+          "top": 14
+        },
+        {
+          "text": "關閉 ×",
+          "width": 67,
+          "height": 35,
+          "left": 313,
+          "right": 380,
+          "top": 69
+        }
+      ],
+      "visibleTapCount": 19,
       "keyRects": {
         ".page-header": {
-          "top": 0,
-          "bottom": 150,
+          "top": 61,
+          "bottom": 198,
           "left": 0,
           "right": 402,
-          "height": 150
+          "height": 137
         },
         ".hero-heading": {
-          "top": 58,
-          "bottom": 129,
+          "top": 106,
+          "bottom": 177,
           "left": 14,
           "right": 388,
           "height": 71
         },
         ".main-panel": {
-          "top": 133,
-          "bottom": 752,
+          "top": 181,
+          "bottom": 800,
           "left": 14,
           "right": 388,
           "height": 620
         },
         ".tabs": {
-          "top": 147,
-          "bottom": 203,
+          "top": 195,
+          "bottom": 251,
           "left": 28,
           "right": 374,
           "height": 56
@@ -563,7 +665,7 @@
           "height": 0
         }
       },
-      "bodyText": "排隊怪獸 使用 LINE 登入 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 遊戲逛店 走進商圈，逛逛店家 先選商圈，再點店面。電腦可使用方向鍵，手機可使用下方控制鈕。 分類 全部類別 餐飲 其他 選擇想逛的商圈 · 2 家公開店家 線上商圈 2 家 遊戲地圖是探索介面，不代表實際地理位置。僅列出已公開的店家；公開商圈另行標示。 預約與取號將使用 LINE 驗證身分，公開叫號看板不需登入。 隱私權說明 · 服務條款",
+      "bodyText": "排隊怪獸 使用 LINE 登入 選單 ⌄ 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 遊戲逛店 走進商圈，逛逛店家 先選商圈，再點店面。電腦可使用方向鍵，手機可使用下方控制鈕。 分類 全部類別 餐飲 其他 選擇想逛的商圈 · 2 家公開店家 線上商圈 2 家 遊戲地圖是探索介面，不代表實際地理位置。僅列出已公開的店家；公開商圈另行標示。 預約與取號將使用 LINE 驗證身分，叫號看板不需登入。 隱私權說明 · 服務條款",
       "errors": [],
       "failedRequests": []
     },
@@ -955,7 +1057,7 @@
       ],
       "visibleTapCount": 3,
       "keyRects": {},
-      "bodyText": "測試1 叫號變動即時更新 12:38 診間 · 上午場 1診 2 接下來：3、5、6、7 等候 4 組 單獨顯示此場次 由排隊怪獸提供服務 全螢幕 最後成功同步：12:38:33；號碼變更即時更新，並定期核對。",
+      "bodyText": "測試1 叫號變動即時更新 13:32 診間 · 上午場 1診 2 接下來：3、5、6、7 等候 4 組 單獨顯示此場次 由排隊怪獸提供服務 全螢幕 最後成功同步：13:32:38；號碼變更即時更新，並定期核對。",
       "errors": [],
       "failedRequests": []
     }
