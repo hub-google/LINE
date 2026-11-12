@@ -189,6 +189,8 @@ test("demo uses actual product styles, matches real customer/merchant layouts an
 
 test("real-flow demo reproduces guest creation, merchant status changes and LINE preview without backend",()=>{
  const source=read("saas/assets/demo/real-flow.js");
+ let now=Date.now();
+ class DemoDate extends Date { static now(){return now;} }
  const handlers={},elements=new Map();
  const el=id=>{
   if(!elements.has(id))elements.set(id,{id,value:"",textContent:"",innerHTML:"",hidden:false,classList:{toggle(){}},setAttribute(){},scrollIntoView(){}});
@@ -200,7 +202,7 @@ test("real-flow demo reproduces guest creation, merchant status changes and LINE
   addEventListener:(name,cb)=>{handlers[name]=cb}
  };
  // Production demo uses a 15-second cancel countdown; VM tests do not run timers.
- runInNewContext(source,{document:doc,Intl,Date,setInterval:()=>1,clearInterval:()=>{},setTimeout:()=>1,clearTimeout:()=>{}});
+ runInNewContext(source,{document:doc,Intl,Date:DemoDate,setInterval:()=>1,clearInterval:()=>{},setTimeout:()=>1,clearTimeout:()=>{}});
  const click=(selector,data)=>handlers.click({target:{closest:s=>s===selector?{dataset:data}:null}});
  const change=(data)=>handlers.change({target:data});
  const input=(id,value)=>handlers.input({target:{id,value}});
@@ -208,7 +210,8 @@ test("real-flow demo reproduces guest creation, merchant status changes and LINE
  assert.match(el("root").innerHTML,/立即線上取號/);
  click("[data-scene]",{scene:"breakfast"});
  assert.match(el("root").innerHTML,/選擇餐點/);
- input("customer-name","示範顧客");input("customer-phone","0912345678");
+ assert.doesNotMatch(el("root").innerHTML,/id="customer-name"/,"Pickup never asks for a name");
+ input("customer-phone","0912345678");
  click("[data-act]",{act:"qty",id:"egg",delta:"1"});
  click("[data-act]",{act:"review-order"});
  assert.match(el("root").innerHTML,/請核對送出前的訂餐內容/);
@@ -217,6 +220,10 @@ test("real-flow demo reproduces guest creation, merchant status changes and LINE
  assert.match(el("notifications").innerHTML,/訂餐已送出/);
  click("[data-role]",{role:"staff"});
  assert.match(el("root").innerHTML,/取餐訂單管理/);
+ assert.doesNotMatch(el("root").innerHTML,/data-id="B003"/,"Order stays hidden during the 15-second grace period");
+ now+=16000;
+ click("[data-role]",{role:"staff"});
+ assert.match(el("root").innerHTML,/data-id="B003"/,"Order becomes available after 15 seconds");
  click("[data-act]",{act:"order-status",id:"B003",value:"ACCEPTED"});
  assert.match(el("notifications").innerHTML,/已接單/);
  click("[data-act]",{act:"order-status",id:"B003",value:"REJECTED"});

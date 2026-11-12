@@ -563,6 +563,7 @@ try{
   console.log('Mobile-first demo geometry:',JSON.stringify({viewport,...ui}));
  }
  await page.setViewportSize({width:390,height:844});
+ await page.clock.install({time:new Date()});
  await page.goto(baseUrl+'/booking/demo.html',{waitUntil:'load'});
  // DEMO starts in the live repair queue; switching to breakfast goes straight to the ordering form.
  assert.match(await page.locator('#root').innerText(),/立即線上取號/);
@@ -576,6 +577,7 @@ try{
  await page.locator('[data-act="order-submit"]').click();
  assert.match(await page.locator('#root').innerText(),/B003/);
  assert.match(await page.locator('#notifications').innerText(),/訂餐已送出/);
+ await page.clock.fastForward(16000);
  await page.locator('[data-role="staff"]').click();
  assert.match(await page.locator('#root').innerText(),/取餐訂單管理/);
  await page.locator('[data-act="order-status"][data-id="B003"][data-value="READY"]').click();
