@@ -27,6 +27,7 @@ async function effectivePassword(email,plaintext){
 const $=id=>document.getElementById(id);
 const returnToLogin=()=>{const url=new URL("./merchant-register.html?mode=login",location.href);if(invited)url.searchParams.set("staff_invite",invitedId);else url.searchParams.set("from","queue-monster");return url.href;};
 const returnToReset=()=>new URL("./merchant-register.html?mode=login&intent=recovery",location.href).href;
+const returnToSignup=()=>{const url=new URL(returnToLogin());url.searchParams.set("intent","complete-signup");return url.href;};
 const needsInitialPassword=user=>user?.app_metadata?.queue_monster_invited===true && user?.app_metadata?.queue_monster_password_ready!==true;
 const msg=(t,error=false)=>{$("message").textContent=t||"";$("message").className=t?"message"+(error?" error":""):""};
 const invitedId=new URL(location.href).searchParams.get("staff_invite")||"";
@@ -35,17 +36,48 @@ const invited=inviteIdPattern.test(invitedId);
 const inviteHint=$("invitation-hint");
 if(invited)inviteHint.textContent="你收到排隊怪獸的企業員工邀請。請使用收到邀請的電子信箱登入，或先註冊並完成信箱驗證。";
 
-let busy=false,active="login",authUser=null,workspaceSlug="";
+let busy=false,active="login",authUser=null,workspaceSlug="",pendingEmail="",lastEmailSentAt=0;
+function renderSignupStep(){
+ $("signup-form").classList.toggle("hidden",active!=="signup"||!!pendingEmail);
+ $("verify-email-stage").classList.toggle("hidden",active!=="signup"||!pendingEmail);
+ if(pendingEmail)$("verify-email-address").textContent=pendingEmail;
+}
+async function requestSignupEmail(email){
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw Error("請輸入有效的電子信箱");
+ if(Date.now()-lastEmailSentAt<60000)throw Error("驗證信剛剛已寄出，請稍後再重新寄送");
+ const {error}=await signupSb.auth.signInWithOtp({email,options:{
+  shouldCreateUser:true,emailRedirectTo:returnToSignup(),
+  data:{app:"queue-monster",queue_monster_password_pending:true}
+ }});
+ if(error)throw error;
+ lastEmailSentAt=Date.now();
+}
 const setMode=(mode)=>{
  active=mode==="signup"?"signup":"login";
+ pendingEmail="";
  showAuth(null);
- for(const m of ["login","signup"]){$("tab-"+m).setAttribute("aria-selected",String(active===m));$(""+m+"-form").classList.toggle("hidden",active!==m)}
+ for(const m of ["login","signup"]){$("tab-"+m).setAttribute("aria-selected",String(active===m));}
+ renderSignupStep();
+ $("login-form").classList.toggle("hidden",active!=="login")
  const u=new URL(location.href);u.searchParams.set("mode",active);history.replaceState(null,"",u.pathname+u.search+u.hash);
  msg("");
 };
 $("tab-login").onclick=()=>{setMode("login");void prepare().catch(e=>msg(customerFacingError(e,"login"),true))};
 $("tab-signup").onclick=()=>setMode("signup");
 setMode(new URL(location.href).searchParams.get("mode"));
+$("google-auth").onclick=()=>void execute(async()=>{
+ const {data,error}=await sb.auth.signInWithOAuth({provider:"google",
+  options:{redirectTo:returnToLogin(),skipBrowserRedirect:true,queryParams:{prompt:"select_account"}}});
+ if(error)throw error;
+ if(!data?.url)throw Error("Google 登入暫時無法使用，請改用 Email。");
+ location.assign(data.url);
+},"login");
+$("resend-signup-email").onclick=()=>void execute(async()=>{
+ if(!pendingEmail)throw Error("請先輸入電子信箱");
+ await requestSignupEmail(pendingEmail);
+ msg("已重新申請寄送驗證信，請查看收件匣與垃圾郵件匣。");
+},"signup");
+$("change-signup-email").onclick=()=>{pendingEmail="";renderSignupStep();msg("");$("signup-email").focus()};
 async function execute(job,operation="general"){
  if(busy)return;busy=true;document.querySelectorAll("button").forEach(b=>b.disabled=true);msg("正在處理…");
  try{await job()}catch(error){msg(customerFacingError(error,operation==="general"?(active==="signup"?"signup":"login"):operation),true)}
@@ -54,7 +86,7 @@ async function execute(job,operation="general"){
 async function rpc(name,args={}){const {data,error}=await sb.rpc(name,args);if(error)throw Error(error.message);return data}
 function showAuth(user){
  authUser=user;$("auth-zone").classList.toggle("hidden",!!user);$("account-zone").classList.toggle("hidden",!user);
- if(user){$("account-email").textContent=user.email||"";$("account-name").textContent=user.email||"店家使用者";$("account-title").textContent="帳號已登入"}
+ if(user){$("account-email").textContent=user.email||"";$("account-name").textContent=user.user_metadata?.full_name||user.user_metadata?.name||user.email||"店家使用者";$("account-title").textContent="帳號已登入"}
 }
 async function prepare(){
  if(active==="signup"){showAuth(null);return}
@@ -72,13 +104,16 @@ async function prepare(){
  workspace.replaceChildren();
  const passwordPanel=document.querySelector(".password-panel");
  const firstSetup=needsInitialPassword(user);
- const recovering=new URL(location.href).searchParams.get("intent")==="recovery";
+ const intent=new URL(location.href).searchParams.get("intent");
+ const recovering=intent==="recovery";
+ const completingSignup=intent==="complete-signup"||user?.user_metadata?.queue_monster_password_pending===true;
  const title=passwordPanel.querySelector("h3"),help=passwordPanel.querySelector(".sub");
- if(recovering||firstSetup){
-   $("account-title").textContent=recovering?"重設帳號密碼":"完成員工帳號啟用";
-   title.textContent=recovering?"設定新密碼":"首次設定登入密碼";
+ if(recovering||firstSetup||completingSignup){
+   $("account-title").textContent=recovering?"重設帳號密碼":completingSignup?"信箱已驗證｜完成註冊":"完成員工帳號啟用";
+   title.textContent=recovering?"設定新密碼":completingSignup?"最後一步：設定登入密碼":"首次設定登入密碼";
    help.textContent=recovering?"請輸入新密碼並確認，完成後才能繼續。":
-     "此帳號尚未完成密碼設定。請先設定密碼並再次輸入確認，完成後才能進入員工後台。";
+     completingSignup?"信箱已驗證，現在設定只有自己知道的密碼；如帳號先前已有密碼，將以這次設定為準。":
+     "此帳號尚未完成密碼設定。請先設定密碼並再次輸入確認，完成後才能進入員工後台.";
    return;
  }
  title.textContent="變更登入密碼";
@@ -199,18 +234,10 @@ $("login-form").onsubmit=e=>{e.preventDefault();void execute(async()=>{
 })};
 $("signup-form").onsubmit=e=>{e.preventDefault();void execute(async()=>{
  const email=$("signup-email").value.trim().toLowerCase();
- const password=$("signup-pass").value,confirm=$("signup-confirm").value;
- if(password.length<1)throw Error("請輸入密碼");
- if(password!==confirm)throw Error("兩次輸入的密碼不相同");
- const {data,error}=await signupSb.auth.signUp({email,password:await effectivePassword(email,password),options:{emailRedirectTo:returnToLogin(),data:{app:"queue-monster"}}});
- if(error)throw error;
- if(data.session){
-  const {error:sessionError}=await sb.auth.setSession({access_token:data.session.access_token,refresh_token:data.session.refresh_token});
-  if(sessionError)throw sessionError;
-  setMode("login");await prepare();msg("帳號已建立，請完成店家資料");
- }
- else{setMode("login");$("login-email").value=email;msg("註冊已送出，請先到信箱完成驗證，再回來登入")}
-})};
+ await requestSignupEmail(email);
+ pendingEmail=email;renderSignupStep();
+ msg("請到信箱點擊驗證連結，驗證成功後才能設定密碼。");
+},"signup")};
 $("email-link-login").onclick=()=>void execute(async()=>{
  const email=$("login-email").value.trim().toLowerCase();
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw Error("請先填寫有效的電子信箱");
@@ -228,7 +255,11 @@ $("change-pass").onclick=()=>void execute(async()=>{
  if(password.length<1)throw Error("請輸入新密碼");
  if(password!==confirm)throw Error("兩次輸入的密碼不相同");
  const effective=await effectivePassword(authUser?.email,password);
- const {data:updated,error}=await sb.auth.updateUser({password:effective});
+ const finishingSignup=authUser?.user_metadata?.queue_monster_password_pending===true||
+   new URL(location.href).searchParams.get("intent")==="complete-signup";
+  const update={password:effective};
+  if(finishingSignup)update.data={queue_monster_password_pending:false};
+  const {data:updated,error}=await sb.auth.updateUser(update);
  if(error)throw error;
  if(needsInitialPassword(updated.user||authUser)){
    const email=(updated.user||authUser)?.email;
