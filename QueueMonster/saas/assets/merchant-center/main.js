@@ -43,5 +43,28 @@
     });
     document.addEventListener("keydown",function(event){if(event.key==="Escape"&&mobileGuide.open)mobileGuide.open=false});
   }
-  if(location.hash==="#mode-own"){setMode("own",false);document.getElementById("mode").scrollIntoView()}
+  /* Keep the instructions first. Screenshot-like previews are optional supporting material. */
+  document.querySelectorAll(".panel.example").forEach(function(panel){
+    var screen=panel.querySelector(":scope > .screen");
+    var howto=panel.querySelector(":scope > .howto");
+    if(!screen||!howto)return;
+    var details=document.createElement("details");
+    details.className="preview-details";
+    var summary=document.createElement("summary");
+    summary.textContent="查看對應操作畫面示範";
+    details.appendChild(summary);
+    details.appendChild(screen);
+    panel.appendChild(details);
+  });
+  function syncGuideHash(){
+    if(location.hash==="#mode-own"){
+      setMode("own",false);
+      var mode=document.getElementById("mode");
+      if(mode)mode.scrollIntoView({block:"start"});
+    }else if(location.hash==="#mode"){
+      setMode("platform",false);
+    }
+  }
+  window.addEventListener("hashchange",syncGuideHash);
+  syncGuideHash();
 })();
