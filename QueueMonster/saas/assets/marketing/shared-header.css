@@ -35,4 +35,4 @@
 #marketing-header{position:sticky;top:0;z-index:95}
 #marketing-header .qm-public-header{position:relative;top:auto}
 /* The public icon is part of the shared header, not dependent on another page's CSS. */
-#marketing-header .site-auth-button.site-auth-login::before{content:"";display:block;flex:0 0 23px;width:23px;height:23px;background:url("/LINE/booking/line-app-icon.svg") center/contain no-repeat}
+#marketing-header .site-auth-button.site-auth-login::before{content:"";display:block;flex:0 0 23px;width:23px;height:23px;background:url("https://hub-google.github.io/LINE/booking/line-app-icon.svg") center/contain no-repeat}
