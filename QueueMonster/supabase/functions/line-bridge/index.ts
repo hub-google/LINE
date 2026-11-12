@@ -530,7 +530,7 @@ async function dispatchOutboxItem(
       return { status: "SKIPPED", reason: "PICKUP_EVENT_OLDER_THAN_LATEST" };
     const states: Record<string,string> = {
       NEW:"訂單已送出，等待店家接單",ACCEPTED:"店家已接單",PREPARING:"店家製作中",
-      READY:"餐點可取餐",PICKED_UP:"已取餐",REJECTED:"店家已拒單",CANCELLED:"訂單已取消",
+      READY:"餐點可取餐",PICKED_UP:"已取餐",REJECTED:"店家已取消訂單",CANCELLED:"訂單已取消",
     };
     const statusText = states[event.status] || event.status;
     const itemLines = Array.isArray(order.items)

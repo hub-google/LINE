@@ -15,7 +15,7 @@ export const pickupState={
   day:"",slot:"",method:"scheduled",cart:{},note:"",requestId:"",history:null,historyPage:1,historyFilter:"all",customerHistory:null,customerHistoryPage:1,phoneType:"mobile",phone:"",phoneArea:"02",phoneLocal:"",confirming:false
 };
 const statusText={NEW:"待店家接單",ACCEPTED:"已接單・待製作",PREPARING:"製作中",
-  READY:"可取餐",PICKED_UP:"已取餐",REJECTED:"店家已拒單",CANCELLED:"已取消"};
+  READY:"可取餐",PICKED_UP:"已取餐",REJECTED:"店家已取消訂單",CANCELLED:"已取消"};
 const pickupContactPhone=()=>pickupState.phoneType==="landline"?pickupState.phoneArea+pickupState.phoneLocal:pickupState.phone;
 const validPickupContactPhone=()=>isValidTaiwanPhoneParts(pickupState.phoneType,pickupState.phone,pickupState.phoneArea,pickupState.phoneLocal);
 const money=n=>"NT$ "+Number(n||0).toLocaleString("zh-TW",{maximumFractionDigits:2});
@@ -178,12 +178,12 @@ export function renderStaffPickup(){
  const history=orders.filter(o=>["PICKED_UP","REJECTED","CANCELLED"].includes(o.status));
  const canUpdate=d.can_update!==false;
  const staffStatusText={NEW:"待接單",ACCEPTED:"已接單",PREPARING:"製作中",
-   READY:"已完成待取",PICKED_UP:"已取餐",REJECTED:"已拒單",CANCELLED:"已取消"};
+   READY:"已完成待取",PICKED_UP:"已取餐",REJECTED:"店家已取消訂單",CANCELLED:"已取消"};
  const action=(o,label,status,disabled=false,style="outline")=>btn(label,"pickup-status",style,
    'data-id="'+esc(o.id)+'" data-status="'+status+'" data-expected="'+esc(o.status)+'"'+
    (disabled?' disabled title="目前狀態或尚未到建議製作時間"':''));
  // These choices remain available for every order, including rejected and finished orders.
- const choices=[["接單","ACCEPTED"],["已完成待取","READY"],["拒單","REJECTED"]];
+ const choices=[["接單","ACCEPTED"],["已完成待取","READY"],["取消訂單","REJECTED"]];
  const card=o=>'<div class="inset" style="margin:0 0 12px;padding:14px"><div class="listline"><strong>'+
   esc(o.number)+'</strong><strong>'+esc(staffStatusText[o.status]||o.status)+'</strong></div>'+
   '<p class="small"><strong>約定取餐 '+esc(o.pickup_at)+'</strong> '+(o.scheduled?"（指定時間）":"（立即）")+'</p>'+
@@ -192,15 +192,15 @@ export function renderStaffPickup(){
   (canUpdate?'<div class="staff-actionbar" role="group" aria-label="選擇訂單狀態">'+
   choices.map(([label,status])=>action(o,label,status,o.status===status,o.status===status?"primary":"outline")).join("")+'</div>':
   '<p class="small">此員工角色僅可查看訂單，由管理者修改狀態。</p>')+
-  (canUpdate?'<details style="margin-top:8px"><summary class="small">其他操作（開始製作／取消／恢復待接單）</summary>'+
+  (canUpdate?'<details style="margin-top:8px"><summary class="small">其他操作（開始製作／取消類型更正／恢復待接單）</summary>'+
   '<div class="staff-actionbar" style="margin-top:10px">'+
   (o.status==="ACCEPTED"?action(o,"開始製作","PREPARING",!o.can_prepare):"")+
-  (o.status!=="CANCELLED"?action(o,"取消訂單","CANCELLED"):"")+
+  (o.status!=="CANCELLED"?action(o,"更正為顧客取消","CANCELLED"):"")+
   (o.status!=="NEW"?action(o,"恢復待接單","NEW"):"")+'</div></details>':"")+'</div>';
  const h=pickupState.history||{},past=h.orders||[],maxPage=Math.max(1,Math.ceil(Number(h.total||0)/25));
  const choose=(f,label)=>btn(label,"pickup-history-filter",pickupState.historyFilter===f?"primary":"outline",'data-filter="'+f+'"');
  return box("取餐訂單管理",
-  '<p class="small">依約定取餐時間排序。可切換接單、已完成待取或拒單；誤操作可以更正，所有變更均保留稽核紀錄。</p>'+
+  '<p class="small">依約定取餐時間排序。可切換接單、已完成待取或取消訂單；誤操作可以更正，所有變更均保留稽核紀錄。</p>'+
   '<p><strong>待處理 '+active.length+' 筆</strong></p>'+
   (active.length?active.map(card).join(""):'<p class="muted">目前沒有待處理訂單。</p>')+
   '<details class="pickup-history-panel" open><summary>歷史訂單（'+Number(h.total??history.length)+' 筆，可更正狀態）</summary>'+

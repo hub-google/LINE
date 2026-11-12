@@ -15,7 +15,7 @@ const modes = {breakfast:["order","mine"],salon:["reserve","mine"],repair:["queu
 const primaryTab = {repair:"queue",breakfast:"order",salon:"reserve",clinic:"reserve"};
 const tabs = {home:"首頁",order:"線上點餐",reserve:"線上預約",queue:"現場取號",mine:"我的服務"};
 const staffTabs = {breakfast:"orders",salon:"bookings",repair:"queue",clinic:"bookings"};
-const statusName = {NEW:"待接單",ACCEPTED:"已接單",READY:"待取",REJECTED:"已拒單",PICKED_UP:"已完成",CONFIRMED:"已預約",CHECKED_IN:"已報到",COMPLETED:"已完成",CANCELLED:"已取消",NO_SHOW:"未到",WAITING:"候位中",CALLED:"已叫號",ARRIVED:"已到場",ADMITTED:"已進場",SERVING:"服務中",PASSED:"已過號",HOLD:"保留中"};
+const statusName = {NEW:"待接單",ACCEPTED:"已接單",READY:"待取",REJECTED:"店家已取消訂單",PICKED_UP:"已完成",CONFIRMED:"已預約",CHECKED_IN:"已報到",COMPLETED:"已完成",CANCELLED:"已取消",NO_SHOW:"未到",WAITING:"候位中",CALLED:"已叫號",ARRIVED:"已到場",ADMITTED:"已進場",SERVING:"服務中",PASSED:"已過號",HOLD:"保留中"};
 const food = [{id:"egg",name:"招牌蛋餅",price:40,description:"現點現做"},{id:"toast",name:"火腿蛋吐司",price:50,description:"早餐人氣商品"},{id:"tea",name:"奶茶",price:25,description:"中杯"},{id:"burger",name:"豬肉蛋漢堡",price:60,description:"經典早餐"}];
 const make = () => ({
  breakfast:{orders:[{id:"B001",name:"王小美",phone:"0912000001",lines:[{name:"招牌蛋餅",qty:1,price:40}],time:"08:00",status:"NEW",total:40},{id:"B002",name:"林先生",phone:"0912000002",lines:[{name:"火腿蛋吐司",qty:2,price:50}],time:"08:30",status:"READY",total:100}],seq:3},
@@ -125,9 +125,9 @@ function customerMine(){
 }
 function staffOrder(){
  const d=current(),active=d.orders.filter(o=>!["REJECTED","PICKED_UP"].includes(o.status)),old=d.orders.filter(o=>["REJECTED","PICKED_UP"].includes(o.status));
- const choices=[["接單","ACCEPTED"],["待取","READY"],["拒單","REJECTED"],["已完成","PICKED_UP"]];
- const card=o=>inset('<div class="listline"><strong>'+esc(o.id)+'</strong><strong>'+esc(statusName[o.status])+'</strong></div><p class="small"><strong>約定取餐 '+esc(o.time)+'</strong>（指定時間）</p><p class="small">顧客：'+esc(o.name)+' · '+esc(o.phone)+'</p><p>'+esc(o.lines.map(x=>x.name+" × "+x.qty).join("、"))+'</p><p class="small">'+money(o.total)+'</p><div class="staff-actionbar" role="group" aria-label="選擇訂單狀態">'+choices.map(([name,v])=>btn(name,"order-status",v===o.status?"primary":"outline",'data-id="'+esc(o.id)+'" data-value="'+v+'"')).join("")+'</div><details><summary class="small">其他操作（取消／恢復待接單）</summary><div class="staff-actionbar">'+btn("恢復待接單","order-status","outline",'data-id="'+esc(o.id)+'" data-value="NEW"')+'</div></details>');
- return box("取餐訂單管理",'<p class="small">依約定取餐時間排序。可切換接單、待取、拒單或已完成，已結束的訂單也能重新更正。</p><p><strong>待處理 '+active.length+' 筆</strong></p>'+active.map(card).join("")+'<details open class="pickup-history-panel"><summary>歷史訂單（'+old.length+' 筆，可更正狀態）</summary>'+old.map(card).join("")+'</details>');
+ const choices=[["接單","ACCEPTED"],["待取","READY"],["取消訂單","REJECTED"],["已完成","PICKED_UP"]];
+ const card=o=>inset('<div class="listline"><strong>'+esc(o.id)+'</strong><strong>'+esc(statusName[o.status])+'</strong></div><p class="small"><strong>約定取餐 '+esc(o.time)+'</strong>（指定時間）</p><p class="small">顧客：'+esc(o.name)+' · '+esc(o.phone)+'</p><p>'+esc(o.lines.map(x=>x.name+" × "+x.qty).join("、"))+'</p><p class="small">'+money(o.total)+'</p><div class="staff-actionbar" role="group" aria-label="選擇訂單狀態">'+choices.map(([name,v])=>btn(name,"order-status",v===o.status?"primary":"outline",'data-id="'+esc(o.id)+'" data-value="'+v+'"')).join("")+'</div><details><summary class="small">其他操作（恢復待接單）</summary><div class="staff-actionbar">'+btn("恢復待接單","order-status","outline",'data-id="'+esc(o.id)+'" data-value="NEW"')+'</div></details>');
+ return box("取餐訂單管理",'<p class="small">依約定取餐時間排序。可切換接單、待取、取消訂單或已完成，已結束的訂單也能重新更正。</p><p><strong>待處理 '+active.length+' 筆</strong></p>'+active.map(card).join("")+'<details open class="pickup-history-panel"><summary>歷史訂單（'+old.length+' 筆，可更正狀態）</summary>'+old.map(card).join("")+'</details>');
 }
 function statusPicker(kind,item){
  const choices=kind==="reservation"?[["CONFIRMED","已預約"],["CHECKED_IN","已報到"],["COMPLETED","已完成"],["NO_SHOW","未到"],["CANCELLED","已取消"]]:
