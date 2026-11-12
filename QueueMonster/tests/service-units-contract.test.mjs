@@ -98,11 +98,12 @@ test("settings groups service windows, menu, branches and business profile under
  assert.match(view,/const menu=nav\("設定","settings"/);
  assert.doesNotMatch(view,/nav\("菜單及服務設定","menu"/);
  assert.doesNotMatch(view,/nav\("多分店管理","branches"/);
- for(const section of ["profile","operations","sessions","catalog","branches","customers","public"])
+ for(const section of ["profile","operations","catalog","public"])
   assert.match(hub,new RegExp('\\["'+section+'","'));
  assert.match(hub,/renderStaffMenu\(/);
  assert.match(hub,/renderStaffBranches\(/);
  assert.match(hub,/unitSettingsPanel\(/);
+ assert.match(hub,/const aliases=\{sessions:"operations",pickup:"catalog",branches:"profile",customers:"profile"\}/);
 });
 
 test("ordinary shops can create sessions without a window, and edit/delete actions are guarded",()=>{
@@ -287,9 +288,9 @@ test("legacy settings tabs route to the one settings page, with no duplicate uni
  const manifest=read("tests/helpers/application-sources.json");
  assert.match(view,/if\(\["units","menu","branches"\]\.includes\(staffState\.staffTab\)\)/);
  assert.match(view,/staffState\.staffTab="settings"/);
- assert.match(settings,/if\(section==="sessions"\)html\+=unitSettingsPanel\(isManager\)/);
+ assert.match(settings,/if\(section==="operations"\)html\+=unitSettingsPanel\(isManager\)/);
  assert.match(settings,/if\(section==="catalog"\)html=renderStaffMenu/);
- assert.match(settings,/if\(section==="branches"\)html=renderStaffBranches/);
+ assert.match(settings,/if\(section==="profile"\)html=renderStaffBranches/);
  assert.doesNotMatch(view,/renderStaffUnits|renderStaffMenu|renderStaffBranches/);
  assert.doesNotMatch(manifest,/app\/staff\/units\.js/);
 });

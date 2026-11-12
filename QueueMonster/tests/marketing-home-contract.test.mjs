@@ -116,3 +116,23 @@ test("homepage hero presents two separate Chinese-first booking and queue exampl
  const brand=read("saas/monster-world.css");
  assert.match(brand,/body:has\(\.site-head\) \.mock-scene:before\{[^}]*monster-mascot\.svg/);
 });
+
+
+test("homepage SEO stays in metadata, provides meaningful structured data, and publishes sitemap",()=>{
+ const description=landing.match(/<meta name="description" content="([^"]+)">/);
+ assert.ok(description?.[1].includes("線上預約"));
+ for(const word of ["排隊取號","線上點餐","早餐店","診所","美髮","維修"])assert.ok(description[1].includes(word),word);
+ assert.match(landing,/rel="canonical" href="https:\/\/hub-google\.github\.io\/LINE\/booking\/home\.html"/);
+ const script=landing.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+ assert.ok(script,"missing SEO structured data");
+ const json=JSON.parse(script[1]);
+ assert.equal(json["@context"],"https://schema.org");
+ assert.ok(json["@graph"].some(x=>x["@type"]==="WebApplication"));
+ assert.doesNotMatch(landing,/<meta name="keywords"/);
+ const sitemap=read("saas/sitemap.xml");
+ for(const page of ["home.html","directory.html","merchant-center.html","merchant-register.html"]){
+  assert.ok(sitemap.includes("https://hub-google.github.io/LINE/booking/"+page),"missing sitemap "+page);
+ }
+ assert.match(build,/copyFile\(path\.join\(src, "sitemap\.xml"\)/);
+ assert.match(publish,/sitemap\.xml/);
+});

@@ -284,7 +284,7 @@ test("only active services appear in public entry points, preserving older ticke
 
 test("platform enterprise settings reuses the merchant backend rather than a second form",()=>{
  assert.ok(index.includes('route("staff",t.slug)+"&tab=settings"'),"settings link opens this tenant's staff settings");
- assert.ok(index.includes('["dashboard","bookings","queue","orders","calendar","units","analytics","menu","members","branches","settings","customers"].includes(incomingParam("tab"))'),"deep links select only supported staff tabs");
+ assert.ok(read("saas/app/route-state.js").includes('["dashboard","bookings","queue","orders","calendar","units","analytics","menu","members","branches","settings","customers"].includes(incomingParam("tab"))'),"deep links select only supported staff tabs");
  assert.ok(index.includes('context?.platform_admin||context?.memberships?.some(m=>m.slug===slug)'),"platform owners can access merchants without membership");
  assert.ok(index.includes('if(a==="toggle-company")'),"platform remains able to suspend and resume companies");
  assert.ok(index.includes('const target=b.dataset.slug'),"suspend action targets the selected row's slug");
