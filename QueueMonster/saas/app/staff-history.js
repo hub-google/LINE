@@ -89,7 +89,7 @@ export async function exportHistoricalBookings(){
 }
 
 export function customerHistoryDialog(){
- if(routeState.view!=="staff"||staffState.staffTab!=="settings"||!staffState.staff||!staffHistoryState.customerHistoryUserId)return "";
+ if(routeState.view!=="staff"||!["settings","customers"].includes(staffState.staffTab)||!staffState.staff||!staffHistoryState.customerHistoryUserId)return "";
  const data=staffHistoryState.customerHistoryData;
  const total=Number(data?.total||0),page=Number(data?.page||staffHistoryState.customerHistoryPage);
  const pages=Math.max(1,Math.ceil(total/25));
@@ -115,7 +115,7 @@ export function customerHistoryDialog(){
 }
 
 export async function loadCustomerHistory(page=1){
- if(routeState.view!=="staff"||staffState.staffTab!=="settings"||!staffState.staff||!staffHistoryState.customerHistoryUserId)return;
+ if(routeState.view!=="staff"||!["settings","customers"].includes(staffState.staffTab)||!staffState.staff||!staffHistoryState.customerHistoryUserId)return;
  const seq=++staffHistoryState.customerHistorySeq,customerId=staffHistoryState.customerHistoryUserId,merchant=routeState.slug;
  staffHistoryState.customerHistoryLoading=true;staffHistoryState.customerHistoryError="";render();
  try{
