@@ -289,7 +289,7 @@ test("legacy settings tabs route to the one settings page, with no duplicate uni
  assert.match(view,/if\(\["units","menu","branches"\]\.includes\(staffState\.staffTab\)\)/);
  assert.match(view,/staffState\.staffTab="settings"/);
  assert.match(settings,/if\(section==="operations"\)html\+=unitSettingsPanel\(isManager\)/);
- assert.match(settings,/if\(section==="catalog"\)html=renderStaffMenu/);
+ assert.match(settings,/if\(section==="catalog"\)\{\s*html=renderStaffMenu/);
  assert.match(settings,/if\(section==="profile"\)html=renderStaffBranches/);
  assert.doesNotMatch(view,/renderStaffUnits|renderStaffMenu|renderStaffBranches/);
  assert.doesNotMatch(manifest,/app\/staff\/units\.js/);
