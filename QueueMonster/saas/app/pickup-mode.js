@@ -147,13 +147,13 @@ export function renderCustomerPickup(){
    btn("＋","pickup-qty","outline",'data-id="'+esc(i.id)+'" data-delta="1" aria-label="增加 '+esc(i.name)+'"')+'</div></div>').join("")+
   '<div style="margin-top:12px"><label for="pickup-phone-type">聯絡電話類型</label><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
    '<select class="field" id="pickup-phone-type" style="width:140px;max-width:100%"><option value="mobile" '+(pickupState.phoneType==="mobile"?"selected":"")+'>手機</option><option value="landline" '+(pickupState.phoneType==="landline"?"selected":"")+'>市話</option></select>'+
-   '<span class="small" style="flex:1;min-width:145px">'+(pickupState.phoneType==="landline"?"範例：02－23456789":"範例：0912345678（09 開頭、10 碼）")+'</span></div>'+
+   '</div>'+
    (pickupState.phoneType==="mobile"?
-      field("手機號碼","pickup-customer-phone",pickupState.phone,"tel",'inputmode="numeric" autocomplete="tel-national" pattern="[0-9]*" maxlength="10" placeholder="0912345678"'):
+      field("手機號碼","pickup-customer-phone",pickupState.phone,"tel",'inputmode="numeric" autocomplete="tel-national" pattern="[0-9]*" maxlength="10" placeholder="例如：0912345678（臺灣號碼，09 開頭、10 碼、半形數字）"'):
       '<div style="display:grid;grid-template-columns:minmax(0,125px) minmax(0,1fr);gap:10px;margin-top:8px;align-items:end">'+
         '<div><label for="pickup-customer-area">市話區碼</label><select class="field" id="pickup-customer-area">'+TW_LANDLINE_AREAS.map(a=>'<option value="'+esc(a)+'" '+(a===pickupState.phoneArea?"selected":"")+'>'+esc(a)+'</option>').join("")+'</select></div>'+
-        '<div style="min-width:0">'+field("市話號碼","pickup-customer-local",pickupState.phoneLocal,"tel",'inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="'+esc(getTaiwanLandlineHint(pickupState.phoneArea).example)+'"')+'</div></div>'+
-        '<p class="small" style="margin:4px 0 0">區碼 '+esc(pickupState.phoneArea)+'：'+esc(getTaiwanLandlineHint(pickupState.phoneArea).description)+'，例如 '+esc(pickupState.phoneArea+'-'+getTaiwanLandlineHint(pickupState.phoneArea).example)+'</p>')+
+        '<div style="min-width:0">'+field("市話號碼","pickup-customer-local",pickupState.phoneLocal,"tel",'inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="例如：'+esc(getTaiwanLandlineHint(pickupState.phoneArea).example)+'（臺灣市話，半形數字）"')+'</div></div>'+
+        '')+
    '</div>'+
    '<div style="margin-top:12px">'+field("給店家的備註（最多 200 字）","pickup-note",pickupState.note,"text",'maxlength="200" placeholder="例如：不要加辣"')+'</div>'+
   '<div class="listline"><strong>共 '+esc(count)+' 份</strong><strong>'+money(total)+'</strong></div>'+
