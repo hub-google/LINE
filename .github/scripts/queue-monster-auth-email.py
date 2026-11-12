@@ -31,21 +31,63 @@ assert isinstance(original, dict), "Auth config was not an object"
 invite_redirect = "https://hub-google.github.io/LINE/booking/merchant-register.html?mode=login&from=staff-invite"
 login_redirect = "https://hub-google.github.io/LINE/booking/merchant-register.html?mode=login&from=queue-monster"
 reset_redirect = "https://hub-google.github.io/LINE/booking/merchant-register.html?mode=login&intent=recovery"
-stamp = "queue-monster-mail-v1"
-base_style = ('<div style="background:#f6f1fa;padding:28px 16px;font-family:Arial,sans-serif;color:#352849;">'
-    '<div style="background:white;max-width:560px;margin:auto;padding:30px;border-radius:18px;border:1px solid #e7d8f1">'
-    '<div style="font-size:22px;font-weight:800;color:#523b70;margin-bottom:18px">排隊怪獸</div>')
-footer = ('<p style="font-size:13px;color:#71657c;margin-top:28px">此信為排隊怪獸系統通知。'
-          '若您並未提出申請，可以忽略此信。</p></div></div>')
-button_style = ('style="display:inline-block;background:#523b70;color:#ffffff;text-decoration:none;'
-    'padding:13px 22px;border-radius:10px;font-size:16px;font-weight:700"')
-
-def card(headline,description,button_label,tail=""):
-    return (f'<!-- {stamp} -->' + base_style +
-            f'<h2 style="font-size:22px;margin:0 0 16px">{headline}</h2>' +
-            f'<p style="font-size:16px;line-height:1.8">{description}</p>' +
-            f'<p style="margin:25px 0"><a href="{{{{ .ConfirmationURL }}}}" {button_style}>{button_label}</a></p>' +
-            f'<p style="font-size:14px;line-height:1.7;color:#71657c">{tail}</p>' + footer)
+stamp = "queue-monster-mail-v2"
+legacy_stamp = "queue-monster-mail-v1"
+# Use tables and inline styles for broad email-client compatibility. No remote
+# fonts, embedded SVG, scripting, or images that become broken when blocked.
+brand_start = (
+    '<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8">'
+    '<meta name="viewport" content="width=device-width,initial-scale=1"></head>'
+    '<body style="margin:0;padding:0;background:#f5f1f8;color:#30263a;'
+    'font-family:Arial,Microsoft JhengHei,PingFang TC,sans-serif">'
+)
+body_open = (
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+    'style="background:#f5f1f8;padding:32px 12px"><tr><td align="center">'
+    '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" '
+    'style="max-width:560px;background:#ffffff;border:1px solid #e9dff1;'
+    'border-radius:18px;overflow:hidden;text-align:left">'
+    '<tr><td style="padding:27px 32px 23px;background:#523b70;color:#fff">'
+    '<table role="presentation" cellpadding="0" cellspacing="0"><tr>'
+    '<td style="vertical-align:middle;padding-right:13px"><div '
+    'style="width:47px;height:47px;border-radius:13px;background:#fff;'
+    'color:#523b70;font-size:15px;font-weight:800;line-height:47px;'
+    'text-align:center">QM</div></td><td style="vertical-align:middle">'
+    '<div style="font-size:24px;line-height:1.3;font-weight:800;'
+    'letter-spacing:1px">排隊怪獸</div>'
+    '<div style="font-size:12px;opacity:.85;letter-spacing:1.2px">'
+    'QUEUING MONSTER</div></td></tr></table></td></tr>'
+    '<tr><td style="padding:32px 32px 27px">'
+    '<div style="color:#79628c;font-size:13px;font-weight:700;'
+    'letter-spacing:1px;margin-bottom:12px">讓等待少一點，服務順一點</div>'
+)
+button_style = (
+    'style="display:inline-block;background:#523b70;color:#ffffff;'
+    'text-decoration:none;padding:15px 28px;border-radius:10px;'
+    'font-size:16px;font-weight:700"'
+)
+footer = (
+    '<div style="margin-top:30px;border-top:1px solid #efe8f3;padding-top:18px;'
+    'font-size:12px;line-height:1.9;color:#7b7282">'
+    '這封信由排隊怪獸系統自動寄出，請勿直接回覆。'
+    '我們不會透過電子郵件索取您的登入密碼。'
+    '<br>排隊怪獸｜讓每一次等待都更輕鬆'
+    '<br><a href="https://hub-google.github.io/LINE/booking/" '
+    'style="color:#523b70;text-decoration:none">前往排隊怪獸網站</a>'
+    '</div></td></tr></table></td></tr></table></body></html>'
+)
+def card(headline, description, button_label, tail="", preview=""):
+    preheader = (preview or headline).replace("&", "&amp;").replace("<", "&lt;")
+    hidden = ('<div style="display:none;max-height:0;overflow:hidden;'
+              'opacity:0;color:transparent">' + preheader + '</div>')
+    return (f'<!-- {stamp} -->' + brand_start + hidden + body_open +
+        f'<h1 style="font-size:27px;line-height:1.35;color:#352849;'
+        f'margin:0 0 18px;font-weight:800">{headline}</h1>' +
+        f'<p style="font-size:16px;line-height:1.85;margin:0;color:#44374f">{description}</p>' +
+        f'<p style="margin:28px 0 24px"><a href="{{{{ .ConfirmationURL }}}}" '
+        f'{button_style}>{button_label}</a></p>' +
+        (f'<p style="font-size:13px;line-height:1.85;color:#71667a;margin:0">'
+         f'{tail}</p>' if tail else '') + footer)
 
 brand_invite = card(
     "邀請您加入排隊怪獸",
@@ -67,9 +109,12 @@ brand_magic = card(
     "若非本人要求登入，請忽略此信。"
 )
 brand_confirmation = card(
-    "驗證排隊怪獸帳號",
-    "歡迎使用排隊怪獸。請驗證電子信箱以完成帳號建立；受邀員工驗證後再設定密碼與接受企業邀請。",
-    "驗證電子信箱"
+    "歡迎加入排隊怪獸！",
+    "歡迎來到排隊怪獸。只差最後一步，請點選下方按鈕驗證您的電子信箱。"
+    "驗證完成後，即可登入並建立店家專屬的預約、取號、叫號與線上點餐服務。",
+    "完成信箱驗證",
+    "如果您沒有註冊排隊怪獸，請直接忽略此信，無須進行任何操作。",
+    "歡迎加入排隊怪獸！確認電子信箱，就能開始打造更輕鬆的店家服務。"
 )
 mail = [
     ("invite", '{{ if eq .Data.app "queue-monster" }}', brand_invite,
@@ -80,7 +125,7 @@ mail = [
      '{{ if or (eq .RedirectTo "' + invite_redirect + '") (eq .RedirectTo "' + login_redirect + '") }}',
      brand_magic, "【排隊怪獸】登入與接受企業邀請"),
     ("confirmation", '{{ if eq .Data.app "queue-monster" }}', brand_confirmation,
-     "【排隊怪獸】驗證電子信箱")
+     "【排隊怪獸】歡迎加入！請驗證電子信箱")
 ]
 defaults = {
  "invite": ("You've been invited", '<h2>You have been invited</h2><p>Follow the link to complete registration.</p><a href="{{ .ConfirmationURL }}">Accept invite</a>'),
@@ -94,9 +139,30 @@ for name,condition,branded,branded_subject in mail:
     subject_key = f"mailer_subjects_{name}"
     current_body = original.get(body_key) or defaults[name][1]
     current_subject = original.get(subject_key) or defaults[name][0]
-    # Refuse an unreviewed reapplication instead of nesting templates indefinitely.
+    # Idempotent v2 upgrade: replace only Queue Monster's legacy branded markup.
+    # Keep the shared project's pre-existing non-Queue-Monster {{ else }} branch.
     if stamp in current_body:
-        print(f"{name}: already branded, preserving")
+        print(f"{name}: v2 brand already installed")
+        continue
+    if legacy_stamp in current_body:
+        import re
+        legacy_pattern = re.compile(
+            r'<!-- queue-monster-mail-v1 -->.*?</div></div>', re.DOTALL
+        )
+        upgraded, replaced = legacy_pattern.subn(lambda _: branded, current_body, count=1)
+        if replaced != 1 or condition not in upgraded:
+            raise RuntimeError(f"{name}: unable to safely upgrade old branded email")
+        patch[body_key] = upgraded
+        old_brand_subjects = {
+            "invite": "【排隊怪獸】企業員工邀請",
+            "recovery": "【排隊怪獸】重設登入密碼",
+            "magic_link": "【排隊怪獸】登入與接受企業邀請",
+            "confirmation": "【排隊怪獸】驗證電子信箱",
+        }
+        old_title = old_brand_subjects[name]
+        if old_title not in current_subject:
+            raise RuntimeError(f"{name}: unexpected shared Auth subject; refusing overwrite")
+        patch[subject_key] = current_subject.replace(old_title, branded_subject, 1)
         continue
     patch[body_key] = condition + branded + "{{ else }}" + current_body + "{{ end }}"
     patch[subject_key] = condition + branded_subject + "{{ else }}" + current_subject + "{{ end }}"
@@ -108,7 +174,7 @@ if patch:
         key = f"mailer_templates_{name}_content"
         if key in patch and stamp not in (changed.get(key) or ""):
             raise RuntimeError(f"Branded {name} template did not persist")
-    print("Branded Queue Monster-only invite, password reset, sign-in and confirmation templates verified.")
+    print("Queue Monster v2 branded templates and subjects saved and verified.")
 else:
     print("Queue Monster mail templates were already configured.")
 
