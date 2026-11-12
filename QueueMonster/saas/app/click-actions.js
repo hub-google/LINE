@@ -31,6 +31,7 @@ import {render} from "./staff-layout.js";
 import {availableUnits} from "./service-units.js";
 import {load} from "./data-loading.js";
 import {stopQueueRealtime} from "./queue-progress.js";
+import {returnToCustomerHistory} from "./customer-detail.js";
 import {refreshCrossStoreOverview,stopCrossQueueRealtime} from "./cross-store.js";
 import {availableForParty,currentBookingSlots,refreshServiceSlots} from "./customer-booking.js";
 import {loadBookingCalendar} from "./booking-calendar.js";
@@ -81,7 +82,14 @@ document.addEventListener("click",async ev=>{
    void load();return;
  }
  if(b.dataset.nav){const v=b.dataset.nav;const tab=b.dataset.tab;if(v==="customer"){
+  const wasRecordScreen=["detail","progress"].includes(routeState.customerTab);
   routeState.customerTab=tab;queueState.progressTicketId="";crossStoreState.crossCurrentStore=false;
+  if(wasRecordScreen){
+   routeState.detailKind="";routeState.detailId="";
+   const u=new URL(location.href);u.searchParams.set("tab",tab);
+   for(const key of ["kind","item","ticket","mode","manage"])u.searchParams.delete(key);
+   history.pushState(null,"",u.pathname+u.search+u.hash);
+  }
   if(tab==="order"){void load();return;}
   if(["reserve","queue"].includes(tab)&&!customerState.customer?.tenant.modules[tab==="reserve"?"reservation":"queue"])routeState.customerTab="home";
   stopQueueRealtime();
@@ -111,6 +119,10 @@ document.addEventListener("click",async ev=>{
  }
  const a=b.dataset.act,id=b.dataset.id;
  if(!a)return;
+ if(a==="detail-history"){
+   returnToCustomerHistory();stopQueueRealtime();render();void refreshCrossStoreOverview();return;
+ }
+ if(a==="detail-refresh"){void load();return;}
 
  for(const handler of [handlePickupAction,handleAccountPlatform,handleMerchantSettings,handleStaffCalendar,handleQueueSettings,handleServiceUnitActions,handleMerchantAdmin,handleBookingSubmit,handleBookingRecordActions,handleCrossStoreActions,handleQueueLineActions,handleStaffQueueActions]){if(await handler(ev,b,a,id))return;}
 });
