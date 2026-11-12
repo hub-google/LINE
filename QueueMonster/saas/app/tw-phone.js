@@ -8,6 +8,12 @@ export function normalizeTaiwanPhone(input){
 }
 
 export function isValidTaiwanPhone(input){
+  const raw=String(input??"").trim();
+  // Honor an explicitly separated area code; 08-2234567 must not be
+  // reinterpreted as a Kinmen 082 number when the caller chose area 08.
+  const parts=raw.match(/^(0\d{1,3})[\s－-]+(\d+)$/);
+  if(parts&&TW_LANDLINE_AREAS.includes(parts[1]))
+    return isValidTaiwanPhoneParts("landline","",parts[1],parts[2]);
   return TW_PHONE.test(normalizeTaiwanPhone(input));
 }
 
@@ -33,8 +39,24 @@ export function getTaiwanLandlineHint(area){
  return LANDLINE_EXAMPLES[area]||{example:"",description:"請選擇市話區碼"};
 }
 
+const LANDLINE_LOCAL_RULES={
+ "02":/^[235678]\d{7}$/,
+ "03":/^[2-689]\d{6}$/,
+ "037":/^[2-9]\d{5}$/,
+ "04":/^(?:[23]\d{7}|[78]\d{6})$/,
+ "049":/^[2-9]\d{6}$/,
+ "05":/^[2-7]\d{6}$/,
+ "06":/^[235679]\d{6}$/,
+ "07":/^[2-9]\d{6}$/,
+ "08":/^[478]\d{6}$/,
+ "082":/^[2-57-9]\d{5}$/,
+ "0826":/^6\d{4}$/,
+ "0836":/^[2-9]\d{4}$/,
+ "089":/^[2-9]\d{5}$/
+};
+
 export function isValidTaiwanPhoneParts(type,mobile,area,local){
  if(type==="mobile")return /^09\d{8}$/.test(String(mobile??""));
- if(type==="landline")return TW_LANDLINE_AREAS.includes(area)&&/^\d+$/.test(String(local??""))&&isValidTaiwanPhone(area+local);
+ if(type==="landline")return LANDLINE_LOCAL_RULES[area]?.test(String(local??""))===true;
  return false;
 }

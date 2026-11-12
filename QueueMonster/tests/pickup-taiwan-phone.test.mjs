@@ -44,6 +44,6 @@ test("phone type switch validates exact Taiwan mobile and area-based landline lo
  for(const area of TW_LANDLINE_AREAS)assert.ok(getTaiwanLandlineHint(area).example.length>0,area);
  for(const good of [["mobile","0912345678","",""],["landline","","02","23456789"],["landline","","03","2123456"],["landline","","037","234567"],["landline","","04","22345678"],["landline","","04","7123456"],["landline","","0826","61234"]])
   assert.equal(isValidTaiwanPhoneParts(...good),true,good.join(","));
- for(const bad of [["mobile","0223456789","",""],["mobile","091234567","",""],["mobile","09123456789","",""],["landline","","02","2345678"],["landline","","037","2345678"],["landline","","04","5234567"],["landline","","09","12345678"],["landline","","0826","6123"]])
+ for(const bad of [["mobile","0223456789","",""],["mobile","091234567","",""],["mobile","09123456789","",""],["landline","","02","2345678"],["landline","","08","2234567"],["landline","","08","223456"],["landline","","037","2345678"],["landline","","04","5234567"],["landline","","09","12345678"],["landline","","0826","6123"]])
   assert.equal(isValidTaiwanPhoneParts(...bad),false,bad.join(","));
 });
