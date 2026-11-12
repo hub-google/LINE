@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "./helpers/source-fs.mjs";
 
-const ui=readFileSync(new URL("../saas/index.html",import.meta.url),"utf8");
+const sharedUi=readFileSync(new URL("../saas/app/shared-ui.js",import.meta.url),"utf8");
+const progress=readFileSync(new URL("../saas/app/queue-progress.js",import.meta.url),"utf8");
 const sql=readFileSync(new URL("../supabase/migrations/20261104_queue_arrival_admission_states.sql",import.meta.url),"utf8");
 
 test("K11: arrival and admission are separate persistent ticket statuses",()=>{
@@ -21,13 +22,13 @@ test("K11: active call includes confirmed arrival/admission until service ends",
   assert.match(sql,/so_staff_worklist/);
 });
 
-test("K11: customer and staff display both independent stages",()=>{
-  assert.match(ui,/ARRIVED:"已到場"/);
-  assert.match(ui,/ADMITTED:"已進場"/);
-  assert.match(ui,/\["ARRIVED","已到場"\]/);
-  assert.match(ui,/\["ADMITTED","已進場"\]/);
-  assert.match(ui,/ownStatus==="ARRIVED"/);
-  assert.match(ui,/ownStatus==="ADMITTED"/);
+test("K11: historical arrival and admission remain readable without extra primary status buttons",()=>{
+  assert.match(sharedUi,/ARRIVED:"已到場"/);
+  assert.match(sharedUi,/ADMITTED:"已進場"/);
+  assert.match(sharedUi,/Historical ARRIVED\/ADMITTED\/SERVING records/);
+  assert.match(sharedUi,/\["WAITING","候位中"\]/);
+  assert.match(progress,/ownStatus==="ARRIVED"/);
+  assert.match(progress,/ownStatus==="ADMITTED"/);
 });
 
 test("K11: admission event audit stays backend-only and retains historical ticket",()=>{
