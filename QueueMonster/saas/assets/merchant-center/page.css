@@ -564,3 +564,21 @@ body[data-monster-page="merchant-center"] .footer{border-color:#e8d9ee;font-size
 @media(prefers-reduced-motion:reduce){
  body[data-monster-page="merchant-center"] .guide-fast-link{transition:none}
 }
+
+
+/* Concise online-ordering walkthrough; same typographic scale as other guide chapters. */
+body[data-monster-page="merchant-center"] .guide-plain-steps{display:grid;gap:0;border:1px solid #eadff0;border-radius:15px;overflow:hidden;background:#fff}
+body[data-monster-page="merchant-center"] .guide-plain-step{display:grid;grid-template-columns:40px minmax(0,1fr);gap:14px;padding:21px 22px}
+body[data-monster-page="merchant-center"] .guide-plain-step+.guide-plain-step{border-top:1px solid #efe6f3}
+body[data-monster-page="merchant-center"] .guide-plain-step>span{display:grid;place-items:center;width:36px;height:36px;background:#f1e5f8;border-radius:11px;color:#744695;font-size:13px;font-weight:900}
+body[data-monster-page="merchant-center"] .guide-plain-step h3{font-size:18px;line-height:1.5;margin:1px 0 5px;color:#492b5d}
+body[data-monster-page="merchant-center"] .guide-plain-step p{font-size:16px;line-height:1.85;color:#6d5b78;margin:0}
+body[data-monster-page="merchant-center"] .guide-inline-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:17px}
+@media(max-width:760px){
+ body[data-monster-page="merchant-center"] .guide-plain-step{grid-template-columns:34px minmax(0,1fr);gap:11px;padding:17px 14px}
+ body[data-monster-page="merchant-center"] .guide-plain-step>span{width:32px;height:32px}
+ body[data-monster-page="merchant-center"] .guide-plain-step h3{font-size:17px}
+ body[data-monster-page="merchant-center"] .guide-plain-step p{font-size:15px}
+ body[data-monster-page="merchant-center"] .guide-inline-actions{display:grid;grid-template-columns:1fr 1fr}
+ body[data-monster-page="merchant-center"] .guide-inline-actions .action{font-size:13px;padding:10px 7px}
+}
