@@ -195,7 +195,7 @@ export function featureChecks(data={},prefix="feature"){
 }
 
 export function initializeSharedUi(){
-sharedUiState.features=[["reservation","線上預約"],["queue","線上取號"],["calling","現場叫號"]];
+sharedUiState.features=[["reservation","線上預約"],["queue","線上取號"]];
 sharedUiState.bookingPath=location.pathname.replace(/\/(?:saas|booking)\/(?:index\.html)?$/,"/booking/");
 sharedUiState.route=(v,s=routeState.slug,tab="")=>sharedUiState.bookingPath+"?view="+encodeURIComponent(v)+(s?"&merchant="+encodeURIComponent(s):"")+(v==="customer"&&tab?"&tab="+encodeURIComponent(tab):"");
 sharedUiState.lastStaffChange=null;
