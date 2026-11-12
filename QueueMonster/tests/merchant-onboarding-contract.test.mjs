@@ -33,6 +33,7 @@ test("Email registration verifies ownership before password creation",()=>{
  const logic=read("saas/assets/merchant-register/main.js");
  assert.doesNotMatch(reg,/id="signup-pass"|id="signup-confirm"/);
  assert.match(logic,/signupSb\.auth\.signInWithOtp/);
+ assert.match(logic,/shouldCreateUser:false,emailRedirectTo:new URL/);
  assert.match(logic,/shouldCreateUser:true,emailRedirectTo:returnToSignup\(\)/);
  assert.match(logic,/queue_monster_password_pending:true/);
  assert.match(logic,/intent==="complete-signup"/);
