@@ -264,6 +264,16 @@ document.addEventListener("click",async event=>{
   location.assign("./?"+query.toString());
  }
 });
+function publishGameDirectory(){
+ if(mode==="mine")return;
+ window.LineExploreGame?.setData({
+  shops:all.map(shop=>({...shop,
+    reserve_href:customerUrl(shop.slug,"reserve",shop.oa_mode),
+    queue_href:customerUrl(shop.slug,"queue",shop.oa_mode),
+    board_href:"./board.html?merchant="+encodeURIComponent(shop.slug)
+  }))
+ });
+}
 async function load(){
  // Render identity-loading before the first network request, not "popular stores".
  let identityTimer=null;
@@ -295,8 +305,14 @@ async function load(){
       liffId=conf.liffId||"";
     }
   }else{
-    const conf=await confPromise;
-    liffId=conf.liffId||"";
+    // Optional LINE channel configuration must not block public store discovery.
+    // When it arrives later, refresh existing links without fetching stores again.
+    void confPromise.then(conf=>{
+      const updated=String(conf?.liffId||"");
+      if(updated===liffId)return;
+      liffId=updated;
+      if(all.length){publishGameDirectory();render();}
+    });
     els.intro.innerHTML=mode==="game"?
       '<strong>遊戲逛街 · 逛商圈找店家</strong><p>在虛擬商店街點選店面，查看真實公開店家的預約與取號入口。</p>':mode==="search"?
       '<strong>找店家、查看叫號更簡單</strong><p>搜尋店名或地點，直接查看可使用的服務。公開叫號看板無須登入；預約及取號才需 LINE 身分驗證。</p>':
@@ -311,13 +327,7 @@ async function load(){
     popular=Array.isArray(ranking.data)?ranking.data:[];
   }
   setupExploreFilters();
-  if(mode!=="mine")window.LineExploreGame?.setData({
-    shops:all.map(shop=>({...shop,
-      reserve_href:customerUrl(shop.slug,"reserve",shop.oa_mode),
-      queue_href:customerUrl(shop.slug,"queue",shop.oa_mode),
-      board_href:"./board.html?merchant="+encodeURIComponent(shop.slug)
-    }))
-  });
+  publishGameDirectory();
   render();
  }catch(error){
   console.warn("Store discovery unavailable",error);
