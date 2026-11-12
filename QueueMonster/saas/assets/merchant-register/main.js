@@ -72,6 +72,20 @@ $("tab-login").onclick=()=>{setMode("login");void prepare().catch(e=>msg(custome
 $("tab-signup").onclick=()=>setMode("signup");
 setMode(new URL(location.href).searchParams.get("mode"));
 $("google-auth").onclick=()=>void execute(async()=>{
+ // Check public Auth provider status on click; never poll the database.
+ try{
+  const response=await fetch(SUPABASE_URL+"/auth/v1/settings",{
+   headers:{"apikey":SUPABASE_PUBLISHABLE_KEY}
+  });
+  if(response.ok){
+   const settings=await response.json();
+   if(settings?.external?.google===false)
+    throw Error("Google 帳號登入尚未啟用，請先使用下方 Email 註冊或登入。");
+  }
+ }catch(error){
+  if(/Google 帳號登入尚未啟用/.test(error?.message||""))throw error;
+  // Transient settings lookup errors must not prevent a valid OAuth attempt.
+ }
  const {data,error}=await sb.auth.signInWithOAuth({provider:"google",
   options:{redirectTo:returnToLogin(),skipBrowserRedirect:true,queryParams:{prompt:"select_account"}}});
  if(error)throw error;
