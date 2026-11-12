@@ -7,6 +7,7 @@ import {sharedUiState} from "./state/sharedUiState.js";
 
 import {rpc} from "./data-loading.js";
 import {render} from "./staff-layout.js";
+import {pickupStatusLabel} from "./pickup-mode.js";
 import {box,btn,esc,formatTaipeiCreated,selectedItemsHtml,tag} from "./shared-ui.js";
 
 export function stopCrossQueueRealtime(){
@@ -72,7 +73,7 @@ export function crossTicketCards(){
    (shown.length>crossStoreState.crossPageSize?'<div class="staff-actionbar">'+btn("顯示更多（剩餘 "+(shown.length-crossStoreState.crossPageSize)+" 筆）","cross-more","outline")+'</div>':"")+
    '<div class="staff-actionbar">'+btn("手動更新跨店進度","cross-refresh","outline")+
     btn("查看目前門市叫號","cross-current-store","outline")+'</div>'+
-   '<p class="small">此頁不會自動更新資料；請按重新整理查看最新紀錄，或開啟商家的公開叫號看板。</p>';
+   '<p class="small">此頁不會自動更新資料；請按重新整理查看最新紀錄，或開啟商家的叫號看板。</p>';
 }
 
 export function crossRecords(){
@@ -97,7 +98,7 @@ export function crossRecords(){
      'data-merchant="'+esc(x.slug)+'" data-ticket="'+esc(x.id)+'"')+'</div></article>'
  ).join(""):'<p class="muted">目前沒有號碼紀錄。</p>';
  const orderHtml=orders.length?orders.slice(0,80).map(x=>
-    '<article class="cross-record"><div class="cross-ticket-head"><strong>'+esc(x.shop_name)+'</strong><span>'+esc(x.status)+'</span></div>'+
+    '<article class="cross-record"><div class="cross-ticket-head"><strong>'+esc(x.shop_name)+'</strong><span>'+esc(pickupStatusLabel(x.status))+'</span></div>'+
     '<strong>訂單 '+esc(x.number)+'</strong><div>取餐：'+esc(x.pickup_at)+'</div>'+
     '<div class="small">'+esc((x.items||[]).map(i=>i.name+" × "+i.qty).join("、"))+' ・ NT$ '+esc(Number(x.total||0).toLocaleString("zh-TW"))+'</div>'+
     '<div class="staff-actionbar"><a class="btn secondary" href="'+esc(sharedUiState.route("customer",x.slug,"order"))+'">查看店家取餐進度</a></div></article>'

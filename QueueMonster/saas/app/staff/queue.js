@@ -41,7 +41,7 @@ export function renderStaffQueue({isManager,t,html}){
    (unitMode&&selected?'&session='+encodeURIComponent(selected.id):"");
  const callExtra=unitMode?' data-session="'+esc(selected?.id||"")+'"':"";
  const recallExtra=callExtra+' data-id="'+esc(active?.id||"")+'"';
- const canCall=!!waiting.length&&!active&&(unitMode?!!selected:!!t.modules.calling);
+ const canCall=!!waiting.length&&(unitMode?!!selected:!!t.modules.calling);
  const canRecall=!!active&&active.status==="CALLED"&&(!unitMode||!!selected);
  if(unitMode){
    html+=box("按場次獨立叫號",
@@ -57,7 +57,7 @@ export function renderStaffQueue({isManager,t,html}){
    stat("已過號",passed.length)+stat("保留中",held.length)+stat("已結束",doneTickets.length)+'</div>'+
    box("叫號操作",
      '<p class="muted">'+(unitMode?"目前操作選取的場次；": "仍在候位的跨日號碼會繼續排隊。")+
-     '號碼狀態可直接勾選與更正；標記「已到場」、「已進場」、「服務中」、「已過號」或「已取消」後，即可繼續叫下一位，無須等到服務完成。</p>'+
+     '號碼狀態可直接勾選與更正。叫下一位時，若上一位仍是「正在叫號」，系統會自動將上一位標為「已過號」並保留更正紀錄；已到場或服務中的顧客不受影響。</p>'+
      '<div class="staff-actionbar">'+
      btn("叫下一位",unitMode?"unit-call":"call","primary",(canCall?"":"disabled")+callExtra)+
      btn("再叫一次",unitMode?"unit-recall":"recall","outline",(canRecall?"":"disabled")+recallExtra)+
@@ -67,7 +67,7 @@ export function renderStaffQueue({isManager,t,html}){
      (unitMode?"本隊列看板":"電視即時叫號看板")+'</a></div>'+
      '<p class="staff-help">叫號通知使用票券識別碼，避免跨天同號誤通知。已發出的 LINE 訊息無法撤回。</p>')+
    (!unitMode?box("取號場次管理",
-     '<p class="small">目前：<strong>'+esc(queueSessionName(staffState.staff.queue_session?.code||"MORNING"))+
+     '<p class="small">此處是一般取號的手動早／午／晚場切換；自訂場次與每週排程則在「設定 → 營業與場次」管理。</p><p class="small">目前：<strong>'+esc(queueSessionName(staffState.staff.queue_session?.code||"MORNING"))+
      '</strong>。休場只暫停新的取號，先前號碼仍可繼續叫號；切場不會重設流水號。</p>'+
      '<div class="staff-actionbar">'+
      [["MORNING","早場"],["AFTERNOON","午場"],["EVENING","晚場"],["REST","休場"]].map(([code,name])=>

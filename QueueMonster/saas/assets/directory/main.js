@@ -144,13 +144,13 @@ function render(){
     actions='<a class="btn" href="'+e(mineHref)+'">查看我的紀錄</a>'+
       (services.queue?'<a class="btn secondary" href="'+e(queueHref)+'">查看號碼</a>':"")+
       (services.pickup?'<a class="btn secondary" href="'+e(orderHref)+'">查看取餐進度</a>':"")+
-      (services.queue&&services.calling?'<a class="btn secondary" href="'+boardHref+'">公開叫號看板</a>':"");
+      (services.queue&&services.calling?'<a class="btn secondary" href="'+boardHref+'">叫號看板</a>':"");
   }else{
     primaryHref=services.reservation?reserveHref:services.queue?queueHref:services.pickup?orderHref:"";
     actions=(services.reservation?'<a class="btn" href="'+e(reserveHref)+'">立即預約</a>':"")+
       (services.queue?'<a class="btn'+(services.reservation?" secondary":"")+'" href="'+e(queueHref)+'">現場取號</a>':"")+
       (services.pickup?'<a class="btn secondary" href="'+e(orderHref)+'">立即點餐</a>':"")+
-      (services.queue&&services.calling?'<a class="btn secondary" href="'+boardHref+'">公開叫號看板</a>':"");
+      (services.queue&&services.calling?'<a class="btn secondary" href="'+boardHref+'">叫號看板</a>':"");
   }
   const badges=badgesForStore(t);
   const rank=mode!=="mine"&&!searching&&Number(t.popularity_rank)>0?
@@ -315,7 +315,7 @@ async function load(){
     });
     els.intro.innerHTML=mode==="game"?
       '<strong>遊戲逛街 · 逛商圈找店家</strong><p>在虛擬商店街點選店面，查看真實公開店家的預約與取號入口。</p>':mode==="search"?
-      '<strong>找店家、查看叫號更簡單</strong><p>搜尋店名或地點，直接查看可使用的服務。公開叫號看板無須登入；預約及取號才需 LINE 身分驗證。</p>':
+      '<strong>找店家、查看叫號更簡單</strong><p>搜尋店名或地點，直接查看可使用的服務。叫號看板無須登入；預約及取號才需 LINE 身分驗證。</p>':
       '<strong>選擇提供現場取號的店家</strong><p>公開看板可直接查看；實際取號時才需要 LINE 驗證。</p>';
     const [directory,ranking]=await Promise.all([
       sb.rpc("so_public_directory",{p_query:null,p_mode:mode==="queue"?"queue":"all"}),

@@ -1,5 +1,5 @@
 import {staffState} from "../state/staffState.js";
-import {pickupState} from "../pickup-mode.js";
+import {pickupState,pickupStatusLabel} from "../pickup-mode.js";
 import {box,btn,esc,stat,tag} from "../shared-ui.js";
 
 export function renderStaffDashboard({isManager,pendingBookings,openBookings,waiting,active,openTickets,html}){
@@ -28,7 +28,7 @@ export function renderStaffDashboard({isManager,pendingBookings,openBookings,wai
       '<div class="staff-dash-row"><div><strong>'+esc(x.number)+'</strong><span>'+esc(x.name)+' · '+esc(x.party||1)+' 人</span></div>'+tag(x.status)+'</div>'
     ).join(""):'<p class="muted">目前沒有候位號碼。</p>')+
     box("近期取餐訂單",orders.filter(o=>!["PICKED_UP","REJECTED","CANCELLED"].includes(o.status)).slice(0,5).map(o=>
-      '<div class="staff-dash-row"><div><strong>'+esc(o.number)+' ・ '+esc(o.pickup_at)+'</strong><span>'+esc((o.items||[]).map(i=>i.name+"×"+i.qty).join("、"))+'</span></div><span>'+esc(o.status)+'</span></div>'
+      '<div class="staff-dash-row"><div><strong>'+esc(o.number)+' ・ '+esc(o.pickup_at)+'</strong><span>'+esc((o.items||[]).map(i=>i.name+"×"+i.qty).join("、"))+'</span></div><span>'+esc(pickupStatusLabel(o.status))+'</span></div>'
     ).join("")||'<p class="muted">目前沒有待處理訂單。</p>')+'</div>';
   return html;
 }
