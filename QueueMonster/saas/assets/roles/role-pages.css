@@ -69,3 +69,60 @@ body[data-monster-page="home"] .qm-final{background:#462b52;color:#fff;padding:5
 @media(max-width:700px){.qm-role-shell{padding-inline:18px}.qm-nav{align-items:flex-start;padding-top:10px;padding-bottom:10px;flex-wrap:wrap;gap:7px}.qm-nav nav{gap:13px}.qm-nav nav a{font-size:12px}.qm-brand{font-size:18px}.qm-brand img{width:33px;height:33px}.qm-role-hero{padding:43px 0}.qm-role-hero h1{font-size:clamp(35px,8.4vw,46px)}.qm-role-section{padding:45px 0}.qm-flow{padding:17px}.qm-flow-step strong{font-size:16px}.qm-flow-branches{gap:5px}.qm-flow-branches>div{padding:13px 5px}.qm-flow-branches span,.qm-flow-branches strong{font-size:11px}.qm-flow-output strong{font-size:16px}.qm-benefits{grid-template-columns:1fr 1fr;gap:10px}.qm-benefits article{padding:16px;min-height:0}.qm-benefits h3{font-size:17px}.qm-role-bottom{padding:40px 0}body[data-monster-page="home"] .qm-section{padding:45px 0}body[data-monster-page="home"] .qm-three{grid-template-columns:1fr}body[data-monster-page="home"] .qm-mini{padding:13px;gap:8px}body[data-monster-page="home"] .qm-audiences{grid-template-columns:1fr}body[data-monster-page="home"] .qm-audience{padding:19px;gap:12px}body[data-monster-page="home"] .qm-role-symbol{flex-basis:45px;width:45px;height:45px;font-size:19px;border-radius:13px}body[data-monster-page="home"] .qm-system-map{grid-template-columns:1fr;gap:8px;padding:19px}body[data-monster-page="home"] .qm-connector{transform:rotate(90deg);width:65px;margin:auto}.qm-connector small{display:none}body[data-monster-page="home"] .qm-map-output{grid-column:auto;margin-top:14px}.qm-final-inner{flex-direction:column;align-items:flex-start}}
 @media(max-width:430px){.qm-benefits{grid-template-columns:1fr}.qm-float{font-size:12px;padding:8px}.qm-float-top{left:0}.qm-float-bottom{right:0}.qm-role-actions .qm-button{width:100%}.qm-flow-output span{font-size:11px;padding:5px 8px}body[data-monster-page="home"] .qm-audience h3{font-size:19px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+
+/* Merchant documentation directory 2026-11-12: scoped to merchant feature page. */
+body[data-role="merchant"] .qm-guide-section{background:linear-gradient(180deg,#fffdfd 0%,#fcf7ff 100%);padding:72px 0}
+body[data-role="merchant"] .qm-guide-section .qm-role-heading{margin-bottom:27px}
+body[data-role="merchant"] .qm-guide-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+body[data-role="merchant"] .qm-guide-card{
+  display:flex;flex-direction:column;
+  min-height:223px;
+  padding:24px;
+  border:1px solid #e5d6ef;
+  border-radius:20px;
+  background:#fff;
+  box-shadow:0 6px 25px rgba(71,40,89,.045);
+  text-decoration:none;
+  transition:transform .2s,border-color .2s,box-shadow .2s;
+}
+body[data-role="merchant"] .qm-guide-card:hover{
+  transform:translateY(-3px);
+  border-color:#bd93d2;
+  box-shadow:0 14px 33px rgba(71,40,89,.10);
+}
+body[data-role="merchant"] .qm-guide-card-featured{background:#fcf7ff;border-color:#cda7e3}
+body[data-role="merchant"] .qm-guide-label{font-size:13px;letter-spacing:.025em;font-weight:850;color:#8354a0}
+body[data-role="merchant"] .qm-guide-card h3{font-size:20px;line-height:1.45;margin:12px 0 8px;color:#4c2b64}
+body[data-role="merchant"] .qm-guide-card p{font-size:15px;line-height:1.75;margin:0 0 17px;color:#74627f}
+body[data-role="merchant"] .qm-guide-cta{
+  display:inline-flex;gap:8px;align-items:center;
+  font-size:14px;font-weight:850;color:#79459a;
+  margin-top:auto;
+}
+body[data-role="merchant"] .qm-guide-cta span{font-size:18px}
+body[data-role="merchant"] .qm-guide-all{
+  display:flex;align-items:center;justify-content:space-between;gap:17px;
+  margin-top:21px;
+  padding:18px 22px;
+  border-radius:16px;
+  background:#f3e8fa;
+  border:1px solid #e8d4f0;
+}
+body[data-role="merchant"] .qm-guide-all p{font-size:15px;line-height:1.7;color:#6b517c;margin:0}
+body[data-role="merchant"] .qm-guide-all .qm-button{min-height:43px;white-space:nowrap}
+@media(max-width:920px){
+ body[data-role="merchant"] .qm-guide-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:620px){
+ body[data-role="merchant"] .qm-guide-section{padding:48px 0}
+ body[data-role="merchant"] .qm-guide-cards{grid-template-columns:1fr;gap:11px}
+ body[data-role="merchant"] .qm-guide-card{min-height:0;padding:21px}
+ body[data-role="merchant"] .qm-guide-card h3{font-size:19px;margin:7px 0}
+ body[data-role="merchant"] .qm-guide-card p{font-size:15px;margin-bottom:10px}
+ body[data-role="merchant"] .qm-guide-all{display:block;padding:19px}
+ body[data-role="merchant"] .qm-guide-all .qm-button{width:100%;margin-top:12px}
+}
+@media(prefers-reduced-motion:reduce){
+ body[data-role="merchant"] .qm-guide-card{transition:none}
+}
