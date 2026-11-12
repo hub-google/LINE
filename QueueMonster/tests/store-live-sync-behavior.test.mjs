@@ -89,7 +89,8 @@ test("shared live-sync receives events and falls back to API on the 201st connec
     }
   }
 });
-\ntest("no-OA shops are skipped and HTTP backup is exactly five seconds",()=>{
+
+test("no-OA shops are skipped and HTTP backup is exactly five seconds",()=>{
   const notices=readFileSync(new URL("../supabase/functions/line-bridge/index.ts",import.meta.url),"utf8");
   const board=readFileSync(new URL("../saas/assets/board/main.js",import.meta.url),"utf8");
   const pickup=readFileSync(new URL("../saas/assets/pickup-board/main.js",import.meta.url),"utf8");
@@ -101,4 +102,4 @@ test("shared live-sync receives events and falls back to API on the 201st connec
   assert.match(board,/每 5 秒更新一次叫號/);
   assert.match(pickup,/每 5 秒備援同步/);
   assert.match(progress,/叫號進度約每 5 秒更新一次/);
-});\n
+});
