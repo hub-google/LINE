@@ -199,7 +199,8 @@ test("real-flow demo reproduces guest creation, merchant status changes and LINE
   getElementById:el,querySelectorAll:()=>[],
   addEventListener:(name,cb)=>{handlers[name]=cb}
  };
- runInNewContext(source,{document:doc,Intl,Date});
+ // Production demo uses a 15-second cancel countdown; VM tests do not run timers.
+ runInNewContext(source,{document:doc,Intl,Date,setInterval:()=>1,clearInterval:()=>{},setTimeout:()=>1,clearTimeout:()=>{}});
  const click=(selector,data)=>handlers.click({target:{closest:s=>s===selector?{dataset:data}:null}});
  const change=(data)=>handlers.change({target:data});
  const input=(id,value)=>handlers.input({target:{id,value}});
