@@ -8,7 +8,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const bridge = readFileSync(path.join(root, "supabase/functions/line-bridge/index.ts"), "utf8");
 const invite = readFileSync(path.join(root, "saas/supabase/functions/staff-invite/index.ts"), "utf8");
 const migration = readFileSync(
-  path.join(root, "supabase/migrations/20261112143000_queue_monster_qm_table_prefix.sql"), "utf8"
+  path.join(root, "supabase/migrations/20261112073327_queue_monster_qm_table_prefix.sql"), "utf8"
 );
 
 test("live QueueMonster Edge Functions reference qm_ tables, never so_ tables", () => {

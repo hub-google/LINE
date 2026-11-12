@@ -2,7 +2,7 @@
 
 The shared Supabase project `unapiwajmgqqtdkixaab` stores **QueueMonster's 42 physical tables** under the `qm_` prefix (39 in `public`, 3 in `private`). The existing `public.qm_admin_pin_guard` was already using that prefix.
 
-The original `so_` tables were renamed in place, **not copied**, by `supabase/migrations/20261112143000_queue_monster_qm_table_prefix.sql`. Primary keys, foreign keys, indexes, data, RLS, privileges and table-bound triggers retain their PostgreSQL object identities.
+The original `so_` tables were renamed in place, **not copied**, by `supabase/migrations/20261112073327_queue_monster_qm_table_prefix.sql`. Primary keys, foreign keys, indexes, data, RLS, privileges and table-bound triggers retain their PostgreSQL object identities.
 
 **Stable backwards-compatible API:** existing `so_*` RPC names, function names, and LINE endpoints are intentionally unchanged. The migration rewrites physical table references inside SQL function bodies; the `line-bridge` and `staff-invite` Edge Functions reference `qm_*` tables.
 
