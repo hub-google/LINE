@@ -25,7 +25,7 @@ function pickupWindowValid(){
  if(method==="immediate")return true; // Demo simulates an open shop, not the shop's actual live hours.
  if(!/^\d{4}-\d{2}-\d{2}$/.test(draft.day)||!/^\d{2}:\d{2}$/.test(draft.time))return false;
  const at=Date.parse(draft.day+"T"+draft.time+":00+08:00");
- return Number.isFinite(at)&&at>=Date.now()+20*60*1000&&at<=Date.now()+8*86400000;
+ return Number.isFinite(at)&&at>=Date.now()+20*60*1000&&draft.day<=later(7);
 }
 const food = [{id:"egg",name:"招牌蛋餅",price:40,description:"現點現做"},{id:"toast",name:"火腿蛋吐司",price:50,description:"早餐人氣商品"},{id:"tea",name:"奶茶",price:25,description:"中杯"},{id:"burger",name:"豬肉蛋漢堡",price:60,description:"經典早餐"}];
 const make = () => ({
@@ -121,7 +121,8 @@ function customerReserve(){
  const unitsHtml='<div class="unit-form-header"><h3>選擇服務窗口</h3><span>'+units.length+' 個選項</span></div><div class="unit-card-grid">'+units.map(u=>'<button type="button" class="unit-option '+(chosen===u?"selected":"")+'" data-act="unit" data-value="'+u+'"><span class="unit-option-copy"><strong>'+u+'</strong><small>'+(clinic?"上午門診 09:00–12:00":"預約服務 10:00–18:00")+'</small></span></button>').join("")+'</div>';
  const slots=clinic?["09:30","10:00","10:30","11:00"]:["10:00","11:00","14:00","15:30","16:00"];
  let slot=slots.includes(draft.slot)?draft.slot:slots[0];
- const slotHtml='<label>可預約時段</label><div class="slots">'+slots.map(s=>'<button type="button" class="slot '+(slot===s?"active":"")+'" data-act="slot" data-value="'+s+'">'+s+'<small>剩 5 位</small></button>').join("")+'</div>';
+ const remaining=s=>Math.max(0,(clinic?5:1)-d.bookings.filter(b=>b.unit===chosen&&b.date===draft.day&&b.time===s&&!["CANCELLED","COMPLETED","NO_SHOW"].includes(b.status)).reduce((n,b)=>n+Number(b.party||1),0));
+ const slotHtml='<label>可預約時段（示範容量，非真實名額）</label><div class="slots">'+slots.map(s=>'<button type="button" class="slot '+(slot===s?"active":"")+'" data-act="slot" data-value="'+s+'" '+(remaining(s)?"":"disabled")+'>'+s+'<small>剩 '+remaining(s)+' 人</small></button>').join("")+'</div>';
  const service=sel("服務項目","reserve-service",clinic?["一般門診","慢性病追蹤"]:["洗剪","染髮","燙髮","護髮"],draft.service);
  const form=field("預約日期","booking-day",draft.day,"date")+(clinic?unitsHtml:unitsHtml)+slotHtml+service+'<div style="margin-top:12px">'+field("本次人數","party-size",draft.party,"number",'min="1" max="20"')+'</div>'+contact()+'<p class="small">預約是保留時段，'+(clinic?"預約報到後依各診間叫號順序等待。":"依服務安排到店。")+'</p>';
  const confirm=review?inset('<strong>確認預約資訊</strong><p>店家：'+esc(displayShop())+'</p><p>'+chosen+' · '+esc(draft.day)+' '+slot+'</p><p>姓名：'+esc(draft.name||"示範顧客")+'　'+Number(draft.party||1)+' 位</p>'):"";
@@ -129,7 +130,7 @@ function customerReserve(){
  return box(clinic?"選擇預約場次":"選擇預約日期與時間",'<p class="small">先選擇服務人員／診間，再選擇可預約時段。</p>'+form+confirm+'<div class="staff-actionbar">'+(review?btn("返回修改","review-back")+btn("確認送出預約","reserve-submit","primary full"):btn("下一步：確認預約","review-reserve","primary full"))+'</div>')+box("我的近期預約",recent||'<p class="muted">尚無預約紀錄</p>');
 }
 function customerQueue(){
- const d=current(),clinic=scene==="clinic",tickets=clinic?d.tickets.filter(t=>t.unit===room):d.tickets,linkedBooking=clinic?d.bookings.find(b=>b.id===lastOwn):null,own=lastOwn&&d.tickets.find(t=>t.id===lastOwn||(linkedBooking&&t.id===linkedBooking.ticket));
+ const d=current(),clinic=scene==="clinic",tickets=clinic?d.tickets.filter(t=>t.unit===room):d.tickets,linkedBooking=clinic?d.bookings.find(b=>b.id===lastOwn&&ownedIds[scene].has(b.id)):null,own=d.tickets.find(t=>ownedIds[scene].has(t.id)&&!["CANCELLED","COMPLETED"].includes(t.status)&&(t.id===lastOwn||(linkedBooking&&t.id===linkedBooking.ticket)))||d.tickets.find(t=>ownedIds[scene].has(t.id)&&!["CANCELLED","COMPLETED"].includes(t.status));
  const currentNo=getCurrent();
  const navRoom=clinic?'<div class="unit-form-header"><h3>選擇服務窗口</h3><span>2 個選項</span></div><div class="unit-card-grid">'+["1診","2診"].map(u=>'<button class="unit-option '+(room===u?"selected":"")+'" data-act="room" data-value="'+u+'"><span class="unit-option-copy"><strong>'+u+'</strong><small>上午診 09:00–12:00</small></span></button>').join("")+'</div>':"";
  const active=tickets.filter(t=>t.status==="WAITING");
@@ -177,7 +178,7 @@ function statusPicker(kind,item){
  return '<fieldset class="staff-picker"><legend>點選狀態即儲存（可重新選擇修正）</legend>'+choices.map(option).join("")+'</fieldset>'+extra;
 }
 function bookingCard(o){
- return '<article class="staff-record"><div class="staff-record-head"><div><div class="staff-record-title">預約 '+esc(o.id)+'　'+esc(o.date)+'　'+esc(o.time)+'　'+esc(o.name)+'</div><div class="small">'+esc(o.unit)+' · '+esc(o.service)+'</div><div class="small">預約人數 1 位 · 聯絡電話：'+esc(o.phone)+'</div>'+(o.ticket?'<div class="small">已連動候診號碼：'+esc(o.ticket)+'</div>':"")+'</div>'+status(o.status)+'</div>'+statusPicker("reservation",o)+'</article>';
+ return '<article class="staff-record"><div class="staff-record-head"><div><div class="staff-record-title">預約 '+esc(o.id)+'　'+esc(o.date)+'　'+esc(o.time)+'　'+esc(o.name)+'</div><div class="small">'+esc(o.unit)+' · '+esc(o.service)+'</div><div class="small">預約人數 '+esc(o.party||1)+' 位 · 聯絡電話：'+esc(o.phone)+'</div>'+(o.ticket?'<div class="small">已連動候診號碼：'+esc(o.ticket)+'</div>':"")+'</div>'+status(o.status)+'</div>'+statusPicker("reservation",o)+'</article>';
 }
 function staffBookings(){
  const d=current(),open=d.bookings.filter(o=>!["COMPLETED","CANCELLED","NO_SHOW"].includes(o.status)),done=d.bookings.filter(o=>!open.includes(o));
@@ -256,11 +257,14 @@ function render(){
  renderNotice();
 }
 function resetDraft(){draft={name:"",phone:"",phoneType:"mobile",phoneArea:"02",phoneLocal:"",day:later(1),time:"08:00",slot:scene==="clinic"?"09:30":"14:00",unit:scene==="clinic"?"1診":"Ava",service:scene==="clinic"?"一般門診":scene==="repair"?"手機維修":"洗剪",party:1,note:""};cart={};review=false;receipt="";}
-function setScene(s){scene=s;role="customer";tab=primaryTab[s];room="1診";lastOwn="";newNotice="";notes=[];notifyOpen=false;showBoard=false;bookingFilter="";resetDraft();render();}
+function setScene(s){scene=s;role="customer";tab=primaryTab[s];room="1診";lastOwn="";
+ const previous=[...(data[s].tickets||[]),...(data[s].bookings||[]),...(data[s].orders||[])].filter(x=>ownedIds[s].has(x.id));
+ if(previous.length)lastOwn=previous[previous.length-1].id;
+ newNotice="";notes=[];notifyOpen=false;showBoard=false;bookingFilter="";resetDraft();render();}
 function inform(s){newNotice=s;render();}
 function noticeItem(obj,kind){notifyFor(kind,obj);render();}
 function find(type,id){return current()[type]?.find(o=>o.id===id);}
-function contactReady(){return !!draft.name.trim()&&/^09\d{8}$/.test(String(draft.phone).replace(/[\s-]/g,""));}
+function contactReady(){return !!draft.name.trim()&&/^09\d{8}$/.test(draft.phone);}
 function requireContact(){if(contactReady())return true;inform("請先輸入預約姓名及有效的 09 開頭十碼手機號碼（試用可用 0912345678）。");return false;}
 document.addEventListener("click",e=>{
  const sceneBtn=e.target.closest("[data-scene]");if(sceneBtn){setScene(sceneBtn.dataset.scene);return;}
@@ -290,8 +294,14 @@ document.addEventListener("click",e=>{
  if(a==="reserve-submit"){
   if(!requireContact())return;
   const slots=scene==="clinic"?["09:30","10:00","10:30","11:00"]:["10:00","11:00","14:00","15:30","16:00"];let slot=slots.includes(draft.slot)?draft.slot:slots[0];
-  const bookings=d.bookings;if(bookings.some(x=>x.unit===draft.unit&&x.date===draft.day&&x.time===slot&&!["CANCELLED","COMPLETED"].includes(x.status))){review=false;inform("此時段已被預約，請選擇其他時段或服務窗口");return;}
-  const o={id:(scene==="clinic"?"P":"S")+pad(scene==="clinic"?d.bookingSeq++:d.seq++),name:draft.name||"示範顧客",phone:draft.phone||"（試用未填）",unit:draft.unit,service:draft.service,date:draft.day,time:slot,status:"CONFIRMED",ticket:""};
+  const bookings=d.bookings;
+   const requested=Number(draft.party);
+   if(!Number.isInteger(requested)||requested<1||requested>20){review=false;inform("請輸入 1～20 人的預約人數。");return;}
+   const at=Date.parse(draft.day+"T"+slot+":00+08:00");
+   if(!Number.isFinite(at)||at<Date.now()){review=false;inform("這個預約時段已過期，請重新選擇日期或時間。");return;}
+   const taken=bookings.filter(x=>x.unit===draft.unit&&x.date===draft.day&&x.time===slot&&!["CANCELLED","COMPLETED","NO_SHOW"].includes(x.status)).reduce((n,x)=>n+Number(x.party||1),0);
+   if(taken+requested>(scene==="clinic"?5:1)){review=false;inform("此時段可預約名額不足，請選擇其他時段或服務窗口。");return;}
+  const o={id:(scene==="clinic"?"P":"S")+pad(scene==="clinic"?d.bookingSeq++:d.seq++),name:draft.name||"示範顧客",phone:draft.phone||"（試用未填）",unit:draft.unit,service:draft.service,date:draft.day,time:slot,party:Number(draft.party),status:"CONFIRMED",ticket:""};
   bookings.unshift(o);lastOwn=o.id;ownedIds[scene].add(o.id);review=false;notifyFor("booking",o);tab="reserve";inform("示範預約 "+o.id+" 已建立；可到店家端「預約管理」報到。");return;
  }
  if(a==="take-number"){
