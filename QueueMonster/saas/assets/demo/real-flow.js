@@ -348,8 +348,8 @@ document.addEventListener("click",e=>{
   if(!b||b.status!=="CONFIRMED")return;
   const date=$("demo-edit-date")?.value,time=$("demo-edit-time")?.value;
   const party=Number($("demo-edit-party")?.value),name=$("demo-edit-name")?.value.trim(),phone=$("demo-edit-phone")?.value.trim();
-  if(!date||!/^\\d{2}:\\d{2}$/.test(time||"")||!Number.isInteger(party)||party<1||party>20||
-     !name||!/^09\\d{8}$/.test(phone)||Date.parse(date+"T"+time+":00+08:00")<Date.now()){
+  if(!date||!/^\d{2}:\d{2}$/.test(time||"")||!Number.isInteger(party)||party<1||party>20||
+     !name||!/^09\d{8}$/.test(phone)||Date.parse(date+"T"+time+":00+08:00")<Date.now()){
      inform("請確認未過期的日期時間、1～20 人、姓名及 09 開頭十碼手機。");return;
   }
   const capacity=scene==="clinic"?5:1;
