@@ -14,62 +14,10 @@
 <link rel="stylesheet" href="./booking-theme.css?build=__LINE_SAAS_BUILD__">
 <link rel="stylesheet" href="./monster-world.css?build=__LINE_SAAS_BUILD__">
 <script defer src="./version-watch.js?build=__LINE_SAAS_BUILD__"></script>
-<style>
-/* Demo wrapper only. The actual booking, pickup, queue, customer and staff markup
-   below uses the same classes and CSS as the shipping product. */
-.demo-intro{max-width:1500px;margin:20px auto 0;padding:0 24px}
-.demo-intro h1{font-size:clamp(23px,3vw,33px);margin:0 0 8px}
-.demo-intro p{color:var(--muted);font-size:14px;line-height:1.7;margin:0}
-.demo-badge{display:inline-block;background:#fff0c9;border-radius:100px;color:#735124;font-weight:850;font-size:11px;padding:5px 11px;margin-bottom:8px}
-.demo-scenes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:16px 0}
-.demo-scene{border:2px solid #e8d6f0;border-radius:18px;background:#fff;padding:14px 16px;text-align:left;color:#462b52;cursor:pointer;min-height:99px}
-.demo-scene strong{display:block;font-size:16px}.demo-scene small{display:block;color:#80688d;font-size:12px;line-height:1.5;margin-top:5px}
-.demo-scene.active{border-color:#724397;background:#fdf9ff;box-shadow:0 7px 22px #462b5213}
-.demo-controls{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:7px}
-.demo-controls .roles{display:flex;align-items:center;gap:5px;border:1px solid #e3cdea;background:#f7edfc;padding:5px;border-radius:13px}
-.demo-controls .roles button{border:0;border-radius:10px;background:transparent;padding:10px 17px;font-weight:850;min-height:42px;color:#5f4470;cursor:pointer}
-.demo-controls .roles button.active{background:#462b52;color:white}
-.demo-label{font-size:13px;font-weight:800;color:#694680}
-.demo-stage{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start;max-width:1500px;margin:15px auto 50px;padding:0 24px}
-#root{max-width:none;margin:0;padding:0;min-width:0}
-#root .toolbar{margin-bottom:18px}
-#root .layout{grid-template-columns:210px minmax(0,1fr);gap:15px}
-#root .layout aside{top:90px}
-#root .staff-picker{max-width:100%}
-#root .staff-choice{margin-bottom:6px}
-#root .staff-record{margin:12px 0}
-#root .content{min-width:0}
-#root .unit-option{cursor:pointer}
-#root .side-item{display:block;width:100%;text-align:left}
-#root .customer-shop-identity{max-width:100%}
-#root .grid4{grid-template-columns:repeat(auto-fit,minmax(105px,1fr))}
-#root .grid3{grid-template-columns:repeat(auto-fit,minmax(115px,1fr))}
-#root .slots{display:flex;flex-wrap:wrap;gap:8px;margin:9px 0}
-#root .slots .slot{flex:1 0 68px;max-width:150px}
-#root .ticket{font-size:clamp(35px,5vw,64px)}
-#root .demo-line-bypass{font-size:12px;background:#f3e5fa;border-radius:11px;padding:11px;color:#68427c}
-.demo-notice-pane{position:sticky;top:92px;border:1px solid #e8d4f0;border-radius:20px;background:#fff;padding:14px;box-shadow:0 8px 35px #462b5210;min-width:0}
-.demo-notice-head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:11px}
-.demo-notice-head strong{color:#462b52}.demo-notice-head p{font-size:11px;margin:3px 0;color:#80668d}
-.demo-line-phone{border:7px solid #353b41;border-radius:24px;overflow:hidden;background:#cbe9d1;box-shadow:0 10px 25px #3333}
-.demo-phone-header{background:#fff;padding:15px 10px;font-weight:850;font-size:12px;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px}
-.demo-phone-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#06c755}
-.demo-phone-body{padding:11px 10px;max-height:455px;min-height:190px;overflow-y:auto;display:flex;flex-direction:column;gap:13px}
-.demo-message{background:#fff;border-radius:14px 14px 14px 3px;padding:12px;font-size:12px;line-height:1.6;word-break:break-word;box-shadow:0 2px 10px #3331}
-.demo-message strong{display:block;font-size:14px;margin:6px 0;color:#222}
-.demo-message p{margin:4px 0;color:#343434;white-space:normal}
-.demo-message-source{font-size:10px;color:#697976}
-.demo-notice-disclaimer{font-size:11px;line-height:1.65;color:#7c6786;margin:11px 3px 0}
-.demo-foot{border-top:1px solid #eadcec;padding:17px 24px;margin:20px auto;max-width:1500px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.demo-foot p{font-size:12px;color:#7c6986;margin:0}
-a.demo-action-link{display:inline-block;background:#693c8b;color:white;padding:11px 18px;border-radius:12px;font-size:13px;font-weight:850}
-@media(max-width:1180px){.demo-stage{grid-template-columns:1fr}.demo-notice-pane{position:relative;top:auto;max-width:650px;width:100%;margin:auto}.demo-line-phone{max-width:360px;margin:auto}}
-@media(max-width:850px){#root .layout{grid-template-columns:1fr}#root .layout aside{position:relative;top:auto;display:flex;flex-wrap:wrap;gap:7px}#root .layout aside .side-item{width:auto;min-height:41px;padding:9px 12px}#root .layout aside .staff-side-label{width:100%;padding-top:7px}#root .layout aside .staff-side-label:first-of-type{padding-top:0}}
-@media(max-width:590px){.demo-intro,.demo-stage{padding:0 13px}.demo-scenes{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.demo-scene{padding:12px;min-height:90px}.demo-scene strong{font-size:14px}.demo-controls .roles{width:100%}.demo-controls .roles button{flex:1}.demo-scene small{font-size:11px}#root .customer-shop-title h1{font-size:20px}#root .toolbar{margin-bottom:12px}#root .card{padding:15px}#root .staff-picker .staff-choice{margin:3px 1px}#root .staff-choice span{font-size:12px}#root .grid{grid-template-columns:1fr}#root .queue-board-grid{grid-template-columns:1fr 1fr}#root .staff-record-head{flex-wrap:wrap}}
-@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
-</style>
+<link rel="stylesheet" href="./assets/demo/mobile-ui.css?build=__LINE_SAAS_BUILD__">
+
 </head>
-<body data-portal="customer">
+<body class="mobile-demo" data-portal="customer">
 <header>
 <div class="top">
 <a class="brand" href="./home.html" aria-label="排隊怪獸首頁"><span class="brandmark" aria-hidden="true"></span>排隊怪獸<small>預約・取號・訂餐</small></a>
@@ -78,14 +26,14 @@ a.demo-action-link{display:inline-block;background:#693c8b;color:white;padding:1
 </header>
 <main>
 <section class="demo-intro">
-<span class="demo-badge">免登入功能試用 · 使用正式產品介面</span>
-<h1>像真的開店一樣，親自操作一次。</h1>
-<p>選擇產業，先以顧客端訂餐、預約或取號，再切到店家端查看真實系統同款操作方式；右側會顯示客人完成後可能收到的 LINE 通知及後續狀態。此頁完全是獨立展示資料。</p>
+<span class="demo-badge">免登入 · 四大產業 · 手機操作體驗</span>
+<h1>用手機，試一次真正的門市流程。</h1>
+<p>選擇情境，實際完成訂餐、預約或取號，再切換店家端處理。通知區會同步呈現客人可能收到的 LINE 訊息。</p>
 <div class="demo-scenes" aria-label="試用情境">
-<button class="demo-scene active" data-scene="breakfast" aria-pressed="true"><strong>早餐店</strong><small>線上點餐、取餐進度</small></button>
-<button class="demo-scene" data-scene="salon" aria-pressed="false"><strong>美髮店</strong><small>預約、設計師、報到</small></button>
-<button class="demo-scene" data-scene="repair" aria-pressed="false"><strong>維修店</strong><small>取號、叫號、過號恢復</small></button>
-<button class="demo-scene" data-scene="clinic" aria-pressed="false"><strong>診所</strong><small>預約、報到、1診／2診</small></button>
+<button class="demo-scene active" data-scene="breakfast" aria-pressed="true"><span class="demo-scene-icon" aria-hidden="true">🥪</span><span class="demo-scene-copy"><strong>早餐店</strong><small>線上點餐、取餐進度</small></span></button>
+<button class="demo-scene" data-scene="salon" aria-pressed="false"><span class="demo-scene-icon" aria-hidden="true">✂️</span><span class="demo-scene-copy"><strong>美髮店</strong><small>預約、設計師、報到</small></span></button>
+<button class="demo-scene" data-scene="repair" aria-pressed="false"><span class="demo-scene-icon" aria-hidden="true">🛠</span><span class="demo-scene-copy"><strong>維修店</strong><small>取號、叫號、過號恢復</small></span></button>
+<button class="demo-scene" data-scene="clinic" aria-pressed="false"><span class="demo-scene-icon" aria-hidden="true">🏥</span><span class="demo-scene-copy"><strong>診所</strong><small>預約、報到、1診／2診</small></span></button>
 </div>
 <div class="demo-controls">
 <div class="demo-label" id="demo-scene">早餐店｜線上點餐</div>
@@ -96,7 +44,8 @@ a.demo-action-link{display:inline-block;background:#693c8b;color:white;padding:1
 </div>
 </section>
 <div class="demo-stage">
-<div id="root" class="container" aria-live="polite"></div>
+<div class="mobile-device"><div class="mobile-statusbar" aria-hidden="true"><span>9:41</span><span class="mobile-statusbar-icons"><svg viewBox="0 0 24 18" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6c6-6 16-6 22 0M5 10c4-4 10-4 14 0M9 14c2-2 4-2 6 0"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg><span>▰</span></span></div>
+<div id="root" class="container" aria-live="polite"></div></div>
 <aside id="notifications" class="demo-notice-pane" aria-label="顧客 LINE 通知及網站回饋模擬"></aside>
 </div>
 </main>
