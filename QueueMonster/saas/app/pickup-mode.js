@@ -6,6 +6,7 @@ import {lineState} from "./state/lineState.js";
 import {box,btn,esc,field,taipei} from "./shared-ui.js";
 import {rpc,act,load} from "./data-loading.js";
 import {render} from "./staff-layout.js";
+import {selectCustomerDetail} from "./customer-detail.js";
 import {normalizeTaiwanPhone,isValidTaiwanPhone,TW_LANDLINE_AREAS,getTaiwanLandlineHint,isValidTaiwanPhoneParts} from "./tw-phone.js";
 
 // The existing store, LINE identity and so_menu_items catalogue remain the source of truth.
@@ -35,7 +36,7 @@ export async function loadPickupData(){
       try{pickupState.customer=await rpc("so_pickup_public",{p_slug:routeState.slug,p_date:pickupState.day});}
       catch(err){console.warn("取餐服務資料不可用",err);pickupState.customer=null;}
     }
-    if(routeState.customerTab==="order"){
+    if(routeState.customerTab==="order"||(routeState.customerTab==="detail"&&routeState.detailKind==="order")){
       try{pickupState.customerHistory=await rpc("so_pickup_my_orders",{p_slug:routeState.slug,p_page:pickupState.customerHistoryPage});}
       catch(e){console.warn("無法讀取訂餐完整歷史",e);pickupState.customerHistory=null;}
     }
@@ -287,6 +288,7 @@ export async function handlePickupAction(ev,b,a,id){
        p_immediate:pickupState.method==="immediate",
        p_customer_phone:normalizeTaiwanPhone(pickupContactPhone())});
      pickupState.cart={};pickupState.note="";pickupState.requestId="";pickupState.confirming=false;placed=true;
+     if(!selectCustomerDetail("order",res.id))routeState.customerTab="order";
      return "訂單 "+res.number+" 已送出。15 秒內可取消，倒數後交給店家接單";
    });
    if(placed)window.scrollTo({top:0,behavior:"instant"});
