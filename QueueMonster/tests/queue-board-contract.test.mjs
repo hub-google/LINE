@@ -57,8 +57,8 @@ test("public board and merchant/customer pages use one privacy-safe live-sync im
   assert.match(sync,/too_many_connections/);
   assert.match(sync,/tenant_events/);
   assert.match(sync,/setInterval\(tick,fallbackMs\)/);
-  assert.match(sync,/fallbackMs=10000,reconcileMs=60000/);
-  assert.match(board,/每 10 秒更新一次叫號/);
+  assert.match(sync,/fallbackMs=5000,reconcileMs=60000/);
+  assert.match(board,/每 5 秒更新一次叫號/);
   assert.match(board,/叫號變動即時更新/);
   assert.match(board,/id="board-update-mode"/);
   assert.doesNotMatch(board,/id="refresh"|12 秒自動核對/);
@@ -98,7 +98,7 @@ test("inactive merchant board shows a stable unavailable state without repeated 
  assert.match(board,/門市目前未開放叫號/);
  assert.doesNotMatch(board,/id="refresh"/);
  assert.match(read("saas/assets/board/main.js"),/isActive:\(\)=>!disabled/);
- assert.match(read("saas/store-live-sync.js"),/fallbackMs=10000/);
+ assert.match(read("saas/store-live-sync.js"),/fallbackMs=5000/);
 });
 
 
