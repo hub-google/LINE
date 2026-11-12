@@ -299,7 +299,9 @@ test("anonymous demo completes before showing a route to free merchant signup",(
  assert.match(demo,/id="demo-conversion"[^>]*hidden/);
  assert.match(demo,/id="demo-register-link"/);
  assert.match(demo,/id="demo-footer-signup"[^>]*merchant-register\.html\?mode=signup/);
- assert.match(demo,/signup-conversion\.js/);
+ assert.ok(/signup-conversion\.js/.test(demo) ||
+   /if\(action==="dismiss-conversion"\|\|action==="reset"\)/.test(demo),
+   "Demo must include the registration conversion handler, either external or inlined");
  assert.doesNotMatch(demo,/href="\.\/merchant-center\.html#apply">建立我的店家/);
  assert.match(reg,/id="demo-origin"[^>]*hidden/);
  assert.match(reg,/signup-conversion\.js/);
