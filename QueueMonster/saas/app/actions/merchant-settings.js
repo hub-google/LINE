@@ -28,7 +28,7 @@ if(a==="save-customer-homepage"){
   return true;
 }
  if(a==="connect-own-oa"||a==="disconnect-own-oa"){
-  if(a==="disconnect-own-oa"&&!confirm("確定改回平台 LINE OA？商家自己的 LINE 通知將停止；原預約和取號不會刪除。"))return true;
+  if(a==="disconnect-own-oa"&&!confirm("確定解除本店 LINE OA 綁定？店家 LINE 通知將停止，平台 OA 不會代發；原預約和取號仍保留。"))return true;
   await act(async()=>{
    let payload={action:"disconnect-merchant-oa",slug:routeState.slug};
    if(a==="connect-own-oa"){
@@ -59,8 +59,8 @@ if(a==="save-customer-homepage"){
    }
    lineState.lineConfig=null;lineState.lineConfigSlug="";
    return a==="connect-own-oa"
-     ?"Messaging API 已驗證連接。請以店家 LINE OA 確認顧客身分配對及通知是否送達；LIFF 為選填。"
-     :"已解除自有 LINE OA，恢復平台服務";
+     ?"Messaging API 已驗證連接。一般通知可使用本店 OA；預約免費自動回覆還須設定本店 LIFF（chat_message.write）與 Webhook，並從店家聊天室開啟預約。"
+     :"已解除自有 LINE OA；平台 OA 不會代發店家通知";
   });return true;
  }
  if(a==="save-directory"){await act(async()=>{const enabled=!!routeState.$("directory-enabled")?.checked;await rpc("so_set_directory_listing",{p_slug:routeState.slug,p_enabled:enabled,p_oa_mode:"PLATFORM"});return enabled?"門市已開放在排隊怪獸平台搜尋":"門市已取消公開搜尋（原有專屬連結仍可使用）";});return true;}
