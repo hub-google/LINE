@@ -32,7 +32,7 @@ function serviceLink(kind,label,enabled){
  '</div>';
 }
 
-export function renderStaffSettings({t,isManager,html}){
+export function renderStaffSettings({t,isManager,html,customersOnly=false}){
   installClosedDatesPicker();
   const policy=staffState.staff.bookingPolicy||{};
   const selectedFlag=staffState.staffCustomerBook.find(x=>x.id===staffState.customerFlagSelected)||staffState.staffCustomerBook[0]||null;
@@ -131,19 +131,29 @@ export function renderStaffSettings({t,isManager,html}){
     '<p class="small">新門市預設勾選公開；若取消勾選，仍可透過專屬預約網址使用服務。</p>'+
     '<p class="small">通知將依本店已連接的 LINE 官方帳號設定提供。</p>'+
     '<div style="margin-top:12px">'+btn("儲存公開設定","save-directory","primary")+'</div>'):"")],
-["operations",box("顧客專屬網址（電腦與手機皆可使用）",'<p class="small">叫號看板網址固定顯示；抽號與預約網址依上方服務開關即時顯示，按下「儲存服務開關」後正式生效。</p>'+serviceLink("board","叫號看板網址",true)+serviceLink("pickup-board","取餐進度看板網址",true)+serviceLink("queue","抽號網址",!!serviceModules.queue)+serviceLink("reserve","預約網址",!!serviceModules.reservation)+serviceLink("order","點餐網址",!!pickupState.staff?.settings?.enabled))]];
-  const section=staffState.settingsSection||"profile";
+["public",box("顧客專屬網址（電腦與手機皆可使用）",'<p class="small">叫號看板網址固定顯示；抽號與預約網址依「營業與場次」的服務開關即時顯示，按下「儲存服務開關」後正式生效。</p>'+serviceLink("board","叫號看板網址",true)+serviceLink("pickup-board","取餐進度看板網址",true)+serviceLink("queue","抽號網址",!!serviceModules.queue)+serviceLink("reserve","預約網址",!!serviceModules.reservation)+serviceLink("order","點餐網址",!!pickupState.staff?.settings?.enabled))]];
+  // Customer records are daily operations, not merchant configuration.
+  if(customersOnly){
+    return html+'<div class="settings-hub-head"><h2>顧客管理</h2><p class="small">查看顧客紀錄、編輯標籤、備註與預約限制。</p></div>'+
+      cards.filter(([key])=>key==="customers").map(([,markup])=>markup).join("");
+  }
+  // Preserve historical deep links while presenting only four visible categories.
+  const aliases={sessions:"operations",pickup:"catalog",branches:"profile",customers:"profile"};
+  const section=aliases[staffState.settingsSection]||staffState.settingsSection||"profile";
+  staffState.settingsSection=section;
   const choices=[
-   ["profile","店家資料"],["operations","營業與預約"],["sessions","場次與窗口"],
-   ["catalog","菜單與服務"],["pickup","線上點餐"],["branches","分店管理"],["customers","顧客管理"],["public","通知與公開"]
+    ["profile","店家與分店"],["operations","營業與場次"],
+    ["catalog","菜單與點餐"],["public","通知與公開"]
   ];
   const tabs='<nav class="settings-hub-tabs" aria-label="設定分類">'+choices.map(([key,label])=>
     btn(label,"settings-section",section===key?"primary":"outline",'data-section="'+key+'" aria-current="'+(section===key?"page":"false")+'"')).join("")+'</nav>';
   html+='<div class="settings-hub-head"><h2>設定</h2><p class="small">所有店家營運設定都在這裡。先完成店家資料，再依需要開放預約、取號、場次與服務。</p></div>'+tabs;
   html+=cards.filter(([key])=>key===section).map(([,markup])=>markup).join("");
-  if(section==="sessions")html+=unitSettingsPanel(isManager);
-  if(section==="catalog")html=renderStaffMenu({t,isManager,html});
-   if(section==="pickup")html+=renderPickupSettings(isManager);
-  if(section==="branches")html=renderStaffBranches({role:staffState.staff.role,html});
+  if(section==="profile")html=renderStaffBranches({role:staffState.staff.role,html});
+  if(section==="operations")html+=unitSettingsPanel(isManager);
+  if(section==="catalog"){
+    html=renderStaffMenu({t,isManager,html});
+    html+=renderPickupSettings(isManager);
+  }
   return html;
 }
