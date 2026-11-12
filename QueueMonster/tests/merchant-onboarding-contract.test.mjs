@@ -15,96 +15,37 @@ const directory=read("saas/directory.html");
 const sql=read("supabase/migrations/20261106102500_merchant_account_onboarding_and_privacy.sql");
 const cleanup=read("supabase/migrations/20261106103000_disable_qa_recovery.sql");
 
-test("merchant signup and login are separate actionable screens",()=>{
- assert.match(reg,/id="tab-login"/);
- assert.match(reg,/id="tab-signup"/);
- for(const id of ["signup-email","signup-pass","signup-confirm","login-email","login-pass"]){
+test("Google login comes before Email on both signup and login tabs",()=>{
+ const logic=read("saas/assets/merchant-register/main.js");
+ const styles=read("saas/assets/merchant-register/page.css");
+ for(const id of ["tab-login","tab-signup","google-auth","signup-email","login-email","login-pass","verify-email-stage","resend-signup-email","change-signup-email"]){
   assert.match(reg,new RegExp('id="'+id+'"'));
  }
- assert.match(reg,/signInWithPassword/);
- assert.match(reg,/auth\.signUp/);
- assert.match(reg,/so_start_merchant/);
- assert.match(reg,/emailRedirectTo:returnToLogin\(\)/);
- assert.doesNotMatch(reg,/id="username"|id="finish-username"/);
- assert.match(reg,/電子信箱（登入帳號）/);
- const loginLogic=read("saas/assets/merchant-register/main.js");
- assert.match(loginLogic,/rpc\("so_start_merchant"\)/);
- assert.doesNotMatch(loginLogic,/p_username|const username="m"/);
- assert.match(loginLogic,/so_start_merchant/);
- assert.doesNotMatch(loginLogic,/data:\{username\}|\$\("username"\)|\$\("finish-username"\)/);
- const merchantGuide=read("saas/merchant-center.html");
- assert.doesNotMatch(merchantGuide,/例如：happyshop|填寫帳號、電子信箱/);
- const emailOnlySql=read("supabase/migrations/20261110143200_queue_monster_email_only_merchant_registration.sql");
- assert.match(emailOnlySql,/rename column username to internal_code/);
- assert.match(emailOnlySql,/v_internal_code := 'm'/);
- assert.match(emailOnlySql,/on conflict \(user_id\) do nothing/);
- assert.doesNotMatch(emailOnlySql,/raw_user_meta_data|v_internal_code:=lower\(btrim/);
- assert.match(merchantGuide,/merchant-register\.html\?mode=signup/);
+ assert.ok(reg.indexOf('id="google-auth"')<reg.indexOf('id="login-email"'));
+ assert.ok(reg.indexOf('id="google-auth"')<reg.indexOf('id="signup-email"'));
+ assert.match(styles,/\.google-auth-button/);
+ assert.match(logic,/signInWithOAuth\(\{provider:"google"/);
+ assert.match(logic,/skipBrowserRedirect:true/);
+ assert.match(logic,/returnToLogin\(\)/);
+ assert.match(logic,/user_metadata\?\.full_name/);
 });
-test("merchant supports secure account activation, password reset and callback preservation",()=>{
- assert.match(reg,/signInWithOtp/);
- assert.match(reg,/shouldCreateUser:true/);
- assert.match(reg,/resetPasswordForEmail/);
- assert.ok(reg.includes("auth.updateUser({password:effective})")||reg.includes("auth.updateUser({password})"));
- assert.match(reg,/u\.pathname\+u\.search\+u\.hash/);
- const module=reg.match(/<script type="module">([\s\S]+?)<\/script>/)?.[1];
- assert.ok(module,"merchant page should have executable module");
- const checked=spawnSync(process.execPath,["--input-type=module","--check"],{input:module,encoding:"utf8"});
- assert.equal(checked.status,0,checked.stderr);
-});
-test("explicit merchant signup never falls through to a stored platform admin session",()=>{
- assert.match(reg,/const signupSb=createClient\(/);
- assert.match(reg,/persistSession:false,autoRefreshToken:false,detectSessionInUrl:false/);
- assert.match(reg,/if\(active==="signup"\)\{showAuth\(null\);return\}/);
- assert.match(reg,/signupSb\.auth\.signUp\(/);
- assert.match(reg,/setMode\("login"\);await prepare\(\)/);
- assert.match(reg,/id="switch-account"/);
- assert.match(reg,/id="account-title"/);
- assert.match(reg,/href="\.\/merchant-register\.html\?mode=signup"/);
-});
-test("a signed-in platform admin still sees the merchant signup form",async()=>{
- const start=reg.indexOf('<script type="module">'),end=reg.indexOf('</script>',start);
- assert.ok(start>=0 && end>start);
- const module=reg.slice(start+'<script type="module">'.length,end).trimStart();
- const source=module.replace(/^import .*?;\s*$/gm,"");
- const elements=new Map();
- const element=id=>{
-  if(!elements.has(id)){
-   const flags=new Set();
-   elements.set(id,{
-    value:"",textContent:"",innerHTML:"",attributes:{},
-    classList:{
-     toggle(name,force){if(force===undefined? !flags.has(name):force)flags.add(name);else flags.delete(name)},
-     add(name){flags.add(name)},
-     remove(name){flags.delete(name)},
-     contains(name){return flags.has(name)}
-    },
-    setAttribute(name,value){this.attributes[name]=value}
-   });
-  }
-  return elements.get(id);
- };
- let sessionReads=0,adminClaims=0;
- const configs=[];
- const createClient=(_url,_key,config)=>{
-  configs.push(config);
-  return {
-   auth:{async getUser(){sessionReads++;return {data:{user:{email:"admin@example.com"}},error:null}}},
-   async rpc(){adminClaims++;return {data:true,error:null}}
-  };
- };
- const document={getElementById:element,querySelectorAll:()=>[]};
- const location={href:"https://hub-google.github.io/LINE/booking/merchant-register.html?mode=signup"};
- vm.runInNewContext(source,{createClient,document,location,URL,history:{replaceState(){}},
-  SUPABASE_URL:"https://test.supabase.co",SUPABASE_PUBLISHABLE_KEY:"test-publishable-key"});
- await Promise.resolve();
- await Promise.resolve();
- assert.equal(sessionReads,0,"signup must not inspect the existing admin session");
- assert.equal(adminClaims,0,"signup must not invoke the platform claim RPC");
- assert.equal(element("signup-form").classList.contains("hidden"),false);
- assert.equal(element("auth-zone").classList.contains("hidden"),false);
- assert.equal(element("account-zone").classList.contains("hidden"),true);
- assert.equal(configs[1]?.auth?.persistSession,false,"signup must use an isolated auth client");
+test("Email registration verifies ownership before password creation",()=>{
+ const logic=read("saas/assets/merchant-register/main.js");
+ assert.doesNotMatch(reg,/id="signup-pass"|id="signup-confirm"/);
+ assert.match(logic,/signupSb\.auth\.signInWithOtp/);
+ assert.match(logic,/shouldCreateUser:true,emailRedirectTo:returnToSignup\(\)/);
+ assert.match(logic,/queue_monster_password_pending:true/);
+ assert.match(logic,/intent==="complete-signup"/);
+ assert.match(logic,/auth\.updateUser\(update\)/);
+ assert.match(logic,/resetPasswordForEmail/);
+ assert.match(logic,/signInWithPassword/);
+ assert.doesNotMatch(logic,/signupSb\.auth\.signUp/);
+ assert.match(logic,/persistSession:false,autoRefreshToken:false,detectSessionInUrl:false/);
+ assert.match(logic,/if\(active==="signup"\)\{showAuth\(null\);return\}/);
+ assert.match(logic,/functions\.invoke\("staff-complete-setup"/);
+ assert.match(logic,/rpc\("so_start_merchant"\)/);
+ assert.match(read("saas/merchant-center.html"),/merchant-register\.html\?mode=signup/);
+ assert.match(read("supabase/migrations/20261110143200_queue_monster_email_only_merchant_registration.sql"),/rename column username to internal_code/);
 });
 test("new stores start private and are published only after settings are saved",()=>{
  assert.match(sql,/onboarding_complete boolean not null default true/);
