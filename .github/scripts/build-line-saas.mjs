@@ -34,6 +34,7 @@ await copyFile(path.join(src,"vendor/qrcode.min.js"),path.join(dest,"vendor/qrco
 await copyFile(path.join(src,"vendor/QR-CODE-LICENSE"),path.join(dest,"vendor/QR-CODE-LICENSE"));
 
 await copyFile(path.join(src, "manifest.webmanifest"), path.join(dest, "manifest.webmanifest"));
+await copyFile(path.join(src, "sitemap.xml"), path.join(dest, "sitemap.xml"));
 await copyFile(path.join(src, "offline.html"), path.join(dest, "offline.html"));
 const worker = await readFile(path.join(src, "pwa-sw.js"), "utf8");
 if (!worker.includes(placeholder)) throw Error("PWA service worker missing version placeholder");
