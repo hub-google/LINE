@@ -241,3 +241,7 @@ body.mobile-demo .demo-conversion-close:hover{background:#f3eff7}
 /* Cancellation is deliberately separated from the five primary queue controls. */
 body.mobile-demo #root .ticket-secondary-status{border-top:1px solid #eee7f0;padding-top:7px;margin-top:11px}
 body.mobile-demo #root .staff-picker-secondary{display:grid;grid-template-columns:minmax(0,1fr);max-width:220px;margin-top:5px}
+
+/* Demo interactions must remain tappable when Playwright or users scroll to buttons.
+   The marketing header's generic sticky position otherwise overlays mobile in-page controls. */
+body.mobile-demo #marketing-header{position:relative;top:auto;z-index:10}
