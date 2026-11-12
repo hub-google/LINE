@@ -19,7 +19,7 @@ if(a==="booking-line-reply"){
   const notice=await sendBookingReply(id);
   if(/提醒暫時無法送出/.test(notice)){
    const config=await bridgeConfig();
-   if(/^@[a-z0-9_.-]{2,100}$/i.test(config.botBasicId||""))
+   if(config.merchantOaConnected===true && /^@[a-z0-9_.-]{2,100}$/i.test(config.botBasicId||""))
     location.assign("https://line.me/R/oaMessage/"+encodeURIComponent(config.botBasicId)+"/?"+encodeURIComponent("確認預約 "+id));
   }
   return notice;
