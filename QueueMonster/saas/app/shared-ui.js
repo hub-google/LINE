@@ -91,7 +91,7 @@ export function staffStatusPicker(kind,item,editable){
  // Cancellation is reversible, but kept apart from the five primary choices.
  const extra=kind==="ticket"?'<details class="ticket-secondary-status"><summary>其他操作</summary>'+
    '<div class="staff-picker-secondary">'+option(["CANCELLED","取消號碼牌"])+'</div></details>':"";
- return '<fieldset class="staff-picker"><legend>點選狀態即儲存（可重新選擇修正）</legend>'+
+ return '<fieldset class="staff-picker'+(kind==="ticket"?" ticket-primary-status":"")+'"><legend>點選狀態即儲存（可重新選擇修正）</legend>'+
   choices.map(option).join("")+'</fieldset>'+extra;
 }
 
