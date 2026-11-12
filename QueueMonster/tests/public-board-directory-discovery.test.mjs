@@ -13,7 +13,7 @@ test("public search lists published merchants and preserves unauthenticated boar
  assert.match(directory,/sb\.rpc\("so_public_directory",\{p_query:null,p_mode:/);
  assert.match(directory,/sb\.rpc\("so_public_popular_stores"/);
  assert.doesNotMatch(directory,/test_board_only|qa-84b3ef9297eb470685a91a527ca499ca/);
- assert.match(directory,/公開叫號看板/);
+ assert.match(directory,/叫號看板/);
  assert.match(directory,/if\(original\.searchParams\.get\("view"\)!=="customer"\)return/);
  assert.match(publicBoardSql,/grant execute on function public\.so_public_board\(text,integer\) to anon,authenticated/);
 });

@@ -272,7 +272,7 @@ test("marketing site has platform overview and two role-specific diagram pages",
 test("public introduction and demo pages share one header and the same navigation labels",()=>{
  const js=read("saas/assets/marketing/shared-header.js");
  const css=read("saas/assets/marketing/shared-header.css");
- for(const p of ["home.html","for-merchants.html","for-customers.html","demo.html","merchant-center.html"]){
+ for(const p of ["home.html","for-merchants.html","for-customers.html","demo.html","merchant-center.html","directory.html"]){
   const html=rawReadFileSync(path.join(root,"saas",p),"utf8");
   assert.match(html,/id="marketing-header"/);
   assert.match(html,/assets\/marketing\/shared-header\.js/);

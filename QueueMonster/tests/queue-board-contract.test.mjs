@@ -80,7 +80,7 @@ test("public board links bypass LINE login on the homepage, directory and mercha
   const home=read("saas/home.html"),directory=read("saas/directory.html"),customer=read("saas/app/customer-booking.js");
   assert.match(home,/叫號看板/);
   assert.match(home,/directory\.html\?mode=queue/);
-  assert.match(directory,/公開叫號看板/);
+  assert.match(directory,/叫號看板/);
   assert.match(directory,/board\.html\?merchant=/);
   assert.match(directory,/original\.searchParams\.get\("view"\)!=="customer"\)return/);
   assert.match(customer,/if\(lineState\.lineLinkStatus!=="linked"\)/);

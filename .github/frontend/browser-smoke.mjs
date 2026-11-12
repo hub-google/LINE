@@ -245,7 +245,7 @@ try{
  // Shared public navigation must match on all introduction pages and all viewport sizes.
  for(const width of [1280,390]){
   await page.setViewportSize({width,height:900});
-  for(const name of ['home.html','for-merchants.html','for-customers.html','demo.html','merchant-center.html']){
+  for(const name of ['home.html','for-merchants.html','for-customers.html','demo.html','merchant-center.html','directory.html']){
    await page.goto(baseUrl+'/booking/'+name,{waitUntil:'domcontentloaded',timeout:45000});
    const header=page.locator('.qm-public-header');
    await header.waitFor({state:'attached',timeout:10000});
