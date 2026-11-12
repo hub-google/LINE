@@ -2707,12 +2707,16 @@ async function wfExportAttendanceHistory(from,to,memberId){
  for(let i=0;i<corrections.length;i+=25){
   const requestIds=corrections.slice(i,i+25).map(r=>r.id);
   const ids=requestIds.join(',');
-  const chunk=await query('wm_request_actions','select=id,tenant_id,request_id,actor_id,action,note,at'+
-    '&tenant_id=eq.'+t+'&request_id=in.('+ids+')&at=lt.'+asOf+
-    '&order=at.asc,id.asc&limit=10000');
-  if(!Array.isArray(chunk)||chunk.length>=10000)
-    throw Error('申請審核歷程過多，請縮短日期範圍後重試');
-  actions.push(...chunk);
+  for(let actionOffset=0;;actionOffset+=500){
+   const chunk=await query('wm_request_actions','select=id,tenant_id,request_id,actor_id,action,note,at'+
+     '&tenant_id=eq.'+t+'&request_id=in.('+ids+')&at=lt.'+asOf+
+     '&order=at.asc,id.asc&limit=500&offset='+actionOffset);
+   if(!Array.isArray(chunk))throw Error('補卡審核歷程回傳資料不正確');
+   actions.push(...chunk);
+   if(actions.length>Number(prepared.action_count))
+     throw Error('補卡審核歷程筆數異常，取消匯出');
+   if(chunk.length<500)break;
+  }
  }
  if(actions.length!==Number(prepared.action_count)||
   new Set(actions.map(r=>r.id)).size!==actions.length)
