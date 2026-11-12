@@ -190,13 +190,13 @@ export async function handleScheduleAction(ev,b,a,id){
  if(!a.startsWith("schedule-"))return false;
  if(a==="schedule-special-copy-template"){
   const d=capture(),e=exceptionDraft(),windows=d.templates[e.template_key];
-  if(!windows){alert("請先選擇要帶入的場次模板");return true;}
+  if(!windows){window.alert("請先選擇要帶入的場次模板");return true;}
   e.mode="CUSTOM";e.windows=clone(windows).map(({title,...w})=>w);
   render();return true;
  }
  if(a==="schedule-special-slot-add"){
   capture();const e=exceptionDraft();
-  if(e.windows.length>=20){alert("特殊日期最多可設定 20 場");return true;}
+  if(e.windows.length>=20){window.alert("特殊日期最多可設定 20 場");return true;}
   const last=e.windows[e.windows.length-1];
   const start=last?.end||"09:00";
   const minutes=Number(start.slice(0,2))*60+Number(start.slice(3))+120;
@@ -228,7 +228,7 @@ export async function handleScheduleAction(ev,b,a,id){
  }
  if(a==="schedule-template-add"){
   const d=capture(),name=val("schedule-new-template-name").trim();
-  if(!name||name.length>40){alert("請輸入 1～40 字的模板名稱");return true;}
+  if(!name||name.length>40){window.alert("請輸入 1～40 字的模板名稱");return true;}
   const key="template_"+Date.now().toString(36)+"_"+Object.keys(d.templates).length;
   d.templates[key]=[{...emptyWindow(),title:name}];
   serviceUnitsState.scheduleEditTemplate=key;render();return true;
@@ -236,7 +236,7 @@ export async function handleScheduleAction(ev,b,a,id){
  if(a==="schedule-slot-add"){
   const d=capture(),key=b.dataset.key;
   if(!d.templates[key])return true;
-  if(d.templates[key].length>=20){alert("一個模板最多 20 場");return true;}
+  if(d.templates[key].length>=20){window.alert("一個模板最多 20 場");return true;}
   d.templates[key].push(emptyWindow());serviceUnitsState.scheduleEditTemplate=key;render();return true;
  }
  if(a==="schedule-slot-remove"){
@@ -248,7 +248,7 @@ export async function handleScheduleAction(ev,b,a,id){
   const d=capture(),key=b.dataset.key;
   if(Object.keys(d.templates).length<=1)return true;
   if((serviceUnitsState.scheduleConfig?.exceptions||[]).some(x=>x.template_key===key)){
-   alert("有特殊日期正在使用此模板，請先移除或改設該特殊日期");return true;
+   window.alert("有特殊日期正在使用此模板，請先移除或改設該特殊日期");return true;
   }
   if(!confirm("刪除「"+templateTitle(key,d.templates[key])+"」？套用此模板的星期將改為公休。"))return true;
   delete d.templates[key];for(let i=1;i<=7;i++)if(d.weekdays[String(i)]===key)d.weekdays[String(i)]="off";
@@ -256,7 +256,7 @@ export async function handleScheduleAction(ev,b,a,id){
  }
  if(a==="schedule-weekly-save"){
   const d=capture();
-  try{validate(d);}catch(error){alert(error.message);return true;}
+  try{validate(d);}catch(error){window.alert(error.message);return true;}
   await act(async()=>{
    await rpc("so_schedule_manage",{p_slug:routeState.slug,p_action:"weekly",
     p_data:{enabled:d.enabled,weekdays:d.weekdays,templates:d.templates}});
@@ -265,16 +265,16 @@ export async function handleScheduleAction(ev,b,a,id){
  }
  if(a==="schedule-special-save"){
   capture();const e=exceptionDraft();
-  if(!e.start||!e.end||e.end<e.start){alert("請確認特殊日期的開始與結束日");return true;}
-  if(!serviceUnitsState.scheduleConfig?.enabled){alert("請先啟用並儲存每週自動排程");return true;}
+  if(!e.start||!e.end||e.end<e.start){window.alert("請確認特殊日期的開始與結束日");return true;}
+  if(!serviceUnitsState.scheduleConfig?.enabled){window.alert("請先啟用並儲存每週自動排程");return true;}
   const data={start:e.start,end:e.end,note:e.note||"",mode:e.mode==="CLOSED"?"CLOSED":"CUSTOM"};
   if(e.mode==="TEMPLATE")data.template_key=e.template_key;
   if(e.mode==="CUSTOM"){
-   if(!Array.isArray(e.windows)||e.windows.length<1||e.windows.length>20){alert("請設定 1～20 個場次");return true;}
+   if(!Array.isArray(e.windows)||e.windows.length<1||e.windows.length>20){window.alert("請設定 1～20 個場次");return true;}
    for(const w of e.windows){
     if(!w.name||!/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(w.start)||!/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(w.end)
       ||w.start>=w.end||!Number.isInteger(w.capacity)||w.capacity<1||w.capacity>300){
-     alert("特殊日期的場次名稱、時間或名額無效，請逐場確認");return true;
+     window.alert("特殊日期的場次名稱、時間或名額無效，請逐場確認");return true;
     }
    }
    data.windows=e.windows;
