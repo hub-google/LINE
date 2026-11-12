@@ -520,7 +520,9 @@ try{
     navItems:nav.querySelectorAll('[data-tab]').length,
     rootVisible:root.getBoundingClientRect().height>400,
     scenes:document.querySelectorAll('[data-scene]').length,
-    hasDeskSideMenu:!!document.querySelector('#root .layout > aside')
+    hasDeskSideMenu:!!document.querySelector('#root .layout > aside'),
+    guideVisible:!!document.querySelector('.demo-desktop-guide')&&getComputedStyle(document.querySelector('.demo-desktop-guide')).display!=='none',
+    navAboveContent:nav.getBoundingClientRect().bottom<=document.querySelector('#root .layout').getBoundingClientRect().top+1
    };
   });
   assert.ok(ui.width<=viewport.width+1,'DEMO horizontal overflow at '+viewport.width+': '+JSON.stringify(ui));
@@ -529,8 +531,15 @@ try{
   assert.equal(ui.scenes,4);
   assert.ok(ui.navItems>=2);
   assert.equal(ui.hasDeskSideMenu,false,'Mobile demo must never show desktop left sidebar');
-  if(viewport.width<=390)assert.equal(ui.navPosition,'fixed','Phone mode must use thumb-reachable fixed bottom navigation');
-  else assert.notEqual(ui.navPosition,'fixed','Desktop phone preview must keep navigation inside device');
+  if(viewport.width<=390){
+   assert.equal(ui.navPosition,'fixed','Phone mode must use thumb-reachable fixed bottom navigation');
+   assert.equal(ui.guideVisible,false,'Phone UI should not show desktop guide');
+  }else{
+   assert.notEqual(ui.navPosition,'fixed','Desktop navigation stays within the demo');
+   assert.ok(ui.phoneWidth>=620,'Desktop operation area should expand: '+JSON.stringify(ui));
+   assert.equal(ui.guideVisible,true,'Desktop demo should show the scenario guide');
+   assert.equal(ui.navAboveContent,true,'Desktop navigation should appear above the form');
+  }
   await page.locator('[data-scene="clinic"]').click();
   await page.locator('[data-role="staff"]').click();
   await page.locator('.mobile-bottom-nav [data-tab="queue"]').click();
@@ -541,8 +550,10 @@ try{
  }
  await page.setViewportSize({width:390,height:844});
  await page.goto(baseUrl+'/booking/demo.html',{waitUntil:'load'});
- // DEMO now starts with repair queue; explicitly choose breakfast before testing an order.
+ // DEMO starts in the live repair queue; switching to breakfast goes straight to the ordering form.
+ assert.match(await page.locator('#root').innerText(),/立即線上取號/);
  await page.locator('[data-scene="breakfast"]').click();
+ assert.match(await page.locator('#root').innerText(),/選擇餐點/);
  await page.locator('.mobile-bottom-nav [data-tab="order"]').click();
  await page.locator('[data-act="qty"][data-delta="1"]').first().click();
  await page.locator('#customer-name').fill('示範顧客');
