@@ -304,7 +304,9 @@ test("anonymous demo completes before showing a route to free merchant signup",(
    "Demo must include the registration conversion handler, either external or inlined");
  assert.doesNotMatch(demo,/href="\.\/merchant-center\.html#apply">建立我的店家/);
  assert.match(reg,/id="demo-origin"[^>]*hidden/);
- assert.match(reg,/signup-conversion\.js/);
+ assert.ok(/signup-conversion\.js/.test(reg) ||
+   /if\(action==="dismiss-conversion"\|\|action==="reset"\)/.test(reg),
+   "Merchant register must include the signup conversion handler, either external or inlined");
  assert.match(bridge,/if\(!panel\)return/);
  assert.match(bridge,/if\(!rule\|\|!rule\.pattern\.test\(message\)\)return/);
  for(const action of ["order-submit","reserve-submit","take-number","next","order-status","staff-status"])
