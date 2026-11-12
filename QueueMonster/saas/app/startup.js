@@ -8,6 +8,7 @@ import {staffState} from "./state/staffState.js";
 import {feedbackState} from "./state/feedbackState.js";
 import {queueState} from "./state/queueState.js";
 import {crossStoreState} from "./state/crossStoreState.js";
+import {bookingState} from "./state/bookingState.js";
 
 const validMerchant=slug=>/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug||"");
 function operationalPage(){
@@ -38,6 +39,19 @@ async function updateVisibleRecords(){
   }
 }
 export function initializeStartup(){
+  // Restore the correct per-record screen when browser Back/Forward is pressed.
+  window.addEventListener("popstate",()=>{
+    if(routeState.view!=="customer")return;
+    const params=new URLSearchParams(location.search);
+    const tab=params.get("tab")||"home";
+    routeState.customerTab=["home","reserve","queue","order","mine","progress","detail"].includes(tab)?tab:"home";
+    routeState.detailKind=["reservation","order"].includes(params.get("kind"))?params.get("kind"):"";
+    routeState.detailId=/^[0-9a-f-]{36}$/i.test(params.get("item")||"")?params.get("item"):"";
+    if(routeState.customerTab==="detail"&&(!routeState.detailKind||!routeState.detailId))routeState.customerTab="mine";
+    queueState.progressTicketId=/^[0-9a-f-]{36}$/i.test(params.get("ticket")||"")?params.get("ticket"):"";
+    bookingState.manageKind="";bookingState.manageItem="";bookingState.manageMode="view";
+    void load();
+  });
   // No network timers for HQ, marketing home, directory or other static pages.
   void load().finally(()=>{
     if(!validMerchant(routeState.slug)||!["customer","staff"].includes(routeState.view))return;
