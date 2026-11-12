@@ -110,14 +110,15 @@ function customerReserve(){
  return box(clinic?"選擇預約場次":"選擇預約日期與時間",'<p class="small">先選擇服務人員／診間，再選擇可預約時段。</p>'+form+confirm+'<div class="staff-actionbar">'+(review?btn("返回修改","review-back")+btn("確認送出預約","reserve-submit","primary full"):btn("下一步：確認預約","review-reserve","primary full"))+'</div>')+box("我的近期預約",recent||'<p class="muted">尚無預約紀錄</p>');
 }
 function customerQueue(){
- const d=current(),clinic=scene==="clinic",tickets=clinic?d.tickets.filter(t=>t.unit===room):d.tickets,own=lastOwn&&d.tickets.find(t=>t.id===lastOwn);
+ const d=current(),clinic=scene==="clinic",tickets=clinic?d.tickets.filter(t=>t.unit===room):d.tickets,linkedBooking=clinic?d.bookings.find(b=>b.id===lastOwn):null,own=lastOwn&&d.tickets.find(t=>t.id===lastOwn||(linkedBooking&&t.id===linkedBooking.ticket));
  const currentNo=clinic?d.current[room]||"尚未叫號":d.current;
  const navRoom=clinic?'<div class="unit-form-header"><h3>選擇服務窗口</h3><span>2 個選項</span></div><div class="unit-card-grid">'+["1診","2診"].map(u=>'<button class="unit-option '+(room===u?"selected":"")+'" data-act="room" data-value="'+u+'"><span class="unit-option-copy"><strong>'+u+'</strong><small>上午診 09:00–12:00</small></span></button>').join("")+'</div>':"";
  const active=tickets.filter(t=>t.status==="WAITING");
  const ahead=own?active.findIndex(t=>t.id===own.id):-1;
  const progress='<div class="queue-board"><div class="queue-board-lead">現在叫到</div><div class="queue-board-current">'+esc(currentNo)+'</div><div class="queue-board-sub">請依現場叫號進度為準</div><div class="queue-board-grid"><div class="queue-board-stat"><span>我的號碼</span><strong>'+esc(own?.id||"—")+'</strong><small>'+(own?esc(statusName[own.status]||own.status):"尚未取號")+'</small></div><div class="queue-board-stat"><span>前面還有</span><strong>'+esc(ahead>=0?ahead+" 組":"—")+'</strong><small>依候位順序計算</small></div></div><p class="queue-board-note">'+(own?.status==="CALLED"?"已叫到您的號碼，請依現場人員指示報到。":"可在此查看候位狀態；展示資料會依店家端操作變更。")+'</p></div>';
  const ticket=own?'<div class="ticket">'+esc(own.id)+'</div><p>'+status(own.status)+'</p><p class="small">這張號碼牌代表一組</p><div class="staff-actionbar">'+btn("查看叫號進度","view-progress")+btn("查看通知示意","view-notice")+'</div>':
- '<p class="muted">現在可以在網站上取得號碼。</p><p>取號者：<strong>試用顧客</strong>（DEMO 已模擬 LINE 身分）</p>'+field("本次候位人數（1～20 人）","queue-party",draft.party,"number",'min="1" max="20" step="1"')+(clinic?'<p class="small">請先選上方診間，現場病患報到後由店家處理。</p>':sel("服務需求","queue-service",["手機維修","電池更換","資料轉移","維修諮詢"],draft.service))+'<div style="margin-top:14px">'+btn("立即線上取號","take-number","primary full")+'</div>';
+ clinic?'<p class="muted">診所預約後請先到現場報到。店家確認報到時，系統才會把病患加入指定診間候診隊列。</p><div class="staff-actionbar">'+btn("查看門診預約","go-reserve","primary full")+'</div>':
+ '<p class="muted">現在可以在網站上取得號碼。</p><p>取號者：<strong>試用顧客</strong>（DEMO 已模擬 LINE 身分）</p>'+field("本次候位人數（1～20 人）","queue-party",draft.party,"number",'min="1" max="20" step="1"')+sel("服務需求","queue-service",["手機維修","電池更換","資料轉移","維修諮詢"],draft.service)+'<div style="margin-top:14px">'+btn("立即線上取號","take-number","primary full")+'</div>';
  return (clinic?box("選擇取號場次",navRoom+'<p class="small">若已預約，請先至店家端「預約管理」報到；報到後會加入對應診間叫號。</p>'):"")+'<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",currentNo)+stat("等候組數",active.length)+stat("我的號碼",own?.id||"—")+'</div>'+box("我的現場號碼",ticket)+(own?box("我的取號",progress):"");
 }
 function customerMine(){
@@ -169,7 +170,11 @@ function renderNotice(){
  (notifyOpen?'<div class="demo-line-phone"><div class="demo-phone-header"><span class="demo-phone-dot"></span>LINE 對話示意 · '+esc(displayShop())+'</div><div class="demo-phone-body">'+(notes.length?notes.slice(0,4).map(n=>'<div class="demo-message"><div class="demo-message-source">'+esc(n.kind)+' · '+esc(n.at)+'</div><strong>'+esc(n.title)+'</strong><div>'+n.lines.map(line=>'<p>'+esc(line)+'</p>').join("")+'</div></div>').join(""):'<div class="demo-message"><strong>尚無新訊息</strong><p>顧客完成訂餐、預約或取號後，這裡會顯示可能看到的確認內容。</p></div>')+'</div></div>':'')+
  '<p class="demo-notice-disclaimer">這是示範內容，不是真實 LINE 推播。正式環境是否發送、發送哪些訊息，依 LINE 授權、店家 OA 設定及後端功能而定；網站內的紀錄與進度仍可查詢。</p>';
 }
+let lastViewSignature="";
 function render(){
+ const viewport=$("root")?.querySelector?.(".content");
+ const prevScroll=viewport?.scrollTop||0;
+ const viewSignature=scene+"|"+role+"|"+tab;
  document.body.dataset.portal=role==="customer"?"customer":"staff";
  const d=current(),title=displayShop();
  $("demo-scene").textContent=metadata[scene][0]+"｜"+metadata[scene][1];
@@ -192,6 +197,8 @@ function render(){
  '<div class="customer-platform-credit">由 <a href="./home.html">排隊怪獸 Queuing Monster</a> 提供</div></section></div>'+
  '<nav class="mobile-bottom-nav" aria-label="'+(role==="customer"?"顧客功能":"店家功能")+'">'+nav()+'</nav>';
 
+ if(lastViewSignature===viewSignature&&$("root")?.querySelector){const scroller=$("root").querySelector(".content");if(scroller)scroller.scrollTop=prevScroll;}
+ lastViewSignature=viewSignature;
  renderNotice();
 }
 function resetDraft(){draft={name:"",phone:"",day:today(),time:"08:00",slot:scene==="clinic"?"09:30":"14:00",unit:scene==="clinic"?"1診":"Ava",service:scene==="clinic"?"一般門診":scene==="repair"?"手機維修":"洗剪",party:1,note:""};cart={};review=false;receipt="";}
@@ -207,6 +214,7 @@ document.addEventListener("click",e=>{
  const navBtn=e.target.closest("[data-tab]");if(navBtn){tab=navBtn.dataset.tab;newNotice="";review=false;render();return;}
  const button=e.target.closest("[data-act]");if(!button)return;
  const a=button.dataset.act,id=button.dataset.id,value=button.dataset.value,d=current();
+ if(a==="go-reserve"){tab="reserve";inform("請先完成預約；報到後會出現在候診名單");return;}
  if(a==="reset"){data[scene]=make()[scene];lastOwn="";notes=[];newNotice="已重設本產業的示範資料";resetDraft();render();return;}
  if(a==="toggle-notify"){notifyOpen=!notifyOpen;renderNotice();if(notifyOpen) $("notifications")?.scrollIntoView?.({behavior:"smooth",block:"nearest"});return;}
  if(a==="view-notice"){notifyOpen=true;renderNotice();$("notifications")?.scrollIntoView?.({behavior:"smooth",block:"nearest"});return;}
@@ -231,6 +239,7 @@ document.addEventListener("click",e=>{
   bookings.unshift(o);lastOwn=o.id;review=false;notifyFor("booking",o);tab="reserve";inform("示範預約 "+o.id+" 已建立；可到店家端「預約管理」報到。");return;
  }
  if(a==="take-number"){
+  if(scene==="clinic"){inform("診所取號需先由店家進行預約報到。");return;}
   if(!Number.isInteger(Number(draft.party))||Number(draft.party)<1||Number(draft.party)>20){inform("候位人數請輸入 1～20 人");return;}
   const o={id:"R"+pad(d.seq++),name:draft.name||"示範顧客",service:draft.service||"手機維修",status:"WAITING",party:Number(draft.party)||1};d.tickets.push(o);lastOwn=o.id;notifyFor("ticket",o);inform("已取得示範號碼 "+o.id+"，切換店家端體驗叫號。");return;
  }
@@ -248,7 +257,7 @@ document.addEventListener("change",e=>{
  if(el.matches("[data-status-kind]")){
   const kind=el.dataset.statusKind,d=current(),o=find(kind==="reservation"?"bookings":"tickets",el.dataset.id);if(!o)return;
   o.status=el.value;
-  if(kind==="reservation"&&scene==="clinic"&&el.value==="CHECKED_IN"&&!o.ticket){const id="C"+(o.unit==="1診"?"1":"2")+"-"+pad(d.seq++);o.ticket=id;d.tickets.push({id,name:o.name,unit:o.unit,party:1,status:"WAITING"});notifyFor("checkin",o);}
+  if(kind==="reservation"&&scene==="clinic"&&el.value==="CHECKED_IN"&&!o.ticket){const id="C"+(o.unit==="1診"?"1":"2")+"-"+pad(d.seq++);o.ticket=id;d.tickets.push({id,name:o.name,unit:o.unit,party:1,status:"WAITING"});lastOwn=id;notifyFor("checkin",o);}
   if(kind==="ticket"&&el.value==="CALLED"){if(scene==="clinic")d.current[o.unit]=o.id;else d.current=o.id;notifyFor("called",o);}
   inform(o.id+" 狀態已變更為 "+statusName[el.value]+"；已結案紀錄仍可重新修改。");return;
  }
