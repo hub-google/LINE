@@ -38,7 +38,7 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
     function updateSyncMode(mode=liveSync?.mode||"api"){
       const label=$("board-update-mode");
       if(!label)return;
-      label.textContent=mode==="realtime"?"叫號變動即時更新":"每 10 秒更新一次叫號";
+      label.textContent=mode==="realtime"?"叫號變動即時更新":"每 5 秒更新一次叫號";
       label.dataset.realtime=mode==="realtime"?"on":"fallback";
       if(lastSuccess)updateConnectionStatus();
     }
@@ -69,7 +69,7 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
       }
       health(isRealtime()?"即時同步正常":"備援同步正常","ok");
       $("notice").textContent="最後成功同步："+localTime(lastSuccess)+
-        (isRealtime()?"；號碼變更即時更新，並定期核對。":"；每 10 秒自動同步，網路斷線會提示。");
+        (isRealtime()?"；號碼變更即時更新，並定期核對。":"；每 5 秒自動同步，網路斷線會提示。");
     }
     function renderUnits(sessions){
       const grid=$("unit-board");

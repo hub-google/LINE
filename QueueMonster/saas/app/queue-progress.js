@@ -82,7 +82,7 @@ export function queueProgressBoard(){
  const ownStatus=own?.status||fallbackTicket?.status||"";
  const ownParty=own?.party||fallbackTicket?.party||1;
  const syncMode=document.documentElement.dataset.storeLiveMode;
- let note=syncMode==="realtime"?"叫號變動會即時更新；也可手動重新整理核對。":syncMode==="api"?"叫號進度約每 10 秒更新一次；也可手動重新整理核對。":"正在建立進度同步，必要時請手動重新整理。";
+ let note=syncMode==="realtime"?"叫號變動會即時更新；也可手動重新整理核對。":syncMode==="api"?"叫號進度約每 5 秒更新一次；也可手動重新整理核對。":"正在建立進度同步，必要時請手動重新整理。";
  if(ownStatus==="CALLED")note="已叫到您的號碼，請依現場人員指示報到。";
  else if(ownStatus==="ARRIVED")note="門市已確認您到場，請依現場指示等待進場。";
   else if(ownStatus==="ADMITTED")note="門市已確認您進場，請依現場人員指示。";
@@ -106,7 +106,7 @@ export function queueProgressBoard(){
    '<p class="queue-board-note">'+esc(note)+'</p>'+
    '<p class="small" role="status">'+
       (notLive?"<strong>最新進度無法確認：</strong>"+(navigator.onLine===false?"目前離線。":esc(queueState.queueLiveError))+"以下為最後取得的資料，請重新連線再確認。":
-        (syncMode==="realtime"?"即時同步中；如需立即核對，可按重新整理。":syncMode==="api"?"每 10 秒備援更新中；如需立即核對，可按重新整理。":"目前顯示最近一次查詢結果；可按重新整理。"))+
+        (syncMode==="realtime"?"即時同步中；如需立即核對，可按重新整理。":syncMode==="api"?"每 5 秒備援更新中；如需立即核對，可按重新整理。":"目前顯示最近一次查詢結果；可按重新整理。"))+
       " 最後成功更新："+(lastSync?esc(formatTaipeiCreated(lastSync)):"尚未成功同步")+
       "（台灣時間）。"+'</p>'+
    queueNearAlertControls(own||fallbackTicket,ownStatus)+

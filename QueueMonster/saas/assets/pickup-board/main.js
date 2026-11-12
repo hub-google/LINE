@@ -38,10 +38,10 @@ async function refresh(){
  $("health").textContent="已同步："+clock()+"。本看板不顯示姓名、電話與餐點內容。";
 }
 let sync=null;
-function modeLabel(mode){$("sync-mode").textContent=mode==="realtime"?"訂單變動即時更新":"每 10 秒備援同步";}
+function modeLabel(mode){$("sync-mode").textContent=mode==="realtime"?"訂單變動即時更新":"每 5 秒備援同步";}
 if(valid){
  void refresh();
- sync=createStoreLiveSync({client,slug,refresh,onModeChange:modeLabel,fallbackMs:10000,reconcileMs:60000});
+ sync=createStoreLiveSync({client,slug,refresh,onModeChange:modeLabel,fallbackMs:5000,reconcileMs:60000});
  sync.start();
 }else {$("shop").textContent="門市網址無效";$("health").textContent="請確認網址中的 merchant 參數";}
 $("fullscreen").addEventListener("click",()=>{
