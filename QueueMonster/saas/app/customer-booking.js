@@ -147,21 +147,22 @@ export function customerRender(){
   const t=customerState.customer.tenant,m=t.modules||{},items=customerState.customer.my_reservations||[],tickets=customerState.customer.my_tickets||[],live=tickets.find(x=>["WAITING","HOLD","CALLED","ARRIVED","ADMITTED","SERVING"].includes(x.status));
   const catalogue=customerState.customer.menu_items||[];
  applyCustomerBrand(t);
- // One customer menu entry owns ordering, queue progress, and previous records.
- // Keep the original tab values for LINE deep links and existing actions.
- const serviceView=["order","progress","mine"].includes(routeState.customerTab);
+ // Online ordering is a first-class action; progress and records share one menu.
+ // Keep the existing tab values for LINE deep links and existing actions.
+ const serviceView=["progress","mine"].includes(routeState.customerTab);
+ const pickupEnabled=pickupState.customer?.settings?.enabled===true;
  const menu=nav("首頁","home",routeState.customerTab,"customer")+
    (m.reservation?nav("線上預約","reserve",routeState.customerTab,"customer"):"")+
    (m.queue?nav("現場取號","queue",routeState.customerTab,"customer"):"")+
+   (pickupEnabled?nav("線上點餐","order",routeState.customerTab,"customer"):"")+
    nav("我的服務","mine",serviceView?"mine":routeState.customerTab,"customer");
  const serviceTabButton=(tab,label)=>'<button type="button" data-nav="customer" data-tab="'+tab+
     '" class="'+(routeState.customerTab===tab?"active":"")+
     '" aria-pressed="'+(routeState.customerTab===tab?"true":"false")+'">'+label+'</button>';
  const serviceNav=serviceView?
    '<section class="customer-service-nav" aria-label="我的服務">'+
-     '<div class="customer-service-title"><h2>我的服務</h2><p class="small">點餐、查看叫號進度及過往紀錄</p></div>'+
+     '<div class="customer-service-title"><h2>我的服務</h2><p class="small">查看叫號進度及過往紀錄</p></div>'+
      '<nav class="customer-service-switcher" aria-label="我的服務功能">'+
-       (pickupState.customer?.settings?.enabled?serviceTabButton("order","線上點餐"):"")+
        serviceTabButton("progress","我的取號")+
        serviceTabButton("mine","我的紀錄")+'</nav></section>':"";
  let html='';
@@ -177,8 +178,8 @@ export function customerRender(){
    (t.address?'<p class="muted" style="font-size:13px;margin:0">'+esc(t.address)+'</p>':"")+'</section>')+
  '<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",customerState.customer.current||"—")+stat("現場候位",customerState.customer.waiting+" 組")+stat("我的有效預約",items.filter(x=>x.status==="CONFIRMED").length)+'</div>'+
  '<div class="grid">'+(m.reservation?'<button class="routecard" data-nav="customer" data-tab="reserve"><h2>線上預約</h2><p class="muted">選擇日期與時段，完成預約</p><strong>立即預約 →</strong></button>':"")+
- (m.queue?'<button class="routecard" data-nav="customer" data-tab="queue"><h2>現場取號</h2><p class="muted">直接取得候位號碼與查看進度</p><strong>立即取號 →</strong></button>':"")+(pickupState.customer?.settings?.enabled?'<button class="routecard" data-nav="customer" data-tab="order"><h2>線上點餐</h2><p class="muted">選擇餐點和取餐時間，查看店家進度</p><strong>立即點餐 →</strong></button>':"")+
- '<button class="routecard" data-nav="customer" data-tab="mine"><h2>我的服務</h2><p class="muted">點餐、叫號進度與預約紀錄集中管理</p><strong>查看我的服務 →</strong></button>'+
+ (m.queue?'<button class="routecard" data-nav="customer" data-tab="queue"><h2>現場取號</h2><p class="muted">直接取得候位號碼與查看進度</p><strong>立即取號 →</strong></button>':"")+(pickupEnabled?'<button class="routecard" data-nav="customer" data-tab="order"><h2>線上點餐</h2><p class="muted">選擇餐點和取餐時間，查看店家進度</p><strong>立即點餐 →</strong></button>':"")+
+ '<button class="routecard" data-nav="customer" data-tab="mine"><h2>我的服務</h2><p class="muted">叫號進度與預約紀錄集中管理</p><strong>查看我的服務 →</strong></button>'+
 (m.queue&&m.calling?'<a class="routecard" href="./board.html?merchant='+encodeURIComponent(routeState.slug)+'"><h2>公開即時叫號看板</h2><p class="muted">直接查看目前叫號及接下來的順序。</p><strong>查看公開看板 →</strong></a>':"")+'</div>';
  }
  else if(routeState.customerTab==="order"){
