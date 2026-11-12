@@ -111,7 +111,7 @@ export function queueProgressBoard(){
       "（台灣時間）。"+'</p>'+
    queueNearAlertControls(own||fallbackTicket,ownStatus)+
    '<div class="staff-actionbar">'+btn("重新整理進度","queue-refresh","outline")+
-      btn("查看我的紀錄","queue-records","secondary")+
+      btn("返回歷史紀錄","cross-back","secondary")+
       (ownStatus==="WAITING"&&own?.id?btn("保留候位","hold-my-number","secondary",'data-id="'+esc(own.id)+'"'):"")+
       (ownStatus==="HOLD"&&own?.id?btn("恢復候位","resume-my-number","primary",'data-id="'+esc(own.id)+'"'):"")+
       (["WAITING","HOLD"].includes(ownStatus)&&own?.id?btn("取消排隊","cancel-my-number","outline",'data-id="'+esc(own.id)+'"'):"")+
