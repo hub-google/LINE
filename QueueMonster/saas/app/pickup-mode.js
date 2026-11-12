@@ -15,7 +15,8 @@ export const pickupState={
   day:"",slot:"",method:"scheduled",cart:{},note:"",requestId:"",history:null,historyPage:1,historyFilter:"all",customerHistory:null,customerHistoryPage:1,phoneType:"mobile",phone:"",phoneArea:"02",phoneLocal:"",confirming:false
 };
 const statusText={NEW:"待店家接單",ACCEPTED:"已接單・待製作",PREPARING:"製作中",
-  READY:"可取餐",PICKED_UP:"已取餐",REJECTED:"店家已取消訂單",CANCELLED:"已取消"};
+  READY:"已完成待取",PICKED_UP:"已取餐",REJECTED:"店家已取消訂單",CANCELLED:"已取消"};
+export const pickupStatusLabel=status=>statusText[status]||status;
 const pickupContactPhone=()=>pickupState.phoneType==="landline"?pickupState.phoneArea+pickupState.phoneLocal:pickupState.phone;
 const validPickupContactPhone=()=>isValidTaiwanPhoneParts(pickupState.phoneType,pickupState.phone,pickupState.phoneArea,pickupState.phoneLocal);
 const money=n=>"NT$ "+Number(n||0).toLocaleString("zh-TW",{maximumFractionDigits:2});
@@ -185,14 +186,14 @@ export function renderStaffPickup(){
    'data-id="'+esc(o.id)+'" data-status="'+status+'" data-expected="'+esc(o.status)+'"'+
    (disabled?' disabled title="目前狀態或尚未到建議製作時間"':''));
  // These choices remain available for every order, including rejected and finished orders.
- const choices=[["接單","ACCEPTED"],["已完成待取","READY"],["取消訂單","REJECTED"]];
+ const choices=o=>[[o.status==="READY"?"確認已取餐":"接單",o.status==="READY"?"PICKED_UP":"ACCEPTED"],["已完成待取","READY"],["取消訂單","REJECTED"]];
  const card=o=>'<div class="inset" style="margin:0 0 12px;padding:14px"><div class="listline"><strong>'+
   esc(o.number)+'</strong><strong>'+esc(staffStatusText[o.status]||o.status)+'</strong></div>'+
   '<p class="small"><strong>約定取餐 '+esc(o.pickup_at)+'</strong> '+(o.scheduled?"（指定時間）":"（立即）")+'</p>'+
   '<p class="small">聯絡電話：'+esc(o.customer_phone||'未提供')+'</p><p class="small">建議開始製作：'+esc(o.prepare_at)+(o.can_prepare?"":" — 尚未到製作時間")+'</p>'+
   '<p>'+lines(o)+'</p><p class="small">'+(o.note?"備註："+esc(o.note):"無備註")+' ・ '+money(o.total)+'</p>'+
   (canUpdate?'<div class="staff-actionbar" role="group" aria-label="選擇訂單狀態">'+
-  choices.map(([label,status])=>action(o,label,status,o.status===status,o.status===status?"primary":"outline")).join("")+'</div>':
+  choices(o).map(([label,status])=>action(o,label,status,o.status===status,o.status===status?"primary":"outline")).join("")+'</div>':
   '<p class="small">此員工角色僅可查看訂單，由管理者修改狀態。</p>')+
   (canUpdate?'<details style="margin-top:8px"><summary class="small">其他操作（開始製作／取消類型更正／恢復待接單）</summary>'+
   '<div class="staff-actionbar" style="margin-top:10px">'+
@@ -295,7 +296,8 @@ export async function handlePickupAction(ev,b,a,id){
    if(!id)return true;
    const desired=b.dataset.status,expected=b.dataset.expected;
    if(desired===expected)return true;
-   if(["REJECTED","CANCELLED"].includes(desired)&&!confirm("確定要取消或拒絕這筆訂單？"))return true;
+   if(["REJECTED","CANCELLED"].includes(desired)&&!confirm("確定要取消這筆訂單？"))return true;
+   if(desired==="PICKED_UP"&&!confirm("確認顧客已領取這筆訂單？"))return true;
    await act(async()=>{
      await rpc("so_pickup_update",{p_slug:routeState.slug,p_order_id:id,p_expected:expected,p_status:desired});
      return "訂單狀態已更新為："+(statusText[desired]||desired);

@@ -96,14 +96,17 @@ export function renderStaffSettings({t,isManager,html,customersOnly=false}){
       '<div class="staff-actionbar">'+btn("儲存顧客標籤與限制","save-customer-flags","primary")+'</div>':
       '<p class="muted">本店目前沒有預約或訂餐顧客資料。</p>')):"")],
 ["public",(isManager?box("門市公告與照片",
-    '<p class="small">可以發布公告、價目表連結及最多 8 張可橫向滑動的照片。請使用可公開瀏覽的 HTTPS 圖片網址，勿貼個資或私密連結。</p>'+
+    '<p class="small">公告最多可放 8 張照片，可直接選擇裝置內的圖片上傳，也可以貼公開 HTTPS 圖片網址。</p>'+
     (staffState.staffAnnouncements.length?staffState.staffAnnouncements.map(a=>
       '<div class="listline"><span><strong>'+esc(a.title)+'</strong>　'+tag(a.active?"公開":"未公開")+'</span>'+
       '<span>'+btn("編輯","announcement-edit","outline",'data-id="'+esc(a.id)+'"')+
       btn(a.active?"暫停公開":"重新公開","announcement-toggle","outline",'data-id="'+esc(a.id)+'" data-active="'+esc(a.active)+'"')+'</span></div>').join(""):'<p class="muted">目前沒有公告。</p>')+
     '<div style="margin-top:12px">'+field("公告標題","announcement-title",(staffState.staffAnnouncements.find(a=>a.id===staffState.announcementEditId)?.title)||"")+
     '<label for="announcement-body">公告內容</label><textarea class="field" id="announcement-body" rows="4" maxlength="2000">'+esc(staffState.staffAnnouncements.find(a=>a.id===staffState.announcementEditId)?.body||"")+'</textarea>'+
-    '<label for="announcement-images">照片網址（每行一張，最多 8 張）</label><textarea class="field" id="announcement-images" rows="4">'+esc((staffState.staffAnnouncements.find(a=>a.id===staffState.announcementEditId)?.images||[]).join("\n"))+'</textarea>'+
+    '<label for="announcement-photo-files">從手機或電腦新增照片（最多 8 張，單張 2 MB）</label><input class="field" type="file" id="announcement-photo-files" accept="image/png,image/jpeg,image/webp" multiple aria-describedby="announcement-photo-hint">'+
+    '<p class="small" id="announcement-photo-hint">可選 JPG、PNG、WebP，選取後按「儲存修改／發布公告」才會上傳。</p>'+
+    '<p class="small">目前既有照片：'+(staffState.staffAnnouncements.find(a=>a.id===staffState.announcementEditId)?.images||[]).length+' 張；新增後合計最多 8 張。</p>'+
+    '<details><summary>進階：以照片網址管理既有照片</summary><label for="announcement-images">照片網址（一行一張，刪除網址即可移除照片）</label><textarea class="field" id="announcement-images" rows="4">'+esc((staffState.staffAnnouncements.find(a=>a.id===staffState.announcementEditId)?.images||[]).join("\n"))+'</textarea></details>'+
     '<label class="checklist"><input type="checkbox" id="announcement-active" '+(staffState.staffAnnouncements.find(a=>a.id===staffState.announcementEditId)?.active===false?"":"checked")+'>發布至顧客首頁</label>'+
     '<div class="staff-actionbar">'+btn(staffState.announcementEditId?"儲存修改":"發布公告","announcement-save","primary")+
        (staffState.announcementEditId?btn("取消編輯","announcement-edit-cancel","outline"):"")+'</div></div>'):"")],
@@ -150,7 +153,8 @@ export function renderStaffSettings({t,isManager,html,customersOnly=false}){
   ];
   const tabs='<nav class="settings-hub-tabs" aria-label="設定分類">'+choices.map(([key,label])=>
     btn(label,"settings-section",section===key?"primary":"outline",'data-section="'+key+'" aria-current="'+(section===key?"page":"false")+'"')).join("")+'</nav>';
-  html+='<div class="settings-hub-head"><h2>設定</h2><p class="small">所有店家營運設定都在這裡。先完成店家資料，再依需要開放預約、取號、場次與服務。</p></div>'+tabs;
+  html+='<div class="settings-hub-head"><h2>設定</h2><p class="small">所有店家營運設定都在這裡。先完成店家資料，再依需要開放預約、取號、場次與服務。</p>'+
+    (section==="public"?"":'<div class="staff-actionbar"><span class="small">LINE OA 通知來源：'+(lineState.lineConfig?.merchantOaConnected?"店家自己的 OA":"平台 OA")+'</span>'+btn("查看 LINE OA 綁定與教學","settings-section","outline",'data-section="public"')+'</div>')+'</div>'+tabs;
   html+=cards.filter(([key])=>key===section).map(([,markup])=>markup).join("");
   if(section==="profile")html=renderStaffBranches({role:staffState.staff.role,html});
   if(section==="operations")html+=unitSettingsPanel(isManager);

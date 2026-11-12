@@ -1,4 +1,7 @@
 import {routeState} from "../state/routeState.js";
+import {authState} from "../state/authState.js";
+import {lineState} from "../state/lineState.js";
+import {merchantBrandState} from "../state/merchantBrandState.js";
 import {staffState} from "../state/staffState.js";
 import {serviceUnitsState} from "../state/serviceUnitsState.js";
 
@@ -44,7 +47,22 @@ if(a==="noop-queue-session"){return true;}
     await act(async()=>{
       const title=val("announcement-title"),body=val("announcement-body");
       const images=val("announcement-images").split(/[\r\n]+/).map(x=>x.trim()).filter(Boolean);
-      if(!title||title.length>80||images.length>8)throw Error("請輸入公告標題；照片最多八張");
+      const files=Array.from(routeState.$("announcement-photo-files")?.files||[]);
+      if(!title||title.length>80||images.length+files.length>8)throw Error("請輸入公告標題；既有照片與新照片合計最多八張");
+      if(files.some(f=>!["image/jpeg","image/png","image/webp"].includes(f.type)||f.size<1||f.size>2097152))
+        throw Error("公告照片僅支援 JPG、PNG 或 WebP，每張不超過 2 MB");
+      if(files.length){
+        const userId=authState.session?.user?.id;
+        if(!userId||!globalThis.crypto?.randomUUID)throw Error("上傳公告照片前請先登入店家帳號");
+        const bucket=lineState.supa.storage.from(merchantBrandState.MERCHANT_LOGO_BUCKET);
+        for(const file of files){
+          const ext={"image/jpeg":"jpg","image/png":"png","image/webp":"webp"}[file.type];
+          const key=userId+"/announcements/"+crypto.randomUUID()+"."+ext;
+          const uploaded=await bucket.upload(key,file,{contentType:file.type,upsert:false,cacheControl:"3600"});
+          if(uploaded.error)throw Error("照片「"+file.name+"」上傳失敗："+uploaded.error.message);
+          images.push(bucket.getPublicUrl(uploaded.data.path).data.publicUrl);
+        }
+      }
       await rpc("so_save_announcement",{p_slug:routeState.slug,p_id:staffState.announcementEditId||null,
         p_title:title,p_body:body,p_images:images,p_active:!!routeState.$("announcement-active")?.checked});
       staffState.announcementEditId="";
