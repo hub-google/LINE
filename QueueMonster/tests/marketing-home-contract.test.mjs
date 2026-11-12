@@ -98,9 +98,16 @@ test("homepage mascot artwork does not have redundant demo text floating above i
 
 test("homepage hero presents two separate Chinese-first booking and queue examples",()=>{
  const css=read("saas/assets/home/page.css");
- for(const industry of ["診所","餐廳","髮廊","美容美甲","寵物服務","課程活動"]){
-  assert.match(landing,new RegExp("<span>"+industry+"</span>"),industry+" industry tag missing");
- }
+ assert.match(landing,/<ul class="hero-feature-list" aria-label="排隊怪獸三大功能">/);
+ for(const [name,detail] of [
+  ["線上預約","選擇日期、時段，快速完成預約"],
+  ["排隊叫號","線上取號，隨時查看等候進度"],
+  ["線上點餐","提前下單，可指定取餐時間"]
+ ])assert.ok(landing.includes("<strong>"+name+"</strong><span>"+detail+"</span>"),name+" summary missing");
+ const hero=landing.split('<section class="hero"')[1]?.split('</section>')[0]||"";
+ assert.doesNotMatch(hero,/class="lead"|class="hero-industries"/,"hero must be concise, with no redundant industry labels");
+ assert.match(css,/\.hero-feature-list\{[^}]*display:grid/);
+ assert.match(css,/@media\(max-width:620px\)\{[\s\S]*?\.hero-feature-list li\{grid-template-columns:91px/);
  assert.match(landing,/class="hero-demo hero-demo--booking" aria-label="線上預約範例"/);
  assert.match(landing,/class="hero-demo hero-demo--queue" aria-label="現場抽號叫號範例"/);
  assert.equal((landing.match(/<article class="hero-demo hero-demo--/g)||[]).length,2);

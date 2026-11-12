@@ -198,10 +198,12 @@
   
 
 /* 首頁雙服務展示：預約與抽號叫號清楚並列，數字只作靜態示範。 */
-.hero-industries{margin:-5px 0 24px;max-width:560px}
-.hero-industries-title{display:block;font-size:13px;font-weight:850;color:#674576;margin-bottom:9px}
-.hero-industry-tags{display:flex;flex-wrap:wrap;gap:7px}
-.hero-industry-tags span{display:inline-flex;align-items:center;justify-content:center;border:1px solid #dec6ed;background:#fff9ff;color:#603e75;border-radius:999px;padding:4px 11px;font-size:12px;font-weight:800;line-height:1.5}
+.hero-feature-list{list-style:none;padding:0;margin:0 0 28px;max-width:570px;display:grid;gap:12px}
+.hero-feature-list li{display:grid;grid-template-columns:110px minmax(0,1fr);align-items:baseline;gap:12px;padding:0;color:#6d5578;font-size:clamp(16px,1.5vw,18px);line-height:1.55}
+.hero-feature-list li::before{content:"";display:none}
+.hero-feature-list strong{color:#56376c;font-weight:900;white-space:nowrap;position:relative;padding-left:17px}
+.hero-feature-list strong::before{content:"";position:absolute;left:0;top:.68em;width:7px;height:7px;border-radius:50%;background:#a875cb}
+.hero-feature-list span{min-width:0}
 .hero-showcase.mock-scene{min-height:485px;padding:80px 0 16px;width:100%;max-width:585px;margin-inline:auto}
 .hero-showcase .mock-ring{width:min(98%,500px);max-width:100%;background:radial-gradient(circle at 42% 30%,#ffefff 0%,#e7cff6 72%,#dfc1f1 100%);opacity:.8}
 .hero-demo-grid{position:relative;z-index:2;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:13px;width:100%}
@@ -237,10 +239,10 @@ body[data-monster-page="home"] .mock-scene.hero-showcase::before{width:112px;hei
   .hero-demo-grid{max-width:610px}
 }
 @media(max-width:620px){
-  .hero-industries{margin:0 0 20px}
-  .hero-industries-title{font-size:12px}
-  .hero-industry-tags{gap:6px}
-  .hero-industry-tags span{padding:4px 9px;font-size:11px}
+  .hero-feature-list{gap:10px;margin-bottom:22px}
+  .hero-feature-list li{grid-template-columns:91px minmax(0,1fr);gap:7px;font-size:14px;line-height:1.5}
+  .hero-feature-list strong{padding-left:14px}
+  .hero-feature-list strong::before{width:6px;height:6px;top:.65em}
   .hero-showcase.mock-scene{min-height:0;max-width:430px;padding:81px 0 10px;margin-top:15px}
   .hero-showcase .mock-ring{max-width:330px;top:95px;opacity:.65}
   .hero-demo-grid{grid-template-columns:1fr;gap:13px;max-width:410px}
