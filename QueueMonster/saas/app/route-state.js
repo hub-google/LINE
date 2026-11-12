@@ -126,8 +126,9 @@ bookingState.bookingContactName="";
 bookingState.bookingContactPhone="";
 bookingState.bookingContactDirty=false;
 routeState.customerTab=["home","reserve","queue","order","mine","progress"].includes(incomingParam("tab"))?incomingParam("tab"):"home";
-staffState.staffTab=["dashboard","bookings","queue","orders","calendar","units","analytics","menu","members","branches","settings"].includes(incomingParam("tab"))?incomingParam("tab"):"dashboard";
+staffState.staffTab=["dashboard","bookings","queue","orders","calendar","units","analytics","menu","members","branches","settings","customers"].includes(incomingParam("tab"))?incomingParam("tab"):"dashboard";
  staffState.settingsSection=["profile","operations","sessions","catalog","pickup","branches","customers","public"].includes(incomingParam("section"))?incomingParam("section"):"profile";
+ if(staffState.staffTab==="settings"&&staffState.settingsSection==="customers"){staffState.staffTab="customers";staffState.settingsSection="profile";}
 routeState.platformTab="dashboard";
 bookingState.chosenSlot="";
 routeState.registration=false;
