@@ -29,7 +29,7 @@ BEGIN
   IF EXISTS (
     SELECT 1
     FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
-    JOIN jsonb_each_text(v_map) AS m ON c.relname=m.value
+    JOIN jsonb_each_text(v_map) AS target_rel ON c.relname=target_rel.value
     WHERE n.nspname IN ('public','private') AND c.relkind IN ('r','p','v','m')
   ) THEN
     RAISE EXCEPTION 'A target qm_ relation already exists; aborting rename';
@@ -72,7 +72,7 @@ BEGIN
 
   IF EXISTS (
     SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
-    JOIN jsonb_each_text(v_map) AS m ON p.prosrc ~ ('\m'||m.key||'\M')
+    JOIN jsonb_each_text(v_map) AS old_rel ON p.prosrc ~ ('\m'||old_rel.key||'\M')
     WHERE n.nspname IN ('public','private') AND p.prokind='f'
   ) THEN
     RAISE EXCEPTION 'Old table names remain in one or more function bodies';
