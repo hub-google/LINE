@@ -135,7 +135,7 @@ export function renderStaffSettings({t,isManager,html,customersOnly=false}){
   // Customer records are daily operations, not merchant configuration.
   if(customersOnly){
     return html+'<div class="settings-hub-head"><h2>顧客管理</h2><p class="small">查看顧客紀錄、編輯標籤、備註與預約限制。</p></div>'+
-      cards.filter(([key])=>key==="customers").map(([,markup])=>markup).join("");
+      (isManager?cards.filter(([key])=>key==="customers").map(([,markup])=>markup).join(""):box("顧客管理","<p class=\"muted\">只有店家管理者可以查看及編輯顧客資料。</p>"));
   }
   // Preserve historical deep links while presenting only four visible categories.
   const aliases={sessions:"operations",pickup:"catalog",branches:"profile",customers:"profile"};
