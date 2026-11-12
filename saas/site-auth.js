@@ -18,7 +18,7 @@ function portalMode(){
  const page=location.pathname.split("/").pop()||"";
  const view=new URLSearchParams(location.search).get("view");
  if(view==="platform")return "headquarters";
- if(view==="staff"||["merchant-center.html","merchant-register.html"].includes(page))return "merchant";
+ if(view==="staff"||["merchant-register.html"].includes(page))return "merchant";
  return "customer";
 }
 function el(tag,className,text){
@@ -61,15 +61,15 @@ function draw(status,message){
 function isReturnAllowed(candidate){
  if(typeof candidate!=="string"||!candidate||candidate.length>600)return false;
  // Return only to one of this product's same-origin public pages.
- if(!/^(?:home|directory|board|merchant-center|merchant-register|privacy|terms)\.html(?:\?[^#]*)?$/.test(candidate))return false;
+ if(!/^(?:home|for-merchants|for-customers|demo|directory|board|merchant-center|merchant-register|privacy|terms)\.html(?:\?[^#]*)?$/.test(candidate))return false;
  try{
   const u=new URL(candidate,location.origin+location.pathname.replace(/[^/]*$/,""));
-  return u.origin===location.origin && /^\/LINE\/(?:booking|saas)\/(?:home|directory|board|merchant-center|merchant-register|privacy|terms)\.html$/.test(u.pathname);
+  return u.origin===location.origin && /^\/LINE\/(?:booking|saas)\/(?:home|for-merchants|for-customers|demo|directory|board|merchant-center|merchant-register|privacy|terms)\.html$/.test(u.pathname);
  }catch(_){return false}
 }
 function currentReturn(){
  let name=location.pathname.split("/").pop()||"home.html";
- if(!/^(?:home|directory|board|merchant-center|merchant-register|privacy|terms)\.html$/.test(name))name="home.html";
+ if(!/^(?:home|for-merchants|for-customers|demo|directory|board|merchant-center|merchant-register|privacy|terms)\.html$/.test(name))name="home.html";
  const qs=new URLSearchParams(location.search);
  // Never persist OAuth credentials, secret tokens or callback state.
  for(const k of [...qs.keys()])if(/token|code|state|liff|secret|key/i.test(k))qs.delete(k);
