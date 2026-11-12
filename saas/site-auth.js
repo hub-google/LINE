@@ -49,7 +49,8 @@ function draw(status,message){
  }else if(status==="linked"){
   const profile=el("details","site-auth-profile");
   const name=el("summary","site-auth-name");
-  const avatar=el("span","site-auth-avatar","L");
+  const avatarText=currentIdentity?.type==="customer"?"L":currentIdentity?.provider==="google"?"G":"信";
+  const avatar=el("span","site-auth-avatar",avatarText);
   const label=el("span","site-auth-label",currentIdentity?.displayName||"LINE 使用者");
   name.title=currentIdentity?.displayName||"LINE 使用者";
   name.setAttribute("aria-label","開啟帳號選單："+(currentIdentity?.displayName||"LINE 使用者"));
@@ -71,7 +72,7 @@ function draw(status,message){
    // Google and LINE accounts have no Queue Monster password to change.
    const plain=el("span","site-auth-name");
    plain.title=currentIdentity?.displayName||"已登入";
-   const icon=el("span","site-auth-avatar","L");
+   const icon=el("span","site-auth-avatar",avatarText);
    const text=el("span","site-auth-label",currentIdentity?.displayName||"已登入");
    plain.append(icon,text);
    holder.append(plain,logout);
@@ -259,7 +260,7 @@ async function getIdentity(){
   const emailAccount=provider==="email" ||
    (!provider && staffUser.identities?.some(item=>item.provider==="email")===true);
   operatorIdentity={
-   type:"operator",displayName:staffUser.email||"商家使用者",
+   type:"operator",displayName:staffUser.email||"商家使用者",provider:emailAccount?"email":provider||"google",
    userId:staffUser.id,client:operator,
    canChangePassword:emailAccount,
    needsPasswordSetup:emailAccount && staffUser.user_metadata?.queue_monster_password_pending===true
