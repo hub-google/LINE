@@ -2620,3 +2620,146 @@ $('overlay').addEventListener('submit',async event=>{
   closeModal();await reload(true);banner('已由資料庫保存，請依簽核結果查看是否生效');
  }catch(err){banner(err.message||'操作失敗',true);if(submit)submit.disabled=false;}
 },true);
+
+
+/* PRD HR-ATT-10 / HR-RPT-05: audited multi-year attendance export.
+ * Existing punch, correction, review action and adjustment sources are used.
+ * Every REST result is checked against the authenticated snapshot counts.
+ * A partial download is never presented as a successful legal record export. */
+const wfPriorHistoryReports=reports;
+reports=function(){
+ wfPriorHistoryReports();
+ if(app.mode!=='real'||!app.token)return;
+ const self=wfMyMember();
+ const candidates=(app.data?.members||[]).filter(m=>manager()||m.user_id===app.user?.id);
+ const selected=app.historyExportMemberId&&candidates.some(m=>m.id===app.historyExportMemberId)?
+  app.historyExportMemberId:self?.id||candidates[0]?.id||'';
+ const memberOptions=candidates.map(m=>'<option value="'+esc(m.id)+'" '+
+  (m.id===selected?'selected':'')+'>'+esc(m.display_name)+'</option>').join('');
+ const from=app.historyExportFrom||dayAdd(today(),-30),to=app.historyExportTo||today();
+ $('appContent').insertAdjacentHTML('beforeend',panel('HR-RPT-05｜出勤原始紀錄與補正歷程匯出',
+  '<div class="notice">可下載單一員工最多連續五年的原始上下班／休息打卡、補卡申請、審核歷程及核准後補正。保留原始 UTC 時間與台灣顯示時間，不改寫打卡資料。僅限具有企業授權的人員使用，操作會留下匯出稽核紀錄。</div>'+
+  '<form id="wfHistoryExportForm"><div class="form-grid">'+
+  '<div class="field"><label for="wfHistoryMember">員工</label><select id="wfHistoryMember" name="member_id" required>'+memberOptions+'</select></div>'+
+  '<div class="field"><label for="wfHistoryFrom">開始日期</label><input id="wfHistoryFrom" name="from" type="date" required value="'+esc(from)+'"></div>'+
+  '<div class="field"><label for="wfHistoryTo">結束日期</label><input id="wfHistoryTo" name="to" type="date" required value="'+esc(to)+'"></div>'+
+  '</div><div class="modal-actions"><button class="btn primary" type="submit">下載完整出勤歷程 CSV</button></div></form>'+
+  '<p class="muted">每批讀取 500 筆並與伺服器查核總數。資料有遺漏、驗證失敗、網路中斷或無權查詢時不會下載不完整的檔案。此為原始出勤／更正證據，不等同核定薪資工時。</p>'
+ ));
+};
+function wfHistoryRange(from,to){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(from)||!/^\d{4}-\d{2}-\d{2}$/.test(to)||from>to)
+  throw Error('出勤匯出起訖日期不正確');
+ const years=new Date(from+'T00:00:00Z');
+ years.setUTCFullYear(years.getUTCFullYear()+5);
+ if(new Date(to+'T00:00:00Z')>years)throw Error('每次最多匯出連續五年，請分批查詢');
+ return {begin:new Date(from+'T00:00:00+08:00').toISOString(),
+   end:new Date(dayAdd(to,1)+'T00:00:00+08:00').toISOString()};
+}
+async function wfHistoryPages(table,columns,conditions,count){
+ const rows=[],size=500;
+ if(!Number.isSafeInteger(count)||count<0)throw Error('伺服器的出勤事件筆數格式錯誤');
+ for(let offset=0;offset<count;offset+=size){
+  const take=Math.min(size,count-offset);
+  const params='select='+columns+'&'+conditions+
+   '&order='+((table==='wm_request_actions')?'at.asc,id.asc':
+     (table==='wm_punches')?'punched_at.asc,id.asc':
+     (table==='wm_attendance_adjustments')?'created_at.asc,id.asc':'created_at.asc,id.asc')+
+   '&limit='+take+'&offset='+offset;
+  const part=await query(table,params);
+  if(!Array.isArray(part)||part.length!==take)
+    throw Error('讀取 '+table+' 第 '+(offset+1)+' 筆時缺少資料，已取消匯出');
+  rows.push(...part);
+ }
+ if(rows.length!==count)throw Error('歷史紀錄筆數不一致，已取消匯出');
+ if(new Set(rows.map(r=>r.id)).size!==rows.length)throw Error('歷史資料分頁重複，已取消匯出');
+ return rows;
+}
+async function wfExportAttendanceHistory(from,to,memberId){
+ if(app.mode!=='real'||!app.token||!app.tenantId)throw Error('請登入企業再下載');
+ const tenant=app.tenantId,userToken=app.token;
+ const member=(app.data?.members||[]).find(m=>m.id===memberId);
+ if(!member||(!manager()&&member.user_id!==app.user?.id))
+  throw Error('無權匯出這位員工的出勤紀錄');
+ const range=wfHistoryRange(from,to);
+ const prepared=await call('/rest/v1/rpc/wm_prepare_attendance_export','POST',
+  {p_tenant:tenant,p_member:memberId,p_from:from,p_to:to},userToken);
+ if(!prepared||prepared.tenant_id!==tenant||prepared.member_id!==memberId)
+  throw Error('伺服器未授權本次出勤匯出');
+ const asOf=encodeURIComponent(prepared.as_of),t=encodeURIComponent(tenant),m=encodeURIComponent(memberId);
+ const begin=encodeURIComponent(range.begin),end=encodeURIComponent(range.end);
+ const common='tenant_id=eq.'+t+'&member_id=eq.'+m;
+ const punches=await wfHistoryPages('wm_punches',
+  'id,tenant_id,member_id,kind,punched_at,source,actor_id,idempotency_key',
+  common+'&punched_at=gte.'+begin+'&punched_at=lt.'+end+
+   '&punched_at=lt.'+asOf,Number(prepared.punch_count));
+ const correctionFilters=common+'&kind=eq.correction&starts_at=lt.'+end+
+  '&ends_at=gt.'+begin+'&created_at=lt.'+asOf;
+ const corrections=await wfHistoryPages('wm_requests',
+  'id,tenant_id,member_id,kind,correction_type,starts_at,ends_at,reason,status,created_at,reviewer_id,decided_at,decision_note',
+  correctionFilters,Number(prepared.correction_count));
+ const adjustments=await wfHistoryPages('wm_attendance_adjustments',
+  'id,tenant_id,member_id,request_id,corrected_start,corrected_end,created_at',
+  common+'&corrected_start=lt.'+end+'&corrected_end=gt.'+begin+
+  '&created_at=lt.'+asOf,Number(prepared.adjustment_count));
+ const actions=[];
+ // Request IDs are selected by an RLS-authorized fetch, not derived from user input.
+ for(let i=0;i<corrections.length;i+=25){
+  const requestIds=corrections.slice(i,i+25).map(r=>r.id);
+  const ids=requestIds.join(',');
+  const chunk=await query('wm_request_actions','select=id,tenant_id,request_id,actor_id,action,note,at'+
+    '&tenant_id=eq.'+t+'&request_id=in.('+ids+')&at=lt.'+asOf+
+    '&order=at.asc,id.asc&limit=10000');
+  if(!Array.isArray(chunk)||chunk.length>=10000)
+    throw Error('申請審核歷程過多，請縮短日期範圍後重試');
+  actions.push(...chunk);
+ }
+ if(actions.length!==Number(prepared.action_count)||
+  new Set(actions.map(r=>r.id)).size!==actions.length)
+  throw Error('補卡審核歷程筆數不一致，取消不完整匯出');
+ if(tenant!==app.tenantId||userToken!==app.token)throw Error('登入企業已變更，請重新下載');
+ const csv=[
+  ['LINE Workforce｜出勤與補正原始紀錄'],
+  ['匯出驗證編號',prepared.export_id],
+  ['企業識別',tenant],['員工',member.display_name],['員工編號',member.employee_code||''],
+  ['開始日期',from],['結束日期',to],['資料截止 UTC',prepared.as_of],
+  ['原始打卡筆數',punches.length],['補卡申請筆數',corrections.length],
+  ['申請簽核動作筆數',actions.length],['補卡更正筆數',adjustments.length],
+  [],
+  ['種類','紀錄 ID','所屬申請 ID','台灣時間','原始時間 UTC','狀態／動作',
+   '期間開始 UTC','期間結束 UTC','說明','來源／類型','操作者 UUID']
+ ];
+ for(const p of punches)csv.push(['原始打卡',p.id,'',taiStamp(p.punched_at),p.punched_at,
+  kind(p.kind),'','',p.idempotency_key||'',p.source||'',p.actor_id||'']);
+ for(const r of corrections)csv.push(['補卡申請',r.id,r.id,taiStamp(r.created_at),r.created_at,
+  status(r.status),r.starts_at,r.ends_at,r.reason||'',r.correction_type||'未分類',r.reviewer_id||'']);
+ for(const h of actions)csv.push(['補卡審核歷程',h.id,h.request_id,taiStamp(h.at),h.at,
+  h.action,'','',h.note||'','',h.actor_id||'']);
+ for(const a of adjustments)csv.push(['補卡核准後更正',a.id,a.request_id,taiStamp(a.created_at),a.created_at,
+  '更正紀錄',a.corrected_start,a.corrected_end,'保留原始打卡','資料庫更正', '']);
+ const csvText='\uFEFF'+csv.map(row=>row.map(reportCell).join(',')).join('\r\n');
+ const blob=new Blob([csvText],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob);
+ try{
+  const link=document.createElement('a');
+  link.href=url;link.download='workforce-history-'+memberId.slice(0,8)+'-'+from+'-'+to+'.csv';
+  document.body.appendChild(link);link.click();link.remove();
+ }finally{setTimeout(()=>URL.revokeObjectURL(url),1500);}
+ return {events:punches.length,corrections:corrections.length,
+  actions:actions.length,adjustments:adjustments.length};
+}
+$('appContent').addEventListener('submit',async event=>{
+ const form=event.target;
+ if(form?.id!=='wfHistoryExportForm')return;
+ event.preventDefault();
+ const submit=form.querySelector('button[type="submit"]');
+ if(submit?.disabled)return;
+ if(submit)submit.disabled=true;
+ try{
+  const vals=Object.fromEntries(new FormData(form).entries());
+  app.historyExportMemberId=vals.member_id;app.historyExportFrom=vals.from;app.historyExportTo=vals.to;
+  const out=await wfExportAttendanceHistory(vals.from,vals.to,vals.member_id);
+  banner('完整出勤歷史 CSV 已下載：打卡 '+out.events+'、補卡 '+out.corrections+
+   '、審核 '+out.actions+'、更正 '+out.adjustments+' 筆');
+ }catch(err){banner(err.message||'出勤歷史匯出失敗',true);}
+ finally{if(submit&&submit.isConnected)submit.disabled=false;}
+});
