@@ -92,9 +92,11 @@ export async function load(){feedbackState.err="";try{
  if(routeState.view!=="customer"){
    await bridgeConfig();
    await loadContext();
+   // Only choose a default merchant when the staff URL did not specify one.
+   // Never silently replace an explicit merchant from the platform's 設定 link:
+   // that made a different shop appear to have lost its saved settings.
    if(routeState.view==="staff" && authState.session?.user && !authState.session.user.is_anonymous &&
-     !authState.context?.platform_admin && authState.context?.memberships?.length &&
-     !authState.context.memberships.some(m=>m.slug===routeState.slug)){
+     !routeState.slug && !authState.context?.platform_admin && authState.context?.memberships?.length){
      const own=authState.context.memberships.find(m=>m.role==="OWNER")||authState.context.memberships[0];
      routeState.slug=own.slug;history.replaceState(null,"",sharedUiState.route("staff",routeState.slug));
    }
