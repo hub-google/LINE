@@ -261,7 +261,7 @@ $("signup-form").onsubmit=e=>{e.preventDefault();void execute(async()=>{
 $("email-link-login").onclick=()=>void execute(async()=>{
  const email=$("login-email").value.trim().toLowerCase();
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw Error("請先填寫有效的電子信箱");
- const {error}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:new URL("./merchant-register.html?mode=login&from=queue-monster",location.href).href}});
+ const {error}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:false,emailRedirectTo:new URL("./merchant-register.html?mode=login&from=queue-monster",location.href).href}});
  if(error)throw error;msg("已申請寄送登入連結，請到信箱完成身分驗證");
 },"reset");
 $("forgot-pass").onclick=()=>void execute(async()=>{
