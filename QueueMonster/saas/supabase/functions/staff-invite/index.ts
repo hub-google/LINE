@@ -52,7 +52,7 @@ Deno.serve(async(req:Request)=>{
  redirect.searchParams.set("staff_invite",invite.invite_id);
  let sendError:unknown=null;
  let emailSent=false;
- const {data:tenant}=await admin.from("so_tenants").select("name").eq("slug",slug).maybeSingle();
+ const {data:tenant}=await admin.from("qm_tenants").select("name").eq("slug",slug).maybeSingle();
  const tenantName=typeof tenant?.name==="string"?tenant.name.slice(0,100):"";
  const {data:newUser,error:newUserError}=await admin.auth.admin.inviteUserByEmail(email,{
   redirectTo:redirect.href,
