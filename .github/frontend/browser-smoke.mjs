@@ -570,7 +570,7 @@ try{
  assert.match(await page.locator('#root').innerText(),/選擇餐點/);
  await page.locator('.mobile-bottom-nav [data-tab="order"]').click();
  await page.locator('[data-act="qty"][data-delta="1"]').first().click();
- await page.locator('#customer-name').fill('示範顧客');
+ assert.equal(await page.locator('#customer-name').count(),0,'Online pickup intentionally does not collect a customer name');
  await page.locator('#customer-phone').fill('0912345678');
  await page.locator('[data-act="review-order"]').click();
  await page.locator('[data-act="order-submit"]').click();
