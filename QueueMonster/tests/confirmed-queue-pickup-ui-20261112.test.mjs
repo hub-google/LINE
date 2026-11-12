@@ -39,3 +39,36 @@ test("customer progress, directory, merchant settings and announcement uploads u
  assert.match(upload,/images\.length\+files\.length>8/);
  assert.match(auth,/currentIdentity\?\.provider==="google"\?"G"/);
 });
+
+test("ticket status choices match the five queue KPIs without counting cancellations as completed",()=>{
+ const ui=read("saas/app/shared-ui.js");
+ const queue=read("saas/app/staff/queue.js");
+ const picker=ui.slice(ui.indexOf("export function staffStatusPicker("),ui.indexOf("export function staffDeletePicker("));
+ assert.ok(picker.includes('[["WAITING","候位中"],["HOLD","保留中"],["CALLED","已叫號"],["PASSED","已過號"],["COMPLETED","已完成"]]'));
+ assert.doesNotMatch(picker,/["']ARRIVED["']|["']ADMITTED["']|["']SERVING["']/);
+ assert.match(picker,/ticket-secondary-status/);
+ assert.match(picker,/取消號碼牌/);
+ assert.match(queue,/completedTickets=doneTickets\.filter\(x=>x\.status==="COMPLETED"\)/);
+ assert.match(queue,/stat\("已完成",completedTickets\.length\)/);
+ assert.match(queue,/已處理號碼牌/);
+ assert.doesNotMatch(queue,/stat\("已結束"/);
+});
+
+test("free demo mirrors queue, phone, pickup grace, privacy and booking availability",()=>{
+ const demo=read("saas/assets/demo/real-flow.js");
+ const picker=demo.slice(demo.indexOf("function statusPicker(kind,item){"),demo.indexOf("function bookingCard("));
+ assert.ok(picker.includes('[["WAITING","候位中"],["HOLD","保留中"],["CALLED","已叫號"],["PASSED","已過號"],["COMPLETED","已完成"]]'));
+ assert.match(picker,/ticket-secondary-status/);
+ assert.match(demo,/stat\("已完成",completed\.length\)/);
+ assert.match(demo,/ts\.filter\(x=>x\.status==="CALLED"\)\.forEach\(x=>\{x\.status="PASSED"/);
+ assert.match(demo,/showBoard\?box\("叫號看板示意"/);
+ assert.match(demo,/function validPickupPhone\(\)/);
+ assert.match(demo,/landlineRules=/);
+ assert.doesNotMatch(demo,/取餐姓名/);
+ assert.match(demo,/createdAt\+15000/);
+ assert.match(demo,/Date\.now\(\)-o\.createdAt>=15000/);
+ assert.match(demo,/\.filter\(o=>mine\.has\(o\.id\)\)/);
+ assert.match(demo,/const remaining=s=>/);
+ assert.match(demo,/其他操作（誤操作更正）/);
+ assert.match(demo,/if\(a==="clear-filter"\)/);
+});
