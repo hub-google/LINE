@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-11T09:45:07.808Z",
+  "date": "2026-11-12T00:38:25.088Z",
   "device": "iPhone 17 simulated Chromium, 402x874 CSS pixels, DPR3",
   "note": "Read-only live website screenshots; no authentication, no writes; not physical Safari.",
   "screens": [
@@ -871,17 +871,17 @@
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
-      "visibleTapCount": 2,
+      "visibleTapCount": 4,
       "keyRects": {
         "#root": {
-          "top": 144,
-          "bottom": 293,
+          "top": 83,
+          "bottom": 364,
           "left": 0,
           "right": 402,
-          "height": 149
+          "height": 281
         }
       },
-      "bodyText": "排隊怪獸 店家登入 資料更新中，請稍後",
+      "bodyText": "排隊怪獸 店家登入 店家登入 使用店家帳號管理預約及叫號。 店家登入 註冊店家",
       "errors": [],
       "failedRequests": []
     },
@@ -984,9 +984,9 @@
           "top": 821
         }
       ],
-      "visibleTapCount": 4,
+      "visibleTapCount": 3,
       "keyRects": {},
-      "bodyText": "測試1 每 10 秒更新一次叫號 17:45 診間 · 上午場 1診 2 接下來：3、5、6、7 等候 4 組 單獨顯示此場次 診間 · 上午場 2診 尚未 叫號 接下來：目前無人等候 等候 0 組 單獨顯示此場次 由排隊怪獸提供服務 全螢幕 最後成功同步：17:45:07；每 10 秒自動同步，網路斷線會提示。",
+      "bodyText": "測試1 叫號變動即時更新 08:38 診間 · 上午場 1診 2 接下來：3、5、6、7 等候 4 組 單獨顯示此場次 由排隊怪獸提供服務 全螢幕 最後成功同步：08:38:23；號碼變更即時更新，並定期核對。",
       "errors": [],
       "failedRequests": []
     }
