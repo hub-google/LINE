@@ -239,7 +239,7 @@ export async function handlePickupAction(ev,b,a,id){
    pickupState.cart=Object.fromEntries((order.items||[]).map(x=>[x.id,Number(x.qty)]));
    pickupState.note=order.note||"";
    const phone=normalizeTaiwanPhone(order.customer_phone||"");
-   if(/^09\\d{8}$/.test(phone)){pickupState.phoneType="mobile";pickupState.phone=phone;}
+   if(/^09\d{8}$/.test(phone)){pickupState.phoneType="mobile";pickupState.phone=phone;}
    else{
      pickupState.phoneType="landline";
      pickupState.phoneArea=TW_LANDLINE_AREAS.filter(x=>phone.startsWith(x)).sort((a,b)=>b.length-a.length)[0]||"02";
