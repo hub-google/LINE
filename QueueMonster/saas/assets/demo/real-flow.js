@@ -10,7 +10,9 @@ const money = n => "NT$ "+Number(n).toLocaleString("zh-TW");
 const pad = n => String(n).padStart(3,"0");
 const names = {breakfast:"晨光早餐店",salon:"青禾風格美髮",repair:"快修手機維修中心",clinic:"安心家醫診所"};
 const metadata = {breakfast:["早餐店","線上點餐"],salon:["美髮店","線上預約"],repair:["維修店","現場取號"],clinic:["診所","預約＋多診間叫號"]};
-const modes = {breakfast:["home","order","mine"],salon:["home","reserve","mine"],repair:["home","queue","mine"],clinic:["home","reserve","queue","mine"]};
+const modes = {breakfast:["order","mine"],salon:["reserve","mine"],repair:["queue","mine"],clinic:["reserve","queue","mine"]};
+// Start each case in its real task flow; no intermediate store-home/menu click.
+const primaryTab = {repair:"queue",breakfast:"order",salon:"reserve",clinic:"reserve"};
 const tabs = {home:"首頁",order:"線上點餐",reserve:"線上預約",queue:"現場取號",mine:"我的服務"};
 const staffTabs = {breakfast:"orders",salon:"bookings",repair:"queue",clinic:"bookings"};
 const statusName = {NEW:"待接單",ACCEPTED:"已接單",READY:"待取",REJECTED:"已拒單",PICKED_UP:"已完成",CONFIRMED:"已預約",CHECKED_IN:"已報到",COMPLETED:"已完成",CANCELLED:"已取消",NO_SHOW:"未到",WAITING:"候位中",CALLED:"已叫號",ARRIVED:"已到場",ADMITTED:"已進場",SERVING:"服務中",PASSED:"已過號",HOLD:"保留中"};
@@ -21,7 +23,7 @@ const make = () => ({
  repair:{tickets:[{id:"R012",name:"張先生",service:"手機維修",status:"CALLED",party:1},{id:"R013",name:"李小姐",service:"電池更換",status:"WAITING",party:1},{id:"R014",name:"王先生",service:"檢測諮詢",status:"WAITING",party:1}],seq:15,current:"R012"},
  clinic:{bookings:[{id:"P001",name:"王小姐",phone:"0912000005",unit:"1診",service:"一般門診",date:today(),time:"09:30",status:"CONFIRMED",ticket:""},{id:"P002",name:"林先生",phone:"0912000006",unit:"2診",service:"一般門診",date:today(),time:"10:00",status:"CHECKED_IN",ticket:"C2-002"}],tickets:[{id:"C1-001",name:"陳先生",unit:"1診",status:"CALLED",party:1},{id:"C2-002",name:"林先生",unit:"2診",status:"WAITING",party:1}],seq:3,bookingSeq:3,current:{"1診":"C1-001","2診":""}}
 });
-let data=make(),scene="breakfast",role="customer",tab="home",room="1診",review=false,receipt="",lastOwn="",newNotice="",notifyOpen=false,notes=[],cart={},method="scheduled";
+let data=make(),scene="repair",role="customer",tab="queue",room="1診",review=false,receipt="",lastOwn="",newNotice="",notifyOpen=false,notes=[],cart={},method="scheduled";
 let draft={name:"",phone:"",day:today(),time:"08:00",slot:"14:00",qty:1,unit:"Ava",service:"洗剪",party:1,note:""};
 function current(){return data[scene];}
 function status(v){return '<span class="tag '+(["COMPLETED","CONFIRMED","ACCEPTED","READY","CHECKED_IN"].includes(v)?"ok":["REJECTED","PASSED","CANCELLED"].includes(v)?"warn":"")+'">'+esc(statusName[v]||v)+'</span>';}
@@ -69,13 +71,6 @@ function nav(){
  scene==="repair"?[["dashboard","總覽"],["queue","叫號管理"]]:
  [["dashboard","總覽"],["bookings","預約管理"],["queue","叫號管理"]];
  return items.map(([key,label])=>navItem(label,key,tab)).join("");
-}
-function landing(){
- const cards=modes[scene].filter(x=>x!=="home").map(t=>'<button class="routecard" data-tab="'+t+'"><h2>'+tabs[t]+'</h2><p class="muted">'+({order:"查看菜單、選擇取餐時段並訂餐",reserve:"選擇日期與服務時段",queue:"立即取得現場候位號碼",mine:"查看我的預約、號碼及訂餐進度"}[t])+'</p><strong>立即體驗 →</strong></button>').join("");
- const stats=scene==="breakfast"?'<div class="grid3">'+stat("未處理訂單",current().orders.filter(o=>o.status==="NEW").length)+stat("待取餐",current().orders.filter(o=>o.status==="READY").length)+stat("我的訂單",current().orders.length)+'</div>':
- scene==="salon"?'<div class="grid3">'+stat("預約總數",current().bookings.length)+stat("已報到",current().bookings.filter(o=>o.status==="CHECKED_IN").length)+stat("我的預約",lastOwn||"—")+'</div>':
- '<div class="grid3">'+stat("目前叫號",scene==="clinic"?current().current[room]||"尚未叫號":current().current)+stat("現場候位",displayNum(current().tickets)+" 組")+stat("我的號碼",lastOwn||"—")+'</div>';
- return '<p class="demo-line-bypass">試用模式已略過 LINE 身分授權。正式顧客需依店家 LINE 設定完成授權。</p>'+stats+'<div class="grid demo-home-cards">'+cards+'</div>';
 }
 function customerOrder(){
  const orders=current().orders;
@@ -183,7 +178,7 @@ function render(){
  document.querySelectorAll("[data-scene]").forEach(el=>{el.classList.toggle("active",el.dataset.scene===scene);el.setAttribute("aria-pressed",String(el.dataset.scene===scene));});
  document.querySelectorAll("[data-role]").forEach(el=>{el.classList.toggle("active",el.dataset.role===role);el.setAttribute("aria-pressed",String(el.dataset.role===role));});
  let body="";
- if(role==="customer")body=tab==="home"?landing():tab==="order"?customerOrder():tab==="reserve"?customerReserve():tab==="queue"?customerQueue():customerMine();
+ if(role==="customer")body=tab==="order"?customerOrder():tab==="reserve"?customerReserve():tab==="queue"?customerQueue():customerMine();
  else body=tab==="orders"?staffOrder():tab==="bookings"?staffBookings():tab==="queue"?staffQueue():tab==="dashboard"?dashboard():box("試用導覽",'<p class="muted">請切換「預約管理」、「叫號管理」或「取餐訂單」體驗日常作業。其他店家設定不會連到正式資料。</p>');
 
  const headerName=role==="customer"?title:title+" · 管理中心";
@@ -204,7 +199,7 @@ function render(){
  renderNotice();
 }
 function resetDraft(){draft={name:"",phone:"",day:today(),time:"08:00",slot:scene==="clinic"?"09:30":"14:00",unit:scene==="clinic"?"1診":"Ava",service:scene==="clinic"?"一般門診":scene==="repair"?"手機維修":"洗剪",party:1,note:""};cart={};review=false;receipt="";}
-function setScene(s){scene=s;role="customer";tab="home";room="1診";lastOwn="";newNotice="";notes=[];notifyOpen=false;resetDraft();render();}
+function setScene(s){scene=s;role="customer";tab=primaryTab[s];room="1診";lastOwn="";newNotice="";notes=[];notifyOpen=false;resetDraft();render();}
 function inform(s){newNotice=s;render();}
 function noticeItem(obj,kind){notifyFor(kind,obj);render();}
 function find(type,id){return current()[type]?.find(o=>o.id===id);}
@@ -212,7 +207,7 @@ function contactReady(){return !!draft.name.trim()&&/^09\d{8}$/.test(String(draf
 function requireContact(){if(contactReady())return true;inform("請先輸入預約姓名及有效的 09 開頭十碼手機號碼（試用可用 0912345678）。");return false;}
 document.addEventListener("click",e=>{
  const sceneBtn=e.target.closest("[data-scene]");if(sceneBtn){setScene(sceneBtn.dataset.scene);return;}
- const roleBtn=e.target.closest("[data-role]");if(roleBtn){role=roleBtn.dataset.role;tab=role==="customer"?"home":staffTabs[scene];newNotice="";review=false;notifyOpen=false;render();return;}
+ const roleBtn=e.target.closest("[data-role]");if(roleBtn){role=roleBtn.dataset.role;tab=role==="customer"?primaryTab[scene]:staffTabs[scene];newNotice="";review=false;notifyOpen=false;render();return;}
  const navBtn=e.target.closest("[data-tab]");if(navBtn){tab=navBtn.dataset.tab;newNotice="";review=false;render();return;}
  const button=e.target.closest("[data-act]");if(!button)return;
  const a=button.dataset.act,id=button.dataset.id,value=button.dataset.value,d=current();
