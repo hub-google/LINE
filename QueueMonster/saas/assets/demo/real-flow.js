@@ -13,7 +13,7 @@ const metadata = {breakfast:["早餐店","線上點餐"],salon:["美髮店","線
 const modes = {breakfast:["order","mine"],salon:["reserve","mine"],repair:["queue","mine"],clinic:["reserve","queue","mine"]};
 // Start each case in its real task flow; no intermediate store-home/menu click.
 const primaryTab = {repair:"queue",breakfast:"order",salon:"reserve",clinic:"reserve"};
-const tabs = {home:"首頁",order:"線上點餐",reserve:"線上預約",queue:"現場取號",mine:"我的服務"};
+const tabs = {home:"首頁",order:"線上點餐",reserve:"線上預約",queue:"現場取號",mine:"歷史紀錄"};
 const staffTabs = {breakfast:"orders",salon:"bookings",repair:"queue",clinic:"bookings"};
 const statusName = {NEW:"待接單",ACCEPTED:"已接單",PREPARING:"製作中",READY:"已完成待取",REJECTED:"店家已取消訂單",PICKED_UP:"已取餐",CONFIRMED:"已預約",CHECKED_IN:"已報到",COMPLETED:"已完成",CANCELLED:"已取消",NO_SHOW:"未到",WAITING:"候位中",CALLED:"已叫號",ARRIVED:"已到場",ADMITTED:"已進場",SERVING:"服務中",PASSED:"已過號",HOLD:"保留中"};
 // Same Taiwanese area code and subscriber-length rules as the production booking form.
@@ -39,7 +39,7 @@ const make = () => ({
  repair:{tickets:[{id:"R012",name:"張先生",service:"手機維修",status:"CALLED",party:1},{id:"R013",name:"李小姐",service:"電池更換",status:"WAITING",party:1},{id:"R014",name:"王先生",service:"檢測諮詢",status:"WAITING",party:1}],seq:15,current:"R012"},
  clinic:{bookings:[{id:"P001",name:"王小姐",phone:"0912000005",unit:"1診",service:"一般門診",date:today(),time:"09:30",status:"CONFIRMED",ticket:""},{id:"P002",name:"林先生",phone:"0912000006",unit:"2診",service:"一般門診",date:today(),time:"10:00",status:"CHECKED_IN",ticket:"C2-002"}],tickets:[{id:"C1-001",name:"陳先生",unit:"1診",status:"CALLED",party:1},{id:"C2-002",name:"林先生",unit:"2診",status:"WAITING",party:1}],seq:3,bookingSeq:3,current:{"1診":"C1-001","2診":""}}
 });
-let data=make(),scene="repair",role="customer",tab="queue",room="1診",review=false,receipt="",lastOwn="",newNotice="",notifyOpen=false,notes=[],cart={},method="scheduled",showBoard=false,bookingFilter="";
+let data=make(),scene="repair",role="customer",tab="queue",room="1診",detailKind="",detailId="",detailEditing=false,review=false,receipt="",lastOwn="",newNotice="",notifyOpen=false,notes=[],cart={},method="scheduled",showBoard=false,bookingFilter="";
 const ownedIds={breakfast:new Set(),salon:new Set(),repair:new Set(),clinic:new Set()};
 let draft={name:"",phone:"",phoneType:"mobile",phoneArea:"02",phoneLocal:"",day:later(1),time:"08:00",slot:"14:00",qty:1,unit:"Ava",service:"洗剪",party:1,note:""};
 function current(){return data[scene];}
@@ -60,11 +60,11 @@ function getCurrent(){return currentCalled(scene==="clinic"?room:null);}
 function message(kind,title,lines){notes.unshift({kind,title,lines,shop:displayShop(),at:new Intl.DateTimeFormat("zh-TW",{timeZone:"Asia/Taipei",hour:"2-digit",minute:"2-digit"}).format(new Date())});notes=notes.slice(0,15);notifyOpen=true;}
 function notifyFor(action,obj){
  const shop=displayShop();
- if(action==="order"){message("網站狀態示意","訂餐已送出",["店家："+shop,"訂單編號："+obj.id,"預約取餐："+obj.time,"品項："+obj.lines.map(x=>x.name+" × "+x.qty).join("、"),"金額："+money(obj.total),"請在「我的服務」查看後續進度。"]);return;}
- if(action==="booking"){message("LINE 通知示意","預約成功",["店家："+shop,"預約編號："+obj.id,"預約："+obj.date+" "+obj.time,"姓名："+obj.name,"服務："+obj.service+(obj.unit?"／"+obj.unit:""),"可返回「我的服務」查詢預約狀態。"]);return;}
- if(action==="ticket"){message("LINE 通知示意","取號成功",["店家："+shop,"我的號碼："+obj.id,"目前叫號："+(typeof getCurrent()==="string"?getCurrent():"請選診間"),"前方等候以即時進度為準。","請從「我的服務」查看叫號進度。"]);return;}
+ if(action==="order"){message("網站狀態示意","訂餐已送出",["店家："+shop,"訂單編號："+obj.id,"預約取餐："+obj.time,"品項："+obj.lines.map(x=>x.name+" × "+x.qty).join("、"),"金額："+money(obj.total),"請在「歷史紀錄」查看後續進度。"]);return;}
+ if(action==="booking"){message("LINE 通知示意","預約成功",["店家："+shop,"預約編號："+obj.id,"預約："+obj.date+" "+obj.time,"姓名："+obj.name,"服務："+obj.service+(obj.unit?"／"+obj.unit:""),"可返回「歷史紀錄」查詢預約狀態。"]);return;}
+ if(action==="ticket"){message("LINE 通知示意","取號成功",["店家："+shop,"我的號碼："+obj.id,"目前叫號："+(typeof getCurrent()==="string"?getCurrent():"請選診間"),"前方等候以即時進度為準。","請從「歷史紀錄」查看叫號進度。"]);return;}
  if(action==="called"){message("LINE 叫號通知示意","輪到您的號碼",["店家："+shop,"叫號："+obj.id,(obj.unit?"服務窗口："+obj.unit:""),"請依現場人員指示報到。"]);return;}
- if(action==="order-status"){message("網站狀態示意","取餐訂單狀態更新",["店家："+shop,"訂單："+obj.id,"目前狀態："+(statusName[obj.status]||obj.status),"請查看「我的服務」中的最新進度。"]);return;}
+ if(action==="order-status"){message("網站狀態示意","取餐訂單狀態更新",["店家："+shop,"訂單："+obj.id,"目前狀態："+(statusName[obj.status]||obj.status),"請查看「歷史紀錄」中的最新進度。"]);return;}
  if(action==="checkin"){message("網站狀態示意","已完成報到",["店家："+shop,"預約："+obj.id,"候診號碼："+obj.ticket,"請留意叫號進度。"]);return;}
 }
 
@@ -152,7 +152,7 @@ function customerMine(){
  if(d.orders)elements=d.orders.filter(o=>mine.has(o.id)).map(o=>inset('<div class="listline"><strong>'+esc(o.id)+'</strong>'+status(o.status)+'</div><p class="small">取餐：'+esc(o.time)+'</p><p>'+esc(o.lines.map(i=>i.name+" × "+i.qty).join("、"))+'</p><strong>'+money(o.total)+'</strong>'));
  if(d.bookings)elements=d.bookings.filter(o=>mine.has(o.id)).map(o=>inset('<div class="listline"><strong>'+esc(o.id)+'　'+esc(o.name)+'</strong>'+status(o.status)+'</div><p class="small">'+esc(o.date)+' '+esc(o.time)+'　'+esc(o.unit)+(o.ticket?"　候診號碼 "+esc(o.ticket):"")+'</p>'));
  if(d.tickets)elements=elements.concat(d.tickets.filter(o=>mine.has(o.id)).map(o=>inset('<div class="listline"><strong>'+esc(o.id)+'　'+esc(o.name)+'</strong>'+status(o.status)+'</div><p class="small">'+esc(o.unit||o.service||"")+'</p>')));
- return '<section class="customer-service-nav"><div class="customer-service-title"><h2>我的服務</h2><p class="small">只顯示本次試用顧客建立的預約、取號及訂餐紀錄</p></div></section>'+
+ return '<section class="customer-service-nav"><div class="customer-service-title"><h2>歷史紀錄</h2><p class="small">只顯示本次試用顧客建立的預約、取號及訂餐紀錄</p></div></section>'+
  box("我的紀錄",elements.join("")||'<p class="muted">尚無本次試用顧客的紀錄，請先完成預約、取號或點餐。</p>')+
  (d.tickets?box("目前叫號進度",scene==="clinic"?"1診："+esc(currentCalled("1診"))+" / 2診："+esc(currentCalled("2診")):"目前："+esc(currentCalled())):"");
 }
@@ -241,11 +241,11 @@ function render(){
  document.querySelectorAll("[data-scene]").forEach(el=>{el.classList.toggle("active",el.dataset.scene===scene);el.setAttribute("aria-pressed",String(el.dataset.scene===scene));});
  document.querySelectorAll("[data-role]").forEach(el=>{el.classList.toggle("active",el.dataset.role===role);el.setAttribute("aria-pressed",String(el.dataset.role===role));});
  let body="";
- if(role==="customer")body=tab==="order"?customerOrder():tab==="reserve"?customerReserve():tab==="queue"?customerQueue():customerMine();
+ if(role==="customer")body=tab==="order"?customerOrder():tab==="reserve"?customerReserve():tab==="queue"?customerQueue():tab==="detail"?customerDetail():customerMine();
  else body=tab==="orders"?staffOrder():tab==="bookings"?staffBookings():tab==="queue"?staffQueue():tab==="dashboard"?dashboard():box("試用導覽",'<p class="muted">請切換「預約管理」、「叫號管理」或「取餐訂單」體驗日常作業。其他店家設定不會連到正式資料。</p>');
 
  const headerName=role==="customer"?title:title+" · 管理中心";
- const modeName=role==="customer"?({home:"門市首頁",order:"線上點餐",reserve:"線上預約",queue:"現場取號",mine:"我的服務"}[tab]||"門市服務"):
+ const modeName=role==="customer"?({home:"門市首頁",order:"線上點餐",reserve:"線上預約",queue:"現場取號",mine:"歷史紀錄",detail:"個人專屬進度"}[tab]||"門市服務"):
  ({dashboard:"今日營運",bookings:"預約管理",queue:"叫號管理",orders:"取餐訂單"}[tab]||"店家管理");
  const avatar='<span class="mobile-shop-avatar">'+esc(title.slice(0,2))+'</span>';
  const heading='<div class="mobile-merchant-head">'+avatar+'<div class="mobile-merchant-copy"><span class="mobile-merchant-overline">'+(role==="customer"?"排隊怪獸 · 線上服務":"排隊怪獸 · 店家管理")+'</span><strong>'+esc(headerName)+'</strong></div>'+
@@ -265,7 +265,7 @@ function resetDraft(){draft={name:"",phone:"",phoneType:"mobile",phoneArea:"02",
 function setScene(s){scene=s;role="customer";tab=primaryTab[s];room="1診";lastOwn="";
  const previous=[...(data[s].tickets||[]),...(data[s].bookings||[]),...(data[s].orders||[])].filter(x=>ownedIds[s].has(x.id));
  if(previous.length)lastOwn=previous[previous.length-1].id;
- newNotice="";notes=[];notifyOpen=false;showBoard=false;bookingFilter="";resetDraft();render();}
+ newNotice="";notes=[];notifyOpen=false;showBoard=false;bookingFilter="";detailKind="";detailId="";detailEditing=false;resetDraft();render();}
 function inform(s){newNotice=s;render();}
 function noticeItem(obj,kind){notifyFor(kind,obj);render();}
 function find(type,id){return current()[type]?.find(o=>o.id===id);}
@@ -279,7 +279,7 @@ document.addEventListener("click",e=>{
  const a=button.dataset.act,id=button.dataset.id,value=button.dataset.value,d=current();
  if(a==="go-reserve"){tab="reserve";inform("請先完成預約；報到後會出現在候診名單");return;}
   if(a==="clear-filter"){bookingFilter="";render();return;}
- if(a==="reset"){data[scene]=make()[scene];lastOwn="";notes=[];ownedIds[scene].clear();showBoard=false;bookingFilter="";newNotice="已重設本產業的示範資料";resetDraft();render();return;}
+ if(a==="reset"){data[scene]=make()[scene];lastOwn="";notes=[];ownedIds[scene].clear();showBoard=false;bookingFilter="";detailKind="";detailId="";detailEditing=false;newNotice="已重設本產業的示範資料";resetDraft();render();return;}
  if(a==="toggle-notify"){notifyOpen=!notifyOpen;renderNotice();if(notifyOpen) $("notifications")?.scrollIntoView?.({behavior:"smooth",block:"nearest"});return;}
  if(a==="view-notice"){notifyOpen=true;renderNotice();$("notifications")?.scrollIntoView?.({behavior:"smooth",block:"nearest"});return;}
  if(a==="qty"){cart[id]=Math.max(0,Math.min(30,(cart[id]||0)+Number(button.dataset.delta)));review=false;render();return;}
@@ -323,7 +323,7 @@ document.addEventListener("click",e=>{
   if(a==="order-status"){const o=find("orders",id);
    if(!o||o.createdAt&&Date.now()-o.createdAt<15000){inform("此訂單仍在顧客取消期，店家暫時無法操作。");return;}
    if(o.status===value)return;if(value==="PREPARING"&&!canPrepareDemo(o)){inform("尚未到建議製作時間，無法開始製作。");return;}o.status=value;notifyFor("order-status",o);
-   inform(o.id+" 已更新為 "+statusName[value]+"；顧客可從我的服務查看狀態。");return;
+   inform(o.id+" 已更新為 "+statusName[value]+"；顧客可從歷史紀錄查看狀態。");return;
   }
  if(a==="next"){
    const ts=scene==="clinic"?d.tickets.filter(t=>t.unit===room):d.tickets;
