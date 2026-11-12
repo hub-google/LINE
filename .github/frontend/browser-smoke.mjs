@@ -541,6 +541,8 @@ try{
  }
  await page.setViewportSize({width:390,height:844});
  await page.goto(baseUrl+'/booking/demo.html',{waitUntil:'load'});
+ // DEMO now starts with repair queue; explicitly choose breakfast before testing an order.
+ await page.locator('[data-scene="breakfast"]').click();
  await page.locator('.mobile-bottom-nav [data-tab="order"]').click();
  await page.locator('[data-act="qty"][data-delta="1"]').first().click();
  await page.locator('#customer-name').fill('示範顧客');
