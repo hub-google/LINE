@@ -7,6 +7,9 @@ const SB_KEY=SUPABASE_PUBLISHABLE_KEY;
 const bridge=SB_URL+"/functions/v1/line-bridge?action=config";
 const sb=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"line-saas-customer-session-v2"}});
 const params=new URLSearchParams(location.search),mode=["search","queue","mine","game"].includes(params.get("mode"))?params.get("mode"):"search";
+// LINE OA service links open the matching real-store filter, never a demo or blank search.
+const requestedService=mode==="search"&&["預約","取號","點餐","看板"].includes(params.get("service"))?params.get("service"):"";
+if(requestedService)document.getElementById("explore-service").value=requestedService;
 const els={intro:document.getElementById("intro"),results:document.getElementById("results"),keyword:document.getElementById("keyword"),test:null};
 document.body.dataset.directoryMode=mode;
 const filterDisclosure=document.getElementById("explore-filters");
@@ -251,7 +254,7 @@ document.addEventListener("click",async event=>{
  const query=new URLSearchParams();
  query.set("view","customer");query.set("merchant",merchant);
  const tab=original.searchParams.get("tab")||"home";
- if(["home","reserve","queue","mine","progress"].includes(tab))query.set("tab",tab);
+ if(["home","reserve","queue","order","mine","progress"].includes(tab))query.set("tab",tab);
  try{
   const response=await fetch(bridge+"&merchant="+encodeURIComponent(merchant),{cache:"no-store"});
   if(!response.ok)throw Error("LINE_CHANNEL_UNAVAILABLE");
@@ -328,7 +331,9 @@ async function load(){
   }
   setupExploreFilters();
   publishGameDirectory();
-  render();
+  updateFilterSummary();
+  if(searchCriteria())await loadSearch();
+  else render();
  }catch(error){
   console.warn("Store discovery unavailable",error);
   if(mode==="mine"){mineIdentityState="error";render();}

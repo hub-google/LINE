@@ -18,19 +18,19 @@ SPLITS_Y = [0, 843, HEIGHT]
 BASE = "https://hub-google.github.io/LINE/booking/"
 CENTER = BASE + "merchant-center.html"
 CUSTOMER_ITEMS = [
-    ("找店家預約", "搜尋全平台", "search", {"type":"uri","label":"找店家預約","uri":BASE+"directory.html?mode=search"}),
-    ("現場取號", "選店家領號", "play", {"type":"uri","label":"現場取號","uri":BASE+"directory.html?mode=queue"}),
-    ("我的紀錄", "跨店預約與號碼", "features", {"type":"uri","label":"我的紀錄","uri":BASE+"directory.html?mode=mine"}),
-    ("遊戲逛街", "另一種找店方式", "store", {"type":"uri","label":"遊戲逛街","uri":BASE+"directory.html?mode=game"}),
-    ("即時叫號", "選店查看看板", "dashboard", {"type":"uri","label":"即時叫號","uri":BASE+"directory.html?mode=queue"}),
-    ("客服中心", "文字詢問協助", "support", {"type":"message","label":"客服中心","text":"客服"}),
+    ("搜尋店家", "找服務中的門市", "search", {"type":"uri","label":"搜尋店家","uri":BASE+"directory.html?mode=search"}),
+    ("線上預約", "挑選日期與場次", "features", {"type":"uri","label":"線上預約","uri":BASE+"directory.html?mode=search&service=%E9%A0%90%E7%B4%84"}),
+    ("現場取號", "領號並查看進度", "play", {"type":"uri","label":"現場取號","uri":BASE+"directory.html?mode=queue"}),
+    ("線上點餐", "預訂與查詢取餐", "store", {"type":"uri","label":"線上點餐","uri":BASE+"directory.html?mode=search&service=%E9%BB%9E%E9%A4%90"}),
+    ("我的紀錄", "預約・號碼・訂單", "dashboard", {"type":"uri","label":"我的紀錄","uri":BASE+"directory.html?mode=mine"}),
+    ("客服中心", "操作問題找我們", "support", {"type":"message","label":"客服中心","text":"客服"}),
 ]
 MERCHANT_ITEMS = [
-    ("商家開通", "不用自有 OA", "store", {"type":"uri","label":"商家開通","uri":BASE+"merchant-register.html"}),
-    ("管理後台", "門市營運管理", "dashboard", {"type":"uri","label":"管理後台","uri":BASE+"?view=staff"}),
-    ("預約與叫號", "登入後台操作", "features", {"type":"uri","label":"預約與叫號","uri":BASE+"?view=staff"}),
-    ("分享入口", "預約與取號分享", "play", {"type":"uri","label":"分享入口","uri":CENTER+"#publish"}),
-    ("操作教學", "圖解商家流程", "guide", {"type":"uri","label":"操作教學","uri":CENTER+"#guide"}),
+    ("免費叫號體驗", "免註冊直接試用", "play", {"type":"uri","label":"免費叫號體驗","uri":BASE+"demo.html"}),
+    ("了解平台功能", "預約・叫號・點餐", "features", {"type":"uri","label":"了解平台功能","uri":BASE+"for-merchants.html"}),
+    ("免費建立店家", "建立自己的門市", "store", {"type":"uri","label":"免費建立店家","uri":BASE+"merchant-register.html?mode=signup"}),
+    ("店家管理後台", "營運與訂單管理", "dashboard", {"type":"uri","label":"店家管理後台","uri":BASE+"?view=staff"}),
+    ("操作與串接", "設定・LINE OA 教學", "guide", {"type":"uri","label":"操作與串接","uri":CENTER+"#guide"}),
     ("聯絡平台", "發訊息取得協助", "support", {"type":"message","label":"聯絡平台","text":"商家客服"}),
 ]
 CUSTOMER_ALIAS = "platform-booking-customers"
@@ -182,7 +182,7 @@ def publish_menu(token, items, active, name_prefix):
         "name":name_prefix + hashlib.sha256(
             image+json.dumps(areas,ensure_ascii=False,sort_keys=True).encode("utf-8")
         ).hexdigest()[:16],
-        "chatBarText":"排隊怪獸｜預約取號",
+        "chatBarText":"排隊怪獸｜預約取號點餐",
         "areas":areas,
     }
     existing = next((m for m in api("/v2/bot/richmenu/list",token).get("richmenus",[])

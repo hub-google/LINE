@@ -29,7 +29,7 @@ test("bot links to working public booking entry points without bypassing verifie
   assert.match(bridge, /directory\.html\?mode=search/);
   assert.match(bridge, /directory\.html\?mode=queue/);
   assert.match(bridge, /directory\.html\?mode=mine/);
-  assert.match(bridge, /merchant-register\.html/);
+  assert.match(bridge, /merchant-register\\.html/);
   assert.match(bridge, /歡迎加入排隊怪獸！/);
   assert.match(richMenu, /CUSTOMER_ALIAS = "platform-booking-customers"/);
   assert.match(richMenu, /排隊怪獸｜預約取號/);

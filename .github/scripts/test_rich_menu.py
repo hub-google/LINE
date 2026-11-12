@@ -28,8 +28,13 @@ class RichMenuContract(unittest.TestCase):
         self.assertTrue(any("mode=search" in d for d in dest))
         self.assertTrue(any("mode=queue" in d for d in dest))
         self.assertTrue(any("mode=mine" in d for d in dest))
-        self.assertTrue(any("mode=game" in d for d in dest))
-        self.assertFalse(any("greenfield" in d or "demo" in d for d in dest))
+        self.assertTrue(any("service=%E9%A0%90%E7%B4%84" in d for d in dest))
+        self.assertTrue(any("service=%E9%BB%9E%E9%A4%90" in d for d in dest))
+        self.assertFalse(any("mode=game" in d for d in dest))
+        self.assertFalse(any("greenfield" in d or "demo-" in d for d in dest))
+        merchant = [entry[3].get("uri", "") for entry in richmenu.MERCHANT_ITEMS]
+        self.assertTrue(any("demo.html" in d for d in merchant))
+        self.assertTrue(any("for-merchants.html" in d for d in merchant))
 
     def test_both_rendered_pngs(self):
         pictures = [richmenu.create_image(richmenu.CUSTOMER_ITEMS, 0),
