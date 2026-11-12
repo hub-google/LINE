@@ -95,18 +95,19 @@ test("returning verified LINE customers can open another platform-OA shop withou
  assert.match(backend,/onConflict:"tenant_id,user_id"/);
 });
 
-test("customer services have one sidebar entry without removing existing deep links",()=>{
+test("online ordering has its own enabled-only sidebar link and records remain unified",()=>{
  const source=read("app/customer-booking.js");
  const route=read("app/route-state.js");
  const css=read("monster-world.css");
+ assert.match(source,/const pickupEnabled=pickupState\.customer\?\.settings\?\.enabled===true/);
+ assert.match(source,/\(pickupEnabled\?nav\("線上點餐","order",routeState\.customerTab,"customer"\):""\)/);
+ assert.match(source,/const serviceView=\["progress","mine"\]\.includes\(routeState\.customerTab\)/);
  assert.match(source,/nav\("我的服務","mine",serviceView\?"mine":routeState\.customerTab,"customer"\)/);
- for(const label of ["線上點餐","我的取號","我的紀錄"]){
-   assert.doesNotMatch(source,new RegExp('nav\\("'+label+'"'));
- }
- for(const [tab,label] of [["order","線上點餐"],["progress","我的取號"],["mine","我的紀錄"]]){
+ assert.doesNotMatch(source,/serviceTabButton\("order","線上點餐"\)/);
+ for(const [tab,label] of [["progress","我的取號"],["mine","我的紀錄"]]){
    assert.ok(source.includes('serviceTabButton("'+tab+'","'+label+'")'));
-   assert.ok(route.includes('"'+tab+'"'),"must retain existing tab deep link "+tab);
  }
+ for(const tab of ["order","progress","mine"])assert.ok(route.includes('"'+tab+'"'),"must retain existing tab deep link "+tab);
  assert.match(source,/customer-service-switcher/);
  assert.match(css,/\.customer-service-switcher button:focus-visible/);
  assert.match(source,/serviceNav\+html/);
