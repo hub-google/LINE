@@ -101,10 +101,9 @@ test("pastel directory header keeps WCAG AA contrast on mobile",()=>{
  assert.doesNotMatch(directory,/class="site-auth-slot site-auth-dark"/);
  const shared=read("saas/assets/marketing/shared-header.css");
  const sharedNav=shared.match(/\.qm-public-header a\{[^}]+\}/)?.[0]||"";
- const sharedSearch=shared.match(/\.qm-public-header \.qm-public-search\{[^}]+\}/)?.[0]||"";
  assert.ok(ratio(hex(sharedNav,"color"),"#FFFAFF")>=4.5,"public marketing navigation contrast");
- assert.match(sharedSearch,/color:white/);
- assert.ok(ratio("#FFFFFF",hex(sharedSearch,"background"))>=4.5,"public search button contrast");
+ assert.match(shared,/\.qm-public-header \.qm-public-nav a\{font-size:18px;/);
+ assert.doesNotMatch(shared,/\.qm-public-header \.qm-public-search\{/,"removed duplicate CTA should have no button style");
  assert.match(directory,/monster-world\.css\?build=__LINE_SAAS_BUILD__/);
  assert.ok(directory.indexOf("monster-world.css")>directory.indexOf("site-auth.css"),"contrast layer must load last");
 });
