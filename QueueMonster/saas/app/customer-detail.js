@@ -69,6 +69,10 @@ export function renderCustomerDetail(){
    const message=confirmed?"預約成功":record.status==="CHECKED_IN"?"已完成報到":
      record.status==="COMPLETED"?"預約已完成":record.status==="CANCELLED"?"預約已取消":
      record.status==="NO_SHOW"?"本次預約未到": "預約狀態："+jsStatus(record.status);
+   const linked=(customerState.customer?.my_tickets||[]).find(x=>x.reservation_id===id)||
+     (crossStoreState.customerActivity?.tickets||[]).find(x=>x.reservation_id===id&&x.slug===routeState.slug);
+   const queueButton=linked?'<div class="staff-actionbar customer-detail-queue">'+
+     btn("查看本次預約的即時叫號進度","open-linked-ticket","primary",'data-ticket="'+esc(linked.id)+'"')+'</div>':"";
    const actions=confirmed?
      '<div class="staff-actionbar customer-detail-actions">'+
        btn("修改預約日期／人數","edit-book","primary",'data-id="'+esc(id)+'"')+
@@ -82,7 +86,7 @@ export function renderCustomerDetail(){
        meta("預約人數",String(record.party||1)+" 位")+meta("預約姓名",record.name)+
        meta("聯絡電話",record.phone)+meta("預約狀態",jsStatus(record.status))+
      '</div>'+selectedItemsHtml(record.selected_items)+
-     actions+(confirmed?'<div class="staff-actionbar customer-detail-secondary">'+
+     queueButton+actions+(confirmed?'<div class="staff-actionbar customer-detail-secondary">'+
        btn("加入行事曆","booking-ics","outline",'data-id="'+esc(id)+'"')+
        btn("查看／列印預約憑證","booking-receipt","outline",'data-id="'+esc(id)+'"')+'</div>':"")+
      editBookingForm(record)+'</section>';
