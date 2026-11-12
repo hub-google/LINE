@@ -2,6 +2,7 @@ import {bookingState} from "./state/bookingState.js";
 import {customerState} from "./state/customerState.js";
 import {queueState} from "./state/queueState.js";
 import {routeState} from "./state/routeState.js";
+import {renderScheduleSettings} from "./schedule-settings.js";
 import {serviceUnitsState} from "./state/serviceUnitsState.js";
 
 
@@ -170,7 +171,7 @@ export function unitSettingsPanel(isManager){
    '<label class="checklist"><input type="checkbox" id="link-units" '+(serviceUnitsState.unitConfig?.linked?'checked':'')+
       (isManager?'':' disabled')+'> 預約報到後自動加入場次叫號</label>'+
    (isManager?'<div class="staff-actionbar">'+btn("儲存窗口顯示方式","save-unit-mode","primary")+'</div>':'')+'</div>');
- return sessionCard+windowsCard;
+ return renderScheduleSettings(isManager)+sessionCard+windowsCard;
 }
 
 
