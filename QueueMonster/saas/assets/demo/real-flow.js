@@ -180,7 +180,7 @@ function statusPicker(kind,item){
   [["WAITING","候位中"],["HOLD","保留中"],["CALLED","已叫號"],["PASSED","已過號"],["COMPLETED","已完成"]];
  const option=([v,label])=>'<label class="staff-choice"><input type="radio" name="'+kind+"-"+esc(item.id)+'" data-status-kind="'+kind+'" data-id="'+esc(item.id)+'" value="'+v+'" '+(item.status===v?"checked":"")+'><span>'+label+'</span></label>';
  const extra=kind==="ticket"?'<details class="ticket-secondary-status"><summary>其他操作</summary><div class="staff-picker-secondary">'+option(["CANCELLED","取消號碼牌"])+'</div></details>':"";
- return '<fieldset class="staff-picker"><legend>點選狀態即儲存（可重新選擇修正）</legend>'+choices.map(option).join("")+'</fieldset>'+extra;
+ return '<fieldset class="staff-picker'+(kind==="ticket"?" ticket-primary-status":"")+'"><legend>點選狀態即儲存（可重新選擇修正）</legend>'+choices.map(option).join("")+'</fieldset>'+extra;
 }
 function bookingCard(o){
  return '<article class="staff-record"><div class="staff-record-head"><div><div class="staff-record-title">預約 '+esc(o.id)+'　'+esc(o.date)+'　'+esc(o.time)+'　'+esc(o.name)+'</div><div class="small">'+esc(o.unit)+' · '+esc(o.service)+'</div><div class="small">預約人數 '+esc(o.party||1)+' 位 · 聯絡電話：'+esc(o.phone)+'</div>'+(o.ticket?'<div class="small">已連動候診號碼：'+esc(o.ticket)+'</div>':"")+'</div>'+status(o.status)+'</div>'+statusPicker("reservation",o)+'</article>';
@@ -202,7 +202,7 @@ function ticketCard(o){
 function staffQueue(){
  const d=current(),clinic=scene==="clinic",items=d.tickets.filter(t=>!clinic||t.unit===room),active=items.find(t=>t.status==="CALLED"),waiting=items.filter(t=>t.status==="WAITING"),passed=items.filter(t=>t.status==="PASSED"),held=items.filter(t=>t.status==="HOLD"),completed=items.filter(t=>t.status==="COMPLETED"),done=items.filter(t=>["COMPLETED","CANCELLED"].includes(t.status));
  const selector=clinic?box("按場次獨立叫號",'<p class="small">各場次獨立叫號，所有已處理紀錄仍可查閱。</p>'+sel("操作隊列","staff-room",[["1診","1診 · 上午診 09:00–12:00"],["2診","2診 · 上午診 09:00–12:00"]],room)):"";
- return selector+'<div class="grid4" style="margin-bottom:16px">'+stat("正在叫號",active?.id||"—")+stat("候位中",waiting.length)+stat("已過號",passed.length)+stat("保留中",held.length)+stat("已完成",completed.length)+'</div>'+
+ return selector+'<div class="grid4 queue-status-summary" style="margin-bottom:16px">'+stat("正在叫號",active?.id||"—")+stat("候位中",waiting.length)+stat("已過號",passed.length)+stat("保留中",held.length)+stat("已完成",completed.length)+'</div>'+
  box("叫號操作",'<p class="muted">號碼狀態可直接勾選並更正；叫下一位時，前一個仍為「已叫號」的號碼才會自動轉為「已過號」。已完成的號碼不受影響。</p><div class="staff-actionbar">'+btn("叫下一位","next","primary",waiting.length?"":"disabled")+btn("再叫一次","recall","outline",active?"":"disabled")+btn(showBoard?"收起看板示意":"查看看板示意","board","outline")+'</div><p class="staff-help">已發出的 LINE 訊息無法撤回；這裡只展示模擬通知。</p>')+
  (showBoard?box("叫號看板示意",'<div class="queue-board"><div class="queue-board-lead">'+(clinic?esc(room)+" · ":"")+'現在叫到</div><div class="queue-board-current">'+esc(active?.id||"尚未叫號")+'</div><p class="small">這是本頁記憶體中的示意進度，不連接真實門市。</p></div>'):"")+
  box("未結案號碼牌（"+(items.length-done.length)+" 筆）",items.filter(t=>!done.includes(t)).map(ticketCard).join("")||'<p class="muted">尚無未結案號碼牌。</p>')+
