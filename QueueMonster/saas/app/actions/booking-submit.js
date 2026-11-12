@@ -9,6 +9,7 @@ import {act,clearCustomerBookingRequest,customerBookingRequestId,rpc,val} from "
 import {availableForParty,bookingConfirmationFingerprint,bookingRequestDetails,currentBookingSlots,normalizeBookingPhone,validBookingContact} from "./../customer-booking.js";
 import {jsStatus,menuChoiceReady,showActionFeedback} from "./../shared-ui.js";
 import {customerNoticeSuffix,sendBookingReply} from "./../line-session.js";
+import {selectCustomerDetail} from "../customer-detail.js";
 
 export async function handleBookingSubmit(ev,b,a,id){
 if(a==="book-back"){bookingState.bookingConfirmationKey="";render();return true;}
@@ -39,8 +40,9 @@ if(a==="book-back"){bookingState.bookingConfirmationKey="";render();return true;
   // Clear only AFTER the database has acknowledged this ID. A lost response
   // leaves the same ID ready for a safe retry.
   clearCustomerBookingRequest(requestId);
-  bookingState.chosenSlot="";bookingState.bookingChosenItems=[];bookingState.bookingConfirmationKey="";routeState.customerTab="mine";
-  if(result.status!=="CONFIRMED")return "先前送出的預約已找到，最新狀態："+jsStatus(result.status)+"。請到我的預約確認。";
+  bookingState.chosenSlot="";bookingState.bookingChosenItems=[];bookingState.bookingConfirmationKey="";
+  if(!selectCustomerDetail("reservation",result.id))routeState.customerTab="mine";
+  if(result.status!=="CONFIRMED")return "先前送出的預約已找到，最新狀態："+jsStatus(result.status)+"。請在此查看預約詳情。";
   if(result.replayed)return "已查到先前成立的預約："+routeState.day+" "+time+"，"+party+" 位；系統沒有重複建立第二筆。";
   const notice=await sendBookingReply(result.id);
   return "預約已成立："+routeState.day+" "+time+"，"+party+" 位"+customerNoticeSuffix(notice);
