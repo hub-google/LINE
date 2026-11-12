@@ -21,7 +21,7 @@ const make = () => ({
  repair:{tickets:[{id:"R012",name:"張先生",service:"手機維修",status:"CALLED",party:1},{id:"R013",name:"李小姐",service:"電池更換",status:"WAITING",party:1},{id:"R014",name:"王先生",service:"檢測諮詢",status:"WAITING",party:1}],seq:15,current:"R012"},
  clinic:{bookings:[{id:"P001",name:"王小姐",phone:"0912000005",unit:"1診",service:"一般門診",date:today(),time:"09:30",status:"CONFIRMED",ticket:""},{id:"P002",name:"林先生",phone:"0912000006",unit:"2診",service:"一般門診",date:today(),time:"10:00",status:"CHECKED_IN",ticket:"C2-002"}],tickets:[{id:"C1-001",name:"陳先生",unit:"1診",status:"CALLED",party:1},{id:"C2-002",name:"林先生",unit:"2診",status:"WAITING",party:1}],seq:3,bookingSeq:3,current:{"1診":"C1-001","2診":""}}
 });
-let data=make(),scene="breakfast",role="customer",tab="home",room="1診",review=false,receipt="",lastOwn="",newNotice="",notifyOpen=true,notes=[],cart={},method="scheduled";
+let data=make(),scene="breakfast",role="customer",tab="home",room="1診",review=false,receipt="",lastOwn="",newNotice="",notifyOpen=false,notes=[],cart={},method="scheduled";
 let draft={name:"",phone:"",day:today(),time:"08:00",slot:"14:00",qty:1,unit:"Ava",service:"洗剪",party:1,note:""};
 function current(){return data[scene];}
 function status(v){return '<span class="tag '+(["COMPLETED","CONFIRMED","ACCEPTED","READY","CHECKED_IN"].includes(v)?"ok":["REJECTED","PASSED","CANCELLED"].includes(v)?"warn":"")+'">'+esc(statusName[v]||v)+'</span>';}
@@ -166,6 +166,8 @@ function dashboard(){
 }
 function renderNotice(){
  const el=$("notifications");if(!el)return;
+ el.classList.toggle("is-open",notifyOpen);
+ el.setAttribute?.("aria-expanded",String(notifyOpen));
  el.innerHTML='<div class="demo-notice-head"><div><strong>顧客收到什麼？</strong><p>LINE 訊息與網站狀態模擬</p></div>'+btn(notifyOpen?"收起":"查看通知","toggle-notify","outline")+'</div>'+
  (notifyOpen?'<div class="demo-line-phone"><div class="demo-phone-header"><span class="demo-phone-dot"></span>LINE 對話示意 · '+esc(displayShop())+'</div><div class="demo-phone-body">'+(notes.length?notes.slice(0,4).map(n=>'<div class="demo-message"><div class="demo-message-source">'+esc(n.kind)+' · '+esc(n.at)+'</div><strong>'+esc(n.title)+'</strong><div>'+n.lines.map(line=>'<p>'+esc(line)+'</p>').join("")+'</div></div>').join(""):'<div class="demo-message"><strong>尚無新訊息</strong><p>顧客完成訂餐、預約或取號後，這裡會顯示可能看到的確認內容。</p></div>')+'</div></div>':'')+
  '<p class="demo-notice-disclaimer">這是示範內容，不是真實 LINE 推播。正式環境是否發送、發送哪些訊息，依 LINE 授權、店家 OA 設定及後端功能而定；網站內的紀錄與進度仍可查詢。</p>';
@@ -202,7 +204,7 @@ function render(){
  renderNotice();
 }
 function resetDraft(){draft={name:"",phone:"",day:today(),time:"08:00",slot:scene==="clinic"?"09:30":"14:00",unit:scene==="clinic"?"1診":"Ava",service:scene==="clinic"?"一般門診":scene==="repair"?"手機維修":"洗剪",party:1,note:""};cart={};review=false;receipt="";}
-function setScene(s){scene=s;role="customer";tab="home";room="1診";lastOwn="";newNotice="";notes=[];resetDraft();render();}
+function setScene(s){scene=s;role="customer";tab="home";room="1診";lastOwn="";newNotice="";notes=[];notifyOpen=false;resetDraft();render();}
 function inform(s){newNotice=s;render();}
 function noticeItem(obj,kind){notifyFor(kind,obj);render();}
 function find(type,id){return current()[type]?.find(o=>o.id===id);}
@@ -210,7 +212,7 @@ function contactReady(){return !!draft.name.trim()&&/^09\d{8}$/.test(String(draf
 function requireContact(){if(contactReady())return true;inform("請先輸入預約姓名及有效的 09 開頭十碼手機號碼（試用可用 0912345678）。");return false;}
 document.addEventListener("click",e=>{
  const sceneBtn=e.target.closest("[data-scene]");if(sceneBtn){setScene(sceneBtn.dataset.scene);return;}
- const roleBtn=e.target.closest("[data-role]");if(roleBtn){role=roleBtn.dataset.role;tab=role==="customer"?"home":staffTabs[scene];newNotice="";review=false;render();return;}
+ const roleBtn=e.target.closest("[data-role]");if(roleBtn){role=roleBtn.dataset.role;tab=role==="customer"?"home":staffTabs[scene];newNotice="";review=false;notifyOpen=false;render();return;}
  const navBtn=e.target.closest("[data-tab]");if(navBtn){tab=navBtn.dataset.tab;newNotice="";review=false;render();return;}
  const button=e.target.closest("[data-act]");if(!button)return;
  const a=button.dataset.act,id=button.dataset.id,value=button.dataset.value,d=current();
