@@ -161,11 +161,22 @@ function dashboard(){
 }
 function renderNotice(){
  const el=$("notifications");if(!el)return;
+ // Desktop explains the interactive scenario beside the full-width app; phone UI stays unchanged.
+ const guideMap={
+  repair:["現場排隊，3 步就完成","以顧客端領取號碼","切換店家端，點「叫下一位」","看顧客的叫號通知示意"],
+  breakfast:["點餐到接單，一次走完","選餐點、數量和預計取餐時間","確認送出訂單並切換店家端","試著接單或改成待取，再查看通知"],
+  salon:["從預約到報到","選擇設計師、日期與時段","送出預約後切換店家端","調整報到或完成狀態"],
+  clinic:["診所的預約與叫號","選擇診間及預約時段","切換店家端確認報到","進入叫號管理，呼叫下一位"]
+ };
+ const g=guideMap[scene];
+ const guideHtml='<section class="demo-desktop-guide"><span class="demo-guide-eyebrow">互動試用教學</span><h3>'+esc(g[0])+'</h3><ol class="demo-guide-steps">'+g.slice(1).map((step,i)=>'<li><span>'+(i+1)+'</span>'+esc(step)+'</li>').join("")+'</ol></section>';
+ const desktopPreview=typeof window!=="undefined"&&typeof window.matchMedia==="function"&&window.matchMedia("(min-width: 901px)").matches;
+ const showMessages=notifyOpen||desktopPreview;
  el.classList.toggle("is-open",notifyOpen);
  el.setAttribute?.("aria-expanded",String(notifyOpen));
- el.innerHTML='<div class="demo-notice-head"><div><strong>顧客收到什麼？</strong><p>LINE 訊息與網站狀態模擬</p></div>'+btn(notifyOpen?"收起":"查看通知","toggle-notify","outline")+'</div>'+
- (notifyOpen?'<div class="demo-line-phone"><div class="demo-phone-header"><span class="demo-phone-dot"></span>LINE 對話示意 · '+esc(displayShop())+'</div><div class="demo-phone-body">'+(notes.length?notes.slice(0,4).map(n=>'<div class="demo-message"><div class="demo-message-source">'+esc(n.kind)+' · '+esc(n.at)+'</div><strong>'+esc(n.title)+'</strong><div>'+n.lines.map(line=>'<p>'+esc(line)+'</p>').join("")+'</div></div>').join(""):'<div class="demo-message"><strong>尚無新訊息</strong><p>顧客完成訂餐、預約或取號後，這裡會顯示可能看到的確認內容。</p></div>')+'</div></div>':'')+
- '<p class="demo-notice-disclaimer">這是示範內容，不是真實 LINE 推播。正式環境是否發送、發送哪些訊息，依 LINE 授權、店家 OA 設定及後端功能而定；網站內的紀錄與進度仍可查詢。</p>';
+ el.innerHTML=guideHtml+'<section class="demo-desktop-notice-card"><div class="demo-notice-head"><div><strong>顧客收到什麼？</strong><p>LINE 訊息與網站狀態模擬</p></div>'+btn(notifyOpen?"收起":"查看通知","toggle-notify","outline")+'</div>'+
+ (showMessages?'<div class="demo-line-phone"><div class="demo-phone-header"><span class="demo-phone-dot"></span>LINE 對話示意 · '+esc(displayShop())+'</div><div class="demo-phone-body">'+(notes.length?notes.slice(0,4).map(n=>'<div class="demo-message"><div class="demo-message-source">'+esc(n.kind)+' · '+esc(n.at)+'</div><strong>'+esc(n.title)+'</strong><div>'+n.lines.map(line=>'<p>'+esc(line)+'</p>').join("")+'</div></div>').join(""):'<div class="demo-message"><strong>尚無新訊息</strong><p>顧客完成訂餐、預約或取號後，這裡會顯示可能看到的確認內容。</p></div>')+'</div></div>':'')+
+ '<p class="demo-notice-disclaimer">這是示範內容，不是真實 LINE 推播。正式環境是否發送、發送哪些訊息，依 LINE 授權、店家 OA 設定及後端功能而定；網站內的紀錄與進度仍可查詢。</p></section>';
 }
 let lastViewSignature="";
 function render(){
