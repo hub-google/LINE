@@ -30,7 +30,7 @@ function backend(overrides={}){
 function dbMock({booking,link,tenant,own=null}){
  return {rpc:async()=>({data:own}),from(table){
   const filters=[];const q={select(){return q},eq(k,v){filters.push([k,v]);return q},is(){return q},async maybeSingle(){
-   const value=table==='so_reservations'?booking:table==='so_line_links'?link:tenant;
+   const value=table==='qm_reservations'?booking:table==='qm_line_links'?link:tenant;
    return {data:value&&filters.every(([k,v])=>value[k]===v)?value:null};
   }};return q;
  }};
