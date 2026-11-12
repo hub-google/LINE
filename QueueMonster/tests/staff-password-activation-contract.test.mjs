@@ -14,7 +14,7 @@ test("invited staff cannot enter before password setup and trusted verification"
  const edge=read("saas/supabase/functions/staff-complete-setup/index.ts");
  assert.match(page,/needsInitialPassword\(user\)/);
  assert.match(page,/if\(recovering\|\|firstSetup\)/);
- assert.match(page,/auth\.updateUser\(\{password\}\)/);
+ assert.match(page,/auth\.updateUser\(update\)/);
  assert.match(page,/auth\.signInWithPassword\(\{email,password\}\)/);
  assert.match(page,/functions\.invoke\("staff-complete-setup"/);
  assert.match(page,/returnToReset\(\)/);
