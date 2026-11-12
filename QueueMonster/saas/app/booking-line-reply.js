@@ -10,8 +10,7 @@ export async function requestBookingReply(liff, reservationId, config = {}) {
  try {
   if(!liff?.isInClient?.()||liff.getContext?.()?.type!=="utou" ||
       (liff.id && liff.id!==merchantLiffId) ||
-      typeof liff.sendMessages!=="function" ||
-      liff.isApiAvailable?.("sendMessages")===false)
+      typeof liff.sendMessages!=="function")
     return {requested:false,command,reason:"MERCHANT_CHAT_REQUIRED"};
   await liff.sendMessages([{type:"text",text:command}]);
   return {requested:true,command};
