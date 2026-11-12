@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://hub-google.github.io/LINE/booking/home.html</loc></url>
+  <url><loc>https://hub-google.github.io/LINE/booking/for-merchants.html</loc></url>
+  <url><loc>https://hub-google.github.io/LINE/booking/for-customers.html</loc></url>
   <url><loc>https://hub-google.github.io/LINE/booking/directory.html</loc></url>
   <url><loc>https://hub-google.github.io/LINE/booking/merchant-center.html</loc></url>
   <url><loc>https://hub-google.github.io/LINE/booking/merchant-register.html</loc></url>
