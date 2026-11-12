@@ -80,28 +80,38 @@ export function crossRecords(){
  const bookings=crossStoreState.customerActivity?.reservations||[];
  const tickets=crossStoreState.customerActivity?.tickets||[];
  const orders=crossStoreState.customerActivity?.orders||[];
- const errMessage=crossStoreState.customerActivityError?'<p class="alert">'+esc(crossStoreState.customerActivityError)+'</p>':"";
+ const errMessage=crossStoreState.customerActivityError?
+   '<p class="alert">'+esc(crossStoreState.customerActivityError)+'</p>':"";
+ const item=(x,type,label,meta,action,idAttr)=>{
+  const status=type==="order"?pickupStatusLabel(x.status):tag(x.status);
+  const right=type==="order"?'<span class="customer-history-state">'+esc(status)+'</span>':status;
+  return '<button type="button" class="customer-history-entry" data-act="'+action+
+    '" data-merchant="'+esc(x.slug)+'" '+idAttr+'="'+esc(x.id)+'"'+
+    ' aria-label="開啟 '+esc(x.shop_name)+' 的'+esc(label)+'詳情">'+
+    '<span class="customer-history-entry-top"><strong>'+esc(x.shop_name||"店家")+'</strong>'+right+'</span>'+
+    '<span class="customer-history-entry-number">'+esc(label)+'</span>'+
+    '<span class="customer-history-entry-meta">'+meta+'</span>'+
+    '<span class="customer-history-entry-open">點開查看這家店的專屬'+esc(type==="ticket"?"叫號進度":type==="reservation"?"預約資訊":"取餐進度")+' <span aria-hidden="true">›</span></span>'+
+    '</button>';
+ };
  const bookingHtml=bookings.length?bookings.slice(0,80).map(x=>
-   '<article class="cross-record"><div class="cross-ticket-head"><strong>'+esc(x.shop_name)+'</strong>'+tag(x.status)+'</div>'+
-   '<div>預約 '+esc(x.number||"—")+' ・ '+esc(x.day)+' '+esc(x.time)+' ・ '+esc(x.party)+' 位</div><div class="small">預約姓名：'+esc(x.name||'—')+' ・ 聯絡電話：'+esc(x.phone||'未提供')+'</div>'+
-   '<div class="small">送出預約時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
-   selectedItemsHtml(x.selected_items)+
-   '<div class="staff-actionbar">'+btn("查看／管理預約","open-cross-booking","secondary",
-     'data-merchant="'+esc(x.slug)+'" data-id="'+esc(x.id)+'"')+'</div></article>'
- ).join(""):'<p class="muted">目前沒有預約紀錄。</p>';
+   item(x,"reservation","預約 "+(x.number||"—"),
+     '預約時間：'+esc(x.day)+' '+esc(x.time)+' ・ '+esc(x.party||1)+' 位',
+     "open-cross-booking","data-id")).join(""):'<p class="muted">目前沒有預約紀錄。</p>';
  const ticketHtml=tickets.length?tickets.slice(0,80).map(x=>
-   '<article class="cross-record"><div class="cross-ticket-head"><strong>'+esc(x.shop_name)+'</strong>'+tag(x.status)+'</div>'+
-   '<strong>我的號碼：'+esc(x.number)+'</strong><div class="small">候位人數：'+esc(x.party||1)+' 人／組</div>'+
-   '<div class="small">取號時間：'+esc(formatTaipeiCreated(x.created_at))+' ・ '+esc(x.party||1)+' 人／組</div>'+
-   selectedItemsHtml(x.selected_items)+
-   '<div class="staff-actionbar">'+btn("查看該店進度","open-cross-ticket","secondary",
-     'data-merchant="'+esc(x.slug)+'" data-ticket="'+esc(x.id)+'"')+'</div></article>'
- ).join(""):'<p class="muted">目前沒有號碼紀錄。</p>';
+   item(x,"ticket","我的號碼 "+(x.number||"—"),
+     '取號：'+esc(formatTaipeiCreated(x.created_at))+' ・ '+esc(x.party||1)+' 人／組',
+     "open-cross-ticket","data-ticket")).join(""):'<p class="muted">目前沒有取號紀錄。</p>';
  const orderHtml=orders.length?orders.slice(0,80).map(x=>
-    '<article class="cross-record"><div class="cross-ticket-head"><strong>'+esc(x.shop_name)+'</strong><span>'+esc(pickupStatusLabel(x.status))+'</span></div>'+
-    '<strong>訂單 '+esc(x.number)+'</strong><div>取餐：'+esc(x.pickup_at)+'</div>'+
-    '<div class="small">'+esc((x.items||[]).map(i=>i.name+" × "+i.qty).join("、"))+' ・ NT$ '+esc(Number(x.total||0).toLocaleString("zh-TW"))+'</div>'+
-    '<div class="staff-actionbar"><a class="btn secondary" href="'+esc(sharedUiState.route("customer",x.slug,"order"))+'">查看店家取餐進度</a></div></article>'
-  ).join(""):'<p class="muted">目前沒有訂餐紀錄。</p>';
-  return errMessage+box("我的跨店預約紀錄",bookingHtml)+box("我的跨店取號紀錄",ticketHtml)+box("我的跨店訂餐紀錄",orderHtml);
+   item(x,"order","訂單 "+(x.number||"—"),
+     '取餐：'+esc(x.pickup_at)+' ・ NT$ '+esc(Number(x.total||0).toLocaleString("zh-TW")),
+     "open-cross-order","data-id")).join(""):'<p class="muted">目前沒有訂餐紀錄。</p>';
+ const stale=crossStoreState.customerActivityError?'<p class="small">目前無法確認最新紀錄；請重新整理再試。</p>':"";
+ return '<div class="customer-history-intro"><strong>我的歷史紀錄</strong>'+
+   '<p class="small">每間店、每筆預約與訂單都可以直接點開。開啟後只顯示該筆紀錄，不再把不同店家的叫號資訊放在一起。</p></div>'+
+   errMessage+stale+
+   box("預約紀錄（"+bookings.length+"）",'<div class="customer-history-grid">'+bookingHtml+'</div>')+
+   box("叫號紀錄（"+tickets.length+"）",'<div class="customer-history-grid">'+ticketHtml+'</div>')+
+   box("訂餐紀錄（"+orders.length+"）",'<div class="customer-history-grid">'+orderHtml+'</div>')+
+   '<div class="staff-actionbar">'+btn("重新整理歷史紀錄","cross-refresh","outline")+'</div>';
 }
