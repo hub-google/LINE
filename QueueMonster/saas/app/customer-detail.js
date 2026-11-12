@@ -2,6 +2,7 @@
 // This module never fetches a record by a bare unverified user-provided ID.
 import {bookingState} from "./state/bookingState.js";
 import {customerState} from "./state/customerState.js";
+import {crossStoreState} from "./state/crossStoreState.js";
 import {routeState} from "./state/routeState.js";
 import {sharedUiState} from "./state/sharedUiState.js";
 import {pickupState,pickupStatusLabel} from "./pickup-mode.js";
@@ -60,7 +61,8 @@ export function renderCustomerDetail(){
  const shop=customerState.customer?.tenant?.name||"店家";
  const id=routeState.detailId;
  if(routeState.detailKind==="reservation"){
-   const record=(customerState.customer?.my_reservations||[]).find(x=>x.id===id);
+   const record=(customerState.customer?.my_reservations||[]).find(x=>x.id===id)||
+    (crossStoreState.customerActivity?.reservations||[]).find(x=>x.id===id&&x.slug===routeState.slug);
    // The authenticated so_public_state RPC controls which personal records exist.
    if(!record)return box("查無預約紀錄",'<p class="alert">目前帳號找不到這筆店家的預約，請確認使用原本的 LINE 帳號。</p>'+back());
    const confirmed=record.status==="CONFIRMED";
@@ -88,7 +90,8 @@ export function renderCustomerDetail(){
  // Use the existing user-scoped ordering RPC. A raw order ID is never enough
  // to fetch somebody else's order, and no separate unauthenticated endpoint is added.
  const orders=pickupState.customerHistory?.orders||pickupState.customer?.orders||[];
- const order=orders.find(x=>x.id===id);
+ const order=orders.find(x=>x.id===id)||
+   (crossStoreState.customerActivity?.orders||[]).find(x=>x.id===id&&x.slug===routeState.slug);
  if(!order){
    return box("訂單詳情",'<p class="muted">目前還無法取得這筆訂單的資料；請重新整理，或以原本的 LINE 帳號登入。</p>'+
       btn("重新讀取訂單","detail-refresh","primary")+back());
