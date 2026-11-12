@@ -188,9 +188,11 @@ test("real-flow demo reproduces guest creation, merchant status changes and LINE
  runInNewContext(source,{document:doc,Intl,Date});
  const click=(selector,data)=>handlers.click({target:{closest:s=>s===selector?{dataset:data}:null}});
  const change=(data)=>handlers.change({target:data});
+ const input=(id,value)=>handlers.input({target:{id,value}});
  assert.match(el("root").innerHTML,/首頁/);
  click("[data-tab]",{tab:"order"});
  assert.match(el("root").innerHTML,/選擇餐點/);
+ input("customer-name","示範顧客");input("customer-phone","0912345678");
  click("[data-act]",{act:"qty",id:"egg",delta:"1"});
  click("[data-act]",{act:"review-order"});
  assert.match(el("root").innerHTML,/請核對送出前的訂餐內容/);
@@ -215,6 +217,7 @@ test("real-flow demo reproduces guest creation, merchant status changes and LINE
  assert.match(el("root").innerHTML,/已過號/);
  click("[data-scene]",{scene:"salon"});
  click("[data-tab]",{tab:"reserve"});
+ input("contact-name","示範顧客");input("contact-phone","0912345678");
  click("[data-act]",{act:"unit",value:"Ken"});
  click("[data-act]",{act:"review-reserve"});
  click("[data-act]",{act:"reserve-submit"});
@@ -223,6 +226,7 @@ test("real-flow demo reproduces guest creation, merchant status changes and LINE
  assert.match(el("root").innerHTML,/預約管理/);
  click("[data-scene]",{scene:"clinic"});
  click("[data-tab]",{tab:"reserve"});
+ input("contact-name","示範顧客");input("contact-phone","0912345678");
  click("[data-act]",{act:"unit",value:"2診"});
  click("[data-act]",{act:"review-reserve"});
  click("[data-act]",{act:"reserve-submit"});
