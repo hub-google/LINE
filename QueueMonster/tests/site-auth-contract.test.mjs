@@ -67,7 +67,7 @@ test("only server-verified LINE account data is shown, not anonymous Supabase us
  assert.match(index,/incomingParam\("site_return"\)/);
  assert.match(index,/location\.replace\(destination\.pathname\+destination\.search\)/);
 });
-function createScenario({lineName="",customerSession=false,staffName="",url="https://hub-google.github.io/LINE/booking/directory.html?mode=game"}={}){
+function createScenario({lineName="",customerSession=false,staffName="",staffProvider="email",url="https://hub-google.github.io/LINE/booking/directory.html?mode=game"}={}){
  const state={signedOut:null,navigated:null,reloaded:false};
  function node(tag){
   return {tag,className:"",textContent:"",children:[],title:"",disabled:false,handlers:{},
@@ -91,7 +91,7 @@ function createScenario({lineName="",customerSession=false,staffName="",url="htt
   const logged=type==="customer"?customerSession:Boolean(staffName);
   return {
    auth:{
-    async getSession(){return {data:{session:logged?{access_token:"session",user:{is_anonymous:type==="customer",email:staffName}}:null},error:null}},
+    async getSession(){return {data:{session:logged?{access_token:"session",user:{id:type+"-id",is_anonymous:type==="customer",email:staffName,app_metadata:{provider:type==="customer"?"anonymous":staffProvider}}}:null},error:null}},
     onAuthStateChange(){return {data:{subscription:{unsubscribe(){}}}}},
     async signOut(){state.signedOut=type;return {error:null}}
    },
@@ -113,7 +113,14 @@ function createScenario({lineName="",customerSession=false,staffName="",url="htt
  return {rootNode,state,memory};
 }
 async function flush(){await new Promise(resolve=>setImmediate(resolve));await new Promise(resolve=>setImmediate(resolve));}
-function controls(root){return root.children.flatMap(x=>x.children)}
+function controls(root){
+ const list=[];
+ function visit(node){
+  for(const child of node?.children||[]){list.push(child);visit(child)}
+ }
+ visit(root);
+ return list;
+}
 test("anonymous visitor sees functional LINE login and retains return destination",async()=>{
  const ui=createScenario({customerSession:true});
  await flush();
@@ -190,6 +197,21 @@ test("staff pages show actual operator identity and logout operator account",asy
  const logout=controls(ui.rootNode).find(x=>x.tag==="button");
  logout.handlers.click();await flush();
  assert.equal(ui.state.signedOut,"operator");
+});
+
+test("Email-password users get the password action, Google and LINE accounts do not",async()=>{
+ const email=createScenario({staffName:"email@example.test",staffProvider:"email",url:"https://hub-google.github.io/LINE/booking/?view=staff"});
+ await flush();
+ assert.ok(controls(email.rootNode).some(x=>x.textContent==="修改密碼"),"Email password menu action missing");
+ assert.ok(controls(email.rootNode).some(x=>x.tag==="summary"),"Email account is not clickable");
+ const google=createScenario({staffName:"google@example.test",staffProvider:"google",url:"https://hub-google.github.io/LINE/booking/?view=staff"});
+ await flush();
+ assert.equal(controls(google.rootNode).some(x=>x.textContent==="修改密碼"),false);
+ assert.equal(controls(google.rootNode).some(x=>x.tag==="summary"),false);
+ const line=createScenario({customerSession:true,lineName:"LINE 顧客"});
+ await flush();
+ assert.equal(controls(line.rootNode).some(x=>x.textContent==="修改密碼"),false);
+ assert.equal(controls(line.rootNode).some(x=>x.tag==="summary"),false);
 });
 
 test("customer pages do not show an operator account from the same browser",async()=>{

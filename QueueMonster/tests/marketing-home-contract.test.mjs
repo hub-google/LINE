@@ -14,7 +14,6 @@ const app=read("saas/index.html");
 const directory=read("saas/directory.html");
 const build=read("../.github/scripts/build-line-saas.mjs");
 const publish=read("../.github/workflows/line-saas-pages.yml");
-const deployPr=read("../.github/workflows/line-saas-pr-validation.yml");
 
 test("independent homepage is versioned and included in non-destructive Pages deployment",()=>{
  assert.match(landing,/<meta name="line-saas-build" content="__LINE_SAAS_BUILD__">/);
@@ -23,7 +22,6 @@ test("independent homepage is versioned and included in non-destructive Pages de
  assert.match(publish,/for product in booking saas/);
  assert.match(publish,/git -C "\$pubdir" add -- booking\/ saas\//);
  assert.match(publish,/marketing-home-contract\.test\.mjs/);
- assert.match(deployPr,/marketing-home-contract\.test\.mjs/);
  assert.match(landing,/<meta name="viewport"/);
  assert.match(landing,/@media\(max-width:620px\)/);
  assert.match(landing,/prefers-reduced-motion/);

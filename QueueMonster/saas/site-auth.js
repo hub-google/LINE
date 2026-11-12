@@ -44,18 +44,25 @@ function draw(status,message){
   const menu=el("div","site-auth-menu");
   menu.append(el("div","site-auth-menu-heading","帳號設定"));
   menu.append(el("div","site-auth-menu-email",currentIdentity?.displayName||"LINE 使用者"));
-  if(currentIdentity?.type==="operator"){
-   const change=el("button","site-auth-menu-item","修改密碼");
-   change.type="button";change.disabled=busy;
-   change.addEventListener("click",()=>{profile.open=false;showPasswordDialog()});
-   menu.append(change);
-  }else{
-   menu.append(el("p","site-auth-menu-note","目前使用 LINE 身分登入，無須設定本平台密碼。"));
-  }
+  const change=el("button","site-auth-menu-item",
+   currentIdentity?.needsPasswordSetup?"設定登入密碼":"修改密碼");
+  change.type="button";change.disabled=busy;
+  change.addEventListener("click",()=>{profile.open=false;showPasswordDialog()});
+  menu.append(change);
   profile.append(name,menu);
   const logout=el("button","site-auth-button","登出");
   logout.type="button";logout.disabled=busy;logout.addEventListener("click",()=>{void logOut()});
-  holder.append(profile,logout);
+  if(currentIdentity?.canChangePassword){
+   holder.append(profile,logout);
+  }else{
+   // Google and LINE accounts have no Queue Monster password to change.
+   const plain=el("span","site-auth-name");
+   plain.title=currentIdentity?.displayName||"已登入";
+   const icon=el("span","site-auth-avatar","L");
+   const text=el("span","site-auth-label",currentIdentity?.displayName||"已登入");
+   plain.append(icon,text);
+   holder.append(plain,logout);
+  }
  }else{
   const mode=portalMode();
   const login=el("button",mode==="customer"?"site-auth-button site-auth-login":"site-auth-button");
@@ -84,7 +91,7 @@ document.addEventListener("keydown",event=>{
 });
 
 function showPasswordDialog(){
- if(busy||currentIdentity?.type!=="operator")return;
+ if(busy||currentIdentity?.type!=="operator"||!currentIdentity?.canChangePassword)return;
  document.querySelector(".site-auth-password-backdrop")?.remove();
  const originalFocus=document.activeElement;
  const backdrop=el("div","site-auth-password-backdrop");
@@ -93,7 +100,7 @@ function showPasswordDialog(){
  dialog.setAttribute("aria-modal","true");
  dialog.setAttribute("aria-labelledby","site-auth-password-title");
  const head=el("div","site-auth-password-head");
- const title=el("h2","site-auth-password-title","修改密碼");
+ const title=el("h2","site-auth-password-title",currentIdentity?.needsPasswordSetup?"設定登入密碼":"修改密碼");
  title.id="site-auth-password-title";
  const dismiss=el("button","site-auth-password-close","×");
  dismiss.type="button";dismiss.setAttribute("aria-label","關閉修改密碼");
@@ -153,6 +160,10 @@ function showPasswordDialog(){
    const verified=await operator.auth.getUser();
    if(verified.error||!verified.data?.user||verified.data.user.id!==currentIdentity?.userId)
     throw Error("登入狀態已失效，請重新登入後再試。");
+   const liveProvider=verified.data.user.app_metadata?.provider;
+   const hasEmailProvider=liveProvider==="email" ||
+    (!liveProvider && verified.data.user.identities?.some(item=>item.provider==="email")===true);
+   if(!hasEmailProvider)throw Error("此帳號以 Google 或 LINE 登入，沒有需要修改的平台密碼。");
    const result=await operator.auth.updateUser({password:password.value});
    if(result.error)throw result.error;
    password.value="";confirmation.value="";
@@ -225,7 +236,17 @@ async function getIdentity(){
  }
  const staffUser=operatorSession?.user;
  if(staffUser&&!staffUser.is_anonymous){
-  operatorIdentity={type:"operator",displayName:staffUser.email||"商家使用者",userId:staffUser.id,client:operator};
+  // Supabase Auth exposes the account's provider in app_metadata.
+  // The Google OAuth provider does not create a Queue Monster password.
+  const provider=staffUser.app_metadata?.provider;
+  const emailAccount=provider==="email" ||
+   (!provider && staffUser.identities?.some(item=>item.provider==="email")===true);
+  operatorIdentity={
+   type:"operator",displayName:staffUser.email||"商家使用者",
+   userId:staffUser.id,client:operator,
+   canChangePassword:emailAccount,
+   needsPasswordSetup:emailAccount && staffUser.user_metadata?.queue_monster_password_pending===true
+  };
  }
  if(!preferOperator)return lineIdentity;
  if(!operatorIdentity)return null;

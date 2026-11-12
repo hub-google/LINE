@@ -17,7 +17,10 @@ for (const name of pages) {
   if (!html.includes(placeholder) || !html.includes("version-watch.js")) {
     throw Error(name + " is missing the automatic version update integration");
   }
-  await writeFile(path.join(dest, name), html.replaceAll(placeholder, sha), "utf8");
+  const versioned=html.replaceAll(placeholder,sha)
+    .replaceAll('href="./site-auth.css"','href="./site-auth.css?build='+sha+'"')
+    .replaceAll('src="./site-auth.js"','src="./site-auth.js?build='+sha+'"');
+  await writeFile(path.join(dest,name),versioned,"utf8");
 }
 await copyFile(path.join(src, "version-watch.js"), path.join(dest, "version-watch.js"));
 await copyFile(path.join(src, "booking-theme.css"), path.join(dest, "booking-theme.css"));
