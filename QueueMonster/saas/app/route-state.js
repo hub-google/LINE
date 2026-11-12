@@ -27,7 +27,12 @@ export function refreshLiffRoute(){
  const nextView=lastParam(stateQuery,"view")||lastParam(live,"view");
  if(["customer","staff","platform","home"].includes(nextView))routeState.view=nextView;
  const nextTab=lastParam(stateQuery,"tab")||lastParam(live,"tab");
- if(["home","reserve","queue","order","mine","progress"].includes(nextTab))routeState.customerTab=nextTab;
+ const detailKind=lastParam(stateQuery,"kind")||lastParam(live,"kind");
+ const detailId=lastParam(stateQuery,"item")||lastParam(live,"item");
+ if(["reservation","order"].includes(detailKind)&&/^[0-9a-f-]{36}$/i.test(detailId||"")){
+  routeState.detailKind=detailKind;routeState.detailId=detailId;
+ }
+ if(["home","reserve","queue","order","mine","progress","detail"].includes(nextTab))routeState.customerTab=nextTab;
  const newTicket=lastParam(stateQuery,"ticket")||lastParam(live,"ticket");
  if(/^[0-9a-f-]{36}$/i.test(newTicket||"")){
    queueState.progressTicketId=newTicket;
@@ -125,7 +130,10 @@ queueState.queuePartySize=2;
 bookingState.bookingContactName="";
 bookingState.bookingContactPhone="";
 bookingState.bookingContactDirty=false;
-routeState.customerTab=["home","reserve","queue","order","mine","progress"].includes(incomingParam("tab"))?incomingParam("tab"):"home";
+routeState.customerTab=["home","reserve","queue","order","mine","progress","detail"].includes(incomingParam("tab"))?incomingParam("tab"):"home";
+routeState.detailKind=["reservation","order"].includes(incomingParam("kind"))?incomingParam("kind"):"";
+routeState.detailId=/^[0-9a-f-]{36}$/i.test(incomingParam("item")||"")?incomingParam("item"):"";
+if(routeState.customerTab==="detail"&&(!routeState.detailKind||!routeState.detailId))routeState.customerTab="mine";
 staffState.staffTab=["dashboard","bookings","queue","orders","calendar","units","analytics","menu","members","branches","settings","customers"].includes(incomingParam("tab"))?incomingParam("tab"):"dashboard";
  staffState.settingsSection=["profile","operations","sessions","catalog","pickup","branches","customers","public"].includes(incomingParam("section"))?incomingParam("section"):"profile";
  if(staffState.staffTab==="settings"&&staffState.settingsSection==="customers"){staffState.staffTab="customers";staffState.settingsSection="profile";}
