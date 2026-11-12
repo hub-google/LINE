@@ -582,3 +582,22 @@ body[data-monster-page="merchant-center"] .guide-inline-actions{display:flex;gap
  body[data-monster-page="merchant-center"] .guide-inline-actions{display:grid;grid-template-columns:1fr 1fr}
  body[data-monster-page="merchant-center"] .guide-inline-actions .action{font-size:13px;padding:10px 7px}
 }
+
+
+/* Optional LINE OA setup essentials and advanced help. */
+body[data-monster-page="merchant-center"] .guide-keybox{
+  display:grid;gap:8px;background:#f8f1fc;border:1px solid #e6d5ef;
+  border-radius:13px;padding:18px 20px;margin:0 0 24px;
+}
+body[data-monster-page="merchant-center"] .guide-keybox>strong{font-size:14px;color:#784b95;margin-bottom:3px}
+body[data-monster-page="merchant-center"] .guide-keybox>span{font-size:16px;font-weight:800;color:#4e325e;line-height:1.6}
+body[data-monster-page="merchant-center"] .guide-keybox>p{font-size:14px;line-height:1.75;color:#746180;margin:5px 0 0}
+body[data-monster-page="merchant-center"] .guide-advanced{border:1px solid #eadff0;border-radius:12px;margin:4px 0 21px;overflow:hidden}
+body[data-monster-page="merchant-center"] .guide-advanced>summary{cursor:pointer;padding:15px 18px;font-size:15px;font-weight:800;color:#664878;background:#fcf9fe}
+body[data-monster-page="merchant-center"] .guide-advanced>div{padding:1px 18px 16px}
+body[data-monster-page="merchant-center"] .guide-advanced p{font-size:15px;line-height:1.8;color:#6a5a77}
+body[data-monster-page="merchant-center"] .guide-advanced a{text-decoration:underline;text-underline-offset:3px}
+@media(max-width:760px){
+ body[data-monster-page="merchant-center"] .guide-keybox{padding:15px}
+ body[data-monster-page="merchant-center"] .guide-keybox>span{font-size:15px;overflow-wrap:anywhere}
+}
