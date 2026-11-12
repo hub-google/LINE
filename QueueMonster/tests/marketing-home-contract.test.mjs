@@ -236,3 +236,30 @@ test("real-flow demo reproduces guest creation, merchant status changes and LINE
  assert.match(el("root").innerHTML,/C2-003/);
  assert.match(el("notifications").innerHTML,/已完成報到/);
 });
+
+
+test("marketing site has platform overview and two role-specific diagram pages",()=>{
+ const merchant=read("saas/for-merchants.html");
+ const customer=read("saas/for-customers.html");
+ const flowCSS=read("saas/assets/roles/role-pages.css");
+ for(const [name,html] of [["for-merchants.html",merchant],["for-customers.html",customer]]){
+  assert.match(html,/line-saas-build" content="__LINE_SAAS_BUILD__"/);
+  assert.match(html,/version-watch\.js\?build=__LINE_SAAS_BUILD__/);
+  assert.match(build,new RegExp('"'+name.replaceAll(".","\\.")+'"'));
+  assert.match(publish,new RegExp(name.replaceAll(".","\\.")));
+  assert.match(html,/<title>/);
+  assert.match(html,/rel="canonical"/);
+  assert.match(html,/class="qm-flow"/);
+  assert.match(read("saas/sitemap.xml"),new RegExp(name.replaceAll(".","\\.")));
+ }
+ assert.match(landing,/href="\.\/for-merchants\.html"/);
+ assert.match(landing,/href="\.\/for-customers\.html"/);
+ assert.match(landing,/一個平台，串起店家與顧客/);
+ assert.match(landing,/class="qm-system-map"/);
+ assert.match(merchant,/降低假帳號惡意預約、棄單風險/);
+ assert.match(merchant,/電視或投影機直接顯示/);
+ assert.match(merchant,/href="\.\/demo\.html"/);
+ assert.match(customer,/手機查看最新進度/);
+ assert.match(customer,/href="\.\/directory\.html\?mode=search"/);
+ assert.match(flowCSS,/@media\(max-width:700px\)/);
+});
