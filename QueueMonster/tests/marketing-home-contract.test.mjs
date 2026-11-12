@@ -153,13 +153,18 @@ test("demo uses actual product styles, matches real customer/merchant layouts an
  assert.match(html,/version-watch\.js\?build=__LINE_SAAS_BUILD__/);
  for(const css of ["assets/index/page.css","booking-theme.css","monster-world.css"]) assert.ok(html.includes(css),"missing production stylesheet "+css);
  assert.match(html,/assets\/demo\/real-flow\.js/);
+ assert.match(html,/assets\/demo\/mobile-ui\.css/);
+ assert.match(html,/class="mobile-device"/);
+ const mobileCss=read("saas/assets/demo/mobile-ui.css");
+ assert.match(mobileCss,/@media\(max-width:540px\)/);
+ assert.match(mobileCss,/#root \.mobile-bottom-nav/);
  assert.match(build,/"demo\.html"/);
  assert.match(publish,/home\.html for-merchants\.html for-customers\.html demo\.html board\.html/);
  assert.match(landing,/href="\.\/demo\.html"/);
  for(const id of ["breakfast","salon","repair","clinic"])assert.match(html,new RegExp('data-scene="'+id+'"'));
  for(const name of ["早餐店","美髮店","維修店","診所","顧客端","店家端"])assert.ok(html.includes(name),"missing scenario "+name);
  assert.doesNotMatch(html,/店員端/);
- for(const originalClass of ["customer-shop-identity","customer-shop-toolbar","customer-layout","staff-record","staff-picker","side-item","unit-card-grid","queue-board","staff-actionbar"]){
+ for(const originalClass of ["mobile-merchant-head","mobile-bottom-nav","customer-shop-toolbar","customer-layout","staff-record","staff-picker","side-item","unit-card-grid","queue-board","staff-actionbar"]){
   assert.ok(source.includes(originalClass)||html.includes(originalClass),"demo missing production markup class "+originalClass);
  }
  for(const action of ["order-submit","reserve-submit","take-number","order-status","next","recall","toggle-notify","reset"])assert.ok(source.includes(action),"missing demo action "+action);
