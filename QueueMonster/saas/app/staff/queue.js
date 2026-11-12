@@ -53,7 +53,7 @@ export function renderStaffQueue({isManager,t,html}){
        esc(unitNameForSession(s.id))+' · '+esc(s.name)+' '+esc(s.start)+'</option>').join("")+'</select>'+
      (!selected?'<p class="muted">目前沒有可操作的場次，請到設定新增場次；歷史顧客仍可在下方查閱。</p>':""));
  }
- html+='<div class="grid4" style="margin-bottom:16px">'+
+ html+='<div class="grid4 queue-status-summary" style="margin-bottom:16px">'+
    stat("正在叫號",active?.number||"—")+stat("候位中",waiting.length)+
    stat("已過號",passed.length)+stat("保留中",held.length)+stat("已完成",completedTickets.length)+'</div>'+
    box("叫號操作",
