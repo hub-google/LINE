@@ -237,3 +237,7 @@ body.mobile-demo .demo-conversion-close:hover{background:#f3eff7}
  body.mobile-demo .demo-conversion-copy p{font-size:11px}
  body.mobile-demo .demo-conversion-link{width:100%;min-height:41px;font-size:13px}
 }
+
+/* Cancellation is deliberately separated from the five primary queue controls. */
+body.mobile-demo #root .ticket-secondary-status{border-top:1px solid #eee7f0;padding-top:7px;margin-top:11px}
+body.mobile-demo #root .staff-picker-secondary{display:grid;grid-template-columns:minmax(0,1fr);max-width:220px;margin-top:5px}
