@@ -289,3 +289,29 @@ test("merchant LINE OA onboarding never requires or displays webhook configurati
  assert.doesNotMatch(actions,/copy-own-oa-webhook|請設定 Webhook URL/);
  assert.doesNotMatch(guide,/複製 Webhook URL|Use webhook|訊息回傳網址/);
 });
+
+
+test("anonymous demo completes before showing a route to free merchant signup",()=>{
+ const demo=read("saas/demo.html");
+ const bridge=read("saas/assets/demo/signup-conversion.js");
+ const demoCss=read("saas/assets/demo/mobile-ui.css");
+ const registrationCss=read("saas/assets/merchant-register/page.css");
+ assert.match(demo,/id="demo-conversion"[^>]*hidden/);
+ assert.match(demo,/id="demo-register-link"/);
+ assert.match(demo,/id="demo-footer-signup"[^>]*merchant-register\.html\?mode=signup/);
+ assert.match(demo,/signup-conversion\.js/);
+ assert.doesNotMatch(demo,/href="\.\/merchant-center\.html#apply">建立我的店家/);
+ assert.match(reg,/id="demo-origin"[^>]*hidden/);
+ assert.match(reg,/signup-conversion\.js/);
+ assert.match(bridge,/if\(!panel\)return/);
+ assert.match(bridge,/if\(!rule\|\|!rule\.pattern\.test\(message\)\)return/);
+ for(const action of ["order-submit","reserve-submit","take-number","next","order-status","staff-status"])
+  assert.ok(bridge.includes(action),"Missing completion handler "+action);
+ assert.match(bridge,/url\.searchParams\.set\("mode","signup"\)/);
+ assert.match(bridge,/url\.searchParams\.set\("scene",selectedScene\(\)\)/);
+ assert.match(bridge,/if\(action==="dismiss-conversion"\|\|action==="reset"\)/);
+ assert.match(demoCss,/\.demo-conversion\[hidden\]/);
+ assert.match(registrationCss,/\.demo-origin\[hidden\]/);
+ const syntax=spawnSync(process.execPath,["--check"],{input:bridge,encoding:"utf8"});
+ assert.equal(syntax.status,0,syntax.stderr);
+});
