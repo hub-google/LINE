@@ -154,7 +154,7 @@ test("demo uses actual product styles, matches real customer/merchant layouts an
  for(const css of ["assets/index/page.css","booking-theme.css","monster-world.css"]) assert.ok(html.includes(css),"missing production stylesheet "+css);
  assert.match(html,/assets\/demo\/real-flow\.js/);
  assert.match(build,/"demo\.html"/);
- assert.match(publish,/home\.html demo\.html board\.html/);
+ assert.match(publish,/home\.html for-merchants\.html for-customers\.html demo\.html board\.html/);
  assert.match(landing,/href="\.\/demo\.html"/);
  for(const id of ["breakfast","salon","repair","clinic"])assert.match(html,new RegExp('data-scene="'+id+'"'));
  for(const name of ["早餐店","美髮店","維修店","診所","顧客端","店家端"])assert.ok(html.includes(name),"missing scenario "+name);
