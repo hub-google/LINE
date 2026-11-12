@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/line-oa-deploy.yml'
       - 'QueueMonster/supabase/functions/line-bridge/index.ts'
+      - 'QueueMonster/tests/line-oa-bot-contract.test.mjs'
 
 permissions:
   contents: read
