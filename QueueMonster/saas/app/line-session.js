@@ -239,9 +239,14 @@ export async function connectLineSession(force=false){
 }
 
 export async function sendBookingReply(reservationId){
- const result=await requestBookingReply(window.liff,reservationId);
- return result.requested ? "LINE 確認訊息已提出申請，請查看聊天室" :
-  "提醒暫時無法送出；預約已成立。請回官方帳號聊天室傳送「"+result.command+"」取得預約資訊。";
+ // The platform OA never acts as a proxy for merchants, even via free replies.
+ const config=await bridgeConfig();
+ if(config.merchantOaConnected!==true)return "";
+ const result=await requestBookingReply(window.liff,reservationId,{
+   merchantOaConnected:true,merchantLiffId:config.merchantLiffId||""
+ });
+ return result.requested ? "LINE 預約確認訊息已送出，請查看店家聊天室回覆" :
+  "提醒暫時無法送出；預約已成立。請回店家 LINE 官方帳號聊天室傳送「"+result.command+"」取得預約資訊。";
 }
 
 export async function sendLineNotice(action,ids){
