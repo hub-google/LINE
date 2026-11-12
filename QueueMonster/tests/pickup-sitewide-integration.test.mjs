@@ -28,7 +28,7 @@ test("customer, directory, headquarters, dashboard and branches expose pickup",(
   ["saas/app/staff/analytics.js",["訂餐分析","有效訂單金額","daily"]],
   ["saas/app/staff/branches.js",["today_orders","today_order_amount"]],
   ["saas/app/platform-view.js",["today_pending_orders","pickup_enabled","today_order_amount"]],
-  ["saas/app/cross-store.js",["customerActivity?.orders","我的跨店訂餐紀錄"]],
+  ["saas/app/cross-store.js",["customerActivity?.orders","訂餐紀錄（"]],
   ["saas/app/shared-ui.js",["nav(\"訂餐\""]],
  ];
  for(const [file,values] of checks)
