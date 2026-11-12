@@ -31,8 +31,8 @@ assert isinstance(original, dict), "Auth config was not an object"
 invite_redirect = "https://hub-google.github.io/LINE/booking/merchant-register.html?mode=login&from=staff-invite"
 login_redirect = "https://hub-google.github.io/LINE/booking/merchant-register.html?mode=login&from=queue-monster"
 reset_redirect = "https://hub-google.github.io/LINE/booking/merchant-register.html?mode=login&intent=recovery"
-stamp = "queue-monster-mail-v2"
-legacy_stamp = "queue-monster-mail-v1"
+stamp = "queue-monster-mail-v3"
+legacy_stamp = "queue-monster-mail-v2"
 # Use tables and inline styles for broad email-client compatibility. No remote
 # fonts, embedded SVG, scripting, or images that become broken when blocked.
 brand_start = (
@@ -49,10 +49,11 @@ body_open = (
     'border-radius:18px;overflow:hidden;text-align:left">'
     '<tr><td style="padding:27px 32px 23px;background:#523b70;color:#fff">'
     '<table role="presentation" cellpadding="0" cellspacing="0"><tr>'
-    '<td style="vertical-align:middle;padding-right:13px"><div '
-    'style="width:47px;height:47px;border-radius:13px;background:#fff;'
-    'color:#523b70;font-size:15px;font-weight:800;line-height:47px;'
-    'text-align:center">QM</div></td><td style="vertical-align:middle">'
+    '<td style="vertical-align:middle;padding-right:13px">'
+    '<img src="https://hub-google.github.io/LINE/booking/pwa-icon-192.png" '
+    'width="47" height="47" alt="排隊怪獸" '
+    'style="display:block;border:0;border-radius:10px"></td>'
+    '<td style="vertical-align:middle">'
     '<div style="font-size:24px;line-height:1.3;font-weight:800;'
     'letter-spacing:1px">排隊怪獸</div>'
     '<div style="font-size:12px;opacity:.85;letter-spacing:1.2px">'
@@ -147,7 +148,7 @@ for name,condition,branded,branded_subject in mail:
     if legacy_stamp in current_body:
         import re
         legacy_pattern = re.compile(
-            r'<!-- queue-monster-mail-v1 -->.*?</div></div>', re.DOTALL
+            r'<!-- queue-monster-mail-v2 --><!doctype html>.*?</html>', re.DOTALL
         )
         upgraded, replaced = legacy_pattern.subn(lambda _: branded, current_body, count=1)
         if replaced != 1 or condition not in upgraded:
@@ -157,7 +158,7 @@ for name,condition,branded,branded_subject in mail:
             "invite": "【排隊怪獸】企業員工邀請",
             "recovery": "【排隊怪獸】重設登入密碼",
             "magic_link": "【排隊怪獸】登入與接受企業邀請",
-            "confirmation": "【排隊怪獸】驗證電子信箱",
+            "confirmation": "【排隊怪獸】歡迎加入！請驗證電子信箱",
         }
         old_title = old_brand_subjects[name]
         if old_title not in current_subject:
@@ -174,7 +175,7 @@ if patch:
         key = f"mailer_templates_{name}_content"
         if key in patch and stamp not in (changed.get(key) or ""):
             raise RuntimeError(f"Branded {name} template did not persist")
-    print("Queue Monster v2 branded templates and subjects saved and verified.")
+    print("Queue Monster v3 branded templates and subjects saved and verified.")
 else:
     print("Queue Monster mail templates were already configured.")
 
