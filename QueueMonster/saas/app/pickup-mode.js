@@ -178,12 +178,12 @@ export function renderStaffPickup(){
  const history=orders.filter(o=>["PICKED_UP","REJECTED","CANCELLED"].includes(o.status));
  const canUpdate=d.can_update!==false;
  const staffStatusText={NEW:"待接單",ACCEPTED:"已接單",PREPARING:"製作中",
-   READY:"待取",PICKED_UP:"已完成",REJECTED:"已拒單",CANCELLED:"已取消"};
+   READY:"已完成待取",PICKED_UP:"已取餐",REJECTED:"已拒單",CANCELLED:"已取消"};
  const action=(o,label,status,disabled=false,style="outline")=>btn(label,"pickup-status",style,
    'data-id="'+esc(o.id)+'" data-status="'+status+'" data-expected="'+esc(o.status)+'"'+
    (disabled?' disabled title="目前狀態或尚未到建議製作時間"':''));
  // These choices remain available for every order, including rejected and finished orders.
- const choices=[["接單","ACCEPTED"],["待取","READY"],["拒單","REJECTED"],["已完成","PICKED_UP"]];
+ const choices=[["接單","ACCEPTED"],["已完成待取","READY"],["拒單","REJECTED"]];
  const card=o=>'<div class="inset" style="margin:0 0 12px;padding:14px"><div class="listline"><strong>'+
   esc(o.number)+'</strong><strong>'+esc(staffStatusText[o.status]||o.status)+'</strong></div>'+
   '<p class="small"><strong>約定取餐 '+esc(o.pickup_at)+'</strong> '+(o.scheduled?"（指定時間）":"（立即）")+'</p>'+
@@ -200,7 +200,7 @@ export function renderStaffPickup(){
  const h=pickupState.history||{},past=h.orders||[],maxPage=Math.max(1,Math.ceil(Number(h.total||0)/25));
  const choose=(f,label)=>btn(label,"pickup-history-filter",pickupState.historyFilter===f?"primary":"outline",'data-filter="'+f+'"');
  return box("取餐訂單管理",
-  '<p class="small">依約定取餐時間排序。可切換接單、待取、拒單或已完成；誤操作可以更正，所有變更均保留稽核紀錄。</p>'+
+  '<p class="small">依約定取餐時間排序。可切換接單、已完成待取或拒單；誤操作可以更正，所有變更均保留稽核紀錄。</p>'+
   '<p><strong>待處理 '+active.length+' 筆</strong></p>'+
   (active.length?active.map(card).join(""):'<p class="muted">目前沒有待處理訂單。</p>')+
   '<details class="pickup-history-panel" open><summary>歷史訂單（'+Number(h.total??history.length)+' 筆，可更正狀態）</summary>'+
@@ -293,7 +293,7 @@ export async function handlePickupAction(ev,b,a,id){
    if(!id)return true;
    const desired=b.dataset.status,expected=b.dataset.expected;
    if(desired===expected)return true;
-   if(["REJECTED","CANCELLED","PICKED_UP"].includes(desired)&&!confirm(desired==="PICKED_UP"?"確定將訂單標記為「已完成」？之後仍可更正。":"確定要取消或拒絕這筆訂單？"))return true;
+   if(["REJECTED","CANCELLED"].includes(desired)&&!confirm("確定要取消或拒絕這筆訂單？"))return true;
    await act(async()=>{
      await rpc("so_pickup_update",{p_slug:routeState.slug,p_order_id:id,p_expected:expected,p_status:desired});
      return "訂單狀態已更新為："+(statusText[desired]||desired);
