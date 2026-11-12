@@ -252,3 +252,9 @@ body.mobile-demo .demo-desktop-guide{display:none}
   body.mobile-demo .demo-desktop-guide{padding:18px}
   body.mobile-demo .demo-desktop-notice-card{padding:15px}
 }
+
+/* On desktop the example's five queue statuses match its five equal-size KPIs. */
+@media(min-width:901px){
+ body.mobile-demo #root .grid4.queue-status-summary{grid-template-columns:repeat(5,minmax(0,1fr))}
+ body.mobile-demo #root .staff-picker.ticket-primary-status{grid-template-columns:repeat(5,minmax(0,1fr))}
+}
