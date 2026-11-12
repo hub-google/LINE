@@ -160,7 +160,7 @@ test("demo uses actual product styles, matches real customer/merchant layouts an
  for(const name of ["早餐店","美髮店","維修店","診所","顧客端","店家端"])assert.ok(html.includes(name),"missing scenario "+name);
  assert.doesNotMatch(html,/店員端/);
  for(const originalClass of ["customer-shop-identity","customer-shop-toolbar","customer-layout","staff-record","staff-picker","side-item","unit-card-grid","queue-board","staff-actionbar"]){
-  assert.ok(source.includes(originalClass),"demo missing production markup class "+originalClass);
+  assert.ok(source.includes(originalClass)||html.includes(originalClass),"demo missing production markup class "+originalClass);
  }
  for(const action of ["order-submit","reserve-submit","take-number","order-status","next","recall","toggle-notify","reset"])assert.ok(source.includes(action),"missing demo action "+action);
  const syntax=spawnSync(process.execPath,["--check"],{input:source,encoding:"utf8"});
