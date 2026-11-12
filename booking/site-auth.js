@@ -164,7 +164,10 @@ function showPasswordDialog(){
    const hasEmailProvider=liveProvider==="email" ||
     (!liveProvider && verified.data.user.identities?.some(item=>item.provider==="email")===true);
    if(!hasEmailProvider)throw Error("此帳號以 Google 或 LINE 登入，沒有需要修改的平台密碼。");
-   const result=await operator.auth.updateUser({password:password.value});
+   const changes={password:password.value};
+   if(verified.data.user.user_metadata?.queue_monster_password_pending===true)
+    changes.data={queue_monster_password_pending:false};
+   const result=await operator.auth.updateUser(changes);
    if(result.error)throw result.error;
    password.value="";confirmation.value="";
    feedback.classList.add("success");
