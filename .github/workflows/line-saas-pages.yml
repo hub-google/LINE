@@ -51,6 +51,7 @@ jobs:
           node .github/scripts/build-line-saas.mjs "$RUNNER_TEMP/line-saas-dist"
           grep -q "$GITHUB_SHA" "$RUNNER_TEMP/line-saas-dist/index.html"
           grep -q "$GITHUB_SHA" "$RUNNER_TEMP/line-saas-dist/home.html"
+          grep -q "$GITHUB_SHA" "$RUNNER_TEMP/line-saas-dist/demo.html"
           grep -q "$GITHUB_SHA" "$RUNNER_TEMP/line-saas-dist/board.html"
           test ! -e "$RUNNER_TEMP/line-saas-dist/poster.html"
           grep -q "$GITHUB_SHA" "$RUNNER_TEMP/line-saas-dist/release.json"
@@ -87,7 +88,7 @@ jobs:
             rm -f "$pubdir/$product/poster.html"
             rm -rf "$pubdir/$product/assets/poster"
             cp -R "$RUNNER_TEMP/line-saas-dist/assets" "$pubdir/$product/"
-            for f in index.html template.html home.html board.html directory.html merchant-register.html platform-login.html merchant-center.html privacy.html terms.html version-watch.js release.json booking-theme.css monster-world.css monster-mascot.svg line-app-icon.svg explore-game.css explore-game.js site-auth.css site-auth.js public-config.js manifest.webmanifest sitemap.xml pwa-sw.js offline.html pwa-icon-192.png pwa-icon-512.png; do
+            for f in index.html template.html home.html demo.html board.html directory.html merchant-register.html platform-login.html merchant-center.html privacy.html terms.html version-watch.js release.json booking-theme.css monster-world.css monster-mascot.svg line-app-icon.svg explore-game.css explore-game.js site-auth.css site-auth.js public-config.js manifest.webmanifest sitemap.xml pwa-sw.js offline.html pwa-icon-192.png pwa-icon-512.png; do
               cp "$RUNNER_TEMP/line-saas-dist/$f" "$pubdir/$product/$f"
             done
           done
