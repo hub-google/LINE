@@ -601,3 +601,110 @@ body[data-monster-page="merchant-center"] .guide-advanced a{text-decoration:unde
  body[data-monster-page="merchant-center"] .guide-keybox{padding:15px}
  body[data-monster-page="merchant-center"] .guide-keybox>span{font-size:15px;overflow-wrap:anywhere}
 }
+
+
+/* Production-matched merchant guide previews: visual samples are deliberately noninteractive. */
+body[data-monster-page="merchant-center"] .qm-demo-provider{
+  padding:11px 13px;
+  text-align:center;
+  border:1px solid #e1d5ed;
+  border-radius:11px;
+  background:#fff;
+  color:#4f3963;
+  font-size:12px;
+  font-weight:850;
+  margin:12px 0 5px;
+}
+body[data-monster-page="merchant-center"] .qm-register .qm-demo-help{
+  margin:5px 0 12px;
+  color:#796886;
+  font-size:11px;
+  line-height:1.6;
+}
+body[data-monster-page="merchant-center"] .qm-demo-divider{
+  text-align:center;
+  color:#887693;
+  font-size:11px;
+  margin:15px 0 11px;
+}
+body[data-monster-page="merchant-center"] .qm-demo-settings-tabs{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin:10px 0 15px;
+}
+body[data-monster-page="merchant-center"] .qm-demo-settings-tabs>span{
+  border:1px solid #e4d3ee;
+  border-radius:10px;
+  background:#fff;
+  padding:7px 9px;
+  color:#725985;
+  font-size:10px;
+  font-weight:850;
+  line-height:1.4;
+}
+body[data-monster-page="merchant-center"] .qm-demo-settings-tabs>span.active{
+  color:#fff;
+  background:#6d408b;
+  border-color:#6d408b;
+}
+body[data-monster-page="merchant-center"] .qm-demo-advanced{
+  border:1px solid #e6d9ed;
+  background:#fcf9fe;
+  border-radius:10px;
+  padding:10px;
+  font-size:11px;
+  color:#6d567f;
+  margin-top:10px;
+}
+body[data-monster-page="merchant-center"] .guide-links-preview{
+  margin-top:16px;
+  padding:22px;
+}
+body[data-monster-page="merchant-center"] .guide-links-preview h3{
+  font-size:19px;
+  line-height:1.5;
+  margin:0 0 9px;
+}
+body[data-monster-page="merchant-center"] .guide-links-preview>p{
+  font-size:15px;
+  color:#756684;
+  line-height:1.8;
+  margin:0 0 14px;
+}
+body[data-monster-page="merchant-center"] .guide-links-preview .guide-link-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:12px;
+  padding:13px 0;
+  border-top:1px solid #eee4f3;
+}
+body[data-monster-page="merchant-center"] .guide-links-preview .guide-link-row>strong{
+  font-size:16px;
+  color:#4b3659;
+}
+body[data-monster-page="merchant-center"] .guide-links-preview .qm-actions{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+}
+body[data-monster-page="merchant-center"] .guide-links-preview .qm-btn{
+  background:#fff;
+  color:#674b7b;
+  padding:8px 10px;
+  border:1px solid #d8c7e4;
+  border-radius:10px;
+  font-size:13px;
+  font-weight:800;
+}
+body[data-monster-page="merchant-center"] .guide-links-preview .caption{
+  margin:12px 0 0;
+  font-size:13px;
+}
+@media(max-width:760px){
+ body[data-monster-page="merchant-center"] .guide-links-preview{padding:17px}
+ body[data-monster-page="merchant-center"] .guide-links-preview .guide-link-row{display:block}
+ body[data-monster-page="merchant-center"] .guide-links-preview .qm-actions{margin-top:10px}
+}
