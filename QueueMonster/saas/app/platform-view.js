@@ -56,7 +56,7 @@ export function platformRender(){
     '</div><div>'+field("第一位企業管理者 Email（選填）","create-owner","","email")+
     '<p class="small">若填寫，將建立管理者邀請，請對方以該信箱註冊後接受。</p></div></div>'+
     merchantProfileFields("create",{accent:"#523B70",open_time:"10:00",close_time:"20:00",slot_capacity:3,slot_minutes:30})+
-    '<div class="merchant-profile-section"><h3>開通服務</h3>'+featureChecks({reservation:true,queue:true,calling:true},"create-feature")+
+    '<div class="merchant-profile-section"><h3>開通服務</h3>'+featureChecks({reservation:true,queue:true},"create-feature")+
       '<label class="checklist"><input type="checkbox" id="create-pickup-enabled"> 同時啟用線上點餐（建立後可在店家設定調整取餐時段）</label>'+'</div>'+
     '<div class="merchant-profile-actions">'+btn("建立企業專屬網站","create-tenant","primary")+'</div>');
  }else html=box("平台運作方式",'<p>每家店家都擁有獨立的管理空間，可以自行設定營業資訊、預約與取號功能，並管理本店員工、訂餐、預約、取號及顧客紀錄。</p><p>不同身分的使用者依權限操作對應門市。顧客可使用 LINE 完成身分確認；訊息通知依店家的官方帳號設定與 LINE 服務規則提供。</p>');
