@@ -147,14 +147,62 @@ function customerQueue(){
  return (clinic?box("選擇取號場次",navRoom+'<p class="small">若已預約，請先至店家端「預約管理」報到；報到後會加入對應診間叫號。</p>'):"")+'<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",currentNo)+stat("等候組數",active.length)+stat("我的號碼",own?.id||"—")+'</div>'+box("我的現場號碼",ticket)+(own?box("我的取號",progress):"");
 }
 function customerMine(){
- const d=current(),mine=ownedIds[scene];let elements=[];
- // A customer must never see other visitors' names, phone numbers or bookings.
- if(d.orders)elements=d.orders.filter(o=>mine.has(o.id)).map(o=>inset('<div class="listline"><strong>'+esc(o.id)+'</strong>'+status(o.status)+'</div><p class="small">取餐：'+esc(o.time)+'</p><p>'+esc(o.lines.map(i=>i.name+" × "+i.qty).join("、"))+'</p><strong>'+money(o.total)+'</strong>'));
- if(d.bookings)elements=d.bookings.filter(o=>mine.has(o.id)).map(o=>inset('<div class="listline"><strong>'+esc(o.id)+'　'+esc(o.name)+'</strong>'+status(o.status)+'</div><p class="small">'+esc(o.date)+' '+esc(o.time)+'　'+esc(o.unit)+(o.ticket?"　候診號碼 "+esc(o.ticket):"")+'</p>'));
- if(d.tickets)elements=elements.concat(d.tickets.filter(o=>mine.has(o.id)).map(o=>inset('<div class="listline"><strong>'+esc(o.id)+'　'+esc(o.name)+'</strong>'+status(o.status)+'</div><p class="small">'+esc(o.unit||o.service||"")+'</p>')));
- return '<section class="customer-service-nav"><div class="customer-service-title"><h2>歷史紀錄</h2><p class="small">只顯示本次試用顧客建立的預約、取號及訂餐紀錄</p></div></section>'+
- box("我的紀錄",elements.join("")||'<p class="muted">尚無本次試用顧客的紀錄，請先完成預約、取號或點餐。</p>')+
- (d.tickets?box("目前叫號進度",scene==="clinic"?"1診："+esc(currentCalled("1診"))+" / 2診："+esc(currentCalled("2診")):"目前："+esc(currentCalled())):"");
+ const d=current(),owned=ownedIds[scene],cards=[];
+ for(const [kind,records] of [["reservation",d.bookings||[]],["ticket",d.tickets||[]],["order",d.orders||[]]]){
+  for(const o of records.filter(x=>owned.has(x.id))){
+   const label=kind==="reservation"?"預約":kind==="ticket"?"取號":"訂餐";
+   const time=kind==="reservation"?o.date+" "+o.time:kind==="order"?"取餐："+o.time:"現場候位";
+   cards.push('<button type="button" class="customer-history-entry" data-act="demo-open-detail" data-kind="'+kind+'" data-id="'+esc(o.id)+'">'+
+     '<span class="customer-history-entry-top"><strong>'+esc(displayShop())+'</strong><span>'+esc(statusName[o.status]||o.status)+'</span></span>'+
+     '<span class="customer-history-entry-number">'+label+' '+esc(o.id)+'</span>'+
+     '<span class="customer-history-entry-meta">'+esc(time)+'</span>'+
+     '<span class="customer-history-entry-open">開啟這筆'+label+'的專屬資訊 <span>›</span></span></button>');
+  }
+ }
+ return box("歷史紀錄",'<p class="small">點選任一紀錄，即可開啟該筆服務的專屬詳細頁面，不混合顯示不同紀錄的叫號資訊。</p>'+
+   (cards.length?'<div class="customer-history-grid">'+cards.join("")+'</div>':'<p class="muted">尚無本次試用的服務紀錄。</p>'));
+}
+function customerDetail(){
+ const d=current(),records=detailKind==="reservation"?d.bookings||[]:detailKind==="order"?d.orders||[]:d.tickets||[];
+ const o=records.find(x=>x.id===detailId&&ownedIds[scene].has(x.id));
+ const back='<div class="staff-actionbar">'+btn("返回歷史紀錄","demo-detail-back","outline")+'</div>';
+ if(!o)return box("沒有找到這筆紀錄",back);
+ const title=detailKind==="reservation"?(o.status==="CONFIRMED"?"預約成功":o.status==="CANCELLED"?"預約已取消":"預約狀態："+(statusName[o.status]||o.status)):
+   detailKind==="order"?(o.status==="NEW"?"訂單已送出":statusName[o.status]||o.status):"我的專屬叫號看板";
+ const header='<div class="demo-detail-heading"><p class="small">'+esc(displayShop())+' · 示範紀錄</p><h2>'+esc(title)+'</h2><strong>'+esc(o.id)+'</strong></div>';
+ if(detailKind==="reservation"){
+  const editable=o.status==="CONFIRMED";
+  const edit=editable&&detailEditing?'<div class="inset"><h3>修改預約資訊</h3>'+
+    field("日期","demo-edit-date",o.date,"date",'min="'+today()+'"')+
+    field("時間","demo-edit-time",o.time,"time")+
+    field("人數","demo-edit-party",o.party||1,"number",'min="1" max="20"')+
+    field("姓名","demo-edit-name",o.name)+field("聯絡手機","demo-edit-phone",o.phone,"tel",'maxlength="10"')+
+    '<div class="staff-actionbar">'+btn("儲存修改","demo-save-booking","primary")+btn("返回","demo-close-edit")+'</div></div>':"";
+  const ticket=o.ticket&&d.tickets?.find(t=>t.id===o.ticket);
+  return box("預約詳細資訊",back+header+
+    '<div class="customer-detail-fields"><p>日期：<strong>'+esc(o.date)+'</strong></p>'+
+    '<p>時間：<strong>'+esc(o.time)+'</strong></p><p>人數：<strong>'+esc(o.party||1)+' 位</strong></p>'+
+    '<p>服務：<strong>'+esc(o.service)+'</strong></p><p>預約姓名：<strong>'+esc(o.name)+'</strong></p>'+
+    '<p>聯絡電話：<strong>'+esc(o.phone)+'</strong></p></div>'+
+    (editable?'<div class="staff-actionbar">'+btn("修改預約","demo-edit-booking","primary")+btn("取消預約","demo-cancel-booking","outline")+'</div>':"")+
+    (ticket?btn("查看這筆預約的即時叫號進度","demo-linked-ticket","secondary",'data-id="'+esc(ticket.id)+'"'):"")+edit);
+ }
+ if(detailKind==="order"){
+  const remain=o.createdAt?Math.max(0,Math.ceil((o.createdAt+15000-Date.now())/1000)):0;
+  const cancel=o.status==="NEW"&&remain>0;
+  return box("訂單詳細資訊",back+header+'<p>取餐時間：'+esc(o.time)+'</p><p>聯絡電話：'+esc(o.phone)+'</p>'+
+    '<p>訂購餐點：'+esc(o.lines.map(x=>x.name+" × "+x.qty).join("、"))+'</p>'+
+    '<p>金額：<strong>'+money(o.total)+'</strong></p>'+
+    (cancel?'<div data-demo-cancel-at="'+(o.createdAt+15000)+'"><p class="notice">還有 <strong class="demo-grace-seconds">'+remain+'</strong> 秒可取消訂單，倒數結束後交給店家。</p>'+
+      btn("取消訂單","cancel-order","outline",'data-id="'+esc(o.id)+'"')+'</div>':'<p class="small">請依上方狀態安排取餐；過了自行取消期限後需聯絡店家。</p>'));
+ }
+ const unit=scene==="clinic"?o.unit:null,all=d.tickets.filter(t=>!unit||t.unit===unit),waiting=all.filter(t=>t.status==="WAITING");
+ const ahead=o.status==="CALLED"?0:o.status==="WAITING"?waiting.findIndex(t=>t.id===o.id):-1;
+ return box("我的叫號進度",back+header+'<div class="queue-board"><div class="queue-board-lead">'+(unit?esc(unit)+" · ":"")+'現在叫到</div>'+
+   '<div class="queue-board-current">'+esc(currentCalled(unit))+'</div><div class="queue-board-grid">'+
+   '<div class="queue-board-stat"><span>我的號碼</span><strong>'+esc(o.id)+'</strong><small>'+esc(statusName[o.status]||o.status)+'</small></div>'+
+   '<div class="queue-board-stat"><span>前面還有</span><strong>'+esc(ahead<0?"—":ahead+" 組")+'</strong></div></div>'+
+   '<p class="queue-board-note">'+(o.status==="CALLED"?"已叫到您的號碼。":"進度依此示範店家端的叫號操作變動。")+'</p></div>');
 }
 function staffOrder(){
  const d=current(),visible=d.orders.filter(o=>!o.createdAt||Date.now()-o.createdAt>=15000);
