@@ -12,8 +12,10 @@ import {customerNoticeSuffix,notifyLineCalled,sendLineNotice} from "./../line-se
 import {selectedUnitSession,unitBookingFingerprint,unitNameForSession,unitSessionAvailable} from "./../service-units.js";
 import {bookingRequestDetails,normalizeBookingPhone,validBookingContact} from "./../customer-booking.js";
 import {showActionFeedback} from "./../shared-ui.js";
+import {handleScheduleAction} from "../schedule-settings.js";
 
 export async function handleServiceUnitActions(ev,b,a,id){
+if(await handleScheduleAction(ev,b,a,id))return true;
 if(a==="save-unit-mode"){
    await act(async()=>{
     await rpc("so_unit_manage",{p_slug:routeState.slug,p_action:"settings",p_data:{
