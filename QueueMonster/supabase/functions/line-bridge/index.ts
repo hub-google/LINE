@@ -1260,8 +1260,10 @@ Deno.serve(async (req: Request) => {
       if (tenantError) throw tenantError;
       if (!tenant) return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
       const ownOa = await merchantLineConfig(db, tenant.id);
-      const expectedChannelId = ownOa?.channelId ||
-        /^([0-9]{8,})-[A-Za-z0-9]+$/.exec(Deno.env.get("LINE_LIFF_ID") || "")?.[1] || "";
+      // LIFF ID is issued to a LINE Login channel, not a Messaging API channel.
+      // Both channels must be owned by the same LINE Provider for user ID parity.
+      const expectedChannelId = /^([0-9]{8,})-[A-Za-z0-9]+$/.exec(
+        ownOa?.liffId || Deno.env.get("LINE_LIFF_ID") || "")?.[1] || "";
       let { data: linked, error: linkError } = await db.from("qm_line_links")
         .select("display_name,line_sub,is_following,updated_at,login_channel_id")
         .eq("tenant_id", tenant.id).eq("user_id", user.id).maybeSingle();
@@ -1310,8 +1312,10 @@ Deno.serve(async (req: Request) => {
         .select("id,slug,status").eq("slug", slug).eq("status", "ACTIVE").single();
       if (te || !tenant) return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
       const ownOa = await merchantLineConfig(db, tenant.id);
-      const expectedChannelId = ownOa?.channelId ||
-        /^([0-9]{8,})-[A-Za-z0-9]+$/.exec(Deno.env.get("LINE_LIFF_ID") || "")?.[1] || "";
+      // LIFF ID is issued to a LINE Login channel, not a Messaging API channel.
+      // Both channels must be owned by the same LINE Provider for user ID parity.
+      const expectedChannelId = /^([0-9]{8,})-[A-Za-z0-9]+$/.exec(
+        ownOa?.liffId || Deno.env.get("LINE_LIFF_ID") || "")?.[1] || "";
       const line = await lineVerify(idToken, accessToken, {
         channelId:expectedChannelId, botToken:ownOa?.token
       });
