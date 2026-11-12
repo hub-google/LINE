@@ -215,7 +215,7 @@ test("one renderer powers ordinary queues and independent sessions without losin
  assert.match(plain,/取號場次管理/);
  assert.match(plain,/NUMBER SETTINGS/);
  assert.match(plain,/data-act="call"/);
- assert.match(plain,/已結束號碼牌/);
+ assert.match(plain,/已處理號碼牌/);
  assert.match(plain,/已完成客戶/);
  assert.match(plain,/已取消客戶/);
  assert.match(plain,/已刪除客戶/);
