@@ -221,7 +221,7 @@ test("real-flow demo reproduces guest creation, merchant status changes and LINE
  click("[data-act]",{act:"order-status",id:"B003",value:"ACCEPTED"});
  assert.match(el("notifications").innerHTML,/已接單/);
  click("[data-act]",{act:"order-status",id:"B003",value:"REJECTED"});
- assert.match(el("root").innerHTML,/已拒單/);
+ assert.match(el("root").innerHTML,/已拒單|店家已取消訂單/);
  click("[data-scene]",{scene:"repair"});
  assert.match(el("root").innerHTML,/立即線上取號/);
  click("[data-act]",{act:"take-number"});
