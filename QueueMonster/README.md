@@ -8,6 +8,27 @@
 
 > 依據 [PRD.md](./PRD.md) 規劃之企業級門市營運系統。
 
+## Supabase 資料表命名規範（2026-11-12 已上線）
+
+排隊怪獸的資料存於共用 Supabase 專案 `unapiwajmgqqtdkixaab`。**所有 QueueMonster 實體資料表一律以 `qm_` 開頭**（Queuing Monster）；新功能不得再新增 `so_` 實體表。
+
+| 範圍 | 已套用命名 |
+| --- | --- |
+| 原 `public.so_*` 39 張 | `public.qm_*` |
+| 原 `private.so_*` 3 張 | `private.qm_*` |
+| 原有 `public.qm_admin_pin_guard` 1 張 | 保留 |
+| **目前合計** | **43 張 `qm_` 實體表、0 張 `so_` 實體表** |
+
+常用實體表：`qm_tenants`、`qm_members`、`qm_reservations`、`qm_tickets`、`qm_service_sessions`、`qm_schedule_rules`、`qm_schedule_exceptions`、`qm_pickup_orders`、`qm_menu_items`、`qm_line_links`。
+
+**注意：既有 `so_*` RPC／資料庫函式名稱仍保留，供前端與 LINE 呼叫，相容 API 不等於舊資料表。** 新 SQL、直接查表的程式與 Edge Functions 一律使用 `qm_*`；同步檢查 Trigger、RLS、GRANT、Realtime 與測試。其他專案的 `wm_`／`ti_` 表不修改。歷史 Migration 的 `so_` 表名是當時結構，不可當作目前實體表名。
+
+- [正式改名 Migration](./supabase/migrations/20261112073327_queue_monster_qm_table_prefix.sql)
+- [完整命名規範](./supabase/TABLE-NAMING.md)
+- [PRD 正式需求（DB-NAME-001）](./PRD.md)
+
+**請勿對共用正式 Supabase 直接執行未核對的 Prisma `db:push`、舊版建表或初始化腳本。**
+
 ---
 
 ## 快速啟動 (Quick Start)
@@ -25,7 +46,7 @@ npx prisma generate
 
 > 💡 **零摩擦上線**：只要您於 LINE Developers 與 LINE Pay 取得憑證，將 `.env` 中的各項 Key 填入並設定 `MOCK_LINE_SERVICES=false`，系統立即無縫對接 LINE 官方真實 API！
 
-### 3. 資料庫遷移與寫入示範資料
+### 3. 資料庫遷移與寫入示範資料（以下指令僅適用獨立本機／測試資料庫，勿連正式共用 Supabase）
 ```bash
 # 推送 Schema 至 PostgreSQL 資料庫 (需先設定 DATABASE_URL)
 npm run db:push
