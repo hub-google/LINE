@@ -123,6 +123,17 @@ document.addEventListener("click",async ev=>{
    returnToCustomerHistory();stopQueueRealtime();render();void refreshCrossStoreOverview();return;
  }
  if(a==="detail-refresh"){void load();return;}
+ if(a==="open-linked-ticket"){
+   const ticket=b.dataset.ticket||"";
+   if(!/^[0-9a-f-]{36}$/i.test(ticket))return;
+   queueState.progressTicketId=ticket;
+   queueState.queueLive=null;queueState.queueLiveShop="";
+   crossStoreState.crossCurrentStore=false;routeState.customerTab="progress";
+   const u=new URL(location.href);u.searchParams.set("tab","progress");u.searchParams.set("ticket",ticket);
+   for(const key of ["kind","item","mode","manage"])u.searchParams.delete(key);
+   history.pushState(null,"",u.pathname+u.search+u.hash);
+   render();void refreshQueueProgress();return;
+ }
 
  for(const handler of [handlePickupAction,handleAccountPlatform,handleMerchantSettings,handleStaffCalendar,handleQueueSettings,handleServiceUnitActions,handleMerchantAdmin,handleBookingSubmit,handleBookingRecordActions,handleCrossStoreActions,handleQueueLineActions,handleStaffQueueActions]){if(await handler(ev,b,a,id))return;}
 });
