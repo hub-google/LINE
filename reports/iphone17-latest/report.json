@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-12T04:36:55.853Z",
+  "date": "2026-11-12T04:38:34.141Z",
   "device": "iPhone 17 simulated Chromium, 402x874 CSS pixels, DPR3",
   "note": "Read-only live website screenshots; no authentication, no writes; not physical Safari.",
   "screens": [
@@ -955,7 +955,7 @@
       ],
       "visibleTapCount": 3,
       "keyRects": {},
-      "bodyText": "測試1 叫號變動即時更新 12:36 診間 · 上午場 1診 2 接下來：3、5、6、7 等候 4 組 單獨顯示此場次 由排隊怪獸提供服務 全螢幕 最後成功同步：12:36:54；號碼變更即時更新，並定期核對。",
+      "bodyText": "測試1 叫號變動即時更新 12:38 診間 · 上午場 1診 2 接下來：3、5、6、7 等候 4 組 單獨顯示此場次 由排隊怪獸提供服務 全螢幕 最後成功同步：12:38:33；號碼變更即時更新，並定期核對。",
       "errors": [],
       "failedRequests": []
     }
