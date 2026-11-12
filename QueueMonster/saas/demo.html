@@ -23,7 +23,7 @@
 <section class="demo-intro">
 <span class="demo-badge">免費試用 · 不必註冊</span>
 <h1>你的店，也能<span>更從容。</span></h1>
-<p>先從叫號開始，也能直接切換點餐或預約。選擇情境後立即操作，不必再點進門市首頁。完成後可查看店家處理與 LINE 通知示意。</p>
+<p>先從叫號開始，也能直接切換點餐或預約。選擇情境後立即操作，不必再點進門市首頁。完成操作後可以免費建立自己的店家。LINE 訊息為條件式示意，正式推播僅使用店家自行綁定的 LINE OA。</p>
 <div class="demo-scenes" aria-label="試用情境">
 <button class="demo-scene active" data-scene="repair" aria-pressed="true"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5a5 5 0 0 0-6 6L4 17a2 2 0 1 0 3 3l4.5-4.5a5 5 0 0 0 6-6L14 12l-2-2z"/></svg></span><span class="demo-scene-copy"><strong>維修店</strong><small>取號、叫號、過號恢復</small></span></button>
 <button class="demo-scene" data-scene="breakfast" aria-pressed="false"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h16M5 10l2-5h10l2 5M4 10l2 8h12l2-8M9 14h6M7 20h10"/></svg></span><span class="demo-scene-copy"><strong>早餐店</strong><small>線上點餐、取餐進度</small></span></button>
@@ -43,10 +43,19 @@
 <div id="root" class="container" aria-live="polite"></div></div>
 <aside id="notifications" class="demo-notice-pane" aria-label="顧客 LINE 通知及網站回饋模擬"></aside>
 </div>
+<aside id="demo-conversion" class="demo-conversion" hidden aria-label="完成示範後免費建立店家">
+  <button type="button" class="demo-conversion-close" data-act="dismiss-conversion" aria-label="關閉建立店家提示">×</button>
+  <div class="demo-conversion-copy">
+    <span>體驗完成 · 不用付費</span>
+    <strong id="demo-conversion-message">已完成示範操作</strong>
+    <p>想用自己的店名與服務？建立店家帳號就能開始設定。</p>
+  </div>
+  <a id="demo-register-link" class="demo-conversion-link" href="./merchant-register.html?mode=signup&amp;from=demo">免費建立我的店家 <span aria-hidden="true">→</span></a>
+</aside>
 </main>
 <footer class="demo-foot">
 <p>所有操作資料只在目前瀏覽頁面暫存，不呼叫正式 Supabase、LINE 或店家服務。此頁不需要登入。</p>
-<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn outline" data-act="reset">重設本產業</button><a class="demo-action-link" href="./merchant-center.html#apply">建立我的店家</a></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn outline" data-act="reset">重設本產業</button><a id="demo-footer-signup" class="demo-action-link" href="./merchant-register.html?mode=signup&amp;from=demo">免費建立我的店家</a></div>
 </footer>
 <script defer src="./assets/demo/real-flow.js?build=__LINE_SAAS_BUILD__"></script>
 </body>
