@@ -47,10 +47,28 @@ function notifyFor(action,obj){
  if(action==="order-status"){message("狀態通知示意","取餐訂單狀態更新",["店家："+shop,"訂單："+obj.id,"目前狀態："+(statusName[obj.status]||obj.status),"請查看「我的服務」中的最新進度。"]);return;}
  if(action==="checkin"){message("網站狀態示意","已完成報到",["店家："+shop,"預約："+obj.id,"候診號碼："+obj.ticket,"請留意叫號進度。"]);return;}
 }
-function navItem(label,key,currentTab){return '<button type="button" class="side-item '+(key===currentTab?"active":"")+'" data-tab="'+key+'">'+label+'</button>';}
+
+const appIcons={
+ home:'<path d="M3 10.7 12 3l9 7.7V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>',
+ reserve:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18m-13 5h3"/>',
+ queue:'<rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8m-8 5h8m-8 4h5"/>',
+ order:'<path d="M5 4h14l-1.4 15H6.4zM3 4h18M9 4V2m6 2V2M9 10h6m-6 4h6"/>',
+ mine:'<circle cx="12" cy="8" r="4"/><path d="M4.5 21c.6-4 3.1-6 7.5-6s6.9 2 7.5 6"/>',
+ dashboard:'<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/>',
+ bookings:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18m5 5 2 2 4-4"/>',
+ orders:'<path d="M7 3h10l2 18-7-2-7 2zM9 9h6m-6 4h6"/>'
+};
+function mobileIcon(k){return '<svg class="mobile-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" aria-hidden="true">'+(appIcons[k]||appIcons.home)+'</svg>';}
+function navItem(label,key,currentTab){
+ return '<button type="button" class="side-item mobile-tab '+(key===currentTab?'active':'')+'" data-tab="'+key+'" aria-current="'+(key===currentTab?'page':'false')+'">'+mobileIcon(key)+'<span>'+esc(label)+'</span></button>';
+}
 function nav(){
- if(role==="customer")return modes[scene].map(key=>navItem(tabs[key],key,tab)).join("");
- return navItem("設定","settings",tab)+'<div class="staff-side-label">日常作業</div>'+navItem("工作台","dashboard",tab)+navItem("預約管理","bookings",tab)+navItem("叫號管理","queue",tab)+navItem("取餐訂單","orders",tab)+navItem("預約日曆","calendar",tab)+'<div class="staff-side-label">營運管理</div>'+navItem("營運分析","analytics",tab)+navItem("顧客管理","customers",tab)+navItem("員工管理","members",tab);
+ if(role==="customer")return modes[scene].map(key=>navItem(key==="mine"?"我的":tabs[key],key,tab)).join("");
+ const items=scene==="breakfast"?[["dashboard","總覽"],["orders","取餐訂單"]]:
+ scene==="salon"?[["dashboard","總覽"],["bookings","預約管理"]]:
+ scene==="repair"?[["dashboard","總覽"],["queue","叫號管理"]]:
+ [["dashboard","總覽"],["bookings","預約管理"],["queue","叫號管理"]];
+ return items.map(([key,label])=>navItem(label,key,tab)).join("");
 }
 function landing(){
  const cards=modes[scene].filter(x=>x!=="home").map(t=>'<button class="routecard" data-tab="'+t+'"><h2>'+tabs[t]+'</h2><p class="muted">'+({order:"查看菜單、選擇取餐時段並訂餐",reserve:"選擇日期與服務時段",queue:"立即取得現場候位號碼",mine:"查看我的預約、號碼及訂餐進度"}[t])+'</p><strong>立即體驗 →</strong></button>').join("");
@@ -160,8 +178,20 @@ function render(){
  let body="";
  if(role==="customer")body=tab==="home"?landing():tab==="order"?customerOrder():tab==="reserve"?customerReserve():tab==="queue"?customerQueue():customerMine();
  else body=tab==="orders"?staffOrder():tab==="bookings"?staffBookings():tab==="queue"?staffQueue():tab==="dashboard"?dashboard():box("試用導覽",'<p class="muted">請切換「預約管理」、「叫號管理」或「取餐訂單」體驗日常作業。其他店家設定不會連到正式資料。</p>');
- const heading=role==="customer"?'<div class="customer-shop-identity"><div class="customer-shop-avatar"><span class="customer-shop-avatar-fallback">'+esc(title.slice(0,2))+'</span></div><div class="customer-shop-title"><div class="customer-shop-overline">店家預約與取號</div><h1>'+esc(title)+'</h1><div class="muted">預約、取號與點餐・示範資料</div></div></div>':'<div><div class="eyebrow">排隊怪獸 · 門市管理</div><h1>'+esc(title)+'</h1><div class="muted">企業員工營運後台・示範資料</div></div>';
- $("root").innerHTML='<div class="toolbar '+(role==="customer"?"customer-shop-toolbar":"")+'">'+heading+'</div><div class="layout '+(role==="customer"?"customer-layout":"")+'"><aside>'+nav()+'</aside><section class="content">'+(newNotice?'<div class="notice" role="status">'+esc(newNotice)+'</div>':"")+body+'<div class="customer-platform-credit">預約及取號服務由 <a href="./home.html">排隊怪獸</a> 提供</div></section></div>';
+
+ const headerName=role==="customer"?title:title+" · 管理中心";
+ const modeName=role==="customer"?({home:"門市首頁",order:"線上點餐",reserve:"線上預約",queue:"現場取號",mine:"我的服務"}[tab]||"門市服務"):
+ ({dashboard:"今日營運",bookings:"預約管理",queue:"叫號管理",orders:"取餐訂單"}[tab]||"店家管理");
+ const avatar='<span class="mobile-shop-avatar">'+esc(title.slice(0,2))+'</span>';
+ const heading='<div class="mobile-merchant-head">'+avatar+'<div class="mobile-merchant-copy"><span class="mobile-merchant-overline">'+(role==="customer"?"排隊怪獸 · 線上服務":"排隊怪獸 · 店家管理")+'</span><strong>'+esc(headerName)+'</strong></div>'+
+ '<button type="button" class="mobile-bell" data-act="view-notice" aria-label="查看通知示意">'+mobileIcon("queue")+(notes.length?'<span class="mobile-bell-count">'+notes.length+'</span>':'')+'</button></div>';
+ $("root").innerHTML='<div class="toolbar customer-shop-toolbar">'+heading+'</div>'+
+ '<div class="mobile-screen-heading"><div class="mobile-section-eyebrow">'+(role==="customer"?"CUSTOMER EXPERIENCE":"MERCHANT OPERATIONS")+'</div><h2>'+esc(modeName)+'</h2><p>'+(role==="customer"?"即時模擬體驗 · 不需登入":"資料同步演示 · 所有狀態可修正")+'</p></div>'+
+ '<div class="layout '+(role==="customer"?"customer-layout":"merchant-layout")+'"><section class="content">'+
+ (newNotice?'<div class="notice" role="status">'+esc(newNotice)+'</div>':'')+body+
+ '<div class="customer-platform-credit">由 <a href="./home.html">排隊怪獸 Queuing Monster</a> 提供</div></section></div>'+
+ '<nav class="mobile-bottom-nav" aria-label="'+(role==="customer"?"顧客功能":"店家功能")+'">'+nav()+'</nav>';
+
  renderNotice();
 }
 function resetDraft(){draft={name:"",phone:"",day:today(),time:"08:00",slot:scene==="clinic"?"09:30":"14:00",unit:scene==="clinic"?"1診":"Ava",service:scene==="clinic"?"一般門診":scene==="repair"?"手機維修":"洗剪",party:1,note:""};cart={};review=false;receipt="";}
@@ -178,8 +208,8 @@ document.addEventListener("click",e=>{
  const button=e.target.closest("[data-act]");if(!button)return;
  const a=button.dataset.act,id=button.dataset.id,value=button.dataset.value,d=current();
  if(a==="reset"){data[scene]=make()[scene];lastOwn="";notes=[];newNotice="已重設本產業的示範資料";resetDraft();render();return;}
- if(a==="toggle-notify"){notifyOpen=!notifyOpen;renderNotice();return;}
- if(a==="view-notice"){notifyOpen=true;renderNotice();$("notifications").scrollIntoView({behavior:"smooth",block:"nearest"});return;}
+ if(a==="toggle-notify"){notifyOpen=!notifyOpen;renderNotice();if(notifyOpen) $("notifications")?.scrollIntoView?.({behavior:"smooth",block:"nearest"});return;}
+ if(a==="view-notice"){notifyOpen=true;renderNotice();$("notifications")?.scrollIntoView?.({behavior:"smooth",block:"nearest"});return;}
  if(a==="qty"){cart[id]=Math.max(0,Math.min(30,(cart[id]||0)+Number(button.dataset.delta)));review=false;render();return;}
  if(a==="method"){method=value;review=false;render();return;}
  if(a==="review-order"){if(!Object.values(cart).some(n=>n>0)){inform("請至少選擇一項餐點");return;}if(!requireContact())return;review=true;inform("請核對訂餐內容後再送出");return;}
