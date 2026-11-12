@@ -56,8 +56,8 @@ function message(kind,title,lines){notes.unshift({kind,title,lines,shop:displayS
 function notifyFor(action,obj){
  const shop=displayShop();
  if(action==="order"){message("網站狀態示意","訂餐已送出",["店家："+shop,"訂單編號："+obj.id,"預約取餐："+obj.time,"品項："+obj.lines.map(x=>x.name+" × "+x.qty).join("、"),"金額："+money(obj.total),"請在「我的服務」查看後續進度。"]);return;}
- if(action==="booking"){message("LINE 通知示意","預約成功",["店家："+shop,"預約編號："+obj.id,"預約："+obj.date+" "+obj.time,"姓名："+obj.name,"服務："+obj.service+(obj.unit?"／"+obj.unit:""),"可返回「我的服務」查詢或取消。"]);return;}
- if(action==="ticket"){message("LINE 通知示意","取號成功",["店家："+shop,"我的號碼："+obj.id,"目前叫號："+(typeof getCurrent()==="string"?getCurrent():"請選診間"),"前方等候以即時進度為準。","請從「我的取號」查看叫號進度。"]);return;}
+ if(action==="booking"){message("LINE 通知示意","預約成功",["店家："+shop,"預約編號："+obj.id,"預約："+obj.date+" "+obj.time,"姓名："+obj.name,"服務："+obj.service+(obj.unit?"／"+obj.unit:""),"可返回「我的服務」查詢預約狀態。"]);return;}
+ if(action==="ticket"){message("LINE 通知示意","取號成功",["店家："+shop,"我的號碼："+obj.id,"目前叫號："+(typeof getCurrent()==="string"?getCurrent():"請選診間"),"前方等候以即時進度為準。","請從「我的服務」查看叫號進度。"]);return;}
  if(action==="called"){message("LINE 叫號通知示意","輪到您的號碼",["店家："+shop,"叫號："+obj.id,(obj.unit?"服務窗口："+obj.unit:""),"請依現場人員指示報到。"]);return;}
  if(action==="order-status"){message("網站狀態示意","取餐訂單狀態更新",["店家："+shop,"訂單："+obj.id,"目前狀態："+(statusName[obj.status]||obj.status),"請查看「我的服務」中的最新進度。"]);return;}
  if(action==="checkin"){message("網站狀態示意","已完成報到",["店家："+shop,"預約："+obj.id,"候診號碼："+obj.ticket,"請留意叫號進度。"]);return;}
@@ -100,7 +100,7 @@ function customerOrder(){
    field("市話號碼","customer-phone-local",draft.phoneLocal,"tel",'inputmode="numeric" maxlength="8" placeholder="例如：'+esc(landlineExamples[draft.phoneArea]||"23456789")+'（半形數字）"')+'</div></div>');
  const content='<p class="muted">以下是示範店家的菜單與時段，並非真實可訂名額。正式版依店家營業排程與時段容量檢查。</p>'+
  '<div class="staff-actionbar">'+btn("立即取餐","method",method==="immediate"?"primary":"outline",'data-value="immediate"')+btn("預約指定時間","method",method==="scheduled"?"primary":"outline",'data-value="scheduled"')+'</div>'+
- (method==="scheduled"?'<div class="grid"><div>'+field("取餐日期","pickup-day",draft.day,"date",'min="'+today()+'"')+'</div><div>'+sel("取餐時間","pickup-slot",["07:30","07:45","08:00","08:15","08:30","09:00"],draft.time)+'</div></div><p class="small">示範早餐店可預約時間；正式可選時段依店家設定。</p>':
+ (method==="scheduled"?'<div class="grid"><div>'+field("取餐日期","pickup-day",draft.day,"date",'min="'+today()+'"')+'</div><div>'+sel("取餐時間","pickup-slot",["05:30","05:45","06:00","07:30","07:45","08:00","08:15","08:30","09:00"],draft.time)+'</div></div><p class="small">示範早餐店可預約時間；正式可選時段依店家設定。</p>':
  '<p class="notice">此處模擬營業中的立即取餐，製作時間由店家設定，並非實際營業狀態。</p>')+
  '<h3 style="margin-top:16px">選擇餐點</h3>'+shopMenus+
  '<div style="margin-top:12px">'+contactInputs+'</div>'+
@@ -210,8 +210,8 @@ function renderNotice(){
  const el=$("notifications");if(!el)return;
  // Desktop explains the interactive scenario beside the full-width app; phone UI stays unchanged.
  const guideMap={
-  repair:["現場排隊，3 步就完成","以顧客端領取號碼","切換店家端，點「叫下一位」","看顧客的叫號通知示意"],
-  breakfast:["點餐到接單，一次走完","選餐點、數量和預計取餐時間","確認送出訂單並切換店家端","試著接單或改成待取，再查看通知"],
+  repair:["現場排隊，3 步就完成","以顧客端領取號碼","切換店家端，依序叫到你的號碼","查看叫號進度與通知示意"],
+  breakfast:["點餐到接單，一次走完","選餐點、數量和預計取餐時間","確認送出訂單，體驗 15 秒取消期","切換店家端接單或改成已完成待取"],
   salon:["從預約到報到","選擇設計師、日期與時段","送出預約後切換店家端","調整報到或完成狀態"],
   clinic:["診所的預約與叫號","選擇診間及預約時段","切換店家端確認報到","進入叫號管理，呼叫下一位"]
  };
