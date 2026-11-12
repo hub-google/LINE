@@ -16,6 +16,7 @@ export function renderStaffQueue({isManager,t,html}){
  const selected=sessions.find(s=>s.id===serviceUnitsState.unitStaffSession)||sessions[0]||null;
  const allOpen=(staffState.staff?.active_tickets||[]).filter(x=>!x.deleted_at);
  const doneTickets=(staffState.staff?.processed_tickets||[]).filter(x=>!x.deleted_at);
+  const completedTickets=doneTickets.filter(x=>x.status==="COMPLETED");
  const deletedTickets=staffState.staff?.deleted_tickets||[];
  const inQueue=x=>!unitMode||!!selected&&x.service_session_id===selected.id;
  const openTickets=allOpen.filter(inQueue);
@@ -54,10 +55,10 @@ export function renderStaffQueue({isManager,t,html}){
  }
  html+='<div class="grid4" style="margin-bottom:16px">'+
    stat("正在叫號",active?.number||"—")+stat("候位中",waiting.length)+
-   stat("已過號",passed.length)+stat("保留中",held.length)+stat("已結束",doneTickets.length)+'</div>'+
+   stat("已過號",passed.length)+stat("保留中",held.length)+stat("已完成",completedTickets.length)+'</div>'+
    box("叫號操作",
      '<p class="muted">'+(unitMode?"目前操作選取的場次；": "仍在候位的跨日號碼會繼續排隊。")+
-     '號碼狀態可直接勾選與更正。叫下一位時，若上一位仍是「正在叫號」，系統會自動將上一位標為「已過號」並保留更正紀錄；已到場或服務中的顧客不受影響。</p>'+
+     '號碼狀態可直接勾選與更正。叫下一位時，前一位若仍是「已叫號」，才會自動轉成「已過號」；已完成或其他狀態不會被自動更動。</p>'+
      '<div class="staff-actionbar">'+
      btn("叫下一位",unitMode?"unit-call":"call","primary",(canCall?"":"disabled")+callExtra)+
      btn("再叫一次",unitMode?"unit-recall":"recall","outline",(canRecall?"":"disabled")+recallExtra)+
@@ -80,7 +81,7 @@ export function renderStaffQueue({isManager,t,html}){
    (otherOpen.length?box("其他場次未結案（"+otherOpen.length+" 筆）",
      '<p class="staff-help">其他日期或已關閉的場次仍有未結案客戶，可在這裡修正狀態。</p>'+
      listing(otherOpen,"unit-queue-other-open","沒有其他未結案號碼牌。")):"")+
-   box((unitMode?"已處理號碼牌":"已結束號碼牌")+"（最近 "+staffHistoryState.staffHistoryDays+" 天，"+doneTickets.length+" 筆）",
+   box("已處理號碼牌（最近 "+staffHistoryState.staffHistoryDays+" 天，"+doneTickets.length+" 筆）",
      '<p class="staff-help">包含已完成、已取消的顧客，可直接修正狀態；顧客不會因結案而消失。</p>'+
      listing(doneTickets,unitMode?"unit-queue-processed":"ticket-done","這段期間沒有已處理號碼牌。"))+
    box("已刪除號碼牌（最近 "+staffHistoryState.staffHistoryDays+" 天，"+deletedTickets.length+" 筆）",
