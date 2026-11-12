@@ -17,7 +17,7 @@ export async function buildFrontend(src,dest,pages){
   const group=[...entries.values()].filter(x=>x.module===module);if(!group.length)continue;
   const result=await build({entryPoints:group.map(({in:input,out})=>({in:input,out})),outdir:dest,
    bundle:true,format:module?'esm':'iife',platform:'browser',target:['es2022'],minify:true,
-   sourcemap:false,metafile:true,entryNames:'[dir]/[name]-[hash]',external:['https://*'],logLevel:'warning'});
+   sourcemap:false,metafile:true,entryNames:'[dir]/[name]-[hash]',assetNames:'assets/[name]-[hash]',loader:{'.svg':'file'},external:['https://*'],logLevel:'warning'});
   for(const [output,meta] of Object.entries(result.metafile.outputs))if(meta.entryPoint){
    replacements.set(path.resolve(meta.entryPoint), './'+path.relative(dest,path.resolve(output)).replaceAll(path.sep,'/'));
   }
