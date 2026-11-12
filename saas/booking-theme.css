@@ -632,3 +632,12 @@ body[data-portal="staff"] .customer-history-link:focus-visible{
  opacity:1;
  font-weight:400;
 }
+
+/* Queue states: five primary actions and five matching KPIs; cancel stays secondary. */
+body[data-portal="staff"] .ticket-secondary-status{margin-top:9px;padding-top:7px;border-top:1px solid #eee6f1}
+body[data-portal="staff"] .ticket-secondary-status>summary{cursor:pointer;padding:9px 2px;color:#78658b;font-size:12px;font-weight:700}
+body[data-portal="staff"] .staff-picker-secondary{display:flex;max-width:220px;margin-top:8px}
+body[data-portal="staff"] .staff-picker-secondary>.staff-choice{flex:1 1 100%;min-width:0}
+@media(min-width:1100px){
+ body[data-portal="staff"] .grid4.queue-status-summary{grid-template-columns:repeat(5,minmax(0,1fr))}
+}
