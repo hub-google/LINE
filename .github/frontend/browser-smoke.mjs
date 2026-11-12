@@ -125,10 +125,10 @@ try{
   }
   if(tab==='settings'){
    assert.ok(html.includes('settings-hub-tabs'),'Settings must show grouped category navigation');
-   assert.ok(html.includes('店家資料'),'Merchant profile must be the default category');
-   assert.ok(html.includes('場次與窗口'),'Sessions must be grouped in Settings');
-   assert.ok(html.includes('菜單與服務'),'Menu must be grouped in Settings');
-   assert.ok(html.includes('分店管理'),'Branches must be grouped in Settings');
+   assert.ok(html.includes('店家與分店'),'Merchant profile and branch configuration must share one category');
+   assert.ok(html.includes('營業與場次'),'Operating rules and sessions must share one category');
+   assert.ok(html.includes('菜單與點餐'),'Menu and pickup must share one category');
+   assert.ok(html.includes('通知與公開'),'Notifications and public links must remain a category');
    continue;
   }
   if(['units','branches'].includes(tab)){
