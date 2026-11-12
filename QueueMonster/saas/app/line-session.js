@@ -35,7 +35,8 @@ export function lineLoginUrl(){
   const siteReturn=incomingParam("site_return");
   return "https://liff.line.me/"+encodeURIComponent(lineState.lineConfig?.liffId||"")+"/?view=customer"+(isSafeMerchant(routeState.slug)?"&merchant="+encodeURIComponent(routeState.slug):"")+(routeState.customerTab?"&tab="+encodeURIComponent(routeState.customerTab):"")+(siteReturn?"&site_return="+encodeURIComponent(siteReturn):"")+
     (bookingState.manageKind&&bookingState.manageItem?"&manage="+encodeURIComponent(bookingState.manageKind)+"&item="+encodeURIComponent(bookingState.manageItem)+"&mode="+encodeURIComponent(bookingState.manageMode):"")+
-    (routeState.customerTab==="progress"&&queueState.progressTicketId?"&ticket="+encodeURIComponent(queueState.progressTicketId):"");
+    (routeState.customerTab==="progress"&&queueState.progressTicketId?"&ticket="+encodeURIComponent(queueState.progressTicketId):"")+
+    (routeState.customerTab==="detail"&&routeState.detailId?"&kind="+encodeURIComponent(routeState.detailKind)+"&item="+encodeURIComponent(routeState.detailId):"");
 }
 
 export function cleanLineRedirectUri(){
@@ -47,6 +48,7 @@ export function cleanLineRedirectUri(){
   const siteReturn=incomingParam("site_return");
   if(siteReturn)url.searchParams.set("site_return",siteReturn);
   if(routeState.customerTab==="progress"&&queueState.progressTicketId)url.searchParams.set("ticket",queueState.progressTicketId);
+  if(routeState.customerTab==="detail"&&routeState.detailId){url.searchParams.set("kind",routeState.detailKind);url.searchParams.set("item",routeState.detailId);}
   if(bookingState.manageKind&&bookingState.manageItem){
    url.searchParams.set("manage",bookingState.manageKind);
    url.searchParams.set("item",bookingState.manageItem);
