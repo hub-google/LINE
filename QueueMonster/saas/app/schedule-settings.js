@@ -60,7 +60,9 @@ function capture(){
   const windows=[];
   for(const line of panel.querySelectorAll("[data-schedule-window]")){
    const read=name=>line.querySelector('[data-schedule-field="'+name+'"]')?.value||"";
-   windows.push({name:read("name").trim(),start:read("start"),end:read("end"),capacity:Number(read("capacity"))});
+   const windowData={name:read("name").trim(),start:read("start"),end:read("end"),capacity:Number(read("capacity"))};
+   if(read("unit_id"))windowData.unit_id=read("unit_id");
+   windows.push(windowData);
   }
   if(windows.length)windows[0].title=title;
   saved[key]=windows;
@@ -109,6 +111,7 @@ export function renderScheduleSettings(isManager){
   '<label for="schedule-weekday-'+(i+1)+'">星期'+day+'</label>'+
   '<select class="field" id="schedule-weekday-'+(i+1)+'" data-schedule-weekday="'+(i+1)+'">'+
    templateOptions(d.templates,d.weekdays[String(i+1)],true)+'</select></div>').join("");
+ const unitOptions=(serviceUnitsState.unitConfig?.units||[]).filter(u=>u.active&&!u.is_default);
  const templates=Object.entries(d.templates).map(([key,windows])=>
   '<details data-schedule-template="'+esc(key)+'"'+(serviceUnitsState.scheduleEditTemplate===key?' open':'')+
    ' style="margin:12px 0;padding:12px;border:1px solid var(--border,#d7dce3);border-radius:10px">'+
@@ -121,6 +124,8 @@ export function renderScheduleSettings(isManager){
      '<div><label>名額（人）</label><input class="field" data-schedule-field="capacity" type="number" min="1" max="300" value="'+esc(w.capacity)+'"></div></div>'+
      '<div class="grid"><div><label>開始時間</label><input class="field" data-schedule-field="start" type="time" value="'+esc(w.start)+'"></div>'+
      '<div><label>結束時間</label><input class="field" data-schedule-field="end" type="time" value="'+esc(w.end)+'"></div></div>'+
+     '<label>服務窗口（選填）</label><select class="field" data-schedule-field="unit_id"><option value="">一般場次</option>'+
+      unitOptions.map(u=>'<option value="'+esc(u.id)+'"'+(u.id===w.unit_id?' selected':'')+'>'+esc(u.name)+'</option>').join("")+'</select>'+
      (windows.length>1?btn("移除此場","schedule-slot-remove","outline",'data-key="'+esc(key)+'" data-index="'+i+'"'):"")+
     '</div>').join("")+
    '<div class="staff-actionbar" style="margin-top:12px">'+btn("＋ 增加場次","schedule-slot-add","outline",'data-key="'+esc(key)+'"')+
@@ -208,7 +213,7 @@ export async function handleScheduleAction(ev,b,a,id){
  if(a==="schedule-special-save"){
   capture();const e=exceptionDraft();
   if(!e.start||!e.end||e.end<e.start){alert("請確認特殊日期的開始與結束日");return true;}
-  if(!draft().enabled){alert("請先啟用並儲存每週自動排程");return true;}
+  if(!serviceUnitsState.scheduleConfig?.enabled){alert("請先啟用並儲存每週自動排程");return true;}
   const data={start:e.start,end:e.end,note:e.note||"",mode:e.mode==="CLOSED"?"CLOSED":"CUSTOM"};
   if(e.mode==="TEMPLATE")data.template_key=e.template_key;
   if(e.mode==="CUSTOM")data.windows=[{name:e.name,start:e.start_time,end:e.end_time,capacity:Number(e.capacity)}];
