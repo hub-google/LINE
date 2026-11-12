@@ -6,6 +6,16 @@ import {authReady,box,btn,esc,featureChecks,field,layout,nav,platformReady,stat,
 import {customerUrl} from "./line-session.js";
 import {merchantProfileFields} from "./merchant-brand.js";
 
+function enabledMerchantServices(tenant){
+ // The HQ list reflects the three switches merchants can actually change.
+ // Calling is derived from queue availability/unfinished tickets, not an independent switch.
+ const enabled=[];
+ if(tenant.modules?.reservation===true)enabled.push("線上預約");
+ if(tenant.modules?.queue===true)enabled.push("線上取號");
+ if(tenant.pickup_enabled===true)enabled.push("線上點餐");
+ return enabled.length?enabled.map(esc).join("、"):'<span class="muted">未開放服務</span>';
+}
+
 export function platformRender(){
  if(!authReady())return box("總部管理員登入",'<p>請從總部專用入口登入，完成授權後才能使用總部管理功能。</p><a class="btn primary" href="./platform-login.html">前往總部登入</a>');
  if(!platformReady())return box("沒有總部管理權限",'<p>目前帳號無法進入總部管理後台。請使用總部專用入口登入。</p><a class="btn primary" href="./platform-login.html">前往總部登入</a>');
@@ -33,7 +43,7 @@ export function platformRender(){
     [["all","全部企業"],["enabled","已啟用線上點餐"],["disabled","未啟用線上點餐"]].map(([v,label])=>
     '<option value="'+v+'" '+(pickupFilter===v?"selected":"")+'>'+label+'</option>').join("")+'</select></div></div>'+
     '<div class="card scroll"><table class="rows"><thead><tr><th>企業</th><th>啟用功能</th><th>狀態</th><th>員工</th><th>操作</th></tr></thead><tbody>'+
-    (filtered.map(t=>'<tr><td><strong>'+esc(t.name)+'</strong><div class="small">'+esc(t.slug)+'</div></td><td>'+[...sharedUiState.features.filter(f=>t.modules?.[f[0]]).map(f=>esc(f[1])),...(t.pickup_enabled?["線上點餐"]:[])].join("、")+'</td><td>'+tag(t.status)+'</td><td>'+esc(t.staff)+'</td><td><div class="platform-row-actions" role="group" aria-label="'+esc(t.name)+' 操作">'+
+    (filtered.map(t=>'<tr><td><strong>'+esc(t.name)+'</strong><div class="small">'+esc(t.slug)+'</div></td><td>'+enabledMerchantServices(t)+'</td><td>'+tag(t.status)+'</td><td>'+esc(t.staff)+'</td><td><div class="platform-row-actions" role="group" aria-label="'+esc(t.name)+' 操作">'+
       '<a class="btn outline" href="'+esc(sharedUiState.route("staff",t.slug)+"&tab=settings")+'">設定</a>'+
       '<a class="btn outline" href="'+esc(sharedUiState.route("customer",t.slug))+'" target="_blank" rel="noopener">顧客頁</a>'+
       btn(t.status==="ACTIVE"?"暫停":"恢復","toggle-company","outline",'data-slug="'+esc(t.slug)+'"')+
