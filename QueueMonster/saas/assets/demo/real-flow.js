@@ -306,6 +306,7 @@ document.addEventListener("click",e=>{
  }
  if(a==="take-number"){
   if(scene==="clinic"){inform("診所取號需先由店家進行預約報到。");return;}
+  if(d.tickets.some(t=>ownedIds[scene].has(t.id)&&!["COMPLETED","CANCELLED"].includes(t.status))){inform("已有有效號碼牌，不可重複取號。");return;}
   if(!Number.isInteger(Number(draft.party))||Number(draft.party)<1||Number(draft.party)>20){inform("候位人數請輸入 1～20 人");return;}
   const o={id:"R"+pad(d.seq++),name:draft.name||"示範顧客",service:draft.service||"手機維修",status:"WAITING",party:Number(draft.party)||1};d.tickets.push(o);lastOwn=o.id;ownedIds[scene].add(o.id);notifyFor("ticket",o);inform("已取得示範號碼 "+o.id+"，切換店家端體驗叫號。");return;
  }
