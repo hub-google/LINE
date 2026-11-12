@@ -9,7 +9,9 @@ import {rpc} from "./data-loading.js";
 export function finishManageLink(){
  bookingState.manageKind="";bookingState.manageItem="";bookingState.manageMode="view";
  const url=new URL(location.href);
- for(const key of ["manage","item","mode"])url.searchParams.delete(key);
+ for(const key of ["manage","mode"])url.searchParams.delete(key);
+  // The detail route uses item= as its permanent record reference; do not erase it.
+  if(routeState.customerTab!=="detail")url.searchParams.delete("item");
  if(!url.searchParams.has("liff.state"))history.replaceState(null,"",url.pathname+url.search+url.hash);
 }
 
