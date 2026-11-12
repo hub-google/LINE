@@ -58,6 +58,16 @@ document.addEventListener("change",async ev=>{
    }
    return;
  }
+ if(el.id==="schedule-special-mode"){
+  const mode=el.value;
+  if(!["CLOSED","CUSTOM","TEMPLATE"].includes(mode))return;
+  if(serviceUnitsState.scheduleExceptionDraft)serviceUnitsState.scheduleExceptionDraft.mode=mode;
+  for(const section of document.querySelectorAll("[data-schedule-template-choice]"))
+   section.style.display=mode==="CLOSED"?"none":"";
+  for(const section of document.querySelectorAll("[data-schedule-custom]"))
+   section.style.display=mode==="CUSTOM"?"":"none";
+  return;
+ }
  if(el.id==="menu-kind"){
    const custom=el.value==="__CUSTOM__";
    const wrap=routeState.$("menu-custom-kind-wrap");
