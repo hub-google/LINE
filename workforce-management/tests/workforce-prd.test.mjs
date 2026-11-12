@@ -337,3 +337,55 @@ test('HR-LVE-05 labels overtime advance/retroactive without altering attendance'
  assert.match(src,/name==='request'&&data.kind==='overtime'/);
  assert.match(src,/wm_submit_overtime_request/);
 });
+
+
+test('HR-ATT-10 / HR-RPT-05 export audits identity and reports exact source counts',()=>{
+ const sql=migration('20261111_workforce_attendance_history_export.sql');
+ for(const marker of ['wm_prepare_attendance_export','wm_private.member_visible',
+  'wm_punches','wm_requests','wm_request_actions','wm_attendance_adjustments',
+  'wm_audit','attendance_history_export_requested','p_from','p_to','p_member',
+  'REVOKE ALL ON FUNCTION public.wm_prepare_attendance_export'])
+  assert.ok(sql.includes(marker),marker);
+ assert.match(sql,/IF v_actor IS NULL/);
+ assert.match(sql,/m\.tenant_id=p_tenant/);
+ assert.match(sql,/wm_private\.member_visible\(p_tenant,p_member\)/);
+ assert.match(sql,/p_to>\(p_from\+interval '5 years'\)::date/);
+ assert.match(sql,/GRANT EXECUTE ON FUNCTION public\.wm_prepare_attendance_export/);
+ assert.doesNotMatch(sql,/UPDATE public\.wm_punches|DELETE FROM public\.wm_punches/i);
+ for(const marker of ['wfHistoryExportForm','wfExportAttendanceHistory',
+  'wm_prepare_attendance_export','wm_request_actions','wm_attendance_adjustments',
+  'wfHistoryPages','reportCell','下載完整出勤歷程 CSV'])assert.ok(src.includes(marker),marker);
+});
+test('HR-RPT-05 range validation uses Taipei date boundaries and rejects over-five-year spans',()=>{
+ const start=src.indexOf('function wfHistoryRange(from,to){');
+ const end=src.indexOf('async function wfHistoryPages(',start);
+ assert.ok(start>0&&end>start);
+ const dayAdd=(s,n)=>{const d=new Date(s+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);};
+ const fn=new Function('dayAdd',src.slice(start,end)+';return wfHistoryRange;')(dayAdd);
+ const good=fn('2026-11-11','2031-11-11');
+ assert.equal(good.begin,'2026-11-10T16:00:00.000Z');
+ assert.equal(good.end,'2031-11-11T16:00:00.000Z');
+ assert.throws(()=>fn('2026-11-11','2031-11-12'),/五年/);
+ assert.throws(()=>fn('2026-11-12','2026-11-11'),/不正確/);
+ assert.throws(()=>fn('bad date','2026-11-11'),/不正確/);
+});
+test('HR-ATT-10 / HR-RPT-05 audited CSV export rejects incomplete pages and duplicate records',async()=>{
+ const start=src.indexOf('async function wfHistoryPages(table,columns,conditions,count){');
+ const end=src.indexOf('async function wfExportAttendanceHistory(',start);
+ assert.ok(start>0&&end>start);
+ let callCount=0;
+ const good=new Function('query',src.slice(start,end)+';return wfHistoryPages;')(
+  async()=>{callCount++;return [{id:'r1'},{id:'r2'}];});
+ assert.equal((await good('wm_punches','id','tenant_id=eq.test',2)).length,2);
+ assert.equal(callCount,1);
+ const missing=new Function('query',src.slice(start,end)+';return wfHistoryPages;')(
+  async()=>[{id:'r1'}]);
+ await assert.rejects(missing('wm_punches','id','tenant_id=eq.test',2),/缺少資料/);
+ const duplicate=new Function('query',src.slice(start,end)+';return wfHistoryPages;')(
+  async()=>[{id:'r1'},{id:'r1'}]);
+ await assert.rejects(duplicate('wm_punches','id','tenant_id=eq.test',2),/分頁重複/);
+ const failCount=new Function('query',src.slice(start,end)+';return wfHistoryPages;')(
+  async()=>{throw Error('No network should be used');});
+ await assert.rejects(failCount('wm_requests','id','tenant_id=eq.test',NaN),/格式錯誤/);
+ assert.deepEqual(await good('wm_punches','id','tenant_id=eq.test',0),[]);
+});
