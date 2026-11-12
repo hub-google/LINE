@@ -27,7 +27,13 @@ async function effectivePassword(email,plaintext){
 const $=id=>document.getElementById(id);
 const returnToLogin=()=>{const url=new URL("./merchant-register.html?mode=login",location.href);if(invited)url.searchParams.set("staff_invite",invitedId);else url.searchParams.set("from","queue-monster");return url.href;};
 const returnToReset=()=>new URL("./merchant-register.html?mode=login&intent=recovery",location.href).href;
-const returnToSignup=()=>{const url=new URL(returnToLogin());url.searchParams.set("intent","complete-signup");return url.href;};
+const returnToSignup=()=>{
+ // Always use the main /booking/ URL for branded emails, including legacy /saas/ visits.
+ if(location.hostname==="hub-google.github.io")
+  return "https://hub-google.github.io/LINE/booking/merchant-register.html?mode=login&intent=complete-signup";
+ const url=new URL("./merchant-register.html?mode=login&intent=complete-signup",location.href);
+ return url.href;
+};
 const needsInitialPassword=user=>user?.app_metadata?.queue_monster_invited===true && user?.app_metadata?.queue_monster_password_ready!==true;
 const msg=(t,error=false)=>{$("message").textContent=t||"";$("message").className=t?"message"+(error?" error":""):""};
 const invitedId=new URL(location.href).searchParams.get("staff_invite")||"";
