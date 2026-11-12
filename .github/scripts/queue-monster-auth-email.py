@@ -198,4 +198,5 @@ else:
 # input compatible with the existing native minimum (without adding entropy).
 config = api("GET")
 print("Shared Supabase Auth password minimum retained:",config.get("password_min_length"))
+print("Google OAuth provider enabled:", bool(config.get("external_google_enabled", False)))
 print("Queue Monster shorter passwords are encoded client-side; other products are unaffected.")
