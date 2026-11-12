@@ -104,7 +104,9 @@ export function renderCustomerPickup(){
    '<span>第 '+pickupState.customerHistoryPage+'／'+historyMax+' 頁</span>'+
    btn("下一頁","pickup-customer-history-page","outline",'data-page="'+(pickupState.customerHistoryPage+1)+'"'+(pickupState.customerHistoryPage>=historyMax?' disabled':''))+
    '</div>':"";
- const orderCards=customerOrders.map(o=>{
+ const featuredCancelIndex=customerOrders.findIndex(o=>o.status==="NEW"&&
+   Number.isFinite(Date.parse(o.created_at||""))&&Date.now()<Date.parse(o.created_at)+15000);
+ const orderCardList=customerOrders.map(o=>{
   const deadline=Date.parse(o.created_at||"")+15000;
   const remaining=Number.isFinite(deadline)?Math.max(0,Math.ceil((deadline-Date.now())/1000)):0;
   const canCancel=o.status==="NEW"&&remaining>0;
@@ -118,12 +120,16 @@ export function renderCustomerPickup(){
     (o.status==="NEW"?'<p class="small">訂單已送給店家，無法自行取消。</p>':
     ["ACCEPTED","PREPARING","READY"].includes(o.status)?'<p class="small">店家已接單，無法自行取消。</p>':""))+
    '</div>';
- }).join("");
+ });
+ const orderCards=orderCardList.join("");
+ const featuredCancelCard=featuredCancelIndex>=0?orderCardList[featuredCancelIndex]:"";
+ const otherOrderCards=orderCardList.filter((_,i)=>i!==featuredCancelIndex).join("");
  if(!s.enabled)return box("尚未開放線上點餐",'<p>店家暫停接受新訂單，既有訂單仍可查看。</p>'+(orderCards||'<p>目前沒有訂餐紀錄。</p>')+historyControls);
  const available=(d.slots||[]).filter(x=>x.left>0);
  return box("線上點餐",
   '<p class="muted">直接使用本店上架菜單，送出後可在此追蹤接單、製餐、可取餐與已取餐進度。</p>'+
-  '<p class="notice"><strong>下單後 15 秒內可取消。</strong>送出訂單後會顯示倒數；倒數結束，訂單才會交給店家接單，之後無法自行取消。</p>'+
+  (featuredCancelCard?'<section role="region" aria-label="新訂單取消倒數" style="margin:10px 0 18px"><h3>訂單已送出</h3>'+featuredCancelCard+'</section>':
+  '<p class="notice"><strong>下單後 15 秒內可取消。</strong>送出訂單後會顯示倒數；倒數結束，訂單才會交給店家接單，之後無法自行取消。</p>')+
   (s.schedule_mode==="OPTIONAL"?'<div class="staff-actionbar">'+
    btn("立即取餐","pickup-method",immediate?"primary":"outline",'data-value="immediate"')+
    btn("預約指定時間","pickup-method",!immediate?"primary":"outline",'data-value="scheduled"')+'</div>':"")+
@@ -160,8 +166,9 @@ export function renderCustomerPickup(){
     '<p>備註：'+esc(pickupState.note||'無')+'</p><div class="staff-actionbar">'+
     btn("返回修改","pickup-review-back","outline")+btn("確定送出訂單","pickup-submit","primary")+'</div></div>':
     btn("下一步：確認訂單內容","pickup-review","primary full",(!count||(!immediate&&!pickupState.slot))?"disabled":""))+
-  (customerOrders.length?'<h3 style="margin:20px 0 8px">我的取餐進度（'+historyTotal+' 筆）</h3>'+orderCards+historyControls:
-    '<p class="small">還沒有取餐訂單。</p>'));
+  (customerOrders.length>(featuredCancelCard?1:0)?
+    '<h3 style="margin:20px 0 8px">我的取餐進度（'+historyTotal+' 筆）</h3>'+otherOrderCards+historyControls:
+    (featuredCancelCard?historyControls:'<p class="small">還沒有取餐訂單。</p>')));
 }
 
 export function renderStaffPickup(){
@@ -269,6 +276,7 @@ export async function handlePickupAction(ev,b,a,id){
    if(!items.length)return true;
    if(pickupState.method!=="immediate"&&!pickupState.slot)return true;
    try{if(!pickupState.requestId)pickupState.requestId=uuid();}catch(e){window.alert(e.message);return true;}
+   let placed=false;
    await act(async()=>{
      const res=await rpc("so_pickup_place_phone",{p_slug:routeState.slug,
        p_date:pickupState.method==="immediate"?null:pickupState.day,
@@ -276,9 +284,11 @@ export async function handlePickupAction(ev,b,a,id){
        p_items:items,p_note:pickupState.note,p_request_id:pickupState.requestId,
        p_immediate:pickupState.method==="immediate",
        p_customer_phone:normalizeTaiwanPhone(pickupContactPhone())});
-     pickupState.cart={};pickupState.note="";pickupState.requestId="";pickupState.confirming=false;
+     pickupState.cart={};pickupState.note="";pickupState.requestId="";pickupState.confirming=false;placed=true;
      return "訂單 "+res.number+" 已送出。15 秒內可取消，倒數後交給店家接單";
-   });return true;
+   });
+   if(placed)window.scrollTo({top:0,behavior:"instant"});
+   return true;
  }
  if(a==="pickup-status"){
    if(!id)return true;
