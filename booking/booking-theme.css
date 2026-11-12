@@ -624,7 +624,7 @@ body[data-portal="staff"] .customer-history-link:focus-visible{
  .settings-hub-tabs + .card .scroll { overflow-x: auto; }
 }
 
-/* Show pickup phone/notes examples as hints, not saved input. */
+/* Order contact examples must look like hints, not prefilled customer data. */
 #pickup-customer-phone::placeholder,
 #pickup-customer-local::placeholder,
 #pickup-note::placeholder{
