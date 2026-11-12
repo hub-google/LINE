@@ -74,7 +74,7 @@ body[data-monster-page="home"] .qm-final{background:#462b52;color:#fff;padding:5
 /* Merchant documentation directory 2026-11-12: scoped to merchant feature page. */
 body[data-role="merchant"] .qm-guide-section{background:linear-gradient(180deg,#fffdfd 0%,#fcf7ff 100%);padding:72px 0}
 body[data-role="merchant"] .qm-guide-section .qm-role-heading{margin-bottom:27px}
-body[data-role="merchant"] .qm-guide-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+body[data-role="merchant"] .qm-guide-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px}
 body[data-role="merchant"] .qm-guide-card{
   display:flex;flex-direction:column;
   min-height:223px;
@@ -111,7 +111,7 @@ body[data-role="merchant"] .qm-guide-all{
 }
 body[data-role="merchant"] .qm-guide-all p{font-size:15px;line-height:1.7;color:#6b517c;margin:0}
 body[data-role="merchant"] .qm-guide-all .qm-button{min-height:43px;white-space:nowrap}
-@media(max-width:920px){
+@media(max-width:1040px){
  body[data-role="merchant"] .qm-guide-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:620px){
