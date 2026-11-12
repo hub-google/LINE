@@ -129,6 +129,7 @@ routeState.customerTab=["home","reserve","queue","order","mine","progress"].incl
 staffState.staffTab=["dashboard","bookings","queue","orders","calendar","units","analytics","menu","members","branches","settings","customers"].includes(incomingParam("tab"))?incomingParam("tab"):"dashboard";
  staffState.settingsSection=["profile","operations","sessions","catalog","pickup","branches","customers","public"].includes(incomingParam("section"))?incomingParam("section"):"profile";
  if(staffState.staffTab==="settings"&&staffState.settingsSection==="customers"){staffState.staffTab="customers";staffState.settingsSection="profile";}
+ staffState.settingsSection=({sessions:"operations",pickup:"catalog",branches:"profile"})[staffState.settingsSection]||staffState.settingsSection;
 routeState.platformTab="dashboard";
 bookingState.chosenSlot="";
 routeState.registration=false;
