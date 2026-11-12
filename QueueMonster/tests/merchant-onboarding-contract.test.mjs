@@ -234,7 +234,7 @@ test("customer, merchant and headquarters views never mix login and navigation l
  }
  assert.doesNotMatch(merchant,/href="[^"]*(?:directory\.html|home\.html|platform-login\.html|view=platform)/);
  assert.match(guide,/id="marketing-header"/,"public merchant guide uses shared marketing navigation");
- assert.match(read("saas/assets/marketing/shared-header.js"),/叫號看板/);
+ assert.match(read("saas/assets/marketing/shared-header.js"),/\["搜尋店家","\.\/directory\.html\?mode=search"/);
  assert.doesNotMatch(hq,/href="[^"]*(?:directory\.html|home\.html|merchant-register\.html|view=staff)/);
  assert.doesNotMatch(platform,/class="side-item" href="merchant-register\.html/);
  assert.match(shared,/view==="platform"/);
