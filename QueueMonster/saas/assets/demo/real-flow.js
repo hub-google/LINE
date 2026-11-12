@@ -340,15 +340,34 @@ document.addEventListener("change",e=>{
  const el=e.target;
  if(el.matches("[data-status-kind]")){
   const kind=el.dataset.statusKind,d=current(),o=find(kind==="reservation"?"bookings":"tickets",el.dataset.id);if(!o)return;
-  o.status=el.value;
-  if(kind==="reservation"&&scene==="clinic"&&el.value==="CHECKED_IN"&&!o.ticket){const id="C"+(o.unit==="1診"?"1":"2")+"-"+pad(d.seq++);o.ticket=id;d.tickets.push({id,name:o.name,unit:o.unit,party:1,status:"WAITING"});if(ownedIds[scene].has(o.id)){ownedIds[scene].add(id);lastOwn=id;}notifyFor("checkin",o);}
-  if(kind==="ticket"&&el.value==="CALLED"){
-    d.tickets.filter(t=>t.id!==o.id&&t.status==="CALLED"&&(scene!=="clinic"||t.unit===o.unit)).forEach(t=>{t.status="PASSED";});
-    notifyFor("called",o);
+  const previous=o.status,next=el.value;
+  if(next===previous){render();return;}
+  if(kind==="ticket"){
+   // Same server rules as private.so_ticket_set_status_core.
+   if(next==="HOLD"&&!["WAITING","CANCELLED"].includes(previous)){inform("只能保留候位中或已取消的號碼。");return;}
+   if(previous==="HOLD"&&!["WAITING","CANCELLED"].includes(next)){inform("保留中的號碼只能恢復候位或取消。");return;}
+   if(next==="CALLED"&&d.tickets.some(t=>t.id!==o.id&&t.status==="CALLED"&&(scene!=="clinic"||t.unit===o.unit))){
+    inform("這個隊列已經有尚未確認的叫號；請先處理目前號碼，或使用「叫下一位」自動過號。");return;
    }
-  inform(o.id+" 狀態已變更為 "+statusName[el.value]+"；已結案紀錄仍可重新修改。");return;
+  }
+  o.status=next;
+  if(kind==="reservation"&&scene==="clinic"&&next==="CHECKED_IN"&&!o.ticket){
+   const id="C"+(o.unit==="1診"?"1":"2")+"-"+pad(d.seq++);
+   o.ticket=id;d.tickets.push({id,name:o.name,unit:o.unit,party:1,status:"WAITING"});
+   if(ownedIds[scene].has(o.id)){ownedIds[scene].add(id);lastOwn=id;}
+   notifyFor("checkin",o);
+  }
+  if(kind==="ticket"){
+   if(next==="CALLED")notifyFor("called",o);
+   if(next==="WAITING"&&["HOLD","PASSED"].includes(previous)){
+    // Returned tickets normally rejoin at the end of the sample queue.
+    d.tickets.splice(d.tickets.findIndex(t=>t.id===o.id),1);
+    d.tickets.push(o);
+   }
+  }
+  inform(o.id+" 狀態已變更為 "+statusName[next]+"；已處理紀錄仍可重新修改。");return;
  }
- if(el.id==="staff-room"){room=el.value;render();return;}
+  if(el.id==="staff-room"){room=el.value;render();return;}
  if(el.id==="customer-phone-type"){draft.phoneType=el.value;review=false;render();return;}
   if(el.id==="customer-phone-area"){draft.phoneArea=el.value;draft.phoneLocal="";review=false;render();return;}
   const models={"pickup-day":"day","pickup-slot":"time","booking-day":"day","party-size":"party","queue-party":"party","queue-service":"service","reserve-service":"service","customer-phone":"phone","customer-phone-local":"phoneLocal","customer-note":"note","contact-name":"name","contact-phone":"phone"};
