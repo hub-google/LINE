@@ -23,7 +23,8 @@ const make = () => ({
  repair:{tickets:[{id:"R012",name:"張先生",service:"手機維修",status:"CALLED",party:1},{id:"R013",name:"李小姐",service:"電池更換",status:"WAITING",party:1},{id:"R014",name:"王先生",service:"檢測諮詢",status:"WAITING",party:1}],seq:15,current:"R012"},
  clinic:{bookings:[{id:"P001",name:"王小姐",phone:"0912000005",unit:"1診",service:"一般門診",date:today(),time:"09:30",status:"CONFIRMED",ticket:""},{id:"P002",name:"林先生",phone:"0912000006",unit:"2診",service:"一般門診",date:today(),time:"10:00",status:"CHECKED_IN",ticket:"C2-002"}],tickets:[{id:"C1-001",name:"陳先生",unit:"1診",status:"CALLED",party:1},{id:"C2-002",name:"林先生",unit:"2診",status:"WAITING",party:1}],seq:3,bookingSeq:3,current:{"1診":"C1-001","2診":""}}
 });
-let data=make(),scene="repair",role="customer",tab="queue",room="1診",review=false,receipt="",lastOwn="",newNotice="",notifyOpen=false,notes=[],cart={},method="scheduled";
+let data=make(),scene="repair",role="customer",tab="queue",room="1診",review=false,receipt="",lastOwn="",newNotice="",notifyOpen=false,notes=[],cart={},method="scheduled",showBoard=false,bookingFilter="";
+const ownedIds={breakfast:new Set(),salon:new Set(),repair:new Set(),clinic:new Set()};
 let draft={name:"",phone:"",day:today(),time:"08:00",slot:"14:00",qty:1,unit:"Ava",service:"洗剪",party:1,note:""};
 function current(){return data[scene];}
 function status(v){return '<span class="tag '+(["COMPLETED","CONFIRMED","ACCEPTED","READY","CHECKED_IN"].includes(v)?"ok":["REJECTED","PASSED","CANCELLED"].includes(v)?"warn":"")+'">'+esc(statusName[v]||v)+'</span>';}
@@ -102,7 +103,7 @@ function customerReserve(){
  const service=sel("服務項目","reserve-service",clinic?["一般門診","慢性病追蹤"]:["洗剪","染髮","燙髮","護髮"],draft.service);
  const form=field("預約日期","booking-day",draft.day,"date")+(clinic?unitsHtml:unitsHtml)+slotHtml+service+'<div style="margin-top:12px">'+field("本次人數","party-size",draft.party,"number",'min="1" max="20"')+'</div>'+contact()+'<p class="small">預約是保留時段，'+(clinic?"預約報到後依各診間叫號順序等待。":"依服務安排到店。")+'</p>';
  const confirm=review?inset('<strong>確認預約資訊</strong><p>店家：'+esc(displayShop())+'</p><p>'+chosen+' · '+esc(draft.day)+' '+slot+'</p><p>姓名：'+esc(draft.name||"示範顧客")+'　'+Number(draft.party||1)+' 位</p>'):"";
- const recent=d.bookings.slice(0,6).map(x=>listline('<div><strong>'+esc(x.id)+' · '+esc(x.name)+'</strong><p class="small">'+esc(x.date)+' '+esc(x.time)+'　'+esc(x.unit)+'</p></div>'+status(x.status))).join("");
+ const recent=d.bookings.filter(x=>ownedIds[scene].has(x.id)).slice(0,6).map(x=>listline('<div><strong>'+esc(x.id)+' · '+esc(x.name)+'</strong><p class="small">'+esc(x.date)+' '+esc(x.time)+'　'+esc(x.unit)+'</p></div>'+status(x.status))).join("");
  return box(clinic?"選擇預約場次":"選擇預約日期與時間",'<p class="small">先選擇服務人員／診間，再選擇可預約時段。</p>'+form+confirm+'<div class="staff-actionbar">'+(review?btn("返回修改","review-back")+btn("確認送出預約","reserve-submit","primary full"):btn("下一步：確認預約","review-reserve","primary full"))+'</div>')+box("我的近期預約",recent||'<p class="muted">尚無預約紀錄</p>');
 }
 function customerQueue(){
@@ -118,11 +119,14 @@ function customerQueue(){
  return (clinic?box("選擇取號場次",navRoom+'<p class="small">若已預約，請先至店家端「預約管理」報到；報到後會加入對應診間叫號。</p>'):"")+'<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",currentNo)+stat("等候組數",active.length)+stat("我的號碼",own?.id||"—")+'</div>'+box("我的現場號碼",ticket)+(own?box("我的取號",progress):"");
 }
 function customerMine(){
- const d=current();let elements=[];
- if(d.orders)elements=d.orders.map(o=>inset('<div class="listline"><strong>'+esc(o.id)+'</strong>'+status(o.status)+'</div><p class="small">取餐：'+esc(o.time)+'</p><p>'+esc(o.lines.map(i=>i.name+" × "+i.qty).join("、"))+'</p><strong>'+money(o.total)+'</strong>'));
- if(d.bookings)elements=d.bookings.map(o=>inset('<div class="listline"><strong>'+esc(o.id)+'　'+esc(o.name)+'</strong>'+status(o.status)+'</div><p class="small">'+esc(o.date)+' '+esc(o.time)+'　'+esc(o.unit)+(o.ticket?"　候診號碼 "+esc(o.ticket):"")+'</p>'));
- if(d.tickets)elements=elements.concat(d.tickets.map(o=>inset('<div class="listline"><strong>'+esc(o.id)+'　'+esc(o.name)+'</strong>'+status(o.status)+'</div><p class="small">'+esc(o.unit||o.service||"")+'</p>')));
- return '<section class="customer-service-nav"><div class="customer-service-title"><h2>我的服務</h2><p class="small">查看叫號進度及過往紀錄</p></div><nav class="customer-service-switcher"><button class="active">我的紀錄</button></nav></section>'+box("我的紀錄",elements.join("")||'<p class="muted">尚無紀錄。</p>')+(d.tickets?box("目前叫號進度",scene==="clinic"?"1診："+esc(currentCalled("1診"))+" / 2診："+esc(currentCalled("2診")):"目前："+esc(currentCalled())):"");
+ const d=current(),mine=ownedIds[scene];let elements=[];
+ // A customer must never see other visitors' names, phone numbers or bookings.
+ if(d.orders)elements=d.orders.filter(o=>mine.has(o.id)).map(o=>inset('<div class="listline"><strong>'+esc(o.id)+'</strong>'+status(o.status)+'</div><p class="small">取餐：'+esc(o.time)+'</p><p>'+esc(o.lines.map(i=>i.name+" × "+i.qty).join("、"))+'</p><strong>'+money(o.total)+'</strong>'));
+ if(d.bookings)elements=d.bookings.filter(o=>mine.has(o.id)).map(o=>inset('<div class="listline"><strong>'+esc(o.id)+'　'+esc(o.name)+'</strong>'+status(o.status)+'</div><p class="small">'+esc(o.date)+' '+esc(o.time)+'　'+esc(o.unit)+(o.ticket?"　候診號碼 "+esc(o.ticket):"")+'</p>'));
+ if(d.tickets)elements=elements.concat(d.tickets.filter(o=>mine.has(o.id)).map(o=>inset('<div class="listline"><strong>'+esc(o.id)+'　'+esc(o.name)+'</strong>'+status(o.status)+'</div><p class="small">'+esc(o.unit||o.service||"")+'</p>')));
+ return '<section class="customer-service-nav"><div class="customer-service-title"><h2>我的服務</h2><p class="small">只顯示本次試用顧客建立的預約、取號及訂餐紀錄</p></div></section>'+
+ box("我的紀錄",elements.join("")||'<p class="muted">尚無本次試用顧客的紀錄，請先完成預約、取號或點餐。</p>')+
+ (d.tickets?box("目前叫號進度",scene==="clinic"?"1診："+esc(currentCalled("1診"))+" / 2診："+esc(currentCalled("2診")):"目前："+esc(currentCalled())):"");
 }
 function staffOrder(){
  const d=current(),active=d.orders.filter(o=>!["REJECTED","PICKED_UP"].includes(o.status)),old=d.orders.filter(o=>["REJECTED","PICKED_UP"].includes(o.status));
@@ -142,11 +146,14 @@ function bookingCard(o){
 }
 function staffBookings(){
  const d=current(),open=d.bookings.filter(o=>!["COMPLETED","CANCELLED","NO_SHOW"].includes(o.status)),done=d.bookings.filter(o=>!open.includes(o));
- return (scene==="clinic"?box("預約報到與叫號連動說明",'<p class="small">預約報到後建立同一場次的叫號號碼，重複報到不會重複發號。</p>'):"")+
- box("搜尋與篩選預約",'<p class="small">搜尋目前已載入的示範預約紀錄。</p>'+field("搜尋預約編號、姓名或服務","staff-search","","search",'placeholder="輸入關鍵字"')+'<div class="staff-actionbar">'+btn("清除篩選","clear-filter","outline")+'</div>')+
+ const query=bookingFilter.trim().toLocaleLowerCase("zh-TW");
+ const matches=o=>!query||[o.id,o.name,o.service,o.unit,o.phone].some(v=>String(v||"").toLocaleLowerCase("zh-TW").includes(query));
+ const shownOpen=open.filter(matches),shownDone=done.filter(matches);
+ return (scene==="clinic"?box("預約報到與叫號連動說明",'<p class="small">預約完成報到後，加入指定診間的候診隊列；重複報到不會再產生第二張號碼牌。</p>'):"")+
+ box("搜尋與篩選預約",'<p class="small">只篩選本情境的示範資料；上方統計仍以所有示範預約計算。</p>'+field("搜尋預約編號、姓名或服務","staff-search",bookingFilter,"search",'placeholder="輸入關鍵字"')+'<div class="staff-actionbar">'+btn("清除篩選","clear-filter","outline")+'</div>')+
  '<div class="grid4" style="margin-bottom:16px">'+stat("待處理預約",open.length)+stat("待報到",open.filter(o=>o.status==="CONFIRMED").length)+stat("已報到未結案",open.filter(o=>o.status==="CHECKED_IN").length)+stat("已處理預約",done.length)+'</div>'+
- box("待處理預約（"+open.length+" 筆）",open.map(bookingCard).join("")||'<p class="muted">目前沒有未結案預約。</p>')+
- box("已處理預約（"+done.length+" 筆，可修正）",done.map(bookingCard).join("")||'<p class="muted">尚無已處理預約。</p>');
+ box("待處理預約（"+shownOpen.length+" 筆）",shownOpen.map(bookingCard).join("")||'<p class="muted">沒有符合篩選條件的待處理預約。</p>')+
+ box("已處理預約（"+shownDone.length+" 筆，可修正）",shownDone.map(bookingCard).join("")||'<p class="muted">沒有符合篩選條件的已處理預約。</p>');
 }
 function ticketCard(o){
  return '<article class="staff-record"><div class="staff-record-head"><div><div class="staff-record-title">'+esc(o.id)+'　'+esc(o.name)+'</div><div class="small">'+esc(o.unit||o.service||"")+" · "+esc(o.party||1)+' 人／組 · '+(scene==="clinic"?"預約報到":"現場取號")+'</div></div>'+status(o.status)+'</div>'+statusPicker("ticket",o)+'</article>';
@@ -155,12 +162,13 @@ function staffQueue(){
  const d=current(),clinic=scene==="clinic",items=d.tickets.filter(t=>!clinic||t.unit===room),active=items.find(t=>t.status==="CALLED"),waiting=items.filter(t=>t.status==="WAITING"),passed=items.filter(t=>t.status==="PASSED"),held=items.filter(t=>t.status==="HOLD"),completed=items.filter(t=>t.status==="COMPLETED"),done=items.filter(t=>["COMPLETED","CANCELLED"].includes(t.status));
  const selector=clinic?box("按場次獨立叫號",'<p class="small">各場次獨立叫號，所有已處理紀錄仍可查閱。</p>'+sel("操作隊列","staff-room",[["1診","1診 · 上午診 09:00–12:00"],["2診","2診 · 上午診 09:00–12:00"]],room)):"";
  return selector+'<div class="grid4" style="margin-bottom:16px">'+stat("正在叫號",active?.id||"—")+stat("候位中",waiting.length)+stat("已過號",passed.length)+stat("保留中",held.length)+stat("已完成",completed.length)+'</div>'+
- box("叫號操作",'<p class="muted">號碼狀態可直接勾選並更正；叫下一位時，前一個仍為「已叫號」的號碼才會自動轉為「已過號」。已完成的號碼不受影響。</p><div class="staff-actionbar">'+btn("叫下一位","next","primary",waiting.length?"":"disabled")+btn("再叫一次","recall","outline",active?"":"disabled")+btn("電視即時叫號看板","board","outline")+'</div><p class="staff-help">已發出的 LINE 訊息無法撤回；這裡只展示模擬通知。</p>')+
+ box("叫號操作",'<p class="muted">號碼狀態可直接勾選並更正；叫下一位時，前一個仍為「已叫號」的號碼才會自動轉為「已過號」。已完成的號碼不受影響。</p><div class="staff-actionbar">'+btn("叫下一位","next","primary",waiting.length?"":"disabled")+btn("再叫一次","recall","outline",active?"":"disabled")+btn(showBoard?"收起看板示意":"查看看板示意","board","outline")+'</div><p class="staff-help">已發出的 LINE 訊息無法撤回；這裡只展示模擬通知。</p>')+
+ (showBoard?box("叫號看板示意",'<div class="queue-board"><div class="queue-board-lead">'+(clinic?esc(room)+" · ":"")+'現在叫到</div><div class="queue-board-current">'+esc(active?.id||"尚未叫號")+'</div><p class="small">這是本頁記憶體中的示意進度，不連接真實門市。</p></div>'):"")+
  box("未結案號碼牌（"+(items.length-done.length)+" 筆）",items.filter(t=>!done.includes(t)).map(ticketCard).join("")||'<p class="muted">尚無未結案號碼牌。</p>')+
  box("已處理號碼牌（"+done.length+" 筆）",done.map(ticketCard).join("")||'<p class="muted">尚無已處理號碼牌。</p>');
 }
 function dashboard(){
- const d=current();return '<div class="grid4">'+stat("今日預約",d.bookings?.length||0)+stat("現場候位",d.tickets?.filter(t=>t.status==="WAITING").length||0)+stat("取餐訂單",d.orders?.length||0)+stat("目前叫號",scene==="clinic"?"多診間":d.current||"—")+'</div>'+box("今日待辦",'<p class="muted">請由左側「預約管理」、「叫號管理」或「取餐訂單」切換真實系統的作業版型。</p>');
+ const d=current();return '<div class="grid4">'+stat("今日預約",d.bookings?.length||0)+stat("現場候位",d.tickets?.filter(t=>t.status==="WAITING").length||0)+stat("取餐訂單",d.orders?.length||0)+stat("目前叫號",scene==="clinic"?"多診間":currentCalled())+'</div>'+box("今日待辦",'<p class="muted">請由左側「預約管理」、「叫號管理」或「取餐訂單」切換此頁的模擬操作畫面。</p>');
 }
 function renderNotice(){
  const el=$("notifications");if(!el)return;
@@ -213,7 +221,7 @@ function render(){
  renderNotice();
 }
 function resetDraft(){draft={name:"",phone:"",day:today(),time:"08:00",slot:scene==="clinic"?"09:30":"14:00",unit:scene==="clinic"?"1診":"Ava",service:scene==="clinic"?"一般門診":scene==="repair"?"手機維修":"洗剪",party:1,note:""};cart={};review=false;receipt="";}
-function setScene(s){scene=s;role="customer";tab=primaryTab[s];room="1診";lastOwn="";newNotice="";notes=[];notifyOpen=false;resetDraft();render();}
+function setScene(s){scene=s;role="customer";tab=primaryTab[s];room="1診";lastOwn="";newNotice="";notes=[];notifyOpen=false;showBoard=false;bookingFilter="";resetDraft();render();}
 function inform(s){newNotice=s;render();}
 function noticeItem(obj,kind){notifyFor(kind,obj);render();}
 function find(type,id){return current()[type]?.find(o=>o.id===id);}
@@ -226,7 +234,8 @@ document.addEventListener("click",e=>{
  const button=e.target.closest("[data-act]");if(!button)return;
  const a=button.dataset.act,id=button.dataset.id,value=button.dataset.value,d=current();
  if(a==="go-reserve"){tab="reserve";inform("請先完成預約；報到後會出現在候診名單");return;}
- if(a==="reset"){data[scene]=make()[scene];lastOwn="";notes=[];newNotice="已重設本產業的示範資料";resetDraft();render();return;}
+  if(a==="clear-filter"){bookingFilter="";render();return;}
+ if(a==="reset"){data[scene]=make()[scene];lastOwn="";notes=[];ownedIds[scene].clear();showBoard=false;bookingFilter="";newNotice="已重設本產業的示範資料";resetDraft();render();return;}
  if(a==="toggle-notify"){notifyOpen=!notifyOpen;renderNotice();if(notifyOpen) $("notifications")?.scrollIntoView?.({behavior:"smooth",block:"nearest"});return;}
  if(a==="view-notice"){notifyOpen=true;renderNotice();$("notifications")?.scrollIntoView?.({behavior:"smooth",block:"nearest"});return;}
  if(a==="qty"){cart[id]=Math.max(0,Math.min(30,(cart[id]||0)+Number(button.dataset.delta)));review=false;render();return;}
@@ -237,7 +246,7 @@ document.addEventListener("click",e=>{
   if(!requireContact())return;
   const lines=food.filter(i=>cart[i.id]>0).map(i=>({name:i.name,qty:cart[i.id],price:i.price}));if(!lines.length)return;
   const o={id:"B"+pad(d.seq++),name:draft.name||"示範顧客",phone:draft.phone||"（試用未填）",lines,time:method==="immediate"?"立即":draft.time,status:"NEW",total:lines.reduce((s,i)=>s+i.qty*i.price,0)};
-  d.orders.unshift(o);lastOwn=o.id;cart={};review=false;notifyFor("order",o);tab="order";inform("已送出示範訂單 "+o.id+"，右側顯示客人可能收到的訊息。");return;
+  d.orders.unshift(o);lastOwn=o.id;ownedIds[scene].add(o.id);cart={};review=false;notifyFor("order",o);tab="order";inform("已送出示範訂單 "+o.id+"，右側顯示客人可能收到的訊息。");return;
  }
  if(a==="unit"){draft.unit=value;if(scene==="clinic")room=value;review=false;render();return;}
  if(a==="slot"){draft.slot=value;review=false;render();return;}
@@ -247,12 +256,12 @@ document.addEventListener("click",e=>{
   const slots=scene==="clinic"?["09:30","10:00","10:30","11:00"]:["10:00","11:00","14:00","15:30","16:00"];let slot=slots.includes(draft.slot)?draft.slot:slots[0];
   const bookings=d.bookings;if(bookings.some(x=>x.unit===draft.unit&&x.date===draft.day&&x.time===slot&&!["CANCELLED","COMPLETED"].includes(x.status))){review=false;inform("此時段已被預約，請選擇其他時段或服務窗口");return;}
   const o={id:(scene==="clinic"?"P":"S")+pad(scene==="clinic"?d.bookingSeq++:d.seq++),name:draft.name||"示範顧客",phone:draft.phone||"（試用未填）",unit:draft.unit,service:draft.service,date:draft.day,time:slot,status:"CONFIRMED",ticket:""};
-  bookings.unshift(o);lastOwn=o.id;review=false;notifyFor("booking",o);tab="reserve";inform("示範預約 "+o.id+" 已建立；可到店家端「預約管理」報到。");return;
+  bookings.unshift(o);lastOwn=o.id;ownedIds[scene].add(o.id);review=false;notifyFor("booking",o);tab="reserve";inform("示範預約 "+o.id+" 已建立；可到店家端「預約管理」報到。");return;
  }
  if(a==="take-number"){
   if(scene==="clinic"){inform("診所取號需先由店家進行預約報到。");return;}
   if(!Number.isInteger(Number(draft.party))||Number(draft.party)<1||Number(draft.party)>20){inform("候位人數請輸入 1～20 人");return;}
-  const o={id:"R"+pad(d.seq++),name:draft.name||"示範顧客",service:draft.service||"手機維修",status:"WAITING",party:Number(draft.party)||1};d.tickets.push(o);lastOwn=o.id;notifyFor("ticket",o);inform("已取得示範號碼 "+o.id+"，切換店家端體驗叫號。");return;
+  const o={id:"R"+pad(d.seq++),name:draft.name||"示範顧客",service:draft.service||"手機維修",status:"WAITING",party:Number(draft.party)||1};d.tickets.push(o);lastOwn=o.id;ownedIds[scene].add(o.id);notifyFor("ticket",o);inform("已取得示範號碼 "+o.id+"，切換店家端體驗叫號。");return;
  }
  if(a==="room"){room=value;draft.unit=value;render();return;}
  if(a==="order-status"){const o=find("orders",id);if(o){o.status=value;notifyFor("order-status",o);inform(o.id+" 已更新為 "+statusName[value]+"；客人可從我的服務看到新狀態。");}return;}
@@ -270,14 +279,14 @@ document.addEventListener("click",e=>{
    if(!active){inform("目前沒有可重叫的號碼。");return;}
    notifyFor("called",active);inform("已重叫 "+active.id+"。");return;
   }
-  if(a==="board"){inform("看板示意：目前叫號 "+(scene==="clinic"?d.current[room]||"尚未叫號":d.current));return;}
+  if(a==="board"){showBoard=!showBoard;render();return;}
 });
 document.addEventListener("change",e=>{
  const el=e.target;
  if(el.matches("[data-status-kind]")){
   const kind=el.dataset.statusKind,d=current(),o=find(kind==="reservation"?"bookings":"tickets",el.dataset.id);if(!o)return;
   o.status=el.value;
-  if(kind==="reservation"&&scene==="clinic"&&el.value==="CHECKED_IN"&&!o.ticket){const id="C"+(o.unit==="1診"?"1":"2")+"-"+pad(d.seq++);o.ticket=id;d.tickets.push({id,name:o.name,unit:o.unit,party:1,status:"WAITING"});lastOwn=id;notifyFor("checkin",o);}
+  if(kind==="reservation"&&scene==="clinic"&&el.value==="CHECKED_IN"&&!o.ticket){const id="C"+(o.unit==="1診"?"1":"2")+"-"+pad(d.seq++);o.ticket=id;d.tickets.push({id,name:o.name,unit:o.unit,party:1,status:"WAITING"});if(ownedIds[scene].has(o.id)){ownedIds[scene].add(id);lastOwn=id;}notifyFor("checkin",o);}
   if(kind==="ticket"&&el.value==="CALLED"){
     d.tickets.filter(t=>t.id!==o.id&&t.status==="CALLED"&&(scene!=="clinic"||t.unit===o.unit)).forEach(t=>{t.status="PASSED";});
     notifyFor("called",o);
@@ -288,6 +297,10 @@ document.addEventListener("change",e=>{
  const models={"pickup-day":"day","pickup-slot":"time","booking-day":"day","party-size":"party","queue-party":"party","queue-service":"service","reserve-service":"service","customer-name":"name","customer-phone":"phone","customer-note":"note","contact-name":"name","contact-phone":"phone"};
  if(models[el.id])draft[models[el.id]]=el.value;
 });
-document.addEventListener("input",e=>{const models={"customer-name":"name","customer-phone":"phone","customer-note":"note","contact-name":"name","contact-phone":"phone","party-size":"party","queue-party":"party","booking-day":"day"};if(models[e.target.id])draft[models[e.target.id]]=e.target.value;});
+document.addEventListener("input",e=>{if(e.target.id==="staff-search"){
+   const at=e.target.selectionStart;bookingFilter=e.target.value;render();
+   const el=$("staff-search");el?.focus();if(Number.isInteger(at))el?.setSelectionRange(at,at);
+   return;
+  }const models={"customer-name":"name","customer-phone":"phone","customer-note":"note","contact-name":"name","contact-phone":"phone","party-size":"party","queue-party":"party","booking-day":"day"};if(models[e.target.id])draft[models[e.target.id]]=e.target.value;});
 resetDraft();render();
 })();
