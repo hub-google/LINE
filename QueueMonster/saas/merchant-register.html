@@ -19,17 +19,22 @@
 <section class="panel">
 <div id="auth-zone">
 <div class="tabs" role="tablist" aria-label="店家帳號操作"><button id="tab-login" type="button" role="tab" aria-selected="true">登入</button><button id="tab-signup" type="button" role="tab" aria-selected="false">註冊</button></div>
-<div id="invitation-hint" class="help" role="status"></div><form id="login-form"><h2>店家／員工登入</h2><p class="sub">使用自己的電子信箱與密碼登入，受邀員工登入後可接受企業邀請。</p>
+<div id="invitation-hint" class="help" role="status"></div>
+<div class="google-first"><button id="google-auth" type="button" class="google-auth-button"><span class="google-mark" aria-hidden="true">G</span>使用 Google 帳號繼續</button><p class="help">使用 Google 帳號即可登入或註冊，不必另外設定密碼。</p></div>
+<div class="email-divider" role="separator"><span>或使用電子信箱</span></div>
+<form id="login-form"><h2>店家／員工登入</h2><p class="sub">使用自己的電子信箱與密碼登入，受邀員工登入後可接受企業邀請。</p>
 <label for="login-email">電子信箱（登入帳號）</label><input type="email" id="login-email" autocomplete="username" required>
 <label for="login-pass">密碼</label><input type="password" id="login-pass" autocomplete="current-password" required>
 <button type="submit" class="primary">登入</button><button type="button" id="email-link-login" class="secondary-action">寄送電子郵件登入連結</button><button type="button" id="forgot-pass" class="secondary-action">忘記密碼？寄送重設連結</button>
 <p class="help">還沒有帳號？點選上方「註冊」。</p></form>
-<form id="signup-form" class="hidden"><h2>建立登入帳號</h2><p class="sub">受邀員工請使用邀請信指定的電子信箱註冊；不會因此自行建立店家。</p>
+<form id="signup-form" class="hidden"><h2>Email 註冊</h2><p class="sub">先驗證您擁有這個電子信箱，再設定密碼。受邀員工請使用邀請信指定的信箱。</p>
 <label for="signup-email">電子信箱（登入帳號）</label><input type="email" id="signup-email" autocomplete="email" required>
-<label for="signup-pass">密碼</label><input type="password" id="signup-pass" minlength="1" autocomplete="new-password" required>
-<label for="signup-confirm">確認密碼</label><input type="password" id="signup-confirm" minlength="1" autocomplete="new-password" required>
-<button type="submit" class="primary">建立帳號</button>
-<p class="help">系統會依註冊流程確認您的身分。請妥善保管登入密碼，不要與他人分享。</p></form>
+<button type="submit" class="primary">寄送 Email 驗證連結</button>
+<p class="help">同一個信箱重複申請不會建立第二個帳號，也不會覆蓋原密碼。</p></form>
+<section id="verify-email-stage" class="hidden" aria-live="polite"><h2>請查看您的信箱</h2><p class="sub">已申請寄送驗證信至 <strong id="verify-email-address"></strong>。請點擊信件中的連結，驗證後回來設定密碼。</p>
+<button type="button" id="resend-signup-email" class="secondary-action">重新寄送驗證信</button>
+<button type="button" id="change-signup-email" class="secondary-action">更換電子信箱</button>
+<p class="help">收不到信請先檢查垃圾郵件匣，重新寄送有頻率限制，不用重新建立帳號。</p></section>
 </div>
 <div id="account-zone" class="hidden"><h2 id="account-title">已登入</h2><div class="account-info"><strong id="account-name"></strong><div id="account-email" class="email"></div></div>
 <div id="workspace" class="workspace"></div>
