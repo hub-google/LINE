@@ -15,7 +15,18 @@ const modes = {breakfast:["order","mine"],salon:["reserve","mine"],repair:["queu
 const primaryTab = {repair:"queue",breakfast:"order",salon:"reserve",clinic:"reserve"};
 const tabs = {home:"首頁",order:"線上點餐",reserve:"線上預約",queue:"現場取號",mine:"我的服務"};
 const staffTabs = {breakfast:"orders",salon:"bookings",repair:"queue",clinic:"bookings"};
-const statusName = {NEW:"待接單",ACCEPTED:"已接單",READY:"待取",REJECTED:"店家已取消訂單",PICKED_UP:"已完成",CONFIRMED:"已預約",CHECKED_IN:"已報到",COMPLETED:"已完成",CANCELLED:"已取消",NO_SHOW:"未到",WAITING:"候位中",CALLED:"已叫號",ARRIVED:"已到場",ADMITTED:"已進場",SERVING:"服務中",PASSED:"已過號",HOLD:"保留中"};
+const statusName = {NEW:"待接單",ACCEPTED:"已接單",PREPARING:"製作中",READY:"已完成待取",REJECTED:"店家已取消訂單",PICKED_UP:"已取餐",CONFIRMED:"已預約",CHECKED_IN:"已報到",COMPLETED:"已完成",CANCELLED:"已取消",NO_SHOW:"未到",WAITING:"候位中",CALLED:"已叫號",ARRIVED:"已到場",ADMITTED:"已進場",SERVING:"服務中",PASSED:"已過號",HOLD:"保留中"};
+// Same Taiwanese area code and subscriber-length rules as the production booking form.
+const landlineRules={"02":/^[235678]\d{7}$/,"03":/^[2-689]\d{6}$/,"037":/^[2-9]\d{5}$/,"04":/^(?:[23]\d{7}|[78]\d{6})$/,"049":/^[2-9]\d{6}$/,"05":/^[2-7]\d{6}$/,"06":/^[235679]\d{6}$/,"07":/^[2-9]\d{6}$/,"08":/^[478]\d{6}$/,"082":/^[2-57-9]\d{5}$/,"0826":/^6\d{4}$/,"0836":/^[2-9]\d{4}$/,"089":/^[2-9]\d{5}$/};
+const landlineExamples={"02":"23456789","03":"2123456","037":"234567","04":"22345678","049":"2345678","05":"2345678","06":"2345678","07":"2345678","08":"4123456","082":"234567","0826":"61234","0836":"21234","089":"234567"};
+function pickupPhone(){return draft.phoneType==="landline"?draft.phoneArea+draft.phoneLocal:draft.phone;}
+function validPickupPhone(){return draft.phoneType==="mobile"?/^09\d{8}$/.test(draft.phone):landlineRules[draft.phoneArea]?.test(draft.phoneLocal)===true;}
+function pickupWindowValid(){
+ if(method==="immediate")return true; // Demo simulates an open shop, not the shop's actual live hours.
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(draft.day)||!/^\d{2}:\d{2}$/.test(draft.time))return false;
+ const at=Date.parse(draft.day+"T"+draft.time+":00+08:00");
+ return Number.isFinite(at)&&at>=Date.now()+20*60*1000&&at<=Date.now()+8*86400000;
+}
 const food = [{id:"egg",name:"招牌蛋餅",price:40,description:"現點現做"},{id:"toast",name:"火腿蛋吐司",price:50,description:"早餐人氣商品"},{id:"tea",name:"奶茶",price:25,description:"中杯"},{id:"burger",name:"豬肉蛋漢堡",price:60,description:"經典早餐"}];
 const make = () => ({
  breakfast:{orders:[{id:"B001",name:"王小美",phone:"0912000001",lines:[{name:"招牌蛋餅",qty:1,price:40}],time:"08:00",status:"NEW",total:40},{id:"B002",name:"林先生",phone:"0912000002",lines:[{name:"火腿蛋吐司",qty:2,price:50}],time:"08:30",status:"READY",total:100}],seq:3},
@@ -25,7 +36,7 @@ const make = () => ({
 });
 let data=make(),scene="repair",role="customer",tab="queue",room="1診",review=false,receipt="",lastOwn="",newNotice="",notifyOpen=false,notes=[],cart={},method="scheduled",showBoard=false,bookingFilter="";
 const ownedIds={breakfast:new Set(),salon:new Set(),repair:new Set(),clinic:new Set()};
-let draft={name:"",phone:"",day:today(),time:"08:00",slot:"14:00",qty:1,unit:"Ava",service:"洗剪",party:1,note:""};
+let draft={name:"",phone:"",phoneType:"mobile",phoneArea:"02",phoneLocal:"",day:later(1),time:"08:00",slot:"14:00",qty:1,unit:"Ava",service:"洗剪",party:1,note:""};
 function current(){return data[scene];}
 function status(v){return '<span class="tag '+(["COMPLETED","CONFIRMED","ACCEPTED","READY","CHECKED_IN"].includes(v)?"ok":["REJECTED","PASSED","CANCELLED"].includes(v)?"warn":"")+'">'+esc(statusName[v]||v)+'</span>';}
 function btn(label,action,style="outline",attrs=""){return '<button type="button" class="btn '+style+'" data-act="'+esc(action)+'" '+attrs+'>'+esc(label)+'</button>';}
@@ -35,7 +46,7 @@ function sel(label,id,values,selected){return '<label for="'+id+'">'+esc(label)+
 function stat(label,value){return '<div class="stat"><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong></div>';}
 function inset(content){return '<div class="inset" style="margin:12px 0">'+content+'</div>';}
 function listline(content){return '<div class="listline">'+content+'</div>';}
-function contact(){return '<p class="small">試用請勿輸入真實個資；可使用「示範顧客／0912345678」。</p><div class="grid" style="margin-top:12px"><div>'+field("預約姓名","contact-name",draft.name,"text",'maxlength="60" placeholder="請輸入姓名"')+'</div><div>'+field("聯絡手機","contact-phone",draft.phone,"tel",'maxlength="15" placeholder="例如：0912345678"')+'</div></div>';}
+function contact(){return '<p class="small">試用請勿輸入真實個資；可使用「示範顧客／0912345678」。</p><div class="grid" style="margin-top:12px"><div>'+field("預約姓名","contact-name",draft.name,"text",'maxlength="60" placeholder="請輸入姓名"')+'</div><div>'+field("聯絡手機","contact-phone",draft.phone,"tel",'maxlength="10" inputmode="numeric" placeholder="例如：0912345678（09 開頭，10 碼）"')+'</div></div>';}
 function displayNum(tickets){return tickets.filter(t=>t.status==="WAITING").length;}
 function getOwn(){return current().tickets?.find(t=>t.id===lastOwn)||current().bookings?.find(t=>t.id===lastOwn)||current().orders?.find(t=>t.id===lastOwn)||null;}
 function displayShop(){return names[scene];}
@@ -79,17 +90,28 @@ function customerOrder(){
  const total=food.reduce((sum,i)=>sum+i.price*(cart[i.id]||0),0);
  const count=Object.values(cart).reduce((sum,n)=>sum+n,0);
  const shopMenus=food.map(i=>listline('<div style="flex:1;min-width:0"><strong>'+esc(i.name)+'</strong><p class="small">'+esc(i.description)+'</p><strong>'+money(i.price)+'</strong></div><div class="staff-actionbar">'+btn("－","qty","outline",'data-id="'+i.id+'" data-delta="-1" aria-label="減少 '+esc(i.name)+'"')+'<strong>'+Number(cart[i.id]||0)+'</strong>'+btn("＋","qty","outline",'data-id="'+i.id+'" data-delta="1" aria-label="增加 '+esc(i.name)+'"')+'</div>')).join("");
- const own=lastOwn&&orders.find(o=>o.id===lastOwn);
- const content='<p class="muted">直接使用本店上架菜單，送出後可在此追蹤接單與取餐進度。</p>'+
+ const own=lastOwn&&orders.find(o=>o.id===lastOwn&&ownedIds[scene].has(o.id));
+ const remaining=own?.createdAt?Math.max(0,Math.ceil((own.createdAt+15000-Date.now())/1000)):0;
+ const canCancel=own?.status==="NEW"&&remaining>0;
+ const contactInputs=sel("聯絡電話類型","customer-phone-type",[["mobile","手機"],["landline","市話"]],draft.phoneType)+
+  (draft.phoneType==="mobile"?
+   field("手機號碼","customer-phone",draft.phone,"tel",'inputmode="numeric" maxlength="10" placeholder="例如：0912345678（臺灣號碼，09 開頭、10 碼、半形數字）"'):
+   '<div class="grid"><div>'+sel("市話區碼","customer-phone-area",Object.keys(landlineRules),draft.phoneArea)+'</div><div>'+
+   field("市話號碼","customer-phone-local",draft.phoneLocal,"tel",'inputmode="numeric" maxlength="8" placeholder="例如：'+esc(landlineExamples[draft.phoneArea]||"23456789")+'（半形數字）"')+'</div></div>');
+ const content='<p class="muted">以下是示範店家的菜單與時段，並非真實可訂名額。正式版依店家營業排程與時段容量檢查。</p>'+
  '<div class="staff-actionbar">'+btn("立即取餐","method",method==="immediate"?"primary":"outline",'data-value="immediate"')+btn("預約指定時間","method",method==="scheduled"?"primary":"outline",'data-value="scheduled"')+'</div>'+
- (method==="scheduled"?'<div class="grid"><div>'+field("取餐日期","pickup-day",draft.day,"date")+'</div><div>'+sel("取餐時間","pickup-slot",["07:30","07:45","08:00","08:15","08:30","09:00"],draft.time)+'</div></div>':'<p class="notice">預估製作時間約 15 分鐘，實際以店家接單進度為準。</p>')+
+ (method==="scheduled"?'<div class="grid"><div>'+field("取餐日期","pickup-day",draft.day,"date",'min="'+today()+'"')+'</div><div>'+sel("取餐時間","pickup-slot",["07:30","07:45","08:00","08:15","08:30","09:00"],draft.time)+'</div></div><p class="small">示範早餐店可預約時間；正式可選時段依店家設定。</p>':
+ '<p class="notice">此處模擬營業中的立即取餐，製作時間由店家設定，並非實際營業狀態。</p>')+
  '<h3 style="margin-top:16px">選擇餐點</h3>'+shopMenus+
- '<div class="grid" style="margin-top:12px"><div>'+field("取餐姓名","customer-name",draft.name,"text",'maxlength="60" placeholder="請輸入姓名"')+'</div><div>'+field("聯絡電話","customer-phone",draft.phone,"tel",'placeholder="請輸入手機號碼"')+'</div></div>'+
+ '<div style="margin-top:12px">'+contactInputs+'</div>'+
+ '<p class="small">不需填寫姓名，僅以電話及訂單編號辨識取餐訂單；試用請勿輸入真實個資。</p>'+
  '<div style="margin-top:12px">'+field("給店家的備註（最多 200 字）","customer-note",draft.note,"text",'maxlength="200" placeholder="例如：不要加辣"')+'</div>'+
  listline('<strong>共 '+count+' 份</strong><strong>'+money(total)+'</strong>')+
- '<p class="small">此處僅建立訂單，不會線上收款；正式訂單依店家設定。</p>'+
- (review?inset('<strong>請核對送出前的訂餐內容</strong><p>取餐人：'+esc(draft.name||"示範顧客")+'</p><p>預計取餐：'+esc(method==="scheduled"?draft.day+" "+draft.time:"立即取餐")+'</p><p>品項：'+food.filter(i=>cart[i.id]>0).map(i=>esc(i.name)+" × "+cart[i.id]).join("、")+'</p><p>總金額：'+money(total)+'</p><div class="staff-actionbar">'+btn("返回修改","review-back")+btn("確定送出訂單","order-submit","primary")+'</div>'):btn("下一步：確認訂單內容","review-order","primary full",count?'':'disabled'))+
- (own?inset('<strong>最新訂單 '+esc(own.id)+'</strong><p>目前狀態：'+status(own.status)+'</p>'+btn("查看訊息示意","view-notice")):"");
+ '<p class="small">此處僅建立模擬訂單，不會線上收款，也不會寫入正式店家資料。</p>'+
+ (review?inset('<strong>請核對送出前的訂餐內容</strong><p>聯絡電話：'+esc(pickupPhone())+'</p><p>預計取餐：'+esc(method==="scheduled"?draft.day+" "+draft.time:"立即取餐")+'</p><p>品項：'+food.filter(i=>cart[i.id]>0).map(i=>esc(i.name)+" × "+cart[i.id]).join("、")+'</p><p>總金額：'+money(total)+'</p><div class="staff-actionbar">'+btn("返回修改","review-back")+btn("確定送出訂單","order-submit","primary")+'</div>'):btn("下一步：確認訂單內容","review-order","primary full",count?'':'disabled'))+
+ (own?inset('<strong>最新訂單 '+esc(own.id)+'</strong><p>目前狀態：'+status(own.status)+'</p>'+
+ (canCancel?'<div data-demo-cancel-at="'+(own.createdAt+15000)+'"><p class="notice">還有 <strong class="demo-grace-seconds">'+remaining+'</strong> 秒可取消；之後店家才會收到訂單。</p>'+btn("取消訂單","cancel-order","outline",'data-id="'+esc(own.id)+'"')+'</div>':'')+
+ btn("查看通知／進度示意","view-notice")):"");
  return box("線上點餐",content);
 }
 function customerReserve(){
@@ -220,7 +242,7 @@ function render(){
  lastViewSignature=viewSignature;
  renderNotice();
 }
-function resetDraft(){draft={name:"",phone:"",day:today(),time:"08:00",slot:scene==="clinic"?"09:30":"14:00",unit:scene==="clinic"?"1診":"Ava",service:scene==="clinic"?"一般門診":scene==="repair"?"手機維修":"洗剪",party:1,note:""};cart={};review=false;receipt="";}
+function resetDraft(){draft={name:"",phone:"",phoneType:"mobile",phoneArea:"02",phoneLocal:"",day:later(1),time:"08:00",slot:scene==="clinic"?"09:30":"14:00",unit:scene==="clinic"?"1診":"Ava",service:scene==="clinic"?"一般門診":scene==="repair"?"手機維修":"洗剪",party:1,note:""};cart={};review=false;receipt="";}
 function setScene(s){scene=s;role="customer";tab=primaryTab[s];room="1診";lastOwn="";newNotice="";notes=[];notifyOpen=false;showBoard=false;bookingFilter="";resetDraft();render();}
 function inform(s){newNotice=s;render();}
 function noticeItem(obj,kind){notifyFor(kind,obj);render();}
