@@ -284,8 +284,8 @@ export async function handleScheduleAction(ev,b,a,id){
     const impact=await rpc("so_schedule_closure_impact",{p_slug:routeState.slug,p_start:e.start,p_end:e.end});
     const bookings=Number(impact?.reservations||0),tickets=Number(impact?.tickets||0),orders=Number(impact?.orders||0);
     const total=bookings+tickets+orders;
-    const message="確定將 "+e.start+" 至 "+e.end+" 設為不營業？\\n"+
-      (total?"目前有 "+bookings+" 筆有效預約、"+tickets+" 筆候位號碼、"+orders+" 筆未結案訂單會受影響。\\n":"目前沒有查到受影響的有效預約、候位或未結案訂單。\\n")+
+    const message="確定將 "+e.start+" 至 "+e.end+" 設為不營業？\n"+
+      (total?"目前有 "+bookings+" 筆有效預約、"+tickets+" 筆候位號碼、"+orders+" 筆未結案訂單會受影響。\n":"目前沒有查到受影響的有效預約、候位或未結案訂單。\n")+
       "已成立紀錄不會被自動刪除或取消。請在預約管理、叫號及訂餐紀錄逐筆聯繫顧客與處理。";
     if(!window.confirm(message))return true;
    }catch(error){
