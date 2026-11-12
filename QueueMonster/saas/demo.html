@@ -5,142 +5,105 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="line-saas-build" content="__LINE_SAAS_BUILD__">
 <meta name="theme-color" content="#462B52">
-<meta name="description" content="排隊怪獸免登入互動試用：早餐店線上訂餐、美髮店預約、維修店叫號、診所預約加叫號。顧客端和店員端都能直接操作。">
 <meta name="robots" content="index,follow">
-<link rel="icon" href="./monster-mascot.svg" type="image/svg+xml">
-<script defer src="./version-watch.js?build=__LINE_SAAS_BUILD__"></script>
+<meta name="description" content="排隊怪獸免登入操作體驗：真實介面風格模擬早餐店線上點餐、美髮店線上預約、維修店現場取號、診所預約與多診間叫號。直接切換顧客端與店家端查看操作和通知。">
+<link rel="canonical" href="https://hub-google.github.io/LINE/booking/demo.html">
+<link rel="icon" type="image/svg+xml" href="./monster-mascot.svg">
 <title>免登入功能試用｜排隊怪獸 Queuing Monster</title>
+<link rel="stylesheet" href="./assets/index/page.css?build=__LINE_SAAS_BUILD__">
+<link rel="stylesheet" href="./booking-theme.css?build=__LINE_SAAS_BUILD__">
+<link rel="stylesheet" href="./monster-world.css?build=__LINE_SAAS_BUILD__">
+<script defer src="./version-watch.js?build=__LINE_SAAS_BUILD__"></script>
 <style>
-:root{font-family:system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif;color:#3c2b45;background:#fcf7ff;--purple:#693c8b;--deep:#462b52;--border:#e8d8f0;--sub:#7b6685}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 88% 1%,#f0defa,transparent 46%),#fcf7ff}a{color:inherit;text-decoration:none}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.44;cursor:not-allowed}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #f5b948;outline-offset:3px}
-.wrap{max-width:1160px;margin:auto;padding:0 20px}.top{background:#ffffffee;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5;backdrop-filter:blur(15px)}.topin{min-height:69px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:8px;padding-bottom:8px}.logo{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:900}.logo img{width:40px;height:40px}.toplinks{display:flex;gap:10px;align-items:center;font-size:14px;font-weight:750}.link{color:var(--purple);border:1px solid var(--border);border-radius:12px;padding:9px 13px;background:#fff}.link:hover{background:#f8ecff}
-.hero{padding-top:38px;padding-bottom:22px}.eyebrow{display:inline-flex;background:#fff0c6;color:#644622;border-radius:100px;padding:7px 13px;font-size:12px;font-weight:800;letter-spacing:.03em}.hero h1{font-size:clamp(30px,5vw,49px);line-height:1.24;letter-spacing:-.04em;margin:15px 0 12px}.hero h1 em{font-style:normal;color:#8050a6}.hero p{color:var(--sub);font-size:16px;line-height:1.8;max-width:720px;margin:0}.feature-pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:17px}.feature-pills span{font-size:12px;color:#654477;background:#fff;border:1px solid var(--border);border-radius:99px;padding:6px 11px}
-.scene-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 0 24px}.scene{border:2px solid var(--border);border-radius:21px;background:#fff;padding:19px 15px;text-align:left;min-height:151px;transition:transform .12s,border-color .12s,box-shadow .12s}.scene:hover{transform:translateY(-2px);border-color:#ae84c6}.scene.active{border-color:#724397;box-shadow:0 8px 30px #693c8b1a;background:#fffafd}.scene .emoji{font-size:28px;display:block;margin-bottom:10px}.scene strong{font-size:18px;display:block;color:var(--deep)}.scene small{display:block;color:var(--sub);line-height:1.6;font-size:12px;margin-top:5px}.work{background:#fff;border:1px solid var(--border);border-radius:26px;overflow:hidden;box-shadow:0 18px 55px #462b5210;margin-bottom:34px}.work-head{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap;padding:21px 24px;border-bottom:1px solid var(--border);background:#fffafe}.work-head h2{font-size:23px;margin:0 0 4px;letter-spacing:-.02em}.work-head p{margin:0;color:var(--sub);font-size:13px}.roles{display:flex;gap:5px;padding:5px;border:1px solid var(--border);border-radius:14px;background:#f8ecfc}.role{border:0;border-radius:10px;padding:10px 17px;background:transparent;color:#60476e;font-weight:800;min-width:108px}.role.active{background:var(--deep);color:white;box-shadow:0 3px 10px #462b522a}.work-main{padding:23px;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(250px,.8fr);gap:20px;align-items:start}.panel{padding:20px;border:1px solid var(--border);border-radius:18px;background:#fff;min-width:0}.panel.muted{background:#fcf9ff}.panel h3{font-size:18px;margin:0 0 15px}.panel .desc{color:var(--sub);font-size:13px;margin:-6px 0 13px;line-height:1.6}.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{margin-bottom:13px}.field label{display:block;font-size:13px;font-weight:800;margin-bottom:5px;color:#5a4167}.field input,.field select,.selector{width:100%;min-width:0;border:1px solid #dbc7e5;background:#fff;border-radius:11px;padding:11px 12px;color:var(--deep);min-height:43px}.primary{border:0;background:var(--purple);color:white;font-weight:850;border-radius:12px;padding:11px 17px;min-height:44px}.primary:hover{background:#4f2e6e}.secondary{border:1px solid #d9c1e7;border-radius:11px;color:#5e377c;background:#f7ebff;padding:8px 11px;font-size:13px;font-weight:800;min-height:39px}.secondary:hover{background:#ead3f8}.secondary.chosen{border-color:#724397;color:#fff;background:#724397}.danger{color:#913354;background:#ffe9f1;border-color:#ffc4d9}.actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.record{padding:13px 0;border-bottom:1px solid #efe3f3;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.record:last-child{border-bottom:0}.record strong{display:block;font-size:14px}.record small{font-size:12px;line-height:1.6;color:var(--sub);display:block;margin-top:3px}.record .actions{margin:8px 0 0}.status{display:inline-flex;font-size:11px;font-weight:850;border-radius:100px;padding:5px 9px;background:#f1dffa;color:#633580;white-space:nowrap}.status.ok{background:#e6f7e9;color:#187545}.status.warn{background:#fff0d5;color:#a06510}.status.bad{background:#ffe2ea;color:#a42f53}.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:15px}.stat{border-radius:14px;background:#f6ebfc;padding:17px;text-align:center}.stat .label{font-size:12px;color:var(--sub)}.stat strong{font-size:29px;display:block;margin:4px 0 0;letter-spacing:-.02em;color:var(--deep)}.notice{margin:0 23px 22px;padding:11px 15px;border:1px solid #d3eacb;background:#effaeb;color:#225d32;font-weight:700;border-radius:13px;font-size:13px}.notice[hidden]{display:none}.empty{padding:25px 8px;color:var(--sub);text-align:center;font-size:13px}.hint{font-size:12px;line-height:1.7;color:var(--sub);margin:12px 0 0}.foot{background:#fbf5ff;border-top:1px solid var(--border);padding:17px 23px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}.foot p{margin:0;font-size:12px;color:var(--sub)}.foot a{font-size:13px;font-weight:850;color:#653c83}.panel .wide{width:100%}.room-row{display:flex;gap:8px;align-items:center;margin-bottom:13px}.room-row label{flex:none;font-weight:800;font-size:13px}.room-row select{max-width:200px}.queue-number{font-variant-numeric:tabular-nums}.mini{font-size:12px;color:var(--sub)}.finish{padding-bottom:50px;text-align:center}.finish h2{font-size:22px}.finish p{font-size:14px;color:var(--sub);line-height:1.7}.finish .primary{display:inline-flex;align-items:center;justify-content:center;margin-top:5px}
-@media(max-width:860px){.scene-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.work-main{grid-template-columns:1fr}.panel.muted{order:-1}}
-@media(max-width:560px){.wrap{padding:0 13px}.topin{min-height:59px}.toplinks{font-size:12px}.logo{font-size:17px}.logo img{width:32px;height:32px}.link{padding:7px 9px}.hero{padding-top:26px}.hero p{font-size:14px}.scene-grid{gap:9px}.scene{min-height:126px;padding:13px}.scene strong{font-size:16px}.scene .emoji{font-size:24px;margin-bottom:7px}.work-head{padding:17px}.work-head h2{font-size:19px}.roles{width:100%}.role{flex:1}.work-main{padding:12px;gap:10px}.panel{padding:15px}.fields{grid-template-columns:1fr}.foot{padding:13px}.stat strong{font-size:25px}}
-@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+/* Demo wrapper only. The actual booking, pickup, queue, customer and staff markup
+   below uses the same classes and CSS as the shipping product. */
+.demo-intro{max-width:1500px;margin:20px auto 0;padding:0 24px}
+.demo-intro h1{font-size:clamp(23px,3vw,33px);margin:0 0 8px}
+.demo-intro p{color:var(--muted);font-size:14px;line-height:1.7;margin:0}
+.demo-badge{display:inline-block;background:#fff0c9;border-radius:100px;color:#735124;font-weight:850;font-size:11px;padding:5px 11px;margin-bottom:8px}
+.demo-scenes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:16px 0}
+.demo-scene{border:2px solid #e8d6f0;border-radius:18px;background:#fff;padding:14px 16px;text-align:left;color:#462b52;cursor:pointer;min-height:99px}
+.demo-scene strong{display:block;font-size:16px}.demo-scene small{display:block;color:#80688d;font-size:12px;line-height:1.5;margin-top:5px}
+.demo-scene.active{border-color:#724397;background:#fdf9ff;box-shadow:0 7px 22px #462b5213}
+.demo-controls{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:7px}
+.demo-controls .roles{display:flex;align-items:center;gap:5px;border:1px solid #e3cdea;background:#f7edfc;padding:5px;border-radius:13px}
+.demo-controls .roles button{border:0;border-radius:10px;background:transparent;padding:10px 17px;font-weight:850;min-height:42px;color:#5f4470;cursor:pointer}
+.demo-controls .roles button.active{background:#462b52;color:white}
+.demo-label{font-size:13px;font-weight:800;color:#694680}
+.demo-stage{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start;max-width:1500px;margin:15px auto 50px;padding:0 24px}
+#root{max-width:none;margin:0;padding:0;min-width:0}
+#root .toolbar{margin-bottom:18px}
+#root .layout{grid-template-columns:210px minmax(0,1fr);gap:15px}
+#root .layout aside{top:90px}
+#root .staff-picker{max-width:100%}
+#root .staff-choice{margin-bottom:6px}
+#root .staff-record{margin:12px 0}
+#root .content{min-width:0}
+#root .unit-option{cursor:pointer}
+#root .side-item{display:block;width:100%;text-align:left}
+#root .customer-shop-identity{max-width:100%}
+#root .grid4{grid-template-columns:repeat(auto-fit,minmax(105px,1fr))}
+#root .grid3{grid-template-columns:repeat(auto-fit,minmax(115px,1fr))}
+#root .slots{display:flex;flex-wrap:wrap;gap:8px;margin:9px 0}
+#root .slots .slot{flex:1 0 68px;max-width:150px}
+#root .ticket{font-size:clamp(35px,5vw,64px)}
+#root .demo-line-bypass{font-size:12px;background:#f3e5fa;border-radius:11px;padding:11px;color:#68427c}
+.demo-notice-pane{position:sticky;top:92px;border:1px solid #e8d4f0;border-radius:20px;background:#fff;padding:14px;box-shadow:0 8px 35px #462b5210;min-width:0}
+.demo-notice-head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:11px}
+.demo-notice-head strong{color:#462b52}.demo-notice-head p{font-size:11px;margin:3px 0;color:#80668d}
+.demo-line-phone{border:7px solid #353b41;border-radius:24px;overflow:hidden;background:#cbe9d1;box-shadow:0 10px 25px #3333}
+.demo-phone-header{background:#fff;padding:15px 10px;font-weight:850;font-size:12px;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px}
+.demo-phone-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#06c755}
+.demo-phone-body{padding:11px 10px;max-height:455px;min-height:190px;overflow-y:auto;display:flex;flex-direction:column;gap:13px}
+.demo-message{background:#fff;border-radius:14px 14px 14px 3px;padding:12px;font-size:12px;line-height:1.6;word-break:break-word;box-shadow:0 2px 10px #3331}
+.demo-message strong{display:block;font-size:14px;margin:6px 0;color:#222}
+.demo-message p{margin:4px 0;color:#343434;white-space:normal}
+.demo-message-source{font-size:10px;color:#697976}
+.demo-notice-disclaimer{font-size:11px;line-height:1.65;color:#7c6786;margin:11px 3px 0}
+.demo-foot{border-top:1px solid #eadcec;padding:17px 24px;margin:20px auto;max-width:1500px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.demo-foot p{font-size:12px;color:#7c6986;margin:0}
+a.demo-action-link{display:inline-block;background:#693c8b;color:white;padding:11px 18px;border-radius:12px;font-size:13px;font-weight:850}
+@media(max-width:1180px){.demo-stage{grid-template-columns:1fr}.demo-notice-pane{position:relative;top:auto;max-width:650px;width:100%;margin:auto}.demo-line-phone{max-width:360px;margin:auto}}
+@media(max-width:850px){#root .layout{grid-template-columns:1fr}#root .layout aside{position:relative;top:auto;display:flex;flex-wrap:wrap;gap:7px}#root .layout aside .side-item{width:auto;min-height:41px;padding:9px 12px}#root .layout aside .staff-side-label{width:100%;padding-top:7px}#root .layout aside .staff-side-label:first-of-type{padding-top:0}}
+@media(max-width:590px){.demo-intro,.demo-stage{padding:0 13px}.demo-scenes{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.demo-scene{padding:12px;min-height:90px}.demo-scene strong{font-size:14px}.demo-controls .roles{width:100%}.demo-controls .roles button{flex:1}.demo-scene small{font-size:11px}#root .customer-shop-title h1{font-size:20px}#root .toolbar{margin-bottom:12px}#root .card{padding:15px}#root .staff-picker .staff-choice{margin:3px 1px}#root .staff-choice span{font-size:12px}#root .grid{grid-template-columns:1fr}#root .queue-board-grid{grid-template-columns:1fr 1fr}#root .staff-record-head{flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
-<body>
-<header class="top"><div class="wrap topin"><a class="logo" href="./home.html"><img alt="" src="./monster-mascot.svg"><span>排隊怪獸</span></a><div class="toplinks"><a class="link" href="./home.html">回首頁</a><a class="link" href="./merchant-center.html#apply">建立我的店家</a></div></div></header>
-<main>
-<section class="wrap hero">
-<span class="eyebrow">免登入 · 立即操作 · 免費體驗</span>
-<h1>看看你的店，<br><em>如何少一點排隊、多一點效率。</em></h1>
-<p>選一種店家情境，直接模擬顧客下單、預約、抽號，再切換店員端操作接單、報到和叫號。所有資料只存在這個試用頁中，不會產生真實訂單或寫入正式資料庫。</p>
-<div class="feature-pills"><span>無需 LINE 授權</span><span>顧客與店員雙端操作</span><span>四種常見店家</span><span>可隨時重設</span></div>
-</section>
-<section class="wrap" aria-label="選擇試用產業">
-<div class="scene-grid" id="scenes">
-<button type="button" class="scene active" data-scene="breakfast" aria-pressed="true"><span class="emoji" aria-hidden="true">🥪</span><strong>早餐店</strong><small>線上點餐 · 指定取餐時間</small></button>
-<button type="button" class="scene" data-scene="salon" aria-pressed="false"><span class="emoji" aria-hidden="true">✂️</span><strong>美髮店</strong><small>預約服務 · 設計師 · 報到</small></button>
-<button type="button" class="scene" data-scene="repair" aria-pressed="false"><span class="emoji" aria-hidden="true">🔧</span><strong>維修店</strong><small>現場取號 · 即時叫號</small></button>
-<button type="button" class="scene" data-scene="clinic" aria-pressed="false"><span class="emoji" aria-hidden="true">🏥</span><strong>診所</strong><small>預約 + 報到 + 多診間叫號</small></button>
+<body data-portal="customer">
+<header>
+<div class="top">
+<a class="brand" href="./home.html" aria-label="排隊怪獸首頁"><span class="brandmark" aria-hidden="true"></span>排隊怪獸<small>預約・取號・訂餐</small></a>
+<nav class="headlinks"><a href="./home.html">回首頁</a><a href="./merchant-center.html#apply">建立自己的店家</a></nav>
 </div>
-<section class="work" aria-labelledby="work-title">
-<div class="work-head"><div><h2 id="work-title">早餐店｜線上點餐</h2><p id="work-sub">點一次訂餐，再切換店員端處理訂單。</p></div><div class="roles" role="group" aria-label="切換操作身分"><button type="button" class="role active" data-role="customer" aria-pressed="true">顧客端</button><button type="button" class="role" data-role="staff" aria-pressed="false">店員端</button></div></div>
-<div class="work-main" id="demo-app"></div>
-<div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
-<div class="foot"><p>這是獨立的互動模擬；資料不會傳送到 Supabase、LINE 或其他商家。</p><button type="button" class="secondary" data-action="reset">重設這個情境</button></div>
+</header>
+<main>
+<section class="demo-intro">
+<span class="demo-badge">免登入功能試用 · 使用正式產品介面</span>
+<h1>像真的開店一樣，親自操作一次。</h1>
+<p>選擇產業，先以顧客端訂餐、預約或取號，再切到店家端查看真實系統同款操作方式；右側會顯示客人完成後可能收到的 LINE 通知及後續狀態。此頁完全是獨立展示資料。</p>
+<div class="demo-scenes" aria-label="試用情境">
+<button class="demo-scene active" data-scene="breakfast" aria-pressed="true"><strong>早餐店</strong><small>線上點餐、取餐進度</small></button>
+<button class="demo-scene" data-scene="salon" aria-pressed="false"><strong>美髮店</strong><small>預約、設計師、報到</small></button>
+<button class="demo-scene" data-scene="repair" aria-pressed="false"><strong>維修店</strong><small>取號、叫號、過號恢復</small></button>
+<button class="demo-scene" data-scene="clinic" aria-pressed="false"><strong>診所</strong><small>預約、報到、1診／2診</small></button>
+</div>
+<div class="demo-controls">
+<div class="demo-label" id="demo-scene">早餐店｜線上點餐</div>
+<div class="roles" role="group" aria-label="切換顧客與店家操作畫面">
+<button data-role="customer" class="active" aria-pressed="true">顧客端</button>
+<button data-role="staff" aria-pressed="false">店家端</button>
+</div>
+</div>
 </section>
-</section>
-<section class="wrap finish"><h2>操作順手，就開始用在自己的店。</h2><p>不需要購買專用設備，手機、平板或電腦都能進行管理。<br>正式使用時，請由店家入口完成設定。</p><a class="primary" href="./merchant-center.html#apply">建立我的店家</a></section>
+<div class="demo-stage">
+<div id="root" class="container" aria-live="polite"></div>
+<aside id="notifications" class="demo-notice-pane" aria-label="顧客 LINE 通知及網站回饋模擬"></aside>
+</div>
 </main>
-<script>
-(function(){
-"use strict";
-// All state is intentionally in-memory. No credentials, storage, network calls or production database operations.
-function initial(){return {
- breakfast:{seq:3,orders:[{id:"B001",name:"小美",item:"火腿蛋吐司",qty:1,time:"08:00",status:"待接單"},{id:"B002",name:"林先生",item:"培根蛋餅",qty:2,time:"08:20",status:"待取"}]},
- salon:{seq:3,bookings:[{id:"S001",name:"王小姐",service:"洗剪",stylist:"Ava",time:"今天 14:00",status:"已預約"},{id:"S002",name:"林先生",service:"染髮",stylist:"Mina",time:"今天 15:30",status:"已報到"}]},
- repair:{seq:15,tickets:[{id:"R012",name:"張先生",issue:"電池更換",status:"已叫號"},{id:"R013",name:"李小姐",issue:"手機維修",status:"等候中"},{id:"R014",name:"陳先生",issue:"資料轉移",status:"等候中"}],current:"R012"},
- clinic:{seq:3,bookingSeq:3,bookings:[{id:"P001",name:"王小姐",room:"1診",time:"今天 09:30",status:"已預約",ticket:""},{id:"P002",name:"林先生",room:"2診",time:"今天 10:00",status:"已報到",ticket:"C2-002"}],tickets:[{id:"C1-001",name:"陳先生",room:"1診",status:"已叫號"},{id:"C2-002",name:"林先生",room:"2診",status:"等候中"}],current:{"1診":"C1-001","2診":""}}
-};}
-var state=initial(),scene="breakfast",role="customer",selectedRoom="1診",notice="";
-var meta={breakfast:["早餐店｜線上點餐","模擬顧客預訂取餐，再切換店員端接單、待取或拒單。"],salon:["美髮店｜線上預約","選服務、設計師與時段，店員可調整報到及完成狀態。"],repair:["維修店｜現場叫號","先抽號，再到店員端叫下一位、過號、恢復。"],clinic:["診所｜預約與叫號","先預約、報到進入候診，再按診間分別叫號。"]};
-var statusClass={"已報到":"ok","已完成":"ok","待取":"ok","服務中":"ok","已叫號":"warn","待接單":"warn","過號":"bad","拒單":"bad","取消":"bad"};
-function esc(value){return String(value==null?"":value).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
-function pill(v){return '<span class="status '+(statusClass[v]||"")+'">'+esc(v)+'</span>';}
-function fmt(n,len){return String(n).padStart(len||3,"0");}
-function record(title,subtitle,status,buttons){return '<div class="record"><div><strong>'+esc(title)+'</strong><small>'+esc(subtitle)+'</small>'+(buttons?'<div class="actions">'+buttons+'</div>':"")+'</div>'+pill(status)+'</div>';}
-function button(text,action,id,value,extra){return '<button type="button" class="secondary '+(extra||"")+'" data-action="'+esc(action)+'"'+(id?' data-id="'+esc(id)+'"':"")+(value?' data-value="'+esc(value)+'"':"")+'>'+esc(text)+'</button>';}
-function list(records){return records.length?records.join(""):'<div class="empty">目前沒有紀錄，試著從顧客端新增一筆。</div>';}
-function field(title,id,html){return '<div class="field"><label for="'+id+'">'+title+'</label>'+html+'</div>';}
-function input(id,placeholder){return '<input id="'+id+'" maxlength="18" placeholder="'+placeholder+'" autocomplete="off">';}
-function select(id,values){return '<select id="'+id+'">'+values.map(function(v){return '<option value="'+esc(v)+'">'+esc(v)+'</option>';}).join("")+'</select>';}
-function formStart(type){return '<form data-form="'+type+'">';}
-function formEnd(text){return '<button class="primary wide" type="submit">'+text+'</button></form>';}
-function box(title,inner,cls){return '<section class="panel '+(cls||"")+'"><h3>'+title+'</h3>'+inner+'</section>';}
-function stat(label,value){return '<div class="stat"><div class="label">'+esc(label)+'</div><strong class="queue-number">'+esc(value)+'</strong></div>';}
-function summary(title,inner){return box(title,inner,"muted");}
-function breakfast(){
- var d=state.breakfast;
- var orders=d.orders.map(function(o){var controls=role==="staff"?["接單","待取","拒單"].map(function(s){return button(s,"order-status",o.id,s,o.status===s?"chosen":"");}).join(""):"";return record(o.id+"｜"+o.name,o.item+" × "+o.qty+" · "+o.time+" 取餐",o.status,controls);});
- var left=role==="customer"?box("顧客端｜預訂餐點",formStart("breakfast")+'<div class="fields">'+field("稱呼","b-name",input("b-name","例如：林先生"))+field("餐點","b-item",select("b-item",["火腿蛋吐司","培根蛋餅","蘿蔔糕","鮪魚三明治"]))+field("數量","b-qty",select("b-qty",["1","2","3","4"]))+field("取餐時間","b-time",select("b-time",["07:30","07:45","08:00","08:15","08:30","09:00"]))+'</div>'+formEnd("送出模擬訂單")+'<p class="hint">訂單建立後切換店員端，可自由更改「接單／待取／拒單」，包含已接單後拒單。</p>'):box("店員端｜訂單管理",list(orders)+'<p class="hint">三種狀態可以隨時變更，誤操作也可以復原。</p>');
- var right=role==="customer"?summary("我的店裡正在忙什麼？",'<div class="stats">'+stat("目前訂單",d.orders.length)+stat("待取餐",d.orders.filter(function(o){return o.status==="待取";}).length)+'</div>'+list(orders.slice(0,4))):summary("今日訂單概況",'<div class="stats">'+stat("待接單",d.orders.filter(function(o){return o.status==="待接單";}).length)+stat("已接單或待取",d.orders.filter(function(o){return ["接單","待取"].includes(o.status);}).length)+'</div><p class="hint">從顧客端新增的訂單會立即出現在這裡。</p>');
- return left+right;
-}
-function salon(){
- var d=state.salon;
- var items=d.bookings.map(function(o){var controls=role==="staff"?["已預約","已報到","已完成","取消"].map(function(s){return button(s,"salon-status",o.id,s,o.status===s?"chosen":"");}).join(""):"";return record(o.id+"｜"+o.name,o.service+" · "+o.stylist+" · "+o.time,o.status,controls);});
- var left=role==="customer"?box("顧客端｜線上預約",formStart("salon")+'<div class="fields">'+field("稱呼","s-name",input("s-name","例如：陳小姐"))+field("服務項目","s-service",select("s-service",["洗剪","染髮","燙髮","護髮"]))+field("設計師","s-stylist",select("s-stylist",["Ava","Mina","Ken"]))+field("預約時段","s-time",select("s-time",["今天 14:00","今天 15:00","明天 10:00","明天 11:00","明天 15:30"]))+'</div>'+formEnd("確認模擬預約")+'<p class="hint">同一位設計師同一時段不可重複預約；這裡只示範排程邏輯。</p>'):box("店員端｜預約管理",list(items)+'<p class="hint">已完成或取消的預約不會消失，仍可調回其他狀態。</p>');
- var right=role==="customer"?summary("預約清單",list(items)):summary("預約概況",'<div class="stats">'+stat("預約總數",d.bookings.length)+stat("已報到",d.bookings.filter(function(o){return o.status==="已報到";}).length)+'</div><p class="hint">切到顧客端新增預約，這裡會同步呈現。</p>');
- return left+right;
-}
-function repair(){
- var d=state.repair,waiting=d.tickets.filter(function(t){return t.status==="等候中";}),mine=d.tickets.filter(function(t){return t.id==="R"+fmt(d.seq-1);});
- var items=d.tickets.map(function(o){var controls=role==="staff"?["等候中","已叫號","服務中","已完成","過號"].map(function(s){return button(s,"repair-status",o.id,s,o.status===s?"chosen":"");}).join(""):"";return record(o.id+"｜"+o.name,o.issue,o.status,controls);});
- var left=role==="customer"?box("顧客端｜取號",formStart("repair")+'<div class="fields">'+field("稱呼","r-name",input("r-name","例如：王先生"))+field("服務需求","r-issue",select("r-issue",["手機維修","電池更換","資料轉移","電腦檢測"]))+'</div>'+formEnd("領取模擬號碼")+'<p class="hint">取得號碼後，到店員端按「叫下一位」。</p>'):box("店員端｜叫號操作",'<div class="stats">'+stat("目前叫號",d.current||"尚未叫號")+stat("等候中",waiting.length+" 組")+'</div><div class="actions">'+button("叫下一位","repair-next")+button("重叫目前號碼","repair-recall")+'</div>'+list(items)+'<p class="hint">叫下一位不要求先完成前一人；各筆狀態可自由調整、恢復過號。</p>');
- var right=role==="customer"?summary("公開叫號進度",'<div class="stats">'+stat("目前叫號",d.current||"尚未叫號")+stat("前方待叫",waiting.length+" 組")+'</div>'+list(items.slice(-5))):summary("目前候位名單",list(waiting.map(function(o){return record(o.id,o.name+" · "+o.issue,o.status,"");})));
- return left+right;
-}
-function clinic(){
- var d=state.clinic,bookings=d.bookings.map(function(o){var controls=role==="staff"?button(o.status==="已報到"?"已報到":"辦理報到","clinic-checkin",o.id,"",o.status==="已報到"?"chosen":"")+["已預約","已完成","取消"].map(function(s){return button(s,"clinic-booking-status",o.id,s,o.status===s?"chosen":"");}).join(""):"";return record(o.id+"｜"+o.name,o.room+" · "+o.time+(o.ticket?" · 候診號碼 "+o.ticket:""),o.status,controls);});
- var inRoom=d.tickets.filter(function(t){return t.room===selectedRoom;});
- var items=inRoom.map(function(o){var controls=role==="staff"?["等候中","已叫號","服務中","已完成","過號"].map(function(s){return button(s,"clinic-ticket-status",o.id,s,o.status===s?"chosen":"");}).join(""):"";return record(o.id+"｜"+o.name,o.room,o.status,controls);});
- var left=role==="customer"?box("顧客端｜門診預約",formStart("clinic")+'<div class="fields">'+field("稱呼","c-name",input("c-name","例如：李小姐"))+field("診間","c-room",select("c-room",["1診","2診"]))+field("預約時段","c-time",select("c-time",["今天 09:30","今天 10:00","今天 10:30","明天 09:30","明天 10:00"]))+'</div>'+formEnd("送出模擬門診預約")+'<p class="hint">預約不會自動取號；到店後需由店員執行「辦理報到」才會加入對應診間候診。</p>'):box("店員端｜門診預約與報到",list(bookings)+'<p class="hint">「辦理報到」只會產生一次候診號碼；已完成與取消可調整狀態。</p>');
- var roomSelect='<div class="room-row"><label for="clinic-room">查看診間</label>'+select("clinic-room",["1診","2診"]).replace('id="clinic-room"','id="clinic-room" class="selector"').replace('<option value="'+(selectedRoom==="2診"?"2診":"1診")+'">','<option value="'+selectedRoom+'" selected>')+'</div>';
- var right=summary("診間叫號進度",roomSelect+'<div class="stats">'+stat("目前叫號",d.current[selectedRoom]||"尚未叫號")+stat("候診中",inRoom.filter(function(t){return t.status==="等候中";}).length+" 位")+'</div>'+(role==="staff"?'<div class="actions">'+button("叫下一位","clinic-next")+button("重叫","clinic-recall")+'</div>':"")+list(items));
- return left+right;
-}
-function render(){
- document.querySelectorAll("[data-scene]").forEach(function(b){var on=b.dataset.scene===scene;b.classList.toggle("active",on);b.setAttribute("aria-pressed",String(on));});
- document.querySelectorAll("[data-role]").forEach(function(b){var on=b.dataset.role===role;b.classList.toggle("active",on);b.setAttribute("aria-pressed",String(on));});
- document.getElementById("work-title").textContent=meta[scene][0];document.getElementById("work-sub").textContent=meta[scene][1];
- document.getElementById("demo-app").innerHTML=({breakfast:breakfast,salon:salon,repair:repair,clinic:clinic})[scene]();
- var n=document.getElementById("notice");n.textContent=notice;n.hidden=!notice;
-}
-function inform(s){notice=s;render();}
-function findId(arr,id){return arr.find(function(v){return v.id===id;});}
-function takeVal(id){return (document.getElementById(id)?.value||"").trim();}
-document.addEventListener("click",function(e){
- var sceneBtn=e.target.closest("[data-scene]");if(sceneBtn){scene=sceneBtn.dataset.scene;role="customer";notice="";render();return;}
- var roleBtn=e.target.closest("[data-role]");if(roleBtn){role=roleBtn.dataset.role;notice="";render();return;}
- var btn=e.target.closest("[data-action]");if(!btn)return;
- var a=btn.dataset.action,id=btn.dataset.id,v=btn.dataset.value;
- if(a==="reset"){state[scene]=initial()[scene];notice="已重設這個情境的展示資料";render();return;}
- if(a==="order-status"){var o=findId(state.breakfast.orders,id);if(o)o.status=v;inform(id+" 已更新為「"+v+"」");return;}
- if(a==="salon-status"){var s=findId(state.salon.bookings,id);if(s)s.status=v;inform(id+" 已更新為「"+v+"」");return;}
- if(a==="repair-status"){var t=findId(state.repair.tickets,id);if(t){t.status=v;if(v==="已叫號")state.repair.current=t.id;}inform(id+" 已更新為「"+v+"」");return;}
- if(a==="repair-next"){var next=state.repair.tickets.find(function(t){return t.status==="等候中";});if(!next){inform("目前沒有等候中的號碼");return;}next.status="已叫號";state.repair.current=next.id;inform("目前已叫號 "+next.id);return;}
- if(a==="repair-recall"){inform("重叫 "+(state.repair.current||"目前無號碼")+"（模擬提醒）");return;}
- if(a==="clinic-booking-status"){var b=findId(state.clinic.bookings,id);if(b)b.status=v;inform(id+" 已更新為「"+v+"」");return;}
- if(a==="clinic-checkin"){var b=findId(state.clinic.bookings,id);if(!b)return;if(b.ticket){b.status="已報到";inform("已恢復報到狀態，沿用原候診號碼 "+b.ticket);return;}var number="C"+(b.room==="1診"?"1":"2")+"-"+fmt(state.clinic.seq++);b.status="已報到";b.ticket=number;state.clinic.tickets.push({id:number,name:b.name,room:b.room,status:"等候中"});inform(b.name+" 已報到，候診號碼 "+number);return;}
- if(a==="clinic-ticket-status"){var t=findId(state.clinic.tickets,id);if(t){t.status=v;if(v==="已叫號")state.clinic.current[t.room]=t.id;}inform(id+" 已更新為「"+v+"」");return;}
- if(a==="clinic-next"){var t=state.clinic.tickets.find(function(o){return o.room===selectedRoom&&o.status==="等候中";});if(!t){inform(selectedRoom+" 沒有等候中的病患");return;}t.status="已叫號";state.clinic.current[selectedRoom]=t.id;inform(selectedRoom+" 已叫號 "+t.id);return;}
- if(a==="clinic-recall"){inform(selectedRoom+" 重叫 "+(state.clinic.current[selectedRoom]||"目前無號碼")+"（模擬提醒）");return;}
-});
-document.addEventListener("change",function(e){if(e.target.id==="clinic-room"){selectedRoom=e.target.value;notice="";render();}});
-document.addEventListener("submit",function(e){
- var f=e.target.closest("form[data-form]");if(!f)return;e.preventDefault();
- var type=f.dataset.form,name,id;
- if(type==="breakfast"){name=takeVal("b-name")||"展示顧客";id="B"+fmt(state.breakfast.seq++);state.breakfast.orders.unshift({id:id,name:name,item:takeVal("b-item"),qty:Number(takeVal("b-qty")),time:takeVal("b-time"),status:"待接單"});inform("模擬訂單 "+id+" 已送出。切換店員端即可接單。");}
- if(type==="salon"){name=takeVal("s-name")||"展示顧客";var stylist=takeVal("s-stylist"),time=takeVal("s-time");if(state.salon.bookings.some(function(b){return b.stylist===stylist&&b.time===time&&!["取消","已完成"].includes(b.status);})){inform("這位設計師的時段已有預約，請更換時段或設計師");return;}id="S"+fmt(state.salon.seq++);state.salon.bookings.unshift({id:id,name:name,service:takeVal("s-service"),stylist:stylist,time:time,status:"已預約"});inform("模擬預約 "+id+" 已建立，切換店員端可辦理報到。");}
- if(type==="repair"){name=takeVal("r-name")||"展示顧客";id="R"+fmt(state.repair.seq++);state.repair.tickets.push({id:id,name:name,issue:takeVal("r-issue"),status:"等候中"});inform("已取得展示號碼 "+id+"，切換店員端體驗叫號。");}
- if(type==="clinic"){name=takeVal("c-name")||"展示病患";id="P"+fmt(state.clinic.bookingSeq++);state.clinic.bookings.unshift({id:id,name:name,room:takeVal("c-room"),time:takeVal("c-time"),status:"已預約",ticket:""});inform("已建立模擬門診預約 "+id+"。切換店員端報到後即可加入候診。");}
-});
-render();
-})();
-</script>
+<footer class="demo-foot">
+<p>所有操作資料只在目前瀏覽頁面暫存，不呼叫正式 Supabase、LINE 或店家服務。此頁不需要登入。</p>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn outline" data-act="reset">重設本產業</button><a class="demo-action-link" href="./merchant-center.html#apply">建立我的店家</a></div>
+</footer>
+<script defer src="./assets/demo/real-flow.js?build=__LINE_SAAS_BUILD__"></script>
 </body>
 </html>
