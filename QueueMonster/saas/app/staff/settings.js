@@ -4,6 +4,7 @@ import {routeState} from "../state/routeState.js";
 import {sharedUiState} from "../state/sharedUiState.js";
 
 import {staffState} from "../state/staffState.js";
+import {serviceUnitsState} from "../state/serviceUnitsState.js";
 
 import {box,btn,esc,field,tag} from "../shared-ui.js";
 
@@ -67,10 +68,12 @@ export function renderStaffSettings({t,isManager,html,customersOnly=false}){
      '</div><div><label for="hold-return-mode">恢復後順位</label><select id="hold-return-mode" class="field">'+
      [["END","返回隊尾"],["ORIGINAL","返回原順位"]].map(([v,name])=>'<option value="'+v+'" '+((staffState.staff.queue_hold_policy?.return_mode||"END")===v?"selected":"")+'>'+name+'</option>').join("")+
      '</select></div></div><div class="staff-actionbar">'+btn("儲存候位保留規則","save-hold-policy","primary")+'</div>'):"")],
-["operations",(isManager?box("預約營業日與休息設定",
-      '<p class="small">選擇每週固定公休日；特殊休假日期可直接點開日曆多選，系統會自動整理成日期文字。既有預約不會被自動取消。</p>'+
-      '<label>每週固定公休日</label><div class="grid">'+weekdayChecks+'</div>'+
-      closedDatesPickerMarkup(policy.closed_dates||[])+
+["operations",(isManager?box("預約提前限制與休息時間",
+      '<p class="small">設定預約提前限制與中場休息；每週營業場次和特殊日期請使用智慧營業排程。既有預約不會自動取消。</p>'+
+      (serviceUnitsState.scheduleConfig?.enabled?
+        '<p class="small">每週公休與特殊日期已統一到上方「智慧營業排程」。</p>':
+        '<label>舊版預約公休日</label><div class="grid">'+weekdayChecks+'</div>'+
+        closedDatesPickerMarkup(policy.closed_dates||[]))+
       '<div class="grid"><div>'+field("每日休息開始（可留空）","policy-break-start",policy.break_start||"","time")+
       field("最晚提前預約分鐘數","policy-notice",policy.min_notice_minutes??0,"number",'min="0" max="10080"')+'</div>'+
       '<div>'+field("每日休息結束（可留空）","policy-break-end",policy.break_end||"","time")+'</div></div>'+
