@@ -406,8 +406,8 @@ try{
   await page.waitForTimeout(180);
   assert.equal(await page.locator("#refresh").count(),0,"Event-driven queue board needs no manual refresh button");
   const modeText=(await page.locator("#board-update-mode").textContent()).trim();
-  assert.ok(["叫號變動即時更新","每 10 秒更新一次叫號"].includes(modeText),
-   "The board must explain realtime or exact ten-second fallback");
+  assert.ok(["叫號變動即時更新","每 5 秒更新一次叫號"].includes(modeText),
+   "The board must explain realtime or exact five-second fallback");
   const normal=await geometry();
   assert.equal(normal.fullscreen,false);
   assert.equal(normal.scale,1);
