@@ -205,7 +205,18 @@ test("first Email signup password save clears the pending setup flag",()=>{
  assert.match(code,/operator\.auth\.updateUser\(changes\)/);
 });
 
-test("Email-password users get the password action, Google and LINE accounts do not",async()=>{
+test("Email password-change dialog accepts one character and matches the registration login encoding",async()=>{
+ const registerSource=read("saas/assets/merchant-register/main.js");
+ const helper=/async function effectivePassword\\(email,plaintext\\)\\{[\\s\\S]*?^\\}/m;
+ const inHeader=code.match(helper),inRegister=registerSource.match(helper);
+ assert.ok(inHeader&&inRegister,"short-password compatibility helper must be present in both flows");
+ assert.equal(inHeader[0],inRegister[0],"changing a short password must use the same stored credential as login");
+ assert.match(code,/input\\.minLength=1/);
+ assert.doesNotMatch(code,/minLength=8|password\\.value\\.length<8|至少需要 8 個字元/);
+ assert.match(code,/effectivePassword\\(verified\\.data\\.user\\.email,password\\.value\\)/);
+ assert.match(code,/const changes=\\{password:effective\\}/);
+ assert.match(code,/input\\.required=true/);
+});\n\ntest("Email-password users get the password action, Google and LINE accounts do not",async()=>{
  const email=createScenario({staffName:"email@example.test",staffProvider:"email",url:"https://hub-google.github.io/LINE/booking/?view=staff"});
  await flush();
  assert.ok(controls(email.rootNode).some(x=>x.textContent==="修改密碼"),"Email password menu action missing");

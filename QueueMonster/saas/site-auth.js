@@ -13,6 +13,19 @@ const customer=createClient(SB_URL,SB_KEY,{
 const operator=createClient(SB_URL,SB_KEY,{
  auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}
 });
+// Keep this short-password compatibility transform identical to merchant-register/main.js.
+// The hosted Supabase Auth minimum is six characters; this is not a strengthener.
+async function effectivePassword(email,plaintext){
+ if(typeof plaintext!=="string"||!plaintext.length)throw Error("請輸入密碼");
+ if(plaintext.length>=6)return plaintext;
+ const normalized=(email||"").trim().toLowerCase();
+ if(!normalized)throw Error("找不到帳號的電子信箱");
+ if(!globalThis.crypto?.subtle)throw Error("瀏覽器無法安全處理密碼，請使用新版瀏覽器");
+ const bytes=new TextEncoder().encode("queue-monster-short-password-v1\\0"+normalized+"\\0"+plaintext);
+ const digest=await crypto.subtle.digest("SHA-256",bytes);
+ return "qm1-"+Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,"0")).join("");
+}
+
 let currentIdentity=null,busy=false;
 function portalMode(){
  const page=location.pathname.split("/").pop()||"";
@@ -105,13 +118,13 @@ function showPasswordDialog(){
  const dismiss=el("button","site-auth-password-close","×");
  dismiss.type="button";dismiss.setAttribute("aria-label","關閉修改密碼");
  head.append(title,dismiss);
- const note=el("p","site-auth-password-hint","為了帳號安全，請設定至少 8 個字元的新密碼。");
+ const note=el("p","site-auth-password-hint","請輸入新密碼並再次確認，最少輸入 1 個字元。");
  const form=el("form","site-auth-password-form");
  function addField(labelText,autocomplete){
   const label=el("label","site-auth-password-field");
   const text=el("span","",labelText);
   const input=el("input","site-auth-password-input");
-  input.type="password";input.required=true;input.minLength=8;
+  input.type="password";input.required=true;input.minLength=1;
   input.autocomplete=autocomplete;
   label.append(text,input);form.append(label);
   return input;
@@ -151,7 +164,7 @@ function showPasswordDialog(){
  backdrop.addEventListener("pointerdown",event=>{if(event.target===backdrop)close()});
  form.addEventListener("submit",event=>{event.preventDefault();void(async()=>{
   feedback.classList.remove("error","success");
-  if(password.value.length<8){feedback.textContent="新密碼至少需要 8 個字元。";feedback.classList.add("error");return}
+  if(password.value.length<1){feedback.textContent="請輸入新密碼。";feedback.classList.add("error");return}
   if(password.value!==confirmation.value){feedback.textContent="兩次輸入的密碼不一致。";feedback.classList.add("error");return}
   save.disabled=true;cancel.disabled=true;dismiss.disabled=true;
   feedback.textContent="正在驗證帳號並更新密碼…";
@@ -164,7 +177,8 @@ function showPasswordDialog(){
    const hasEmailProvider=liveProvider==="email" ||
     (!liveProvider && verified.data.user.identities?.some(item=>item.provider==="email")===true);
    if(!hasEmailProvider)throw Error("此帳號以 Google 或 LINE 登入，沒有需要修改的平台密碼。");
-   const changes={password:password.value};
+   const effective=await effectivePassword(verified.data.user.email,password.value);
+   const changes={password:effective};
    if(verified.data.user.user_metadata?.queue_monster_password_pending===true)
     changes.data={queue_monster_password_pending:false};
    const result=await operator.auth.updateUser(changes);
@@ -179,7 +193,7 @@ function showPasswordDialog(){
    feedback.classList.add("error");
    feedback.textContent=/reauth|nonce|authentication/i.test(detail)
     ?"請先完成安全驗證。如無法更新，可從登入頁使用「忘記密碼」重設。"
-    :(/password/i.test(detail)?"密碼不符合安全規則，請設定較長且不同於舊密碼的組合。":"修改密碼失敗："+(detail||"請稍後重試。"));
+    :(/password/i.test(detail)?"密碼修改失敗，請稍後重試或使用「忘記密碼」重新設定。":"修改密碼失敗："+(detail||"請稍後重試。"));
    save.disabled=false;cancel.disabled=false;dismiss.disabled=false;
   }
  })()});
