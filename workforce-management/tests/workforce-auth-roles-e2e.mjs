@@ -401,6 +401,7 @@ try{
  });
  await step('Employee submits a retroactive overtime request through actual browser',async()=>{
   await employeePage.locator('#refreshBtn').click();
+  await employeePage.waitForFunction(()=>document.querySelector('#connectionLabel')?.textContent==='資料已同步',null,{timeout:45000});
   await employeePage.locator('#nav [data-tab="requests"]').click();
   await employeePage.locator('#pageActions [data-action="newOvertimeRequest"]').click();
   const form=employeePage.locator('#overlay form[data-form="request"]');
@@ -493,6 +494,75 @@ try{
   assert.ok(audit.some(x=>x.action==='employee_deactivated'));
   assert.ok(audit.some(x=>x.action==='employee_reactivated'));
   return 'Employee was disabled without deleting history; Auth access blocked; return succeeded';
+ });
+
+ await step('Employee creates correction and supervisor approves without modifying raw punches',async()=>{
+  const prior=new Date(Date.now()-2*86400000).toISOString().slice(0,10);
+  const form={p_member:member,p_kind:'correction',
+   p_start:prior+'T09:00:00+08:00',p_end:prior+'T10:00:00+08:00',
+   p_reason:'【漏上班卡】E2E 補卡歷史匯出測試 '+run,p_leave_kind:null,p_target_member:null};
+  const applied=(await req(api+'/rest/v1/rpc/wm_submit_request','POST',
+   form,header(publicKey,users[1].token))).data;
+  assert.equal(applied.status,'pending');
+  const decision=(await req(api+'/rest/v1/rpc/wm_decide_request','POST',
+   {p_request:applied.id,p_decision:'approved',p_note:'E2E 匯出歷程核准'},
+   header(publicKey,users[2].token))).data;
+  assert.equal(decision.status,'approved');
+  const adjustments=await rows('wm_attendance_adjustments',users[1].token,
+   'select=id,request_id&tenant_id=eq.'+tenant+'&request_id=eq.'+applied.id);
+  assert.equal(adjustments.length,1);
+  const punches=await rows('wm_punches',users[1].token,
+   'select=id&tenant_id=eq.'+tenant);
+  assert.equal(punches.length,0,'Correction must preserve, not fabricate original punch events');
+  return 'Existing request and approval workflow produced one separate correction';
+ });
+ await step('Attendance export RPC checks member scope and returns exact event counts',async()=>{
+  const prior=new Date(Date.now()-2*86400000).toISOString().slice(0,10);
+  const result=(await req(api+'/rest/v1/rpc/wm_prepare_attendance_export','POST',
+   {p_tenant:tenant,p_member:member,p_from:prior,p_to:new Date().toISOString().slice(0,10)},
+   header(publicKey,users[1].token))).data;
+  assert.ok(result.export_id);
+  assert.equal(result.punch_count,0);
+  assert.equal(result.correction_count,1);
+  assert.ok(result.action_count>=2);
+  assert.equal(result.adjustment_count,1);
+  const denied=await req(api+'/rest/v1/rpc/wm_prepare_attendance_export','POST',
+   {p_tenant:tenant,p_member:managerMember,p_from:prior,p_to:new Date().toISOString().slice(0,10)},
+   header(publicKey,users[1].token),false);
+  assert.ok(denied.status>=400,'Employee must not export manager history');
+  const wrongTenant=await req(api+'/rest/v1/rpc/wm_prepare_attendance_export','POST',
+   {p_tenant:randomUUID(),p_member:member,p_from:prior,p_to:new Date().toISOString().slice(0,10)},
+   header(publicKey,users[1].token),false);
+  assert.ok(wrongTenant.status>=400,'Member must be checked against requested tenant');
+ });
+ await step('Employee downloads full audited correction history as CSV through real website',async()=>{
+  await employeePage.locator('#refreshBtn').click();
+  await employeePage.waitForFunction(()=>document.querySelector('#connectionLabel')?.textContent==='資料已同步',null,{timeout:45000});
+  await employeePage.locator('#nav [data-tab="reports"]').click();
+  const form=employeePage.locator('#appContent #wfHistoryExportForm');
+  await form.waitFor({state:'visible',timeout:15000});
+  const choices=await form.locator('[name="member_id"] option').evaluateAll(nodes=>nodes.map(n=>n.value));
+  assert.deepEqual(choices,[member]);
+  await form.locator('[name="member_id"]').selectOption(member);
+  await form.locator('[name="from"]').fill(new Date(Date.now()-2*86400000).toISOString().slice(0,10));
+  await form.locator('[name="to"]').fill(new Date().toISOString().slice(0,10));
+  await screenshot(employeePage,'12-audited-history-export');
+  const [download]=await Promise.all([
+   employeePage.waitForEvent('download',{timeout:45000}),
+   form.locator('button[type="submit"]').click()
+  ]);
+  const stream=await download.createReadStream();let csv='';
+  for await(const chunk of stream)csv+=chunk.toString('utf8');
+  assert.ok(csv.startsWith('\ufeff'));
+  assert.match(csv,/出勤與補正原始紀錄/);
+  assert.match(csv,/補卡申請/);
+  assert.match(csv,/補卡審核歷程/);
+  assert.match(csv,/補卡核准後更正/);
+  assert.match(csv,/E2E 補卡歷史匯出測試/);
+  assert.match(csv,/原始打卡筆數","0/);
+  assert.match(csv,/補卡申請筆數","1/);
+  assert.match(csv,/補卡更正筆數","1/);
+  return 'Real employee downloaded full CSV verified against server counts and preserved correction history';
  });
 
  await step('Employee cannot create manager-only shift through REST',async()=>{
