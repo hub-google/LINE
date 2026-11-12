@@ -136,3 +136,70 @@ test("homepage SEO stays in metadata, provides meaningful structured data, and p
  assert.match(build,/copyFile\(path\.join\(src, "sitemap\.xml"\)/);
  assert.match(publish,/sitemap\.xml/);
 });
+
+
+test("four-scenario login-free demo is versioned and deployed to Pages",()=>{
+ const html=read("saas/demo.html");
+ assert.match(html,/meta name="line-saas-build" content="__LINE_SAAS_BUILD__"/);
+ assert.match(html,/version-watch\.js\?build=__LINE_SAAS_BUILD__/);
+ assert.match(build,/"demo\.html"/);
+ assert.match(publish,/home\.html demo\.html board\.html/);
+ assert.match(landing,/href="\.\/demo\.html"/);
+ for(const id of ["breakfast","salon","repair","clinic"])assert.match(html,new RegExp('data-scene="'+id+'"'));
+ for(const name of ["早餐店","美髮店","維修店","診所","顧客端","店員端","接單","待取","拒單","已報到","過號"])assert.ok(html.includes(name),"missing demo: "+name);
+ const source=html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+ assert.ok(source,"demo interaction script missing");
+ const syntax=spawnSync(process.execPath,["--check"],{input:source,encoding:"utf8"});
+ assert.equal(syntax.status,0,syntax.stderr);
+ for(const prohibited of ["localStorage","sessionStorage","XMLHttpRequest","createClient(","fetch(","line-bridge","so_staff_action"])assert.ok(!source.includes(prohibited),"demo must not access production: "+prohibited);
+});
+
+test("demo guest and staff interactions work on isolated in-memory state",()=>{
+ const html=read("saas/demo.html");
+ const source=html.match(/<script>([\s\S]*?)<\/script>/)[1];
+ const handlers={},elements=new Map();
+ const el=(id)=>{if(!elements.has(id))elements.set(id,{id,value:"",textContent:"",innerHTML:"",hidden:false,classList:{toggle(){}},setAttribute(){}});return elements.get(id);};
+ const doc={
+  getElementById:el,
+  querySelectorAll:()=>[],
+  addEventListener:(type,callback)=>{handlers[type]=callback;}
+ };
+ runInNewContext(source,{document:doc});
+ const click=(selector,data)=>handlers.click({target:{closest:s=>s===selector?{dataset:data}:null}});
+ const submit=(type)=>handlers.submit({target:{closest:s=>s==="form[data-form]"?{dataset:{form:type}}:null},preventDefault(){}});
+ assert.match(el("demo-app").innerHTML,/火腿蛋吐司/);
+ el("b-name").value="小明";el("b-item").value="培根蛋餅";el("b-qty").value="2";el("b-time").value="08:00";
+ submit("breakfast");
+ assert.match(el("notice").textContent,/B003/);
+ click("[data-role]",{role:"staff"});
+ assert.match(el("demo-app").innerHTML,/小明/);
+ click("[data-action]",{action:"order-status",id:"B003",value:"接單"});
+ assert.match(el("demo-app").innerHTML,/B003[\s\S]*?接單/);
+ click("[data-action]",{action:"order-status",id:"B003",value:"拒單"});
+ assert.match(el("notice").textContent,/拒單/);
+ click("[data-scene]",{scene:"repair"});
+ el("r-name").value="維修顧客";el("r-issue").value="手機維修";submit("repair");
+ assert.match(el("notice").textContent,/R015/);
+ click("[data-role]",{role:"staff"});
+ click("[data-action]",{action:"repair-next"});
+ assert.match(el("notice").textContent,/R013/);
+ click("[data-action]",{action:"repair-status",id:"R013",value:"過號"});
+ assert.match(el("notice").textContent,/過號/);
+ click("[data-action]",{action:"repair-status",id:"R013",value:"等候中"});
+ assert.match(el("notice").textContent,/等候中/);
+ click("[data-scene]",{scene:"clinic"});
+ el("c-name").value="試用病患";el("c-room").value="1診";el("c-time").value="今天 09:30";submit("clinic");
+ assert.match(el("notice").textContent,/P003/);
+ click("[data-role]",{role:"staff"});
+ click("[data-action]",{action:"clinic-checkin",id:"P003"});
+ assert.match(el("notice").textContent,/C1-003/);
+ click("[data-action]",{action:"clinic-next"});
+ assert.match(el("notice").textContent,/C1-003/);
+ click("[data-scene]",{scene:"salon"});
+ el("s-name").value="試用預約";el("s-service").value="洗剪";el("s-stylist").value="Ken";el("s-time").value="明天 10:00";submit("salon");
+ assert.match(el("notice").textContent,/S003/);
+ click("[data-role]",{role:"staff"});
+ assert.match(el("demo-app").innerHTML,/試用預約/);
+ click("[data-action]",{action:"salon-status",id:"S003",value:"已完成"});
+ assert.match(el("notice").textContent,/已完成/);
+});
