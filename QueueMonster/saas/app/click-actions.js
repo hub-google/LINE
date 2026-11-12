@@ -40,7 +40,7 @@ document.addEventListener("click",async ev=>{
  const historyLink=ev.target.closest("a[data-customer-history-id]");
  if(historyLink){
    ev.preventDefault();
-   if(routeState.view!=="staff"||staffState.staffTab!=="settings"||feedbackState.busy)return;
+   if(routeState.view!=="staff"||!["settings","customers"].includes(staffState.staffTab)||feedbackState.busy)return;
    const userId=historyLink.dataset.customerHistoryId||"";
    const match=staffState.staffCustomerBook.find(x=>x.id===userId);
    if(!match)return;
@@ -60,7 +60,7 @@ document.addEventListener("click",async ev=>{
  }
  if(b.dataset.act==="settings-section"){
    const section=b.dataset.section;
-   if(!["profile","operations","sessions","catalog","pickup","branches","customers","public"].includes(section))return;
+   if(!["profile","operations","catalog","public"].includes(section))return;
    staffState.settingsSection=section;
    if(routeState.view==="staff")staffState.staffTab="settings";
    void load();return;
@@ -97,7 +97,7 @@ document.addEventListener("click",async ev=>{
  if(v==="staff"){
    staffState.staffTab=tab;
    if(tab==="orders"){void load();return;}
-   if(["analytics","branches","menu","settings","units"].includes(tab)){if(tab==="settings")staffState.settingsSection="profile";void load();return;}
+   if(["analytics","branches","menu","settings","units","customers"].includes(tab)){if(tab==="settings")staffState.settingsSection="profile";void load();return;}
     if(tab==="bookings"){feedbackState.err="";feedbackState.flash="";render();void searchHistoricalBookings(1);return;}
     if(tab==="calendar"){feedbackState.err="";feedbackState.flash="";render();void loadBookingCalendar(1);return;}
  }
