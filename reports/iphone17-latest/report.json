@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-12T05:32:39.625Z",
+  "date": "2026-11-12T05:35:39.254Z",
   "device": "iPhone 17 simulated Chromium, 402x874 CSS pixels, DPR3",
   "note": "Read-only live website screenshots; no authentication, no writes; not physical Safari.",
   "screens": [
@@ -92,15 +92,15 @@
       "visibleTapCount": 11,
       "keyRects": {
         ".hero-cta": {
-          "top": -220,
-          "bottom": -34,
+          "top": -199,
+          "bottom": -13,
           "left": 20,
           "right": 382,
           "height": 186
         },
         ".hero-showcase": {
-          "top": 37,
-          "bottom": 894,
+          "top": 58,
+          "bottom": 915,
           "left": 20,
           "right": 382,
           "height": 857
@@ -241,57 +241,57 @@
       "visibleTapCount": 20,
       "keyRects": {
         ".page-header": {
-          "top": -527,
-          "bottom": -390,
+          "top": -548,
+          "bottom": -411,
           "left": 0,
           "right": 402,
           "height": 137
         },
         ".hero-heading": {
-          "top": -482,
-          "bottom": -411,
+          "top": -503,
+          "bottom": -432,
           "left": 14,
           "right": 388,
           "height": 71
         },
         ".main-panel": {
-          "top": -407,
-          "bottom": 1001,
+          "top": -428,
+          "bottom": 980,
           "left": 14,
           "right": 388,
           "height": 1408
         },
         ".tabs": {
-          "top": -393,
-          "bottom": -337,
+          "top": -414,
+          "bottom": -358,
           "left": 28,
           "right": 374,
           "height": 56
         },
         "#keyword": {
-          "top": -248,
-          "bottom": -199,
+          "top": -269,
+          "bottom": -220,
           "left": 28,
           "right": 374,
           "height": 49
         },
         "#explore-filters": {
-          "top": -189,
-          "bottom": -143,
+          "top": -210,
+          "bottom": -164,
           "left": 28,
           "right": 374,
           "height": 46
         },
         "#results": {
-          "top": -21,
-          "bottom": 977,
+          "top": -42,
+          "bottom": 956,
           "left": 28,
           "right": 374,
           "height": 998
         },
         "#results-heading": {
-          "top": -59,
-          "bottom": -31,
+          "top": -80,
+          "bottom": -52,
           "left": 28,
           "right": 127,
           "height": 28
@@ -401,7 +401,7 @@
       "height": 874,
       "docWidth": 402,
       "bodyWidth": 402,
-      "docHeight": 883,
+      "docHeight": 874,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [
@@ -422,7 +422,7 @@
           "top": 69
         }
       ],
-      "visibleTapCount": 24,
+      "visibleTapCount": 18,
       "keyRects": {
         ".page-header": {
           "top": 61,
@@ -440,10 +440,10 @@
         },
         ".main-panel": {
           "top": 181,
-          "bottom": 695,
+          "bottom": 642,
           "left": 14,
           "right": 388,
-          "height": 514
+          "height": 462
         },
         ".tabs": {
           "top": 195,
@@ -453,35 +453,35 @@
           "height": 56
         },
         "#keyword": {
-          "top": 340,
-          "bottom": 389,
+          "top": 283,
+          "bottom": 332,
           "left": 28,
           "right": 374,
           "height": 49
         },
         "#explore-filters": {
-          "top": 399,
-          "bottom": 445,
-          "left": 28,
-          "right": 374,
-          "height": 46
+          "top": 0,
+          "bottom": 0,
+          "left": 0,
+          "right": 0,
+          "height": 0
         },
         "#results": {
-          "top": 548,
-          "bottom": 671,
+          "top": 431,
+          "bottom": 618,
           "left": 28,
           "right": 374,
-          "height": 122
+          "height": 187
         },
         "#results-heading": {
-          "top": 510,
-          "bottom": 538,
+          "top": 393,
+          "bottom": 421,
           "left": 28,
           "right": 94,
           "height": 28
         }
       },
-      "bodyText": "排隊怪獸 使用 LINE 登入 選單 ⌄ 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 清單找店家 遊戲逛街 搜尋店家名稱或地點 進階篩選 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 正在確認身分 正在確認 LINE 身分 確認後才會顯示與你綁定的預約及取號紀錄。 預約與取號將使用 LINE 驗證身分，叫號看板不需登入。 隱私權說明 · 服務條款",
+      "bodyText": "排隊怪獸 使用 LINE 登入 選單 ⌄ 搜尋店家，立即使用服務 搜尋店家 我的預約 現場取號 搜尋店家名稱或地點 我的預約與取號紀錄 查詢自己已綁定 LINE 身分的預約與號碼紀錄。 我的紀錄 請先登入 LINE 請先使用 LINE 登入 登入後才能查詢自己的預約和號碼；未登入不代表沒有紀錄。 使用 LINE 登入後查看 預約與取號將使用 LINE 驗證身分，叫號看板不需登入。 隱私權說明 · 服務條款",
       "errors": [],
       "failedRequests": []
     },
@@ -732,27 +732,18 @@
       "docHeight": 874,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [
-        {
-          "text": "只想查看目前叫號？前往即時叫號看板",
-          "width": 238,
-          "height": 16,
-          "left": 13,
-          "right": 251,
-          "top": 529
-        }
-      ],
-      "visibleTapCount": 8,
+      "smallTaps": [],
+      "visibleTapCount": 2,
       "keyRects": {
         "#root": {
-          "top": 188,
-          "bottom": 685,
+          "top": 144,
+          "bottom": 293,
           "left": 0,
           "right": 402,
-          "height": 497
+          "height": 149
         }
       },
-      "bodyText": "排隊怪獸 搜尋店家 預約與取號 使用 LINE 登入 店家預約與取號 測試1 由排隊怪獸提供預約與取號服務 線上預約 為避免機器人或惡意假預約，請先透過 LINE 登入，再進行預約或取號。 LINE 登入 只想查看目前叫號？前往即時叫號看板 排隊怪獸服務 ・ 隱私權說明 ・ 使用條款",
+      "bodyText": "排隊怪獸 使用 LINE 登入 資料更新中，請稍後",
       "errors": [],
       "failedRequests": []
     },
@@ -780,7 +771,12 @@
       },
       "bodyText": "排隊怪獸 使用 LINE 登入 資料更新中，請稍後",
       "errors": [],
-      "failedRequests": []
+      "failedRequests": [
+        {
+          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_unit_public_board",
+          "error": "net::ERR_ABORTED"
+        }
+      ]
     },
     {
       "id": "09-customer-queue-scroll",
@@ -806,7 +802,12 @@
       },
       "bodyText": "排隊怪獸 使用 LINE 登入 資料更新中，請稍後",
       "errors": [],
-      "failedRequests": []
+      "failedRequests": [
+        {
+          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_unit_public_board",
+          "error": "net::ERR_ABORTED"
+        }
+      ]
     },
     {
       "id": "09-customer-queue-after-12s",
@@ -819,29 +820,25 @@
       "docHeight": 874,
       "hasHorizontalOverflow": false,
       "overflowElements": [],
-      "smallTaps": [
-        {
-          "text": "只想查看目前叫號？前往即時叫號看板",
-          "width": 238,
-          "height": 16,
-          "left": 13,
-          "right": 251,
-          "top": 529
-        }
-      ],
-      "visibleTapCount": 8,
+      "smallTaps": [],
+      "visibleTapCount": 2,
       "keyRects": {
         "#root": {
-          "top": 188,
-          "bottom": 685,
+          "top": 144,
+          "bottom": 293,
           "left": 0,
           "right": 402,
-          "height": 497
+          "height": 149
         }
       },
-      "bodyText": "排隊怪獸 搜尋店家 預約與取號 使用 LINE 登入 店家預約與取號 測試1 由排隊怪獸提供預約與取號服務 現場取號 為避免機器人或惡意假預約，請先透過 LINE 登入，再進行預約或取號。 LINE 登入 只想查看目前叫號？前往即時叫號看板 排隊怪獸服務 ・ 隱私權說明 ・ 使用條款",
+      "bodyText": "排隊怪獸 使用 LINE 登入 資料更新中，請稍後",
       "errors": [],
-      "failedRequests": []
+      "failedRequests": [
+        {
+          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_unit_public_board",
+          "error": "net::ERR_ABORTED"
+        }
+      ]
     },
     {
       "id": "10-merchant-register",
@@ -867,7 +864,12 @@
       },
       "bodyText": "排隊怪獸 · 店家專區 操作說明 商家管理專區 讓顧客少排隊， 讓店家更好管理。 一個帳號就能開始建立專屬的預約、現場取號與叫號服務。先註冊，再自行填寫店家資料；資料完成前不會公開在搜尋名單。 1 註冊店家帳號並驗證電子信箱 2 登入後填寫自己的店名、地址及營運設定 3 完成資料後正式開放搜尋及預約取號 登入 註冊 店家／員工登入 使用自己的電子信箱與密碼登入，受邀員工登入後可接受企業邀請。 電子信箱（登入帳號） 密碼 登入寄送電子郵件登入連結忘記密碼？寄送重設連結 還沒有帳號？點選上方「註冊」。",
       "errors": [],
-      "failedRequests": []
+      "failedRequests": [
+        {
+          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_unit_public_board",
+          "error": "net::ERR_ABORTED"
+        }
+      ]
     },
     {
       "id": "10-merchant-register-scroll",
@@ -893,7 +895,12 @@
       },
       "bodyText": "排隊怪獸 · 店家專區 操作說明 商家管理專區 讓顧客少排隊， 讓店家更好管理。 一個帳號就能開始建立專屬的預約、現場取號與叫號服務。先註冊，再自行填寫店家資料；資料完成前不會公開在搜尋名單。 1 註冊店家帳號並驗證電子信箱 2 登入後填寫自己的店名、地址及營運設定 3 完成資料後正式開放搜尋及預約取號 登入 註冊 店家／員工登入 使用自己的電子信箱與密碼登入，受邀員工登入後可接受企業邀請。 電子信箱（登入帳號） 密碼 登入寄送電子郵件登入連結忘記密碼？寄送重設連結 還沒有帳號？點選上方「註冊」。",
       "errors": [],
-      "failedRequests": []
+      "failedRequests": [
+        {
+          "url": "https://unapiwajmgqqtdkixaab.supabase.co/rest/v1/rpc/so_unit_public_board",
+          "error": "net::ERR_ABORTED"
+        }
+      ]
     },
     {
       "id": "11-merchant-center",
@@ -942,17 +949,17 @@
       "hasHorizontalOverflow": false,
       "overflowElements": [],
       "smallTaps": [],
-      "visibleTapCount": 4,
+      "visibleTapCount": 2,
       "keyRects": {
         "#root": {
-          "top": 83,
-          "bottom": 364,
+          "top": 144,
+          "bottom": 293,
           "left": 0,
           "right": 402,
-          "height": 281
+          "height": 149
         }
       },
-      "bodyText": "排隊怪獸 店家登入 店家登入 使用店家帳號管理預約及叫號。 店家登入 註冊店家",
+      "bodyText": "排隊怪獸 店家登入 資料更新中，請稍後",
       "errors": [],
       "failedRequests": []
     },
@@ -1057,7 +1064,7 @@
       ],
       "visibleTapCount": 3,
       "keyRects": {},
-      "bodyText": "測試1 叫號變動即時更新 13:32 診間 · 上午場 1診 2 接下來：3、5、6、7 等候 4 組 單獨顯示此場次 由排隊怪獸提供服務 全螢幕 最後成功同步：13:32:38；號碼變更即時更新，並定期核對。",
+      "bodyText": "測試1 叫號變動即時更新 13:35 診間 · 上午場 1診 2 接下來：3、5、6、7 等候 4 組 單獨顯示此場次 由排隊怪獸提供服務 全螢幕 最後成功同步：13:35:38；號碼變更即時更新，並定期核對。",
       "errors": [],
       "failedRequests": []
     }
