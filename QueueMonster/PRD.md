@@ -1,5 +1,7 @@
 # LINE OA 預約／現場取號／叫號／點餐與服務／LINE Pay 整合系統需求書
 
+> **2026-11-12 正式資料庫命名決策（已上線；覆蓋下方較舊的實體表名）**：排隊怪獸在 Supabase 專案 `unapiwajmgqqtdkixaab` 的**實體資料表**統一使用 `qm_` 前綴（原 `so_` 表改名 42 張，另有既存 `qm_` 表 1 張，合計 43 張）。既有 `so_*` **RPC／資料庫函式名稱不變**，以維持前端與 LINE 相容；詳見 §0.1 與 [資料表命名說明](./supabase/TABLE-NAMING.md)。
+
 > **2026-11-10 最新決策（覆蓋以下舊規格）**：使用者明確取消額外的 QR 立牌製作頁面 `/booking/poster.html` 及相容路徑 `/saas/poster.html`，不得重新建立；一併取消該頁 A4/PNG/PDF 匯出、後台「製作 QR 立牌」入口與 LINE 選單的「QR 立牌」名稱。**保留**既有門市專屬預約/取號連結、LINE 身分驗證、直接掃 QR Code 進入服務的功能。下方舊版 NR-16、K20 等立牌描述均以本決策為準，不應作為重新開發授權。
 
 > 文件狀態：Draft for Development  
@@ -27,6 +29,17 @@
 - 不得自行將「權限控制」、「付款一致性」、「叫號歷史」、「Audit Log」等需求簡化為純前端邏輯。
 - 所有涉及身份、金流、權限、訂單、叫號狀態變更的寫入操作，MUST 由後端最終判斷。
 - 所有資料模型需預留多商家、多分店能力，即使第一版只有單一測試店家。
+
+## 0.1 Supabase 正式資料表命名規範（DB-NAME-001，MUST）
+
+**生效：2026-11-12；已套用至正式 Supabase 與後端程式。** 本節為現行規範，覆蓋本文過往以 `so_` 描述**實體表**的歷史規格；但不更名既有 `so_*` RPC。
+
+1. **統一前綴**：QueueMonster 實體資料表名稱一律以 `qm_`（Queuing Monster）開頭。共用 Supabase 專案 ID：`unapiwajmgqqtdkixaab`。原本 `public` 39 張、`private` 3 張 `so_` 實體表均已**原地改名**；加上原有 `public.qm_admin_pin_guard`，合計 43 張 `qm_` 表，現存 `so_` 實體表數為 0。
+2. **名稱示例**：商家 `qm_tenants`、員工 `qm_members`、預約 `qm_reservations`、取號 `qm_tickets`、服務場次 `qm_service_sessions`、每週營業規則 `qm_schedule_rules`、特殊休假／加開場次 `qm_schedule_exceptions`、點餐 `qm_pickup_orders`、菜單 `qm_menu_items`、LINE 綁定 `qm_line_links`。新建 QueueMonster 資料表 MUST 使用 `qm_`，不得再建 `so_` 實體表。
+3. **RPC／函式相容**：`so_my_context`、`so_public_board`、`so_unit_public_board`、`so_pickup_public` 等 `so_*` RPC／資料庫函式名稱是現有對外 API，暫時**保留不變**。**`qm_*` 是實體表、`so_*` 可為 RPC**；不可因統一表名便全域替換 RPC 名稱，除非另有完整版本化遷移。
+4. **程式碼與安全**：新 SQL、Supabase Client 直接查表、Edge Functions、Realtime 設定、資料庫函式內 SQL、測試等直接引用實體表者，MUST 使用 `qm_*`。原 `line-bridge`、`staff-invite` Edge Functions 已同步修改。Migration MUST 保留資料列、UUID、外鍵、索引、Trigger、RLS、GRANT 與 Realtime 設定，不得擅自清空、重建正式或 QA 商家與資料。
+5. **共用資料庫隔離**：`wm_`（Workforce）、`ti_`（標案）及其他非 QueueMonster 表不受此命名變更影響。既有歷史 `so_` Migration 保留原貌；正式改名版本為 [`20261112073327_queue_monster_qm_table_prefix.sql`](./supabase/migrations/20261112073327_queue_monster_qm_table_prefix.sql)。
+6. **驗收與維護**：每次變更資料表或查表程式 MUST 先比對已執行的 Migration、正式表名、SQL 函式引用、Edge Functions 及 CI。測試：`node --test tests/queue-monster-table-prefix.test.mjs`（在 `QueueMonster/` 執行）。延伸說明：[TABLE-NAMING.md](./supabase/TABLE-NAMING.md)。不得將舊 SQL／舊 ORM schema 直接覆蓋共用正式 Supabase。
 
 ---
 
@@ -3580,7 +3593,7 @@ Payment 的核心原則：
 | C03 | 客戶自己選服務、日期、時段、人數 | S1/S4 | FR-101、FR-201、UX-05 | 保留並強化 |
 | C04 | 服務不同時長、不可撞期 | S1 | FR-101 | P1 |
 | C05 | 多項服務／加購自動計算時長 | S1 | FR-101、FR-202 | P1/P2 |
-| C06 | 服務價格與服務說明 | S1/S4 | FR-110、FR-202；沿用 so_menu_items | 保留並強化 |
+| C06 | 服務價格與服務說明 | S1/S4 | FR-110、FR-202；沿用 qm_menu_items | 保留並強化 |
 | C07 | 個別服務不對顧客公開耗時 | S1 05/30 更新 | FR-113 | P1 補入 |
 | C08 | 預約送出前可開關的二次確認 | S1 05/29 更新 | FR-112 | P1 補入 |
 | C09 | 顧客查自己的預約 | S1/S2 | FR-003、FR-108 | 保留並強化 |
@@ -3717,7 +3730,7 @@ Payment 的核心原則：
 - 可選跨領域：Visit/Order、OrderItem、PaymentAllocation、PaymentGatewayTransaction、Refund/Reconcile；原本純預約/純叫號不可被迫建 Order。
 - 通知/整合：NotificationOutbox/DeliveryAttempt/ChannelBinding、WebPushSubscription、CalendarSync/Proposal/ICS、SignageDisplay/DeviceToken、PartnerApiKey/WebhookDelivery、QrPosterAsset。
 - CRM/商業化：CustomerProfile/IdentityLink/Consent/Flag、MerchantPlan/Subscription/Usage、AnalyticsAggregate、CustomerExportAudit。
-- 所有資料以 merchant_id + branch_id + UUID 規範隔離，顯示號可在不同 epoch 重複，UUID 永不重用；執行任何 migration 前先查既有 so_ 表，**優先 additive migration + backfill**，不 truncate、不換租戶、不重建測試帳號。
+- 所有資料以 merchant_id + branch_id + UUID 規範隔離，顯示號可在不同 epoch 重複，UUID 永不重用；執行任何 migration 前先查既有 qm_ 實體表，**優先 additive migration + backfill**，不 truncate、不換租戶、不重建測試帳號。
 
 ## 102.6 重要邏輯衝突與最終解法（開發 Agent 不得自行改回舊規則）
 
@@ -3846,7 +3859,7 @@ Payment 的核心原則：
 
 ### 103.2 每筆預約及抽號必有兩種不可變識別碼
 
-1. **內部資料庫主鍵 `id UUID`（原生 UUID）**：`public.so_reservations.id` 與 `public.so_tickets.id` 原有 `uuid primary key default gen_random_uuid()` 保留不動。所有既有外鍵、RPC、LINE 通知事件、預約與票券關聯及編輯／取消／重置／軟刪除操作，仍依此 UUID 定位，禁止改用易重複的顯示號。
+1. **內部資料庫主鍵 `id UUID`（原生 UUID）**：`public.qm_reservations.id` 與 `public.qm_tickets.id` 原有 `uuid primary key default gen_random_uuid()` 保留不動。所有既有外鍵、RPC、LINE 通知事件、預約與票券關聯及編輯／取消／重置／軟刪除操作，仍依此 UUID 定位，禁止改用易重複的顯示號。
 2. **簡短永久識別碼 `reference_code`（自訂 ID，不是 RFC 標準 UUID）**：在預約與抽號各自新增欄位，供客服查詢與必要的交易追蹤使用。格式固定為 **21 個大寫英數字**：`YYYYMMDDHHmmssSSS`（17 碼，Asia/Taipei 時區、精確到毫秒）＋ **4 碼 Base36（0–9、A–Z）**。例：`20261104132045987K7Q2`。不得用顯示號取代此識別碼，也不得把這個 21 碼的自訂 ID 稱為標準 UUID。
 3. 短碼必須由可信任後端／資料庫生成，不由前端直接自行指定；需要資料庫唯一索引、生成碰撞保護／重試策略或可證明在支援範圍內不碰撞的序列策略。可讓預約與抽號共用同一個生成序列，以降低跨類型碰撞風險。若跨資料庫或跨環境有外部整合需求，還須定義環境命名空間與跨庫唯一性策略。
 4. 兩種識別碼均**建立後永久不變**；即使商家重置可見流水號、重新報到、改期、取消、恢復、歷史資料重算或跨午夜，也不能改寫或重用原本的識別碼。避免把顧客 LINE userId、顯示號或單獨的毫秒時間戳作唯一鍵。
@@ -4020,13 +4033,13 @@ Payment 的核心原則：
   2. grouped_units_enabled：顯示服務分類（科別、櫃台類型、服務區等）。
   3. checkin_queue_enabled：預約報到後進入所屬場次叫號；要求啟用多單位、預約及叫號。
 - 同一商家只有一個網站、一個商家身分與原有 OA 發送方式；醫師、診間、設計師、餐廳候位區、服務櫃台皆以「服務單位」表示。
-- 服務單位沿用 so_booking_resources 加入分類與排序設定；場次以 so_service_sessions 儲存單位、日期、起迄時間與容量。同醫師不同診次為獨立場次。
+- 服務單位沿用 qm_booking_resources 加入分類與排序設定；場次以 qm_service_sessions 儲存單位、日期、起迄時間與容量。同醫師不同診次為獨立場次。
 - 顧客流程：商家首頁→選分類（若開啟）→選單位→日期→場次→預約或取號；LINE 身分驗證與通知共用既有架構。無多單位時不多一個操作步驟。
 - 店員後台與企業設定仍是原網站；增加單位與場次管理、叫號場次切換及同店多隊列。
 - 公開 board.html：單隊列沿用原大號碼版；多單位自動顯示多欄卡片，指定 session=UUID 可只看單一場次。禁止公開顧客姓名、聯絡資訊及 LINE 身分。
 
 ### B. 共用資料與交易規則
-- 延用 so_reservations、so_tickets 各自 UUID、流水號、prefix 及重置；新增 service_unit_id、service_session_id，票券使用既有 reservation_id 連結。
+- 延用 qm_reservations、qm_tickets 各自 UUID、流水號、prefix 及重置；新增 service_unit_id、service_session_id，票券使用既有 reservation_id 連結。
 - 場次預約 RPC so_unit_book_once 必須驗證 LINE 身分、名額和同請求去重；容量以未取消的預約人數計算，不能因同時送出而超賣。
 - 報到 RPC so_unit_checkin 在同一交易內將預約改為已報到並建立一張關聯票券，重複點擊不再發新號；一般商家報到仍不自動產號。
 - 現場抽號 so_unit_take_number 依指定場次處理，重複抽號只限制同場次。
@@ -4061,7 +4074,7 @@ Payment 的核心原則：
 
 ### 清單探索
 - 支援關鍵字（店名／地址）、店家類別、縣市或線上商圈、服務類型（預約／取號／看板）、排序（名稱／類別），並以可點擊卡片提供各服務入口。
-- `so_tenants.directory_category` 新增為公開店家分類欄位；企業設定可修改，後端 `so_update_tenant` 驗證並保存；`so_staff_state` 回填選取值；`so_public_directory` 僅回傳 `status=ACTIVE` 且 `directory_enabled=true` 的正式店家所需非敏感欄位。
+- `qm_tenants.directory_category` 新增為公開店家分類欄位；企業設定可修改，後端 `so_update_tenant` 驗證並保存；`so_staff_state` 回填選取值；`so_public_directory` 僅回傳 `status=ACTIVE` 且 `directory_enabled=true` 的正式店家所需非敏感欄位。
 - 由已公開地址解析縣市，不能將遊戲商圈當成真實定位、實體店家地圖、導航或距離資訊；不編造評分、價格或尚未上架的店家。
 - 店家的平台共用 OA／自有 OA 預約和取號路由沿用既有 `customerUrl` 機制；公開看板連結直達唯讀頁面，不跳 LINE 登入。
 
@@ -4105,9 +4118,9 @@ Payment 的核心原則：
 
 1. **初始列表**：上方顯示搜尋框與店家類別／地區／服務／排序；尚未輸入關鍵字或調整篩選時，下方顯示「熱門店家排行」，取近 30 天真實有效預約數與獨立取號數相加，依次數由高至低排序，最多 50 家。公開候選不足 50 家就只顯示實際家數；0 家顯示空狀態，禁止填入假店家或假交易。
 2. **正式搜尋**：排序選單預設「熱門排行」，也可切換「店家名稱／店家分類」；使用者輸入關鍵字或調整類別、地區、服務類型、排序後，切成「搜尋結果」，呼叫資料庫 `so_public_store_search` 查詢**全體符合公開條件的店家**，不得只在 Top 50 內找。每頁 50 家，可按上一頁／下一頁；清除關鍵字及重置所有篩選後返回熱門榜。僅搜尋測試門市的既有明確查詢入口維持獨立，測試門市不得混入熱門榜或正式搜尋。
-3. **熱度公式**：`30 天有效預約數 + 30 天獨立取號數`。統計以紀錄 `created_at` 換算 Asia/Taipei 的自然日，共當日及前 29 日。取消狀態 `CANCELLED`、`deleted_at IS NOT NULL` 不算；`so_tickets.reservation_id IS NOT NULL` 為預約衍生號碼，不重複加分。保留非取消且曾經發生的預約及獨立抽號，即使該服務日已經結束亦納入 30 天內交易次數。
-4. **統計來源**：`so_reservations` 與 `so_tickets`，透過資料庫 Trigger 增量更新不可公開寫入的 `private.so_store_activity_daily`，依 `private.so_store_popularity_30d` 彙總。由 `so_public_popular_stores('all',50)` 只提供正式上架的商家公開資訊及統計數字，不傳顧客資料。插入、取消、還原、soft delete、切換來源預約都應與排行自動同步，不靠前端排程。
-5. **可被搜尋的範圍**：必須 `so_tenants.status='ACTIVE'` 且 `directory_enabled=true`，排除所有 `qa-%`、`greenfield-salon`、`demo-clinic` 測試資料。取號分頁僅列支援取號的正式商家。店家卡保留預約／取號／看板／Google 地圖既有連結與雙 OA 導向；熱門卡額外顯示名次、近 30 天預約數及取號數。
+3. **熱度公式**：`30 天有效預約數 + 30 天獨立取號數`。統計以紀錄 `created_at` 換算 Asia/Taipei 的自然日，共當日及前 29 日。取消狀態 `CANCELLED`、`deleted_at IS NOT NULL` 不算；`qm_tickets.reservation_id IS NOT NULL` 為預約衍生號碼，不重複加分。保留非取消且曾經發生的預約及獨立抽號，即使該服務日已經結束亦納入 30 天內交易次數。
+4. **統計來源**：`qm_reservations` 與 `qm_tickets`，透過資料庫 Trigger 增量更新不可公開寫入的 `private.qm_store_activity_daily`，依 `private.so_store_popularity_30d` 彙總。由 `so_public_popular_stores('all',50)` 只提供正式上架的商家公開資訊及統計數字，不傳顧客資料。插入、取消、還原、soft delete、切換來源預約都應與排行自動同步，不靠前端排程。
+5. **可被搜尋的範圍**：必須 `qm_tenants.status='ACTIVE'` 且 `directory_enabled=true`，排除所有 `qa-%`、`greenfield-salon`、`demo-clinic` 測試資料。取號分頁僅列支援取號的正式商家。店家卡保留預約／取號／看板／Google 地圖既有連結與雙 OA 導向；熱門卡額外顯示名次、近 30 天預約數及取號數。
 6. **空資料與安全**：無正式上架店家時顯示真正的空資料，不以 QA 交易充數；客戶未登入仍能讀取經資料庫限制的公開排行。統計表位於 private schema、禁止匿名／驗證使用者直讀直寫；僅提供 aggregate 和商家基本公開欄位。
 7. **驗收**：首次開啟顯示熱門榜；關鍵字與任何非預設篩選都觸發真實後端搜尋；搜尋結果可以超過 50 並翻頁；取消或刪除單筆資料後排行扣除，恢復後加回；匿名 RPC 可查無顧客資訊；測試資料不混正式榜；手機可順暢使用搜尋、排序、分頁及店家操作按鈕。
 
