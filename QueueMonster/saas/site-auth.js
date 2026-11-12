@@ -122,7 +122,7 @@ function showPasswordDialog(){
  dialog.append(head,note,form);backdrop.append(dialog);
  document.body.append(backdrop);
  function close(){
-  if(save.disabled)return;
+  if(cancel.disabled)return;
   backdrop.remove();
   document.removeEventListener("keydown",onKey);
   if(originalFocus?.isConnected)originalFocus.focus();
