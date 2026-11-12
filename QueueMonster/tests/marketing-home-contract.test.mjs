@@ -162,6 +162,17 @@ test("demo uses actual product styles, matches real customer/merchant layouts an
  assert.match(publish,/home\.html for-merchants\.html for-customers\.html demo\.html board\.html/);
  assert.match(landing,/href="\.\/demo\.html"/);
  for(const id of ["breakfast","salon","repair","clinic"])assert.match(html,new RegExp('data-scene="'+id+'"'));
+ const order=[...html.matchAll(/data-scene="(repair|breakfast|salon|clinic)"/g)].map(x=>x[1]);
+ assert.deepEqual(order,["repair","breakfast","salon","clinic"],"Queue demo must appear first");
+ assert.match(html,/data-scene="repair" aria-pressed="true"/);
+ const primary=source.match(/const primaryTab = ([^;]+);/);
+ assert.ok(primary,"each case must have an immediate customer action");
+ for(const [scene,tab] of [["repair","queue"],["breakfast","order"],["salon","reserve"],["clinic","reserve"]]){
+  assert.ok(primary[1].includes(scene+':"'+tab+'"'),scene+" must open "+tab);
+ }
+ assert.doesNotMatch(source,/function landing\(\)/);
+ assert.doesNotMatch(source,/data-tab="home"/);
+
  for(const name of ["早餐店","美髮店","維修店","診所","顧客端","店家端"])assert.ok(html.includes(name),"missing scenario "+name);
  assert.doesNotMatch(html,/店員端/);
  for(const originalClass of ["mobile-merchant-head","mobile-bottom-nav","customer-shop-toolbar","customer-layout","staff-record","staff-picker","side-item","unit-card-grid","queue-board","staff-actionbar"]){
@@ -194,8 +205,9 @@ test("real-flow demo reproduces guest creation, merchant status changes and LINE
  const click=(selector,data)=>handlers.click({target:{closest:s=>s===selector?{dataset:data}:null}});
  const change=(data)=>handlers.change({target:data});
  const input=(id,value)=>handlers.input({target:{id,value}});
- assert.match(el("root").innerHTML,/首頁/);
- click("[data-tab]",{tab:"order"});
+ assert.match(el("root").innerHTML,/我的現場號碼/);
+ assert.match(el("root").innerHTML,/立即線上取號/);
+ click("[data-scene]",{scene:"breakfast"});
  assert.match(el("root").innerHTML,/選擇餐點/);
  input("customer-name","示範顧客");input("customer-phone","0912345678");
  click("[data-act]",{act:"qty",id:"egg",delta:"1"});
@@ -211,7 +223,7 @@ test("real-flow demo reproduces guest creation, merchant status changes and LINE
  click("[data-act]",{act:"order-status",id:"B003",value:"REJECTED"});
  assert.match(el("root").innerHTML,/已拒單/);
  click("[data-scene]",{scene:"repair"});
- click("[data-tab]",{tab:"queue"});
+ assert.match(el("root").innerHTML,/立即線上取號/);
  click("[data-act]",{act:"take-number"});
  assert.match(el("root").innerHTML,/R015/);
  assert.match(el("notifications").innerHTML,/取號成功/);
@@ -221,7 +233,7 @@ test("real-flow demo reproduces guest creation, merchant status changes and LINE
  change({dataset:{statusKind:"ticket",id:"R013"},value:"PASSED",matches:s=>s==="[data-status-kind]"});
  assert.match(el("root").innerHTML,/已過號/);
  click("[data-scene]",{scene:"salon"});
- click("[data-tab]",{tab:"reserve"});
+ assert.match(el("root").innerHTML,/選擇預約日期與時間/);
  input("contact-name","示範顧客");input("contact-phone","0912345678");
  click("[data-act]",{act:"unit",value:"Ken"});
  click("[data-act]",{act:"review-reserve"});
@@ -230,7 +242,7 @@ test("real-flow demo reproduces guest creation, merchant status changes and LINE
  click("[data-role]",{role:"staff"});
  assert.match(el("root").innerHTML,/預約管理/);
  click("[data-scene]",{scene:"clinic"});
- click("[data-tab]",{tab:"reserve"});
+ assert.match(el("root").innerHTML,/選擇預約場次/);
  input("contact-name","示範顧客");input("contact-phone","0912345678");
  click("[data-act]",{act:"unit",value:"2診"});
  click("[data-act]",{act:"review-reserve"});
