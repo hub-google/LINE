@@ -23,7 +23,7 @@ CUSTOMER_ITEMS = [
     ("現場取號", "領號並查看進度", "play", {"type":"uri","label":"現場取號","uri":BASE+"directory.html?mode=queue"}),
     ("線上點餐", "預訂與查詢取餐", "store", {"type":"uri","label":"線上點餐","uri":BASE+"directory.html?mode=search&service=%E9%BB%9E%E9%A4%90"}),
     ("我的紀錄", "預約・號碼・訂單", "dashboard", {"type":"uri","label":"我的紀錄","uri":BASE+"directory.html?mode=mine"}),
-    ("客服中心", "操作問題找我們", "support", {"type":"message","label":"客服中心","text":"客服"}),
+    ("叫號看板", "查看各店即時叫號", "dashboard", {"type":"uri","label":"叫號看板","uri":BASE+"directory.html?mode=search&service=%E7%9C%8B%E6%9D%BF"}),
 ]
 MERCHANT_ITEMS = [
     ("免費叫號體驗", "免註冊直接試用", "play", {"type":"uri","label":"免費叫號體驗","uri":BASE+"demo.html"}),
@@ -31,7 +31,7 @@ MERCHANT_ITEMS = [
     ("免費建立店家", "建立自己的門市", "store", {"type":"uri","label":"免費建立店家","uri":BASE+"merchant-register.html?mode=signup"}),
     ("店家管理後台", "營運與訂單管理", "dashboard", {"type":"uri","label":"店家管理後台","uri":BASE+"?view=staff"}),
     ("操作與串接", "設定・LINE OA 教學", "guide", {"type":"uri","label":"操作與串接","uri":CENTER+"#guide"}),
-    ("聯絡平台", "發訊息取得協助", "support", {"type":"message","label":"聯絡平台","text":"商家客服"}),
+    ("入口分享教學", "門市網址與 QR Code", "guide", {"type":"uri","label":"入口分享教學","uri":CENTER+"#publish"}),
 ]
 CUSTOMER_ALIAS = "platform-booking-customers"
 MERCHANT_ALIAS = "platform-booking-merchants"

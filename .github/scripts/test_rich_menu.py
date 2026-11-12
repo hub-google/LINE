@@ -18,7 +18,7 @@ class RichMenuContract(unittest.TestCase):
         for items in (richmenu.CUSTOMER_ITEMS, richmenu.MERCHANT_ITEMS):
             for title, caption, glyph, action in items:
                 self.assertTrue(title and caption and glyph)
-                self.assertIn(action["type"], ("uri", "message"))
+                self.assertEqual(action["type"], "uri")
                 if action["type"] == "uri":
                     self.assertTrue(action["uri"].startswith(richmenu.BASE))
                     self.assertNotIn("#activate", action["uri"])
@@ -30,11 +30,15 @@ class RichMenuContract(unittest.TestCase):
         self.assertTrue(any("mode=mine" in d for d in dest))
         self.assertTrue(any("service=%E9%A0%90%E7%B4%84" in d for d in dest))
         self.assertTrue(any("service=%E9%BB%9E%E9%A4%90" in d for d in dest))
+        self.assertTrue(any("service=%E7%9C%8B%E6%9D%BF" in d for d in dest))
         self.assertFalse(any("mode=game" in d for d in dest))
+        self.assertFalse(any("客服" in title for title, *_ in richmenu.CUSTOMER_ITEMS))
         self.assertFalse(any("greenfield" in d or "demo-" in d for d in dest))
         merchant = [entry[3].get("uri", "") for entry in richmenu.MERCHANT_ITEMS]
         self.assertTrue(any("demo.html" in d for d in merchant))
         self.assertTrue(any("for-merchants.html" in d for d in merchant))
+        self.assertTrue(any("merchant-center.html#publish" in d for d in merchant))
+        self.assertFalse(any("聯絡平台" in title or "客服" in title for title, *_ in richmenu.MERCHANT_ITEMS))
 
     def test_both_rendered_pngs(self):
         pictures = [richmenu.create_image(richmenu.CUSTOMER_ITEMS, 0),
