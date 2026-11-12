@@ -189,3 +189,15 @@ test("HQ pickup filter and self-hosted QR code sharing work with existing mercha
  assert.match(source("../.github/scripts/build-line-saas.mjs"),/vendor\/qrcode\.min\.js/);
  assert.match(source("saas/vendor/QR-CODE-LICENSE"),/MIT License/);
 });
+
+test("public store search and pickup links do not wait on optional LINE config",()=>{
+ const directory=source("saas/assets/directory/main.js");
+ const section=directory.slice(directory.indexOf("async function load(){"));
+ assert.ok(section.includes('sb.rpc("so_public_directory"'),"directory RPC remains");
+ assert.ok(section.includes('sb.rpc("so_public_popular_stores"'),"pickup-aware popular ranking remains");
+ assert.ok(section.includes("void confPromise.then("),"LINE config is optional for public discovery");
+ assert.doesNotMatch(section,/\}else\{\s*const conf=await confPromise;/,
+   "public store loading must not await optional LINE config");
+ assert.ok(section.includes("publishGameDirectory();render();"),
+   "late LINE config refreshes existing customer service links");
+});
