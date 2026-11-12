@@ -22,12 +22,22 @@ function serviceLink(kind,label,enabled){
    :new URL(customerUrl(routeState.slug)||new URL(sharedUiState.route("customer",routeState.slug),location.href).href,location.href);
  if(!["board","pickup-board"].includes(kind))url.searchParams.set("tab",kind);
  const href=url.href;
+ // To preserve the chat context required by liff.sendMessages, booking QRs
+ // for merchant OAs open that merchant's chat and its prefilled booking command.
+ const basicId=String(lineState.lineConfig?.botBasicId||"");
+ const ownChat=kind==="reserve"&&lineState.lineConfig?.merchantOaConnected===true&&
+   /^@[a-z0-9_.-]{2,100}$/i.test(basicId)
+   ?"https://line.me/R/oaMessage/"+encodeURIComponent(basicId)+"/?"+
+     encodeURIComponent("開始預約 "+routeState.slug):"";
+ const qrHref=ownChat||href;
  return '<div class="inset" data-service-url-kind="'+kind+'" style="margin-top:12px">'+
    '<strong>'+label+'</strong>'+
    '<div data-service-url-active'+(enabled?'':' style="display:none"')+'>'+
      '<p style="overflow-wrap:anywhere"><a href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">'+esc(href)+'</a></p>'+
      btn("複製"+label,"copy-service-link","outline",'data-url="'+esc(href)+'" data-service-kind="'+kind+'"')+
-     btn("顯示 QR Code","show-service-qr","outline",'data-url="'+esc(href)+'"')+
+     btn("顯示 QR Code","show-service-qr","outline",'data-url="'+esc(qrHref)+'"')+
+     (ownChat?'<p class="small">這個 QR Code 會開啟<strong>本店 LINE OA 聊天室</strong>；顧客送出已帶入的「開始預約」訊息，再點回覆的 LIFF 預約連結。完成店家 LIFF 授權後，預約送出即可自動傳送確認訊息。</p>'+
+       '<p class="small"><a href="'+esc(ownChat)+'" target="_blank" rel="noopener noreferrer">開啟本店 LINE 預約入口</a></p>':"")+
    '</div>'+
    '<p class="muted" data-service-url-inactive'+(enabled?' style="display:none"':'')+'>未選擇此功能</p>'+
  '</div>';
@@ -111,11 +121,13 @@ export function renderStaffSettings({t,isManager,html,customersOnly=false}){
     '<div class="staff-actionbar">'+btn(staffState.announcementEditId?"儲存修改":"發布公告","announcement-save","primary")+
        (staffState.announcementEditId?btn("取消編輯","announcement-edit-cancel","outline"):"")+'</div></div>'):"")],
 ["public",box("LINE 官方帳號串接",
-    '<p>目前通知來源：<strong>'+(lineState.lineConfig?.merchantOaConnected?"商家自己的 LINE OA":"平台 LINE OA")+'</strong></p>'+
-    '<p class="small">串接店家的 Messaging API 只需要下方兩項資訊，<strong>不需要 Channel ID 或 LIFF ID</strong>。Channel ID 由系統自動向 LINE 查詢；進階的 LINE Login／LIFF 可另外設定。</p>'+
+    '<p>目前通知來源：<strong>'+(lineState.lineConfig?.merchantOaConnected?"商家自己的 LINE OA":"未綁定（平台 OA 不代發店家通知）")+'</strong></p>'+
+    '<p class="small">一般 LINE OA 串接只需下方兩項 Messaging API 憑證，Channel ID 自動辨識。<strong>若要讓顧客預約後自動傳訊，再由店家免費 Reply API 回覆，須加設本店 LIFF（chat_message.write）及 Webhook。</strong>平台 OA 不代發店家通知。</p>'+
     '<p><a href="./merchant-center.html#mode-own" target="_blank" rel="noopener noreferrer">查看 Messaging API 建立及取得憑證教學 ↗</a></p>'+
     (lineState.lineConfig?.merchantOaConnected?
-     '<p>已連接 LINE OA：<strong>'+esc(lineState.lineConfig.botBasicId||"")+'</strong></p>':"")+
+     '<p>已連接 LINE OA：<strong>'+esc(lineState.lineConfig.botBasicId||"")+'</strong></p>'+
+     '<p class="small">預約自動 LINE 回覆：<strong>'+(lineState.lineConfig.merchantLiffId?"LIFF 已填寫，請確認權限與 Webhook":"尚未設定 LIFF（無法自動觸發）")+'</strong></p>'+
+     '<p class="small">Webhook URL（請貼入店家的 Messaging API 並啟用 Use webhook）：<code>'+esc(lineState.LINE_BRIDGE_URL+"?action=webhook&merchant="+encodeURIComponent(routeState.slug))+'</code></p>':"")+
     (isManager?
      '<div class="grid"><div>'+
        field("Channel access token (long-lived)（長效存取權杖）","own-oa-token","","password",'autocomplete="new-password" placeholder="Messaging API 頁籤 → Issue"')+
@@ -125,7 +137,7 @@ export function renderStaffSettings({t,isManager,html,customersOnly=false}){
      '</div></div>'+
      '<details style="margin:14px 0"><summary>進階選填：使用店家自己的 LINE Login／LIFF</summary>'+
        '<div style="margin-top:12px">'+field("LIFF ID（LINE 登入網頁應用程式編號）","own-oa-liff",lineState.lineConfig?.merchantOaConnected?(lineState.lineConfig.merchantLiffId||""):"","text",'autocomplete="off" placeholder="例如：1234567890-AbcdEfgh"')+
-       '<p class="small">這不是 Messaging API 的 Channel ID。只用店家 OA 發送訊息可以留空；若要讓顧客使用店家 Provider 登入，請在同一 Provider 的 LINE Login 頻道建立 LIFF。<a href="https://developers.line.biz/console/" target="_blank" rel="noopener noreferrer">開啟 LINE Developers ↗</a></p></div></details>'+
+       '<p class="small">這不是 Messaging API Channel ID。<strong>預約完成後自動發 LINE 訊息必填：</strong>在與店家 OA 相同 Provider 的 LINE Login 頻道建立 LIFF，開啟 chat_message.write，並由店家 OA 聊天室連結開啟。若只用一般 OA 訊息功能，可以留空。<a href="https://developers.line.biz/console/" target="_blank" rel="noopener noreferrer">開啟 LINE Developers ↗</a></p></div></details>'+
      '<p class="small">通過憑證驗證代表已連接店家 OA，不代表顧客一定收得到訊息。不同 Provider 的 LINE User ID 不同，顧客仍需完成店家 OA 的收訊身分配對。Token 與 secret 不會再回顯。</p>'+
      '<div class="staff-actionbar">'+btn("驗證並連接 Messaging API","connect-own-oa","primary")+
        (lineState.lineConfig?.merchantOaConnected?btn("解除自有 OA 綁定","disconnect-own-oa","outline"):"")+'</div>'
@@ -154,7 +166,7 @@ export function renderStaffSettings({t,isManager,html,customersOnly=false}){
   const tabs='<nav class="settings-hub-tabs" aria-label="設定分類">'+choices.map(([key,label])=>
     btn(label,"settings-section",section===key?"primary":"outline",'data-section="'+key+'" aria-current="'+(section===key?"page":"false")+'"')).join("")+'</nav>';
   html+='<div class="settings-hub-head"><h2>設定</h2><p class="small">所有店家營運設定都在這裡。先完成店家資料，再依需要開放預約、取號、場次與服務。</p>'+
-    (section==="public"?"":'<div class="staff-actionbar"><span class="small">LINE OA 通知來源：'+(lineState.lineConfig?.merchantOaConnected?"店家自己的 OA":"平台 OA")+'</span>'+btn("查看 LINE OA 綁定與教學","settings-section","outline",'data-section="public"')+'</div>')+'</div>'+tabs;
+    (section==="public"?"":'<div class="staff-actionbar"><span class="small">LINE OA 通知來源：'+(lineState.lineConfig?.merchantOaConnected?"店家自己的 OA":"未綁定（不代發）")+'</span>'+btn("查看 LINE OA 綁定與教學","settings-section","outline",'data-section="public"')+'</div>')+'</div>'+tabs;
   html+=cards.filter(([key])=>key===section).map(([,markup])=>markup).join("");
   if(section==="profile")html=renderStaffBranches({role:staffState.staff.role,html});
   if(section==="operations")html+=unitSettingsPanel(isManager);
