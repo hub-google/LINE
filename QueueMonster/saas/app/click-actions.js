@@ -30,7 +30,7 @@ import {dismissActionFeedback,showActionFeedback,taipei} from "./shared-ui.js";
 import {render} from "./staff-layout.js";
 import {availableUnits} from "./service-units.js";
 import {load} from "./data-loading.js";
-import {stopQueueRealtime} from "./queue-progress.js";
+import {refreshQueueProgress,stopQueueRealtime} from "./queue-progress.js";
 import {returnToCustomerHistory} from "./customer-detail.js";
 import {refreshCrossStoreOverview,stopCrossQueueRealtime} from "./cross-store.js";
 import {availableForParty,currentBookingSlots,refreshServiceSlots} from "./customer-booking.js";

@@ -31,7 +31,7 @@ test("customer progress, directory, merchant settings and announcement uploads u
  const upload=read("saas/app/actions/queue-settings.js");
  const auth=read("saas/site-auth.js");
  assert.match(progress,/syncMode==="realtime"/);
- assert.match(progress,/每 10 秒/);
+ assert.match(progress,/每 5 秒/);
  assert.doesNotMatch(directory,/公開叫號看板/);
  assert.match(settings,/查看 LINE OA 綁定與教學/);
  assert.match(settings,/announcement-photo-files/);
