@@ -67,7 +67,9 @@ test("free demo mirrors queue, phone, pickup grace, privacy and booking availabi
  assert.doesNotMatch(demo,/取餐姓名/);
  assert.match(demo,/createdAt\+15000/);
  assert.match(demo,/Date\.now\(\)-o\.createdAt>=15000/);
- assert.match(demo,/\.filter\(o=>mine\.has\(o\.id\)\)/);
+ assert.match(demo,/records\.filter\(x=>owned\.has\(x\.id\)\)/);
+ assert.match(demo,/function customerDetail\(\)/);
+ assert.match(demo,/data-act="demo-open-detail"/);
  assert.match(demo,/const remaining=s=>/);
  assert.match(demo,/其他操作（誤操作更正）/);
  assert.match(demo,/if\(a==="clear-filter"\)/);
