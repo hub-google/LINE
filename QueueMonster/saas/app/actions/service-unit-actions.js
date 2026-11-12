@@ -13,6 +13,7 @@ import {selectedUnitSession,unitBookingFingerprint,unitNameForSession,unitSessio
 import {bookingRequestDetails,normalizeBookingPhone,validBookingContact} from "./../customer-booking.js";
 import {showActionFeedback} from "./../shared-ui.js";
 import {handleScheduleAction} from "../schedule-settings.js";
+import {selectCustomerDetail} from "../customer-detail.js";
 
 export async function handleServiceUnitActions(ev,b,a,id){
 if(await handleScheduleAction(ev,b,a,id))return true;
@@ -106,7 +107,7 @@ if(a==="save-unit-mode"){
       p_name:bookingState.bookingContactName.trim(),p_phone:normalizeBookingPhone(bookingState.bookingContactPhone),
       p_party:party,p_items:items,p_request_id:requestId});
     clearCustomerBookingRequest(requestId);
-    routeState.customerTab="mine";serviceUnitsState.unitSessionChoice="";bookingState.bookingChosenItems=[];serviceUnitsState.unitConfirmKey="";
+    if(!selectCustomerDetail("reservation",result.id))routeState.customerTab="mine";serviceUnitsState.unitSessionChoice="";bookingState.bookingChosenItems=[];serviceUnitsState.unitConfirmKey="";
     const notice=result.replayed?"":await sendLineNotice("notify-reservation",{reservationId:result.id});
     return (result.replayed?"已找到先前的預約":"預約已成立")+"；"+unitNameForSession(s.id)+" "+s.name+
       (notice?customerNoticeSuffix(notice):"");
@@ -120,6 +121,9 @@ if(a==="save-unit-mode"){
     const result=await rpc("so_unit_take_number",{p_slug:routeState.slug,p_session_id:s.id,
       p_party:Number(val("customer-queue-party")),p_items:queueState.queueChosenItems.slice()});
     queueState.progressTicketId=result.id;routeState.customerTab="progress";queueState.queueChosenItems=[];
+    const u=new URL(location.href);u.searchParams.set("view","customer");u.searchParams.set("merchant",routeState.slug);
+    u.searchParams.set("tab","progress");u.searchParams.set("ticket",result.id);u.searchParams.delete("kind");u.searchParams.delete("item");
+    history.pushState(null,"",u.pathname+u.search+u.hash);
     const notice=await sendLineNotice("notify-ticket",{ticketId:result.id});
     return "已取得號碼 "+result.number+customerNoticeSuffix(notice);
    });return true;
