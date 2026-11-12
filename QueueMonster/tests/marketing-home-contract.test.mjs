@@ -31,7 +31,7 @@ test("independent homepage is versioned and included in non-destructive Pages de
 
 test("public homepage only links to customer-facing functions and legal documents",()=>{
  const targets=[
-  "./directory.html?mode=search","./directory.html?mode=queue",
+  "./directory.html?mode=search",
   "./privacy.html","./terms.html"
  ];
  for(const href of targets) assert.ok(landing.includes('href="'+href+'"'),"Missing customer link: "+href);
@@ -267,4 +267,23 @@ test("marketing site has platform overview and two role-specific diagram pages",
  assert.match(customer,/手機查看最新進度/);
  assert.match(customer,/href="\.\/directory\.html\?mode=search"/);
  assert.match(flowCSS,/@media\(max-width:700px\)/);
+});
+
+test("public introduction and demo pages share one header and the same navigation labels",()=>{
+ const js=read("saas/assets/marketing/shared-header.js");
+ const css=read("saas/assets/marketing/shared-header.css");
+ for(const p of ["home.html","for-merchants.html","for-customers.html","demo.html","merchant-center.html"]){
+  const html=read("saas/"+p);
+  assert.match(html,/id="marketing-header"/);
+  assert.match(html,/assets\/marketing\/shared-header\.js/);
+  assert.match(html,/assets\/marketing\/shared-header\.css/);
+ }
+ for(const name of ["平台總覽","店家功能","顧客功能","常見問題","免登入功能試用","叫號看板","搜尋店家"])
+  assert.ok(js.includes(name));
+ assert.doesNotMatch(js,/遊戲逛店|公開叫號看板/);
+ assert.match(js,/site-auth-root/);
+ assert.match(js,/qm-public-mobile/);
+ assert.match(css,/@media\(max-width:620px\)/);
+ const syntax=spawnSync(process.execPath,["--check"],{input:js,encoding:"utf8"});
+ assert.equal(syntax.status,0,syntax.stderr);
 });
