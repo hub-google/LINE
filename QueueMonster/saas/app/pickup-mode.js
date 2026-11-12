@@ -6,6 +6,7 @@ import {lineState} from "./state/lineState.js";
 import {box,btn,esc,field,taipei} from "./shared-ui.js";
 import {rpc,act,load} from "./data-loading.js";
 import {render} from "./staff-layout.js";
+import {normalizeTaiwanPhone,isValidTaiwanPhone} from "./tw-phone.js";
 
 // The existing store, LINE identity and so_menu_items catalogue remain the source of truth.
 // This module owns only pickup-specific presentation and form state.
@@ -127,12 +128,12 @@ export function renderCustomerPickup(){
    '<strong>'+esc(pickupState.cart[i.id]||0)+'</strong>'+
    btn("＋","pickup-qty","outline",'data-id="'+esc(i.id)+'" data-delta="1" aria-label="增加 '+esc(i.name)+'"')+'</div></div>').join("")+
   '<div class="grid" style="margin-top:12px"><div>'+field("取餐姓名","pickup-customer-name",pickupState.name,"text",'maxlength="60" autocomplete="name"')+'</div>'+
-   '<div>'+field("聯絡電話","pickup-customer-phone",pickupState.phone,"tel",'autocomplete="tel" placeholder="請填 8～15 位數字"')+'</div></div>'+
+   '<div>'+field("聯絡電話","pickup-customer-phone",pickupState.phone,"tel",'autocomplete="tel" inputmode="tel" maxlength="24" placeholder="手機 0912345678／市話 02-23456789"')+'</div></div>'+
    '<div style="margin-top:12px">'+field("給店家的備註（最多 200 字）","pickup-note",pickupState.note,"text",'maxlength="200" placeholder="例如：不要加辣"')+'</div>'+
   '<div class="listline"><strong>共 '+esc(count)+' 份</strong><strong>'+money(total)+'</strong></div>'+
   '<p class="small">此處僅建立訂單，不會線上收款；請依店家現場方式結帳。</p>'+
   (pickupState.confirming?'<div class="inset" role="group" aria-label="確認訂餐內容"><strong>請核對送出前的訂餐內容</strong>'+
-    '<p>取餐人：'+esc(pickupState.name.trim())+' ・ '+esc(pickupState.phone.trim())+'</p>'+
+    '<p>取餐人：'+esc(pickupState.name.trim())+' ・ '+esc(normalizeTaiwanPhone(pickupState.phone))+'</p>'+
     '<p>預計取餐：'+(immediate?'立即取餐（以店家接單為準）':esc(pickupState.day)+' '+esc(pickupState.slot))+'</p>'+
     '<p>餐點：'+(d.items||[]).filter(i=>pickupState.cart[i.id]>0).map(i=>esc(i.name)+' × '+esc(pickupState.cart[i.id])).join('、')+'</p>'+
     '<p>金額：'+money(total)+'（以送出時店家菜單價格重新計算）</p>'+
@@ -202,9 +203,9 @@ export async function handlePickupAction(ev,b,a,id){
   pickupState.historyFilter=b.dataset.filter;pickupState.historyPage=1;await load();return true;
  }
  if(a==="pickup-review"){
-   const name=pickupState.name.trim(),phone=pickupState.phone.trim().replace(/[\s()\-]/g,"");
-   if(!name||name.length>60||/[<>\u0000-\u001f]/.test(name)){window.alert("請填寫有效的取餐姓名");return true;}
-   if(!/^\+?[0-9]{8,15}$/.test(phone)){window.alert("請填寫有效的聯絡電話（8～15 位數字）");return true;}
+   const name=pickupState.name.trim(),phone=normalizeTaiwanPhone(pickupState.phone);
+   if(!name||name.length>60||/^\d+$/.test(name)||/[<>\u0000-\u001f]/.test(name)){window.alert("請填寫有效的取餐姓名");return true;}
+   if(!isValidTaiwanPhone(pickupState.phone)){window.alert("請填寫有效的台灣手機或市話（手機 09 開頭 10 碼；市話含區碼）");return true;}
    if(!Object.values(pickupState.cart).some(n=>n>0)){window.alert("請先選擇餐點");return true;}
    pickupState.confirming=true;render();return true;
  }
@@ -243,6 +244,9 @@ export async function handlePickupAction(ev,b,a,id){
  }
  if(a==="pickup-submit"){
    if(!pickupState.confirming){window.alert("請先確認訂單內容");return true;}
+   if(!isValidTaiwanPhone(pickupState.phone)||!pickupState.name.trim()||/^\d+$/.test(pickupState.name.trim())){
+     pickupState.confirming=false;window.alert("請填寫有效的取餐姓名與台灣手機或市話");render();return true;
+   }
    const items=Object.entries(pickupState.cart).filter(([,qty])=>qty>0).map(([itemId,qty])=>({id:itemId,qty}));
    if(!items.length)return true;
    if(pickupState.method!=="immediate"&&!pickupState.slot)return true;
@@ -252,7 +256,7 @@ export async function handlePickupAction(ev,b,a,id){
        p_date:pickupState.method==="immediate"?null:pickupState.day,
        p_time:pickupState.method==="immediate"?null:pickupState.slot,
        p_items:items,p_note:pickupState.note,p_request_id:pickupState.requestId,
-       p_immediate:pickupState.method==="immediate",p_customer_name:pickupState.name.trim(),p_customer_phone:pickupState.phone.trim()});
+       p_immediate:pickupState.method==="immediate",p_customer_name:pickupState.name.trim(),p_customer_phone:normalizeTaiwanPhone(pickupState.phone)});
      pickupState.cart={};pickupState.note="";pickupState.requestId="";pickupState.confirming=false;
      return "訂單 "+res.number+" 已送出，請在我的取餐進度查看店家接單狀態";
    });return true;
