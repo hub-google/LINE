@@ -8,7 +8,7 @@ import {serviceUnitsState} from "../state/serviceUnitsState.js";
 
 import {act,clearCustomerBookingRequest,customerBookingRequestId,rpc,val} from "./../data-loading.js";
 import {render} from "./../staff-layout.js";
-import {customerNoticeSuffix,notifyLineCalled,sendLineNotice} from "./../line-session.js";
+import {customerNoticeSuffix,notifyLineCalled,sendLineNotice,sendBookingReply} from "./../line-session.js";
 import {selectedUnitSession,unitBookingFingerprint,unitNameForSession,unitSessionAvailable} from "./../service-units.js";
 import {bookingRequestDetails,normalizeBookingPhone,validBookingContact} from "./../customer-booking.js";
 import {showActionFeedback} from "./../shared-ui.js";
@@ -108,7 +108,7 @@ if(a==="save-unit-mode"){
       p_party:party,p_items:items,p_request_id:requestId});
     clearCustomerBookingRequest(requestId);
     if(!selectCustomerDetail("reservation",result.id))routeState.customerTab="mine";serviceUnitsState.unitSessionChoice="";bookingState.bookingChosenItems=[];serviceUnitsState.unitConfirmKey="";
-    const notice=result.replayed?"":await sendLineNotice("notify-reservation",{reservationId:result.id});
+    const notice=result.replayed?"":await sendBookingReply(result.id);
     return (result.replayed?"已找到先前的預約":"預約已成立")+"；"+unitNameForSession(s.id)+" "+s.name+
       (notice?customerNoticeSuffix(notice):"");
    });return true;
