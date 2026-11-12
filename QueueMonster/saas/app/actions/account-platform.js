@@ -43,9 +43,12 @@ if(a==="customer-history-close"){
   const email=val("create-owner");
   if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw Error("企業管理者 Email 格式不正確");
   patch.logo_url=await merchantUploadLogo("create",patch.logo_url);
+  const serviceChoices=checked("create-feature");
+  // Calling is part of queue management, never an independent merchant switch.
+  // New shops without queue service must not get a stale calling=true flag.
   const result=await rpc("so_create_tenant",{p_name:patch.name,
    p_slug:code,
-   p_modules:checked("create-feature"),p_owner_email:email||null});
+   p_modules:{...serviceChoices,calling:serviceChoices.queue===true},p_owner_email:email||null});
   try{
      await rpc("so_update_tenant",{p_slug:result.slug,p_patch:patch});
      if(document.getElementById("create-pickup-enabled")?.checked){
