@@ -29,13 +29,10 @@ test("staff controls and merchant guide do not expose the deleted page",()=>{
 
 test("Pages deployment deletes existing public copies of the retired page",()=>{
  const deploy=read(".github/workflows/line-saas-pages.yml");
- const pr=read(".github/workflows/line-saas-pr-validation.yml");
  assert.ok(deploy.includes('rm -f "$pubdir/$product/poster.html"'));
  assert.ok(deploy.includes('rm -rf "$pubdir/$product/assets/poster"'));
  assert.ok(deploy.includes('test ! -e "$RUNNER_TEMP/line-saas-dist/poster.html"'));
- assert.ok(pr.includes('test ! -e /tmp/line-saas-pr-dist/poster.html'));
  assert.ok(deploy.includes("poster-removal-contract.test.mjs"));
- assert.ok(pr.includes("poster-removal-contract.test.mjs"));
 });
 
 

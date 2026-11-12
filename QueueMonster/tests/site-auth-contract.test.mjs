@@ -194,7 +194,8 @@ test("staff pages show actual operator identity and logout operator account",asy
  await flush();
  const names=controls(ui.rootNode).find(x=>x.className==="site-auth-name");
  assert.match(names.children.map(x=>x.textContent).join(""),/staff@example\.test/);
- const logout=controls(ui.rootNode).find(x=>x.tag==="button");
+ const logout=controls(ui.rootNode).find(x=>x.tag==="button"&&x.textContent==="登出");
+ assert.ok(logout,"the separate logout button must remain available");
  logout.handlers.click();await flush();
  assert.equal(ui.state.signedOut,"operator");
 });
@@ -255,7 +256,7 @@ test("platform LINE identity is verified independently from store selection",()=
  assert.match(edge,/payload\.action === "link-platform"/);
  assert.match(edge,/payload\.action === "resume-platform"/);
  assert.match(edge,/lineVerify\(idToken,accessToken,\{channelId:platformChannel\}\)/);
- assert.match(edge,/so_platform_line_identities/);
+ assert.match(edge,/qm_platform_line_identities/);
  assert.match(edge,/identity\(req, db\)/);
  assert.match(edge,/reusablePlatformLineIdentity\(db,user\.id,expectedChannelId\)/);
  assert.match(edge,/isReusableLineIdentity\(platform,channelId\)/);

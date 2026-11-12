@@ -75,7 +75,7 @@ test("one responsive TV board handles single and multiple queues without custome
 test("LINE notice includes scoped session and preserves existing recipient behavior", () => {
   assert.match(bridge, /serviceSessionNoticeLines/);
   assert.match(bridge, /ticket\.service_session_id/);
-  assert.match(bridge, /scope\(db\.from\("so_tickets"\)/);
+  assert.match(bridge, /scope\(db\.from\("qm_tickets"\)/);
   assert.match(bridge, /LINE_MESSAGING_ACCESS_TOKEN/);
   assert.match(bridge, /line_sub/);
 });

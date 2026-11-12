@@ -48,7 +48,7 @@ test("OSS-N03: LINE worker rechecks preference and sends via existing deduped pa
   assert.match(bridge,/ticket\.status !== "WAITING"/);
   assert.match(bridge,/pushNotice\(db, tenant, ticket\.user_id, "QUEUE_NEAR", ticket\.id/);
   assert.match(bridge,/liffQueueProgressLink\(await shopLinkContext\(db, tenant\), ticket\.id\)/);
-  assert.match(bridge,/so_line_push_log/);
+  assert.match(bridge,/qm_line_push_log/);
 });
 
 test("OSS-N03: customer page exposes saved choice and not an untrusted local preference",()=>{
@@ -88,7 +88,7 @@ test("FR-104 reminder job schema, invalidation and minute cron match deployed ba
 test("FR-104 worker handles both reminders with event-versioned booking and tenant checks",()=>{
  assert.match(bridge,/job\.event_kind === "RESERVATION_REMINDER_24H"/);
  assert.match(bridge,/job\.event_kind === "RESERVATION_REMINDER_2H"/);
- assert.match(bridge,/from\("so_booking_reminder_jobs"\)/);
+ assert.match(bridge,/from\("qm_booking_reminder_jobs"\)/);
  assert.match(bridge,/reminder\.status !== "QUEUED"/);
  assert.match(bridge,/reminder\.reminder_kind !== expected/);
  assert.match(bridge,/booking\.status !== "CONFIRMED"/);
@@ -96,7 +96,7 @@ test("FR-104 worker handles both reminders with event-versioned booking and tena
  assert.match(bridge,/reminderDeliveryWindow\(booking\.booking_date, booking\.booking_time/);
  assert.match(bridge,/REMINDER_BOOKING_CANCELLED_OR_CHANGED/);
  assert.match(bridge,/pushNotice\(db, tenant, booking\.user_id, job\.event_kind, job\.reference_id/);
- assert.match(bridge,/so_line_push_log/);
+ assert.match(bridge,/qm_line_push_log/);
 });
 
 test("FR-104 reminder delivery refuses early, stale and rescheduled booking events",()=>{
