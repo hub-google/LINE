@@ -5,20 +5,34 @@ import {stripTypeScriptTypes} from 'node:module';
 import vm from 'node:vm';
 import {requestBookingReply} from '../saas/app/booking-line-reply.js';
 const id='12345678-1234-1234-1234-123456789abc';
+const own={merchantOaConnected:true,merchantLiffId:'1234567890-AbcdEfgh'};
 test('eligible LIFF sends exactly one text command after booking',async()=>{
  const sent=[];
- const result=await requestBookingReply({isInClient:()=>true,getContext:()=>({type:'utou'}),sendMessages:async x=>sent.push(x)},id);
+ const result=await requestBookingReply({id:own.merchantLiffId,isInClient:()=>true,getContext:()=>({type:'utou'}),sendMessages:async x=>sent.push(x)},id,own);
  assert.equal(result.requested,true);assert.deepEqual(sent,[[{type:'text',text:'確認預約 '+id}]]);
 });
 test('external browser, QR context and group never send booking information',async()=>{
  for(const liff of [undefined,{isInClient:()=>false},{isInClient:()=>true,getContext:()=>({type:'none'})},{isInClient:()=>true,getContext:()=>({type:'group'})}]){
-  assert.equal((await requestBookingReply(liff,id)).requested,false);
+  assert.equal((await requestBookingReply(liff,id,own)).requested,false);
  }
 });
 test('SDK rejection preserves a retry command without a push fallback',async()=>{
- const result=await requestBookingReply({isInClient:()=>true,getContext:()=>({type:'utou'}),sendMessages:async()=>{throw Error('403')}},id);
+ const result=await requestBookingReply({id:own.merchantLiffId,isInClient:()=>true,getContext:()=>({type:'utou'}),sendMessages:async()=>{throw Error('403')}},id,own);
  assert.equal(result.requested,false);assert.equal(result.command,'確認預約 '+id);
  await assert.rejects(()=>requestBookingReply(null,'bad-id'));
+});
+test('platform OA, missing merchant LIFF and mismatched LIFF never auto-send',async()=>{
+ const sent=[];
+ const sdk={id:'9999999999-Other',isInClient:()=>true,getContext:()=>({type:'utou'}),sendMessages:async x=>sent.push(x)};
+ assert.equal((await requestBookingReply(sdk,id)).requested,false);
+ assert.equal((await requestBookingReply(sdk,id,{merchantOaConnected:true})).requested,false);
+ assert.equal((await requestBookingReply(sdk,id,own)).requested,false);
+ assert.equal(sent.length,0);
+});
+test('unit/session bookings use the merchant LIFF reply, not reservation push',()=>{
+ const unit=readFileSync(new URL('../saas/app/actions/service-unit-actions.js',import.meta.url),'utf8');
+ assert.match(unit,/await sendBookingReply\(result\.id\)/);
+ assert.doesNotMatch(unit,/sendLineNotice\("notify-reservation"/);
 });
 const source=readFileSync(new URL('../supabase/functions/line-bridge/index.ts',import.meta.url),'utf8');
 function backend(overrides={}){
