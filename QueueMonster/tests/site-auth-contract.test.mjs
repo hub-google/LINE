@@ -200,6 +200,11 @@ test("staff pages show actual operator identity and logout operator account",asy
  assert.equal(ui.state.signedOut,"operator");
 });
 
+test("first Email signup password save clears the pending setup flag",()=>{
+ assert.match(code,/queue_monster_password_pending:false/);
+ assert.match(code,/operator\.auth\.updateUser\(changes\)/);
+});
+
 test("Email-password users get the password action, Google and LINE accounts do not",async()=>{
  const email=createScenario({staffName:"email@example.test",staffProvider:"email",url:"https://hub-google.github.io/LINE/booking/?view=staff"});
  await flush();

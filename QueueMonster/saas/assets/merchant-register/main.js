@@ -35,6 +35,8 @@ const returnToSignup=()=>{
  return url.href;
 };
 const needsInitialPassword=user=>user?.app_metadata?.queue_monster_invited===true && user?.app_metadata?.queue_monster_password_ready!==true;
+const hasEmailCredential=user=>user?.app_metadata?.provider==="email" ||
+ (!user?.app_metadata?.provider&&user?.identities?.some(item=>item.provider==="email")===true);
 const msg=(t,error=false)=>{$("message").textContent=t||"";$("message").className=t?"message"+(error?" error":""):""};
 const invitedId=new URL(location.href).searchParams.get("staff_invite")||"";
 const inviteIdPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -119,14 +121,15 @@ async function prepare(){
  }
  showAuth(user);
  $("account-title").textContent="已登入｜企業與員工權限";
- document.querySelector(".password-panel").classList.remove("hidden");
+ document.querySelector(".password-panel").classList.toggle("hidden",!hasEmailCredential(user));
  const workspace=$("workspace");
  workspace.replaceChildren();
  const passwordPanel=document.querySelector(".password-panel");
- const firstSetup=needsInitialPassword(user);
+ const firstSetup=hasEmailCredential(user)&&needsInitialPassword(user);
  const intent=new URL(location.href).searchParams.get("intent");
- const recovering=intent==="recovery";
- const completingSignup=intent==="complete-signup"||user?.user_metadata?.queue_monster_password_pending===true;
+ const recovering=hasEmailCredential(user)&&intent==="recovery";
+ const completingSignup=hasEmailCredential(user)&&(
+  intent==="complete-signup"||user?.user_metadata?.queue_monster_password_pending===true);
  const title=passwordPanel.querySelector("h3"),help=passwordPanel.querySelector(".sub");
  if(recovering||firstSetup||completingSignup){
    $("account-title").textContent=recovering?"重設帳號密碼":completingSignup?"信箱已驗證｜完成註冊":"完成員工帳號啟用";
@@ -271,6 +274,7 @@ $("forgot-pass").onclick=()=>void execute(async()=>{
  if(error)throw error;msg("若信箱已有帳號，將收到密碼重設連結");
 },"reset");
 $("change-pass").onclick=()=>void execute(async()=>{
+ if(!hasEmailCredential(authUser))throw Error("此帳號使用 Google 或 LINE 登入，無須設定平台密碼。");
  const password=$("new-pass").value,confirm=$("confirm-new-pass").value;
  if(password.length<1)throw Error("請輸入新密碼");
  if(password!==confirm)throw Error("兩次輸入的密碼不相同");

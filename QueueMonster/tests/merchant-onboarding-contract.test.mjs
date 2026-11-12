@@ -29,6 +29,13 @@ test("Google login comes before Email on both signup and login tabs",()=>{
  assert.match(logic,/returnToLogin\(\)/);
  assert.match(logic,/user_metadata\?\.full_name/);
 });
+test("only Email accounts can open or save a local password in the merchant portal",()=>{
+ const logic=read("saas/assets/merchant-register/main.js");
+ assert.match(logic,/hasEmailCredential\(user\)/);
+ assert.match(logic,/classList\.toggle\("hidden",!hasEmailCredential\(user\)\)/);
+ assert.match(logic,/if\(!hasEmailCredential\(authUser\)\)throw Error/);
+});
+
 test("Email registration verifies ownership before password creation",()=>{
  const logic=read("saas/assets/merchant-register/main.js");
  assert.doesNotMatch(reg,/id="signup-pass"|id="signup-confirm"/);
