@@ -241,6 +241,22 @@ try{
  }
 
 
+ // Shared public navigation must match on all introduction pages and all viewport sizes.
+ for(const width of [1280,390]){
+  await page.setViewportSize({width,height:900});
+  for(const name of ['home.html','for-merchants.html','for-customers.html','demo.html','merchant-center.html']){
+   await page.goto(baseUrl+'/booking/'+name,{waitUntil:'domcontentloaded',timeout:45000});
+   const header=page.locator('.qm-public-header');
+   await header.waitFor({state:'attached',timeout:10000});
+   const tabs=await header.locator('.qm-public-nav a').allTextContents();
+   assert.deepEqual(tabs,['平台總覽','店家功能','顧客功能','常見問題','免登入功能試用','叫號看板'],name+' identical navigation');
+   assert.equal(await page.locator('#site-auth-root').count(),1,name+' single login state');
+   assert.equal(await header.locator('.qm-public-mobile>summary').isVisible(),width===390,name+' responsive menu');
+   const bounds=await header.evaluate(node=>{const b=node.getBoundingClientRect();return {left:b.left,right:b.right,width:innerWidth};});
+   assert.ok(bounds.left>=-2&&bounds.right<=bounds.width+2,name+' header fits viewport');
+  }
+ }
+
  // Drive the SAME board engine through many arbitrary shapes: landscape,
  // portrait, square, ultra-wide, and narrow. These are TEST INPUTS, not CSS modes.
  async function geometry(){
