@@ -44,7 +44,7 @@ test("game mode has map to street to storefront flow and works on mobile",()=>{
  assert.match(directory,/id="arcade-previous"/);
  assert.match(directory,/id="arcade-next"/);
  assert.match(directory,/id="arcade-open-shop"/);
- assert.match(directory,/mode=\["search","queue","mine","game"\]/);
+ assert.match(read("saas/assets/directory/main.js"),/mode=\["search","queue","mine","game","last-board"\]/);
  assert.match(directory,/LineExploreGame\?\.setData/);
  assert.match(js,/function showWorld\(\)/);
  assert.match(js,/function enterRegion\(region\)/);
