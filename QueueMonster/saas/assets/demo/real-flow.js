@@ -55,11 +55,11 @@ function getCurrent(){return currentCalled(scene==="clinic"?room:null);}
 function message(kind,title,lines){notes.unshift({kind,title,lines,shop:displayShop(),at:new Intl.DateTimeFormat("zh-TW",{timeZone:"Asia/Taipei",hour:"2-digit",minute:"2-digit"}).format(new Date())});notes=notes.slice(0,15);notifyOpen=true;}
 function notifyFor(action,obj){
  const shop=displayShop();
- if(action==="order"){message("LINE 通知示意","訂餐已送出",["店家："+shop,"訂單編號："+obj.id,"預約取餐："+obj.time,"品項："+obj.lines.map(x=>x.name+" × "+x.qty).join("、"),"金額："+money(obj.total),"請在「我的服務」查看後續進度。"]);return;}
+ if(action==="order"){message("網站狀態示意","訂餐已送出",["店家："+shop,"訂單編號："+obj.id,"預約取餐："+obj.time,"品項："+obj.lines.map(x=>x.name+" × "+x.qty).join("、"),"金額："+money(obj.total),"請在「我的服務」查看後續進度。"]);return;}
  if(action==="booking"){message("LINE 通知示意","預約成功",["店家："+shop,"預約編號："+obj.id,"預約："+obj.date+" "+obj.time,"姓名："+obj.name,"服務："+obj.service+(obj.unit?"／"+obj.unit:""),"可返回「我的服務」查詢或取消。"]);return;}
  if(action==="ticket"){message("LINE 通知示意","取號成功",["店家："+shop,"我的號碼："+obj.id,"目前叫號："+(typeof getCurrent()==="string"?getCurrent():"請選診間"),"前方等候以即時進度為準。","請從「我的取號」查看叫號進度。"]);return;}
  if(action==="called"){message("LINE 叫號通知示意","輪到您的號碼",["店家："+shop,"叫號："+obj.id,(obj.unit?"服務窗口："+obj.unit:""),"請依現場人員指示報到。"]);return;}
- if(action==="order-status"){message("狀態通知示意","取餐訂單狀態更新",["店家："+shop,"訂單："+obj.id,"目前狀態："+(statusName[obj.status]||obj.status),"請查看「我的服務」中的最新進度。"]);return;}
+ if(action==="order-status"){message("網站狀態示意","取餐訂單狀態更新",["店家："+shop,"訂單："+obj.id,"目前狀態："+(statusName[obj.status]||obj.status),"請查看「我的服務」中的最新進度。"]);return;}
  if(action==="checkin"){message("網站狀態示意","已完成報到",["店家："+shop,"預約："+obj.id,"候診號碼："+obj.ticket,"請留意叫號進度。"]);return;}
 }
 
@@ -151,10 +151,23 @@ function customerMine(){
  (d.tickets?box("目前叫號進度",scene==="clinic"?"1診："+esc(currentCalled("1診"))+" / 2診："+esc(currentCalled("2診")):"目前："+esc(currentCalled())):"");
 }
 function staffOrder(){
- const d=current(),active=d.orders.filter(o=>!["REJECTED","PICKED_UP"].includes(o.status)),old=d.orders.filter(o=>["REJECTED","PICKED_UP"].includes(o.status));
- const choices=[["接單","ACCEPTED"],["待取","READY"],["取消訂單","REJECTED"],["已完成","PICKED_UP"]];
- const card=o=>inset('<div class="listline"><strong>'+esc(o.id)+'</strong><strong>'+esc(statusName[o.status])+'</strong></div><p class="small"><strong>約定取餐 '+esc(o.time)+'</strong>（指定時間）</p><p class="small">顧客：'+esc(o.name)+' · '+esc(o.phone)+'</p><p>'+esc(o.lines.map(x=>x.name+" × "+x.qty).join("、"))+'</p><p class="small">'+money(o.total)+'</p><div class="staff-actionbar" role="group" aria-label="選擇訂單狀態">'+choices.map(([name,v])=>btn(name,"order-status",v===o.status?"primary":"outline",'data-id="'+esc(o.id)+'" data-value="'+v+'"')).join("")+'</div><details><summary class="small">其他操作（恢復待接單）</summary><div class="staff-actionbar">'+btn("恢復待接單","order-status","outline",'data-id="'+esc(o.id)+'" data-value="NEW"')+'</div></details>');
- return box("取餐訂單管理",'<p class="small">依約定取餐時間排序。可切換接單、待取、取消訂單或已完成，已結束的訂單也能重新更正。</p><p><strong>待處理 '+active.length+' 筆</strong></p>'+active.map(card).join("")+'<details open class="pickup-history-panel"><summary>歷史訂單（'+old.length+' 筆，可更正狀態）</summary>'+old.map(card).join("")+'</details>');
+ const d=current(),visible=d.orders.filter(o=>!o.createdAt||Date.now()-o.createdAt>=15000);
+ const active=visible.filter(o=>!["REJECTED","PICKED_UP","CANCELLED"].includes(o.status));
+ const old=visible.filter(o=>["REJECTED","PICKED_UP","CANCELLED"].includes(o.status));
+ const waiting=d.orders.length-visible.length;
+ const choices=o=>[[o.status==="READY"?"確認已取餐":"接單",o.status==="READY"?"PICKED_UP":"ACCEPTED"],["已完成待取","READY"],["取消訂單","REJECTED"]];
+ const card=o=>inset('<div class="listline"><strong>'+esc(o.id)+'</strong><strong>'+esc(statusName[o.status]||o.status)+'</strong></div>'+
+  '<p class="small"><strong>約定取餐 '+esc(o.time)+'</strong>（'+(o.immediate?"立即":"指定時間")+'）</p>'+
+  '<p class="small">聯絡電話：'+esc(o.phone)+'</p><p>'+esc(o.lines.map(x=>x.name+" × "+x.qty).join("、"))+'</p><p class="small">'+money(o.total)+'</p>'+
+  '<div class="staff-actionbar" role="group" aria-label="選擇訂單狀態">'+choices(o).map(([name,v])=>btn(name,"order-status",v===o.status?"primary":"outline",'data-id="'+esc(o.id)+'" data-value="'+v+'"'+(v===o.status?" disabled":""))).join("")+'</div>'+
+  '<details><summary class="small">其他操作（誤操作更正）</summary><div class="staff-actionbar">'+
+  (o.status==="ACCEPTED"?btn("開始製作","order-status","outline",'data-id="'+esc(o.id)+'" data-value="PREPARING"'):"")+
+  (o.status!=="CANCELLED"?btn("更正為顧客取消","order-status","outline",'data-id="'+esc(o.id)+'" data-value="CANCELLED"'):"")+
+  (o.status!=="NEW"?btn("恢復待接單","order-status","outline",'data-id="'+esc(o.id)+'" data-value="NEW"'):"")+'</div></details>');
+ return box("取餐訂單管理",'<p class="small">新訂單送出後 15 秒內由顧客自行取消，倒數結束才顯示給店家。主操作為接單、已完成待取及取消訂單；狀態可更正。</p>'+
+ (waiting?'<p class="small">目前 '+waiting+' 筆新訂單仍在顧客取消期，倒數結束後自動顯示。</p>':"")+
+ '<p><strong>待處理 '+active.length+' 筆</strong></p>'+active.map(card).join("")+
+ '<details open class="pickup-history-panel"><summary>歷史訂單（'+old.length+' 筆，可更正狀態）</summary>'+old.map(card).join("")+'</details>');
 }
 function statusPicker(kind,item){
  const choices=kind==="reservation"?[["CONFIRMED","已預約"],["CHECKED_IN","已報到"],["COMPLETED","已完成"],["NO_SHOW","未到"],["CANCELLED","已取消"]]:
@@ -262,15 +275,16 @@ document.addEventListener("click",e=>{
  if(a==="view-notice"){notifyOpen=true;renderNotice();$("notifications")?.scrollIntoView?.({behavior:"smooth",block:"nearest"});return;}
  if(a==="qty"){cart[id]=Math.max(0,Math.min(30,(cart[id]||0)+Number(button.dataset.delta)));review=false;render();return;}
  if(a==="method"){method=value;review=false;render();return;}
- if(a==="review-order"){if(!Object.values(cart).some(n=>n>0)){inform("請至少選擇一項餐點");return;}if(!requireContact())return;review=true;inform("請核對訂餐內容後再送出");return;}
+ if(a==="review-order"){if(!Object.values(cart).some(n=>n>0)){inform("請至少選擇一項餐點");return;}if(!validPickupPhone()){inform("請填寫有效的臺灣手機或市話（手機 09 開頭 10 碼；市話依區碼檢核）。");return;}if(!pickupWindowValid()){inform("取餐日期或時段不在示範可預約範圍，請重新選擇。");return;}review=true;inform("請核對訂餐內容後再送出");return;}
  if(a==="review-back"){review=false;inform("已返回修改");return;}
  if(a==="order-submit"){
-  if(!requireContact())return;
+  if(!validPickupPhone()||!pickupWindowValid()){review=false;inform("聯絡電話、取餐日期或時間不正確，請返回確認。");return;}
   const lines=food.filter(i=>cart[i.id]>0).map(i=>({name:i.name,qty:cart[i.id],price:i.price}));if(!lines.length)return;
-  const o={id:"B"+pad(d.seq++),name:draft.name||"示範顧客",phone:draft.phone||"（試用未填）",lines,time:method==="immediate"?"立即":draft.time,status:"NEW",total:lines.reduce((s,i)=>s+i.qty*i.price,0)};
-  d.orders.unshift(o);lastOwn=o.id;ownedIds[scene].add(o.id);cart={};review=false;notifyFor("order",o);tab="order";inform("已送出示範訂單 "+o.id+"，右側顯示客人可能收到的訊息。");return;
+  const o={id:"B"+pad(d.seq++),phone:pickupPhone(),lines,time:method==="immediate"?"立即":draft.day+" "+draft.time,immediate:method==="immediate",createdAt:Date.now(),status:"NEW",total:lines.reduce((sum,i)=>sum+i.qty*i.price,0)};
+  d.orders.unshift(o);lastOwn=o.id;ownedIds[scene].add(o.id);cart={};review=false;notifyFor("order",o);tab="order";
+  inform("已送出示範訂單 "+o.id+"。15 秒內可取消，之後店家才會收到。");return;
  }
- if(a==="unit"){draft.unit=value;if(scene==="clinic")room=value;review=false;render();return;}
+  if(a==="unit"){draft.unit=value;if(scene==="clinic")room=value;review=false;render();return;}
  if(a==="slot"){draft.slot=value;review=false;render();return;}
  if(a==="review-reserve"){if(!requireContact())return;review=true;inform("請確認預約資訊");return;}
  if(a==="reserve-submit"){
@@ -286,7 +300,15 @@ document.addEventListener("click",e=>{
   const o={id:"R"+pad(d.seq++),name:draft.name||"示範顧客",service:draft.service||"手機維修",status:"WAITING",party:Number(draft.party)||1};d.tickets.push(o);lastOwn=o.id;ownedIds[scene].add(o.id);notifyFor("ticket",o);inform("已取得示範號碼 "+o.id+"，切換店家端體驗叫號。");return;
  }
  if(a==="room"){room=value;draft.unit=value;render();return;}
- if(a==="order-status"){const o=find("orders",id);if(o){o.status=value;notifyFor("order-status",o);inform(o.id+" 已更新為 "+statusName[value]+"；客人可從我的服務看到新狀態。");}return;}
+ if(a==="cancel-order"){const o=find("orders",id);
+   if(!o||!ownedIds[scene].has(id)||o.status!=="NEW"||!o.createdAt||Date.now()-o.createdAt>=15000){inform("此訂單已超過 15 秒取消期限，無法由顧客自行取消。");return;}
+   o.status="CANCELLED";notifyFor("order-status",o);inform("示範訂單 "+o.id+" 已取消。");return;
+  }
+  if(a==="order-status"){const o=find("orders",id);
+   if(!o||o.createdAt&&Date.now()-o.createdAt<15000){inform("此訂單仍在顧客取消期，店家暫時無法操作。");return;}
+   if(o.status===value)return;o.status=value;notifyFor("order-status",o);
+   inform(o.id+" 已更新為 "+statusName[value]+"；顧客可從我的服務查看狀態。");return;
+  }
  if(a==="next"){
    const ts=scene==="clinic"?d.tickets.filter(t=>t.unit===room):d.tickets;
    const t=ts.find(x=>x.status==="WAITING");
@@ -316,13 +338,27 @@ document.addEventListener("change",e=>{
   inform(o.id+" 狀態已變更為 "+statusName[el.value]+"；已結案紀錄仍可重新修改。");return;
  }
  if(el.id==="staff-room"){room=el.value;render();return;}
- const models={"pickup-day":"day","pickup-slot":"time","booking-day":"day","party-size":"party","queue-party":"party","queue-service":"service","reserve-service":"service","customer-name":"name","customer-phone":"phone","customer-note":"note","contact-name":"name","contact-phone":"phone"};
+ if(el.id==="customer-phone-type"){draft.phoneType=el.value;review=false;render();return;}
+  if(el.id==="customer-phone-area"){draft.phoneArea=el.value;draft.phoneLocal="";review=false;render();return;}
+  const models={"pickup-day":"day","pickup-slot":"time","booking-day":"day","party-size":"party","queue-party":"party","queue-service":"service","reserve-service":"service","customer-phone":"phone","customer-phone-local":"phoneLocal","customer-note":"note","contact-name":"name","contact-phone":"phone"};
  if(models[el.id])draft[models[el.id]]=el.value;
 });
 document.addEventListener("input",e=>{if(e.target.id==="staff-search"){
    const at=e.target.selectionStart;bookingFilter=e.target.value;render();
    const el=$("staff-search");el?.focus();if(Number.isInteger(at))el?.setSelectionRange(at,at);
    return;
-  }const models={"customer-name":"name","customer-phone":"phone","customer-note":"note","contact-name":"name","contact-phone":"phone","party-size":"party","queue-party":"party","booking-day":"day"};if(models[e.target.id])draft[models[e.target.id]]=e.target.value;});
+  }const models={"customer-phone":"phone","customer-phone-local":"phoneLocal","customer-note":"note","contact-name":"name","contact-phone":"phone","party-size":"party","queue-party":"party","booking-day":"day"};if(models[e.target.id])draft[models[e.target.id]]=e.target.value;});
+// Only update local countdown text; this demo never polls any API.
+setInterval(()=>{
+ document.querySelectorAll("[data-demo-cancel-at]").forEach(el=>{
+  const remaining=Math.max(0,Math.ceil((Number(el.dataset.demoCancelAt)-Date.now())/1000));
+  const clock=el.querySelector(".demo-grace-seconds");if(clock)clock.textContent=String(remaining);
+  if(!remaining)el.querySelectorAll("button").forEach(b=>{b.disabled=true;});
+ });
+ if(scene==="breakfast"&&role==="staff"&&tab==="orders"){
+  const newlyReady=current().orders.filter(o=>o.createdAt&&!o.staffShown&&Date.now()-o.createdAt>=15000);
+  if(newlyReady.length){newlyReady.forEach(o=>{o.staffShown=true;});render();}
+ }
+},1000);
 resetDraft();render();
 })();
