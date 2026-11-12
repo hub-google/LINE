@@ -49,8 +49,9 @@
         <a href="#publish"><span>04</span>發佈連結與 QR Code</a>
         <a href="#booking"><span>05</span>管理預約</a>
         <a href="#queue"><span>06</span>取號與叫號</a>
-        <a href="#display"><span>07</span>現場看板與通知</a>
-        <a href="#faq"><span>08</span>常見問題</a>
+        <a href="#orders"><span>07</span>線上點餐</a>
+        <a href="#display"><span>08</span>現場看板與通知</a>
+        <a href="#faq"><span>09</span>常見問題</a>
       </nav>
     </details>
 
@@ -62,8 +63,9 @@
       <a href="#publish"><span>04</span>發佈連結與 QR Code</a>
       <a href="#booking"><span>05</span>管理預約</a>
       <a href="#queue"><span>06</span>取號與叫號</a>
-      <a href="#display"><span>07</span>現場看板與通知</a>
-      <a href="#faq"><span>08</span>常見問題</a>
+      <a href="#orders"><span>07</span>線上點餐</a>
+        <a href="#display"><span>08</span>現場看板與通知</a>
+      <a href="#faq"><span>09</span>常見問題</a>
       <div class="side-foot">不需要一次讀完。依照要操作的功能，直接點選對應章節。</div>
     </nav>
 
@@ -234,8 +236,20 @@
         </div>
       </section>
 
+      <section class="content-section" id="orders">
+        <div class="section-head"><span class="section-index">07</span><div><h2>線上點餐與取餐怎麼設定？</h2><p>沿用既有的菜單，再決定是否開放指定取餐時間。店員從「取餐訂單」處理每筆訂單。</p></div></div>
+        <div class="guide-plain-steps">
+          <div class="guide-plain-step"><span>01</span><div><h3>開啟線上點餐</h3><p>管理者進入「設定」，在「線上點餐與取餐進度」開啟服務；餐點直接使用原本的「菜單與服務」，不必另外建立一份。</p></div></div>
+          <div class="guide-plain-step"><span>02</span><div><h3>決定取餐方式與時段</h3><p>選擇「僅立即取餐」、「可選立即或預約取餐」或「必須選擇取餐時間」，再設定時段間隔、容量及最晚可下單時間。</p></div></div>
+          <div class="guide-plain-step"><span>03</span><div><h3>分享點餐入口</h3><p>啟用服務後，複製設定畫面提供的店家專屬點餐連結，讓顧客以手機選餐並送出訂單。</p></div></div>
+          <div class="guide-plain-step"><span>04</span><div><h3>店員依取餐時間處理</h3><p>在「取餐訂單」查看待接單、已接單與已完成待取的訂單；可執行「接單」、「已完成待取」或「取消訂單」，按錯時仍可更正狀態。</p></div></div>
+        </div>
+        <div class="guide-inline-actions"><a class="action green" href="./?view=staff&amp;tab=settings">前往訂餐設定 →</a><a class="action outline" href="./?view=staff&amp;tab=orders">前往取餐訂單 →</a></div>
+        <div class="section-tip">顧客下單後有 15 秒可以取消；倒數結束才會交由店家接單。取餐時間與製作時間應依店家實際營業安排設定。</div>
+      </section>
+
       <section class="content-section" id="display">
-        <div class="section-head"><span class="section-index">07</span><div><h2>用螢幕顯示叫號進度</h2><p>店家可以把即時叫號看板放在電視、平板或櫃台螢幕上。</p></div></div>
+        <div class="section-head"><span class="section-index">08</span><div><h2>用螢幕顯示叫號進度</h2><p>店家可以把即時叫號看板放在電視、平板或櫃台螢幕上。</p></div></div>
         <div class="panel">
           <div class="screen full qm-screen"><div class="qm-board"><div class="qm-board-top"><strong>範例門市</strong><time>14:20</time></div><div class="qm-board-main"><div class="qm-board-now"><h3>目前叫號</h3><i></i><strong>12</strong></div><div class="qm-board-next"><h3>接下來等候排序</h3><i></i><div><span>13</span><span>15</span><span>14</span></div></div></div><div class="qm-board-footer">叫號順序將依現場狀況即時更新　<span>重新整理</span><span>全螢幕</span></div></div><p class="caption">畫面示範｜即時叫號看板（僅使用範例號碼）</p></div>
           <div class="panel-pad" style="border-top:1px solid var(--line)"><p style="margin:0 0 13px;font-size:13px;color:#526f61">在「叫號管理」開啟「電視即時叫號看板」，將它顯示在店內螢幕。店員於後台叫號；顧客也能查看自己的叫號進度，不用全部擠到櫃檯。</p><a class="action green" href="./directory.html?mode=queue">查看叫號清單 →</a></div>
@@ -244,7 +258,7 @@
       </section>
 
       <section class="content-section" id="faq">
-        <div class="section-head"><span class="section-index">08</span><div><h2>店家最常遇到的問題</h2><p>不用翻技術文件；依實際操作情境查找。</p></div></div>
+        <div class="section-head"><span class="section-index">09</span><div><h2>店家最常遇到的問題</h2><p>不用翻技術文件；依實際操作情境查找。</p></div></div>
         <div class="accordion">
           <details><summary>我沒有自己的 LINE 官方帳號，也能讓顧客預約嗎？</summary><p>可以。完成註冊及門市基本設定後，可使用平台共用 LINE 官方帳號接待顧客。顧客可從平台的店家搜尋入口，或直接掃店家專屬 QR Code／點分享網址進行預約或取號。</p></details>
           <details><summary>預約已報到，為什麼沒有自動進入叫號？</summary><p>預約與取號預設為獨立流程。若門市尚未設定場次連動，報到只會更新預約狀態；需要現場叫號時，可另行取號。</p></details>
