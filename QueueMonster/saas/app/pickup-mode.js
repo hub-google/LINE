@@ -6,16 +6,18 @@ import {lineState} from "./state/lineState.js";
 import {box,btn,esc,field,taipei} from "./shared-ui.js";
 import {rpc,act,load} from "./data-loading.js";
 import {render} from "./staff-layout.js";
-import {normalizeTaiwanPhone,isValidTaiwanPhone} from "./tw-phone.js";
+import {normalizeTaiwanPhone,isValidTaiwanPhone,TW_LANDLINE_AREAS,getTaiwanLandlineHint,isValidTaiwanPhoneParts} from "./tw-phone.js";
 
 // The existing store, LINE identity and so_menu_items catalogue remain the source of truth.
 // This module owns only pickup-specific presentation and form state.
 export const pickupState={
   customer:null,staff:null,customerSlug:"",staffSlug:"",
-  day:"",slot:"",method:"scheduled",cart:{},note:"",requestId:"",history:null,historyPage:1,historyFilter:"all",customerHistory:null,customerHistoryPage:1,name:"",phone:"",confirming:false
+  day:"",slot:"",method:"scheduled",cart:{},note:"",requestId:"",history:null,historyPage:1,historyFilter:"all",customerHistory:null,customerHistoryPage:1,phoneType:"mobile",phone:"",phoneArea:"02",phoneLocal:"",confirming:false
 };
 const statusText={NEW:"待店家接單",ACCEPTED:"已接單・待製作",PREPARING:"製作中",
   READY:"可取餐",PICKED_UP:"已取餐",REJECTED:"店家已拒單",CANCELLED:"已取消"};
+const pickupContactPhone=()=>pickupState.phoneType==="landline"?pickupState.phoneArea+pickupState.phoneLocal:pickupState.phone;
+const validPickupContactPhone=()=>isValidTaiwanPhoneParts(pickupState.phoneType,pickupState.phone,pickupState.phoneArea,pickupState.phoneLocal);
 const money=n=>"NT$ "+Number(n||0).toLocaleString("zh-TW",{maximumFractionDigits:2});
 const modeName={DISABLED:"僅立即取餐",OPTIONAL:"顧客可選立即或預約取餐",REQUIRED:"必須選擇取餐時間"};
 const uuid=()=>{if(!globalThis.crypto?.randomUUID)throw Error("瀏覽器不支援安全訂單識別");return crypto.randomUUID();};
@@ -26,9 +28,8 @@ export async function loadPickupData(){
     if(!pickupState.day)pickupState.day=taipei();
     if(pickupState.customerSlug!==routeState.slug){
       pickupState.customer=null;pickupState.customerSlug=routeState.slug;
-      pickupState.cart={};pickupState.slot="";pickupState.requestId="";pickupState.method="scheduled";pickupState.confirming=false;pickupState.name="";pickupState.phone="";pickupState.customerHistory=null;pickupState.customerHistoryPage=1;
+      pickupState.cart={};pickupState.slot="";pickupState.requestId="";pickupState.method="scheduled";pickupState.confirming=false;pickupState.phoneType="mobile";pickupState.phone="";pickupState.phoneArea="02";pickupState.phoneLocal="";pickupState.customerHistory=null;pickupState.customerHistoryPage=1;
     }
-    if(!pickupState.name&&lineState.lineDisplayName)pickupState.name=String(lineState.lineDisplayName).slice(0,60);
     if(!pickupState.customer||routeState.customerTab==="order"){
       try{pickupState.customer=await rpc("so_pickup_public",{p_slug:routeState.slug,p_date:pickupState.day});}
       catch(err){console.warn("取餐服務資料不可用",err);pickupState.customer=null;}
@@ -127,13 +128,21 @@ export function renderCustomerPickup(){
    '<div class="staff-actionbar">'+btn("－","pickup-qty","outline",'data-id="'+esc(i.id)+'" data-delta="-1" aria-label="減少 '+esc(i.name)+'"')+
    '<strong>'+esc(pickupState.cart[i.id]||0)+'</strong>'+
    btn("＋","pickup-qty","outline",'data-id="'+esc(i.id)+'" data-delta="1" aria-label="增加 '+esc(i.name)+'"')+'</div></div>').join("")+
-  '<div class="grid" style="margin-top:12px"><div>'+field("取餐姓名","pickup-customer-name",pickupState.name,"text",'maxlength="60" autocomplete="name"')+'</div>'+
-   '<div>'+field("聯絡電話","pickup-customer-phone",pickupState.phone,"tel",'autocomplete="tel" inputmode="tel" maxlength="24" placeholder="手機 0912345678／市話 02-23456789"')+'</div></div>'+
+  '<div style="margin-top:12px"><label for="pickup-phone-type">聯絡電話類型</label><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
+   '<select class="field" id="pickup-phone-type" style="width:140px;max-width:100%"><option value="mobile" '+(pickupState.phoneType==="mobile"?"selected":"")+'>手機</option><option value="landline" '+(pickupState.phoneType==="landline"?"selected":"")+'>市話</option></select>'+
+   '<span class="small" style="flex:1;min-width:145px">'+(pickupState.phoneType==="landline"?"範例：02－23456789":"範例：0912345678（09 開頭、10 碼）")+'</span></div>'+
+   (pickupState.phoneType==="mobile"?
+      field("手機號碼","pickup-customer-phone",pickupState.phone,"tel",'inputmode="numeric" autocomplete="tel-national" pattern="[0-9]*" maxlength="10" placeholder="0912345678"'):
+      '<div style="display:grid;grid-template-columns:minmax(0,125px) minmax(0,1fr);gap:10px;margin-top:8px;align-items:end">'+
+        '<div><label for="pickup-customer-area">市話區碼</label><select class="field" id="pickup-customer-area">'+TW_LANDLINE_AREAS.map(a=>'<option value="'+esc(a)+'" '+(a===pickupState.phoneArea?"selected":"")+'>'+esc(a)+'</option>').join("")+'</select></div>'+
+        '<div style="min-width:0">'+field("市話號碼","pickup-customer-local",pickupState.phoneLocal,"tel",'inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="'+esc(getTaiwanLandlineHint(pickupState.phoneArea).example)+'"')+'</div></div>'+
+        '<p class="small" style="margin:4px 0 0">區碼 '+esc(pickupState.phoneArea)+'：'+esc(getTaiwanLandlineHint(pickupState.phoneArea).description)+'，例如 '+esc(pickupState.phoneArea+'-'+getTaiwanLandlineHint(pickupState.phoneArea).example)+'</p>')+
+   '</div>'+
    '<div style="margin-top:12px">'+field("給店家的備註（最多 200 字）","pickup-note",pickupState.note,"text",'maxlength="200" placeholder="例如：不要加辣"')+'</div>'+
   '<div class="listline"><strong>共 '+esc(count)+' 份</strong><strong>'+money(total)+'</strong></div>'+
   '<p class="small">此處僅建立訂單，不會線上收款；請依店家現場方式結帳。</p>'+
   (pickupState.confirming?'<div class="inset" role="group" aria-label="確認訂餐內容"><strong>請核對送出前的訂餐內容</strong>'+
-    '<p>取餐人：'+esc(pickupState.name.trim())+' ・ '+esc(normalizeTaiwanPhone(pickupState.phone))+'</p>'+
+    '<p>聯絡電話：'+esc(normalizeTaiwanPhone(pickupContactPhone()))+'</p>'+
     '<p>預計取餐：'+(immediate?'立即取餐（以店家接單為準）':esc(pickupState.day)+' '+esc(pickupState.slot))+'</p>'+
     '<p>餐點：'+(d.items||[]).filter(i=>pickupState.cart[i.id]>0).map(i=>esc(i.name)+' × '+esc(pickupState.cart[i.id])).join('、')+'</p>'+
     '<p>金額：'+money(total)+'（以送出時店家菜單價格重新計算）</p>'+
@@ -161,7 +170,7 @@ export function renderStaffPickup(){
  const card=o=>'<div class="inset" style="margin:0 0 12px;padding:14px"><div class="listline"><strong>'+
   esc(o.number)+'</strong><strong>'+esc(staffStatusText[o.status]||o.status)+'</strong></div>'+
   '<p class="small"><strong>約定取餐 '+esc(o.pickup_at)+'</strong> '+(o.scheduled?"（指定時間）":"（立即）")+'</p>'+
-  '<p class="small">顧客：'+esc(o.customer_name||'未填寫')+' ・ '+esc(o.customer_phone||'未提供')+'</p><p class="small">建議開始製作：'+esc(o.prepare_at)+(o.can_prepare?"":" — 尚未到製作時間")+'</p>'+
+  '<p class="small">聯絡電話：'+esc(o.customer_phone||'未提供')+'</p><p class="small">建議開始製作：'+esc(o.prepare_at)+(o.can_prepare?"":" — 尚未到製作時間")+'</p>'+
   '<p>'+lines(o)+'</p><p class="small">'+(o.note?"備註："+esc(o.note):"無備註")+' ・ '+money(o.total)+'</p>'+
   (canUpdate?'<div class="staff-actionbar" role="group" aria-label="選擇訂單狀態">'+
   choices.map(([label,status])=>action(o,label,status,o.status===status,o.status===status?"primary":"outline")).join("")+'</div>':
@@ -203,9 +212,7 @@ export async function handlePickupAction(ev,b,a,id){
   pickupState.historyFilter=b.dataset.filter;pickupState.historyPage=1;await load();return true;
  }
  if(a==="pickup-review"){
-   const name=pickupState.name.trim(),phone=normalizeTaiwanPhone(pickupState.phone);
-   if(!name||name.length>60||/^\d+$/.test(name)||/[<>\u0000-\u001f]/.test(name)){window.alert("請填寫有效的取餐姓名");return true;}
-   if(!isValidTaiwanPhone(pickupState.phone)){window.alert("請填寫有效的台灣手機或市話（手機 09 開頭 10 碼；市話含區碼）");return true;}
+   if(!validPickupContactPhone()){window.alert(pickupState.phoneType==="mobile"?"請輸入 09 開頭、10 碼的台灣手機號碼":"市話區碼與電話號碼格式錯誤，請依區碼確認位數及號碼開頭");return true;}
    if(!Object.values(pickupState.cart).some(n=>n>0)){window.alert("請先選擇餐點");return true;}
    pickupState.confirming=true;render();return true;
  }
@@ -244,19 +251,19 @@ export async function handlePickupAction(ev,b,a,id){
  }
  if(a==="pickup-submit"){
    if(!pickupState.confirming){window.alert("請先確認訂單內容");return true;}
-   if(!isValidTaiwanPhone(pickupState.phone)||!pickupState.name.trim()||/^\d+$/.test(pickupState.name.trim())){
-     pickupState.confirming=false;window.alert("請填寫有效的取餐姓名與台灣手機或市話");render();return true;
+   if(!validPickupContactPhone()){
+     pickupState.confirming=false;window.alert("請填寫有效的台灣手機或市話");render();return true;
    }
    const items=Object.entries(pickupState.cart).filter(([,qty])=>qty>0).map(([itemId,qty])=>({id:itemId,qty}));
    if(!items.length)return true;
    if(pickupState.method!=="immediate"&&!pickupState.slot)return true;
    try{if(!pickupState.requestId)pickupState.requestId=uuid();}catch(e){window.alert(e.message);return true;}
    await act(async()=>{
-     const res=await rpc("so_pickup_place_contact",{p_slug:routeState.slug,
+     const res=await rpc("so_pickup_place_phone",{p_slug:routeState.slug,
        p_date:pickupState.method==="immediate"?null:pickupState.day,
        p_time:pickupState.method==="immediate"?null:pickupState.slot,
        p_items:items,p_note:pickupState.note,p_request_id:pickupState.requestId,
-       p_immediate:pickupState.method==="immediate",p_customer_name:pickupState.name.trim(),p_customer_phone:normalizeTaiwanPhone(pickupState.phone)});
+       p_immediate:pickupState.method==="immediate",p_customer_phone:normalizeTaiwanPhone(pickupContactPhone())});
      pickupState.cart={};pickupState.note="";pickupState.requestId="";pickupState.confirming=false;
      return "訂單 "+res.number+" 已送出，請在我的取餐進度查看店家接單狀態";
    });return true;
@@ -285,10 +292,12 @@ export function initializePickupMode(){
  pickupState.day=taipei();
  document.addEventListener("input",ev=>{
   if(ev.target?.id==="pickup-note"){pickupState.note=ev.target.value;pickupState.requestId="";pickupState.confirming=false;}
-  if(ev.target?.id==="pickup-customer-name"){pickupState.name=ev.target.value;pickupState.requestId="";pickupState.confirming=false;}
-  if(ev.target?.id==="pickup-customer-phone"){pickupState.phone=ev.target.value;pickupState.requestId="";pickupState.confirming=false;}
+  if(ev.target?.id==="pickup-customer-phone"){pickupState.phone=ev.target.value.replace(/\D/g,"").slice(0,10);ev.target.value=pickupState.phone;pickupState.requestId="";pickupState.confirming=false;}
+  if(ev.target?.id==="pickup-customer-local"){pickupState.phoneLocal=ev.target.value.replace(/\D/g,"").slice(0,8);ev.target.value=pickupState.phoneLocal;pickupState.requestId="";pickupState.confirming=false;}
  });
  document.addEventListener("change",async ev=>{
+  if(ev.target?.id==="pickup-phone-type"){pickupState.phoneType=ev.target.value==="landline"?"landline":"mobile";pickupState.requestId="";pickupState.confirming=false;render();return;}
+  if(ev.target?.id==="pickup-customer-area"){pickupState.phoneArea=TW_LANDLINE_AREAS.includes(ev.target.value)?ev.target.value:"02";pickupState.requestId="";pickupState.confirming=false;render();return;}
   if(ev.target?.id==="pickup-day"){
    pickupState.day=ev.target.value;pickupState.slot="";pickupState.requestId="";pickupState.confirming=false;
    try{

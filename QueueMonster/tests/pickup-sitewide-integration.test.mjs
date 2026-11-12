@@ -122,9 +122,11 @@ test("pickup customer uses validated contact, summary confirmation and private o
  for(const token of ["so_pickup_place_contact","p_customer_name","p_customer_phone","customer_phone","customer_name",
    "p_request_id","auth.uid()"])
   assert.ok(sql.includes(token),"pickup contact SQL missing "+token);
- for(const token of ["pickup-customer-name","pickup-customer-phone","pickup-review-back",
-   "pickup-review","pickup-submit","so_pickup_place_contact"])
+ for(const token of ["pickup-phone-type","pickup-customer-phone","pickup-customer-area","pickup-customer-local",
+   "pickup-review-back","pickup-review","pickup-submit","so_pickup_place_phone"])
   assert.ok(ui.includes(token),"pickup customer UI missing "+token);
+ assert.doesNotMatch(ui,/pickup-customer-name|p_customer_name:pickupState/);
+ assert.match(source("supabase/migrations/20261112123500_pickup_phone_only.sql"),/so_pickup_place_phone/);
 });
 
 test("quantity-based capacity is consistently checked by slot availability, placing and restoring",()=>{

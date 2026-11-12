@@ -29,11 +29,21 @@ test("pickup UI and SQL boundary both use Taiwan-specific validation, not generi
  const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
  const ui=readFileSync(path.join(root,"saas/app/pickup-mode.js"),"utf8");
  const sql=readFileSync(path.join(root,"supabase/migrations/20261112120500_pickup_taiwan_phone_validation.sql"),"utf8");
- assert.match(ui,/isValidTaiwanPhone\(pickupState\.phone\)/);
- assert.match(ui,/normalizeTaiwanPhone\(pickupState\.phone\)/);
+ assert.match(ui,/validPickupContactPhone\(\)/);
+ assert.match(ui,/normalizeTaiwanPhone\(pickupContactPhone\(\)\)/);
  assert.match(sql,/private\.so_valid_tw_phone\(v_phone\)/);
  assert.match(sql,/private\.so_normalize_tw_phone\(p_customer_phone\)/);
- assert.match(ui,/^\s*if\(!name\|\|name\.length>60\|\|\/\^\\d\+\$\/.test\(name\)/m);
+ assert.doesNotMatch(ui,/pickup-customer-name|取餐姓名|p_customer_name:pickupState/);
  assert.doesNotMatch(ui,/8～15 位數字/);
  assert.doesNotMatch(sql,/8～15 位數字/);
+});
+
+test("phone type switch validates exact Taiwan mobile and area-based landline local length",async()=>{
+ const {TW_LANDLINE_AREAS,getTaiwanLandlineHint,isValidTaiwanPhoneParts}=await import("../saas/app/tw-phone.js");
+ assert.deepEqual(TW_LANDLINE_AREAS,["02","03","037","04","049","05","06","07","08","082","0826","0836","089"]);
+ for(const area of TW_LANDLINE_AREAS)assert.ok(getTaiwanLandlineHint(area).example.length>0,area);
+ for(const good of [["mobile","0912345678","",""],["landline","","02","23456789"],["landline","","03","2123456"],["landline","","037","234567"],["landline","","04","22345678"],["landline","","04","7123456"],["landline","","0826","61234"]])
+  assert.equal(isValidTaiwanPhoneParts(...good),true,good.join(","));
+ for(const bad of [["mobile","0223456789","",""],["mobile","091234567","",""],["mobile","09123456789","",""],["landline","","02","2345678"],["landline","","037","2345678"],["landline","","04","5234567"],["landline","","09","12345678"],["landline","","0826","6123"]])
+  assert.equal(isValidTaiwanPhoneParts(...bad),false,bad.join(","));
 });
