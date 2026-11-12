@@ -76,10 +76,10 @@ test("public board and merchant/customer pages use one privacy-safe live-sync im
   assert.doesNotMatch(bookingMigration,/to_jsonb\(new\)|realtime.broadcast_changes/);
 });
 
-test("public board links bypass LINE login on the homepage, directory and merchant customer portal",()=>{
+test("public header offers shop search while existing merchant board links remain accessible",()=>{
   const home=read("saas/home.html"),directory=read("saas/directory.html"),customer=read("saas/app/customer-booking.js");
-  assert.match(home,/叫號看板/);
-  assert.match(home,/directory\.html\?mode=queue/);
+  assert.match(home,/搜尋店家/);
+  assert.match(home,/directory\.html\?mode=search/);
   assert.match(directory,/叫號看板/);
   assert.match(directory,/board\.html\?merchant=/);
   assert.match(directory,/original\.searchParams\.get\("view"\)!=="customer"\)return/);
