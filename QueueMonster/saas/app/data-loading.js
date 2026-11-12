@@ -162,12 +162,14 @@ export async function load(){feedbackState.err="";try{
    try{staffState.staffNoticeHealth=await rpc("so_line_notice_health",{p_slug:routeState.slug})}
    catch(e){console.warn("LINE notification diagnostics unavailable")}
  }
- if(staffState.staffTab==="branches"||(staffState.staffTab==="settings"&&staffState.settingsSection==="branches"))staffState.businessGroups=await rpc("so_my_business_groups");
+ if(staffState.staffTab==="branches"||(staffState.staffTab==="settings"&&["profile","branches"].includes(staffState.settingsSection)))staffState.businessGroups=await rpc("so_my_business_groups");
   if(staffState.staffTab==="settings"){
     try{staffState.customerHomepageCopy=await rpc("so_get_customer_homepage",{p_slug:routeState.slug});}
     catch(error){console.warn("顧客首頁顯示設定讀取失敗",error);staffState.customerHomepageCopy=null;}
     try{staffState.staffAnnouncements=await rpc("so_staff_announcements",{p_slug:routeState.slug})||[];}
     catch(_e){staffState.staffAnnouncements=[];}
+  }
+  if(staffState.staffTab==="customers"){
     try{staffState.staffCustomerBook=await rpc("so_staff_customer_book",{p_slug:routeState.slug})||[];}
     catch(_e){staffState.staffCustomerBook=[];}
   }
