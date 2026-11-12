@@ -150,7 +150,7 @@ try{
   body:JSON.stringify({message:'Browser smoke: remote API unavailable'})
  }));
  // Exercise production bundles at both desktop and mobile sizes with actual local asset reads.
- for(const width of [1280,390]){
+ for(const width of [1280,1870,390]){
   await page.setViewportSize({width,height:900});
   for(const name of ['home.html','directory.html?mode=search','merchant-register.html','platform-login.html','index.html?view=platform','index.html?view=staff&merchant=greenfield-salon','index.html?view=customer&merchant=greenfield-salon','board.html?merchant=greenfield-salon']){
    await page.goto(baseUrl+'/booking/'+name,{waitUntil:'domcontentloaded',timeout:45000});
@@ -257,7 +257,14 @@ try{
    const header=page.locator('.qm-public-header');
    await header.waitFor({state:'attached',timeout:10000});
    const tabs=await header.locator('.qm-public-nav a').allTextContents();
-   assert.deepEqual(tabs,['平台總覽','店家功能','顧客功能','常見問題','免登入功能試用','叫號看板'],name+' identical navigation');
+   assert.deepEqual(tabs,['平台總覽','店家功能','顧客功能','常見問題','免登入功能試用','搜尋店家'],name+' identical navigation');
+   assert.equal(await header.locator('.qm-public-search,.qm-public-mobile-search').count(),0,name+' no redundant search CTA');
+   assert.equal(await header.locator('.qm-public-nav a').last().getAttribute('href'),'./directory.html?mode=search',name+' search link');
+   assert.equal(await header.locator('.qm-public-menu nav a').count(),6,name+' unique mobile links');
+   if(width>=1280){
+    const sizes=await header.evaluate(node=>({font:parseFloat(getComputedStyle(node.querySelector('.qm-public-nav a')).fontSize),logo:node.querySelector('.qm-public-logo img').getBoundingClientRect().width}));
+    assert.ok(sizes.font>=16&&sizes.logo>=54,name+' enlarged header: '+JSON.stringify(sizes));
+   }
    assert.equal(await page.locator('#site-auth-root').count(),1,name+' single login state');
    assert.equal(await header.locator('.qm-public-mobile>summary').isVisible(),width===390,name+' responsive menu');
    const bounds=await header.evaluate(node=>{const b=node.getBoundingClientRect();return {left:b.left,right:b.right,width:innerWidth};});
