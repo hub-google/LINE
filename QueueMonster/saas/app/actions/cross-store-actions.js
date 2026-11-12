@@ -14,6 +14,8 @@ import {refreshCrossStoreOverview,stopCrossQueueRealtime,syncCrossQueueRealtime}
 import {refreshQueueProgress,stopQueueRealtime} from "./../queue-progress.js";
 import {isSafeMerchant} from "./../route-state.js";
 import {showActionFeedback} from "./../shared-ui.js";
+import {selectCustomerDetail} from "../customer-detail.js";
+import {load} from "../data-loading.js";
 
 export async function handleCrossStoreActions(ev,b,a,id){
 if(a==="take"){await act(async()=>{
@@ -25,6 +27,10 @@ if(a==="take"){await act(async()=>{
   const result=await rpc("so_take_number_with_party",{p_slug:routeState.slug,p_name:lineState.lineDisplayName,p_items:queueState.queueChosenItems.slice(),p_party_size:party});
   queueState.queueChosenItems=[];
   queueState.progressTicketId=result.id;crossStoreState.crossCurrentStore=false;routeState.customerTab="progress";queueState.queueLive=null;queueState.queueLiveShop="";
+  const resultUrl=new URL(location.href);resultUrl.searchParams.set("merchant",routeState.slug);
+  resultUrl.searchParams.set("view","customer");resultUrl.searchParams.set("tab","progress");
+  resultUrl.searchParams.set("ticket",result.id);resultUrl.searchParams.delete("kind");resultUrl.searchParams.delete("item");
+  history.pushState(null,"",resultUrl.pathname+resultUrl.search+resultUrl.hash);
   const notice=await sendLineNotice("notify-ticket",{ticketId:result.id});
   return "取號成功！您的號碼是 "+result.number+"（"+party+" 人／組）"+customerNoticeSuffix(notice);
  });return true;}
@@ -39,9 +45,10 @@ if(a==="take"){await act(async()=>{
  }
  if(a==="cross-back"){
    queueState.progressTicketId="";crossStoreState.crossCurrentStore=false;queueState.queueLive=null;queueState.queueLiveShop="";stopQueueRealtime();
-   const u=new URL(location.href);u.searchParams.delete("ticket");
-   history.replaceState(null,"",u.pathname+u.search+u.hash);
-   render();syncCrossQueueRealtime();return true;
+   routeState.customerTab="mine";
+   const u=new URL(location.href);u.searchParams.delete("ticket");u.searchParams.set("tab","mine");
+   history.pushState(null,"",u.pathname+u.search+u.hash);
+   render();void refreshCrossStoreOverview();return true;
  }
  if(a==="open-cross-ticket"){
    const merchant=b.dataset.merchant,ticket=b.dataset.ticket;
@@ -52,7 +59,7 @@ if(a==="take"){await act(async()=>{
      queueState.progressTicketId=ticket;crossStoreState.crossCurrentStore=false;routeState.customerTab="progress";stopCrossQueueRealtime();
      const u=new URL(location.href);u.searchParams.set("merchant",routeState.slug);
      u.searchParams.set("tab","progress");u.searchParams.set("ticket",ticket);
-     history.replaceState(null,"",u.pathname+u.search+u.hash);
+     history.pushState(null,"",u.pathname+u.search+u.hash);
      queueState.queueLive=null;queueState.queueLiveShop="";render();void refreshQueueProgress();
    }else{
      location.assign(sharedUiState.route("customer",merchant,"progress")+"&ticket="+encodeURIComponent(ticket));
@@ -64,7 +71,23 @@ if(a==="take"){await act(async()=>{
    if(!isSafeMerchant(merchant)||!/^[0-9a-f-]{36}$/i.test(booking||"")){
      showActionFeedback("預約資料不正確，請重新整理","error");return true;
    }
-   location.assign(sharedUiState.route("customer",merchant,"mine")+"&manage=reservation&item="+encodeURIComponent(booking)+"&mode=view");
+   if(merchant===routeState.slug){
+     if(selectCustomerDetail("reservation",booking)){render();void load();}
+   }else{
+     location.assign(sharedUiState.route("customer",merchant,"detail")+"&kind=reservation&item="+encodeURIComponent(booking));
+   }
+   return true;
+ }
+ if(a==="open-cross-order"){
+   const merchant=b.dataset.merchant,order=b.dataset.id;
+   if(!isSafeMerchant(merchant)||!/^[0-9a-f-]{36}$/i.test(order||"")){
+     showActionFeedback("訂單資料不正確，請重新整理","error");return true;
+   }
+   if(merchant===routeState.slug){
+     if(selectCustomerDetail("order",order)){render();void load();}
+   }else{
+     location.assign(sharedUiState.route("customer",merchant,"detail")+"&kind=order&item="+encodeURIComponent(order));
+   }
    return true;
  }
 return false;
