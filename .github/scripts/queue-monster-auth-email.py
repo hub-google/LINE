@@ -30,6 +30,7 @@ assert isinstance(original, dict), "Auth config was not an object"
 
 invite_redirect = "https://hub-google.github.io/LINE/booking/merchant-register.html?mode=login&from=staff-invite"
 login_redirect = "https://hub-google.github.io/LINE/booking/merchant-register.html?mode=login&from=queue-monster"
+signup_redirect = "https://hub-google.github.io/LINE/booking/merchant-register.html?mode=login&intent=complete-signup"
 reset_redirect = "https://hub-google.github.io/LINE/booking/merchant-register.html?mode=login&intent=recovery"
 stamp = "queue-monster-mail-v3"
 legacy_stamp = "queue-monster-mail-v2"
@@ -123,7 +124,7 @@ mail = [
     ("recovery", '{{ if eq .RedirectTo "' + reset_redirect + '" }}', brand_recovery,
      "【排隊怪獸】重設登入密碼"),
     ("magic_link",
-     '{{ if or (eq .RedirectTo "' + invite_redirect + '") (eq .RedirectTo "' + login_redirect + '") }}',
+     '{{ if or (eq .RedirectTo "' + invite_redirect + '") (eq .RedirectTo "' + login_redirect + '") (eq .RedirectTo "' + signup_redirect + '") }}',
      brand_magic, "【排隊怪獸】登入與接受企業邀請"),
     ("confirmation", '{{ if eq .Data.app "queue-monster" }}', brand_confirmation,
      "【排隊怪獸】歡迎加入！請驗證電子信箱")
@@ -143,7 +144,16 @@ for name,condition,branded,branded_subject in mail:
     # Idempotent v2 upgrade: replace only Queue Monster's legacy branded markup.
     # Keep the shared project's pre-existing non-Queue-Monster {{ else }} branch.
     if stamp in current_body:
-        print(f"{name}: v2 brand already installed")
+        if name == "magic_link" and signup_redirect not in current_body:
+            old_condition = ('{{ if or (eq .RedirectTo "' + invite_redirect +
+                             '") (eq .RedirectTo "' + login_redirect + '") }}')
+            if old_condition not in current_body or old_condition not in current_subject:
+                raise RuntimeError("magic_link: unexpected branded template; refusing shared config overwrite")
+            patch[body_key] = current_body.replace(old_condition, condition, 1)
+            patch[subject_key] = current_subject.replace(old_condition, condition, 1)
+            print("magic_link: added Queue Monster registration verification redirect")
+        else:
+            print(f"{name}: v3 brand already installed")
         continue
     if legacy_stamp in current_body:
         import re
@@ -175,7 +185,10 @@ if patch:
         key = f"mailer_templates_{name}_content"
         if key in patch and stamp not in (changed.get(key) or ""):
             raise RuntimeError(f"Branded {name} template did not persist")
-    print("Queue Monster v3 branded templates and subjects saved and verified.")
+    if "mailer_templates_magic_link_content" in patch:
+        if signup_redirect not in (changed.get("mailer_templates_magic_link_content") or ""):
+            raise RuntimeError("Queue Monster signup verification not included in Magic Link brand routing")
+    print("Queue Monster branded templates and subjects saved and verified.")
 else:
     print("Queue Monster mail templates were already configured.")
 
