@@ -4,6 +4,21 @@
 >
 > **標示規則**：已部署 ≠ 已完成正式驗收；程式碼、資料庫、後端權限、實際跨角色操作及外部 LINE／法遵都須各自通過。請以每筆 Git commit 及 Actions run 留存證據，勿將未完成項目標為 PASS。
 
+## 2026-11-12｜只收尾先前指定的三項功能
+
+> **這一節為最新交付狀態，取代本文件下方 2026-11-11 先前的「BLOCKED／尚未套用」敘述。** 這次沒有新增其他功能，不等於整份 PRD 都已完成。
+
+| PRD 項目 | GitHub 與資料庫 | 驗收 |
+|---|---|---|
+| HR-LVE-03：已核准請假改期 | 既有申請中心＋主管多關簽核，已套用 `wm_leave_amendments` 及其歷程與權限 RPC；原請假直到核准前維持不變、支援版本稽核 | 真實員工／主管 E2E 通過，包含本人不得自審、主管核准、版本保留及阻擋重複核准 |
+| HR-LVE-05：事前／事後加班 | 既有加班表單新增結構化申請時點；已套用 DB 欄位、後端日期／月結驗證，不修改打卡原件 | E2E 通過；假資料建立與核准流程沒有捏造原始打卡 |
+| HR-ATT-10／HR-RPT-05：長期出勤與補卡歷史 CSV | [SQL migration](./supabase/migrations/20261111_workforce_attendance_history_export.sql) **已成功套用**。在原本報表頁依伺服器授權匯出五年範圍內的原始打卡、補卡申請、簽核動作和更正；逐批下載並比對每類總數，避免不完整檔案 | 實際員工 CSV 下載、權限隔離與補卡審核歷程的 E2E 通過 |
+| 以上三項部署 | [Pages Run 43128890720](https://github.com/hub-google/LINE/actions/runs/43128890720) | 靜態檢查、PRD 合約、網站部署與遠端公開 API Smoke 皆為 Success |
+
+- **跨角色完成證據**：[Real Auth E2E Run 43128616161](https://github.com/hub-google/LINE/actions/runs/43128616161)：35 個 PASS；真實 Supabase Auth 虛構企業，含瀏覽器表單、CSV 下載、主管權限及資料庫稽核；結束清理測試租戶。
+- **最後分頁補強**：對大量補卡簽核歷程改為逐頁 500 筆讀取，超過 API 單次上限也不會截斷；對應 commit `aaf0faa6`，部署已完成。最新版本的回歸跑在 [E2E 43128890715](https://github.com/hub-google/LINE/actions/runs/43128890715) 及 [Browser 43128890667](https://github.com/hub-google/LINE/actions/runs/43128890667)。
+- 此三項的行政資料與加班申請狀態，不可當成完整的臺灣勞基法核算或薪資核發；未經用戶要求，不在本次增加其他模組。
+
 ## 2026-11-11 本輪已提交的程式與資料庫
 
 | PRD ID | 模組／行為 | 實際改動 | 測試／限制 |
