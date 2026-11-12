@@ -691,7 +691,14 @@ async function dispatchOutboxItem(
   }
   const data = await result.json().catch(() => ({}));
   if (result.ok && (data.sent === true || data.reason === "ALREADY_SENT")) return { status: "SENT" };
-  return { status: "RETRY", reason: String(data.reason || data.error || "DELIVERY_FAILED").slice(0, 150) };
+  // Permanent recipient failures must not consume 14 retries and six-hour polling slots.
+  // A later LINE account link/follow only affects future events, not an already-stale push.
+  const reason = String(data.reason || data.error || "DELIVERY_FAILED").slice(0, 150);
+  if (result.ok && ["CUSTOMER_NOT_LINKED", "OA_CANNOT_REACH_CUSTOMER", "REPLY_REQUIRED"].includes(reason)) {
+    return { status: "SKIPPED", reason };
+  }
+  // HTTP 429, network problems and a temporarily unavailable OA profile stay retryable.
+  return { status: "RETRY", reason };
 }
 async function dispatchPendingNotices(req: Request, origin: string | null): Promise<Response> {
   const db = service();
