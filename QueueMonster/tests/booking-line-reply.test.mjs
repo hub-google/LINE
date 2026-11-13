@@ -107,16 +107,17 @@ test('merchant provider mismatch is handled by short-lived, merchant-scoped sign
  ctx.proofRecord={id,tenant_id:'shop',user_id:'owner'};
  const proof=await vm.runInContext('issueBookingReplyProof(globalThis.proofRecord)',ctx);
  assert.match(proof,/^t[a-z0-9]+_[a-zA-Z0-9_-]{32}$/);
- const data=dbMock({booking,link:null,tenant:{id:'shop',status:'ACTIVE'}});
+ const data=dbMock({booking,link:null,tenant:{id:'shop',status:'ACTIVE'},own:{token:'merchant-oa',channelId:'own-channel'}});
  assert.equal((await ctx.api.bookingReplyMessage(data,id,'merchant-user','shop',proof)).type,'flex');
  assert.equal((await ctx.api.bookingReplyMessage(data,id,'merchant-user','other-shop',proof)).type,'text');
  assert.equal((await ctx.api.bookingReplyMessage(data,id,'merchant-user',null,proof)).type,'text');
  assert.equal((await ctx.api.bookingReplyMessage(data,id,'merchant-user','shop',proof.replace(/_./,part=>part[0]+(part[1]==='X'?'Y':'X')))).type,'text');
 });
-test('signed proof is accepted only in a merchant Webhook context for all record types',()=>{
+test('signed proof permits requested Reply but blocks platform OA for stores using their own OA',()=>{
  const src=readFileSync(new URL('../supabase/functions/line-bridge/index.ts',import.meta.url),'utf8');
- assert.match(src,/authorizedByProof=!!merchantTenantId && !!proof &&[\s\S]*?checkBookingReplyProof\(proof,booking as BookingReplyProofRecord\)/);
- assert.match(src,/authorizedByProof=!!merchantTenantId && !!proof &&[\s\S]*?checkBookingReplyProof\(proof,record as BookingReplyProofRecord,kind\)/);
+ assert.match(src,/authorizedByProof=!!proof &&/);
+ assert.match(src,/if \(!merchantTenantId && own\) return unavailable/);
+ assert.match(src,/if\(!merchantTenantId&&own\)return unavailable/);
 });
 test('platform reply requires linked identity and merchant proof is scoped to kind and tenant',async()=>{
  const ctx=backend();
