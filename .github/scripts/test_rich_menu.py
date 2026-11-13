@@ -27,7 +27,7 @@ class RichMenuContract(unittest.TestCase):
         dest = [entry[3].get("uri", "") for entry in richmenu.CUSTOMER_ITEMS]
         self.assertTrue(any("mode=search" in d for d in dest))
         self.assertTrue(any("service=%E5%8F%96%E8%99%9F" in d for d in dest))
-        self.assertTrue(any("mode=mine" in d for d in dest))
+        self.assertTrue(any("my-records.html" in d for d in dest))
         self.assertTrue(any("service=%E9%A0%90%E7%B4%84" in d for d in dest))
         self.assertTrue(any("service=%E9%BB%9E%E9%A4%90" in d for d in dest))
         self.assertTrue(any("home.html#faq" in d for d in dest))
