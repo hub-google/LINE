@@ -33,7 +33,7 @@ test("customer progress, directory, merchant settings and announcement uploads u
  assert.match(progress,/syncMode==="realtime"/);
  assert.match(progress,/每 5 秒/);
  assert.doesNotMatch(directory,/公開叫號看板/);
- assert.match(settings,/查看 LINE OA 綁定與教學/);
+ assert.match(settings,/renderOaSettings\(\{isManager\}\)/);
  assert.match(settings,/announcement-photo-files/);
  assert.match(upload,/storage\.from\(merchantBrandState\.MERCHANT_LOGO_BUCKET\)/);
  assert.match(upload,/images\.length\+files\.length>8/);
