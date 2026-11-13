@@ -27,8 +27,8 @@ test("follow greeting is gated, deduplicated and never sent from an own-OA chann
 
 test("bot links to working public booking entry points without bypassing verified identity", () => {
   assert.match(bridge, /directory\.html\?mode=search/);
-  assert.match(bridge, /directory\.html\?mode=mine&section=ticket/);
-  assert.match(bridge, /directory\.html\?mode=mine&section=order/);
+  assert.match(bridge, /directory\.html\?mode=mine/);
+  assert.doesNotMatch(bridge, /directory\.html\?mode=mine&section=(ticket|order)/);
   assert.match(bridge, /directory\.html\?mode=mine/);
   assert.match(bridge, /merchant-register\.html/);
   assert.match(bridge, /歡迎加入排隊怪獸！/);
