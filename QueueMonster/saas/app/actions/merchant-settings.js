@@ -27,9 +27,23 @@ if(a==="save-customer-homepage"){
   });
   return true;
 }
+ if(a==="replace-own-oa"){
+  if(!lineState.lineConfig?.merchantOaConnected)return true;
+  lineState.oaReplacing=true;lineState.oaReplacingSlug=routeState.slug;render();return true;
+ }
+ if(a==="cancel-replace-own-oa"){
+  lineState.oaReplacing=false;lineState.oaReplacingSlug="";render();return true;
+ }
+ if(a==="copy-oa-webhook"){
+  const target=routeState.$("own-oa-webhook");
+  if(!target?.value)return true;
+  try{await navigator.clipboard.writeText(target.value);showActionFeedback("Webhook 網址已複製","success");}
+  catch(_){showActionFeedback("無法自動複製，請選取 Webhook 網址手動複製","warning");}
+  return true;
+ }
  if(a==="toggle-oa-visibility"){
   const target=b.dataset.target||"";
-  if(!["own-oa-token","own-oa-secret","own-oa-webhook"].includes(target))return true;
+  if(!["own-oa-token","own-oa-secret"].includes(target))return true;
   const input=routeState.$(target);
   if(!input||input.tagName!=="INPUT")return true;
   const visible=input.type==="password";
@@ -46,6 +60,7 @@ if(a==="save-customer-homepage"){
   await act(async()=>{
    let payload={action:"disconnect-merchant-oa",slug:routeState.slug};
    if(a==="connect-own-oa"){
+     if(lineState.lineConfig?.merchantOaConnected && !(lineState.oaReplacing===true&&lineState.oaReplacingSlug===routeState.slug))throw Error("請先按「更換憑證」再輸入新資料。");
      const channelSecret=val("own-oa-secret");
      const botToken=val("own-oa-token");
      const liffId=val("own-oa-liff");
@@ -72,7 +87,7 @@ if(a==="save-customer-homepage"){
      throw Error(message||"LINE OA 綁定失敗（"+(data.error||"HTTP "+res.status)+"），請確認 LINE 設定與管理權限。");
    }
    lineState.lineConfig=null;lineState.lineConfigSlug="";
-   lineState.oaCredentials=null;lineState.oaCredentialsSlug="";lineState.oaCredentialReadError="";
+   lineState.oaReplacing=false;lineState.oaReplacingSlug="";
    return a==="connect-own-oa"
      ?"Messaging API 已驗證連接。一般通知可使用本店 OA；預約免費自動回覆還須設定本店 LIFF（chat_message.write）與 Webhook，並從店家聊天室開啟預約。"
      :"已解除自有 LINE OA；平台 OA 不會代發店家通知";
