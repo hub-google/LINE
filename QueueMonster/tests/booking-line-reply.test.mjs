@@ -36,6 +36,16 @@ test('shared LIFF can send from merchant chat without merchant-specific LIFF ID'
  assert.equal(result.requested,true);
  assert.equal(sent[0][0].text,'確認預約 '+id+' t12345_signed');
 });
+test('platform OA may receive a signed reservation, ticket or pickup request from its own chat',async()=>{
+ const sent=[];
+ const sdk={id:own.expectedLiffId,isInClient:()=>true,getContext:()=>({type:'utou'}),sendMessages:async messages=>sent.push(messages)};
+ for(const cmd of ['確認預約','確認取號','確認訂餐']){
+  const result=await requestBookingReply(sdk,id,{oaMode:'PLATFORM',fromPlatformChat:true,expectedLiffId:own.expectedLiffId,command:cmd+' '+id+' t12345_proof'});
+  assert.equal(result.requested,true);
+ }
+ assert.deepEqual(sent.map(x=>x[0].text.split(' ')[0]),['確認預約','確認取號','確認訂餐']);
+ assert.equal((await requestBookingReply(sdk,id,{oaMode:'PLATFORM',expectedLiffId:own.expectedLiffId})).requested,false);
+});
 test('unit/session bookings use the merchant LIFF reply, not reservation push',()=>{
  const unit=readFileSync(new URL('../saas/app/actions/service-unit-actions.js',import.meta.url),'utf8');
  assert.match(unit,/await sendBookingReply\(result\.id\)/);
@@ -48,10 +58,10 @@ function backend(overrides={}){
  vm.runInContext(stripTypeScriptTypes(source.replace(/^import .*;\n/gm,''))+'\n globalThis.api={bookingReplyMessage,pushNotice,dispatchOutboxItem,webhook};',context);
  return context;
 }
-function dbMock({booking,link,tenant,own=null}){
+function dbMock({booking,link,tenant,own=null,ticket=null,order=null}){
  return {rpc:async()=>({data:own}),from(table){
   const filters=[];const q={select(){return q},eq(k,v){filters.push([k,v]);return q},is(){return q},async maybeSingle(){
-   const value=table==='qm_reservations'?booking:table==='qm_line_links'?link:tenant;
+   const value=table==='qm_reservations'?booking:table==='qm_line_links'?link:table==='qm_tickets'?ticket:table==='qm_pickup_orders'?order:tenant;
    return {data:value&&filters.every(([k,v])=>value[k]===v)?value:null};
   }};return q;
  }};
@@ -107,6 +117,21 @@ test('signed proof is accepted only in a merchant Webhook context for all record
  const src=readFileSync(new URL('../supabase/functions/line-bridge/index.ts',import.meta.url),'utf8');
  assert.match(src,/authorizedByProof=!!merchantTenantId && !!proof &&[\s\S]*?checkBookingReplyProof\(proof,booking as BookingReplyProofRecord\)/);
  assert.match(src,/authorizedByProof=!!merchantTenantId && !!proof &&[\s\S]*?checkBookingReplyProof\(proof,record as BookingReplyProofRecord,kind\)/);
+});
+test('platform reply proof is scoped to the owner, merchant, kind and 10-minute window',async()=>{
+ const ctx=backend();
+ ctx.Deno.env.get=name=>name==='SUPABASE_SERVICE_ROLE_KEY'?'test-secret-'+('x'.repeat(50)):'';
+ ctx.record={id,tenant_id:'shop',user_id:'owner',status:'NEW',order_no:42,total:88};
+ const proof=await vm.runInContext('issueBookingReplyProof(globalThis.record,"order")',ctx);
+ const db=dbMock({booking:null,link:null,tenant:{id:'shop',slug:'shop',name:'Shop',status:'ACTIVE'},order:ctx.record});
+ const ok=await vm.runInContext('recordReplyMessage(globalThis.dbMockValue,"order",globalThis.record.id,"line-user",null,globalThis.proofValue)',Object.assign(ctx,{dbMockValue:db,proofValue:proof}));
+ assert.equal(ok.type,'flex');
+ const wrongKind=await ctx.api.bookingReplyMessage(dbMock({booking:{...ctx.record,status:'CONFIRMED'},tenant:{id:'shop',slug:'shop',status:'ACTIVE'}}),id,'line-user',null,proof);
+ assert.equal(wrongKind.type,'text');
+ const wrongShop=await vm.runInContext('recordReplyMessage(globalThis.dbMockValue,"order",globalThis.record.id,"line-user","another",globalThis.proofValue)',ctx);
+ assert.equal(wrongShop.type,'text');
+ const corrupted=await vm.runInContext('recordReplyMessage(globalThis.dbMockValue,"order",globalThis.record.id,"line-user",null,globalThis.proofValue.slice(0,-1)+"x")',ctx);
+ assert.equal(corrupted.type,'text');
 });
 test('signed confirmation webhook calls real reply branch, never push',async()=>{
  const calls=[];
