@@ -786,6 +786,7 @@ async function dispatchPendingNotices(req: Request, origin: string | null): Prom
 // Platform-wide OA replies are navigation only. All private operations still
 // require verified LINE identity and tenant-scoped RPCs on the website.
 const PLATFORM_ENTRY = "https://hub-google.github.io/LINE/booking/";
+// Use record-specific URLs for the platform OA; no fictitious platform queue board.
 function platformBotMessage(command: string, welcome = false): Record<string, unknown> {
   const input = command.trim().toLowerCase().slice(0, 120);
   let title = "排隊怪獸｜請選擇要使用的服務";
