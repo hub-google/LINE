@@ -51,7 +51,7 @@ export function renderStaffMenu({t,isManager,html}){
       [["STAFF","員工"],["ROOM","房間"],["EQUIPMENT","設備"]].map(([v,n])=>'<option value="'+v+'">'+n+'</option>').join("")+
       '</select></div></div>'+btn("新增資源","resource-save","primary"):"")))+
     (services.length?box("服務時長與緩衝（預約資源排程）",
-     '<p class="small">'+(serviceUnitsState.unitEnabled()?'服務窗口與場次請到「設定 → 場次與窗口」管理。':'可指定每項服務的時間及一個員工／房間／設備。')+'服務時間與緩衝仍沿用既有預約資源排程。</p>'+
+     '<p class="small">'+(serviceUnitsState.unitEnabled()?'服務窗口與場次請到「設定 → 營業排程」管理。':'可指定每項服務的時間及一個員工／房間／設備。')+'服務時間與緩衝仍沿用既有預約資源排程。</p>'+
      (services.length?'<div class="scroll"><table class="rows"><thead><tr><th>服務</th><th>分鐘＋緩衝</th><th>指定資源</th></tr></thead><tbody>'+
        services.map(x=>{const rule=rules.find(z=>z.item_id===x.id);const res=resources.find(z=>z.id===rule?.resource_id);
          return '<tr><td>'+esc(x.name)+'</td><td>'+esc(rule?rule.duration_minutes+" + "+rule.buffer_minutes:"預設時段 "+t.slot_minutes+" + 0")+'</td><td>'+esc(res?.name||"未指派")+'</td></tr>'}).join("")+
