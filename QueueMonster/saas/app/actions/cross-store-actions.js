@@ -8,7 +8,7 @@ import {sharedUiState} from "../state/sharedUiState.js";
 
 
 import {act,rpc,val} from "./../data-loading.js";
-import {customerNoticeSuffix,sendLineNotice} from "./../line-session.js";
+import {customerNoticeSuffix,sendLineNotice,sendTicketReply} from "./../line-session.js";
 import {render} from "./../staff-layout.js";
 import {refreshCrossStoreOverview,stopCrossQueueRealtime,syncCrossQueueRealtime} from "./../cross-store.js";
 import {refreshQueueProgress,stopQueueRealtime} from "./../queue-progress.js";
@@ -31,7 +31,7 @@ if(a==="take"){await act(async()=>{
   resultUrl.searchParams.set("view","customer");resultUrl.searchParams.set("tab","progress");
   resultUrl.searchParams.set("ticket",result.id);resultUrl.searchParams.delete("kind");resultUrl.searchParams.delete("item");
   history.pushState(null,"",resultUrl.pathname+resultUrl.search+resultUrl.hash);
-  const notice=await sendLineNotice("notify-ticket",{ticketId:result.id});
+  const notice=await sendTicketReply(result.id);
   return "取號成功！您的號碼是 "+result.number+"（"+party+" 人／組）"+customerNoticeSuffix(notice);
  });return true;}
  if(a==="cross-filter"){
