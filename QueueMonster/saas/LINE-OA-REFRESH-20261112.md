@@ -1,5 +1,7 @@
 # 排隊怪獸｜LINE OA 品牌與圖文選單（2026-11-12）
 
+> **2026-11-13 最新導覽與連結：** [公開網址／相容性盤點](PUBLIC-ROUTE-AUDIT-20261113.md)。平台「搜尋店家」為獨立 `directory.html`；平台「我的紀錄」為獨立 `my-records.html`（**跨所有店家**的預約／取號／訂餐紀錄同頁呈現）。**個別店家**的「歷史紀錄」仍在 `?view=customer&merchant=<slug>&tab=mine`，兩者不得混淆。舊 `directory.html?mode=mine` 及 `mode=last-board` 皆安全轉向新跨店頁，其他搜尋與服務連結保留。下方較早日期的操作規劃僅供歷史參考，以本節為準。
+
 適用：**排隊怪獸平台官方 LINE OA**，不是店家自有的 LINE OA。
 
 ## 品牌資訊（LINE OA Manager 設定）
