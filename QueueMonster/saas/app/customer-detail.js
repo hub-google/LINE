@@ -88,8 +88,8 @@ export function renderCustomerDetail(){
        meta("聯絡電話",record.phone)+meta("預約狀態",jsStatus(record.status))+
      '</div>'+selectedItemsHtml(record.selected_items)+
      queueButton+actions+(confirmed?'<div class="staff-actionbar customer-detail-secondary">'+
-       (lineState.lineConfig?.merchantOaConnected===true?
-         btn("透過店家 LINE 取得確認","booking-line-reply","primary",'data-id="'+esc(id)+'"'):"")+
+       (lineState.lineConfig?.messagingReady===true?
+         btn("透過 LINE 取得預約確認","booking-line-reply","primary",'data-id="'+esc(id)+'"'):"")+
        btn("加入行事曆","booking-ics","outline",'data-id="'+esc(id)+'"')+
        btn("查看／列印預約憑證","booking-receipt","outline",'data-id="'+esc(id)+'"')+'</div>':"")+
      editBookingForm(record)+'</section>';
@@ -124,6 +124,9 @@ export function renderCustomerDetail(){
      '<p class="notice">可取消訂單剩餘時間：<strong><span class="pickup-grace-seconds">'+remaining+'</span> 秒</strong></p>'+
      btn("取消訂單","pickup-cancel","outline",'data-id="'+esc(id)+'"')+'</div>':
     order.status==="NEW"?'<p class="small">訂單已送交店家，無法自行取消。若需更改請聯絡店家。</p>':"")+
-   '<div class="staff-actionbar">'+btn("重新整理訂單進度","detail-refresh","secondary")+'</div>'+
+   '<div class="staff-actionbar">'+
+     (lineState.lineConfig?.messagingReady===true?
+       btn("透過 LINE 取得訂餐確認","pickup-line-reply","primary",'data-id="'+esc(id)+'"'):"")+
+     btn("重新整理訂單進度","detail-refresh","secondary")+'</div>'+
    '</section>';
 }
