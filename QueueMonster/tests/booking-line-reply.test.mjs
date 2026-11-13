@@ -118,18 +118,21 @@ test('signed proof is accepted only in a merchant Webhook context for all record
  assert.match(src,/authorizedByProof=!!merchantTenantId && !!proof &&[\s\S]*?checkBookingReplyProof\(proof,booking as BookingReplyProofRecord\)/);
  assert.match(src,/authorizedByProof=!!merchantTenantId && !!proof &&[\s\S]*?checkBookingReplyProof\(proof,record as BookingReplyProofRecord,kind\)/);
 });
-test('platform reply proof is scoped to the owner, merchant, kind and 10-minute window',async()=>{
+test('platform reply requires linked identity and merchant proof is scoped to kind and tenant',async()=>{
  const ctx=backend();
  ctx.Deno.env.get=name=>name==='SUPABASE_SERVICE_ROLE_KEY'?'test-secret-'+('x'.repeat(50)):'';
  ctx.record={id,tenant_id:'shop',user_id:'owner',status:'NEW',order_no:42,total:88};
  const proof=await vm.runInContext('issueBookingReplyProof(globalThis.record,"order")',ctx);
- const db=dbMock({booking:null,link:null,tenant:{id:'shop',slug:'shop',name:'Shop',status:'ACTIVE'},order:ctx.record});
+ const tenant={id:'shop',slug:'shop',name:'Shop',status:'ACTIVE'};
+ const db=dbMock({booking:null,link:{tenant_id:'shop',user_id:'owner',line_sub:'line-user'},tenant,order:ctx.record});
+ const dbNoLink=dbMock({booking:null,link:null,tenant,order:ctx.record});
  const ok=await vm.runInContext('recordReplyMessage(globalThis.dbMockValue,"order",globalThis.record.id,"line-user",null,globalThis.proofValue)',Object.assign(ctx,{dbMockValue:db,proofValue:proof}));
  assert.equal(ok.type,'flex');
  const wrongKind=await ctx.api.bookingReplyMessage(dbMock({booking:{...ctx.record,status:'CONFIRMED'},tenant:{id:'shop',slug:'shop',status:'ACTIVE'}}),id,'line-user',null,proof);
  assert.equal(wrongKind.type,'text');
  const wrongShop=await vm.runInContext('recordReplyMessage(globalThis.dbMockValue,"order",globalThis.record.id,"line-user","another",globalThis.proofValue)',ctx);
  assert.equal(wrongShop.type,'text');
+ ctx.dbMockValue=dbNoLink;
  const corrupted=await vm.runInContext('recordReplyMessage(globalThis.dbMockValue,"order",globalThis.record.id,"line-user",null,globalThis.proofValue.slice(0,-1)+"x")',ctx);
  assert.equal(corrupted.type,'text');
 });
