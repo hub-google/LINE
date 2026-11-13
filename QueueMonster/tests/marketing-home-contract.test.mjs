@@ -249,15 +249,26 @@ test("real-flow demo reproduces guest creation, merchant status changes and LINE
  assert.match(el("root").innerHTML,/預約管理/);
  click("[data-scene]",{scene:"clinic"});
  assert.match(el("root").innerHTML,/選擇預約場次/);
+ for(const doctor of ["小兒科 陳醫師(1診)","小兒科 王醫師(2診)","皮膚科 張醫師(3診)"]){
+  assert.ok(el("root").innerHTML.includes(doctor),doctor+" should appear in clinic booking options");
+ }
  input("contact-name","示範顧客");input("contact-phone","0912345678");
+ click("[data-act]",{act:"unit",value:"3診"});
+ assert.match(el("root").innerHTML,/皮膚科門診/);
  click("[data-act]",{act:"unit",value:"2診"});
  click("[data-act]",{act:"review-reserve"});
  click("[data-act]",{act:"reserve-submit"});
- assert.match(el("root").innerHTML,/P003/);
+ assert.match(el("root").innerHTML,/P004/);
  click("[data-role]",{role:"staff"});
- change({dataset:{statusKind:"reservation",id:"P003"},value:"CHECKED_IN",matches:s=>s==="[data-status-kind]"});
- assert.match(el("root").innerHTML,/C2-003/);
+ change({dataset:{statusKind:"reservation",id:"P004"},value:"CHECKED_IN",matches:s=>s==="[data-status-kind]"});
+ assert.match(el("root").innerHTML,/C2-004/);
  assert.match(el("notifications").innerHTML,/已完成報到/);
+ click("[data-tab]",{tab:"queue"});
+ change({id:"staff-room",value:"3診"});
+ assert.match(el("root").innerHTML,/皮膚科 張醫師/);
+ click("[data-act]",{act:"next"});
+ assert.match(el("notifications").innerHTML,/皮膚科 張醫師/);
+ assert.match(el("notifications").innerHTML,/C3-003/);
 });
 
 
