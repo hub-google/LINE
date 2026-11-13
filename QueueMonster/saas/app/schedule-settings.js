@@ -15,6 +15,7 @@ function resizeWindows(windows,count){
  const list=clone(windows||[]).slice(0,count);
  if(!validCount(count))throw Error("場次數必須是 0～50 的整數");
  const firstTitle=windows?.[0]?.title;
+ if(!list.length&&count>0)list.push({...emptyWindow(),name:"第 1 場"});
  const current=list.length;
  if(current<count){
   const previousEnd=list.length?Number(list[list.length-1].end.slice(0,2))*60+Number(list[list.length-1].end.slice(3)):540;
@@ -22,8 +23,9 @@ function resizeWindows(windows,count){
   for(let i=current;i<count;i++){
    const remaining=count-current;
    const offset=i-current;
-   let start=free>=remaining?previousEnd+Math.floor(offset*free/remaining):Math.floor(i*1440/count);
-   let end=free>=remaining?previousEnd+Math.floor((offset+1)*free/remaining):Math.floor((i+1)*1440/count);
+   const step=Math.max(1,Math.min(120,Math.floor(free/remaining)));
+   let start=free>=remaining?previousEnd+offset*step:Math.floor(i*1440/count);
+   let end=free>=remaining?start+step:Math.floor((i+1)*1440/count);
    start=Math.min(1438,start);end=Math.min(1439,Math.max(start+1,end));
    list.push({name:"第 "+(i+1)+" 場",start:clock(start),end:clock(end),capacity:10});
   }
@@ -227,7 +229,7 @@ export function renderScheduleSettings(isManager){
    '<select id="schedule-special-template" class="field">'+templateOptions(d.templates,e.template_key)+'</select></div>'+
    '<div data-schedule-custom style="'+(e.mode==="CUSTOM"?"":"display:none;")+'">'+
    '<p class="small">可自訂 0～50 場，各場均可調整時間、名額與服務窗口。</p>'+
-   '<div class="staff-actionbar">'+btn("帶入所選模板的全部場次","schedule-special-copy-template","outline")+'</div'+'> '+
+   '<div class="staff-actionbar">'+btn("帶入所選模板的全部場次","schedule-special-copy-template","outline")+'</div>'+
    specialWindowEditor+'</div>'+
    field("備註（選填）","schedule-special-note",e.note,"text",'maxlength="120" placeholder="例如：店內裝修、國定假日"')+
   '<div class="staff-actionbar" style="margin:16px 0">'+btn("套用特殊日期","schedule-special-save","primary")+'</div>'+
