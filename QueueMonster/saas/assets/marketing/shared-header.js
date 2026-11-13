@@ -15,6 +15,7 @@
  mount.innerHTML='<header class="qm-public-header'+(page==="home.html"?' site-head':'')+'"><div class="qm-public-inner">'+
   '<a href="./home.html" class="qm-public-logo" aria-label="排隊怪獸首頁"><img src="./monster-mascot.svg" alt="" width="60" height="60"><b>排隊怪獸</b></a>'+
   '<nav class="qm-public-nav" aria-label="網站導覽"><span>'+link(items.slice(0,4))+'</span><span class="qm-public-extra">'+link(items.slice(4))+'</span></nav>'+
+  '<nav class="qm-public-quicklinks" aria-label="顧客常用入口">'+link(items.slice(-2))+'</nav>'+
   '<div id="site-auth-root" class="site-auth-slot qm-public-auth" aria-label="使用者登入狀態"><a class="site-auth-button site-auth-login" href="./directory.html?mode=search">使用 LINE 登入</a></div>'+
   '<details class="qm-public-mobile"><summary>選單 <span aria-hidden="true">⌄</span></summary><div class="qm-public-menu"><button type="button" class="qm-public-close">關閉 ×</button><nav aria-label="手機網站導覽">'+link(items)+'</nav></div></details>'+
  '</div></header>';
