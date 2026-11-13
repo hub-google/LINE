@@ -114,6 +114,6 @@ export function queueProgressBoard(){
       btn("返回歷史紀錄","cross-back","secondary")+
       (ownStatus==="WAITING"&&own?.id?btn("保留候位","hold-my-number","secondary",'data-id="'+esc(own.id)+'"'):"")+
       (ownStatus==="HOLD"&&own?.id?btn("恢復候位","resume-my-number","primary",'data-id="'+esc(own.id)+'"'):"")+
-      (["WAITING","HOLD"].includes(ownStatus)&&own?.id?btn("取消排隊","cancel-my-number","outline",'data-id="'+esc(own.id)+'"'):"")+
+      (["WAITING","HOLD","PASSED"].includes(ownStatus)&&own?.id?btn("取消排隊","cancel-my-number","outline",'data-id="'+esc(own.id)+'"'):"")+
    '</div></div>';
 }

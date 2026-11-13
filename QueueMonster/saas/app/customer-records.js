@@ -37,8 +37,8 @@ export function renderMyTickets(tickets){
     '<div class="small">取號時間：'+esc(formatTaipeiCreated(x.created_at))+'</div>'+
     (x.reference_code?'<div class="small">查核參考碼：'+esc(x.reference_code)+'</div>':"")+
     selectedItemsHtml(x.selected_items)+'</div>'+tag(x.status)+'</div>'+
-    (["WAITING","HOLD"].includes(x.status)?(focused&&bookingState.manageMode==="cancel"?'<p class="staff-help">確認不再候位後，點下方取消按鈕。</p>':'')+
-      btn(x.status==="HOLD"?"恢復候位":"保留候位",x.status==="HOLD"?"resume-my-number":"hold-my-number","secondary",'data-id="'+esc(x.id)+'"')+
+    (["WAITING","HOLD","PASSED"].includes(x.status)?(focused&&bookingState.manageMode==="cancel"?'<p class="staff-help">確認不再候位後，點下方取消按鈕。</p>':'')+
+      (["WAITING","HOLD"].includes(x.status)?btn(x.status==="HOLD"?"恢復候位":"保留候位",x.status==="HOLD"?"resume-my-number":"hold-my-number","secondary",'data-id="'+esc(x.id)+'"'):'<p class="small">此號碼已過號，如需重新取號可先取消本號碼。</p>')+
       btn(focused&&bookingState.manageMode==="cancel"?"確認取消排隊":"取消排隊","cancel-my-number","outline",'data-id="'+esc(x.id)+'"'):"")+'</article>';
  }).join("");
 }
