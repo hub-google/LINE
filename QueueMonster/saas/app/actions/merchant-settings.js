@@ -89,7 +89,7 @@ if(a==="save-customer-homepage"){
    lineState.lineConfig=null;lineState.lineConfigSlug="";
    lineState.oaReplacing=false;lineState.oaReplacingSlug="";
    return a==="connect-own-oa"
-     ?"Messaging API 已驗證連接。一般通知可使用本店 OA；預約免費自動回覆還須設定本店 LIFF（chat_message.write）與 Webhook，並從店家聊天室開啟預約。"
+     ?"LINE OA 已連接。請確認 LINE Developers 的 Webhook 已啟用，再用手機測試訊息回覆。"
      :"已解除自有 LINE OA；平台 OA 不會代發店家通知";
   });return true;
  }
