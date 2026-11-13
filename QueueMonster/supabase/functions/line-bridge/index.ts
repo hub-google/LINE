@@ -809,6 +809,10 @@ function platformBotMessage(command: string, welcome = false): Record<string, un
     title = "開啟遊戲逛街模式，探索公開店家。";
     link = PLATFORM_ENTRY+"directory.html?mode=game";
     label = "遊戲逛街";
+  } else if (/上次預約看板|最近預約看板|最近預約的看板|我的叫號看板/.test(input)) {
+    title = "完成 LINE 身分確認後，會開啟你最近一次預約門市的叫號看板；若該店未提供叫號，會顯示說明。";
+    link = PLATFORM_ENTRY+"directory.html?mode=mine&section=board";
+    label = "上次預約看板";
   } else if (/我的|紀錄|紀錄查詢|歷史|取消|修改/.test(input)) {
     title = "個人紀錄需完成 LINE 身分驗證，才能查看跨店預約與取號。";
     link = PLATFORM_ENTRY+"directory.html?mode=mine";
@@ -819,7 +823,7 @@ function platformBotMessage(command: string, welcome = false): Record<string, un
     label = "尋找叫號看板";
   } else if (/取號|抽號|排隊|候位|領號/.test(input)) {
     title = "選擇店家後即可進行現場取號，取號前會驗證 LINE 身分。";
-    link = PLATFORM_ENTRY+"directory.html?mode=queue";
+    link = PLATFORM_ENTRY+"directory.html?mode=mine&section=queue";
     label = "現場取號";
   } else if (/預約|找店|訂位|掛號/.test(input)) {
     title = "搜尋有提供預約服務的店家，再選擇日期及場次。";
@@ -832,8 +836,8 @@ function platformBotMessage(command: string, welcome = false): Record<string, un
     quickReply: {
       items: [
         {type:"action",action:{type:"uri",label,uri:link}},
-        {type:"action",action:{type:"uri",label:"我的紀錄",uri:PLATFORM_ENTRY+"directory.html?mode=mine"}},
-        {type:"action",action:{type:"uri",label:"現場取號",uri:PLATFORM_ENTRY+"directory.html?mode=queue"}},
+        {type:"action",action:{type:"uri",label:"我的預約／取號",uri:PLATFORM_ENTRY+"directory.html?mode=mine"}},
+        {type:"action",action:{type:"uri",label:"現場取號",uri:PLATFORM_ENTRY+"directory.html?mode=mine&section=queue"}},
         {type:"action",action:{type:"uri",label:"線上點餐",uri:PLATFORM_ENTRY+"directory.html?mode=search&service=%E9%BB%9E%E9%A4%90"}},
       ],
     },
