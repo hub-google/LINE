@@ -24,7 +24,7 @@ CUSTOMER_ITEMS = [
     ("線上預約", "挑選日期與場次", "features", {"type":"uri","label":"線上預約","uri":BASE+"directory.html?mode=search&service=%E9%A0%90%E7%B4%84"}),
     ("現場取號", "尋找提供領號的店家", "play", {"type":"uri","label":"現場取號","uri":BASE+"directory.html?mode=search&service=%E5%8F%96%E8%99%9F"}),
     ("線上點餐", "預訂與查詢取餐", "store", {"type":"uri","label":"線上點餐","uri":BASE+"directory.html?mode=search&service=%E9%BB%9E%E9%A4%90"}),
-    ("我的紀錄", "預約・取號・訂單", "dashboard", {"type":"uri","label":"我的紀錄","uri":BASE+"directory.html?mode=mine"}),
+    ("我的紀錄", "跨店預約・取號・訂餐", "dashboard", {"type":"uri","label":"我的紀錄","uri":BASE+"my-records.html"}),
     ("常見問題", "快速了解平台使用方式", "guide", {"type":"uri","label":"常見問題","uri":BASE+"home.html#faq"}),
 ]
 MERCHANT_ITEMS = [
