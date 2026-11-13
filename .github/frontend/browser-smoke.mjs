@@ -111,10 +111,11 @@ try{
    continue; // Approved new custom category changes historical HTML.
   }
   if(tab==='settings-operations'){
-   assert.ok(html.includes('id="policy-closed-dates"'),'Operating hours must retain saved closure dates');
-   assert.ok(html.includes('class="qm-closed-calendar"'),'Closure dates must keep the calendar');
-   assert.ok(html.includes('data-closed-done'),'Calendar must include a completion action');
-   assert.ok(html.includes('id="set-service-queue"'),'Queue mode remains configurable');
+   assert.ok(html.includes('settings-hub-tabs'),'Scheduling must stay within the existing Settings page');
+   assert.ok(html.includes('智慧營業排程'),'Weekly and special-day scheduling must be accessible');
+   assert.ok(html.includes('unit-admin-date'),'Existing session management must remain accessible');
+   assert.ok(!html.includes('舊版預約公休日'),'Legacy closure editor must not be customer-facing');
+   assert.ok(!html.includes('id="set-service-queue"'),'Service switches belong to Service Settings, not Scheduling');
    continue;
   }
   if(tab==='settings-sessions'){
@@ -125,10 +126,10 @@ try{
   }
   if(tab==='settings'){
    assert.ok(html.includes('settings-hub-tabs'),'Settings must show grouped category navigation');
-   assert.ok(html.includes('店家與分店'),'Merchant profile and branch configuration must share one category');
-   assert.ok(html.includes('營業與場次'),'Operating rules and sessions must share one category');
-   assert.ok(html.includes('菜單與點餐'),'Menu and pickup must share one category');
-   assert.ok(html.includes('通知與公開'),'Notifications and public links must remain a category');
+   assert.ok(html.includes('店家資料'),'Merchant profile and branch configuration must share one category');
+   assert.ok(html.includes('營業排程'),'Weekly operating schedule must be easy to find');
+   assert.ok(html.includes('服務設定'),'Booking, queue, menu and pickup rules must share one category');
+   assert.ok(html.includes('顧客通路'),'Public links and LINE OA must share one category');
    continue;
   }
   if(['units','branches'].includes(tab)){
