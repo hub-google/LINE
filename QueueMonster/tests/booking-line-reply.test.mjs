@@ -5,10 +5,10 @@ import {stripTypeScriptTypes} from 'node:module';
 import vm from 'node:vm';
 import {requestBookingReply} from '../saas/app/booking-line-reply.js';
 const id='12345678-1234-1234-1234-123456789abc';
-const own={merchantOaConnected:true,merchantLiffId:'1234567890-AbcdEfgh'};
+const own={merchantOaConnected:true,fromMerchantChat:true,expectedLiffId:'1234567890-AbcdEfgh'};
 test('eligible LIFF sends exactly one text command after booking',async()=>{
  const sent=[];
- const result=await requestBookingReply({id:own.merchantLiffId,isInClient:()=>true,getContext:()=>({type:'utou'}),sendMessages:async x=>sent.push(x)},id,own);
+ const result=await requestBookingReply({id:own.expectedLiffId,isInClient:()=>true,getContext:()=>({type:'utou'}),sendMessages:async x=>sent.push(x)},id,own);
  assert.equal(result.requested,true);assert.deepEqual(sent,[[{type:'text',text:'確認預約 '+id}]]);
 });
 test('external browser, QR context and group never send booking information',async()=>{
@@ -17,17 +17,24 @@ test('external browser, QR context and group never send booking information',asy
  }
 });
 test('SDK rejection preserves a retry command without a push fallback',async()=>{
- const result=await requestBookingReply({id:own.merchantLiffId,isInClient:()=>true,getContext:()=>({type:'utou'}),sendMessages:async()=>{throw Error('403')}},id,own);
+ const result=await requestBookingReply({id:own.expectedLiffId,isInClient:()=>true,getContext:()=>({type:'utou'}),sendMessages:async()=>{throw Error('403')}},id,own);
  assert.equal(result.requested,false);assert.equal(result.command,'確認預約 '+id);
  await assert.rejects(()=>requestBookingReply(null,'bad-id'));
 });
-test('platform OA, missing merchant LIFF and mismatched LIFF never auto-send',async()=>{
+test('platform OA, missing merchant chat and mismatched LIFF never auto-send',async()=>{
  const sent=[];
  const sdk={id:'9999999999-Other',isInClient:()=>true,getContext:()=>({type:'utou'}),sendMessages:async x=>sent.push(x)};
  assert.equal((await requestBookingReply(sdk,id)).requested,false);
  assert.equal((await requestBookingReply(sdk,id,{merchantOaConnected:true})).requested,false);
  assert.equal((await requestBookingReply(sdk,id,own)).requested,false);
  assert.equal(sent.length,0);
+});
+test('shared LIFF can send from merchant chat without merchant-specific LIFF ID',async()=>{
+ const sent=[];
+ const sdk={id:'1234567890-AbcdEfgh',isInClient:()=>true,getContext:()=>({type:'utou'}),sendMessages:async messages=>sent.push(messages)};
+ const result=await requestBookingReply(sdk,id,{merchantOaConnected:true,fromMerchantChat:true,command:'確認預約 '+id+' t12345_signed'});
+ assert.equal(result.requested,true);
+ assert.equal(sent[0][0].text,'確認預約 '+id+' t12345_signed');
 });
 test('unit/session bookings use the merchant LIFF reply, not reservation push',()=>{
  const unit=readFileSync(new URL('../saas/app/actions/service-unit-actions.js',import.meta.url),'utf8');
@@ -82,6 +89,20 @@ test('valid owner receives a card through reply endpoint only',async()=>{
  assert.equal(card.type,'flex');assert.equal(card.altText,'預約已成立');
 });
 
+test('merchant provider mismatch is handled by short-lived, merchant-scoped signed confirmation',async()=>{
+ const ctx=backend();
+ ctx.Deno.env.get=name=>name==="SUPABASE_SERVICE_ROLE_KEY"?"not-a-real-secret-just-a-test-"+'x'.repeat(60):"";
+ vm.runInContext('reservationConfirmationNotice=async()=>({type:"flex",altText:"預約已成立"})',ctx);
+ const booking={id,tenant_id:'shop',user_id:'owner',status:'CONFIRMED'};
+ ctx.proofRecord={id,tenant_id:'shop',user_id:'owner'};
+ const proof=await vm.runInContext('issueBookingReplyProof(globalThis.proofRecord)',ctx);
+ assert.match(proof,/^t[a-z0-9]+_[a-zA-Z0-9_-]{32}$/);
+ const data=dbMock({booking,link:null,tenant:{id:'shop',status:'ACTIVE'}});
+ assert.equal((await ctx.api.bookingReplyMessage(data,id,'merchant-user','shop',proof)).type,'flex');
+ assert.equal((await ctx.api.bookingReplyMessage(data,id,'merchant-user','other-shop',proof)).type,'text');
+ assert.equal((await ctx.api.bookingReplyMessage(data,id,'merchant-user',null,proof)).type,'text');
+ assert.equal((await ctx.api.bookingReplyMessage(data,id,'merchant-user','shop',proof.slice(0,-1)+'X')).type,'text');
+});
 test('signed confirmation webhook calls real reply branch, never push',async()=>{
  const calls=[];
  const ctx=backend({fetch:async(url,options)=>{calls.push({url,body:JSON.parse(options.body)});return new Response('{}',{status:200})}});
