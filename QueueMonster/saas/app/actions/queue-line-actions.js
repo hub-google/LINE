@@ -8,10 +8,18 @@ import {act,rpc,val} from "./../data-loading.js";
 import {showActionFeedback} from "./../shared-ui.js";
 import {refreshQueueProgress,stopQueueRealtime} from "./../queue-progress.js";
 import {render} from "./../staff-layout.js";
-import {bridgeConfig,connectLineSession,customerNoticeSuffix,recoverLineLogin,sendLineNotice} from "./../line-session.js";
+import {bridgeConfig,connectLineSession,customerNoticeSuffix,recoverLineLogin,sendLineNotice,lineReplyHandoff} from "./../line-session.js";
 import {finishManageLink} from "./../booking-edit.js";
 
 export async function handleQueueLineActions(ev,b,a,id){
+ if(a==="queue-line-reply"){
+  if(!id)return true;
+  await act(async()=>{
+   const handoff=await lineReplyHandoff("ticket",id);
+   location.assign(handoff.oaMessageUrl);
+   return "正在開啟 LINE 聊天室；請按傳送取得取號確認卡";
+  });return true;
+ }
 if(a==="save-queue-near-alert"){
   if(!id||!Object.prototype.hasOwnProperty.call(queueState.queueNearAlertSettings,id))return true;
   const threshold=Number(val("queue-near-alert-threshold"));
