@@ -84,11 +84,10 @@ if(a==="noop-queue-session"){return true;}
   }
   if(a==="save-booking-policy"){
    await act(async()=>{
-     const managed=serviceUnitsState.scheduleConfig?.enabled===true;
+     // Keep the old closed-day values intact while schedules move to one editor.
      const policy=staffState.staff?.bookingPolicy||{};
-     const dates=managed?(policy.closed_dates||[]):val("policy-closed-dates").split(/[,，;；\s]+/).filter(Boolean);
-     if(dates.some(x=>!/^\d{4}-\d{2}-\d{2}$/.test(x)))throw Error("請使用 YYYY-MM-DD 格式填寫特殊休假日期");
-     const days=managed?(policy.closed_weekdays||[]):Array.from(document.querySelectorAll(".policy-closed-day:checked"),x=>Number(x.value));
+     const dates=policy.closed_dates||[];
+     const days=policy.closed_weekdays||[];
      await rpc("so_set_booking_policy",{
        p_slug:routeState.slug,p_closed_weekdays:days,p_closed_dates:dates,
        p_break_start:val("policy-break-start"),p_break_end:val("policy-break-end"),
