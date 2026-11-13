@@ -24,8 +24,8 @@ LINE Messaging API **無法直接修改** OA Manager 的名稱、介紹、頭貼
 | 線上預約 | 進入已選「預約」條件的正式店家搜尋 |
 | 現場取號 | 開啟 `directory.html?mode=mine&section=queue`，篩選開放現場取號的店家 |
 | 線上點餐 | 進入已選「點餐」條件的正式店家搜尋 |
-| 我的預約／取號 | 與網站的同名分頁一致，整合我的紀錄、現場取號與上次預約看板 |
-| 上次預約看板 | `directory.html?mode=mine&section=board`，與網站合併後分頁內的「上次預約看板」完全一致 |
+| 我的紀錄 | `directory.html?mode=mine`，顯示預約、取號、訂單三種紀錄分類 |
+| 訂單紀錄 | `directory.html?mode=mine&section=order`，查詢各店點餐與取餐紀錄 |
 
 | 商家服務 | 行為 |
 | --- | --- |
@@ -69,3 +69,17 @@ LINE Messaging API **無法直接修改** OA Manager 的名稱、介紹、頭貼
 | 上次預約看板 | `directory.html?mode=mine&section=board` |
 
 原有 `directory.html?mode=queue` 與 `directory.html?mode=last-board` 仍可解析，以兼容既有連結；查詢個人紀錄與預約的權限不變。
+## 2026-11-13 最新修正：顧客三種歷史紀錄
+
+**此節取代前文關於「我的預約／取號」與「上次預約看板」的導覽規劃。** 網站搜尋頁頂層現在是「搜尋店家」與「我的紀錄」兩個選項。點入「我的紀錄」後，子選單固定為「預約紀錄」「取號紀錄」「訂單紀錄」，三者都是真實個人歷史，不是取號服務入口。平台 OA 也使用相同名稱與網址。
+
+| 畫面／LINE OA | 目的地 | 資料來源 |
+| --- | --- | --- |
+| 我的紀錄 | `directory.html?mode=mine` | 預約紀錄（預設） |
+| 預約紀錄 | `directory.html?mode=mine&section=reservation` | `so_my_platform_records('reservation')` |
+| 取號紀錄 | `directory.html?mode=mine&section=ticket` | `so_my_platform_records('ticket')` |
+| 訂單紀錄 | `directory.html?mode=mine&section=order` | `so_my_platform_records('order')` |
+
+- 舊 `?mode=mine&section=queue` 兼容為「取號紀錄」。舊 `?mode=last-board` 與 `?mode=mine&section=board` 不再有看板入口，改顯示預約紀錄；不影響店家本身的公開叫號看板。
+- 三種資料都以已驗證的 LINE 身分查詢；未登入先顯示 LINE 登入，不向其他顧客揭露資料；每筆紀錄可前往該筆門市的詳情。最多回傳最近 150 筆。
+- 「現場取號」仍可從「搜尋店家」找到開放取號的門市，但不放在「我的紀錄」子選單中。
