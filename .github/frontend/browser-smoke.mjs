@@ -152,7 +152,7 @@ try{
  // Exercise production bundles at both desktop and mobile sizes with actual local asset reads.
  for(const width of [1280,1870,390]){
   await page.setViewportSize({width,height:900});
-  for(const name of ['home.html','directory.html?mode=search','merchant-register.html','platform-login.html','index.html?view=platform','index.html?view=staff&merchant=greenfield-salon','index.html?view=customer&merchant=greenfield-salon','board.html?merchant=greenfield-salon']){
+  for(const name of ['home.html','directory.html?mode=search','my-records.html','merchant-register.html','platform-login.html','index.html?view=platform','index.html?view=staff&merchant=greenfield-salon','index.html?view=customer&merchant=greenfield-salon','board.html?merchant=greenfield-salon']){
    await page.goto(baseUrl+'/booking/'+name,{waitUntil:'domcontentloaded',timeout:45000});
    // Check the rendered application header rather than racing deferred native modules.
    if(name.startsWith('index.html?view=')){
@@ -169,7 +169,7 @@ try{
     else assert.ok(rects[1].left>=rects[0].right-2,'Desktop examples should display side by side');
     console.log('Homepage dual-examples layout:',width,JSON.stringify(rects));
    }
-   if(name==='home.html'||name.startsWith('directory.html')){
+   if(name==='home.html'||name.startsWith('directory.html')||name==='my-records.html'){
     const excluded=await page.locator('a[href*="merchant-register"],a[href*="platform-login"],a[href*="view=staff"],a[href*="view=platform"]').count();
     assert.equal(excluded,0,'Public portals must not display manager or headquarters links');
    }
@@ -223,7 +223,7 @@ try{
     assert.ok(layout.signup.bottom+8<=layout.items[1].top,'Logout must not overlap the registration link');
     assert.ok(layout.items.every(r=>r.width>150&&r.left>=layout.panel.left&&r.right<=layout.panel.right),'Account buttons must stay inside the panel');
    }
-   if(name==='home.html'||name.startsWith('directory.html')){
+   if(name==='home.html'||name.startsWith('directory.html')||name==='my-records.html'){
     // Read style atomically when it becomes available. Auth re-renders between
     // the initial wait and a separate locator evaluation on slower CI browsers.
     const logoHandle=await page.waitForFunction(()=>{
@@ -252,15 +252,16 @@ try{
  // Shared public navigation must match on all introduction pages and all viewport sizes.
  for(const width of [1280,390]){
   await page.setViewportSize({width,height:900});
-  for(const name of ['home.html','for-merchants.html','for-customers.html','demo.html','merchant-center.html','directory.html']){
+  for(const name of ['home.html','for-merchants.html','for-customers.html','demo.html','merchant-center.html','directory.html','my-records.html']){
    await page.goto(baseUrl+'/booking/'+name,{waitUntil:'domcontentloaded',timeout:45000});
    const header=page.locator('.qm-public-header');
    await header.waitFor({state:'attached',timeout:10000});
    const tabs=await header.locator('.qm-public-nav a').allTextContents();
-   assert.deepEqual(tabs,['平台總覽','店家功能','顧客功能','常見問題','免登入功能試用','搜尋店家'],name+' identical navigation');
+   assert.deepEqual(tabs,['平台總覽','店家功能','顧客功能','常見問題','免登入功能試用','搜尋店家','我的紀錄'],name+' identical navigation');
    assert.equal(await header.locator('.qm-public-search,.qm-public-mobile-search').count(),0,name+' no redundant search CTA');
-   assert.equal(await header.locator('.qm-public-nav a').last().getAttribute('href'),'./directory.html?mode=search',name+' search link');
-   assert.equal(await header.locator('.qm-public-menu nav a').count(),6,name+' unique mobile links');
+   assert.equal(await header.locator('.qm-public-nav a').nth(5).getAttribute('href'),'./directory.html',name+' search link');
+   assert.equal(await header.locator('.qm-public-nav a').last().getAttribute('href'),'./my-records.html',name+' distinct history link');
+   assert.equal(await header.locator('.qm-public-menu nav a').count(),7,name+' unique mobile links');
    if(width>=1280){
     const sizes=await header.evaluate(node=>({font:parseFloat(getComputedStyle(node.querySelector('.qm-public-nav a')).fontSize),logo:node.querySelector('.qm-public-logo img').getBoundingClientRect().width}));
     assert.ok(sizes.font>=16&&sizes.logo>=54,name+' enlarged header: '+JSON.stringify(sizes));
@@ -271,6 +272,17 @@ try{
    assert.ok(bounds.left>=-2&&bounds.right<=bounds.width+2,name+' header fits viewport');
   }
  }
+
+ // Verify the old publicly distributed personal-record links resolve to the new page.
+ for(const legacy of ['directory.html?mode=mine','directory.html?mode=mine&section=order','directory.html?mode=last-board']){
+  await page.goto(baseUrl+'/booking/'+legacy,{waitUntil:'domcontentloaded',timeout:45000});
+  await page.waitForURL(/\/my-records\.html(?:\?|$)/,{timeout:12000});
+  assert.equal(await page.locator('.main-panel .tabs').count(),0,'old history URL has no nested directory tabs');
+  assert.equal(await page.locator('h1.eyebrow').innerText(),'我的紀錄','legacy history stays cross-store');
+ }
+ await page.goto(baseUrl+'/booking/directory.html',{waitUntil:'domcontentloaded',timeout:45000});
+ assert.equal(await page.locator('.main-panel .tabs').count(),0,'store search has no nested history tabs');
+ assert.equal(await page.locator('h1.eyebrow').innerText(),'搜尋店家，立即使用服務');
 
  // Drive the SAME board engine through many arbitrary shapes: landscape,
  // portrait, square, ultra-wide, and narrow. These are TEST INPUTS, not CSS modes.
