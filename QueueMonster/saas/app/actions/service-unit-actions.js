@@ -8,7 +8,7 @@ import {serviceUnitsState} from "../state/serviceUnitsState.js";
 
 import {act,clearCustomerBookingRequest,customerBookingRequestId,rpc,val} from "./../data-loading.js";
 import {render} from "./../staff-layout.js";
-import {customerNoticeSuffix,notifyLineCalled,sendLineNotice,sendBookingReply} from "./../line-session.js";
+import {customerNoticeSuffix,notifyLineCalled,sendLineNotice,sendBookingReply,sendTicketReply} from "./../line-session.js";
 import {selectedUnitSession,unitBookingFingerprint,unitNameForSession,unitSessionAvailable} from "./../service-units.js";
 import {bookingRequestDetails,normalizeBookingPhone,validBookingContact} from "./../customer-booking.js";
 import {showActionFeedback} from "./../shared-ui.js";
@@ -124,7 +124,7 @@ if(a==="save-unit-mode"){
     const u=new URL(location.href);u.searchParams.set("view","customer");u.searchParams.set("merchant",routeState.slug);
     u.searchParams.set("tab","progress");u.searchParams.set("ticket",result.id);u.searchParams.delete("kind");u.searchParams.delete("item");
     history.pushState(null,"",u.pathname+u.search+u.hash);
-    const notice=await sendLineNotice("notify-ticket",{ticketId:result.id});
+    const notice=await sendTicketReply(result.id);
     return "已取得號碼 "+result.number+customerNoticeSuffix(notice);
    });return true;
  }
