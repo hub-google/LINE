@@ -203,3 +203,21 @@ test("public store search and pickup links do not wait on optional LINE config",
  assert.ok(section.includes("publishGameDirectory();render();"),
    "late LINE config refreshes existing customer service links");
 });
+
+
+test("pickup item availability controls reach the merchant handler and editing stays discoverable",()=>{
+ const dispatch=source("saas/app/click-actions.js");
+ const pickup=source("saas/app/pickup-mode.js");
+ const merchant=source("saas/app/actions/merchant-settings.js");
+ const menu=source("saas/app/staff/menu.js");
+ assert.match(dispatch,/handlePickupAction,handleAccountPlatform,handleMerchantSettings/);
+ const start=pickup.indexOf("export async function handlePickupAction");
+ const end=pickup.indexOf("export function initializePickupMode",start);
+ assert.ok(start>=0&&end>start,"pickup action handler exists");
+ assert.match(pickup.slice(start,end),/return false;\s*\}/,
+  "unhandled pickup-* actions must pass to later handlers");
+ assert.match(merchant,/if\(a==="pickup-menu-enabled"\|\|a==="pickup-menu-sold-out"\)/);
+ assert.match(merchant,/rpc\("so_pickup_menu_control"/);
+ assert.match(menu,/id="menu-edit-panel"/);
+ assert.match(merchant,/scrollIntoView\(\{behavior:"smooth",block:"start"\}\)/);
+});
