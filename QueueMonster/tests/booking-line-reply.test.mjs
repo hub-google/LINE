@@ -119,3 +119,32 @@ test('signed confirmation webhook calls real reply branch, never push',async()=>
  assert.match(calls[0].url,/\/message\/reply$/);
  assert.equal(calls[0].body.replyToken,'test-reply');assert.equal(calls[0].body.messages[0].type,'flex');
 });
+
+test('platform OA signed message uses Reply API, never Push API',async()=>{
+ const calls=[];
+ const ctx=backend({fetch:async(url,options)=>{
+   calls.push({url,headers:options.headers,body:JSON.parse(options.body)});
+   return new Response('{}',{status:200});
+ }});
+ vm.runInContext('service=()=>({})',ctx);
+ ctx.Deno.env.get=name=>({LINE_MESSAGING_CHANNEL_SECRET:'platform-webhook-secret',LINE_MESSAGING_ACCESS_TOKEN:'platform-webhook-token'})[name]||'';
+ const body=JSON.stringify({destination:'U'+'c'.repeat(32),events:[{
+   type:'message',webhookEventId:'platform_event_12345',timestamp:Date.now(),
+   source:{type:'user',userId:'U'+'b'.repeat(32)},
+   replyToken:'platform-reply-token',message:{id:'1111111111111111',type:'text',text:'測試'}
+ }]});
+ const key=await crypto.subtle.importKey('raw',new TextEncoder().encode('platform-webhook-secret'),
+  {name:'HMAC',hash:'SHA-256'},false,['sign']);
+ const signature=Buffer.from(await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(body))).toString('base64');
+ const url='https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/line-bridge?action=webhook';
+ const invalid=await ctx.api.webhook(new Request(url,{method:'POST',headers:{'x-line-signature':'incorrect'},body}),null);
+ assert.equal(invalid.status,401);
+ assert.equal(calls.length,0);
+ const valid=await ctx.api.webhook(new Request(url,{method:'POST',headers:{'x-line-signature':signature},body}),null);
+ assert.equal(valid.status,200);
+ assert.equal(calls.length,1);
+ assert.equal(calls[0].url,'https://api.line.me/v2/bot/message/reply');
+ assert.equal(calls[0].headers.authorization,'Bearer platform-webhook-token');
+ assert.equal(calls[0].body.replyToken,'platform-reply-token');
+ assert.equal(calls[0].body.messages[0].type,'flex');
+});
