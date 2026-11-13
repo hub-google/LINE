@@ -1,5 +1,7 @@
 # Queue Monster｜排隊怪獸（原 LINE 預約）
 
+> **2026-11-13 最新導覽與連結：** [公開網址／相容性盤點](PUBLIC-ROUTE-AUDIT-20261113.md)。平台「搜尋店家」為獨立 `directory.html`；平台「我的紀錄」為獨立 `my-records.html`（**跨所有店家**的預約／取號／訂餐紀錄同頁呈現）。**個別店家**的「歷史紀錄」仍在 `?view=customer&merchant=<slug>&tab=mine`，兩者不得混淆。舊 `directory.html?mode=mine` 及 `mode=last-board` 皆安全轉向新跨店頁，其他搜尋與服務連結保留。下方較早日期的操作規劃僅供歷史參考，以本節為準。
+
 專案識別名稱：`QueueMonster`。正式英文品牌為 **Queue Monster**；完整專案已更名至 `QueueMonster/`，部署及測試路徑同步更新，公開網址與 LINE LIFF 維持相容。
 實際網站：https://hub-google.github.io/LINE/booking/
 
