@@ -120,7 +120,7 @@ function renderMyRecords(){
     '<p class="shop-desc"><strong>'+numberLabel+' '+e(r.number||"—")+'</strong></p>'+
     '<p class="shop-desc">'+eventLabel+e(r.event_time||"—")+'</p>'+
     '<p class="shop-desc">建立時間：'+e(fmtTime(r.created_at))+'</p>'+extra+
-    (url?'<div class="card-actions"><a class="btn" href="'+e(url)+'">查看這筆'+numberLabel+'詳情</a></div>':"")+
+    (url?'<div class="card-actions"><a class="btn" data-oa-mode="'+e(r.oa_mode||"")+'" href="'+e(url)+'">查看這筆'+numberLabel+'詳情</a></div>':"")+
     '</div></article>';
   }).join("");
   return '<section class="history-section" id="history-'+kind+'" aria-labelledby="heading-'+kind+'">'+
@@ -300,7 +300,7 @@ document.addEventListener("click",async event=>{
  if(!/^[a-z0-9][a-z0-9-]{2,39}$/.test(merchant))return;
  // No second LIFF redirect for merchants sharing the headquarters OA.
  const selected=all.find(shop=>shop.slug===merchant);
- if(selected?.oa_mode==="PLATFORM")return;
+ if(selected?.oa_mode==="PLATFORM"||anchor.dataset.oaMode==="PLATFORM")return;
  event.preventDefault();
  const query=new URLSearchParams();
  query.set("view","customer");query.set("merchant",merchant);
