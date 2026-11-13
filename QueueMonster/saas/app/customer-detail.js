@@ -1,6 +1,7 @@
 // One verified customer record per screen. Keep existing reservation, queue and pickup RPCs.
 // This module never fetches a record by a bare unverified user-provided ID.
 import {bookingState} from "./state/bookingState.js";
+import {lineState} from "./state/lineState.js";
 import {customerState} from "./state/customerState.js";
 import {crossStoreState} from "./state/crossStoreState.js";
 import {routeState} from "./state/routeState.js";
@@ -87,6 +88,8 @@ export function renderCustomerDetail(){
        meta("聯絡電話",record.phone)+meta("預約狀態",jsStatus(record.status))+
      '</div>'+selectedItemsHtml(record.selected_items)+
      queueButton+actions+(confirmed?'<div class="staff-actionbar customer-detail-secondary">'+
+       (lineState.lineConfig?.merchantOaConnected===true?
+         btn("透過店家 LINE 取得確認","booking-line-reply","primary",'data-id="'+esc(id)+'"'):"")+
        btn("加入行事曆","booking-ics","outline",'data-id="'+esc(id)+'"')+
        btn("查看／列印預約憑證","booking-receipt","outline",'data-id="'+esc(id)+'"')+'</div>':"")+
      editBookingForm(record)+'</section>';
