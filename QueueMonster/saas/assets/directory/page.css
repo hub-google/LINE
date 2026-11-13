@@ -191,3 +191,15 @@ a.btn.secondary:hover{background:#e1f3e9}
 .combined-switch a.active{background:#fff;color:#693a83;box-shadow:0 2px 9px rgba(84,45,107,.14)}
 .combined-switch a:focus-visible{outline:3px solid #b98bd5;outline-offset:2px}
 @media(max-width:520px){.combined-switch{gap:3px}.combined-switch a{font-size:12px;padding:8px 3px}}
+
+/* A single scrollable page shows reservation, queue-ticket and food-order history. */
+#results:has(.history-all){display:block}
+.history-all{width:100%;display:flex;flex-direction:column;gap:28px}
+.history-section{display:block;min-width:0}
+.history-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;padding:12px 16px;background:#f3e6fa;border:1px solid #e6d2f1;border-radius:12px}
+.history-section-heading h3{margin:0;font-size:18px;color:#563372}
+.history-section-heading span{font-weight:750;color:#78548f;white-space:nowrap}
+.history-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,310px),1fr));gap:14px;align-items:stretch}
+.history-empty{margin:0;padding:20px 16px;background:#fcf9ff;border:1px solid #ecdfef;border-radius:12px;color:#766582}
+.history-cards .merchant-card{min-width:0}
+@media(max-width:600px){.history-all{gap:20px}.history-section-heading h3{font-size:16px}.history-cards{grid-template-columns:1fr}}
