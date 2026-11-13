@@ -20,3 +20,11 @@ test("generated default sessions use the same unique, active and deterministic u
  assert.equal((next.match(/is_default_session_unit and active order by id limit 1/g)||[]).length,2);
  assert.doesNotMatch(next,/is_default_session_unit limit 1/);
 });
+
+test("custom special dates reject resources from another shop, deleted IDs, or disabled units",()=>{
+ const next=readFileSync(new URL("../supabase/migrations/20261113_qm_special_date_unit_validation.sql",import.meta.url),"utf8");
+ assert.match(next,/coalesce\(w->>'unit_id',''\)<>''/);
+ assert.match(next,/u\.id=\(w->>'unit_id'\)::uuid/);
+ assert.match(next,/u\.tenant_id=t\.id and u\.active/);
+ assert.match(next,/特殊日期包含不存在或已停用的服務窗口/);
+});
