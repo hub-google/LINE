@@ -136,7 +136,7 @@ test("homepage SEO stays in metadata, provides meaningful structured data, and p
  assert.ok(json["@graph"].some(x=>x["@type"]==="WebApplication"));
  assert.doesNotMatch(landing,/<meta name="keywords"/);
  const sitemap=read("saas/sitemap.xml");
- for(const page of ["home.html","directory.html","merchant-center.html","merchant-register.html"]){
+ for(const page of ["home.html","directory.html","my-records.html","merchant-center.html","merchant-register.html"]){
   assert.ok(sitemap.includes("https://hub-google.github.io/LINE/booking/"+page),"missing sitemap "+page);
  }
  assert.match(build,/copyFile\(path\.join\(src, "sitemap\.xml"\)/);
@@ -301,17 +301,18 @@ test("marketing site has platform overview and two role-specific diagram pages",
 test("public introduction and demo pages share one header and the same navigation labels",()=>{
  const js=read("saas/assets/marketing/shared-header.js");
  const css=read("saas/assets/marketing/shared-header.css");
- for(const p of ["home.html","for-merchants.html","for-customers.html","demo.html","merchant-center.html","directory.html"]){
+ for(const p of ["home.html","for-merchants.html","for-customers.html","demo.html","merchant-center.html","directory.html","my-records.html"]){
   const html=rawReadFileSync(path.join(root,"saas",p),"utf8");
   assert.match(html,/id="marketing-header"/);
   assert.match(html,/assets\/marketing\/shared-header\.js/);
   assert.match(html,/assets\/marketing\/shared-header\.css/);
  }
- for(const name of ["平台總覽","店家功能","顧客功能","常見問題","免登入功能試用","搜尋店家"])
+ for(const name of ["平台總覽","店家功能","顧客功能","常見問題","免登入功能試用","搜尋店家","我的紀錄"])
   assert.ok(js.includes(name));
  assert.doesNotMatch(js,/遊戲逛店|公開叫號看板|叫號看板|qm-public-search|qm-public-mobile-search/);
  assert.equal((js.match(/"搜尋店家"/g)||[]).length,1,"Search link must be authored once in shared navigation");
- assert.match(js,/\["搜尋店家","\.\/directory\.html\?mode=search","directory\.html"\]/);
+ assert.match(js,/\["搜尋店家","\.\/directory\.html","directory\.html"\]/);
+ assert.match(js,/\["我的紀錄","\.\/my-records\.html","my-records\.html"\]/);
  assert.match(css,/\.qm-public-nav a\{font-size:18px/);
  assert.match(css,/qm-public-logo img\{width:60px;height:60px/);
  assert.match(js,/site-auth-root/);
