@@ -65,7 +65,7 @@ export function renderPickupSettings(isManager){
  return box("線上點餐與取餐進度",
    '<p class="muted">沿用「設定 → 菜單與服務」的餐點，不另建第二份菜單。此模式與原本預約、取號獨立；不處理線上付款。</p>'+
    (!isManager?'<p>線上點餐：'+(s.enabled?"已啟用":"未啟用")+'；取餐方式：'+esc(modeName[s.schedule_mode]||"預約")+'</p>':
-   '<label class="checklist"><input id="pickup-enabled" type="checkbox" '+(s.enabled?"checked":"")+'>開放線上點餐</label>'+
+   '<p class="settings-guidance">線上點餐是否開放，請使用本頁上方的「顧客服務開放設定」。這裡只需調整取餐方式與時段。</p>'+
    '<label for="pickup-mode">顧客選擇取餐時間</label>'+
    select("pickup-mode",[["DISABLED",modeName.DISABLED],["OPTIONAL",modeName.OPTIONAL],["REQUIRED",modeName.REQUIRED]],s.schedule_mode)+
    '<p class="small">選擇預約取餐時，系統依顧客指定時間排單。晚一點取餐的餐點不會在清晨提前進入製作流程。</p>'+
@@ -269,14 +269,14 @@ export async function handlePickupAction(ev,b,a,id){
  if(a==="pickup-save"){
    await act(async()=>{
      await rpc("so_pickup_save_capacity_settings",{p_slug:routeState.slug,
-       p_enabled:!!routeState.$("pickup-enabled")?.checked,p_mode:routeState.$("pickup-mode")?.value,
+       p_enabled:pickupState.staff?.settings?.enabled===true,p_mode:routeState.$("pickup-mode")?.value,
        p_start:routeState.$("pickup-start")?.value,p_end:routeState.$("pickup-end")?.value,
        p_interval:Number(routeState.$("pickup-interval")?.value),
        p_capacity:Number(routeState.$("pickup-capacity")?.value),
        p_notice:Number(routeState.$("pickup-notice")?.value),
        p_days:Number(routeState.$("pickup-days")?.value),
        p_prep:Number(routeState.$("pickup-prep")?.value),p_capacity_basis:routeState.$("pickup-capacity-basis")?.value});
-     pickupState.customer=null;return "取餐服務與時段容量設定已儲存";
+     pickupState.customer=null;return "取餐時段與容量設定已儲存";
    });return true;
  }
  if(a==="pickup-submit"){
