@@ -16,6 +16,17 @@ if(a==="save-service-modes"){await act(async()=>{
   await rpc("so_set_all_merchant_services",{p_slug:routeState.slug,p_reservation:reservation,p_queue:queue,p_pickup:pickup});
   return "預約、取號、訂餐三項服務開關已同步儲存，既有紀錄不受影響";
  });return true;}
+ if(a==="save-default-operating-hours"){await act(async()=>{
+   const open=val("legacy-open"),close=val("legacy-close");
+   const capacity=Number(val("legacy-capacity")),minutes=Number(val("legacy-minutes"));
+   if(!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(open)||!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(close)||close<=open)
+     throw Error("請確認營業時間，結束時間必須晚於開始時間");
+   if(!Number.isInteger(capacity)||capacity<1||capacity>100)throw Error("每時段人數必須介於 1～100");
+   if(![15,30,60].includes(minutes))throw Error("請選擇預約時段間隔");
+   await rpc("so_update_tenant",{p_slug:routeState.slug,
+     p_patch:{open_time:open,close_time:close,slot_capacity:capacity,slot_minutes:minutes}});
+   return "預設營業時段已更新";
+ });return true;}
  if(a==="update-settings"){await act(async()=>{
  const initial=staffState.staff?.tenant?.onboarding_complete===false;
  // Keep an incomplete merchant unlisted until all settings are successfully saved.
