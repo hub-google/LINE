@@ -177,6 +177,35 @@ async function lineVerify(idToken: string, accessToken?: string, options?: { cha
 function validUUID(value: unknown): value is string {
   return typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
+
+type BookingReplyProofRecord = { id: string; tenant_id: string; user_id: string };
+// This scoped, expiring proof lets a customer verified via the shared platform
+// LINE Login request a confirmation from a merchant whose LINE Provider is
+// different. No LINE user ID from the browser is ever trusted.
+async function bookingReplySignature(record: BookingReplyProofRecord, minute: number): Promise<string> {
+  const secret = secretKey();
+  if (typeof secret !== "string" || secret.length < 32) throw new Error("BOOKING_PROOF_KEY_UNAVAILABLE");
+  const key = await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),
+    {name:"HMAC",hash:"SHA-256"},false,["sign"]);
+  const material = ["qm-booking-reply-v1",record.tenant_id,record.id,record.user_id,String(minute)].join("|");
+  const bytes = new Uint8Array(await crypto.subtle.sign("HMAC",key,new TextEncoder().encode(material)));
+  return btoa(String.fromCharCode(...bytes.slice(0,24))).replace(/\\+/g,"-").replace(/\\//g,"_").replace(/=+$/,"");
+}
+async function issueBookingReplyProof(record: BookingReplyProofRecord): Promise<string> {
+  const minute=Math.floor(Date.now()/60_000);
+  return "t"+minute.toString(36)+"_"+await bookingReplySignature(record,minute);
+}
+async function checkBookingReplyProof(token: string,record: BookingReplyProofRecord): Promise<boolean> {
+  const m=/^t([0-9a-z]{6,9})_([A-Za-z0-9_-]{32})$/.exec(token);
+  if(!m)return false;
+  const minute=parseInt(m[1],36),delta=Math.floor(Date.now()/60_000)-minute;
+  if(!Number.isSafeInteger(minute)||delta< -1||delta>10)return false;
+  const expected=await bookingReplySignature(record,minute);
+  let diff=0;
+  for(let i=0;i<expected.length;i++)diff |= expected.charCodeAt(i)^m[2].charCodeAt(i);
+  return diff===0;
+}
+
 function recently(timestamp: string | null | undefined, maxMs: number): boolean {
   const t = Date.parse(timestamp || "");
   return Number.isFinite(t) && t <= Date.now() + 5_000 && Date.now() - t <= maxMs;
@@ -826,7 +855,7 @@ async function replyToLine(token: string, replyToken: string,
 
 // Signed one-to-one events only. Never trust a browser-supplied LINE user ID.
 async function bookingReplyMessage(db: ReturnType<typeof service>, bookingId: string,
-  lineSub: string, merchantTenantId: string | null): Promise<Record<string, unknown>> {
+  lineSub: string, merchantTenantId: string | null, proof = ""): Promise<Record<string, unknown>> {
   const unavailable = {type:"text",text:"無法取得這筆預約，請至我的預約確認，或重新傳送正確的預約編號。"};
   const {data:booking,error} = await db.from("qm_reservations")
     .select("id,tenant_id,user_id,status,booking_date,booking_time,party_size,customer_name,customer_phone,selected_items,service_session_id")
@@ -834,10 +863,17 @@ async function bookingReplyMessage(db: ReturnType<typeof service>, bookingId: st
   if (error) throw error;
   if (!booking || booking.status !== "CONFIRMED" ||
       (merchantTenantId && booking.tenant_id !== merchantTenantId)) return unavailable;
-  const {data:link,error:linkError} = await db.from("qm_line_links").select("user_id")
-    .eq("tenant_id",booking.tenant_id).eq("user_id",booking.user_id).eq("line_sub",lineSub).maybeSingle();
-  if (linkError) throw linkError;
-  if (!link) return unavailable;
+  // A merchant-scoped, server-signed proof is sufficient for one immediate
+  // confirmation when the platform Login and merchant OA have different User IDs.
+  // The legacy path still requires the exact verified merchant LINE identity.
+  const authorizedByProof=!!merchantTenantId&&!!proof&&
+    await checkBookingReplyProof(proof,booking as BookingReplyProofRecord);
+  if(!authorizedByProof){
+    const {data:link,error:linkError} = await db.from("qm_line_links").select("user_id")
+      .eq("tenant_id",booking.tenant_id).eq("user_id",booking.user_id).eq("line_sub",lineSub).maybeSingle();
+    if (linkError) throw linkError;
+    if (!link) return unavailable;
+  }
   // A platform event cannot retrieve bookings belonging to a different merchant OA.
   const own = await merchantLineConfig(db,booking.tenant_id);
   if (!merchantTenantId && own) return unavailable;
@@ -904,9 +940,9 @@ async function webhook(req: Request, origin: string | null, merchantSlug = "") {
         const token = ownOa?.token || Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
         if (!token) throw new Error("LINE_MESSAGING_NOT_CONFIGURED");
         const redelivery=(event.deliveryContext as {isRedelivery?:unknown}|undefined)?.isRedelivery===true;
-        const confirmation = /^確認預約 ([0-9a-f-]{36})$/i.exec(message.text.trim());
+        const confirmation = /^確認預約 ([0-9a-f-]{36})(?: (t[a-z0-9]+_[A-Za-z0-9_-]{32}))?$/i.exec(message.text.trim());
         if (confirmation && validUUID(confirmation[1])) {
-          const notice=await bookingReplyMessage(db,confirmation[1],source.userId,merchantTenantId);
+          const notice=await bookingReplyMessage(db,confirmation[1],source.userId,merchantTenantId,confirmation[2]||"");
           const sent=await replyToLine(token,replyToken,notice,redelivery);
           if (sent) processed++; else duplicates++;
           continue;
@@ -922,7 +958,7 @@ async function webhook(req: Request, origin: string | null, merchantSlug = "") {
             if (merchantTenantId || !own) {
               const id=own?.liffId || Deno.env.get("LINE_LIFF_ID") || "";
               if (id) notice={type:"text",text:tenant.name+"｜請點下方連結開始預約\n"+
-                "https://liff.line.me/"+encodeURIComponent(id)+"/?view=customer&merchant="+encodeURIComponent(tenant.slug)+"&tab=reserve"};
+                "https://liff.line.me/"+encodeURIComponent(id)+"/?view=customer&merchant="+encodeURIComponent(tenant.slug)+"&tab=reserve"+(merchantTenantId?"&entry=merchant-oa":"")};
             }
           }
           const sent=await replyToLine(token,replyToken,notice,redelivery);
@@ -1140,6 +1176,29 @@ Deno.serve(async (req: Request) => {
     const payload = await req.json();
     const db = service();
     const user = await identity(req, db);
+    if (payload.action === "booking-reply-command") {
+      const slug=String(payload.slug||""),bookingId=String(payload.reservationId||"");
+      if(!/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug)||!validUUID(bookingId))
+        return reply(400,{error:"BAD_REQUEST"},origin);
+      const {data:tenant,error:tenantError}=await db.from("qm_tenants").select("id")
+        .eq("slug",slug).eq("status","ACTIVE").maybeSingle();
+      if(tenantError)throw tenantError;
+      if(!tenant)return reply(404,{error:"TENANT_NOT_FOUND"},origin);
+      const own=await merchantLineConfig(db,tenant.id);
+      if(!own||!/^@[a-z0-9_.-]{2,100}$/i.test(own.basicId||""))
+        return reply(409,{error:"MERCHANT_OA_NOT_CONNECTED"},origin);
+      const {data:booking,error:bookingError}=await db.from("qm_reservations")
+        .select("id,tenant_id,user_id,status").eq("id",bookingId)
+        .eq("tenant_id",tenant.id).eq("user_id",user.id)
+        .is("deleted_at",null).maybeSingle();
+      if(bookingError)throw bookingError;
+      if(!booking||booking.status!=="CONFIRMED")
+        return reply(404,{error:"BOOKING_NOT_OWNED_OR_CONFIRMED"},origin);
+      const command="確認預約 "+booking.id+" "+await issueBookingReplyProof(booking);
+      return reply(200,{ok:true,command,
+        oaMessageUrl:"https://line.me/R/oaMessage/"+encodeURIComponent(own.basicId)+"/?"+encodeURIComponent(command),
+        expiresInSeconds:600},origin);
+    }
     if (payload.action === "connect-merchant-oa" || payload.action === "disconnect-merchant-oa") {
       const slug = String(payload.slug || "");
       if (!/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug)) return reply(400, { error: "BAD_REQUEST" }, origin);
