@@ -196,7 +196,7 @@ async function issueBookingReplyProof(record: BookingReplyProofRecord): Promise<
   return "t"+minute.toString(36)+"_"+await bookingReplySignature(record,minute);
 }
 async function checkBookingReplyProof(token: string,record: BookingReplyProofRecord): Promise<boolean> {
-  const m=/^t([0-9a-z]{6,9})_([A-Za-z0-9_-]{32})$/.exec(token);
+  const m=/^t([0-9a-z]{4,9})_([A-Za-z0-9_-]{32})$/.exec(token);
   if(!m)return false;
   const minute=parseInt(m[1],36),delta=Math.floor(Date.now()/60_000)-minute;
   if(!Number.isSafeInteger(minute)||delta< -1||delta>10)return false;
