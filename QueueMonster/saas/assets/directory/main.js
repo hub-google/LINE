@@ -331,6 +331,7 @@ function publishGameDirectory(){
   shops:all.map(shop=>({...shop,
     reserve_href:customerUrl(shop.slug,"reserve",shop.oa_mode),
     queue_href:customerUrl(shop.slug,"queue",shop.oa_mode),
+    order_href:customerUrl(shop.slug,"order",shop.oa_mode),
     board_href:"./board.html?merchant="+encodeURIComponent(shop.slug)
   }))
  });
@@ -380,7 +381,7 @@ async function load(){
       if(all.length){publishGameDirectory();render();}
     });
     els.intro.innerHTML=mode==="game"?
-      '<strong>遊戲逛街 · 逛商圈找店家</strong><p>在虛擬商店街點選店面，查看真實公開店家的預約與取號入口。</p>':mode==="search"?
+      '<strong>遊戲逛街 · 像素城市地圖</strong><p>在像素城市直接點選已公開店家，走進店內並使用預約、取號或線上點餐。</p>':mode==="search"?
       '<strong>找店家、查看叫號更簡單</strong><p>搜尋店名或地點，直接查看可使用的服務。叫號看板無須登入；預約及取號才需 LINE 身分驗證。</p>':
       '<strong>現場取號</strong><p>只顯示開放現場取號的店家，進入門市領號時才需要 LINE 身分驗證。</p>';
     const [directory,ranking]=await Promise.all([
