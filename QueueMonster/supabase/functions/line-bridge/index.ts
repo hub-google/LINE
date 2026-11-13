@@ -875,7 +875,10 @@ async function bookingReplyMessage(db: ReturnType<typeof service>, bookingId: st
   // A merchant-scoped, server-signed proof is sufficient for one immediate
   // confirmation when the platform Login and merchant OA have different User IDs.
   // The legacy path still requires the exact verified merchant LINE identity.
-  const authorizedByProof=!!merchantTenantId && !!proof &&
+  // Server-signed, short-lived user-triggered commands may be replied to via the
+  // platform OA only for stores WITHOUT their own OA. The own-OA check below
+  // rejects platform-context requests for merchant-connected stores. No Push API.
+  const authorizedByProof=!!proof &&
     await checkBookingReplyProof(proof,booking as BookingReplyProofRecord);
   if(!authorizedByProof){
     const {data:link,error:linkError} = await db.from("qm_line_links").select("user_id")
@@ -913,7 +916,9 @@ async function recordReplyMessage(db: ReturnType<typeof service>,kind: Confirmat
  const {data:record,error}=await q.maybeSingle();
  if(error)throw error;
  if(!record || (merchantTenantId && record.tenant_id!==merchantTenantId))return unavailable;
- const authorizedByProof=!!merchantTenantId && !!proof &&
+ // Signed commands are Reply-only; a merchant with own OA cannot be answered
+ // through the platform OA (checked again below).
+ const authorizedByProof=!!proof &&
   await checkBookingReplyProof(proof,record as BookingReplyProofRecord,kind);
  if(!authorizedByProof){
   const {data:link,error:linkError}=await db.from("qm_line_links").select("user_id")
