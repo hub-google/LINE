@@ -18,6 +18,7 @@ SPLITS_Y = [0, 843, HEIGHT]
 BASE = "https://hub-google.github.io/LINE/booking/"
 CENTER = BASE + "merchant-center.html"
 # Each official-account tile has a distinct purpose. Personal history combines all three record types.
+# Customer records use exactly one LINE OA button; the website shows all three lists together.
 CUSTOMER_ITEMS = [
     ("搜尋店家", "找服務中的門市", "search", {"type":"uri","label":"搜尋店家","uri":BASE+"directory.html?mode=search"}),
     ("線上預約", "挑選日期與場次", "features", {"type":"uri","label":"線上預約","uri":BASE+"directory.html?mode=search&service=%E9%A0%90%E7%B4%84"}),
