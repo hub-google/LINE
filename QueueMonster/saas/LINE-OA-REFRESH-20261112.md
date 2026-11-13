@@ -22,10 +22,10 @@ LINE Messaging API **無法直接修改** OA Manager 的名稱、介紹、頭貼
 | --- | --- |
 | 搜尋店家 | 顯示公開店家 |
 | 線上預約 | 進入已選「預約」條件的正式店家搜尋 |
-| 現場取號 | 進入提供取號服務的店家清單 |
+| 現場取號 | 開啟 `directory.html?mode=mine&section=queue`，篩選開放現場取號的店家 |
 | 線上點餐 | 進入已選「點餐」條件的正式店家搜尋 |
-| 我的紀錄 | 查自己的預約、號碼、取餐紀錄（必要時需身分驗證） |
-| 上次預約看板 | LINE 身分驗證後，自動導至最近一次有效預約的店家看板；無預約或未開啟叫號時提供其他入口 |
+| 我的預約／取號 | 與網站的同名分頁一致，整合我的紀錄、現場取號與上次預約看板 |
+| 上次預約看板 | `directory.html?mode=mine&section=board`，與網站合併後分頁內的「上次預約看板」完全一致 |
 
 | 商家服務 | 行為 |
 | --- | --- |
@@ -57,3 +57,15 @@ LINE Messaging API **無法直接修改** OA Manager 的名稱、介紹、頭貼
 - 以已驗證的 LINE 帳號查 `so_my_last_booking_board()`，只取最近建立、未取消且未刪除的有效預約，並確認門市狀態及 queue、calling 已開啟，才開啟該店 `board.html?merchant=<slug>`。
 - 沒有 LINE 授權時先引導登入；沒有預約、店家未啟用叫號或查詢失敗時保留頁面並提供「我的紀錄／搜尋店家」。
 - 查詢資料庫權限由 RPC 依 `auth.uid()` 與經驗證 LINE 身分決定；不能由連結的 URL 自行指定其他顧客、LINE ID 或門市來查預約。
+
+## 2026-11-13 統一搜尋頁導覽與 LINE OA
+
+網站頂層只保留「搜尋店家」「我的預約／取號」。後者內有「我的紀錄」「現場取號」「上次預約看板」三個子選項。
+
+| 入口 | 對應網址 |
+| --- | --- |
+| 我的預約／取號 | `directory.html?mode=mine` |
+| 現場取號 | `directory.html?mode=mine&section=queue` |
+| 上次預約看板 | `directory.html?mode=mine&section=board` |
+
+原有 `directory.html?mode=queue` 與 `directory.html?mode=last-board` 仍可解析，以兼容既有連結；查詢個人紀錄與預約的權限不變。
