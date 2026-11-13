@@ -110,7 +110,10 @@ export function queueProgressBoard(){
       " 最後成功更新："+(lastSync?esc(formatTaipeiCreated(lastSync)):"尚未成功同步")+
       "（台灣時間）。"+'</p>'+
    queueNearAlertControls(own||fallbackTicket,ownStatus)+
-   '<div class="staff-actionbar">'+btn("重新整理進度","queue-refresh","outline")+
+   '<div class="staff-actionbar">'+
+      (own?.id&&lineState.lineConfig?.messagingReady===true?
+       btn("透過 LINE 取得取號確認","queue-line-reply","primary",'data-id="'+esc(own.id)+'"'):"")+
+      btn("重新整理進度","queue-refresh","outline")+
       btn("返回歷史紀錄","cross-back","secondary")+
       (ownStatus==="WAITING"&&own?.id?btn("保留候位","hold-my-number","secondary",'data-id="'+esc(own.id)+'"'):"")+
       (ownStatus==="HOLD"&&own?.id?btn("恢復候位","resume-my-number","primary",'data-id="'+esc(own.id)+'"'):"")+
