@@ -33,7 +33,7 @@ export function customerUrl(merchant){
 
 export function lineLoginUrl(){
   const siteReturn=incomingParam("site_return");
-  return "https://liff.line.me/"+encodeURIComponent(lineState.lineConfig?.liffId||"")+"/?view=customer"+(isSafeMerchant(routeState.slug)?"&merchant="+encodeURIComponent(routeState.slug):"")+(routeState.customerTab?"&tab="+encodeURIComponent(routeState.customerTab):"")+(siteReturn?"&site_return="+encodeURIComponent(siteReturn):"")+
+  return "https://liff.line.me/"+encodeURIComponent(lineState.lineConfig?.liffId||"")+"/?view=customer"+(isSafeMerchant(routeState.slug)?"&merchant="+encodeURIComponent(routeState.slug):"")+(routeState.customerTab?"&tab="+encodeURIComponent(routeState.customerTab):"")+(siteReturn?"&site_return="+encodeURIComponent(siteReturn):"")+(incomingParam("entry")==="merchant-oa"?"&entry=merchant-oa":"")+
     (bookingState.manageKind&&bookingState.manageItem?"&manage="+encodeURIComponent(bookingState.manageKind)+"&item="+encodeURIComponent(bookingState.manageItem)+"&mode="+encodeURIComponent(bookingState.manageMode):"")+
     (routeState.customerTab==="progress"&&queueState.progressTicketId?"&ticket="+encodeURIComponent(queueState.progressTicketId):"")+
     (routeState.customerTab==="detail"&&routeState.detailId?"&kind="+encodeURIComponent(routeState.detailKind)+"&item="+encodeURIComponent(routeState.detailId):"");
@@ -45,6 +45,7 @@ export function cleanLineRedirectUri(){
  if(isSafeMerchant(routeState.slug))url.searchParams.set("merchant",routeState.slug);
  if(routeState.view==="customer"){
   if(routeState.customerTab)url.searchParams.set("tab",routeState.customerTab);
+  if(incomingParam("entry")==="merchant-oa")url.searchParams.set("entry","merchant-oa");
   const siteReturn=incomingParam("site_return");
   if(siteReturn)url.searchParams.set("site_return",siteReturn);
   if(routeState.customerTab==="progress"&&queueState.progressTicketId)url.searchParams.set("ticket",queueState.progressTicketId);
@@ -238,15 +239,37 @@ export async function connectLineSession(force=false){
   }
 }
 
+export async function bookingReplyHandoff(reservationId) {
+ const config=await bridgeConfig();
+ if(config.merchantOaConnected!==true)return null;
+ if(!authState.session?.access_token)throw Error("請先完成 LINE 登入驗證");
+ const res=await fetch(lineState.LINE_BRIDGE_URL,{
+   method:"POST",
+   headers:{"content-type":"application/json","authorization":"Bearer "+authState.session.access_token},
+   body:JSON.stringify({action:"booking-reply-command",slug:routeState.slug,reservationId})
+ });
+ const data=await res.json().catch(()=>({}));
+ if(!res.ok||data.ok!==true||typeof data.command!=="string"||
+   !/^https:\/\/line\.me\/R\/oaMessage\//.test(data.oaMessageUrl||""))
+   throw Error("無法產生店家 LINE 預約確認，請稍後重試");
+ return data;
+}
 export async function sendBookingReply(reservationId){
- // The platform OA never acts as a proxy for merchants, even via free replies.
+ // No merchant-specific LIFF ID is required. A shared LIFF may send to the
+ // current merchant chat, but never sends on behalf of a disconnected shop.
  const config=await bridgeConfig();
  if(config.merchantOaConnected!==true)return "";
+ let handoff;
+ try { handoff=await bookingReplyHandoff(reservationId); }
+ catch(_) { return "提醒暫時無法送出；預約已成立，請在單筆預約頁重試。"; }
  const result=await requestBookingReply(window.liff,reservationId,{
-   merchantOaConnected:true,merchantLiffId:config.merchantLiffId||""
+   merchantOaConnected:true,
+   expectedLiffId:config.liffId||"",
+   fromMerchantChat:incomingParam("entry")==="merchant-oa",
+   command:handoff.command
  });
- return result.requested ? "LINE 預約確認訊息已送出，請查看店家聊天室回覆" :
-  "提醒暫時無法送出；預約已成立。請回店家 LINE 官方帳號聊天室傳送「"+result.command+"」取得預約資訊。";
+ return result.requested ? "已從您的 LINE 向店家送出確認請求，請查看店家聊天室" :
+   "提醒暫時無法送出；預約已成立。請在預約詳情按「透過店家 LINE 取得確認」，開啟店家聊天室並按傳送。";
 }
 
 export async function sendLineNotice(action,ids){
