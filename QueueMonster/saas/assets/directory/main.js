@@ -7,12 +7,9 @@ const SB_KEY=SUPABASE_PUBLISHABLE_KEY;
 const bridge=SB_URL+"/functions/v1/line-bridge?action=config";
 const sb=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"line-saas-customer-session-v2"}});
 const params=new URLSearchParams(location.search),mode=["search","queue","mine","game","last-board"].includes(params.get("mode"))?params.get("mode"):"search";
-// Preserve legacy queue and board deep links while merging the visible tabs.
-const section=params.get("section")||"";
-const recordKind=section==="ticket"||section==="queue"?"ticket":section==="order"?"order":"reservation";
-const isQueueSection=mode==="queue"; // Preserve only the old public store-finding URL.
-const isHistorySection=mode==="mine"||mode==="last-board"; // Obsolete board link opens history.
-const kindLabel={reservation:"預約紀錄",ticket:"取號紀錄",order:"訂單紀錄"}[recordKind];
+// Old personal record links all show the same combined history page.
+const isQueueSection=mode==="queue";
+const isHistorySection=mode==="mine"||mode==="last-board";
 // LINE OA service links open the matching real-store filter, never a demo or blank search.
 const requestedService=isQueueSection?"取號":mode==="search"&&["預約","取號","點餐","看板"].includes(params.get("service"))?params.get("service"):"";
 if(requestedService)document.getElementById("explore-service").value=requestedService;
@@ -36,18 +33,12 @@ function updateFilterSummary(){
 });
 updateFilterSummary();
 
-document.getElementById("tab-"+(["game","queue"].includes(mode)?"search":"mine"===mode||mode==="last-board"?"mine":"search")).classList.add("active");
-const combinedSwitch=document.getElementById("combined-switch");
-if(combinedSwitch){
- combinedSwitch.hidden=!isHistorySection;
- const target=document.getElementById("section-"+recordKind);
- if(target){target.classList.add("active");target.setAttribute("aria-current","page");}
-}
+document.getElementById("tab-"+(isHistorySection?"mine":"search")).classList.add("active");
 let all=[],popular=[],searchResults=[],searchTotal=0,searchPage=1;
 let searchLoading=false,searchError="",searchRequest=0,searchTimer=null;
 let liffId="";
 let mineIdentityState="loading";
-let personalRecords=[];
+let personalRecords={reservation:[],ticket:[],order:[]};
 const needsIdentity=isHistorySection;
 const searchCriteria=()=>!needsIdentity&&(
  Boolean(els.keyword.value.trim())||
@@ -87,62 +78,58 @@ function badges(t){
  (t.oa_mode==="PLATFORM"?'<span class="badge">平台 LINE 服務</span>':"");
 }
 function renderMyRecords(){
- const title=document.getElementById("results-heading");
- const count=document.getElementById("result-count");
+ const title=document.getElementById("results-heading"),count=document.getElementById("result-count");
  document.getElementById("result-pages").classList.add("hidden");
- title.textContent=kindLabel;
- const login="./?view=customer&tab=mine&site_login=1&site_return="+encodeURIComponent("directory.html?mode=mine&section="+recordKind);
+ title.textContent="我的紀錄";
+ const login="./?view=customer&tab=mine&site_login=1&site_return="+encodeURIComponent("directory.html?mode=mine");
  if(mineIdentityState!=="ready"){
-  const pending=mineIdentityState==="loading";
-  const guest=mineIdentityState==="guest";
+  const pending=mineIdentityState==="loading",guest=mineIdentityState==="guest";
   count.textContent=pending?"確認身分中":guest?"請先登入 LINE":"暫時無法取得";
   els.results.innerHTML='<div class="empty" role="status">'+
-   (pending?'<strong>正在確認 LINE 身分</strong><p>確認後顯示你的'+kindLabel+'。</p>':
-     guest?'<strong>請先使用 LINE 登入</strong><p>登入後才能查看自己的'+kindLabel+'，未登入不代表沒有紀錄。</p><p><a class="btn" href="'+e(login)+'">LINE 登入後查看</a></p>':
-     '<strong>紀錄暫時無法讀取</strong><p>請稍後重試或確認 LINE 已完成授權。</p>')+'</div>';
+   (pending?'<strong>正在確認 LINE 身分</strong><p>將同時顯示預約、取號與訂單紀錄。</p>':
+    guest?'<strong>請先使用 LINE 登入</strong><p>登入後可在同一頁查看全部三種紀錄。</p><p><a class="btn" href="'+e(login)+'">LINE 登入後查看</a></p>':
+    '<strong>紀錄暫時無法讀取</strong><p>請稍後重試或確認 LINE 已完成授權。</p>')+'</div>';
   return;
  }
- const keyword=els.keyword.value.trim().toLocaleLowerCase("zh-TW");
- const items=personalRecords.filter(r=>!keyword||
-  ((r.shop_name||"")+" "+(r.number||"")+" "+(r.status||"")).toLocaleLowerCase("zh-TW").includes(keyword));
- count.textContent=items.length+(personalRecords.length>=150?" / 最近 150":"")+" 筆紀錄";
- if(!items.length){
-  els.results.innerHTML='<div class="empty"><strong>'+(keyword?"找不到符合搜尋條件的紀錄":"目前沒有"+kindLabel)+'</strong>'+
-   '<p>'+(keyword?"請試其他關鍵字。":"有使用同一 LINE 帳號完成相關服務後，紀錄會顯示於此。")+'</p></div>';
-  return;
- }
- const labels={CONFIRMED:"已預約",CHECKED_IN:"已報到",WAITING:"等待中",HOLD:"暫停等候",
-  CALLED:"已叫號",ARRIVED:"已報到",ADMITTED:"已入場",SERVING:"服務中",NO_SHOW:"過號",
-  COMPLETED:"已完成",DONE:"已完成",CANCELLED:"已取消",CANCELED:"已取消",
-  NEW:"待接單",ACCEPTED:"已接單",READY:"已完成待取",PICKED_UP:"已取餐",
-  REJECTED:"店家已取消訂單"};
- const timeFmt=v=>{if(!v)return"—";const date=new Date(v);return Number.isNaN(date.getTime())?"—":
-  date.toLocaleString("zh-TW",{timeZone:"Asia/Taipei",hour12:false,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});};
- els.results.innerHTML=items.map(r=>{
-  const slug=String(r.slug||"");
-  const valid=/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug);
-  const uuid=/^[0-9a-f-]{36}$/i.test(String(r.id||""));
-  let url="";
-  if(valid&&uuid){
-   const targetTab=recordKind==="ticket"?"progress":"detail";
-   const detail=new URL(customerUrl(slug,targetTab,r.oa_mode),location.href);
-   if(recordKind==="ticket")detail.searchParams.set("ticket",r.id);
-   else{detail.searchParams.set("kind",recordKind);detail.searchParams.set("item",r.id);}
-   url=detail.href;
-  }
-  const status=labels[r.status]||r.status||"狀態待確認";
-  const context=recordKind==="reservation"?"預約時間：":recordKind==="ticket"?"取號日期：":"取餐時間：";
-  const extra=recordKind==="order"?"<p class=\"shop-desc\">金額：NT$ "+e(Number(r.total||0).toLocaleString("zh-TW"))+"</p>":
-    (r.party_size?"<p class=\"shop-desc\">人數："+e(r.party_size)+" 人</p>":"");
-  return '<article class="merchant-card"><div class="card-content">'+
-   '<div class="card-top"><span class="shop-icon" aria-hidden="true">▤</span><div class="shop-details">'+
-   '<h3 class="shop-name">'+e(r.shop_name||"店家")+'</h3><div class="badges"><span class="badge">'+e(status)+'</span></div></div></div>'+
-   '<p class="shop-desc"><strong>'+e(kindLabel.replace("紀錄",""))+' '+e(r.number||"—")+'</strong></p>'+
-   '<p class="shop-desc">'+e(context)+e(r.event_time||"—")+'</p>'+
-   '<p class="shop-desc">建立時間：'+e(timeFmt(r.created_at))+'</p>'+extra+
-   (url?'<div class="card-actions"><a class="btn" href="'+e(url)+'">查看這筆'+e(kindLabel.replace("紀錄",""))+'詳情</a></div>':"")+
-   '</div></article>';
- }).join("");
+ const kw=els.keyword.value.trim().toLocaleLowerCase("zh-TW");
+ const statusText={CONFIRMED:"已預約",CHECKED_IN:"已報到",WAITING:"等待中",HOLD:"暫停等候",CALLED:"已叫號",ARRIVED:"已報到",ADMITTED:"已入場",SERVING:"服務中",NO_SHOW:"過號",COMPLETED:"已完成",DONE:"已完成",CANCELLED:"已取消",CANCELED:"已取消",NEW:"待接單",ACCEPTED:"已接單",READY:"已完成待取",PICKED_UP:"已取餐",REJECTED:"店家已取消訂單"};
+ const fmtTime=value=>{const date=new Date(value||"");return Number.isNaN(date.getTime())?"—":date.toLocaleString("zh-TW",{timeZone:"Asia/Taipei",hour12:false,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});};
+ const kinds=[["reservation","預約紀錄"],["ticket","取號紀錄"],["order","訂單紀錄"]];
+ let total=0;
+ const html=kinds.map(([kind,label])=>{
+  const rows=(personalRecords[kind]||[]).filter(r=>!kw||((r.shop_name||"")+" "+(r.number||"")+" "+(r.status||"")).toLocaleLowerCase("zh-TW").includes(kw));
+  total+=rows.length;
+  const cards=rows.map(r=>{
+   const slug=String(r.slug||""),uuid=/^[0-9a-f-]{36}$/i.test(String(r.id||""));
+   const valid=/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug);
+   let url="";
+   if(valid&&uuid){
+    const tab=kind==="ticket"?"progress":"detail";
+    const dest=new URL(customerUrl(slug,tab,r.oa_mode),location.href);
+    if(kind==="ticket")dest.searchParams.set("ticket",r.id);
+    else{dest.searchParams.set("kind",kind);dest.searchParams.set("item",r.id);}
+    url=dest.href;
+   }
+   const numberLabel=kind==="reservation"?"預約":kind==="ticket"?"號碼":"訂單";
+   const eventLabel=kind==="reservation"?"預約時間：":kind==="ticket"?"取號日期：":"取餐時間：";
+   const extra=kind==="order"?'<p class="shop-desc">金額：NT$ '+e(Number(r.total||0).toLocaleString("zh-TW"))+'</p>':r.party_size?'<p class="shop-desc">人數：'+e(r.party_size)+' 人</p>':"";
+   return '<article class="merchant-card"><div class="card-content">'+
+    '<div class="card-top"><span class="shop-icon" aria-hidden="true">▤</span><div class="shop-details">'+
+    '<h4 class="shop-name">'+e(r.shop_name||"店家")+'</h4><div class="badges"><span class="badge">'+e(statusText[r.status]||r.status||"狀態待確認")+'</span></div></div></div>'+
+    '<p class="shop-desc"><strong>'+numberLabel+' '+e(r.number||"—")+'</strong></p>'+
+    '<p class="shop-desc">'+eventLabel+e(r.event_time||"—")+'</p>'+
+    '<p class="shop-desc">建立時間：'+e(fmtTime(r.created_at))+'</p>'+extra+
+    (url?'<div class="card-actions"><a class="btn" href="'+e(url)+'">查看這筆'+numberLabel+'詳情</a></div>':"")+
+    '</div></article>';
+  }).join("");
+  return '<section class="history-section" id="history-'+kind+'" aria-labelledby="heading-'+kind+'">'+
+    '<div class="history-section-heading"><h3 id="heading-'+kind+'">'+label+'</h3><span>'+rows.length+' 筆</span></div>'+
+    (rows.length?'<div class="history-cards">'+cards+'</div>':
+      '<p class="history-empty">'+(kw?"沒有符合搜尋條件的紀錄":"目前沒有"+label)+'</p>')+
+    '</section>';
+ });
+ count.textContent=total+" 筆紀錄";
+ els.results.innerHTML='<div class="history-all">'+html.join("")+'</div>';
 }
 function render(){
  if(isHistorySection){renderMyRecords();return;}
@@ -360,7 +347,7 @@ async function load(){
   // Parallelize LINE config and identity; guests can see the sign-in CTA without config.
   const confPromise=fetch(bridge,{cache:"no-store"}).then(r=>r.ok?r.json():{}).catch(()=>({}));
   if(needsIdentity){
-    els.intro.innerHTML='<strong>我的紀錄 · '+kindLabel+'</strong><p>依 LINE 身分查看跨店紀錄，每個頁籤只顯示相對應的資料。</p>';
+    els.intro.innerHTML='<strong>我的紀錄</strong><p>預約、取號、訂餐三種紀錄同時呈現，並可點開所屬店家的詳細資訊。</p>';
     const session=await sb.auth.getSession();
     if(session.error)throw session.error;
     if(!session.data.session){
@@ -371,11 +358,13 @@ async function load(){
     if(linked.error)throw linked.error;
     if(!String(linked.data?.display_name||"").trim()){
       mineIdentityState="guest";
-      personalRecords=[];
+      personalRecords={reservation:[],ticket:[],order:[]};
     }else{
-      const {data,error}=await sb.rpc("so_my_platform_records",{p_kind:recordKind});
+      const kinds=["reservation","ticket","order"];
+      const responses=await Promise.all(kinds.map(p_kind=>sb.rpc("so_my_platform_records",{p_kind})));
+      const error=responses.find(r=>r.error)?.error;
       if(error)throw error;
-      personalRecords=Array.isArray(data)?data:[];
+      personalRecords=Object.fromEntries(kinds.map((kind,i)=>[kind,Array.isArray(responses[i].data)?responses[i].data:[]]));
       mineIdentityState="ready";
       const conf=await confPromise;
       liffId=conf.liffId||"";
