@@ -36,7 +36,7 @@ function serviceLink(kind,label,enabled){
      '<p style="overflow-wrap:anywhere"><a href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">'+esc(href)+'</a></p>'+
      btn("複製"+label,"copy-service-link","outline",'data-url="'+esc(href)+'" data-service-kind="'+kind+'"')+
      btn("顯示 QR Code","show-service-qr","outline",'data-url="'+esc(qrHref)+'"')+
-     (ownChat?'<p class="small">這個 QR Code 會開啟<strong>本店 LINE OA 聊天室</strong>；顧客送出已帶入的「開始預約」訊息，再點回覆的 LIFF 預約連結。完成店家 LIFF 授權後，預約送出即可自動傳送確認訊息。</p>'+
+     (ownChat?'<p class="small">掃碼先開啟<strong>店家 LINE OA 聊天室</strong>；顧客按傳送「開始預約」，再點回覆的排隊怪獸共用 LINE 預約網頁。若 LINE 已授權訊息發送，預約完成將嘗試自動傳送確認；否則可從預約詳情一鍵開啟店家聊天室送出。</p>'+
        '<p class="small"><a href="'+esc(ownChat)+'" target="_blank" rel="noopener noreferrer">開啟本店 LINE 預約入口</a></p>':"")+
    '</div>'+
    '<p class="muted" data-service-url-inactive'+(enabled?' style="display:none"':'')+'>未選擇此功能</p>'+
@@ -122,11 +122,11 @@ export function renderStaffSettings({t,isManager,html,customersOnly=false}){
        (staffState.announcementEditId?btn("取消編輯","announcement-edit-cancel","outline"):"")+'</div></div>'):"")],
 ["public",box("LINE 官方帳號串接",
     '<p>目前通知來源：<strong>'+(lineState.lineConfig?.merchantOaConnected?"商家自己的 LINE OA":"未綁定（平台 OA 不代發店家通知）")+'</strong></p>'+
-    '<p class="small">一般 LINE OA 串接只需下方兩項 Messaging API 憑證，Channel ID 自動辨識。<strong>若要讓顧客預約後自動傳訊，再由店家免費 Reply API 回覆，須加設本店 LIFF（chat_message.write）及 Webhook。</strong>平台 OA 不代發店家通知。</p>'+
+    '<p class="small">一般 LINE OA 串接只需下方兩項 Messaging API 憑證，Channel ID 自動辨識。<strong>店家不需要自己的 LIFF ID。完成預約可由排隊怪獸共用 LIFF 嘗試發訊，或開啟店家 OA 預填確認訊息；店家需啟用自己的 Webhook 才能用免費 Reply API 回覆。</strong>平台 OA 不代發店家通知。</p>'+
     '<p><a href="./merchant-center.html#mode-own" target="_blank" rel="noopener noreferrer">查看 Messaging API 建立及取得憑證教學 ↗</a></p>'+
     (lineState.lineConfig?.merchantOaConnected?
      '<p>已連接 LINE OA：<strong>'+esc(lineState.lineConfig.botBasicId||"")+'</strong></p>'+
-     '<p class="small">預約自動 LINE 回覆：<strong>'+(lineState.lineConfig.merchantLiffId?"LIFF 已填寫，請確認權限與 Webhook":"尚未設定 LIFF（無法自動觸發）")+'</strong></p>'+
+     '<p class="small">預約自動 LINE 回覆：<strong>'+(lineState.lineConfig.merchantLiffId?"店家 LIFF 已設定（可選用）":"使用平台共用 LIFF（請確認 chat_message.write 授權）")+'</strong></p>'+
      '<p class="small">Webhook URL（請貼入店家的 Messaging API 並啟用 Use webhook）：<code>'+esc(lineState.LINE_BRIDGE_URL+"?action=webhook&merchant="+encodeURIComponent(routeState.slug))+'</code></p>':"")+
     (isManager?
      '<div class="grid"><div>'+
@@ -137,7 +137,7 @@ export function renderStaffSettings({t,isManager,html,customersOnly=false}){
      '</div></div>'+
      '<details style="margin:14px 0"><summary>進階選填：使用店家自己的 LINE Login／LIFF</summary>'+
        '<div style="margin-top:12px">'+field("LIFF ID（LINE 登入網頁應用程式編號）","own-oa-liff",lineState.lineConfig?.merchantOaConnected?(lineState.lineConfig.merchantLiffId||""):"","text",'autocomplete="off" placeholder="例如：1234567890-AbcdEfgh"')+
-       '<p class="small">這不是 Messaging API Channel ID。<strong>預約完成後自動發 LINE 訊息必填：</strong>在與店家 OA 相同 Provider 的 LINE Login 頻道建立 LIFF，開啟 chat_message.write，並由店家 OA 聊天室連結開啟。若只用一般 OA 訊息功能，可以留空。<a href="https://developers.line.biz/console/" target="_blank" rel="noopener noreferrer">開啟 LINE Developers ↗</a></p></div></details>'+
+       '<p class="small">這不是 Messaging API Channel ID。<strong>此欄非必填：</strong>在與店家 OA 相同 Provider 的 LINE Login 頻道建立 LIFF，開啟 chat_message.write，並由店家 OA 聊天室連結開啟。不另建 LIFF 也可用排隊怪獸平台共用 LIFF 進行預約；LINE 未允許自動發送時，顧客仍須在店家聊天室按傳送。<a href="https://developers.line.biz/console/" target="_blank" rel="noopener noreferrer">開啟 LINE Developers ↗</a></p></div></details>'+
      '<p class="small">通過憑證驗證代表已連接店家 OA，不代表顧客一定收得到訊息。不同 Provider 的 LINE User ID 不同，顧客仍需完成店家 OA 的收訊身分配對。Token 與 secret 不會再回顯。</p>'+
      '<div class="staff-actionbar">'+btn("驗證並連接 Messaging API","connect-own-oa","primary")+
        (lineState.lineConfig?.merchantOaConnected?btn("解除自有 OA 綁定","disconnect-own-oa","outline"):"")+'</div>'
