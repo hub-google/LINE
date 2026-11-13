@@ -109,7 +109,7 @@ function applyCustomerBrand(tenant){
 export function customerRender(){
   if(!routeState.slug){
     return lineState.lineLinkStatus==="linked"?
-      box("已登入排隊怪獸",'<p class="muted">LINE 身分驗證完成。現在可以自由搜尋店家，選擇後再預約或取號。</p><p><a class="btn primary" href="./directory.html?mode=search">搜尋店家</a> <a class="btn outline" href="./directory.html?mode=mine">我的預約與取號</a></p>'):
+      box("已登入排隊怪獸",'<p class="muted">LINE 身分驗證完成。現在可以自由搜尋店家，選擇後再預約或取號。</p><p><a class="btn primary" href="./directory.html?mode=search">搜尋店家</a> <a class="btn outline" href="./my-records.html">我的跨店紀錄</a></p>'):
       box("使用 LINE 登入排隊怪獸",'<p class="muted">不需要先選擇店家，登入後即可搜尋、預約及取號。</p>'+lineStatusBadge()+'<p><a href="./directory.html?mode=search">先搜尋店家</a></p>');
   }
   if(lineState.lineLinkStatus!=="linked"){
