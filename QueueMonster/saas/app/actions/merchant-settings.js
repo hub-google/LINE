@@ -89,7 +89,7 @@ if(a==="save-customer-homepage"){
    lineState.lineConfig=null;lineState.lineConfigSlug="";
    lineState.oaReplacing=false;lineState.oaReplacingSlug="";
    return a==="connect-own-oa"
-     ?"LINE OA 已連接。請確認 LINE Developers 的 Webhook 已啟用，再用手機測試訊息回覆。"
+     ?"Messaging API 已驗證連接。一般綁定不需要 Webhook；若要啟用自動回覆，再到 LINE Developers 開啟 Use webhook，並用手機確認回覆是否正常。"
      :"已解除自有 LINE OA；平台 OA 不會代發店家通知";
   });return true;
  }
