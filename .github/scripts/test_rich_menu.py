@@ -26,13 +26,16 @@ class RichMenuContract(unittest.TestCase):
     def test_customer_entry_points_and_no_test_shop(self):
         dest = [entry[3].get("uri", "") for entry in richmenu.CUSTOMER_ITEMS]
         self.assertTrue(any("mode=search" in d for d in dest))
-        self.assertTrue(any("mode=mine&section=queue" in d for d in dest))
+        self.assertTrue(any("mode=mine&section=ticket" in d for d in dest))
         self.assertTrue(any("mode=mine" in d for d in dest))
         self.assertTrue(any("service=%E9%A0%90%E7%B4%84" in d for d in dest))
         self.assertTrue(any("service=%E9%BB%9E%E9%A4%90" in d for d in dest))
-        self.assertTrue(any("mode=mine&section=board" in d for d in dest))
+        self.assertTrue(any("mode=mine&section=order" in d for d in dest))
         self.assertFalse(any("service=%E7%9C%8B%E6%9D%BF" in d for d in dest))
         self.assertFalse(any("mode=game" in d for d in dest))
+        self.assertFalse(any("section=board" in d or "section=queue" in d for d in dest))
+        self.assertEqual({x[0] for x in richmenu.CUSTOMER_ITEMS},
+                         {"搜尋店家","線上預約","取號紀錄","線上點餐","我的紀錄","訂單紀錄"})
         self.assertFalse(any("客服" in title for title, *_ in richmenu.CUSTOMER_ITEMS))
         self.assertFalse(any("greenfield" in d or "demo-" in d for d in dest))
         merchant = [entry[3].get("uri", "") for entry in richmenu.MERCHANT_ITEMS]
