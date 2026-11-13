@@ -13,3 +13,10 @@ test("schedule check verifies store, selected unit, date and active session",()=
  assert.equal((sql.match(/s.session_date,s.unit_id,s.start_time,s.end_time/g)||[]).length,2);
  assert.match(sql,/REVOKE ALL ON FUNCTION private.so_schedule_session_unit_allowed/);
 });
+
+test("generated default sessions use the same unique, active and deterministic unit as the guard",()=>{
+ const next=readFileSync(new URL("../supabase/migrations/20261113_qm_schedule_default_unit_consistency.sql",import.meta.url),"utf8");
+ assert.match(next,/u.is_default_session_unit AND u.active\s+ORDER BY u.id LIMIT 1/);
+ assert.equal((next.match(/is_default_session_unit and active order by id limit 1/g)||[]).length,2);
+ assert.doesNotMatch(next,/is_default_session_unit limit 1/);
+});
