@@ -189,7 +189,7 @@ async function bookingReplySignature(record: BookingReplyProofRecord, minute: nu
     {name:"HMAC",hash:"SHA-256"},false,["sign"]);
   const material = ["qm-booking-reply-v1",record.tenant_id,record.id,record.user_id,String(minute)].join("|");
   const bytes = new Uint8Array(await crypto.subtle.sign("HMAC",key,new TextEncoder().encode(material)));
-  return btoa(String.fromCharCode(...bytes.slice(0,24))).replace(/\\+/g,"-").replace(/\\//g,"_").replace(/=+$/,"");
+  return btoa(String.fromCharCode(...bytes.slice(0,24))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 }
 async function issueBookingReplyProof(record: BookingReplyProofRecord): Promise<string> {
   const minute=Math.floor(Date.now()/60_000);
