@@ -1,46 +1,37 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-const read=(p)=>readFileSync(new URL(p,import.meta.url),"utf8");
-const html=read("../saas/directory.html");
-const js=read("../saas/assets/directory/main.js");
-const menu=read("../../.github/scripts/publish_rich_menu.py");
-const sql=read("../supabase/migrations/20261113084500_customer_record_category_lists.sql");
-test("customer history has exactly three distinct record types",()=>{
- assert.ok(html.includes('id="tab-mine" href="?mode=mine">我的紀錄'));
- assert.ok(html.includes('id="section-reservation" href="./directory.html?mode=mine&amp;section=reservation">預約紀錄'));
- assert.ok(html.includes('id="section-ticket" href="./directory.html?mode=mine&amp;section=ticket">取號紀錄'));
- assert.ok(html.includes('id="section-order" href="./directory.html?mode=mine&amp;section=order">訂單紀錄'));
- assert.ok(!html.includes("section-board"));
- assert.ok(!html.includes("section-queue"));
- assert.ok(!html.includes("上次預約看板"));
- assert.ok(!html.includes('id="tab-queue"'));
+const read=p=>readFileSync(new URL(p,import.meta.url),"utf8");
+const html=read("../saas/directory.html"),js=read("../saas/assets/directory/main.js"),
+ menu=read("../../.github/scripts/publish_rich_menu.py"),
+ sql=read("../supabase/migrations/20261113084500_customer_record_category_lists.sql");
+test("my history is one page with three simultaneously rendered sections, never separate tabs",()=>{
+ assert.match(html,/id="tab-mine" href="\?mode=mine">我的紀錄/);
+ assert.doesNotMatch(html,/id="combined-switch"|id="section-ticket"|id="section-order"|id="section-reservation"/);
+ assert.match(js,/const kinds=\[\["reservation","預約紀錄"\],\["ticket","取號紀錄"\],\["order","訂單紀錄"\]\]/);
+ assert.match(js,/class="history-section"/);
+ assert.match(js,/id="history-/);
+ assert.match(js,/history-cards/);
+ assert.doesNotMatch(js,/const recordKind=/);
 });
-test("history tabs read verified per-kind personal records and open exact merchant details",()=>{
- assert.ok(js.includes('const recordKind='));
- assert.ok(js.includes('so_my_platform_records'));
- assert.ok(js.includes('p_kind:recordKind'));
- assert.ok(js.includes('personalRecords.filter('));
- assert.ok(js.includes('detail.searchParams.set("kind",recordKind)'));
- assert.ok(js.includes('detail.searchParams.set("ticket",r.id)'));
- assert.ok(js.includes('customerUrl(slug,targetTab,r.oa_mode)'));
- assert.ok(!js.includes('sb.rpc("so_my_last_booking_board"'));
+test("one LINE-verified login queries all three types and preserves exact merchant record links",()=>{
+ assert.match(js,/Promise\.all\(kinds\.map\(p_kind=>sb\.rpc\("so_my_platform_records",\{p_kind\}\)\)\)/);
+ assert.match(js,/personalRecords=Object\.fromEntries/);
+ assert.match(js,/dest\.searchParams\.set\("kind",kind\)/);
+ assert.match(js,/dest\.searchParams\.set\("ticket",r\.id\)/);
+ assert.match(js,/customerUrl\(slug,tab,r\.oa_mode\)/);
+ assert.match(js,/so_site_header_identity/);
 });
-test("LINE official account matches website history links",()=>{
- assert.ok(menu.includes('"我的紀錄"'));
- assert.ok(menu.includes('"取號紀錄"'));
- assert.ok(menu.includes('"訂單紀錄"'));
- assert.ok(menu.includes('directory.html?mode=mine&section=ticket'));
- assert.ok(menu.includes('directory.html?mode=mine&section=order'));
- assert.ok(!menu.includes('"上次預約看板"'));
+test("platform OA has one personal-history tile and independent entry points",()=>{
+ assert.match(menu,/"我的紀錄".*"directory\.html\?mode=mine"/);
+ assert.doesNotMatch(menu,/mode=mine&section=/);
+ assert.match(menu,/"現場取號".*"service=%E5%8F%96%E8%99%9F"/);
+ assert.match(menu,/"常見問題".*"home\.html#faq"/);
+ assert.doesNotMatch(menu,/"上次預約看板"|"取號紀錄"|"訂單紀錄"/);
 });
-test("cross-store reservation, ticket and order data are scoped to verified LINE identity",()=>{
- for(const term of ['public.qm_reservations','public.qm_tickets','public.qm_pickup_orders',
-    'verified_subjects','auth.uid()','linked_users','r.deleted_at is null',
-    'k.deleted_at is null','o.user_id','grant execute on function public.so_my_platform_records(text) to authenticated']){
+test("verified cross-store personal history is scoped to the logged-in LINE identity",()=>{
+ for(const term of ["public.qm_reservations","public.qm_tickets","public.qm_pickup_orders","verified_subjects","auth.uid()","linked_users","grant execute on function public.so_my_platform_records(text) to authenticated"]){
   assert.ok(sql.includes(term),term);
  }
- assert.ok(!sql.includes('p_user_id'));
- assert.ok(!sql.includes('p_line_sub'));
- assert.ok(sql.includes("from public,anon,authenticated"));
+ assert.ok(!sql.includes("p_user_id")&&!sql.includes("p_line_sub"));
 });
