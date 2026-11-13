@@ -26,11 +26,11 @@ class RichMenuContract(unittest.TestCase):
     def test_customer_entry_points_and_no_test_shop(self):
         dest = [entry[3].get("uri", "") for entry in richmenu.CUSTOMER_ITEMS]
         self.assertTrue(any("mode=search" in d for d in dest))
-        self.assertTrue(any("mode=queue" in d for d in dest))
+        self.assertTrue(any("mode=mine&section=queue" in d for d in dest))
         self.assertTrue(any("mode=mine" in d for d in dest))
         self.assertTrue(any("service=%E9%A0%90%E7%B4%84" in d for d in dest))
         self.assertTrue(any("service=%E9%BB%9E%E9%A4%90" in d for d in dest))
-        self.assertTrue(any("mode=last-board" in d for d in dest))
+        self.assertTrue(any("mode=mine&section=board" in d for d in dest))
         self.assertFalse(any("service=%E7%9C%8B%E6%9D%BF" in d for d in dest))
         self.assertFalse(any("mode=game" in d for d in dest))
         self.assertFalse(any("客服" in title for title, *_ in richmenu.CUSTOMER_ITEMS))
