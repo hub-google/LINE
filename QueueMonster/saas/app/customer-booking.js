@@ -145,7 +145,7 @@ export function customerRender(){
        encodeURIComponent(routeState.slug)+'">只想查看目前叫號？前往即時叫號看板</a></p>';
   }
   if(!customerState.customer)return box("正在讀取顧客網站",'<p class="muted">正在確認企業設定與登入狀態...</p>');
-  const t=customerState.customer.tenant,m=t.modules||{},items=customerState.customer.my_reservations||[],tickets=customerState.customer.my_tickets||[],live=tickets.find(x=>["WAITING","HOLD","CALLED","ARRIVED","ADMITTED","SERVING"].includes(x.status));
+  const t=customerState.customer.tenant,m=t.modules||{},items=customerState.customer.my_reservations||[],tickets=customerState.customer.my_tickets||[],live=tickets.find(x=>["WAITING","HOLD","CALLED","ARRIVED","ADMITTED","SERVING"].includes(x.status))||tickets.find(x=>x.status==="PASSED"&&x.date===taipei());
   const catalogue=customerState.customer.menu_items||[];
  applyCustomerBrand(t);
  // Online ordering is a first-class action; progress and records share one menu.
@@ -220,7 +220,7 @@ export function customerRender(){
    box("我的現場號碼",live?'<div class="ticket">'+esc(live.number)+'</div><p>'+tag(live.status)+'</p>'+
     '<p class="small">取號時間：'+esc(formatTaipeiCreated(live.created_at))+' ・ '+esc(live.party||1)+' 人／組</p>'+
     selectedItemsHtml(live.selected_items)+
-    (live.status==="WAITING"?btn("取消取號","cancel-my-number","danger",'data-id="'+esc(live.id)+'"'):""):
+    (["WAITING","HOLD","PASSED"].includes(live.status)?btn("取消取號","cancel-my-number","danger",'data-id="'+esc(live.id)+'"'):""):
     '<p class="muted">現在可在網站上取得號碼。</p>'+
     '<p>取號者：<strong>'+esc(lineState.lineDisplayName)+'</strong>（由 LINE 自動帶入）</p>'+
     '<div>'+field("本次候位人數（1～20 人）","customer-queue-party",queueState.queuePartySize,"number",'min="1" max="20" step="1" inputmode="numeric"')+'</div>'+
