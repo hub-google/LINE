@@ -66,6 +66,11 @@ test("game mode opens the illustrated city directly and supports animated shop i
  assert.match(css,/@media\(max-width:410px\)/);
  assert.match(css,/#explore-street\[hidden\]/);
  assert.match(css,/\.arcade-room-avatar/);
+ assert.match(css,/\.arcade-service-dock\{/);
+ assert.match(css,/position:fixed/);
+ assert.match(css,/\.arcade-panel-actions a\.btn/);
+ assert.match(directory,/id="arcade-shop-info"[^>]*role="region"/);
+ assert.match(js,/data-arcade-service/);
  assert.match(css,/prefers-reduced-motion/);
  const gameSection=directory.slice(directory.indexOf('<section id="explore-game"'),
   directory.indexOf('<p id="explore-game-note"'));
