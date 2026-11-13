@@ -53,7 +53,9 @@ export function renderStaffSettings({t,isManager,html,customersOnly=false}){
   const weekdayChecks=[["0","週日"],["1","週一"],["2","週二"],["3","週三"],["4","週四"],["5","週五"],["6","週六"]]
       .map(([day,title])=>'<label class="checklist"><input type="checkbox" class="policy-closed-day" value="'+day+'" '+((policy.closed_weekdays||[]).includes(Number(day))?"checked":"")+'> '+title+'</label>').join("");
   const serviceModules=t.modules||{};
-  const cards=[["operations",box("顧客服務開放設定",
+  const cards=[
+["public",renderOaSettings({isManager})],
+["operations",box("顧客服務開放設定",
     '<p class="muted">店家可自行決定開放線上預約、現場取號與線上點餐；可單獨啟用或任意組合。關閉後顧客不再能建立新預約／新號碼，原有紀錄與已發出的號碼仍保留。</p>'+
     (isManager?
       '<div class="grid"><label class="checklist"><input id="set-service-reservation" type="checkbox" '+(serviceModules.reservation?'checked':'')+'> 開放線上預約</label>'+
@@ -122,7 +124,6 @@ export function renderStaffSettings({t,isManager,html,customersOnly=false}){
     '<label class="checklist"><input type="checkbox" id="announcement-active" '+(staffState.staffAnnouncements.find(a=>a.id===staffState.announcementEditId)?.active===false?"":"checked")+'>發布至顧客首頁</label>'+
     '<div class="staff-actionbar">'+btn(staffState.announcementEditId?"儲存修改":"發布公告","announcement-save","primary")+
        (staffState.announcementEditId?btn("取消編輯","announcement-edit-cancel","outline"):"")+'</div></div>'):"")],
-["public",renderOaSettings({isManager})],
 ["public",(isManager?box("排隊怪獸店家搜尋",t.onboarding_complete===false?
  '<p>填寫店名、電話、地址與分類並儲存後，門市會自動公開在排隊怪獸的搜尋清單。</p>':
  '<p>你可以決定門市是否顯示在排隊怪獸的公開搜尋清單。</p>'+
