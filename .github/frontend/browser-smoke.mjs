@@ -285,6 +285,47 @@ try{
  assert.equal(await page.locator('.main-panel .tabs').count(),0,'store search has no nested history tabs');
  assert.equal(await page.locator('h1.eyebrow').innerText(),'搜尋店家，立即使用服務');
 
+ // The merchant's real enabled services must appear on the FIRST screen at any viewport.
+ // Only synthetic storefront data is injected; no database writes or booking actions.
+ for(const viewport of [{width:320,height:720},{width:390,height:844},{width:1200,height:844}]){
+  await page.setViewportSize(viewport);
+  await page.goto(baseUrl+'/booking/directory.html?mode=game',{waitUntil:'domcontentloaded',timeout:45000});
+  await page.waitForFunction(()=>!!window.LineExploreGame,{timeout:15000});
+  const dock=await page.evaluate(()=>{
+   window.LineExploreGame.setData({shops:[{
+    slug:'fixture-food-store',name:'城市早餐店',category:'餐飲',
+    modules:{reservation:true,queue:true,pickup:true,calling:true},
+    reserve_href:'./?view=customer&merchant=fixture-food-store&tab=reserve',
+    queue_href:'./?view=customer&merchant=fixture-food-store&tab=queue',
+    order_href:'./?view=customer&merchant=fixture-food-store&tab=order',
+    board_href:'./board.html?merchant=fixture-food-store'
+   }]});
+   document.querySelector('[data-shop-slug="fixture-food-store"]').click();
+   const nav=document.querySelector('#arcade-shop-info');
+   const bounds=nav.getBoundingClientRect();
+   const links=[...nav.querySelectorAll('a[data-arcade-service]')].map(a=>{
+    const b=a.getBoundingClientRect();
+    return {kind:a.dataset.arcadeService,href:a.getAttribute('href'),
+      top:b.top,bottom:b.bottom,left:b.left,right:b.right,height:b.height};
+   });
+   return {viewport:{width:innerWidth,height:innerHeight},
+    interiorVisible:!document.querySelector('#explore-street').hidden,
+    position:getComputedStyle(nav).position,
+    top:bounds.top,bottom:bounds.bottom,left:bounds.left,right:bounds.right,
+    links};
+  });
+  assert.equal(dock.interiorVisible,true,'Merchant room must open immediately');
+  assert.equal(dock.position,'fixed','Services cannot sit below scrollable room');
+  assert.ok(dock.top>=0&&dock.bottom<=viewport.height+2&&dock.left>=0&&dock.right<=viewport.width+2,
+   'Service dock must fit screen: '+JSON.stringify(dock));
+  assert.deepEqual(dock.links.map(x=>x.kind),['reserve','queue','order','board']);
+  assert.ok(dock.links.every(x=>x.top>=0&&x.bottom<=viewport.height+1&&x.left>=0&&x.right<=viewport.width+1&&x.height>=42),
+   'Every service button must be visible and touch-sized: '+JSON.stringify(dock));
+  assert.ok(dock.links.every(x=>x.href.includes('fixture-food-store')),
+   'Services must link to the selected shop: '+JSON.stringify(dock));
+  console.log('Game shop service buttons above fold:',JSON.stringify({viewport,top:dock.top,bottom:dock.bottom,buttons:dock.links.map(x=>x.kind)}));
+ }
+ 
  // Drive the SAME board engine through many arbitrary shapes: landscape,
  // portrait, square, ultra-wide, and narrow. These are TEST INPUTS, not CSS modes.
  async function geometry(){
