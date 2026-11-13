@@ -190,7 +190,7 @@ export function renderHome(){
  '<div class="grid3">'+
  '<a class="routecard" href="./directory.html?mode=search"><h2>搜尋店家</h2><p>尋找提供預約與取號的合作店家。</p><strong>開始搜尋 →</strong></a>'+
  '<a class="routecard" href="./directory.html?mode=queue"><h2>查看叫號</h2><p>掌握公開候位進度。</p><strong>查看候位 →</strong></a>'+
- '<a class="routecard" href="./directory.html?mode=mine"><h2>我的預約</h2><p>從 LINE 確認自己的預約與號碼牌。</p><strong>查看紀錄 →</strong></a></div>';
+ '<a class="routecard" href="./my-records.html"><h2>我的跨店紀錄</h2><p>用同一個 LINE 帳號查看各店的預約、取號與訂餐紀錄。</p><strong>查看紀錄 →</strong></a></div>';
 }
 
 export function featureChecks(data={},prefix="feature"){
