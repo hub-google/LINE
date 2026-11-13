@@ -802,7 +802,7 @@ function platformBotMessage(command: string, welcome = false): Record<string, un
     title = "排隊怪獸目前沒有客服中心或人工聊天室。本 LINE 官方帳號僅提供功能入口與自動操作指引，請查看網站的操作教學；請勿傳送密碼、Channel Secret 或 Access Token。";
     link = PLATFORM_ENTRY+"merchant-center.html#guide";
     label = "操作教學";
-  } else if (/點餐|訂餐|取餐|外帶|餐點/.test(input)) {
+  } else if (!/訂單紀錄|訂餐紀錄|取餐紀錄/.test(input) && /點餐|訂餐|取餐|外帶|餐點/.test(input)) {
     title = "尋找提供線上點餐的店家，選好商品後可依該店設定預約取餐時間；取餐進度請到「我的紀錄」查看。";
     link = PLATFORM_ENTRY+"directory.html?mode=search&service=%E9%BB%9E%E9%A4%90";
     label = "尋找線上點餐";
@@ -810,20 +810,16 @@ function platformBotMessage(command: string, welcome = false): Record<string, un
     title = "開啟遊戲逛街模式，探索公開店家。";
     link = PLATFORM_ENTRY+"directory.html?mode=game";
     label = "遊戲逛街";
-  } else if (/訂單紀錄|訂餐紀錄|取餐紀錄/.test(input)) {
-    title = "使用 LINE 身分驗證後，可查看自己在各店的訂單和取餐狀態。";
-    link = PLATFORM_ENTRY+"directory.html?mode=mine&section=order";
-    label = "訂單紀錄";
-  } else if (/取號紀錄|叫號紀錄|號碼紀錄/.test(input)) {
-    title = "使用 LINE 身分驗證後，可查看各店的領號、候位與叫號紀錄。";
-    link = PLATFORM_ENTRY+"directory.html?mode=mine&section=ticket";
-    label = "取號紀錄";
+  } else if (/訂單紀錄|訂餐紀錄|取餐紀錄|取號紀錄|叫號紀錄|號碼紀錄/.test(input)) {
+    title = "「我的紀錄」一頁同時顯示所有門市的預約、取號及訂餐紀錄，登入 LINE 後即可查看。";
+    link = PLATFORM_ENTRY+"directory.html?mode=mine";
+    label = "我的紀錄";
   } else if (/上次預約看板|最近預約看板|最近預約的看板|我的叫號看板/.test(input)) {
-    title = "上次預約看板快捷入口已改為「我的紀錄」；可在預約、取號及訂單三種紀錄間切換。";
+    title = "個人紀錄已合併：預約、取號與訂餐會同時顯示在「我的紀錄」頁面。";
     link = PLATFORM_ENTRY+"directory.html?mode=mine";
     label = "我的紀錄";
   } else if (/我的|紀錄|紀錄查詢|歷史|取消|修改/.test(input)) {
-    title = "使用 LINE 身分驗證後，可分別查看預約紀錄、取號紀錄及訂單紀錄。";
+    title = "「我的紀錄」將預約、取號、訂餐紀錄整合在同一頁，不需要切換三個分頁。";
     link = PLATFORM_ENTRY+"directory.html?mode=mine";
     label = "我的紀錄";
   } else if (/叫號|看板|進度|輪到|排到/.test(input)) {
@@ -846,8 +842,8 @@ function platformBotMessage(command: string, welcome = false): Record<string, un
       items: [
         {type:"action",action:{type:"uri",label,uri:link}},
         {type:"action",action:{type:"uri",label:"我的紀錄",uri:PLATFORM_ENTRY+"directory.html?mode=mine"}},
-        {type:"action",action:{type:"uri",label:"取號紀錄",uri:PLATFORM_ENTRY+"directory.html?mode=mine&section=ticket"}},
-        {type:"action",action:{type:"uri",label:"訂單紀錄",uri:PLATFORM_ENTRY+"directory.html?mode=mine&section=order"}},
+        {type:"action",action:{type:"uri",label:"現場取號",uri:PLATFORM_ENTRY+"directory.html?mode=search&service=%E5%8F%96%E8%99%9F"}},
+        {type:"action",action:{type:"uri",label:"線上預約",uri:PLATFORM_ENTRY+"directory.html?mode=search&service=%E9%A0%90%E7%B4%84"}},
       ],
     },
   };
