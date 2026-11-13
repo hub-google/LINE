@@ -7,6 +7,7 @@ import {box,btn,esc,field,taipei} from "./shared-ui.js";
 import {rpc,act,load} from "./data-loading.js";
 import {render} from "./staff-layout.js";
 import {selectCustomerDetail} from "./customer-detail.js";
+import {customerNoticeSuffix,sendOrderReply} from "./line-session.js";
 import {normalizeTaiwanPhone,isValidTaiwanPhone,TW_LANDLINE_AREAS,getTaiwanLandlineHint,isValidTaiwanPhoneParts} from "./tw-phone.js";
 
 // The existing store, LINE identity and so_menu_items catalogue remain the source of truth.
@@ -289,7 +290,8 @@ export async function handlePickupAction(ev,b,a,id){
        p_customer_phone:normalizeTaiwanPhone(pickupContactPhone())});
      pickupState.cart={};pickupState.note="";pickupState.requestId="";pickupState.confirming=false;placed=true;
      if(!selectCustomerDetail("order",res.id))routeState.customerTab="order";
-     return "訂單 "+res.number+" 已送出。15 秒內可取消，倒數後交給店家接單";
+     const notice=await sendOrderReply(res.id);
+      return "訂單 "+res.number+" 已送出。15 秒內可取消，倒數後交給店家接單"+customerNoticeSuffix(notice);
    });
    if(placed)window.scrollTo({top:0,behavior:"instant"});
    return true;
