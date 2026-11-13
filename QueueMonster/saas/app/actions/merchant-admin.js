@@ -19,7 +19,7 @@ if(a==="save-service-modes"){await act(async()=>{
  if(a==="save-default-operating-hours"){await act(async()=>{
    const open=val("legacy-open"),close=val("legacy-close");
    const capacity=Number(val("legacy-capacity")),minutes=Number(val("legacy-minutes"));
-   if(!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(open)||!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(close)||close<=open)
+   if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(open)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(close)||close<=open)
      throw Error("請確認營業時間，結束時間必須晚於開始時間");
    if(!Number.isInteger(capacity)||capacity<1||capacity>100)throw Error("每時段人數必須介於 1～100");
    if(![15,30,60].includes(minutes))throw Error("請選擇預約時段間隔");
