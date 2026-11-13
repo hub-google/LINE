@@ -146,5 +146,6 @@ test('platform OA signed message uses Reply API, never Push API',async()=>{
  assert.equal(calls[0].url,'https://api.line.me/v2/bot/message/reply');
  assert.equal(calls[0].headers.authorization,'Bearer platform-webhook-token');
  assert.equal(calls[0].body.replyToken,'platform-reply-token');
- assert.equal(calls[0].body.messages[0].type,'flex');
+ assert.equal(calls[0].body.messages[0].type,'text');
+ assert.match(calls[0].body.messages[0].text,/排隊怪獸/);
 });
