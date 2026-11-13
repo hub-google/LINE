@@ -13,6 +13,7 @@ import {unitSettingsPanel} from "../service-units.js";
 import {renderStaffMenu} from "./menu.js";
 import {renderPickupSettings,pickupState} from "../pickup-mode.js";
 import {renderStaffBranches} from "./branches.js";
+import {renderOaSettings} from "./oa-settings.js";
 import {customerUrl} from "../line-session.js";
 import {closedDatesPickerMarkup,installClosedDatesPicker} from "../closed-dates-picker.js";
 
@@ -121,28 +122,7 @@ export function renderStaffSettings({t,isManager,html,customersOnly=false}){
     '<label class="checklist"><input type="checkbox" id="announcement-active" '+(staffState.staffAnnouncements.find(a=>a.id===staffState.announcementEditId)?.active===false?"":"checked")+'>發布至顧客首頁</label>'+
     '<div class="staff-actionbar">'+btn(staffState.announcementEditId?"儲存修改":"發布公告","announcement-save","primary")+
        (staffState.announcementEditId?btn("取消編輯","announcement-edit-cancel","outline"):"")+'</div></div>'):"")],
-["public",box("LINE 官方帳號串接",
-    '<p>目前通知來源：<strong>'+(lineState.lineConfig?.merchantOaConnected?"商家自己的 LINE OA":"未綁定（平台 OA 不代發店家通知）")+'</strong></p>'+
-    '<p class="small">一般 LINE OA 串接只需下方兩項 Messaging API 憑證，Channel ID 自動辨識。<strong>店家不需要自己的 LIFF ID。完成預約可由排隊怪獸共用 LIFF 嘗試發訊，或開啟店家 OA 預填確認訊息；店家需啟用自己的 Webhook 才能用免費 Reply API 回覆。</strong>平台 OA 不代發店家通知。</p>'+
-    '<p><a href="./merchant-center.html#mode-own" target="_blank" rel="noopener noreferrer">查看 Messaging API 建立及取得憑證教學 ↗</a></p>'+
-    (lineState.lineConfig?.merchantOaConnected?
-     '<p>已連接 LINE OA：<strong>'+esc(lineState.lineConfig.botBasicId||"")+'</strong></p>'+
-     '<p class="small">預約自動 LINE 回覆：<strong>'+(lineState.lineConfig.merchantLiffId?"店家 LIFF 已設定（可選用）":"使用平台共用 LIFF（請確認 chat_message.write 授權）")+'</strong></p>'+
-     '<p class="small">Webhook URL（請貼入店家的 Messaging API 並啟用 Use webhook）：<code>'+esc(lineState.LINE_BRIDGE_URL+"?action=webhook&merchant="+encodeURIComponent(routeState.slug))+'</code></p>':"")+
-    (isManager?
-     '<div class="grid"><div>'+
-       field("Channel access token (long-lived)（長效存取權杖）","own-oa-token","","password",'autocomplete="new-password" placeholder="Messaging API 頁籤 → Issue"')+
-     '</div><div>'+
-       field("Channel secret（頻道驗證金鑰）","own-oa-secret","","password",'autocomplete="new-password" placeholder="Basic settings 頁籤"')+
-       '<p class="small">Channel secret 為 32 位十六進位字元。系統會自動從 Access Token 取得 Channel ID，無須額外輸入。</p>'+
-     '</div></div>'+
-     '<details style="margin:14px 0"><summary>進階選填：使用店家自己的 LINE Login／LIFF</summary>'+
-       '<div style="margin-top:12px">'+field("LIFF ID（LINE 登入網頁應用程式編號）","own-oa-liff",lineState.lineConfig?.merchantOaConnected?(lineState.lineConfig.merchantLiffId||""):"","text",'autocomplete="off" placeholder="例如：1234567890-AbcdEfgh"')+
-       '<p class="small">這不是 Messaging API Channel ID。<strong>此欄非必填：</strong>在與店家 OA 相同 Provider 的 LINE Login 頻道建立 LIFF，開啟 chat_message.write，並由店家 OA 聊天室連結開啟。不另建 LIFF 也可用排隊怪獸平台共用 LIFF 進行預約；LINE 未允許自動發送時，顧客仍須在店家聊天室按傳送。<a href="https://developers.line.biz/console/" target="_blank" rel="noopener noreferrer">開啟 LINE Developers ↗</a></p></div></details>'+
-     '<p class="small">通過憑證驗證代表已連接店家 OA，不代表顧客一定收得到訊息。不同 Provider 的 LINE User ID 不同，顧客仍需完成店家 OA 的收訊身分配對。Token 與 secret 不會再回顯。</p>'+
-     '<div class="staff-actionbar">'+btn("驗證並連接 Messaging API","connect-own-oa","primary")+
-       (lineState.lineConfig?.merchantOaConnected?btn("解除自有 OA 綁定","disconnect-own-oa","outline"):"")+'</div>'
-     :'<p class="small">僅企業管理者可設定自己的 LINE OA。</p>'))],
+["public",renderOaSettings({isManager})],
 ["public",(isManager?box("排隊怪獸店家搜尋",t.onboarding_complete===false?
  '<p>填寫店名、電話、地址與分類並儲存後，門市會自動公開在排隊怪獸的搜尋清單。</p>':
  '<p>你可以決定門市是否顯示在排隊怪獸的公開搜尋清單。</p>'+
