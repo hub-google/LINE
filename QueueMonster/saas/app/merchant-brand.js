@@ -78,8 +78,6 @@ export function merchantProfileFields(prefix,tenant={}){
  const value=(key,fallback="")=>blank?"":(tenant[key]??fallback);
  const accent=merchantAccent(value("accent","#523B70"));
  const category=value("directory_category","其他");
- const slot=value("slot_minutes",30);
- const time=(key,fallback="")=>String(value(key,fallback)||"").slice(0,5);
  return '<div class="merchant-profile">'+
   '<div class="merchant-profile-section"><h3>店家識別與品牌</h3>'+
    merchantLogoControl(prefix,value("logo_url"))+
@@ -91,14 +89,22 @@ export function merchantProfileFields(prefix,tenant={}){
   '<div class="merchant-profile-section"><h3>店家聯絡資訊</h3>'+
    '<div class="grid"><div>'+field("聯絡電話",prefix+"-phone",value("phone"),"tel",'maxlength="40" autocomplete="tel"')+'</div>'+
    '<div>'+field("店家地址",prefix+"-address",value("address"),"text",'maxlength="200" autocomplete="street-address"')+'</div></div></div>'+
-  '<div class="merchant-profile-section"><h3>營業與預約設定</h3>'+
-   '<div class="grid"><div>'+field("每日開始營業時間",prefix+"-open",time("open_time",prefix==="create"?"10:00":""),"time")+'</div>'+
+  (prefix==="set"?"":'<div class="merchant-profile-section"><h3>營業時段</h3>'+merchantOperatingFields(prefix,tenant)+'</div>')+
+ '</div>';
+}
+
+/** Default operating hours: used by registration and as a fallback before weekly scheduling. */
+export function merchantOperatingFields(prefix,tenant={}){
+ const blank=tenant.onboarding_complete===false;
+ const value=(key,fallback="")=>blank?"":(tenant[key]??fallback);
+ const slot=value("slot_minutes",30);
+ const time=(key,fallback="")=>String(value(key,fallback)||"").slice(0,5);
+ return '<div class="grid"><div>'+field("每日開始營業時間",prefix+"-open",time("open_time",prefix==="create"?"10:00":""),"time")+'</div>'+
    '<div>'+field("每日結束營業時間",prefix+"-close",time("close_time",prefix==="create"?"20:00":""),"time")+'</div>'+
    '<div>'+field("每時段最多預約人數",prefix+"-capacity",value("slot_capacity",prefix==="create"?3:""),"number",'min="1" max="100"')+'</div>'+
    '<div><label for="'+prefix+'-minutes">預約時段間隔</label><select class="field" id="'+prefix+'-minutes">'+
    (blank?'<option value="">請選擇</option>':"")+
-   [15,30,60].map(m=>'<option value="'+m+'" '+(String(slot)===String(m)?'selected':'')+'>'+m+' 分鐘</option>').join("")+'</select></div></div></div>'+
- '</div>';
+   [15,30,60].map(m=>'<option value="'+m+'" '+(String(slot)===String(m)?'selected':'')+'>'+m+' 分鐘</option>').join("")+'</select></div></div>';
 }
 
 export function merchantProfilePatch(prefix,previous={}){
