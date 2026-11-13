@@ -21,13 +21,13 @@ export function renderStaffMenu({t,isManager,html}){
        (item.description?'<div class="small">'+esc(item.description)+'</div>':'')+'</td>'+
        '<td>'+esc(menuPrice(item)||"未設定")+'</td><td>'+esc(item.active?"上架中":"已停用")+'</td><td>'+
   (item.kind==="SERVICE"?"非餐點":!item.pickup_enabled?"未開放訂餐":item.pickup_sold_out?"暫時售完":"可訂餐")+'</td><td>'+
-       (isManager?btn("編輯","menu-edit","outline",'data-id="'+esc(item.id)+'"')+' '+
+       (isManager?btn(selected?.id===item.id?"編輯中":"編輯","menu-edit",selected?.id===item.id?"primary":"outline",'data-id="'+esc(item.id)+'"')+' '+
         btn(item.active?"停用":"重新上架","menu-toggle","secondary",'data-id="'+esc(item.id)+'"')+
  (item.kind!=="SERVICE"?'<div class="staff-actionbar">'+
  btn(item.pickup_enabled?"關閉訂餐":"開放訂餐","pickup-menu-enabled","outline",'data-id="'+esc(item.id)+'"')+
  btn(item.pickup_sold_out?"恢復供應":"暫時售完","pickup-menu-sold-out","outline",'data-id="'+esc(item.id)+'"')+'</div>':""):'—')+
        '</td></tr>').join("")+'</tbody></table></div>':'<p class="muted">尚未建立餐點或服務。</p>'))+
-   (isManager?box(selected?"修改餐點／服務":"新增餐點／服務",
+   (isManager?'<div id="menu-edit-panel" tabindex="-1" aria-label="餐點與服務編輯表單">'+box(selected?"修改餐點／服務："+esc(selected.name):"新增餐點／服務",
     '<div class="grid"><div><label for="menu-kind">類型</label><select class="field" id="menu-kind">'+
     [["MENU","餐點"],["SERVICE","服務"],["__CUSTOM__","自行輸入"]].map(([v,label])=>'<option value="'+v+'" '+((isCustomKind?"__CUSTOM__":kind)===v?"selected":"")+'>'+label+'</option>').join("")+
     '</select><div id="menu-custom-kind-wrap" '+(isCustomKind?'':'hidden')+'>'+field("自行輸入類型","menu-custom-kind",isCustomKind?kind:"","text",'maxlength="30" placeholder="例如：課程、活動、商品"'+(isCustomKind?'':' disabled'))+'</div>'+field("名稱","menu-name",selected?.name||"")+
@@ -36,7 +36,7 @@ export function renderStaffMenu({t,isManager,html}){
     field("排序（數字越小越前面）","menu-order",selected?.sort_order??0,"number",'min="-9999" max="9999"')+
     '<label class="checklist"><input type="checkbox" id="menu-active" '+(selected?.active===false?"":"checked")+'> 開放顧客選擇</label></div></div>'+
     '<div class="staff-actionbar">'+btn(selected?"儲存修改":"新增項目","menu-save","primary")+
-     (selected?btn("取消編輯","menu-edit-clear","outline"):"")+'</div>'):"");
+     (selected?btn("取消編輯","menu-edit-clear","outline"):"")+'</div>')+'</div>':"");
    const defaultUnitIds=new Set((serviceUnitsState.unitConfig?.units||[]).filter(u=>u.is_default).map(u=>u.id));
    const resources=(staffState.staff.resourceContext?.resources||[]).filter(u=>!defaultUnitIds.has(u.id)),rules=staffState.staff.resourceContext?.service_rules||[];
   const services=items.filter(x=>x.kind!=="MENU");
