@@ -103,6 +103,11 @@ test('merchant provider mismatch is handled by short-lived, merchant-scoped sign
  assert.equal((await ctx.api.bookingReplyMessage(data,id,'merchant-user',null,proof)).type,'text');
  assert.equal((await ctx.api.bookingReplyMessage(data,id,'merchant-user','shop',proof.replace(/_./,part=>part[0]+(part[1]==='X'?'Y':'X')))).type,'text');
 });
+test('signed proof is accepted only in a merchant Webhook context for all record types',()=>{
+ const src=readFileSync(new URL('../supabase/functions/line-bridge/index.ts',import.meta.url),'utf8');
+ assert.match(src,/authorizedByProof=!!merchantTenantId && !!proof &&[\s\S]*?checkBookingReplyProof\(proof,booking as BookingReplyProofRecord\)/);
+ assert.match(src,/authorizedByProof=!!merchantTenantId && !!proof &&[\s\S]*?checkBookingReplyProof\(proof,record as BookingReplyProofRecord,kind\)/);
+});
 test('signed confirmation webhook calls real reply branch, never push',async()=>{
  const calls=[];
  const ctx=backend({fetch:async(url,options)=>{calls.push({url,body:JSON.parse(options.body)});return new Response('{}',{status:200})}});
