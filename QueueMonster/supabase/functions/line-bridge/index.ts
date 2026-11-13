@@ -793,7 +793,7 @@ function platformBotMessage(command: string, welcome = false): Record<string, un
   let link = PLATFORM_ENTRY+"directory.html?mode=search";
   let label = "找店家預約";
   if (welcome) {
-    title = "歡迎加入排隊怪獸！搜尋店家後，可使用店家開放的線上預約、現場取號和線上點餐，也能查看自己的預約、號碼與取餐紀錄。本官方帳號提供找店與功能入口，沒有人工客服；店家通知僅由店家自有 LINE OA 提供。";
+    title = "歡迎加入排隊怪獸！可搜尋店家、預約、取號、線上點餐並查看紀錄。未綁 LINE OA 的店家，可由顧客在本帳號發出確認訊息，免費取得預約、取號及訂餐卡；日後主動叫號或提醒不屬於免費即時回覆。";
   } else if (!/客服|協助|幫助|問題|聯絡|人工/.test(input) && /商家|店家開通|申請開通|店員|管理後台|後台/.test(input)) {
     title = "店家可免費建立門市，使用預約、叫號及線上點餐工具；也能先免註冊體驗免費叫號。已有帳號可登入店家後台。";
     link = PLATFORM_ENTRY+"merchant-register.html";
