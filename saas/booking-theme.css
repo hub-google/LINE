@@ -603,25 +603,24 @@ body[data-portal="staff"] .customer-history-link:focus-visible{
 }
 
 
-/* Unified merchant settings: compact category navigation and readable session actions. */
-.settings-hub-head { margin: 0 0 14px; }
-.settings-hub-head h2 { margin: 0 0 5px; font-size: 1.45rem; }
-.settings-hub-head p { margin: 0; }
-.settings-hub-tabs {
- display: flex; flex-wrap: nowrap; gap: 8px; margin: 0 0 22px; overflow-x: auto; -webkit-overflow-scrolling: touch;
- padding: 10px; border-radius: 16px;
- background: color-mix(in srgb, var(--surface, #ffffff) 90%, #8052aa 10%);
- border: 1px solid #e9d8f4;
-}
-.settings-hub-tabs .btn { flex: 0 0 auto; margin: 0; white-space: nowrap; min-height: 40px; }
-.settings-hub-tabs .btn.primary { box-shadow: 0 2px 6px rgba(85,45,117,.13); }
-.settings-hub-tabs + .card { margin-top: 0; }
-.settings-hub-head + .settings-hub-tabs + .card .staff-actionbar { flex-wrap: wrap; }
-@media (max-width: 700px) {
- .settings-hub-head h2 { font-size: 1.2rem; }
- .settings-hub-tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 8px; scrollbar-width: thin; }
- .settings-hub-tabs .btn { min-height: 42px; font-size: .91rem; }
- .settings-hub-tabs + .card .scroll { overflow-x: auto; }
+/* Settings tabs remain inside the existing staff portal (no extra sidebar). */
+.settings-hub-head{margin:0 0 16px}
+.settings-hub-head h2{margin:0 0 5px;font-size:1.5rem;letter-spacing:-.02em;color:#493063}
+.settings-hub-head .small{margin:0;line-height:1.65;color:#70677a}
+.settings-hub-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 20px;padding:9px;border:1px solid #eadcf1;border-radius:18px;background:#f7f2fa;min-width:0}
+.settings-hub-tabs .btn{margin:0;min-width:0;min-height:46px;white-space:normal;line-height:1.35;font-size:14px;font-weight:700;border-radius:12px;text-align:center;padding:9px 8px}
+.settings-hub-tabs .btn.primary{box-shadow:0 3px 9px #633d7f24}
+.settings-hub-tabs+.card{margin-top:0}
+.settings-hub-tabs+.card .staff-actionbar{flex-wrap:wrap}
+.settings-guidance{padding:12px 14px;margin:10px 0;background:#f7f3fb;border:1px solid #e8daf2;border-radius:12px;color:#674880;font-size:13px;line-height:1.65}
+body[data-portal="staff"] .settings-hub-tabs~.card{min-width:0}
+body[data-portal="staff"] .settings-hub-tabs~.card .grid>*{min-width:0}
+@media(max-width:700px){
+ .settings-hub-head h2{font-size:1.3rem}
+ .settings-hub-tabs{display:flex;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;gap:7px;padding:7px;margin-bottom:16px}
+ .settings-hub-tabs .btn{flex:0 0 auto;min-width:86px;padding:10px 11px;min-height:44px;font-size:13px;white-space:nowrap}
+ .settings-hub-tabs+.card .scroll{overflow-x:auto}
+ .settings-hub-tabs~.card .grid{grid-template-columns:minmax(0,1fr)}
 }
 
 /* Order contact examples must look like hints, not prefilled customer data. */
