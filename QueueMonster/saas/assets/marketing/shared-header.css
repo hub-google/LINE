@@ -33,3 +33,10 @@
 #marketing-header .qm-public-header{position:relative;top:auto}
 /* The public icon is part of the shared header, not dependent on another page's CSS. */
 #marketing-header .site-auth-button.site-auth-login::before{content:"";display:block;flex:0 0 23px;width:23px;height:23px;background:url("https://hub-google.github.io/LINE/booking/line-app-icon.svg") center/contain no-repeat}
+
+/* Show the two core customer pages in the header when the full nav collapses. */
+.qm-public-header .qm-public-quicklinks{display:none;align-items:center;gap:8px;white-space:nowrap}
+.qm-public-header .qm-public-quicklinks a{font-size:15px;font-weight:850;padding:8px 12px;border-radius:10px;background:#f7eafc;color:#573573}
+.qm-public-header .qm-public-quicklinks a[aria-current=page]{background:#ecd5f8;color:#713f95}
+@media(max-width:1240px){.qm-public-header .qm-public-quicklinks{display:flex}}
+@media(max-width:620px){.qm-public-header .qm-public-quicklinks{display:none}}
