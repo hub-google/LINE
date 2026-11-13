@@ -9,7 +9,7 @@ const sb=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:
 const params=new URLSearchParams(location.search),mode=["search","queue","mine","game","last-board"].includes(params.get("mode"))?params.get("mode"):"search";
 // Old personal record links all show the same combined history page.
 const isQueueSection=mode==="queue";
-const isHistorySection=mode==="mine"||mode==="last-board";
+const isHistorySection=location.pathname.endsWith("/my-records.html")||mode==="mine"||mode==="last-board";
 // LINE OA service links open the matching real-store filter, never a demo or blank search.
 const requestedService=isQueueSection?"取號":mode==="search"&&["預約","取號","點餐","看板"].includes(params.get("service"))?params.get("service"):"";
 if(requestedService)document.getElementById("explore-service").value=requestedService;
@@ -33,7 +33,8 @@ function updateFilterSummary(){
 });
 updateFilterSummary();
 
-document.getElementById("tab-"+(isHistorySection?"mine":"search")).classList.add("active");
+// Navigation is owned by the common site header, not a duplicate card-level tab.
+
 let all=[],popular=[],searchResults=[],searchTotal=0,searchPage=1;
 let searchLoading=false,searchError="",searchRequest=0,searchTimer=null;
 let liffId="";
@@ -63,7 +64,7 @@ function setupExploreFilters(){
  options("explore-area",[...new Set(all.map(areaOf))].sort((a,b)=>a.localeCompare(b,"zh-Hant")),"所有地區");
  document.querySelector(".explore-view-switch").hidden=needsIdentity||isQueueSection;
  document.getElementById("explore-filters").classList.toggle("hidden",needsIdentity);
- document.querySelector(".search-wrap label").textContent=isHistorySection?"搜尋店家或紀錄":"搜尋店家名稱或地點";
+ document.querySelector(".search-wrap label").textContent=isHistorySection?"搜尋跨店紀錄":"搜尋店家名稱或地點";
  document.querySelector(".public-note")?.classList.toggle("hidden",needsIdentity);
 }
 
@@ -81,7 +82,7 @@ function renderMyRecords(){
  const title=document.getElementById("results-heading"),count=document.getElementById("result-count");
  document.getElementById("result-pages").classList.add("hidden");
  title.textContent="我的紀錄";
- const login="./?view=customer&tab=mine&site_login=1&site_return="+encodeURIComponent("directory.html?mode=mine");
+ const login="./?view=customer&tab=mine&site_login=1&site_return="+encodeURIComponent("my-records.html");
  if(mineIdentityState!=="ready"){
   const pending=mineIdentityState==="loading",guest=mineIdentityState==="guest";
   count.textContent=pending?"確認身分中":guest?"請先登入 LINE":"暫時無法取得";
