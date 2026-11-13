@@ -185,7 +185,7 @@ function customerDetail(){
   return box("預約詳細資訊",back+header+
     '<div class="customer-detail-fields"><p>日期：<strong>'+esc(o.date)+'</strong></p>'+
     '<p>時間：<strong>'+esc(o.time)+'</strong></p><p>人數：<strong>'+esc(o.party||1)+' 位</strong></p>'+
-    '<p>服務：<strong>'+esc(o.service)+'</strong></p>'+(scene==="clinic"?'<p>診間：<strong>'+esc(unitLabel(o.unit))+'</strong></p>':"")<p>預約姓名：<strong>'+esc(o.name)+'</strong></p>'+
+    '<p>服務：<strong>'+esc(o.service)+'</strong></p>'+(scene==="clinic"?'<p>診間：<strong>'+esc(unitLabel(o.unit))+'</strong></p>':"")+'<p>預約姓名：<strong>'+esc(o.name)+'</strong></p>'+
     '<p>聯絡電話：<strong>'+esc(o.phone)+'</strong></p></div>'+
     (editable?'<div class="staff-actionbar">'+btn("修改預約","demo-edit-booking","primary")+btn("取消預約","demo-cancel-booking","outline")+'</div>':"")+
     (ticket?btn("查看這筆預約的即時叫號進度","demo-linked-ticket","secondary",'data-id="'+esc(ticket.id)+'"'):"")+edit);
