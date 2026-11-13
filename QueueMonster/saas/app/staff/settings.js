@@ -22,13 +22,14 @@ function serviceLink(kind,label,enabled){
    :new URL(customerUrl(routeState.slug)||new URL(sharedUiState.route("customer",routeState.slug),location.href).href,location.href);
  if(!["board","pickup-board"].includes(kind))url.searchParams.set("tab",kind);
  const href=url.href;
- // To preserve the chat context required by liff.sendMessages, booking QRs
- // for merchant OAs open that merchant's chat and its prefilled booking command.
+ // For any OA-enabled service QR, open the correct LINE chat first:
+ // merchant-owned OA when connected, otherwise the QueueMonster platform OA.
+ // Customer presses Send to start; Reply API returns a shared LIFF entry.
  const basicId=String(lineState.lineConfig?.botBasicId||"");
- const ownChat=kind==="reserve"&&lineState.lineConfig?.merchantOaConnected===true&&
-   /^@[a-z0-9_.-]{2,100}$/i.test(basicId)
+ const verb={reserve:"開始預約",queue:"開始取號",order:"開始點餐"}[kind];
+ const ownChat=verb&&/^@[a-z0-9_.-]{2,100}$/i.test(basicId)
    ?"https://line.me/R/oaMessage/"+encodeURIComponent(basicId)+"/?"+
-     encodeURIComponent("開始預約 "+routeState.slug):"";
+     encodeURIComponent(verb+" "+routeState.slug):"";
  const qrHref=ownChat||href;
  return '<div class="inset" data-service-url-kind="'+kind+'" style="margin-top:12px">'+
    '<strong>'+label+'</strong>'+
@@ -36,8 +37,8 @@ function serviceLink(kind,label,enabled){
      '<p style="overflow-wrap:anywhere"><a href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">'+esc(href)+'</a></p>'+
      btn("複製"+label,"copy-service-link","outline",'data-url="'+esc(href)+'" data-service-kind="'+kind+'"')+
      btn("顯示 QR Code","show-service-qr","outline",'data-url="'+esc(qrHref)+'"')+
-     (ownChat?'<p class="small">掃碼先開啟<strong>店家 LINE OA 聊天室</strong>；顧客按傳送「開始預約」，再點回覆的排隊怪獸共用 LINE 預約網頁。若 LINE 已授權訊息發送，預約完成將嘗試自動傳送確認；否則可從預約詳情一鍵開啟店家聊天室送出。</p>'+
-       '<p class="small"><a href="'+esc(ownChat)+'" target="_blank" rel="noopener noreferrer">開啟本店 LINE 預約入口</a></p>':"")+
+     (ownChat?'<p class="small">掃描 QR Code 會先開啟<strong>'+(lineState.lineConfig?.merchantOaConnected?"店家 LINE OA":"排隊怪獸官方 LINE OA")+'聊天室</strong>；顧客按傳送開始使用，再點回覆的排隊怪獸預約／取號／點餐連結。完成操作後會嘗試由客戶 LINE 自動發出確認請求；無法自動發送時可在個人紀錄手動按傳送。</p>'+
+       '<p class="small"><a href="'+esc(ownChat)+'" target="_blank" rel="noopener noreferrer">開啟 LINE 服務入口</a></p>':"")+
    '</div>'+
    '<p class="muted" data-service-url-inactive'+(enabled?' style="display:none"':'')+'>未選擇此功能</p>'+
  '</div>';
