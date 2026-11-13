@@ -8,7 +8,8 @@
   ["顧客功能","./for-customers.html","for-customers.html"],
   ["常見問題","./home.html#faq",""],
   ["免登入功能試用","./demo.html","demo.html"],
-  ["搜尋店家","./directory.html?mode=search","directory.html"]
+  ["搜尋店家","./directory.html","directory.html"],
+  ["我的紀錄","./my-records.html","my-records.html"]
  ];
  const link=arr=>arr.map(([label,url,active])=>'<a href="'+url+'"'+(active===page?' aria-current="page"':'')+'>'+label+'</a>').join("");
  mount.innerHTML='<header class="qm-public-header'+(page==="home.html"?' site-head':'')+'"><div class="qm-public-inner">'+
