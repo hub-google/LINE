@@ -323,7 +323,9 @@ export async function handlePickupAction(ev,b,a,id){
      return "訂單已取消";
    });return true;
  }
- return true;
+ // Only consume pickup actions handled here. Menu availability actions are
+ // handled by handleMerchantSettings later in the click-action chain.
+ return false;
 }
 
 export function initializePickupMode(){
