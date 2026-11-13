@@ -17,6 +17,7 @@ import {render} from "./staff-layout.js";
 import {act,load,rpc} from "./data-loading.js";
 import {loadBookingCalendar} from "./booking-calendar.js";
 import {availableUnits} from "./service-units.js";
+import {applyScheduleSessionCount,applySpecialScheduleMode} from "./schedule-settings.js";
 import {ticketStatusRpc} from "./actions/staff-queue-actions.js";
 import {fetchBookingEditSlots} from "./booking-edit.js";
 import {customerNoticeSuffix,notifyLineCalled,sendLineNotice} from "./line-session.js";
@@ -58,15 +59,11 @@ document.addEventListener("change",async ev=>{
    }
    return;
  }
- if(el.id==="schedule-special-mode"){
-  const mode=el.value;
-  if(!["CLOSED","CUSTOM","TEMPLATE"].includes(mode))return;
-  if(serviceUnitsState.scheduleExceptionDraft)serviceUnitsState.scheduleExceptionDraft.mode=mode;
-  for(const section of document.querySelectorAll("[data-schedule-template-choice]"))
-   section.style.display=mode==="CLOSED"?"none":"";
-  for(const section of document.querySelectorAll("[data-schedule-custom]"))
-   section.style.display=mode==="CUSTOM"?"":"none";
-  return;
+ if(el.dataset.scheduleWeekdayCount||el.id==="schedule-special-count"){
+  applyScheduleSessionCount(el);return;
+ }
+ if(el.id==="schedule-special-mode"||el.id==="schedule-special-template"){
+  applySpecialScheduleMode(el);return;
  }
  if(el.id==="menu-kind"){
    const custom=el.value==="__CUSTOM__";
