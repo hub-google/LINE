@@ -8,14 +8,13 @@ import {serviceUnitsState} from "../state/serviceUnitsState.js";
 
 import {box,btn,esc,field,tag} from "../shared-ui.js";
 
-import {merchantProfileFields} from "../merchant-brand.js";
+import {merchantProfileFields,merchantOperatingFields} from "../merchant-brand.js";
 import {unitSettingsPanel} from "../service-units.js";
 import {renderStaffMenu} from "./menu.js";
 import {renderPickupSettings,pickupState} from "../pickup-mode.js";
 import {renderStaffBranches} from "./branches.js";
 import {renderOaSettings} from "./oa-settings.js";
 import {customerUrl} from "../line-session.js";
-import {closedDatesPickerMarkup,installClosedDatesPicker} from "../closed-dates-picker.js";
 
 function serviceLink(kind,label,enabled){
  const url=["board","pickup-board"].includes(kind)
@@ -46,25 +45,22 @@ function serviceLink(kind,label,enabled){
 }
 
 export function renderStaffSettings({t,isManager,html,customersOnly=false}){
-  installClosedDatesPicker();
   const policy=staffState.staff.bookingPolicy||{};
   const selectedFlag=staffState.staffCustomerBook.find(x=>x.id===staffState.customerFlagSelected)||staffState.staffCustomerBook[0]||null;
   if(selectedFlag)staffState.customerFlagSelected=selectedFlag.id;
-  const weekdayChecks=[["0","週日"],["1","週一"],["2","週二"],["3","週三"],["4","週四"],["5","週五"],["6","週六"]]
-      .map(([day,title])=>'<label class="checklist"><input type="checkbox" class="policy-closed-day" value="'+day+'" '+((policy.closed_weekdays||[]).includes(Number(day))?"checked":"")+'> '+title+'</label>').join("");
   const serviceModules=t.modules||{};
   const cards=[
 ["public",renderOaSettings({isManager})],
-["operations",box("顧客服務開放設定",
+["catalog",box("顧客服務開放設定",
     '<p class="muted">店家可自行決定開放線上預約、現場取號與線上點餐；可單獨啟用或任意組合。關閉後顧客不再能建立新預約／新號碼，原有紀錄與已發出的號碼仍保留。</p>'+
     (isManager?
       '<div class="grid"><label class="checklist"><input id="set-service-reservation" type="checkbox" '+(serviceModules.reservation?'checked':'')+'> 開放線上預約</label>'+
       '<label class="checklist"><input id="set-service-queue" type="checkbox" '+(serviceModules.queue?'checked':'')+'> 開放現場取號</label>'+
        '<label class="checklist"><input id="set-service-pickup" type="checkbox" '+(pickupState.staff?.settings?.enabled?'checked':'')+'> 開放線上點餐</label></div>'+
-      '<p class="small">三項服務獨立控制；都不勾表示暫停新預約、新取號與新訂單，既有資料與已成立訂單仍保留。取餐時段請到「線上點餐」設定。</p>'+
+      '<p class="small">三項服務獨立控制；全部關閉將暫停新預約、新取號與新訂單，既有紀錄保留。細部規則請在下方設定。</p>'+
       '<div class="staff-actionbar">'+btn("儲存服務開關","save-service-modes","primary")+'</div>':
       '<p class="small">目前：預約 '+(serviceModules.reservation?'已開放':'未開放')+'，現場取號 '+(serviceModules.queue?'已開放':'未開放')+'，線上點餐 '+(pickupState.staff?.settings?.enabled?'已開放':'未開放')+'。只有店家管理者可以修改。</p>'))],
-["profile",box("企業基本設定",!isManager?'<p class="muted">只有管理者可以修改設定。</p>':
+["profile",box("店家基本資料",!isManager?'<p class="muted">只有管理者可以修改設定。</p>':
    merchantProfileFields("set",t)+
    '<div class="merchant-profile-actions">'+btn("儲存企業設定","update-settings","primary")+'</div>')],
 ["public",(isManager?box("顧客首頁文字與顯示設定",
@@ -75,24 +71,22 @@ export function renderStaffSettings({t,isManager,html,customersOnly=false}){
     '<label for="homepage-subtitle">首頁說明文字（可留空）</label><textarea id="homepage-subtitle" class="field" rows="2" maxlength="180" placeholder="想給顧客看的簡短介紹">'+esc(staffState.customerHomepageCopy?.subtitle??t.description??"")+'</textarea>'+
     '<label class="checklist"><input id="homepage-show-label" type="checkbox" '+(staffState.customerHomepageCopy?.show_label?'checked':'')+'>顯示上方小標籤</label>'+
     '<div class="staff-actionbar">'+btn("儲存顧客首頁設定","save-customer-homepage","primary")+'</div>'):"")],
-["operations",(isManager?box("候位保留規則",
+["catalog",(isManager?box("候位保留規則",
      '<p class="small">保留期間不會叫號；到期後下一次叫號時自動恢復。可設定回原順位或隊尾，原票券號碼不變。</p>'+
      '<div class="grid3"><div>'+field("每次保留分鐘數","hold-minutes",staffState.staff.queue_hold_policy?.hold_minutes??20,"number",'min="1" max="120"')+
      '</div><div>'+field("最多保留次數","hold-limit",staffState.staff.queue_hold_policy?.max_holds??2,"number",'min="0" max="10"')+
      '</div><div><label for="hold-return-mode">恢復後順位</label><select id="hold-return-mode" class="field">'+
      [["END","返回隊尾"],["ORIGINAL","返回原順位"]].map(([v,name])=>'<option value="'+v+'" '+((staffState.staff.queue_hold_policy?.return_mode||"END")===v?"selected":"")+'>'+name+'</option>').join("")+
      '</select></div></div><div class="staff-actionbar">'+btn("儲存候位保留規則","save-hold-policy","primary")+'</div>'):"")],
-["operations",(isManager?box("預約提前限制與休息時間",
-      '<p class="small">設定預約提前限制與中場休息；每週營業場次和特殊日期請使用智慧營業排程。既有預約不會自動取消。</p>'+
-      (serviceUnitsState.scheduleConfig?.enabled?
-        '<p class="small">每週公休與特殊日期已統一到上方「智慧營業排程」。</p>':
-        '<label>舊版預約公休日</label><div class="grid">'+weekdayChecks+'</div>'+
-        closedDatesPickerMarkup(policy.closed_dates||[]))+
+["catalog",(isManager?box("預約提前限制與休息時間",
+      '<p class="small">設定預約最晚提前時間及中場休息。營業日期、場次及公休請到「營業排程」管理；既有預約不會自動取消。</p>'+
+      '<p class="settings-guidance">每週公休、特殊日期及加開場次請統一至「營業排程」。既有公休資料保留；啟用每週排程後以新規則優先。</p>'+
+      '<div class="staff-actionbar">'+btn("前往營業排程","settings-section","outline",'data-section="operations"')+'</div>'+
       '<div class="grid"><div>'+field("每日休息開始（可留空）","policy-break-start",policy.break_start||"","time")+
       field("最晚提前預約分鐘數","policy-notice",policy.min_notice_minutes??0,"number",'min="0" max="10080"')+'</div>'+
       '<div>'+field("每日休息結束（可留空）","policy-break-end",policy.break_end||"","time")+'</div></div>'+
       '<div style="margin-top:14px">'+btn("儲存預約營業規則","save-booking-policy","primary")+'</div>'):"")],
-["operations",(isManager?box("預約送出前二次確認",
+["catalog",(isManager?box("預約送出前二次確認",
     '<p class="small">預設開啟。顧客會先看到預約內容，再決定是否真正送出。</p>'+
     '<label class="checklist"><input id="policy-confirm-required" type="checkbox" '+(policy.require_confirmation!==false?"checked":"")+'>送出前顯示確認卡</label>'+
     '<div style="margin-top:14px">'+btn("儲存二次確認設定","save-booking-confirmation","primary")+'</div>'):"")],
@@ -138,20 +132,35 @@ export function renderStaffSettings({t,isManager,html,customersOnly=false}){
       (isManager?cards.filter(([key])=>key==="customers").map(([,markup])=>markup).join(""):box("顧客管理","<p class=\"muted\">只有店家管理者可以查看及編輯顧客資料。</p>"));
   }
   // Preserve historical deep links while presenting only four visible categories.
-  const aliases={sessions:"operations",pickup:"catalog",branches:"profile",customers:"profile"};
+  const aliases={sessions:"operations",units:"operations",pickup:"catalog",menu:"catalog",branches:"profile",customers:"profile"};
   const section=aliases[staffState.settingsSection]||staffState.settingsSection||"profile";
   staffState.settingsSection=section;
   const choices=[
-    ["profile","店家與分店"],["operations","營業與場次"],
-    ["catalog","菜單與點餐"],["public","通知與公開"]
+    ["profile","店家資料"],["operations","營業排程"],
+    ["catalog","服務設定"],["public","顧客通路"]
   ];
   const tabs='<nav class="settings-hub-tabs" aria-label="設定分類">'+choices.map(([key,label])=>
     btn(label,"settings-section",section===key?"primary":"outline",'data-section="'+key+'" aria-current="'+(section===key?"page":"false")+'"')).join("")+'</nav>';
-  html+='<div class="settings-hub-head"><h2>設定</h2><p class="small">所有店家營運設定都在這裡。先完成店家資料，再依需要開放預約、取號、場次與服務。</p>'+
-    (section==="public"?"":'<div class="staff-actionbar"><span class="small">LINE OA 通知來源：'+(lineState.lineConfig?.merchantOaConnected?"店家自己的 OA":"未綁定（不代發）")+'</span>'+btn("查看 LINE OA 綁定與教學","settings-section","outline",'data-section="public"')+'</div>')+'</div>'+tabs;
+  const descriptions={
+    profile:"修改店家基本資訊、品牌識別及分店資料。",
+    operations:"管理每週營業時間、場次、特殊日期與服務窗口。",
+    catalog:"設定預約、叫號、點餐規則，以及菜單與服務項目。",
+    public:"設定顧客首頁、公開搜尋、分享入口與 LINE 通知。"
+  };
+  html+='<div class="settings-hub-head"><h2>設定</h2><p class="small">'+descriptions[section]+'</p></div>'+tabs;
   html+=cards.filter(([key])=>key===section).map(([,markup])=>markup).join("");
   if(section==="profile")html=renderStaffBranches({role:staffState.staff.role,html});
-  if(section==="operations")html+=unitSettingsPanel(isManager);
+  if(section==="operations"){
+    const tenant=staffState.staff?.tenant||{};
+    if(!serviceUnitsState.scheduleConfig?.enabled){
+      html+=box("預設營業時段",
+        '<p class="small">未啟用每週自動排程時使用此處的基本時段。可在下方啟用智慧營業排程，統一管理每週公休、特殊日期與場次。</p>'+
+        (isManager?merchantOperatingFields("legacy",tenant)+
+          '<div class="staff-actionbar">'+btn("儲存預設營業時段","save-default-operating-hours","primary")+'</div>':
+          '<p class="muted">僅店家管理者可以修改。</p>'));
+    }
+    html+=unitSettingsPanel(isManager);
+  }
   if(section==="catalog"){
     html=renderStaffMenu({t,isManager,html});
     html+=renderPickupSettings(isManager);
