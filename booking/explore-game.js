@@ -272,9 +272,9 @@ function walk(direction){
  if(avatarTimer)clearTimeout(avatarTimer);
  avatarTimer=setTimeout(()=>avatar.classList.remove("walking"),230);
 }
-function link(href,label,secondary=false){
+function link(href,label,secondary=false,kind=""){
  if(!href)return "";
- return '<a class="btn'+(secondary?' secondary':'')+'" href="'+escapeHtml(href)+'">'+label+'</a>';
+ return '<a class="btn'+(secondary?' secondary':'')+'" data-arcade-service="'+escapeHtml(kind)+'" href="'+escapeHtml(href)+'" aria-label="'+escapeHtml(label)+'">'+escapeHtml(label)+'</a>';
 }
 function enterShop(shop){
  if(!shop)return;
@@ -284,13 +284,16 @@ function enterShop(shop){
  $("arcade-street-meta").textContent=shopSummary(shop);
  $("arcade-room-art").innerHTML=roomSvg(shop);
  renderRoomAvatar();
- const actions=link(mod(shop,"reservation")?shop.reserve_href:"","立即預約")+
-  link(mod(shop,"queue")?shop.queue_href:"","現場取號",true)+
-  link(mod(shop,"pickup")?shop.order_href:"","線上點餐",true)+
-  link(mod(shop,"queue")&&mod(shop,"calling")?shop.board_href:"","即時叫號看板",true);
- $("arcade-shop-info").innerHTML='<div><strong>'+escapeHtml(shop.name)+'</strong><p>'+
-  escapeHtml(shopSummary(shop))+(shop.address?" · "+escapeHtml(shop.address):"")+'</p></div>'+
-  '<div class="arcade-panel-actions">'+(actions||'<span>店家目前未開放線上服務</span>')+'</div>';
+ const actions=[
+  mod(shop,"reservation")?link(shop.reserve_href,"立即預約",false,"reserve"):"",
+  mod(shop,"queue")?link(shop.queue_href,"現場取號",false,"queue"):"",
+  mod(shop,"pickup")?link(shop.order_href,"線上點餐",false,"order"):"",
+  mod(shop,"queue")&&mod(shop,"calling")?link(shop.board_href,"即時叫號看板",true,"board"):""
+ ].filter(Boolean);
+ $("arcade-shop-info").innerHTML='<div class="arcade-service-heading"><strong>選擇店家服務</strong>'+
+  '<p>'+escapeHtml(shop.name)+' · '+escapeHtml(shopCategory(shop))+'</p></div>'+
+  '<div class="arcade-panel-actions">'+(actions.join("")||'<span class="arcade-service-empty">店家目前未開放線上服務</span>')+'</div>';
+ document.body.style.overflow="hidden";
  $("arcade-room-view").focus({preventScroll:true});
 }
 listSwitch.addEventListener("click",()=>setView("list"));
@@ -303,7 +306,7 @@ pins.addEventListener("click",event=>{
  enterShop(shop);
 });
 $("arcade-back").addEventListener("click",()=>{
- interior.hidden=true;world.hidden=false;current=null;world.focus({preventScroll:true})
+ interior.hidden=true;world.hidden=false;current=null;document.body.style.overflow="";world.focus({preventScroll:true})
 });
 $("arcade-zoom-in").addEventListener("click",()=>zoomAt(camera.z*1.22));
 $("arcade-zoom-out").addEventListener("click",()=>zoomAt(camera.z/1.22));

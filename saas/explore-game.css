@@ -91,3 +91,138 @@ body[data-explore-view="game"] .explore-view-switch button:hover{opacity:.82}
 @media(max-width:740px){body[data-explore-view="game"] .explore-view-switch{top:8px;right:12px}.arcade-top{padding:65px 14px 13px;min-height:112px}.arcade-heading h2{font-size:19px}.arcade-top-actions{margin:0}.arcade-top-actions select{min-width:104px;max-width:145px}.arcade-map-viewport{height:calc(100dvh - 180px);min-height:470px}.arcade-map-topline{left:10px;top:10px;font-size:11px;padding:7px 10px}.arcade-map-hint{top:auto;bottom:12px;max-width:calc(100% - 190px);white-space:normal;font-size:10px;left:45%;padding:7px 10px}.arcade-map-dpad{display:block}.arcade-map-tools{right:12px;bottom:15px}.arcade-map-tools button,.arcade-map-dpad button{width:39px;height:39px;font-size:20px}.arcade-pin{min-width:140px}.arcade-pin strong{font-size:17px}.arcade-interior{padding:12px 8px 20px}.arcade-room-header{gap:12px}.arcade-room-header h3{font-size:16px}.arcade-room-header button{font-size:11px;padding:8px 10px}.arcade-panel{padding:12px}.arcade-panel-actions{width:100%}.arcade-room-bottom{flex-direction:column;align-items:stretch}.arcade-controls{justify-content:center}.arcade-room-view{border-width:4px}}
 @media(max-width:410px){body[data-explore-view="game"] .explore-view-switch button{font-size:12px;padding:8px 12px;min-height:38px}.arcade-heading h2{font-size:17px}.arcade-top-actions{gap:4px}.arcade-map-viewport{min-height:450px}.arcade-panel strong{font-size:17px}.arcade-room-header button{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.arcade-car,.arcade-pedestrian,.arcade-water,.arcade-shop-glow,.arcade-room-avatar.walking{animation:none!important}.arcade-pin{transition:none!important}}
+
+
+/* Stay-in-view merchant service dock: actions must be visible immediately upon entering any room.
+   Reserve space for touch-friendly controls; never require scrolling below the room canvas. */
+.arcade-interior{overscroll-behavior:contain;padding-bottom:clamp(150px,19dvh,220px)}
+.arcade-interior .arcade-room-view{
+ max-height:calc(100dvh - 248px);
+ min-height:0;
+ box-sizing:border-box;
+}
+.arcade-interior .arcade-panel.arcade-service-dock{
+ position:fixed;
+ z-index:25;
+ inset:auto auto max(10px,env(safe-area-inset-bottom)) 50%;
+ transform:translateX(-50%);
+ width:min(1080px,calc(100vw - 24px));
+ margin:0;
+ padding:14px 18px;
+ border:3px solid #19372f;
+ background:#fffdf1;
+ box-shadow:0 8px 0 #091a1a,0 15px 35px #0008;
+ display:grid;
+ grid-template-columns:minmax(130px,185px) minmax(0,1fr);
+ align-items:center;
+ gap:16px;
+ box-sizing:border-box;
+}
+.arcade-service-heading{min-width:0}
+.arcade-service-heading strong{
+ display:block;
+ font-size:18px;
+ line-height:1.35;
+ font-weight:950;
+ color:#18392f;
+}
+.arcade-service-heading p{
+ margin:4px 0 0;
+ color:#5b7468;
+ font-size:12px;
+ line-height:1.5;
+ overflow-wrap:anywhere;
+}
+.arcade-panel-actions{
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));
+ gap:10px;
+ width:100%;
+ min-width:0;
+}
+.arcade-panel-actions a.btn,
+.arcade-panel-actions a.btn.secondary{
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ min-width:0;
+ width:100%;
+ min-height:54px;
+ margin:0;
+ padding:10px 9px;
+ border:3px solid #173d32;
+ border-radius:4px!important;
+ background:#087454;
+ color:white;
+ font-size:15px;
+ line-height:1.3;
+ font-weight:900;
+ text-align:center;
+ text-decoration:none;
+ box-shadow:3px 4px 0 #24413760;
+ transition:filter .15s,transform .15s;
+}
+.arcade-panel-actions a.btn.secondary{
+ background:#eff7ed;
+ color:#15563d;
+}
+.arcade-panel-actions a.btn:hover,
+.arcade-panel-actions a.btn.secondary:hover{
+ filter:brightness(1.1);
+ transform:translateY(-2px);
+}
+.arcade-panel-actions a.btn:focus-visible{outline:3px solid #ffd45c;outline-offset:3px}
+.arcade-service-empty{
+ grid-column:1/-1;
+ padding:11px 4px;
+ color:#695c41;
+ font-weight:800;
+}
+.arcade-room-bottom{
+ position:fixed;
+ z-index:9;
+ inset:auto 22px 148px auto;
+ width:auto;
+ margin:0;
+ padding:0;
+ display:flex;
+ flex-direction:column;
+ align-items:flex-end;
+ gap:5px;
+ pointer-events:none;
+}
+.arcade-room-bottom>span{display:none}
+.arcade-room-bottom .arcade-controls{pointer-events:auto}
+@media(max-width:740px){
+ .arcade-interior{padding:10px 8px 205px}
+ .arcade-interior .arcade-room-view{max-height:calc(100dvh - 320px)}
+ .arcade-interior .arcade-panel.arcade-service-dock{
+  bottom:max(7px,env(safe-area-inset-bottom));
+  width:calc(100vw - 16px);
+  padding:10px;
+  grid-template-columns:1fr;
+  gap:9px;
+  border-width:3px;
+ }
+ .arcade-service-heading{display:flex;align-items:center;justify-content:space-between;gap:6px}
+ .arcade-service-heading strong{font-size:16px}
+ .arcade-service-heading p{font-size:11px;margin:0;max-width:55%;text-align:right}
+ .arcade-panel-actions{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .arcade-panel-actions a.btn,
+ .arcade-panel-actions a.btn.secondary{
+  min-height:46px;
+  font-size:14px;
+  padding:7px 5px;
+ }
+ .arcade-room-bottom{right:11px;bottom:calc(190px + env(safe-area-inset-bottom))}
+ .arcade-controls button{min-width:37px;min-height:37px;font-size:17px}
+}
+@media(max-width:360px){
+ .arcade-service-heading strong{font-size:15px}
+ .arcade-panel-actions a.btn,
+ .arcade-panel-actions a.btn.secondary{font-size:13px}
+ .arcade-room-bottom{bottom:calc(185px + env(safe-area-inset-bottom))}
+}
+@media(prefers-reduced-motion:reduce){
+ .arcade-panel-actions a.btn{transition:none}
+}
