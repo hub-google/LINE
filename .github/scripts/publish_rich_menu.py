@@ -20,10 +20,10 @@ CENTER = BASE + "merchant-center.html"
 CUSTOMER_ITEMS = [
     ("搜尋店家", "找服務中的門市", "search", {"type":"uri","label":"搜尋店家","uri":BASE+"directory.html?mode=search"}),
     ("線上預約", "挑選日期與場次", "features", {"type":"uri","label":"線上預約","uri":BASE+"directory.html?mode=search&service=%E9%A0%90%E7%B4%84"}),
-    ("現場取號", "領號並查看進度", "play", {"type":"uri","label":"現場取號","uri":BASE+"directory.html?mode=queue"}),
+    ("現場取號", "從我的服務直接領號", "play", {"type":"uri","label":"現場取號","uri":BASE+"directory.html?mode=mine&section=queue"}),
     ("線上點餐", "預訂與查詢取餐", "store", {"type":"uri","label":"線上點餐","uri":BASE+"directory.html?mode=search&service=%E9%BB%9E%E9%A4%90"}),
-    ("我的紀錄", "預約・號碼・訂單", "dashboard", {"type":"uri","label":"我的紀錄","uri":BASE+"directory.html?mode=mine"}),
-    ("上次預約看板", "直達上次預約門市", "dashboard", {"type":"uri","label":"上次預約看板","uri":BASE+"directory.html?mode=last-board"}),
+    ("我的預約／取號", "紀錄・現場取號・看板", "dashboard", {"type":"uri","label":"我的預約／取號","uri":BASE+"directory.html?mode=mine"}),
+    ("上次預約看板", "最近預約的門市進度", "dashboard", {"type":"uri","label":"上次預約看板","uri":BASE+"directory.html?mode=mine&section=board"}),
 ]
 MERCHANT_ITEMS = [
     ("免費叫號體驗", "免註冊直接試用", "play", {"type":"uri","label":"免費叫號體驗","uri":BASE+"demo.html"}),
