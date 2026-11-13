@@ -107,20 +107,6 @@ export function merchantOperatingFields(prefix,tenant={}){
    [15,30,60].map(m=>'<option value="'+m+'" '+(String(slot)===String(m)?'selected':'')+'>'+m+' 分鐘</option>').join("")+'</select></div></div>';
 }
 
-// Fields for fallback hours only; scheduled openings are managed by service sessions.
-export function merchantOperatingFields(prefix,tenant={}){
- const time=(key,defaultTime)=>String(tenant[key]||defaultTime).slice(0,5);
- const capacity=Number(tenant.slot_capacity||3);
- const slot=Number(tenant.slot_minutes||30);
- return '<div class="grid merchant-operating-fields">'+
-  '<div>'+field("每日開始營業時間",prefix+"-open",time("open_time","10:00"),"time")+'</div>'+
-  '<div>'+field("每日結束營業時間",prefix+"-close",time("close_time","20:00"),"time")+'</div>'+
-  '<div>'+field("每時段最多預約人數",prefix+"-capacity",capacity,"number",'min="1" max="100"')+'</div>'+
-  '<div><label for="'+prefix+'-minutes">預約時段間隔</label><select class="field" id="'+prefix+'-minutes">'+
-    [15,30,60].map(m=>'<option value="'+m+'" '+(slot===m?'selected':'')+'>'+m+' 分鐘</option>').join("")+'</select></div>'+
-  '</div>';
-}
-
 export function merchantProfilePatch(prefix,previous={}){
  const p={
   name:val(prefix+"-name"),phone:val(prefix+"-phone"),address:val(prefix+"-address"),
