@@ -24,8 +24,12 @@ body[data-monster-page="directory"] .page-header{padding-top:45px}
  <section class="main-panel">
   <nav class="tabs" aria-label="顧客功能">
    <a id="tab-search" href="?mode=search">搜尋店家</a>
-   <a id="tab-mine" href="?mode=mine">我的預約</a>
-   <a id="tab-queue" href="?mode=queue">現場取號</a>
+   <a id="tab-mine" href="?mode=mine">我的預約／取號</a>
+  </nav>
+  <nav id="combined-switch" class="combined-switch" aria-label="我的預約與取號功能" hidden>
+   <a id="section-history" href="./directory.html?mode=mine">我的紀錄</a>
+   <a id="section-queue" href="./directory.html?mode=mine&amp;section=queue">現場取號</a>
+   <a id="section-board" href="./directory.html?mode=mine&amp;section=board">上次預約看板</a>
   </nav>
   <div class="explore-view-switch" role="group" aria-label="探索模式"><button type="button" id="explore-switch-list" aria-pressed="true">清單找店家</button><button type="button" id="explore-switch-game" aria-pressed="false">遊戲逛街</button></div>
   <div id="explore-list" class="explore-list">
