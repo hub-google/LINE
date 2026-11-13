@@ -7,7 +7,7 @@ import {box,btn,esc,field,taipei} from "./shared-ui.js";
 import {rpc,act,load} from "./data-loading.js";
 import {render} from "./staff-layout.js";
 import {selectCustomerDetail} from "./customer-detail.js";
-import {customerNoticeSuffix,sendOrderReply} from "./line-session.js";
+import {customerNoticeSuffix,sendOrderReply,lineReplyHandoff} from "./line-session.js";
 import {normalizeTaiwanPhone,isValidTaiwanPhone,TW_LANDLINE_AREAS,getTaiwanLandlineHint,isValidTaiwanPhoneParts} from "./tw-phone.js";
 
 // The existing store, LINE identity and so_menu_items catalogue remain the source of truth.
@@ -219,6 +219,14 @@ export function renderStaffPickup(){
 
 export async function handlePickupAction(ev,b,a,id){
  if(!a.startsWith("pickup-"))return false;
+ if(a==="pickup-line-reply"){
+   if(!id)return true;
+   await act(async()=>{
+     const handoff=await lineReplyHandoff("order",id);
+     location.assign(handoff.oaMessageUrl);
+     return "正在開啟 LINE 聊天室；請按傳送取得訂餐確認卡";
+   });return true;
+ }
  if(a==="pickup-customer-history-page"){
     const page=Number(b.dataset.page),max=Math.max(1,Math.ceil(Number(pickupState.customerHistory?.total||0)/25));
     if(Number.isInteger(page)&&page>=1&&page<=max){pickupState.customerHistoryPage=page;await load();}
