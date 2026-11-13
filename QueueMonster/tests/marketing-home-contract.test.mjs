@@ -264,7 +264,7 @@ test("real-flow demo reproduces guest creation, merchant status changes and LINE
  assert.match(el("root").innerHTML,/C2-004/);
  assert.match(el("notifications").innerHTML,/已完成報到/);
  click("[data-tab]",{tab:"queue"});
- change({id:"staff-room",value:"3診"});
+ change({id:"staff-room",value:"3診",matches:()=>false});
  assert.match(el("root").innerHTML,/皮膚科 張醫師/);
  click("[data-act]",{act:"next"});
  assert.match(el("notifications").innerHTML,/皮膚科 張醫師/);
