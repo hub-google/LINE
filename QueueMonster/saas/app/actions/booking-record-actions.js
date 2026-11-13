@@ -5,7 +5,7 @@ import {routeState} from "../state/routeState.js";
 import {btn,esc,field,showActionFeedback} from "./../shared-ui.js";
 import {act,rpc,val} from "./../data-loading.js";
 import {normalizeBookingPhone} from "./../customer-booking.js";
-import {customerNoticeSuffix,sendLineNotice,sendBookingReply,bookingReplyHandoff,bridgeConfig} from "./../line-session.js";
+import {customerNoticeSuffix,sendLineNotice,lineReplyHandoff} from "./../line-session.js";
 import {downloadReservationIcs} from "./../calendar-export.js";
 import {openBookingReceipt} from "./../customer-records.js";
 import {beginBookingEdit,finishManageLink} from "./../booking-edit.js";
@@ -16,15 +16,9 @@ if(a==="booking-line-reply"){
  const booking=(customerState.customer?.my_reservations||[]).find(x=>x.id===id&&x.status==="CONFIRMED");
  if(!booking)return true;
  await act(async()=>{
-  const notice=await sendBookingReply(id);
-  if(/提醒暫時無法送出/.test(notice)){
-   const config=await bridgeConfig();
-   if(config.merchantOaConnected===true){
-     const handoff=await bookingReplyHandoff(id);
-     if(handoff?.oaMessageUrl)location.assign(handoff.oaMessageUrl);
-   }
-  }
-  return notice;
+  const handoff=await lineReplyHandoff("reservation",id);
+  location.assign(handoff.oaMessageUrl);
+  return "正在開啟 LINE 聊天室；請按傳送取得預約確認卡";
  });return true;
 }
 if(a==="edit-book-contact"){
