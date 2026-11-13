@@ -7,7 +7,7 @@ const sha = (process.env.GITHUB_SHA || "").trim();
 if (!/^[0-9a-f]{40}$/i.test(sha)) throw Error("GITHUB_SHA must be the deployment commit SHA");
 const src = path.resolve("QueueMonster/saas");
 const dest = path.resolve(process.argv[2] || "line-saas-dist");
-const pages = ["index.html", "template.html", "home.html", "for-merchants.html", "for-customers.html", "demo.html", "board.html", "pickup-board.html", "directory.html", "merchant-register.html", "platform-login.html", "merchant-center.html", "privacy.html", "terms.html"];
+const pages = ["index.html", "template.html", "home.html", "for-merchants.html", "for-customers.html", "demo.html", "board.html", "pickup-board.html", "directory.html", "my-records.html", "merchant-register.html", "platform-login.html", "merchant-center.html", "privacy.html", "terms.html"];
 const placeholder = "__LINE_SAAS_BUILD__";
 
 await mkdir(dest, {recursive:true});
