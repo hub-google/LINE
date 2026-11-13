@@ -25,7 +25,7 @@ function savedCredential(label){
 export function renderOaSettings({isManager}){
  const connected=!!lineState.lineConfig?.merchantOaConnected;
  const account=lineState.lineConfig?.botBasicId||"";
- const replacing=connected&&lineState.oaReplacing===true;
+ const replacing=connected&&lineState.oaReplacing===true&&lineState.oaReplacingSlug===routeState.slug;
  const webhook=lineState.LINE_BRIDGE_URL+"?action=webhook&merchant="+encodeURIComponent(routeState.slug);
  const status='<div class="oa-status-row"><div><span class="oa-overline">MESSAGING API</span>'+
   '<h3>店家 LINE OA</h3><p class="oa-summary">使用店家自己的 LINE 官方帳號。</p></div>'+
