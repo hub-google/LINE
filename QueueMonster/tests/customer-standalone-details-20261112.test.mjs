@@ -17,7 +17,7 @@ function harness(){
  const crossStoreState={customerActivity:{reservations:[],tickets:[],orders:[]}};
  const pickupState={customerHistory:{orders:[]},customer:null};
  const bookingState={manageKind:"",manageItem:"",manageMode:"view"};
- const lineState={lineConfig:{merchantOaConnected:true}};
+ const lineState={lineConfig:{merchantOaConnected:true,messagingReady:true}};
  const location={href:"https://hub-google.github.io/LINE/booking/?view=customer&merchant=qa-tenant&tab=mine"};
  const URLs=[];
  const history={pushState(_a,_b,url){URLs.push(url);location.href=new URL(url,location.href).href},
@@ -48,8 +48,10 @@ test("one reservation result screen confirms success with correct edit/cancel ac
  assert.match(html,/取消預約/);
  assert.match(html,/booking-line-reply/,"connected merchant OA offers confirmation through LINE");
  h.lineState.lineConfig.merchantOaConnected=false;
+ h.lineState.lineConfig.messagingReady=false;
  assert.doesNotMatch(h.renderCustomerDetail(),/booking-line-reply/,"unbound merchants cannot send LINE notice");
  h.lineState.lineConfig.merchantOaConnected=true;
+ h.lineState.lineConfig.messagingReady=true;
  assert.doesNotMatch(html,/取餐訂單管理/);
  h.customerState.customer.my_reservations[0].status="CANCELLED";
  const cancelled=h.renderCustomerDetail();
