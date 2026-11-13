@@ -6,6 +6,14 @@
 <title>找店家與線上預約、候位取號、線上點餐｜排隊怪獸</title>
 <meta name="description" content="搜尋使用排隊怪獸的餐廳、早餐店、診所、美髮美容與其他門市，查詢店家提供的 LINE 線上預約、排隊取號、即時叫號看板與線上點餐服務。依店家實際開放項目查看預約、候位或取餐進度。">
 <link rel="canonical" href="https://hub-google.github.io/LINE/booking/directory.html">
+<script>/* Preserve every published personal-history URL. */
+(()=>{const query=new URLSearchParams(location.search);
+ if(!["mine","last-board"].includes(query.get("mode")))return;
+ query.delete("mode");query.delete("section");
+ const target=new URL("./my-records.html",location.href);
+ target.search=query.toString();
+ location.replace(target.href);
+})();</script>
 <link rel="stylesheet" href="./assets/directory/page.css?build=__LINE_SAAS_BUILD__"><link rel="stylesheet" href="./explore-game.css"><script defer src="./explore-game.js"></script><link rel="stylesheet" href="./site-auth.css"><link rel="stylesheet" href="./monster-world.css?build=__LINE_SAAS_BUILD__"><link rel="stylesheet" href="./assets/marketing/shared-header.css?build=__LINE_SAAS_BUILD__"><script defer src="./assets/marketing/shared-header.js?build=__LINE_SAAS_BUILD__"></script><script defer src="./site-auth.js"></script><link rel="icon" type="image/svg+xml" href="./monster-mascot.svg"><style>/* Directory search header is now the shared marketing navigation; keep its own hero separately. */
 body[data-monster-page="directory"] .page-header .hero-heading{margin-top:0}
 body[data-monster-page="directory"] .page-header{padding-top:45px}
@@ -22,10 +30,6 @@ body[data-monster-page="directory"] .page-header{padding-top:45px}
 </header>
 <main class="container">
  <section class="main-panel">
-  <nav class="tabs" aria-label="顧客功能">
-   <a id="tab-search" href="?mode=search">搜尋店家</a>
-   <a id="tab-mine" href="?mode=mine">我的紀錄</a>
-  </nav>
   <div class="explore-view-switch" role="group" aria-label="探索模式"><button type="button" id="explore-switch-list" aria-pressed="true">清單找店家</button><button type="button" id="explore-switch-game" aria-pressed="false">遊戲逛街</button></div>
   <div id="explore-list" class="explore-list">
   <div class="search-wrap">
