@@ -63,7 +63,7 @@ export function renderPickupSettings(isManager){
  const select=(id,options,value)=>'<select class="field" id="'+id+'">'+options.map(([v,label])=>
    '<option value="'+esc(v)+'" '+(String(v)===String(value)?"selected":"")+'>'+esc(label)+'</option>').join("")+'</select>';
  return box("線上點餐與取餐進度",
-   '<p class="muted">沿用「設定 → 菜單與服務」的餐點，不另建第二份菜單。此模式與原本預約、取號獨立；不處理線上付款。</p>'+
+   '<p class="muted">沿用「設定 → 服務設定」的餐點，不另建第二份菜單。此模式與原本預約、取號獨立；不處理線上付款。</p>'+
    (!isManager?'<p>線上點餐：'+(s.enabled?"已啟用":"未啟用")+'；取餐方式：'+esc(modeName[s.schedule_mode]||"預約")+'</p>':
    '<p class="settings-guidance">線上點餐是否開放，請使用本頁上方的「顧客服務開放設定」。這裡只需調整取餐方式與時段。</p>'+
    '<label for="pickup-mode">顧客選擇取餐時間</label>'+
