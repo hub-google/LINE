@@ -27,6 +27,20 @@ if(a==="save-customer-homepage"){
   });
   return true;
 }
+ if(a==="toggle-oa-visibility"){
+  const target=b.dataset.target||"";
+  if(!["own-oa-token","own-oa-secret","own-oa-webhook"].includes(target))return true;
+  const input=routeState.$(target);
+  if(!input||input.tagName!=="INPUT")return true;
+  const visible=input.type==="password";
+  input.type=visible?"text":"password";
+  b.setAttribute("aria-pressed",String(visible));
+  b.setAttribute("aria-label",(visible?"隱藏 ":"顯示 ")+(input.labels?.[0]?.textContent||"憑證"));
+  const open=b.querySelector(".oa-eye-open"),closed=b.querySelector(".oa-eye-closed");
+  if(open)open.hidden=visible;
+  if(closed)closed.hidden=!visible;
+  return true;
+ }
  if(a==="connect-own-oa"||a==="disconnect-own-oa"){
   if(a==="disconnect-own-oa"&&!confirm("確定解除本店 LINE OA 綁定？店家 LINE 通知將停止，平台 OA 不會代發；原預約和取號仍保留。"))return true;
   await act(async()=>{
@@ -58,6 +72,7 @@ if(a==="save-customer-homepage"){
      throw Error(message||"LINE OA 綁定失敗（"+(data.error||"HTTP "+res.status)+"），請確認 LINE 設定與管理權限。");
    }
    lineState.lineConfig=null;lineState.lineConfigSlug="";
+   lineState.oaCredentials=null;lineState.oaCredentialsSlug="";lineState.oaCredentialReadError="";
    return a==="connect-own-oa"
      ?"Messaging API 已驗證連接。一般通知可使用本店 OA；預約免費自動回覆還須設定本店 LIFF（chat_message.write）與 Webhook，並從店家聊天室開啟預約。"
      :"已解除自有 LINE OA；平台 OA 不會代發店家通知";
