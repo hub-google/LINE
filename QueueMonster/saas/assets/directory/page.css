@@ -25,7 +25,7 @@ a:focus-visible,input:focus-visible{outline:3px solid #69bc9b;outline-offset:3px
 .hero-heading p{color:#d5ece3;margin:0;line-height:1.75;font-size:14px}
 main{position:relative;margin-top:-18px;padding-bottom:48px}
 .main-panel{background:#fff;border:1px solid #e0ebe6;border-radius:20px;box-shadow:var(--shadow);padding:24px 26px 28px}
-.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;background:#f0f5f2;border-radius:14px;padding:5px;margin-bottom:27px}
+.tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;background:#f0f5f2;border-radius:14px;padding:5px;margin-bottom:27px}
 .tabs a{text-align:center;text-decoration:none;border-radius:10px;color:#506e62;font-weight:700;min-height:46px;display:flex;align-items:center;justify-content:center;padding:9px 7px;transition:background .2s,box-shadow .2s}
 .tabs a:hover{background:#e2eee8;color:#19533f}
 .tabs a.active{background:#fff;color:#0b674e;box-shadow:0 3px 12px rgba(25,88,62,.12)}
@@ -182,3 +182,12 @@ a.btn.secondary:hover{background:#e1f3e9}
    font-size:11px!important;padding:6px 9px;min-height:39px
  }
 }
+
+/* Combined personal history / queue / last-booking board tabs */
+.combined-switch{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding:5px;margin:-12px 0 24px;background:#f2e5fa;border:1px solid #e6d3f1;border-radius:13px}
+.combined-switch[hidden]{display:none!important}
+.combined-switch a{display:flex;align-items:center;justify-content:center;min-height:44px;padding:8px 6px;text-align:center;font-weight:750;text-decoration:none;border-radius:10px;color:#65417d}
+.combined-switch a:hover{background:#e9d8f6}
+.combined-switch a.active{background:#fff;color:#693a83;box-shadow:0 2px 9px rgba(84,45,107,.14)}
+.combined-switch a:focus-visible{outline:3px solid #b98bd5;outline-offset:2px}
+@media(max-width:520px){.combined-switch{gap:3px}.combined-switch a{font-size:12px;padding:8px 3px}}
