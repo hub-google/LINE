@@ -101,7 +101,7 @@ test('merchant provider mismatch is handled by short-lived, merchant-scoped sign
  assert.equal((await ctx.api.bookingReplyMessage(data,id,'merchant-user','shop',proof)).type,'flex');
  assert.equal((await ctx.api.bookingReplyMessage(data,id,'merchant-user','other-shop',proof)).type,'text');
  assert.equal((await ctx.api.bookingReplyMessage(data,id,'merchant-user',null,proof)).type,'text');
- assert.equal((await ctx.api.bookingReplyMessage(data,id,'merchant-user','shop',proof.slice(0,-1)+'X')).type,'text');
+ assert.equal((await ctx.api.bookingReplyMessage(data,id,'merchant-user','shop',proof.slice(0,-1)+(proof.endsWith('X')?'Y':'X'))).type,'text');
 });
 test('signed confirmation webhook calls real reply branch, never push',async()=>{
  const calls=[];
