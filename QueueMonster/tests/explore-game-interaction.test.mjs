@@ -68,6 +68,10 @@ test("clicking a live shop enters its animated themed room with actual service l
  assert.match(x.element("arcade-shop-info").innerHTML,/立即預約/);
  assert.match(x.element("arcade-shop-info").innerHTML,/線上點餐/);
  assert.match(x.element("arcade-shop-info").innerHTML,/sunny-diner/);
+ assert.match(x.element("arcade-shop-info").innerHTML,/選擇店家服務/);
+ assert.match(x.element("arcade-shop-info").innerHTML,/data-arcade-service="reserve"/);
+ assert.match(x.element("arcade-shop-info").innerHTML,/data-arcade-service="order"/);
+ assert.doesNotMatch(x.element("arcade-shop-info").innerHTML,/data-arcade-service="queue"/);
  const before=x.element("arcade-room-avatar").style.left;
  x.listeners.keydown({key:"ArrowRight",target:{closest:()=>null},preventDefault(){}});
  assert.notEqual(x.element("arcade-room-avatar").style.left,before);
@@ -96,4 +100,22 @@ test("only passed public store data appear; merchant names are HTML-escaped",()=
  api.setData({shops:[{...published[0],name:"<script>"}]});
  assert.match(x.element("arcade-map-pins").innerHTML,/&lt;script&gt;/);
  assert.doesNotMatch(x.element("arcade-map-pins").innerHTML,/<script>/);
+});
+test("merchant with four enabled modules gets all four in-room service actions",()=>{
+ const x=setup();
+ const shop={...published[0],modules:{reservation:true,queue:true,pickup:true,calling:true},
+  queue_href:"./?view=customer&merchant=sunny-diner&tab=queue",board_href:"./board.html?merchant=sunny-diner"};
+ x.window.LineExploreGame.setData({shops:[shop]});
+ x.element("arcade-map-pins").handlers.click({target:{closest:()=>({dataset:{shopSlug:shop.slug}})}});
+ const panel=x.element("arcade-shop-info").innerHTML;
+ for(const kind of ["reserve","queue","order","board"]){
+  assert.match(panel,new RegExp('data-arcade-service="'+kind+'"'));
+ }
+ assert.match(panel,/tab=reserve/);
+ assert.match(panel,/tab=queue/);
+ assert.match(panel,/tab=order/);
+ assert.match(panel,/board\.html\?merchant=sunny-diner/);
+ assert.equal(x.document.body.style.overflow,"hidden");
+ x.element("arcade-back").handlers.click();
+ assert.equal(x.document.body.style.overflow,"");
 });
