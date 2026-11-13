@@ -151,7 +151,8 @@ test("LINE login uses the selected merchant, not a built-in sample store",async(
 test("home and directory LINE logins do not require a merchant",async()=>{
  for(const url of ["https://hub-google.github.io/LINE/booking/home.html",
                    "https://hub-google.github.io/LINE/booking/directory.html?mode=search",
-                   "https://hub-google.github.io/LINE/booking/directory.html?mode=mine"]){
+                   "https://hub-google.github.io/LINE/booking/directory.html?mode=mine",
+                   "https://hub-google.github.io/LINE/booking/my-records.html"]){
   const ui=createScenario({url});
   await flush();
   const login=controls(ui.rootNode).find(x=>x.tag==="button");
