@@ -94,8 +94,16 @@ if(a==="save-customer-homepage"){
   });return true;
  }
  if(a==="save-directory"){await act(async()=>{const enabled=!!routeState.$("directory-enabled")?.checked;await rpc("so_set_directory_listing",{p_slug:routeState.slug,p_enabled:enabled,p_oa_mode:"PLATFORM"});return enabled?"門市已開放在排隊怪獸平台搜尋":"門市已取消公開搜尋（原有專屬連結仍可使用）";});return true;}
- if(a==="menu-edit"){bookingState.editingMenuItemId=id;render();return true;}
- if(a==="menu-edit-clear"){bookingState.editingMenuItemId="";render();return true;}
+ if(a==="menu-edit"){
+   bookingState.editingMenuItemId=id;
+   render();
+   const editor=document.getElementById("menu-edit-panel");
+   if(editor){editor.scrollIntoView({behavior:"smooth",block:"start"});editor.focus({preventScroll:true});}
+   return true;
+ }
+ if(a==="menu-edit-clear"){
+   bookingState.editingMenuItemId="";render();return true;
+ }
  if(a==="refresh-service-slots"){void refreshServiceSlots();return true;}
  if(a==="menu-save"){
    await act(async()=>{
