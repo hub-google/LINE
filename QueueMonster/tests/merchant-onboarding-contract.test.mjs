@@ -286,7 +286,8 @@ test("merchant LINE OA basic connection does not require webhook; optional autom
  assert.match(settings,/驗證並連接 Messaging API/);
  assert.match(settings,/own-oa-token/);
  assert.match(settings,/一般 LINE OA 串接只需下方兩項 Messaging API 憑證/);
- assert.match(settings,/若要讓顧客預約後自動傳訊/);
+ assert.match(settings,/店家不需要自己的 LIFF ID/);
+ assert.match(settings,/店家需啟用自己的 Webhook 才能用免費 Reply API 回覆/);
  assert.match(settings,/Webhook URL/);
  assert.match(actions,/Messaging API 已驗證連接/);
  assert.doesNotMatch(guide,/複製 Webhook URL|Use webhook|訊息回傳網址/);

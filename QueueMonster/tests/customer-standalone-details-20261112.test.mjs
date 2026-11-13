@@ -17,6 +17,7 @@ function harness(){
  const crossStoreState={customerActivity:{reservations:[],tickets:[],orders:[]}};
  const pickupState={customerHistory:{orders:[]},customer:null};
  const bookingState={manageKind:"",manageItem:"",manageMode:"view"};
+ const lineState={lineConfig:{merchantOaConnected:true}};
  const location={href:"https://hub-google.github.io/LINE/booking/?view=customer&merchant=qa-tenant&tab=mine"};
  const URLs=[];
  const history={pushState(_a,_b,url){URLs.push(url);location.href=new URL(url,location.href).href},
@@ -29,9 +30,9 @@ function harness(){
  const source=read("saas/app/customer-detail.js")
   .replace(/^import .*;\s*$/gm,"")
   .replace(/\bexport function\b/g,"function");
- const exports=new Function("bookingState","customerState","crossStoreState","routeState","sharedUiState","pickupState","pickupStatusLabel","editBookingForm","box","btn","esc","formatTaipeiCreated","jsStatus","selectedItemsHtml","history","location",source+"\nreturn {renderCustomerDetail,selectCustomerDetail,returnToCustomerHistory};")(
-  bookingState,customerState,crossStoreState,routeState,{},pickupState,status,()=>"",box,btn,esc,()=>"",jsStatus,()=>"",history,location);
- return {...exports,routeState,customerState,crossStoreState,pickupState,history,location,URLs};
+ const exports=new Function("bookingState","lineState","customerState","crossStoreState","routeState","sharedUiState","pickupState","pickupStatusLabel","editBookingForm","box","btn","esc","formatTaipeiCreated","jsStatus","selectedItemsHtml","history","location",source+"\nreturn {renderCustomerDetail,selectCustomerDetail,returnToCustomerHistory};")(
+  bookingState,lineState,customerState,crossStoreState,routeState,{},pickupState,status,()=>"",box,btn,esc,()=>"",jsStatus,()=>"",history,location);
+ return {...exports,routeState,customerState,crossStoreState,pickupState,lineState,history,location,URLs};
 }
 
 test("one reservation result screen confirms success with correct edit/cancel actions",()=>{
@@ -45,6 +46,10 @@ test("one reservation result screen confirms success with correct edit/cancel ac
  assert.match(html,/修改預約日期／人數/);
  assert.match(html,/修改姓名／電話/);
  assert.match(html,/取消預約/);
+ assert.match(html,/booking-line-reply/,"connected merchant OA offers confirmation through LINE");
+ h.lineState.lineConfig.merchantOaConnected=false;
+ assert.doesNotMatch(h.renderCustomerDetail(),/booking-line-reply/,"unbound merchants cannot send LINE notice");
+ h.lineState.lineConfig.merchantOaConnected=true;
  assert.doesNotMatch(html,/取餐訂單管理/);
  h.customerState.customer.my_reservations[0].status="CANCELLED";
  const cancelled=h.renderCustomerDetail();
