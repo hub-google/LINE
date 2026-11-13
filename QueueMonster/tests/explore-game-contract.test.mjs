@@ -35,34 +35,41 @@ test("explore lists real published stores with category/area/service filters",()
  assert.doesNotMatch(directory,/testMatches|test_board_only/);
 });
 
-test("game mode has map to street to storefront flow and works on mobile",()=>{
+test("game mode opens the illustrated city directly and supports animated shop interiors",()=>{
  assert.match(directory,/id="explore-switch-game"/);
  assert.match(directory,/id="explore-world"/);
- assert.match(directory,/id="arcade-regions"/);
+ assert.match(directory,/id="arcade-city-svg"/);
+ assert.match(directory,/id="arcade-map-pins"/);
+ assert.match(directory,/id="arcade-zoom-in"/);
+ assert.match(directory,/id="arcade-zoom-out"/);
+ assert.match(directory,/id="arcade-zoom-reset"/);
  assert.match(directory,/id="explore-street"/);
- assert.match(directory,/id="arcade-shopline"/);
- assert.match(directory,/id="arcade-previous"/);
- assert.match(directory,/id="arcade-next"/);
- assert.match(directory,/id="arcade-open-shop"/);
+ assert.match(directory,/id="arcade-room-art"/);
+ assert.match(directory,/id="arcade-room-avatar"/);
+ assert.match(directory,/data-map-pan="up"/);
+ assert.match(directory,/data-walk="left"/);
+ assert.doesNotMatch(directory,/id="arcade-regions"/);
  assert.match(read("saas/assets/directory/main.js"),/mode=\["search","queue","mine","game","last-board"\]/);
  assert.match(directory,/LineExploreGame\?\.setData/);
  assert.match(js,/function showWorld\(\)/);
- assert.match(js,/function enterRegion\(region\)/);
- assert.match(js,/function drawStreet\(\)/);
- assert.match(js,/function selectShop\(index,scroll=true\)/);
- assert.match(js,/data-shop-index/);
- assert.match(js,/data-region/);
+ assert.match(js,/function renderPins\(\)/);
+ assert.match(js,/function enterShop\(shop\)/);
+ assert.match(js,/function roomSvg\(shop\)/);
+ assert.match(js,/data-shop-slug/);
  assert.match(js,/event\.key==="ArrowLeft"/);
  assert.match(js,/event\.key==="ArrowRight"/);
- assert.doesNotMatch(js,/test_board_only|qaStore|demoShops/);
+ assert.match(js,/pointermove/);
+ assert.match(js,/wheel/);
+ assert.doesNotMatch(js,/test_board_only|qaStore|demoShops|Math\.random\(\)/);
  assert.match(js,/shops=Array\.isArray\(publicShops\)/);
  assert.match(css,/@media\(max-width:740px\)/);
  assert.match(css,/@media\(max-width:410px\)/);
  assert.match(css,/#explore-street\[hidden\]/);
- assert.match(css,/\.pixel-avatar/);
- assert.doesNotMatch(js,/Math\.random\(\)/);
- const gameSection=directory.slice(directory.indexOf('<section id="explore-game"'),directory.indexOf('</section>',directory.indexOf('<section id="explore-game"')));
- assert.doesNotMatch(gameSection,/免登入/);
+ assert.match(css,/\.arcade-room-avatar/);
+ assert.match(css,/prefers-reduced-motion/);
+ const gameSection=directory.slice(directory.indexOf('<section id="explore-game"'),
+  directory.indexOf('<p id="explore-game-note"'));
+ assert.doesNotMatch(gameSection,/免登入|線上商圈/);
 });
 
 test("game assets are versioned and deployed under both /booking and /saas",()=>{
@@ -86,6 +93,7 @@ test("game shop links reuse existing OA-specific booking routes",()=>{
  assert.match(directory,/board_href:"\.\/board\.html\?merchant="\+encodeURIComponent\(shop\.slug\)/);
  assert.match(js,/if\(shop\.modules\?\.reservation\)/);
  assert.match(js,/if\(shop\.modules\?\.queue\)/);
+ assert.match(directory,/order_href:customerUrl\(shop\.slug,"order",shop\.oa_mode\)/);
  assert.doesNotMatch(js,/shop\.test_board_only\)/);
  assert.match(directory,/selected\?\.oa_mode==="PLATFORM"/);
  assert.match(directory,/if\(original\.searchParams\.get\("view"\)!=="customer"\)return/);
