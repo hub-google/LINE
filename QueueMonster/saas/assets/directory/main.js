@@ -7,8 +7,13 @@ const SB_KEY=SUPABASE_PUBLISHABLE_KEY;
 const bridge=SB_URL+"/functions/v1/line-bridge?action=config";
 const sb=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"line-saas-customer-session-v2"}});
 const params=new URLSearchParams(location.search),mode=["search","queue","mine","game","last-board"].includes(params.get("mode"))?params.get("mode"):"search";
+// Preserve legacy queue and board deep links while merging the visible tabs.
+const section=params.get("section")||"";
+const isQueueSection=mode==="queue"||(mode==="mine"&&section==="queue");
+const isBoardSection=mode==="last-board"||(mode==="mine"&&section==="board");
+const isHistorySection=mode==="mine"&&!isQueueSection&&!isBoardSection;
 // LINE OA service links open the matching real-store filter, never a demo or blank search.
-const requestedService=mode==="search"&&["預約","取號","點餐","看板"].includes(params.get("service"))?params.get("service"):"";
+const requestedService=isQueueSection?"取號":mode==="search"&&["預約","取號","點餐","看板"].includes(params.get("service"))?params.get("service"):"";
 if(requestedService)document.getElementById("explore-service").value=requestedService;
 const els={intro:document.getElementById("intro"),results:document.getElementById("results"),keyword:document.getElementById("keyword"),test:null};
 document.body.dataset.directoryMode=mode;
@@ -30,13 +35,19 @@ function updateFilterSummary(){
 });
 updateFilterSummary();
 
-document.getElementById("tab-"+(mode==="game"?"search":mode==="last-board"?"mine":mode)).classList.add("active");
+document.getElementById("tab-"+(mode==="game"?"search":mode==="queue"||isBoardSection?"mine":mode)).classList.add("active");
+const combinedSwitch=document.getElementById("combined-switch");
+if(combinedSwitch){
+ combinedSwitch.hidden=!(isHistorySection||isQueueSection||isBoardSection);
+ const target=document.getElementById(isQueueSection?"section-queue":isBoardSection?"section-board":"section-history");
+ if(target){target.classList.add("active");target.setAttribute("aria-current","page");}
+}
 let all=[],popular=[],searchResults=[],searchTotal=0,searchPage=1;
 let searchLoading=false,searchError="",searchRequest=0,searchTimer=null;
 let liffId="";
 let mineIdentityState="loading";
 let lastBoardResult=null;
-const needsIdentity=mode==="mine"||mode==="last-board";
+const needsIdentity=isHistorySection||isBoardSection;
 const searchCriteria=()=>!needsIdentity&&(
  Boolean(els.keyword.value.trim())||
  document.getElementById("explore-category").value!=="全部"||
@@ -58,9 +69,9 @@ function setupExploreFilters(){
  };
  options("explore-category",[...new Set(all.map(x=>x.category||"其他"))].sort((a,b)=>a.localeCompare(b,"zh-Hant")),"全部類別");
  options("explore-area",[...new Set(all.map(areaOf))].sort((a,b)=>a.localeCompare(b,"zh-Hant")),"所有地區");
- document.querySelector(".explore-view-switch").hidden=needsIdentity;
+ document.querySelector(".explore-view-switch").hidden=needsIdentity||isQueueSection;
  document.getElementById("explore-filters").classList.toggle("hidden",needsIdentity);
- document.querySelector(".search-wrap")?.classList.toggle("hidden",mode==="last-board");
+ document.querySelector(".search-wrap")?.classList.toggle("hidden",isBoardSection);
 }
 
 function e(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
@@ -74,7 +85,7 @@ function badges(t){
  (t.oa_mode==="PLATFORM"?'<span class="badge">平台 LINE 服務</span>':"");
 }
 function render(){
- if(mode==="last-board"){
+ if(isBoardSection){
   const heading=document.getElementById("results-heading");
   heading.textContent="上次預約門市的叫號看板";
   document.getElementById("result-pages").classList.add("hidden");
@@ -86,7 +97,7 @@ function render(){
   }else if(mineIdentityState==="guest"||lastBoardResult?.status==="LOGIN_REQUIRED"){
     count="需要 LINE 登入";
     message='<strong>請先使用 LINE 登入</strong><p>只有完成 LINE 身分驗證，才能安全地找出你的最近一次預約門市。</p>'+
-      '<p><a class="btn" href="./?view=customer&tab=mine&site_login=1&site_return=directory.html%3Fmode%3Dlast-board">使用 LINE 登入並繼續</a></p>';
+      '<p><a class="btn" href="./?view=customer&tab=mine&site_login=1&site_return=directory.html%3Fmode%3Dmine%26section%3Dboard">使用 LINE 登入並繼續</a></p>';
   }else if(mineIdentityState==="error"){
     count="暫時無法查詢";
     message='<strong>目前無法查詢預約紀錄</strong><p>請稍後重新整理，或從我的紀錄選擇店家。</p>';
@@ -106,7 +117,7 @@ function render(){
     '<a class="btn secondary" href="./directory.html?mode=search">搜尋店家</a></p></div>';
   return;
  }
- if(mode==="mine"&&mineIdentityState!=="ready"){
+ if(isHistorySection&&mineIdentityState!=="ready"){
   document.getElementById("results-heading").textContent="我的紀錄";
   document.getElementById("result-count").textContent=mineIdentityState==="loading"?"正在確認身分":mineIdentityState==="guest"?"請先登入 LINE":"目前無法取得紀錄";
   document.getElementById("result-pages").classList.add("hidden");
@@ -121,7 +132,7 @@ function render(){
  const keyword=els.keyword.value.trim().toLocaleLowerCase("zh-TW");
  const searching=searchCriteria();
  let filtered=[],count=0;
- if(mode==="mine"){
+ if(isHistorySection){
    filtered=all.filter(t=>((t.name||"")+" "+(t.address||"")).toLocaleLowerCase("zh-TW").includes(keyword));
    const category=document.getElementById("explore-category").value;
    const area=document.getElementById("explore-area").value;
@@ -141,10 +152,10 @@ function render(){
    count=filtered.length;
  }
  const heading=document.getElementById("results-heading");
- heading.textContent=mode==="mine"?"我的紀錄":searching?"搜尋結果":"熱門店家排行";
+ heading.textContent=isHistorySection?"我的預約／取號紀錄":searching?"搜尋結果":"熱門店家排行";
  document.getElementById("result-count").textContent=searchLoading&&searching?"搜尋中…":
    searchError&&searching?"搜尋失敗":
-   !searching&&mode!=="mine"?"近 30 天預約＋取號＋訂餐 · 前 "+count+" 名":
+   !searching&&!isHistorySection?"近 30 天預約＋取號＋訂餐 · 前 "+count+" 名":
    searching?count+" 個結果":count+" 個店家";
  const paging=document.getElementById("result-pages");
  paging.classList.toggle("hidden",!searching||searchLoading||Boolean(searchError)||searchTotal<=50);
@@ -161,9 +172,9 @@ function render(){
    return;
  }
  if(!filtered.length){
-   const msg=mode==="mine"?"還沒有找到你的預約紀錄":searching?"找不到符合條件的店家":"目前沒有已公開的店家";
+   const msg=isHistorySection?"還沒有找到你的預約或取號紀錄":searching?"找不到符合條件的店家":"目前沒有已公開的店家";
    els.results.innerHTML='<div class="empty"><strong>'+e(msg)+'</strong><p>'+
-    (mode==="mine"?"可從店家提供的排隊怪獸預約連結登入同一帳號查看。":searching?"試試其他店名、地點或篩選條件。":"新的合作店家開放服務後，將顯示在此處。")+
+    (isHistorySection?"可從店家提供的排隊怪獸預約連結登入同一帳號查看。":searching?"試試其他店名、地點或篩選條件。":"新的合作店家開放服務後，將顯示在此處。")+
     '</p></div>';
    return;
  }
@@ -177,7 +188,7 @@ function render(){
    const orderHref=customerUrl(t.slug,"order",t.oa_mode);
   const mineHref=customerUrl(t.slug,"mine",t.oa_mode);
   let actions="",primaryHref="";
-  if(mode==="mine"){
+  if(isHistorySection){
     primaryHref=mineHref;
     actions='<a class="btn" href="'+e(mineHref)+'">查看我的紀錄</a>'+
       (services.queue?'<a class="btn secondary" href="'+e(queueHref)+'">查看號碼</a>':"")+
@@ -191,7 +202,7 @@ function render(){
       (services.queue&&services.calling?'<a class="btn secondary" href="'+boardHref+'">叫號看板</a>':"");
   }
   const badges=badgesForStore(t);
-  const rank=mode!=="mine"&&!searching&&Number(t.popularity_rank)>0?
+  const rank=!isHistorySection&&!searching&&Number(t.popularity_rank)>0?
     '<span class="rank-number'+(Number(t.popularity_rank)<=3?' leading':'')+'">#'+Number(t.popularity_rank)+'</span>':"";
   const metric=rank?'<p class="popularity-metrics">近30天 · 預約 '+Number(t.booking_count||0)+' · 取號 '+Number(t.ticket_count||0)+' · 訂餐 '+Number(t.order_count||0)+'</p>':"";
   const cover=primaryHref?'<a class="card-cover" href="'+e(primaryHref)+'" aria-label="開啟 '+name+'"></a>':"";
@@ -202,7 +213,7 @@ function render(){
    metric+
    (desc?'<p class="shop-desc">'+desc+'</p>':"")+
    (address?'<p class="shop-address">地點：'+address+'</p>':"")+
-   (mode==="mine"?'<p class="shop-desc">最近預約 '+Number(t.booking_count||0)+' 筆 · 取號 '+Number(t.ticket_count||0)+' 筆</p>':"")+
+   (isHistorySection?'<p class="shop-desc">最近預約 '+Number(t.booking_count||0)+' 筆 · 取號 '+Number(t.ticket_count||0)+' 筆</p>':"")+
    '<div class="card-actions">'+actions+
    (address?'<a class="btn secondary" href="https://www.google.com/maps/search/?api=1&amp;query='+encodeURIComponent(t.address)+'" target="_blank" rel="noopener noreferrer">地圖位置</a>':"")+
    '</div></div></article>';
@@ -211,7 +222,7 @@ function render(){
 function badgesForStore(t){return badges(t);}
 function safeLogo(src){return safeMerchantLogoUrl(src,{directory:true});}
 async function loadSearch(){
- if(mode==="mine")return render();
+ if(isHistorySection)return render();
  const current=++searchRequest;
  if(!searchCriteria()){
    searchLoading=false;searchError="";searchResults=[];searchTotal=0;
@@ -220,7 +231,7 @@ async function loadSearch(){
  searchLoading=true;searchError="";render();
  let {data,error}=await sb.rpc("so_public_store_search",{
    p_query:els.keyword.value.trim()||null,
-   p_mode:mode==="queue"?"queue":"all",
+   p_mode:isQueueSection?"queue":"all",
    p_category:document.getElementById("explore-category").value,
    p_area:document.getElementById("explore-area").value,
    p_service:document.getElementById("explore-service").value,
@@ -235,7 +246,7 @@ async function loadSearch(){
    .map(o=>o.value).filter(c=>c.toLocaleLowerCase("zh-TW").includes(keyword));
   if(match.length===1){
    const retry=await sb.rpc("so_public_store_search",{
-    p_query:null,p_mode:mode==="queue"?"queue":"all",p_category:match[0],
+    p_query:null,p_mode:isQueueSection?"queue":"all",p_category:match[0],
     p_area:document.getElementById("explore-area").value,
     p_service:document.getElementById("explore-service").value,
     p_sort:document.getElementById("explore-sort").value,p_page:searchPage
@@ -251,7 +262,7 @@ async function loadSearch(){
  render();
 }
 function queueSearch(){
- if(mode==="mine")return render();
+ if(isHistorySection)return render();
  searchPage=1;searchRequest++;
  clearTimeout(searchTimer);
  if(!searchCriteria()){
@@ -303,7 +314,7 @@ document.addEventListener("click",async event=>{
  }
 });
 function publishGameDirectory(){
- if(needsIdentity)return;
+ if(needsIdentity||isQueueSection)return;
  window.LineExploreGame?.setData({
   shops:all.map(shop=>({...shop,
     reserve_href:customerUrl(shop.slug,"reserve",shop.oa_mode),
@@ -325,9 +336,9 @@ async function load(){
   // Parallelize LINE config and identity; guests can see the sign-in CTA without config.
   const confPromise=fetch(bridge,{cache:"no-store"}).then(r=>r.ok?r.json():{}).catch(()=>({}));
   if(needsIdentity){
-    els.intro.innerHTML=mode==="last-board"?
+    els.intro.innerHTML=isBoardSection?
      '<strong>快速開啟上次預約的叫號看板</strong><p>以 LINE 身分確認最近一次有效預約；只有店家開放叫號時才會自動進入。</p>':
-     '<strong>我的預約與取號紀錄</strong><p>查詢自己已綁定 LINE 身分的預約與號碼紀錄。</p>';
+     '<strong>我的預約與取號紀錄</strong><p>查詢自己已綁定 LINE 身分的預約與取號紀錄，也能切換現場取號與上次預約看板。</p>';
     const s=await sb.auth.getSession();
     if(s.error)throw s.error;
     if(!s.data.session){const x=await sb.auth.signInAnonymously();if(x.error)throw x.error}
@@ -336,7 +347,7 @@ async function load(){
     if(!String(linked.data?.display_name||"").trim()){
       mineIdentityState="guest";
       all=[];
-    }else if(mode==="last-board"){
+    }else if(isBoardSection){
       const {data,error}=await sb.rpc("so_my_last_booking_board");
       if(error)throw error;
       mineIdentityState="ready";
@@ -367,10 +378,10 @@ async function load(){
     els.intro.innerHTML=mode==="game"?
       '<strong>遊戲逛街 · 逛商圈找店家</strong><p>在虛擬商店街點選店面，查看真實公開店家的預約與取號入口。</p>':mode==="search"?
       '<strong>找店家、查看叫號更簡單</strong><p>搜尋店名或地點，直接查看可使用的服務。叫號看板無須登入；預約及取號才需 LINE 身分驗證。</p>':
-      '<strong>選擇提供現場取號的店家</strong><p>公開看板可直接查看；實際取號時才需要 LINE 驗證。</p>';
+      '<strong>現場取號</strong><p>只顯示開放現場取號的店家，進入門市領號時才需要 LINE 身分驗證。</p>';
     const [directory,ranking]=await Promise.all([
-      sb.rpc("so_public_directory",{p_query:null,p_mode:mode==="queue"?"queue":"all"}),
-      sb.rpc("so_public_popular_stores",{p_mode:mode==="queue"?"queue":"all",p_limit:50})
+      sb.rpc("so_public_directory",{p_query:null,p_mode:isQueueSection?"queue":"all"}),
+      sb.rpc("so_public_popular_stores",{p_mode:isQueueSection?"queue":"all",p_limit:50})
     ]);
     if(directory.error)throw directory.error;
     if(ranking.error)throw ranking.error;
