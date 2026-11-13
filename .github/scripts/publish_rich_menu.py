@@ -17,15 +17,14 @@ SPLITS_X = [0, 833, 1666, WIDTH]
 SPLITS_Y = [0, 843, HEIGHT]
 BASE = "https://hub-google.github.io/LINE/booking/"
 CENTER = BASE + "merchant-center.html"
-# Customer buttons mirror the directory's unified reservation / queue / board routes.
-# Record shortcuts: reservation (default), ticket and pickup order history.
+# Each official-account tile has a distinct purpose. Personal history combines all three record types.
 CUSTOMER_ITEMS = [
     ("搜尋店家", "找服務中的門市", "search", {"type":"uri","label":"搜尋店家","uri":BASE+"directory.html?mode=search"}),
     ("線上預約", "挑選日期與場次", "features", {"type":"uri","label":"線上預約","uri":BASE+"directory.html?mode=search&service=%E9%A0%90%E7%B4%84"}),
-    ("取號紀錄", "各店領號與叫號進度", "play", {"type":"uri","label":"取號紀錄","uri":BASE+"directory.html?mode=mine&section=ticket"}),
+    ("現場取號", "尋找提供領號的店家", "play", {"type":"uri","label":"現場取號","uri":BASE+"directory.html?mode=search&service=%E5%8F%96%E8%99%9F"}),
     ("線上點餐", "預訂與查詢取餐", "store", {"type":"uri","label":"線上點餐","uri":BASE+"directory.html?mode=search&service=%E9%BB%9E%E9%A4%90"}),
     ("我的紀錄", "預約・取號・訂單", "dashboard", {"type":"uri","label":"我的紀錄","uri":BASE+"directory.html?mode=mine"}),
-    ("訂單紀錄", "查看點餐與取餐狀態", "dashboard", {"type":"uri","label":"訂單紀錄","uri":BASE+"directory.html?mode=mine&section=order"}),
+    ("常見問題", "快速了解平台使用方式", "guide", {"type":"uri","label":"常見問題","uri":BASE+"home.html#faq"}),
 ]
 MERCHANT_ITEMS = [
     ("免費叫號體驗", "免註冊直接試用", "play", {"type":"uri","label":"免費叫號體驗","uri":BASE+"demo.html"}),
