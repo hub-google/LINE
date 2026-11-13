@@ -812,15 +812,15 @@ function platformBotMessage(command: string, welcome = false): Record<string, un
     label = "遊戲逛街";
   } else if (/訂單紀錄|訂餐紀錄|取餐紀錄|取號紀錄|叫號紀錄|號碼紀錄/.test(input)) {
     title = "「我的紀錄」一頁同時顯示所有門市的預約、取號及訂餐紀錄，登入 LINE 後即可查看。";
-    link = PLATFORM_ENTRY+"directory.html?mode=mine";
+    link = PLATFORM_ENTRY+"my-records.html";
     label = "我的紀錄";
   } else if (/上次預約看板|最近預約看板|最近預約的看板|我的叫號看板/.test(input)) {
     title = "個人紀錄已合併：預約、取號與訂餐會同時顯示在「我的紀錄」頁面。";
-    link = PLATFORM_ENTRY+"directory.html?mode=mine";
+    link = PLATFORM_ENTRY+"my-records.html";
     label = "我的紀錄";
   } else if (/我的|紀錄|紀錄查詢|歷史|取消|修改/.test(input)) {
     title = "「我的紀錄」將預約、取號、訂餐紀錄整合在同一頁，不需要切換三個分頁。";
-    link = PLATFORM_ENTRY+"directory.html?mode=mine";
+    link = PLATFORM_ENTRY+"my-records.html";
     label = "我的紀錄";
   } else if (/叫號|看板|進度|輪到|排到/.test(input)) {
     title = "先搜尋店家，再查看該店公開叫號看板；自己的號碼請到「取號紀錄」查詢。";
@@ -841,7 +841,7 @@ function platformBotMessage(command: string, welcome = false): Record<string, un
     quickReply: {
       items: [
         {type:"action",action:{type:"uri",label,uri:link}},
-        {type:"action",action:{type:"uri",label:"我的紀錄",uri:PLATFORM_ENTRY+"directory.html?mode=mine"}},
+        {type:"action",action:{type:"uri",label:"我的紀錄",uri:PLATFORM_ENTRY+"my-records.html"}},
         {type:"action",action:{type:"uri",label:"現場取號",uri:PLATFORM_ENTRY+"directory.html?mode=search&service=%E5%8F%96%E8%99%9F"}},
         {type:"action",action:{type:"uri",label:"線上預約",uri:PLATFORM_ENTRY+"directory.html?mode=search&service=%E9%A0%90%E7%B4%84"}},
       ],
