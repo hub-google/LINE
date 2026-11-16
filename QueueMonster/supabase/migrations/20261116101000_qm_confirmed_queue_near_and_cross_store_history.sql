@@ -94,7 +94,7 @@ linked_users as (
  where ll.line_sub in (select line_sub from verified_subjects)
 ),
 mine as (
- select 'reservation'::text kind,r.id,t.slug,t.name shop_name,t.oa_mode,
+ select 'reservation'::text kind,r.id,t.slug,t.name shop_name,t.oa_mode,t.status merchant_status,
    coalesce(r.booking_prefix,'')||coalesce(r.booking_no::text,'—') number,
    r.status,r.created_at,
    to_char(r.booking_date,'YYYY-MM-DD')||' '||to_char(r.booking_time,'HH24:MI') event_time,
@@ -106,7 +106,7 @@ mine as (
   and (r.user_id=(select auth.uid())
     or exists(select 1 from linked_users l where l.tenant_id=r.tenant_id and l.user_id=r.user_id))
  union all
- select 'ticket'::text kind,k.id,t.slug,t.name shop_name,t.oa_mode,
+ select 'ticket'::text kind,k.id,t.slug,t.name shop_name,t.oa_mode,t.status merchant_status,
    coalesce(k.number_prefix,'')||coalesce(k.ticket_no::text,'—') number,
    k.status,k.created_at,
    to_char(k.business_date,'YYYY-MM-DD') event_time,
@@ -119,7 +119,7 @@ mine as (
    and (k.user_id=(select auth.uid())
     or exists(select 1 from linked_users l where l.tenant_id=k.tenant_id and l.user_id=k.user_id))
  union all
- select 'order'::text kind,o.id,t.slug,t.name shop_name,t.oa_mode,
+ select 'order'::text kind,o.id,t.slug,t.name shop_name,t.oa_mode,t.status merchant_status,
    'P'||lpad(o.order_no::text,5,'0') number,
    o.status,o.created_at,
    to_char(o.pickup_at at time zone 'Asia/Taipei','YYYY-MM-DD HH24:MI') event_time,
@@ -133,7 +133,7 @@ mine as (
 )
 select coalesce(jsonb_agg(to_jsonb(recent) order by recent.created_at desc),'[]'::jsonb)
 from (
- select kind,id,slug,shop_name,oa_mode,number,status,created_at,event_time,party_size,total
+ select kind,id,slug,shop_name,oa_mode,merchant_status,number,status,created_at,event_time,party_size,total
  from mine order by created_at desc,id desc limit 150
 ) recent;
 $function$
@@ -160,7 +160,7 @@ linked_users as (
  where ll.line_sub in (select line_sub from verified_subjects)
 ),
 mine as (
- select 'reservation'::text kind,r.id,t.slug,t.name shop_name,t.oa_mode,
+ select 'reservation'::text kind,r.id,t.slug,t.name shop_name,t.oa_mode,t.status merchant_status,
    coalesce(r.booking_prefix,'')||coalesce(r.booking_no::text,'—') number,
    r.status,r.created_at,
    to_char(r.booking_date,'YYYY-MM-DD')||' '||to_char(r.booking_time,'HH24:MI') event_time,
@@ -172,7 +172,7 @@ mine as (
   and (r.user_id=(select auth.uid())
     or exists(select 1 from linked_users l where l.tenant_id=r.tenant_id and l.user_id=r.user_id))
  union all
- select 'ticket'::text kind,k.id,t.slug,t.name shop_name,t.oa_mode,
+ select 'ticket'::text kind,k.id,t.slug,t.name shop_name,t.oa_mode,t.status merchant_status,
    coalesce(k.number_prefix,'')||coalesce(k.ticket_no::text,'—') number,
    k.status,k.created_at,
    to_char(k.business_date,'YYYY-MM-DD') event_time,
@@ -185,7 +185,7 @@ mine as (
    and (k.user_id=(select auth.uid())
     or exists(select 1 from linked_users l where l.tenant_id=k.tenant_id and l.user_id=k.user_id))
  union all
- select 'order'::text kind,o.id,t.slug,t.name shop_name,t.oa_mode,
+ select 'order'::text kind,o.id,t.slug,t.name shop_name,t.oa_mode,t.status merchant_status,
    'P'||lpad(o.order_no::text,5,'0') number,
    o.status,o.created_at,
    to_char(o.pickup_at at time zone 'Asia/Taipei','YYYY-MM-DD HH24:MI') event_time,
@@ -199,7 +199,7 @@ mine as (
 )
 select coalesce(jsonb_agg(to_jsonb(recent) order by recent.created_at desc),'[]'::jsonb)
 from (
- select kind,id,slug,shop_name,oa_mode,number,status,created_at,event_time,party_size,total
+ select kind,id,slug,shop_name,oa_mode,merchant_status,number,status,created_at,event_time,party_size,total
  from mine order by created_at desc,id desc limit least(greatest(coalesce(p_limit,50),1),100) offset greatest(coalesce(p_offset,0),0)
 ) recent;
 $function$
