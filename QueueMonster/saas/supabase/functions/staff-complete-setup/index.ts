@@ -2,19 +2,21 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.0";
 
 const ALLOWED_ORIGIN="https://hub-google.github.io";
-const headers={
- "Access-Control-Allow-Origin":ALLOWED_ORIGIN,
- "Access-Control-Allow-Headers":"authorization,apikey,x-client-info,content-type",
- "Access-Control-Allow-Methods":"POST,OPTIONS",
- "Vary":"Origin"
-};
-const respond=(body:unknown,status=200)=>new Response(JSON.stringify(body),{
- status,headers:{...headers,"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}
-});
+const TRUSTED_ORIGINS=new Set([ALLOWED_ORIGIN,"https://qm.monsterport.com","https://queue.monsterport.com"]);
 Deno.serve(async(request:Request)=>{
+ const origin=request.headers.get("origin");
+ const headers={
+  ...(origin&&TRUSTED_ORIGINS.has(origin)?{"Access-Control-Allow-Origin":origin}:{}),
+  "Access-Control-Allow-Headers":"authorization,apikey,x-client-info,content-type",
+  "Access-Control-Allow-Methods":"POST,OPTIONS",
+  "Vary":"Origin"
+ };
+ const respond=(body:unknown,status=200)=>new Response(JSON.stringify(body),{
+  status,headers:{...headers,"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}
+ });
  if(request.method==="OPTIONS")return new Response(null,{status:204,headers});
  if(request.method!=="POST")return respond({error:"不支援此操作"},405);
- if(request.headers.get("origin")!==ALLOWED_ORIGIN)return respond({error:"來源不符"},403);
+ if(!origin||!TRUSTED_ORIGINS.has(origin))return respond({error:"來源不符"},403);
  const token=(request.headers.get("authorization")||"").match(/^Bearer\s+(.+)$/i)?.[1];
  const url=Deno.env.get("SUPABASE_URL");
  const service=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
