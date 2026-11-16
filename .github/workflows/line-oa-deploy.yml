@@ -44,6 +44,9 @@ jobs:
           version: latest
       - name: Check LINE OA command and webhook contract
         run: node --test QueueMonster/tests/dual-domain-auth-contract.test.mjs QueueMonster/tests/line-oa-bot-contract.test.mjs QueueMonster/tests/booking-line-reply.test.mjs QueueMonster/tests/queue-near-alert-oss-n03.test.mjs QueueMonster/tests/queue-monster-table-prefix.test.mjs QueueMonster/tests/line-notice-permanent-retry-regression.test.mjs
+      - name: Provision separate queue LIFF without changing existing GitHub Pages LIFF
+        shell: bash
+        run: python3 .github/scripts/sync-queue-auth-domains.py --liff-only
       - name: Deploy backend and sync encrypted LINE configuration
         shell: bash
         run: |

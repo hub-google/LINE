@@ -9,6 +9,7 @@ import json
 import os
 import pathlib
 import re
+import sys
 import subprocess
 import tempfile
 import time
@@ -74,7 +75,7 @@ def sync_supabase_redirects():
     print("Supabase Auth: both original GitHub Pages and queue custom-domain redirects accepted.")
 
 
-def sync_queue_liff():
+def sync_queue_liff(persist_to_supabase=True):
     channel = os.environ.get("LINE_LOGIN_CHANNEL_ID", "").strip()
     secret = os.environ.get("LINE_LOGIN_CHANNEL_SECRET", "").strip()
     old_id = os.environ.get("LINE_LIFF_ID", "").strip()
@@ -123,6 +124,10 @@ def sync_queue_liff():
         raise RuntimeError("New queue LIFF endpoint verification failed")
     if not {"openid", "profile", "chat_message.write"}.issubset(set(new.get("scope") or [])):
         raise RuntimeError("New queue LIFF required scopes not enabled")
+    if not persist_to_supabase:
+        # Public LIFF ID is safe to log and allows bootstrap when the Supabase PAT expired.
+        print("QUEUE_PUBLIC_LIFF_ID=" + queue_id)
+        return old_id, queue_id
     # Store public LIFF identifier in existing server-side Supabase secrets; never expose secret keys.
     handle, path = tempfile.mkstemp(prefix="queue-liff-", suffix=".env")
     try:
@@ -158,6 +163,10 @@ def verify_bridge(old_id, queue_id):
 
 
 if __name__ == "__main__":
-    sync_supabase_redirects()
-    legacy_liff, queue_liff = sync_queue_liff()
-    verify_bridge(legacy_liff, queue_liff)
+    if "--liff-only" in sys.argv:
+        # Run before Supabase deployment so an expired PAT cannot block LIFF creation.
+        sync_queue_liff(persist_to_supabase=False)
+    else:
+        sync_supabase_redirects()
+        legacy_liff, queue_liff = sync_queue_liff()
+        verify_bridge(legacy_liff, queue_liff)
