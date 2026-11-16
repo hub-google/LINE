@@ -17,8 +17,15 @@ import {authReady,box,btn,esc,layout,nav,requireAuth} from "./shared-ui.js";
 export function staffRender(){
  if(!authReady())return requireAuth();
  const memberships=authState.context?.memberships||[];
- if(!staffState.staff){return box("企業員工後台",'<p class="muted">請先加入企業或由公司平台管理員核發邀請。'+(memberships.length?"請從下列企業進入：":"")+'</p>'+memberships.map(m=>'<p><a href="'+esc(sharedUiState.route("staff",m.slug))+'">'+esc(m.name)+'（'+esc(m.role)+'）→</a></p>').join("")+
-    (authState.context?.invitations||[]).map(i=>'<div class="listline"><div>'+esc(i.tenant)+'－'+esc(i.role)+'</div>'+btn("接受邀請","accept-invite","primary",'data-id="'+esc(i.id)+'"')+'</div>').join("")); }
+ if(!staffState.staff){
+  const isHeadquarters=!!authState.context?.platform_admin;
+  const guidance=isHeadquarters
+   ?'<p class="muted">總部管理員請先到企業列表選擇門市，再開啟該門市的設定或管理頁面。</p><p><a class="btn primary" href="./?view=platform">前往總部企業列表</a></p>'
+   :'<p class="muted">請先加入企業或由公司平台管理員核發邀請。'+(memberships.length?"請從下列企業進入：":"")+'</p>';
+  return box(isHeadquarters?"選擇要管理的門市":"企業員工後台",guidance+
+    memberships.map(m=>'<p><a href="'+esc(sharedUiState.route("staff",m.slug))+'">'+esc(m.name)+'（'+esc(m.role)+'）→</a></p>').join("")+
+    (authState.context?.invitations||[]).map(i=>'<div class="listline"><div>'+esc(i.tenant)+'－'+esc(i.role)+'</div>'+btn("接受邀請","accept-invite","primary",'data-id="'+esc(i.id)+'"')+'</div>').join(""));
+ }
  if(["units","menu","branches"].includes(staffState.staffTab)){
    staffState.settingsSection=({units:"operations",menu:"catalog",branches:"profile"})[staffState.staffTab];
    staffState.staffTab="settings";

@@ -63,8 +63,14 @@ document.addEventListener("click",async ev=>{
    const section=b.dataset.section;
    if(!["profile","operations","catalog","public"].includes(section))return;
    staffState.settingsSection=section;
-   if(routeState.view==="staff")staffState.staffTab="settings";
-   void load();return;
+   if(routeState.view==="staff"){
+     staffState.staffTab="settings";
+     const url=new URL(location.href);
+     url.searchParams.set("tab","settings");
+     url.searchParams.set("section",section);
+     if(url.href!==location.href)history.replaceState(null,"",url.pathname+url.search+url.hash);
+   }
+   render();void load();return;
  }
  if(b.dataset.act==="open-bookings"||b.dataset.act==="open-queue"){
  staffState.staffTab=b.dataset.act==="open-bookings"?"bookings":"queue";feedbackState.err="";render();
@@ -81,35 +87,46 @@ document.addEventListener("click",async ev=>{
    serviceUnitsState.unitChoice=b.dataset.id;serviceUnitsState.unitSessionChoice="";serviceUnitsState.unitConfirmKey="";routeState.customerTab=customerState.customer?.tenant?.modules?.reservation?"reserve":"queue";
    void load();return;
  }
- if(b.dataset.nav){const v=b.dataset.nav;const tab=b.dataset.tab;if(v==="customer"){
-  const wasRecordScreen=["detail","progress"].includes(routeState.customerTab);
-  routeState.customerTab=tab;queueState.progressTicketId="";crossStoreState.crossCurrentStore=false;
-  if(wasRecordScreen){
-   routeState.detailKind="";routeState.detailId="";
-   const u=new URL(location.href);u.searchParams.set("tab",tab);
-   for(const key of ["kind","item","ticket","mode","manage"])u.searchParams.delete(key);
-   history.pushState(null,"",u.pathname+u.search+u.hash);
-  }
-  if(tab==="order"){void load();return;}
-  if(["reserve","queue"].includes(tab)&&!customerState.customer?.tenant.modules[tab==="reserve"?"reservation":"queue"])routeState.customerTab="home";
-  stopQueueRealtime();
-  if(serviceUnitsState.unitEnabled()&&["queue","reserve"].includes(routeState.customerTab)){
-    if(routeState.customerTab==="queue")routeState.day=taipei();
-    void load();return;
-  }
-  if(routeState.customerTab==="progress"){queueState.queueLive=null;queueState.queueLiveShop="";void refreshCrossStoreOverview();}
-  if(routeState.customerTab==="reserve"&&!serviceUnitsState.unitEnabled())void refreshServiceSlots();
-  else stopCrossQueueRealtime();
-  /* Customer subviews change in-place on the same page. */
+ if(b.dataset.nav){
+   const v=b.dataset.nav,tab=b.dataset.tab;
+   if(v==="customer"){
+     if(!["home","reserve","queue","order","mine"].includes(tab))return;
+     const modules=customerState.customer?.tenant?.modules||{};
+     const nextTab=(tab==="reserve"&&!modules.reservation)||(tab==="queue"&&!modules.queue)?"home":tab;
+     routeState.customerTab=nextTab;
+     queueState.progressTicketId="";
+     crossStoreState.crossCurrentStore=false;
+     routeState.detailKind="";routeState.detailId="";
+     bookingState.manageKind="";bookingState.manageItem="";bookingState.manageMode="view";
+     const url=new URL(location.href);
+     url.searchParams.set("tab",nextTab);
+     for(const key of ["kind","item","ticket","mode","manage"])url.searchParams.delete(key);
+     if(url.href!==location.href)history.pushState(null,"",url.pathname+url.search+url.hash);
+     stopQueueRealtime();stopCrossQueueRealtime();
+     if(nextTab==="queue")routeState.day=taipei();
+     render();
+     if(nextTab!=="home")void load();
+     return;
+   }
+   if(v==="staff"){
+     if(!["dashboard","bookings","queue","orders","calendar","analytics","customers","members","settings","units","menu","branches"].includes(tab))return;
+     staffState.staffTab=tab;
+     if(tab==="settings")staffState.settingsSection="profile";
+     const url=new URL(location.href);
+     url.searchParams.set("tab",tab);
+     url.searchParams.delete("section");
+     if(url.href!==location.href)history.replaceState(null,"",url.pathname+url.search+url.hash);
+     feedbackState.err="";feedbackState.flash="";
+     render();
+     void load();
+     if(tab==="bookings")void searchHistoricalBookings(1);
+     return;
+   }
+   if(v==="platform"){
+     routeState.platformTab=tab;feedbackState.err="";feedbackState.flash="";render();return;
+   }
+   return;
  }
- if(v==="staff"){
-   staffState.staffTab=tab;
-   if(tab==="orders"){void load();return;}
-   if(["analytics","branches","menu","settings","units","customers"].includes(tab)){if(tab==="settings")staffState.settingsSection="profile";void load();return;}
-    if(tab==="bookings"){feedbackState.err="";feedbackState.flash="";render();void searchHistoricalBookings(1);return;}
-    if(tab==="calendar"){feedbackState.err="";feedbackState.flash="";render();void loadBookingCalendar(1);return;}
- }
- if(v==="platform")routeState.platformTab=tab;feedbackState.err="";feedbackState.flash="";render();return}
  if(b.dataset.slot){
   const option=currentBookingSlots().find(x=>x.time===b.dataset.slot);
   if(!availableForParty(option)){
