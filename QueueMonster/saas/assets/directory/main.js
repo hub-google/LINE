@@ -40,6 +40,10 @@ let searchLoading=false,searchError="",searchRequest=0,searchTimer=null;
 let liffId="";
 let mineIdentityState="loading";
 let personalRecords={reservation:[],ticket:[],order:[]};
+const historyPageSize=50;
+let historyPages={reservation:1,ticket:1,order:1};
+let historyHasMore={reservation:false,ticket:false,order:false};
+let historyLoading="",historyError="";
 const needsIdentity=isHistorySection;
 const searchCriteria=()=>!needsIdentity&&(
  Boolean(els.keyword.value.trim())||
@@ -126,12 +130,38 @@ function renderMyRecords(){
   return '<section class="history-section" id="history-'+kind+'" aria-labelledby="heading-'+kind+'">'+
     '<div class="history-section-heading"><h3 id="heading-'+kind+'">'+label+'</h3><span>'+rows.length+' 筆</span></div>'+
     (rows.length?'<div class="history-cards">'+cards+'</div>':
-      '<p class="history-empty">'+(kw?"沒有符合搜尋條件的紀錄":"目前沒有"+label)+'</p>')+
+      '<p class="history-empty">'+(kw?"已載入紀錄中沒有符合條件的結果":"目前沒有"+label)+'</p>')+
+    (historyHasMore[kind]?'<div class="history-more"><button class="btn secondary" type="button" data-history-more="'+kind+'"'+(historyLoading?' disabled':'')+'>'+(historyLoading===kind?"讀取中…":"載入更多"+label)+'</button></div>':'')+
     '</section>';
  });
- count.textContent=total+" 筆紀錄";
- els.results.innerHTML='<div class="history-all">'+html.join("")+'</div>';
+ count.textContent=total+(Object.values(historyHasMore).some(Boolean)?" 筆已載入":" 筆紀錄");
+ els.results.innerHTML='<div class="history-all">'+html.join("")+
+   (historyError?'<p class="history-empty" role="alert">'+e(historyError)+'</p>':"")+'</div>';
 }
+async function loadMoreHistory(kind){
+ if(!isHistorySection||!["reservation","ticket","order"].includes(kind)||
+    mineIdentityState!=="ready"||!historyHasMore[kind]||historyLoading)return;
+ historyLoading=kind;historyError="";renderMyRecords();
+ const offset=historyPages[kind]*historyPageSize;
+ try{
+  const {data,error}=await sb.rpc("so_my_platform_records_page",
+    {p_kind:kind,p_offset:offset,p_limit:historyPageSize+1});
+  if(error)throw error;
+  const rows=Array.isArray(data)?data:[];
+  const seen=new Set(personalRecords[kind].map(record=>record.id));
+  personalRecords[kind].push(...rows.slice(0,historyPageSize).filter(record=>!seen.has(record.id)));
+  historyPages[kind]++;
+  historyHasMore[kind]=rows.length>historyPageSize;
+ }catch(error){
+  historyError="無法載入更多紀錄，請稍後重試。";
+  console.warn("Customer history paging failed",error);
+ }finally{historyLoading="";renderMyRecords();}
+}
+document.addEventListener("click",event=>{
+ const button=event.target.closest("button[data-history-more]");
+ if(!button)return;
+ void loadMoreHistory(button.dataset.historyMore);
+});
 function render(){
  if(isHistorySection){renderMyRecords();return;}
  const keyword=els.keyword.value.trim().toLocaleLowerCase("zh-TW");
@@ -363,10 +393,15 @@ async function load(){
       personalRecords={reservation:[],ticket:[],order:[]};
     }else{
       const kinds=["reservation","ticket","order"];
-      const responses=await Promise.all(kinds.map(p_kind=>sb.rpc("so_my_platform_records",{p_kind})));
+      const responses=await Promise.all(kinds.map(p_kind=>sb.rpc("so_my_platform_records_page",
+        {p_kind,p_offset:0,p_limit:historyPageSize+1})));
       const error=responses.find(r=>r.error)?.error;
       if(error)throw error;
-      personalRecords=Object.fromEntries(kinds.map((kind,i)=>[kind,Array.isArray(responses[i].data)?responses[i].data:[]]));
+      personalRecords=Object.fromEntries(kinds.map((kind,i)=>[kind,
+        (Array.isArray(responses[i].data)?responses[i].data:[]).slice(0,historyPageSize)]));
+      historyHasMore=Object.fromEntries(kinds.map((kind,i)=>[kind,
+        Array.isArray(responses[i].data)&&responses[i].data.length>historyPageSize]));
+      historyPages={reservation:1,ticket:1,order:1};historyError="";
       mineIdentityState="ready";
       const conf=await confPromise;
       liffId=conf.liffId||"";
