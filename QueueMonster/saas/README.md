@@ -1,5 +1,8 @@
 # Queue Monster｜排隊怪獸（原 LINE 預約）
 
+> **2026-11-16 遊戲逛街下架：** 舊版像素城市探索介面已從 `directory.html` 移除，舊 `directory.html?mode=game` 網址會安全轉為一般搜尋（`mode=search`）。一般店家搜尋、熱門排行、預約、現場取號及線上點餐繼續提供服務。原遊戲 JS/CSS 已停止發布並由 Pages 部署清除；新的 Arena 整合尚未上線，規劃見 [ARENA-INTEGRATION-PLAN.md](../ARENA-INTEGRATION-PLAN.md)。
+
+
 > **2026-11-13 最新導覽與連結：** [公開網址／相容性盤點](PUBLIC-ROUTE-AUDIT-20261113.md)。平台「搜尋店家」為獨立 `directory.html`；平台「我的紀錄」為獨立 `my-records.html`（**跨所有店家**的預約／取號／訂餐紀錄同頁呈現）。**個別店家**的「歷史紀錄」仍在 `?view=customer&merchant=<slug>&tab=mine`，兩者不得混淆。舊 `directory.html?mode=mine` 及 `mode=last-board` 皆安全轉向新跨店頁，其他搜尋與服務連結保留。下方較早日期的操作規劃僅供歷史參考，以本節為準。
 
 專案識別名稱：`QueueMonster`。正式英文品牌為 **Queue Monster**；完整專案已更名至 `QueueMonster/`，部署及測試路徑同步更新，公開網址與 LINE LIFF 維持相容。
