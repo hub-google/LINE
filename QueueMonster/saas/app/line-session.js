@@ -69,7 +69,7 @@ export function finishPublicHeaderLogin(){
      !/^(?:home|directory|my-records|board|merchant-center|merchant-register|privacy|terms)\.html(?:\?[^#]*)?$/.test(target))return false;
   const destination=new URL(target,location.origin+sharedUiState.bookingPath);
   if(destination.origin!==location.origin||
-     !/^\/LINE\/(?:booking|saas)\/(?:home|directory|my-records|board|merchant-center|merchant-register|privacy|terms)\.html$/.test(destination.pathname))return false;
+     !/^\/(?:LINE\/(?:booking|saas)\/)?(?:home|directory|my-records|board|merchant-center|merchant-register|privacy|terms)\.html$/.test(destination.pathname))return false;
   try{sessionStorage.removeItem(key)}catch(_){}
   location.replace(destination.pathname+destination.search);
   return true;
