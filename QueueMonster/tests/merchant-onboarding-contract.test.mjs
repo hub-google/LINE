@@ -271,10 +271,10 @@ test("production release contains no customer-visible QA or infrastructure copy"
  }
  assert.ok(!index.includes("testMode")&&!index.includes("recoveryMode"),"legacy QA sign-ins have been removed");
  assert.doesNotMatch(read("saas/app/data-loading.js"),/startsWith\("qa-"\)|greenfield-salon|demo-clinic/,"dashboard must not hide stores by identifier");
- assert.doesNotMatch(read("saas/explore-game.js"),/startsWith\("qa-"\)|greenfield-salon|demo-clinic/,"public discovery must use publication settings");
+ assert.doesNotMatch(read("saas/assets/directory/main.js"),/startsWith\("qa-"\)|greenfield-salon|demo-clinic/,"public discovery must use publication settings");
  assert.ok(!directory.includes("testBoardShop")&&!directory.includes("demoShops"),"no sample merchants can be injected into discovery");
- const game=read("saas/explore-game.js");
- assert.ok(!game.includes("qaStore")&&!game.includes("demoShops"),"game mode uses published merchants only");
+ const discovery=read("saas/assets/directory/main.js");
+ assert.ok(!discovery.includes("qaStore")&&!discovery.includes("demoShops"),"directory uses published merchants only");
  assert.ok(!read("saas/privacy.html").includes("Supabase"),"privacy document describes service providers in customer terms");
  assert.ok(!read("saas/merchant-register.html").includes("密碼由 Supabase Auth"),"account help stays customer-focused");
  assert.ok(read("saas/template.html").includes("merchant-center.html#setup"),"retired preview directs visitors to live merchant guide");
