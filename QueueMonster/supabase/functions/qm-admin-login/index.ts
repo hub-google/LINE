@@ -5,20 +5,21 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.0";
 // The single-character PIN must be provisioned in qm_admin_pin_guard separately.
 const ADMIN_EMAIL = "cit5055@gmail.com";
 const EXPECTED_ORIGIN = "https://hub-google.github.io";
-const corsHeaders = {
-  "Access-Control-Allow-Origin": EXPECTED_ORIGIN,
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Vary": "Origin",
-};
-const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
-  status,
-  headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
-});
+const TRUSTED_ORIGINS = new Set([EXPECTED_ORIGIN, "https://qm.monsterport.com", "https://queue.monsterport.com"]);
 Deno.serve(async (req: Request) => {
+  const origin = req.headers.get("origin");
+  const corsHeaders = {
+    ...(origin && TRUSTED_ORIGINS.has(origin) ? { "Access-Control-Allow-Origin": origin } : {}),
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+  const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
+    status, headers: { ...corsHeaders, "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
+  });
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
-  if (req.headers.get("origin") !== EXPECTED_ORIGIN) return json({ error: "Origin not allowed" }, 403);
+  if (!origin || !TRUSTED_ORIGINS.has(origin)) return json({ error: "Origin not allowed" }, 403);
   const url = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
