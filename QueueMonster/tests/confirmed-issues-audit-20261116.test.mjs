@@ -5,6 +5,7 @@ import {readFileSync} from "node:fs";
 const read=path=>readFileSync(new URL(path,import.meta.url),"utf8");
 const migration=read("../supabase/migrations/20261116101000_qm_confirmed_queue_near_and_cross_store_history.sql");
 const directory=read("../saas/assets/directory/main.js");
+const pickup=read("../saas/app/pickup-mode.js");
 
 test("Q01: queue near-alert enqueue and send-time checks use the same unit/session/round",()=>{
   assert.match(migration,/so_queue_enqueue_near_alerts\(\)/);
@@ -34,4 +35,10 @@ test("B03: verified historical records are available from formerly active mercha
   assert.match(historySource,/verified_subjects/);
   assert.match(historySource,/auth\.uid\(\)/);
   assert.match(migration,/grant execute on function public\.so_my_platform_records_page\(text,integer,integer\) to authenticated/);
+});
+
+test("O04: active pickup orders stay on the active worklist, history defaults to closed",()=>{
+ assert.match(pickup,/historyFilter:"closed"/);
+ assert.match(pickup,/const history=orders\.filter\(o=>\["PICKED_UP","REJECTED","CANCELLED"\]\.includes\(o\.status\)\)/);
+ assert.match(pickup,/\["all","全部"\]/);
 });
