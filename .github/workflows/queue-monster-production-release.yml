@@ -4,31 +4,43 @@ on:
   workflow_dispatch:
     inputs:
       confirmation:
-        description: '輸入 RELEASE 才會把已測試的 main 版本發布到 release'
+        description: '輸入 RELEASE 才將這個 main 版本發布至 Cloudflare 正式站'
         required: true
         type: string
+  push:
+    branches: [release]
+    paths:
+      - "QueueMonster/saas/**"
+      - "QueueMonster/tests/**"
+      - ".github/scripts/build-line-saas.mjs"
+      - ".github/scripts/frontend-build.mjs"
+      - ".github/frontend/**"
+      - ".github/workflows/queue-monster-production-release.yml"
 
 permissions:
   contents: write
 
+# Both test and production update the same gh-pages branch, so serialize commits.
 concurrency:
-  group: queue-monster-production-promotion
+  group: line-saas-gh-pages
   cancel-in-progress: false
 
 jobs:
-  promote:
-    name: Validate and promote main to release
-    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'RELEASE'
+  publish:
+    name: Validate and publish isolated production snapshot
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/release') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.confirmation == 'RELEASE')
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - name: Checkout selected main commit
+      - name: Checkout the exact requested source revision
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: true
-      - name: Validate Queue Monster source scripts
+      - name: Validate source syntax
         run: |
           node --check .github/scripts/build-line-saas.mjs
           node --check QueueMonster/saas/site-auth.js
@@ -36,7 +48,7 @@ jobs:
           node --check QueueMonster/saas/pwa-sw.js
       - name: Install frontend build dependencies
         run: npm ci --prefix .github/frontend
-      - name: Run deployment-critical regression tests
+      - name: Run release regression tests
         run: |
           node --test \
             QueueMonster/tests/booking-buttons-regression-20261116.test.mjs \
@@ -45,21 +57,41 @@ jobs:
             QueueMonster/tests/booking-line-reply.test.mjs \
             QueueMonster/tests/public-customer-routes-20261113.test.mjs \
             QueueMonster/tests/frontend-build.test.mjs
-      - name: Validate production static build
+      - name: Build versioned production assets
+        shell: bash
         run: |
-          GITHUB_SHA=${{ github.sha }} node .github/scripts/build-line-saas.mjs "$RUNNER_TEMP/queue-monster-prod"
-          test -s "$RUNNER_TEMP/queue-monster-prod/home.html"
-          test -s "$RUNNER_TEMP/queue-monster-prod/index.html"
-          test -s "$RUNNER_TEMP/queue-monster-prod/site-auth.js"
-          test -s "$RUNNER_TEMP/queue-monster-prod/release.json"
-      - name: Promote exact checked commit to release (fast-forward only)
+          set -euo pipefail
+          node .github/scripts/build-line-saas.mjs "$RUNNER_TEMP/queue-prod-dist"
+          for f in index.html home.html release.json site-auth.js pwa-sw.js booking-theme.css vendor/qrcode.min.js; do
+            test -s "$RUNNER_TEMP/queue-prod-dist/$f"
+          done
+          grep -q "$GITHUB_SHA" "$RUNNER_TEMP/queue-prod-dist/release.json"
+      - name: Publish production snapshot without touching the test site
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin refs/heads/gh-pages:refs/remotes/origin/gh-pages
+          pubdir="$RUNNER_TEMP/queue-prod-gh-pages"
+          git worktree add --detach "$pubdir" origin/gh-pages
+          # Change ONLY /LINE/queue-prod; never alter /LINE/booking or /LINE/saas.
+          rm -rf "$pubdir/queue-prod"
+          mkdir -p "$pubdir/queue-prod"
+          cp -a "$RUNNER_TEMP/queue-prod-dist/." "$pubdir/queue-prod/"
+          git -C "$pubdir" add -A -- queue-prod/
+          if ! git -C "$pubdir" diff --cached --quiet; then
+            git -C "$pubdir" -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "deploy: Queue Monster production $GITHUB_SHA"
+            git -C "$pubdir" push origin HEAD:gh-pages
+          fi
+          echo "Production snapshot published to /LINE/queue-prod/ at $GITHUB_SHA"
+      - name: Advance release branch after successful production upload
+        if: github.event_name == 'workflow_dispatch'
         shell: bash
         run: |
           set -euo pipefail
           git fetch origin refs/heads/release:refs/remotes/origin/release
           if ! git merge-base --is-ancestor origin/release HEAD; then
-            echo "::error::release differs from main. Refusing force-push; resolve divergence first."
+            echo "::error::release is not an ancestor; refusing to force-push."
             exit 1
           fi
           git push origin HEAD:refs/heads/release
-          echo "Published verified commit ${GITHUB_SHA} to release. Cloudflare Git integration deploys only when connected."
+          echo "Production approved at $GITHUB_SHA"
