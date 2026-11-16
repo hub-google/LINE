@@ -1,0 +1,59 @@
+name: Queue Monster｜手動發布 Cloudflare 正式版
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: '輸入 RELEASE 才會把已測試的 main 版本發布到 release'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: queue-monster-production-promotion
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: Validate and promote main to release
+    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'RELEASE'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout selected main commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Validate Queue Monster source scripts
+        run: |
+          node --check .github/scripts/build-line-saas.mjs
+          node --check QueueMonster/saas/site-auth.js
+          node --check QueueMonster/saas/version-watch.js
+          node --check QueueMonster/saas/pwa-sw.js
+      - name: Install frontend build dependencies
+        run: npm ci --prefix .github/frontend
+      - name: Run deployment-critical regression tests
+        run: |
+          node --test             QueueMonster/tests/booking-buttons-regression-20261116.test.mjs             QueueMonster/tests/site-auth-contract.test.mjs             QueueMonster/tests/marketing-home-contract.test.mjs             QueueMonster/tests/booking-line-reply.test.mjs             QueueMonster/tests/public-customer-routes-20261113.test.mjs             QueueMonster/tests/frontend-build.test.mjs
+      - name: Validate production static build
+        run: |
+          GITHUB_SHA=${{ github.sha }} node .github/scripts/build-line-saas.mjs "$RUNNER_TEMP/queue-monster-prod"
+          test -s "$RUNNER_TEMP/queue-monster-prod/home.html"
+          test -s "$RUNNER_TEMP/queue-monster-prod/index.html"
+          test -s "$RUNNER_TEMP/queue-monster-prod/site-auth.js"
+          test -s "$RUNNER_TEMP/queue-monster-prod/release.json"
+      - name: Promote exact checked commit to release (fast-forward only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin refs/heads/release:refs/remotes/origin/release
+          if ! git merge-base --is-ancestor origin/release HEAD; then
+            echo "::error::release differs from main. Refusing force-push; resolve divergence first."
+            exit 1
+          fi
+          git push origin HEAD:refs/heads/release
+          echo "Published verified commit ${GITHUB_SHA} to release. Cloudflare Git integration deploys only when connected."
