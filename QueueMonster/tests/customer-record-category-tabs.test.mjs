@@ -21,10 +21,10 @@ test("my history is one page with three simultaneously rendered sections, never 
  assert.doesNotMatch(js,/const recordKind=/);
 });
 test("one LINE-verified login queries all three types and preserves exact merchant record links",()=>{
- assert.match(js,/Promise\\.all\\(kinds\\.map\\(p_kind=>sb\\.rpc\\("so_my_platform_records_page",/);
+ assert.match(js,/Promise\.all\(kinds\.map\(p_kind=>sb\.rpc\("so_my_platform_records_page",/);
  assert.match(js,/historyHasMore/);
  assert.match(js,/data-history-more/);
- assert.match(js,/p_offset:offset,p_limit:historyPageSize\\+1/);
+ assert.match(js,/p_offset:offset,p_limit:historyPageSize\+1/);
  assert.match(js,/personalRecords=Object\.fromEntries/);
  assert.match(js,/dest\.searchParams\.set\("kind",kind\)/);
  assert.match(js,/dest\.searchParams\.set\("ticket",r\.id\)/);
