@@ -25,8 +25,14 @@ test("customer and merchant management use the real shared brand stylesheet",()=
  assert.match(css,/prefers-reduced-motion/);
 });
 
-test("generated staff and customer links use /booking/ without changing OAuth callback handling",()=>{
- assert.match(app,/bookingPath=location\.pathname\.replace\(/);
+test("generated staff and customer links support both GitHub Pages and custom domain roots",()=>{
+ assert.match(app,/bookingPath=new URL\("\.\/",location\.href\)\.pathname\.replace\(/);
+ const routeBase=url=>new URL("./",url).pathname.replace(/\/saas\/$/,"/booking/");
+ assert.equal(routeBase("https://hub-google.github.io/LINE/booking/"),"/LINE/booking/");
+ assert.equal(routeBase("https://hub-google.github.io/LINE/booking/home.html"),"/LINE/booking/");
+ assert.equal(routeBase("https://hub-google.github.io/LINE/saas/index.html"),"/LINE/booking/");
+ assert.equal(routeBase("https://app.example.test/"),"/");
+ assert.equal(routeBase("https://app.example.test/merchant-center.html"),"/");
  assert.match(app,/route=\(v,s=slug,tab=""\)=>bookingPath/);
  assert.match(app,/customerEntryUrl\(merchant,/);
  assert.match(app,/new URL\(location\.origin\+location\.pathname\)/);
