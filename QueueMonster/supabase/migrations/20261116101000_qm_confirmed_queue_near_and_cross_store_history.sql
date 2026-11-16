@@ -208,3 +208,5 @@ revoke all on function public.so_my_platform_records_page(text,integer,integer) 
 grant execute on function public.so_my_platform_records_page(text,integer,integer) to authenticated;
 comment on function public.so_my_platform_records_page(text,integer,integer)
 is 'LINE-verified user-scoped cross-store history; page size bounded to 100; includes records of no-longer-active stores';
+-- Make the new RPC available to PostgREST without requiring a deployment restart.
+notify pgrst, 'reload schema';
