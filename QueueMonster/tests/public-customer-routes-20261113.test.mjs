@@ -42,7 +42,7 @@ test("old public store discovery and personal record links retain their meaning"
 
 test("platform history is cross-store; individual merchant history and detail routes remain distinct",()=>{
  assert.match(directoryJs,/so_my_platform_records/);
- assert.match(directoryJs,/Promise\.all\(kinds\.map\(p_kind=>sb\.rpc\("so_my_platform_records"/);
+ assert.match(directoryJs,/Promise\.all\(kinds\.map\(p_kind=>sb\.rpc\("so_my_platform_records_page"/);
  assert.match(directoryJs,/dest\.searchParams\.set\("item",r\.id\)/);
  assert.match(directoryJs,/dest\.searchParams\.set\("ticket",r\.id\)/);
  assert.match(directoryJs,/anchor\.dataset\.oaMode==="PLATFORM"/);
