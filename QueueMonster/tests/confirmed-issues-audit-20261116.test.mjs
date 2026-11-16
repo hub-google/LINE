@@ -40,5 +40,5 @@ test("B03: verified historical records are available from formerly active mercha
 test("O04: active pickup orders stay on the active worklist, history defaults to closed",()=>{
  assert.match(pickup,/historyFilter:"closed"/);
  assert.match(pickup,/const history=orders\.filter\(o=>\["PICKED_UP","REJECTED","CANCELLED"\]\.includes\(o\.status\)\)/);
- assert.match(pickup,/\["all","全部"\]/);
+ assert.match(pickup,/choose\("all","全部"\)/);
 });
