@@ -18,7 +18,8 @@ export async function bridgeConfig(){
   const merchant=isSafeMerchant(routeState.slug)?routeState.slug:"";
   if(lineState.lineConfig!==null&&lineState.lineConfigSlug===merchant)return lineState.lineConfig;
   try{
-    const res=await fetch(lineState.LINE_BRIDGE_URL+"?action=config&merchant="+encodeURIComponent(merchant),{cache:"no-store"});
+    const site=location.hostname==="queue.monsterport.com"?"queue":"legacy";
+    const res=await fetch(lineState.LINE_BRIDGE_URL+"?action=config&merchant="+encodeURIComponent(merchant)+"&site="+site,{cache:"no-store"});
     if(res.ok){lineState.lineConfig=await res.json();lineState.lineConfigSlug=merchant;}
   }catch(e){console.warn("LINE 設定尚不可用");}
   return lineState.lineConfig||{};

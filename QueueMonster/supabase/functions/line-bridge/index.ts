@@ -1240,7 +1240,11 @@ Deno.serve(async (req: Request) => {
         own = config;
       }
     }
-    const liffId = own?.liff_id || Deno.env.get("LINE_LIFF_ID") || "";
+    // Separate LIFF apps are required: LINE binds each app to one Endpoint origin.
+    // Never send the GitHub Pages LIFF to the queue domain if queue LIFF is not ready.
+    const queueSite = url.searchParams.get("site") === "queue";
+    const platformLiff = Deno.env.get(queueSite ? "LINE_LIFF_ID_QUEUE" : "LINE_LIFF_ID") || "";
+    const liffId = own?.liff_id || platformLiff;
     const expectedChannelId = /^([0-9]{8,})-[A-Za-z0-9]+$/.exec(liffId)?.[1] || null;
     const platformFriendUrl = own ? null : await oaAddFriendUrl();
     return reply(200, {

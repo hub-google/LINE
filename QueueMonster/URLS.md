@@ -52,3 +52,13 @@
 - Cloudflare Pages GitHub 專案連接目前遭遇 Git 整合 HTTP 401 錯誤；完成原生部署前，不可刪除 Worker 或 GitHub Pages 來源。
 - 正式切換前須檢查 Supabase Auth Redirect URLs、Google OAuth、LINE LIFF Endpoint、各店家 QR Code、PWA、預約／取號／訂餐流程，並完成新舊網址的回歸測試。
 - `site-auth.js` 與 `app/line-session.js` 允許單頁返回網址使用舊 `/LINE/booking/` 或新網域根目錄路徑。
+
+## 雙網站登入設定（2026-11-16）
+
+- 正式入口：`https://queue.monsterport.com/`（根目錄直接顯示品牌首頁）；原 GitHub Pages `https://hub-google.github.io/LINE/booking/` 同時保留。
+- Google 與 Email Auth：同一 Supabase 專案，同時允許 `https://queue.monsterport.com/**`、`https://hub-google.github.io/LINE/booking/**`、既有 `/LINE/saas/**`。登入會回到發起操作的同一網域。
+- LINE：保留舊 LIFF ID 的 Endpoint `https://hub-google.github.io/LINE/booking/`，為正式新網域新增**同一 LINE Login Channel 下的第二個 LIFF ID**，Endpoint `https://queue.monsterport.com/`。
+- `app/line-session.js` 依當前 hostname 請求對應的 LIFF，後端 `line-bridge?action=config&site=queue` 回傳正式網域的 LIFF ID，未就緒時不錯用舊 ID。
+- 自動設定：`.github/workflows/line-oa-deploy.yml` 呼叫 `.github/scripts/sync-queue-auth-domains.py`，只追加 Supabase redirect allowlist、保留原 Site URL，建立或重用第二個 LIFF 並存入 Supabase Edge Secret `LINE_LIFF_ID_QUEUE`。需要既有 GitHub Secrets `SUPABASE_ACCESS_TOKEN`、`LINE_LOGIN_CHANNEL_ID`、`LINE_LOGIN_CHANNEL_SECRET`、`LINE_LIFF_ID`；無權限時會**明確失敗，不宣稱完成**。
+- Google Cloud Console 若使用此專案的 OAuth Web Client，請核對 Authorized JavaScript origins 同時含兩個 origin；Authorized redirect URI 仍為 `https://unapiwajmgqqtdkixaab.supabase.co/auth/v1/callback`，不要改成前端網址。
+- 需分別用真人 Google / LINE 帳號在兩站測試登入、登出、跳轉、Email 驗證／重設；CI 與公開設定檢查無法取代使用者端實際授權。

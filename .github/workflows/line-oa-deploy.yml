@@ -7,6 +7,7 @@ on:
       - '.github/workflows/line-oa-deploy.yml'
       - 'QueueMonster/supabase/functions/line-bridge/index.ts'
       - 'QueueMonster/tests/line-oa-bot-contract.test.mjs'
+      - '.github/scripts/sync-queue-auth-domains.py'
 
 permissions:
   contents: read
@@ -42,7 +43,7 @@ jobs:
         with:
           version: latest
       - name: Check LINE OA command and webhook contract
-        run: node --test QueueMonster/tests/line-oa-bot-contract.test.mjs QueueMonster/tests/booking-line-reply.test.mjs QueueMonster/tests/queue-near-alert-oss-n03.test.mjs QueueMonster/tests/queue-monster-table-prefix.test.mjs QueueMonster/tests/line-notice-permanent-retry-regression.test.mjs
+        run: node --test QueueMonster/tests/dual-domain-auth-contract.test.mjs QueueMonster/tests/line-oa-bot-contract.test.mjs QueueMonster/tests/booking-line-reply.test.mjs QueueMonster/tests/queue-near-alert-oss-n03.test.mjs QueueMonster/tests/queue-monster-table-prefix.test.mjs QueueMonster/tests/line-notice-permanent-retry-regression.test.mjs
       - name: Deploy backend and sync encrypted LINE configuration
         shell: bash
         run: |
@@ -190,3 +191,8 @@ jobs:
           assert all(scope in (app.get("scope") or []) for scope in ("openid","profile","chat_message.write")), "LIFF reply scopes missing"
           print("LIFF endpoint verified; openid, profile and chat_message.write scopes enabled. No credentials displayed.")
           PY
+      - name: Configure Google redirects and second LINE LIFF for both public domains
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/sync-queue-auth-domains.py
