@@ -3,19 +3,24 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.0";
 
 // Server-side only: never embed SUPABASE_SERVICE_ROLE_KEY in GitHub Pages.
 const ORIGIN="https://hub-google.github.io";
-const cors={
- "Access-Control-Allow-Origin":ORIGIN,
- "Access-Control-Allow-Methods":"POST, OPTIONS",
- "Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type",
- "Vary":"Origin"
-};
-const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{
- status,headers:{...cors,"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}
-});
+const TRUSTED_ORIGINS=new Set([ORIGIN,"https://qm.monsterport.com","https://queue.monsterport.com"]);
+function corsFor(origin:string|null){
+ return {
+  ...(origin&&TRUSTED_ORIGINS.has(origin)?{"Access-Control-Allow-Origin":origin}:{}),
+  "Access-Control-Allow-Methods":"POST, OPTIONS",
+  "Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type",
+  "Vary":"Origin"
+ };
+}
 Deno.serve(async(req:Request)=>{
+ const origin=req.headers.get("origin");
+ const cors=corsFor(origin);
+ const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{
+  status,headers:{...cors,"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}
+ });
  if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors});
  if(req.method!=="POST")return json({error:"僅支援送出邀請"},405);
- if(req.headers.get("origin")!==ORIGIN)return json({error:"不允許的來源"},403);
+ if(!origin||!TRUSTED_ORIGINS.has(origin))return json({error:"不允許的來源"},403);
  const url=Deno.env.get("SUPABASE_URL");
  const anonKey=Deno.env.get("SUPABASE_ANON_KEY");
  const serviceKey=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -47,7 +52,8 @@ Deno.serve(async(req:Request)=>{
   p_slug:slug,p_email:email,p_role:role
  });
  if(inviteError||!invite?.invite_id)return json({error:"無法儲存邀請，請確認企業與角色權限"},400);
- const redirect=new URL("https://hub-google.github.io/LINE/booking/merchant-register.html");
+ const inviteBase=origin===ORIGIN?"https://hub-google.github.io/LINE/booking/":"https://queue.monsterport.com/";
+ const redirect=new URL("merchant-register.html",inviteBase);
  redirect.searchParams.set("mode","login");
  redirect.searchParams.set("staff_invite",invite.invite_id);
  let sendError:unknown=null;
@@ -71,7 +77,7 @@ Deno.serve(async(req:Request)=>{
   // granted only by so_accept_invite for the verified, matching address.
   const mailer=createClient(url,anonKey,{auth:{persistSession:false,autoRefreshToken:false}});
   const {error:existingUserError}=await mailer.auth.signInWithOtp({
-   email,options:{shouldCreateUser:false,emailRedirectTo:"https://hub-google.github.io/LINE/booking/merchant-register.html?mode=login&from=staff-invite"}
+   email,options:{shouldCreateUser:false,emailRedirectTo:new URL("merchant-register.html?mode=login&from=staff-invite",inviteBase).href}
   });
   if(!existingUserError)emailSent=true;
   else sendError=existingUserError;
