@@ -6,6 +6,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const trustedBrowserOrigins = new Set([
   "https://hub-google.github.io",
   "https://qm.monsterport.com",
+  "https://queue.monsterport.com",
 ]);
 function headers(origin: string | null) {
   return {
