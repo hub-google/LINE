@@ -200,7 +200,7 @@ test("public store search and pickup links do not wait on optional LINE config",
  assert.ok(section.includes("void confPromise.then("),"LINE config is optional for public discovery");
  assert.doesNotMatch(section,/\}else\{\s*const conf=await confPromise;/,
    "public store loading must not await optional LINE config");
- assert.ok(section.includes("publishGameDirectory();render();"),
+ assert.ok(section.includes("if(all.length)render();"),
    "late LINE config refreshes existing customer service links");
 });
 

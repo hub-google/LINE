@@ -35,7 +35,8 @@ test("old public store discovery and personal record links retain their meaning"
  assert.match(search,/query\.delete\("section"\)/);
  assert.match(directoryJs,/const isQueueSection=mode==="queue"/);
  assert.match(directoryJs,/const isHistorySection=location\.pathname\.endsWith\("\/my-records\.html"\)/);
- assert.match(directoryJs,/mode==="game"/);
+ assert.doesNotMatch(directoryJs,/mode==="game"/);
+ assert.match(search,/if\(oldMode==="game"\)query\.set\("mode","search"\)/);
  assert.match(directoryJs,/so_public_store_search/);
  assert.match(directoryJs,/so_public_popular_stores/);
 });

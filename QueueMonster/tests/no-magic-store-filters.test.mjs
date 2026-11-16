@@ -21,15 +21,15 @@ test("listing and test permissions use metadata, not merchant names or slug pref
 });
 
 test("front end does not hide named or prefix-matched test stores",()=>{
- const street=read("saas/explore-game.js");
+ const directory=read("saas/assets/directory/main.js");
  const loading=read("saas/app/data-loading.js");
  const route=read("saas/app/route-state.js");
  const login=read("saas/site-auth.js");
- for(const code of [street,loading,route,login]){
+ for(const code of [directory,loading,route,login]){
    assert.doesNotMatch(code,/greenfield-salon|demo-clinic/);
    assert.doesNotMatch(code,/slug\.startsWith\(["']qa-|slug\s+not\s+like\s+["']qa-/);
  }
- assert.match(street,/publicShops\.filter\(s=>typeof s\?\.slug/);
+ assert.match(directory,/all=Array\.isArray\(directory\.data\)/);
  assert.doesNotMatch(login,/BIND_SHOP/);
  assert.match(route,/routeState\.slug=isSafeMerchant/);
 });
