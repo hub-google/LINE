@@ -27,7 +27,17 @@
 - 不改動 Supabase、Google/LINE OAuth、LIFF ID、店家 QR Code 或 DNS。
 - 正式版發布需通過 JavaScript 語法、關鍵 regression tests、靜態建置及靜態檔案檢查；失敗不應更新 `queue-prod/`。
 
-## 首次切換確認
+## 2026-11-16 已完成部署驗證
+
+- GitHub `release` 分支已切到 `6c125e771d73aa3991b0f850ffb137efc4540385`。
+- GitHub Actions <https://github.com/hub-google/LINE/actions/runs/43836861082>：回歸測試、靜態建置、`gh-pages/queue-prod/` 上傳全部成功。
+- 正式來源 `gh-pages/queue-prod/release.json` 的 `build` 與 `release` SHA 完全一致。
+- Cloudflare Worker `monsterport-queue-bridge` 已更新並綁定 `queue.monsterport.com`，100% 流量指向新 Worker 版本。
+- 透過 Cloudflare Browser Rendering 實測：`https://queue.monsterport.com/release.json` HTTP 200，版本為 `6c125e77`；`/` HTTP 200、品牌首頁標題正確；`/?view=platform` HTTP 200、載入相同正式版本。回應有 `X-MonsterPort-Bridge: independent-release-origin`。
+- 新增 `QueueMonster/tests/queue-deployment-isolation.test.mjs`，在日常測試部署和重大版本發布都檢查測試／正式上游路徑不交叉。
+- Google／LINE 真實帳號登入、實際預約及通知屬動態端對端流程，未進行真人授權，**不宣稱已完成這些驗收**。
+
+## 首次切換記錄／未來復核
 
 1. 確認 `release` 分支及 `.github/workflows/queue-monster-production-release.yml` 存在。
 2. 觸發**第一次** release 分支發布，確認 `https://hub-google.github.io/LINE/queue-prod/release.json` 真的存在、對應 release commit。
