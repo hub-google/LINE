@@ -8,13 +8,16 @@
 <link rel="canonical" href="https://hub-google.github.io/LINE/booking/directory.html">
 <script>/* Preserve every published personal-history URL. */
 (()=>{const query=new URLSearchParams(location.search);
- if(!["mine","last-board"].includes(query.get("mode")))return;
- query.delete("mode");query.delete("section");
- const target=new URL("./my-records.html",location.href);
+ const oldMode=query.get("mode");
+ if(!["mine","last-board","game"].includes(oldMode))return;
+ if(oldMode==="game")query.set("mode","search");
+ else query.delete("mode");
+ query.delete("section");
+ const target=new URL(oldMode==="game"?"./directory.html":"./my-records.html",location.href);
  target.search=query.toString();
  location.replace(target.href);
 })();</script>
-<link rel="stylesheet" href="./assets/directory/page.css?build=__LINE_SAAS_BUILD__"><link rel="stylesheet" href="./explore-game.css"><script defer src="./explore-game.js"></script><link rel="stylesheet" href="./site-auth.css"><link rel="stylesheet" href="./monster-world.css?build=__LINE_SAAS_BUILD__"><link rel="stylesheet" href="./assets/marketing/shared-header.css?build=__LINE_SAAS_BUILD__"><script defer src="./assets/marketing/shared-header.js?build=__LINE_SAAS_BUILD__"></script><script defer src="./site-auth.js"></script><link rel="icon" type="image/svg+xml" href="./monster-mascot.svg"><style>/* Directory search header is now the shared marketing navigation; keep its own hero separately. */
+<link rel="stylesheet" href="./assets/directory/page.css?build=__LINE_SAAS_BUILD__"><link rel="stylesheet" href="./site-auth.css"><link rel="stylesheet" href="./monster-world.css?build=__LINE_SAAS_BUILD__"><link rel="stylesheet" href="./assets/marketing/shared-header.css?build=__LINE_SAAS_BUILD__"><script defer src="./assets/marketing/shared-header.js?build=__LINE_SAAS_BUILD__"></script><script defer src="./site-auth.js"></script><link rel="icon" type="image/svg+xml" href="./monster-mascot.svg"><style>/* Directory search header is now the shared marketing navigation; keep its own hero separately. */
 body[data-monster-page="directory"] .page-header .hero-heading{margin-top:0}
 body[data-monster-page="directory"] .page-header{padding-top:45px}
 </style></head>
@@ -30,7 +33,6 @@ body[data-monster-page="directory"] .page-header{padding-top:45px}
 </header>
 <main class="container">
  <section class="main-panel">
-  <div class="explore-view-switch" role="group" aria-label="探索模式"><button type="button" id="explore-switch-list" aria-pressed="true">清單找店家</button><button type="button" id="explore-switch-game" aria-pressed="false">遊戲逛街</button></div>
   <div id="explore-list" class="explore-list">
   <div class="search-wrap">
    <label for="keyword">搜尋店家名稱或地點</label>
@@ -61,40 +63,6 @@ body[data-monster-page="directory"] .page-header{padding-top:45px}
     <button type="button" id="page-next">下一頁</button>
   </div>
   </div>
-  <section id="explore-game" class="explore-game" hidden aria-label="像素城市探索店家">
-    <div class="arcade-top">
-      <div class="arcade-heading"><h2>找店家遊戲</h2><p>拖曳地圖自由探索，點選店家即可走進店內。</p></div>
-      <div class="arcade-top-actions"><label for="arcade-game-categories">分類</label><select id="arcade-game-categories" aria-label="依店家分類篩選"><option value="全部">全部類別</option></select></div>
-    </div>
-    <div id="explore-world" class="arcade-map-viewport" tabindex="0" aria-label="可拖曳縮放的像素城市地圖。點選彩色店家標籤進店，方向鍵移動地圖">
-      <div id="arcade-map-layer" class="arcade-map-layer">
-        <svg id="arcade-city-svg" viewBox="0 0 2400 1500" width="2400" height="1500" aria-hidden="true" focusable="false"></svg>
-        <div id="arcade-map-pins" class="arcade-map-pins"></div>
-        <div id="arcade-map-cars" class="arcade-map-cars" aria-hidden="true"></div>
-      </div>
-      <div class="arcade-map-topline"><span class="arcade-live-indicator"></span><span id="arcade-region-count" aria-live="polite">正在載入店家</span></div>
-      <div class="arcade-map-hint">拖曳平移 · 滾輪／雙指縮放 · 點選店家進入</div>
-      <div class="arcade-map-tools" role="group" aria-label="地圖縮放">
-        <button type="button" id="arcade-zoom-in" aria-label="放大地圖">+</button>
-        <button type="button" id="arcade-zoom-out" aria-label="縮小地圖">−</button>
-        <button type="button" id="arcade-zoom-reset" aria-label="回到地圖中心">⌖</button>
-      </div>
-      <div class="arcade-map-dpad" role="group" aria-label="移動地圖">
-        <button type="button" data-map-pan="up" aria-label="地圖向上移動">↑</button>
-        <div><button type="button" data-map-pan="left" aria-label="地圖向左移動">←</button><button type="button" data-map-pan="down" aria-label="地圖向下移動">↓</button><button type="button" data-map-pan="right" aria-label="地圖向右移動">→</button></div>
-      </div>
-    </div>
-    <section id="explore-street" class="arcade-interior" hidden aria-label="店家像素室內場景">
-      <div class="arcade-room-header"><button type="button" id="arcade-back">← 返回城市地圖</button><div><h3 id="arcade-street-name"></h3><p id="arcade-street-meta"></p></div></div>
-      <div id="arcade-room-view" class="arcade-room-view" tabindex="0" aria-label="店內可操作角色，方向鍵移動">
-        <svg id="arcade-room-art" viewBox="0 0 960 570" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
-        <div id="arcade-room-avatar" class="arcade-room-avatar" aria-hidden="true"></div>
-      </div>
-      <div id="arcade-shop-info" class="arcade-panel arcade-service-dock" role="region" aria-label="店家可使用的服務" aria-live="polite"></div>
-      <div class="arcade-room-bottom"><span>使用方向鍵或下方按鈕走動探索店內</span><div class="arcade-controls" role="group" aria-label="控制角色移動"><button type="button" data-walk="left">←</button><button type="button" data-walk="up">↑</button><button type="button" data-walk="down">↓</button><button type="button" data-walk="right">→</button></div></div>
-    </section>
-    <p id="explore-game-note" class="explore-help">此為遊戲式探索地圖，非實際地理位置。彩色標籤皆對應平台真實公開店家，預約、取號及訂餐使用原本的店家服務。</p>
-  </section>
 
  </section>
 </main>

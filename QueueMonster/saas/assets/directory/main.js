@@ -6,7 +6,7 @@ const SB_URL=SUPABASE_URL;
 const SB_KEY=SUPABASE_PUBLISHABLE_KEY;
 const bridge=SB_URL+"/functions/v1/line-bridge?action=config";
 const sb=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"line-saas-customer-session-v2"}});
-const params=new URLSearchParams(location.search),mode=["search","queue","mine","game","last-board"].includes(params.get("mode"))?params.get("mode"):"search";
+const params=new URLSearchParams(location.search),mode=["search","queue","mine","last-board"].includes(params.get("mode"))?params.get("mode"):"search";
 // Old personal record links all show the same combined history page.
 const isQueueSection=mode==="queue";
 const isHistorySection=location.pathname.endsWith("/my-records.html")||mode==="mine"||mode==="last-board";
@@ -66,7 +66,6 @@ function setupExploreFilters(){
  };
  options("explore-category",[...new Set(all.map(x=>x.category||"其他"))].sort((a,b)=>a.localeCompare(b,"zh-Hant")),"全部類別");
  options("explore-area",[...new Set(all.map(areaOf))].sort((a,b)=>a.localeCompare(b,"zh-Hant")),"所有地區");
- document.querySelector(".explore-view-switch").hidden=needsIdentity||isQueueSection;
  document.getElementById("explore-filters").classList.toggle("hidden",needsIdentity);
  document.querySelector(".search-wrap label").textContent=isHistorySection?"搜尋跨店紀錄":"搜尋店家名稱或地點";
  document.querySelector(".public-note")?.classList.toggle("hidden",needsIdentity);
@@ -357,17 +356,6 @@ document.addEventListener("click",async event=>{
   location.assign("./?"+query.toString());
  }
 });
-function publishGameDirectory(){
- if(needsIdentity||isQueueSection)return;
- window.LineExploreGame?.setData({
-  shops:all.map(shop=>({...shop,
-    reserve_href:customerUrl(shop.slug,"reserve",shop.oa_mode),
-    queue_href:customerUrl(shop.slug,"queue",shop.oa_mode),
-    order_href:customerUrl(shop.slug,"order",shop.oa_mode),
-    board_href:"./board.html?merchant="+encodeURIComponent(shop.slug)
-  }))
- });
-}
 async function load(){
  // Render identity-loading before the first network request, not "popular stores".
  let identityTimer=null;
@@ -415,10 +403,9 @@ async function load(){
       const updated=String(conf?.liffId||"");
       if(updated===liffId)return;
       liffId=updated;
-      if(all.length){publishGameDirectory();render();}
+      if(all.length)render();
     });
-    els.intro.innerHTML=mode==="game"?
-      '<strong>遊戲逛街 · 像素城市地圖</strong><p>在像素城市直接點選已公開店家，走進店內並使用預約、取號或線上點餐。</p>':mode==="search"?
+    els.intro.innerHTML=mode==="search"?
       '<strong>找店家、查看叫號更簡單</strong><p>搜尋店名或地點，直接查看可使用的服務。叫號看板無須登入；預約及取號才需 LINE 身分驗證。</p>':
       '<strong>現場取號</strong><p>只顯示開放現場取號的店家，進入門市領號時才需要 LINE 身分驗證。</p>';
     const [directory,ranking]=await Promise.all([
@@ -431,7 +418,6 @@ async function load(){
     popular=Array.isArray(ranking.data)?ranking.data:[];
   }
   setupExploreFilters();
-  publishGameDirectory();
   updateFilterSummary();
   if(searchCriteria())await loadSearch();
   else render();

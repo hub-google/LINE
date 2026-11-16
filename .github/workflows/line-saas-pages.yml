@@ -36,7 +36,6 @@ jobs:
           node --check QueueMonster/saas/version-watch.js
           node --check .github/scripts/build-line-saas.mjs
           node --check QueueMonster/saas/pwa-sw.js
-          node --check QueueMonster/saas/explore-game.js
           node --check QueueMonster/saas/site-auth.js
           test -s QueueMonster/saas/booking-theme.css
           test -s QueueMonster/saas/monster-world.css
@@ -63,8 +62,6 @@ jobs:
           test -s "$RUNNER_TEMP/line-saas-dist/monster-world.css"
           test -s "$RUNNER_TEMP/line-saas-dist/monster-mascot.svg"
           test -s "$RUNNER_TEMP/line-saas-dist/line-app-icon.svg"
-          test -s "$RUNNER_TEMP/line-saas-dist/explore-game.css"
-          test -s "$RUNNER_TEMP/line-saas-dist/explore-game.js"
           test -s "$RUNNER_TEMP/line-saas-dist/site-auth.css"
           test -s "$RUNNER_TEMP/line-saas-dist/site-auth.js"
           grep -q "$GITHUB_SHA" "$RUNNER_TEMP/line-saas-dist/pwa-sw.js"
@@ -88,10 +85,10 @@ jobs:
           git worktree add --detach "$pubdir" origin/gh-pages
           for product in booking saas; do
             mkdir -p "$pubdir/$product"
-            rm -f "$pubdir/$product/poster.html"
+            rm -f "$pubdir/$product/poster.html" "$pubdir/$product/explore-game.css" "$pubdir/$product/explore-game.js"
             rm -rf "$pubdir/$product/assets/poster"
             cp -R "$RUNNER_TEMP/line-saas-dist/assets" "$pubdir/$product/"
-            for f in index.html template.html home.html for-merchants.html for-customers.html demo.html board.html directory.html my-records.html merchant-register.html platform-login.html merchant-center.html privacy.html terms.html version-watch.js release.json booking-theme.css monster-world.css monster-mascot.svg line-app-icon.svg explore-game.css explore-game.js site-auth.css site-auth.js public-config.js manifest.webmanifest sitemap.xml pwa-sw.js offline.html pwa-icon-192.png pwa-icon-512.png; do
+            for f in index.html template.html home.html for-merchants.html for-customers.html demo.html board.html directory.html my-records.html merchant-register.html platform-login.html merchant-center.html privacy.html terms.html version-watch.js release.json booking-theme.css monster-world.css monster-mascot.svg line-app-icon.svg site-auth.css site-auth.js public-config.js manifest.webmanifest sitemap.xml pwa-sw.js offline.html pwa-icon-192.png pwa-icon-512.png; do
               cp "$RUNNER_TEMP/line-saas-dist/$f" "$pubdir/$product/$f"
             done
           done

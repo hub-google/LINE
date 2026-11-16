@@ -114,6 +114,9 @@ a.btn.secondary:hover{background:#e1f3e9}
 
 
 /* Mobile discovery: show search before copy and use an explicit filter drawer. */
+.explore-filter-row{margin:16px 0 2px;display:flex;gap:10px;flex-wrap:wrap}
+.explore-filter-row label{display:flex;flex-direction:column;gap:6px;color:#527166;font-size:12px;font-weight:700;flex:1;min-width:150px}
+.explore-filter-row select{min-height:42px;border:1px solid #d2e5d9;background:#fff;color:#214b39;border-radius:10px;padding:9px 12px;font:inherit;font-size:13px;max-width:100%}
 .filter-details{margin:13px 0 5px}
 .filter-details>.filter-summary{display:none}
 .filter-details>.explore-filter-row{margin:0}
@@ -125,11 +128,6 @@ a.btn.secondary:hover{background:#e1f3e9}
  body[data-monster-page="directory"] .hero-heading p{display:none}
  body[data-monster-page="directory"] .main-panel{padding:13px 13px 23px}
  body[data-monster-page="directory"] .tabs{margin-bottom:8px;gap:5px}
- body[data-monster-page="directory"] .explore-view-switch{
-   display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
-   width:100%;gap:4px;margin:0 0 7px;padding:4px
- }
- body[data-monster-page="directory"] .explore-view-switch button{min-height:40px;padding:8px 10px}
  body[data-monster-page="directory"] .search-wrap{margin-top:5px}
  body[data-monster-page="directory"] .search-wrap label{font-size:12px;margin-bottom:5px}
  body[data-monster-page="directory"] .search{min-height:48px;padding-top:11px;padding-bottom:11px}
