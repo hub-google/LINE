@@ -3,9 +3,18 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 // FoodRadar subscriber opt-ins require a signed platform OA event and are stored privately.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const originAllowed = "https://hub-google.github.io";
+const trustedBrowserOrigins = new Set([
+  "https://hub-google.github.io",
+  "https://qm.monsterport.com",
+]);
 function headers(origin: string | null) {
-  return { "content-type": "application/json", "access-control-allow-origin": origin === originAllowed ? originAllowed : originAllowed, "access-control-allow-headers": "authorization, apikey, content-type", "access-control-allow-methods": "GET, POST, OPTIONS", "vary": "Origin" };
+  return {
+    "content-type": "application/json",
+    "access-control-allow-headers": "authorization, apikey, content-type",
+    "access-control-allow-methods": "GET, POST, OPTIONS",
+    "vary": "Origin",
+    ...(origin && trustedBrowserOrigins.has(origin) ? { "access-control-allow-origin": origin } : {}),
+  };
 }
 function reply(status: number, body: Record<string, unknown>, origin: string | null) {
   return new Response(JSON.stringify(body), { status, headers: headers(origin) });
@@ -1244,7 +1253,7 @@ Deno.serve(async (req: Request) => {
     }, origin);
   }
   if (req.method !== "POST") return reply(405, { error: "METHOD_NOT_ALLOWED" }, origin);
-  if (origin && origin !== originAllowed) return reply(403, { error: "ORIGIN_DENIED" }, origin);
+  if (origin && !trustedBrowserOrigins.has(origin)) return reply(403, { error: "ORIGIN_DENIED" }, origin);
   try {
     const payload = await req.json();
     const db = service();
