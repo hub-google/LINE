@@ -13,7 +13,7 @@ import {renderCustomerPickup,pickupState} from "./pickup-mode.js";
 import {rpc} from "./data-loading.js";
 import {box,btn,esc,field,formatTaipeiCreated,layout,menuChoiceReady,menuSelectSection,nav,selectedItemsHtml,stat,tag,taipei} from "./shared-ui.js";
 import {lineStatusBadge,lineLoginUrl} from "./line-session.js";
-import {unitBookingPanel,unitList,unitQueuePanel} from "./service-units.js";
+import {unitBookingPanel,unitBookingReady,unitBookingFingerprint,unitList,unitQueuePanel,selectedUnitSession} from "./service-units.js";
 import {renderBookings,renderMyTickets} from "./customer-records.js";
 import {queueProgressBoard} from "./queue-progress.js";
 import {crossRecords,crossTicketCards} from "./cross-store.js";
@@ -47,8 +47,12 @@ export function availableForParty(slot,party=bookingState.bookingParty){
 }
 
 export function syncBookingPartyInput(raw){
- const requested=Number(raw);
+ const requested=Number(raw),previous=bookingState.bookingParty;
  bookingState.bookingParty=Number.isInteger(requested)&&requested>=1&&requested<=20?requested:0;
+ if(bookingState.bookingParty!==previous){
+   bookingState.bookingConfirmationKey="";
+   serviceUnitsState.unitConfirmKey="";
+ }
  const slots=currentBookingSlots();
  if(bookingState.chosenSlot&&!slots.some(x=>x.time===bookingState.chosenSlot&&availableForParty(x)))bookingState.chosenSlot="";
  for(const button of document.querySelectorAll("button[data-slot]")){
@@ -62,9 +66,25 @@ export function syncBookingPartyInput(raw){
  if(helper)helper.textContent=bookingState.bookingParty?
    "已依 "+bookingState.bookingParty+" 位篩選時段；名額不足的時間不能選擇。":
    "請輸入 1～20 位的有效預約人數。";
- const submit=document.querySelector('button[data-act="book"]');
- if(submit)submit.disabled=!bookingState.chosenSlot||!bookingState.bookingParty||!validBookingContact()||
-   !menuChoiceReady(customerState.customer?.tenant?.menu_booking_mode||"DISABLED",bookingState.bookingChosenItems,customerState.customer?.menu_items||[]);
+ syncBookingSubmitButtons();
+}
+
+export function syncBookingSubmitButtons(){
+ const menuReady=menuChoiceReady(customerState.customer?.tenant?.menu_booking_mode||"DISABLED",
+   bookingState.bookingChosenItems,customerState.customer?.menu_items||[]);
+ const standard=document.querySelector('button[data-act="book"]');
+ if(standard)standard.disabled=!bookingState.chosenSlot||!bookingState.bookingParty||!validBookingContact()||!menuReady;
+ const unit=document.querySelector('button[data-act="unit-book-review"],button[data-act="unit-book-final"]');
+ if(!unit)return;
+ // Invalidate the old review if contact details or party size change.
+ if(unit.dataset.act==="unit-book-final"&&customerState.customer?.booking_confirmation_required!==false&&
+    serviceUnitsState.unitConfirmKey!==unitBookingFingerprint(selectedUnitSession("reserve"),bookingState.bookingParty)){
+   unit.dataset.act="unit-book-review";
+   unit.textContent="下一步：確認預約";
+   document.querySelector("[data-unit-booking-review]")?.remove();
+   document.querySelector('button[data-act="unit-book-back"]')?.remove();
+ }
+ unit.disabled=!unitBookingReady();
 }
 
 export function normalizeBookingPhone(v){let raw=String(v||"").replace(/[\s()-]/g,"");if(/^\+8869\d{8}$/.test(raw))raw="0"+raw.slice(4);return raw}

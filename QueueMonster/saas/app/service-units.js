@@ -45,6 +45,15 @@ export function selectedUnitSession(mode=routeState.customerTab){
  return ss.find(s=>s.id===serviceUnitsState.unitSessionChoice)||ss[0]||null;
 }
 
+// Shared readiness rule for the session booking UI and live input updates.
+export function unitBookingReady(){
+ const s=selectedUnitSession("reserve"),party=bookingState.bookingParty;
+ return !!s&&Number.isInteger(party)&&party>=1&&party<=20&&
+   Number(s.booked||0)+party<=Number(s.capacity)&&validBookingContact()&&
+   menuChoiceReady(customerState.customer?.tenant?.menu_booking_mode||"DISABLED",
+     bookingState.bookingChosenItems,customerState.customer?.menu_items||[]);
+}
+
 export function unitBookingFingerprint(s,party){
  return JSON.stringify({shop:routeState.slug,day:routeState.day,session:s?.id||"",party,
   name:bookingState.bookingContactName.trim(),phone:normalizeBookingPhone(bookingState.bookingContactPhone),
@@ -85,8 +94,8 @@ export function unitChooseHtml(mode=routeState.customerTab){
 
 export function unitBookingPanel(){
  const s=selectedUnitSession();
- const available=s&&Number(s.booked||0)+Number(bookingState.bookingParty)<=s.capacity;
- const confirming=customerState.customer?.booking_confirmation_required!==false&&serviceUnitsState.unitConfirmKey===unitBookingFingerprint(s,Number(bookingState.bookingParty));
+ const confirmationRequired=customerState.customer?.booking_confirmation_required!==false;
+ const confirming=confirmationRequired&&serviceUnitsState.unitConfirmKey===unitBookingFingerprint(s,Number(bookingState.bookingParty));
  return box("選擇預約場次",
    '<p class="small">選擇可預約的場次；若店家有不同服務窗口，也可先選擇窗口。</p>'+
    field("預約日期","customer-day",routeState.day,"date",'min="'+taipei()+'" max="'+dateInNinetyDays()+'"')+
@@ -95,13 +104,12 @@ export function unitBookingPanel(){
    menuSelectSection(customerState.customer?.tenant?.menu_booking_mode||"DISABLED",customerState.customer?.menu_items||[],bookingState.bookingChosenItems,"booking")+
    bookingContactFields("unit")+
    '<p class="small">預約場次代表可報到的時段，實際開始服務時間依現場叫號與人員安排。</p>'+
-   (confirming?'<div class="notice"><strong>確認預約資訊</strong><p>'+esc(unitNameForSession(s?.id))+' · '+esc(s?.name||"")+
+   (confirming?'<div class="notice" data-unit-booking-review><strong>確認預約資訊</strong><p>'+esc(unitNameForSession(s?.id))+' · '+esc(s?.name||"")+
     '</p><p>日期：'+esc(routeState.day)+' '+esc(s?.start||"")+'–'+esc(s?.end||"")+'</p>'+
     '<p>姓名：'+esc(bookingState.bookingContactName.trim())+'，'+esc(bookingState.bookingParty)+' 位</p></div>':'')+
-   '<div class="staff-actionbar">'+btn(confirming?"確認送出預約":"下一步：確認預約",
-    confirming?"unit-book-final":customerState.customer?.booking_confirmation_required===false?"unit-book-final":"unit-book-review",
-    "primary full",(!available||!validBookingContact()||
-    !menuChoiceReady(customerState.customer?.tenant?.menu_booking_mode||"DISABLED",bookingState.bookingChosenItems,customerState.customer?.menu_items||[])?'disabled':''))+
+   '<div class="staff-actionbar">'+btn(confirming?"確認送出預約":confirmationRequired?"下一步：確認預約":"確定送出預約",
+    confirming?"unit-book-final":confirmationRequired?"unit-book-review":"unit-book-final",
+    "primary full",unitBookingReady()?"":"disabled")+
     (confirming?btn("返回修改","unit-book-back","outline"):"")+'</div>')+
    box("我的近期預約",renderBookings(customerState.customer?.my_reservations||[],true));
 }

@@ -56,7 +56,7 @@ document.addEventListener("click",async ev=>{
  if(b.dataset.act==="staff-show-more"){
   const key=b.dataset.listKey||"";
   if(!isStaffListKey(key))return;
-  staffViewState.staffVisibleLimits.set(key,Math.min(500,(staffViewState.staffVisibleLimits.get(key)||12)+12));
+  staffViewState.staffVisibleLimits.set(key,(staffViewState.staffVisibleLimits.get(key)||12)+12);
   render();return;
  }
  if(b.dataset.act==="settings-section"){

@@ -11,7 +11,7 @@ import {staffState} from "./state/staffState.js";
 
 
 
-import {refreshServiceSlots,syncBookingPartyInput,validBookingContact} from "./customer-booking.js";
+import {refreshServiceSlots,syncBookingPartyInput,syncBookingSubmitButtons} from "./customer-booking.js";
 import {jsStatus,menuChoiceReady} from "./shared-ui.js";
 import {render} from "./staff-layout.js";
 import {act,load,rpc} from "./data-loading.js";
@@ -32,9 +32,7 @@ document.addEventListener("input",ev=>{
    if(el.id==="customer-book-name")bookingState.bookingContactName=el.value;
    else bookingState.bookingContactPhone=el.value;
    bookingState.bookingContactDirty=true;bookingState.bookingConfirmationKey="";serviceUnitsState.unitConfirmKey="";
-   const submit=document.querySelector('button[data-act="book"]');
-   if(submit)submit.disabled=!bookingState.chosenSlot||!bookingState.bookingParty||!validBookingContact()||
-     !menuChoiceReady(customerState.customer?.tenant?.menu_booking_mode||"DISABLED",bookingState.bookingChosenItems,customerState.customer?.menu_items||[]);
+   syncBookingSubmitButtons();
  }
 });
 document.addEventListener("change",async ev=>{
