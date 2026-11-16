@@ -9,7 +9,8 @@
 | 需求文件 | https://github.com/hub-google/LINE/blob/main/QueueMonster/PRD.md |
 | 網站需求補充 | https://github.com/hub-google/LINE/blob/main/QueueMonster/saas/PRD-20261104-DoYouBook-benchmark-and-solutions.md |
 | 網站入口 | https://hub-google.github.io/LINE/booking/ |
-| 新網域（Cloudflare Worker 過渡版，尚待 OAuth／LIFF 驗收） | https://qm.monsterport.com/ |
+| 正式品牌網域（Cloudflare Worker 過渡版，LINE LIFF 尚待驗收） | https://queue.monsterport.com/ |
+| 舊測試子網域（保留相容，不作新入口） | https://qm.monsterport.com/ |
 | 品牌首頁 | https://hub-google.github.io/LINE/booking/home.html |
 | 找店家 | https://hub-google.github.io/LINE/booking/directory.html |
 | 店家申請 | https://hub-google.github.io/LINE/booking/merchant-register.html |
@@ -33,6 +34,15 @@
 | LINE 圖文選單部署 | https://github.com/hub-google/LINE/actions/workflows/line-rich-menu.yml |
 
 `greenfield-salon` 是既有示範商家代碼；正式商家請換成自己的代碼。後台須有相應權限。
+
+## QueueMonster 新網域（2026-11-16）
+
+- **新首頁：`https://queue.monsterport.com/`（不加 `home.html`）**。訪問新網域根路徑時直接提供品牌首頁，`/home.html` 舊路徑導向 `/`。
+- 顧客／店員／總部功能保留原根路徑查詢參數，例如 `/?view=customer&merchant=...`、`/?view=staff&merchant=...`、`/?view=platform`。
+- Cloudflare Worker：`monsterport-queue-bridge`；來源 [`cloudflare/monsterport-queue-bridge.mjs`](./cloudflare/monsterport-queue-bridge.mjs)。
+- Supabase `line-bridge` 自第 161 版允許 `https://queue.monsterport.com`，仍保留舊 GitHub Pages 與 `qm` 來源。
+- 目前是 Worker 轉接 GitHub Pages 的部署方式，不是 Cloudflare Pages 原生託管。舊網址與 Supabase 資料庫保持不變。
+- LINE LIFF Endpoint 與 Supabase Auth Redirect URL 須再檢查新網址授權；在認證完成前，不得移除舊 LIFF App／改動現有店家 QR Code。
 
 ## MonsterPort 過渡部署（2026-11-16）
 
