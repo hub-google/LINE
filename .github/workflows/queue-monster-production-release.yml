@@ -38,7 +38,13 @@ jobs:
         run: npm ci --prefix .github/frontend
       - name: Run deployment-critical regression tests
         run: |
-          node --test             QueueMonster/tests/booking-buttons-regression-20261116.test.mjs             QueueMonster/tests/site-auth-contract.test.mjs             QueueMonster/tests/marketing-home-contract.test.mjs             QueueMonster/tests/booking-line-reply.test.mjs             QueueMonster/tests/public-customer-routes-20261113.test.mjs             QueueMonster/tests/frontend-build.test.mjs
+          node --test \
+            QueueMonster/tests/booking-buttons-regression-20261116.test.mjs \
+            QueueMonster/tests/site-auth-contract.test.mjs \
+            QueueMonster/tests/marketing-home-contract.test.mjs \
+            QueueMonster/tests/booking-line-reply.test.mjs \
+            QueueMonster/tests/public-customer-routes-20261113.test.mjs \
+            QueueMonster/tests/frontend-build.test.mjs
       - name: Validate production static build
         run: |
           GITHUB_SHA=${{ github.sha }} node .github/scripts/build-line-saas.mjs "$RUNNER_TEMP/queue-monster-prod"
