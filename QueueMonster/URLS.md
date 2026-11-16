@@ -9,6 +9,7 @@
 | 需求文件 | https://github.com/hub-google/LINE/blob/main/QueueMonster/PRD.md |
 | 網站需求補充 | https://github.com/hub-google/LINE/blob/main/QueueMonster/saas/PRD-20261104-DoYouBook-benchmark-and-solutions.md |
 | 網站入口 | https://hub-google.github.io/LINE/booking/ |
+| 新網域（Cloudflare Worker 過渡版，尚待 OAuth／LIFF 驗收） | https://qm.monsterport.com/ |
 | 品牌首頁 | https://hub-google.github.io/LINE/booking/home.html |
 | 找店家 | https://hub-google.github.io/LINE/booking/directory.html |
 | 店家申請 | https://hub-google.github.io/LINE/booking/merchant-register.html |
@@ -32,3 +33,12 @@
 | LINE 圖文選單部署 | https://github.com/hub-google/LINE/actions/workflows/line-rich-menu.yml |
 
 `greenfield-salon` 是既有示範商家代碼；正式商家請換成自己的代碼。後台須有相應權限。
+
+## MonsterPort 過渡部署（2026-11-16）
+
+- Cloudflare Worker：`monsterport-qm-bridge`，綁定 `qm.monsterport.com`，原始碼存放於 [`cloudflare/monsterport-qm-bridge.mjs`](./cloudflare/monsterport-qm-bridge.mjs)。
+- 這是反向代理過渡部署，靜態網站仍從 `hub-google.github.io/LINE/booking/` 取得，不是 Cloudflare Pages 原生託管。
+- 現有 GitHub Pages 網址、`gh-pages` 部署、Supabase 與 LINE API 不得直接移除。後端資料庫沒有搬遷。
+- Cloudflare Pages GitHub 專案連接目前遭遇 Git 整合 HTTP 401 錯誤；完成原生部署前，不可刪除 Worker 或 GitHub Pages 來源。
+- 正式切換前須檢查 Supabase Auth Redirect URLs、Google OAuth、LINE LIFF Endpoint、各店家 QR Code、PWA、預約／取號／訂餐流程，並完成新舊網址的回歸測試。
+- `site-auth.js` 與 `app/line-session.js` 允許單頁返回網址使用舊 `/LINE/booking/` 或新網域根目錄路徑。
