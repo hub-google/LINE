@@ -124,7 +124,9 @@ function renderMyRecords(){
     '<p class="shop-desc"><strong>'+numberLabel+' '+e(r.number||"—")+'</strong></p>'+
     '<p class="shop-desc">'+eventLabel+e(r.event_time||"—")+'</p>'+
     '<p class="shop-desc">建立時間：'+e(fmtTime(r.created_at))+'</p>'+extra+
-    (url?'<div class="card-actions"><a class="btn" data-oa-mode="'+e(r.oa_mode||"")+'" href="'+e(url)+'">查看這筆'+numberLabel+'詳情</a></div>':"")+
+    (r.merchant_status&&r.merchant_status!=="ACTIVE"?
+       '<p class="shop-desc">此店家目前未提供服務；歷史紀錄摘要仍保留，詳情暫時無法開啟。</p>':
+      url?'<div class="card-actions"><a class="btn" data-oa-mode="'+e(r.oa_mode||"")+'" href="'+e(url)+'">查看這筆'+numberLabel+'詳情</a></div>':"")+
     '</div></article>';
   }).join("");
   return '<section class="history-section" id="history-'+kind+'" aria-labelledby="heading-'+kind+'">'+
