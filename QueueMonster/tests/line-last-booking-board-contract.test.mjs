@@ -10,7 +10,7 @@ test("retired last-booking board is not in official menu or personal record UI",
   assert.doesNotMatch(menu,/mode=mine&section=board/);
   assert.doesNotMatch(page,/sb\\.rpc\\("so_my_last_booking_board"\\)/);
   assert.match(page,/const isHistorySection=/);
-  assert.match(page,/Promise\.all\(kinds\.map\(p_kind=>sb\.rpc\("so_my_platform_records"/);
+ assert.match(page,/Promise\.all\(kinds\.map\(p_kind=>sb\.rpc\("so_my_platform_records_page"/);
 });
 test("last-booked-store lookup never trusts a supplied customer ID",()=>{
   assert.match(migration,/public\.qm_platform_line_identities/);
