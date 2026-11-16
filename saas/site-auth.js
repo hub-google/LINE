@@ -206,7 +206,7 @@ function isReturnAllowed(candidate){
  if(!/^(?:home|for-merchants|for-customers|demo|directory|my-records|board|merchant-center|merchant-register|privacy|terms)\.html(?:\?[^#]*)?$/.test(candidate))return false;
  try{
   const u=new URL(candidate,location.origin+location.pathname.replace(/[^/]*$/,""));
-  return u.origin===location.origin && /^\/LINE\/(?:booking|saas)\/(?:home|for-merchants|for-customers|demo|directory|my-records|board|merchant-center|merchant-register|privacy|terms)\.html$/.test(u.pathname);
+  return u.origin===location.origin && /^\/(?:LINE\/(?:booking|saas)\/)?(?:home|for-merchants|for-customers|demo|directory|my-records|board|merchant-center|merchant-register|privacy|terms)\.html$/.test(u.pathname);
  }catch(_){return false}
 }
 function currentReturn(){
