@@ -24,6 +24,13 @@ test("Google login comes before Email on both signup and login tabs",()=>{
  assert.ok(reg.indexOf('id="google-auth"')<reg.indexOf('id="login-email"'));
  assert.ok(reg.indexOf('id="google-auth"')<reg.indexOf('id="signup-email"'));
  assert.match(styles,/\.google-auth-button/);
+ assert.match(reg,/id="google-gis-button"/);
+ assert.match(logic,/GOOGLE_WEB_CLIENT_ID/);
+ assert.match(logic,/accounts\.google\.com\/gsi\/client/);
+ assert.match(logic,/signInWithIdToken\(\{/);
+ assert.match(logic,/provider:"google",token:response\.credential,nonce/);
+ assert.match(logic,/crypto\.subtle\.digest\("SHA-256"/);
+ assert.match(logic,/useLegacyGoogleLogin/);
  assert.match(logic,/signInWithOAuth\(\{provider:"google"/);
  assert.match(logic,/skipBrowserRedirect:true/);
  assert.match(logic,/returnToLogin\(\)/);

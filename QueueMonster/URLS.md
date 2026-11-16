@@ -62,3 +62,10 @@
 - 自動設定：`.github/workflows/line-oa-deploy.yml` 呼叫 `.github/scripts/sync-queue-auth-domains.py`，只追加 Supabase redirect allowlist、保留原 Site URL，建立或重用第二個 LIFF 並存入 Supabase Edge Secret `LINE_LIFF_ID_QUEUE`。需要既有 GitHub Secrets `SUPABASE_ACCESS_TOKEN`、`LINE_LOGIN_CHANNEL_ID`、`LINE_LOGIN_CHANNEL_SECRET`、`LINE_LIFF_ID`；無權限時會**明確失敗，不宣稱完成**。
 - Google Cloud Console 若使用此專案的 OAuth Web Client，請核對 Authorized JavaScript origins 同時含兩個 origin；Authorized redirect URI 仍為 `https://unapiwajmgqqtdkixaab.supabase.co/auth/v1/callback`，不要改成前端網址。
 - 需分別用真人 Google / LINE 帳號在兩站測試登入、登出、跳轉、Email 驗證／重設；CI 與公開設定檢查無法取代使用者端實際授權。
+
+## Google 登入（雙網域、Google Identity Services，2026-11-16）
+
+- Google OAuth 網頁用戶端公開 Client ID 在 `saas/public-config.js`（不是 Client Secret），JavaScript 來源已加入 `https://queue.monsterport.com` 和 `https://hub-google.github.io`。
+- 店家登入頁優先使用官方 GIS 按鈕、Google ID Token → Supabase `signInWithIdToken`，使用 SHA-256 nonce 保護；店家資料、帳號、權限、Supabase sessions 仍共用原專案。
+- GIS 載入失敗或憑證交換失敗時才顯示原本的 Supabase Google OAuth 按鈕作為手動備援；此備援仍可能顯示 `unapiwajmgqqtdkixaab.supabase.co`，不宣稱 Google 主畫面的文字已經全部消失。
+- 此修改未變更 Google OAuth 品牌審核設定，也未修改 LINE LIFF 設定；Chrome/Safari 真實 Google 帳號登入必須由帳號持有人完成驗收。

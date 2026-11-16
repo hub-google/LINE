@@ -1,4 +1,4 @@
-import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
+import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,GOOGLE_WEB_CLIENT_ID} from "../../public-config.js";
 import {formatAuthError} from "../../app/auth-errors.js";
 
 import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
@@ -94,6 +94,70 @@ $("google-auth").onclick=()=>void execute(async()=>{
  if(!data?.url)throw Error("Google 登入暫時無法使用，請改用 Email。");
  location.assign(data.url);
 },"login");
+
+// Google Identity Services returns a Google ID token directly to this page.
+// The authenticated Supabase account, roles and merchant permissions remain unchanged.
+// Keep the existing OAuth redirect button as an explicit fallback if GIS is unavailable.
+function useLegacyGoogleLogin(message=""){
+ $("google-gis-button").hidden=true;
+ $("google-gis-button").replaceChildren();
+ $("google-auth").hidden=false;
+ if(message)msg(message,true);
+}
+async function installGoogleIdentity(){
+ if(!GOOGLE_WEB_CLIENT_ID||!/^https:\/\/(queue\.monsterport\.com|hub-google\.github\.io)$/.test(location.origin))return;
+ const sdk=document.createElement("script");
+ sdk.src="https://accounts.google.com/gsi/client";
+ sdk.async=true;
+ sdk.onerror=()=>useLegacyGoogleLogin();
+ sdk.onload=()=>{
+  void (async()=>{
+   if(!window.google?.accounts?.id||!globalThis.crypto?.subtle)throw Error("GOOGLE_GIS_UNAVAILABLE");
+   // The unhashed nonce is retained only in memory; Google receives SHA-256(nonce).
+   // Supabase recomputes and verifies it when exchanging the Google ID token.
+   const random=crypto.getRandomValues(new Uint8Array(32));
+   const nonce=Array.from(random,b=>b.toString(16).padStart(2,"0")).join("");
+   const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(nonce));
+   const googleNonce=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");
+   const holder=$("google-gis-button");
+   holder.hidden=false;
+   window.google.accounts.id.initialize({
+    client_id:GOOGLE_WEB_CLIENT_ID,
+    nonce:googleNonce,
+    ux_mode:"popup",
+    auto_select:false,
+    callback:response=>{
+     void execute(async()=>{
+      if(!response?.credential)throw Error("Google 沒有提供登入憑證，請重新登入。");
+      const {data,error}=await sb.auth.signInWithIdToken({
+       provider:"google",token:response.credential,nonce
+      });
+      if(error)throw error;
+      if(!data?.user)throw Error("Google 登入未能建立帳號工作階段。");
+      if(active==="signup")setMode("login");
+      await prepare();
+      msg("Google 登入成功");
+     },"login").then(ok=>{
+      if(!ok)useLegacyGoogleLogin("Google 快速登入未能完成，可使用下方備用 Google 登入。");
+     });
+    }
+   });
+   window.google.accounts.id.renderButton(holder,{
+    type:"standard",theme:"outline",size:"large",shape:"rectangular",
+    text:"continue_with",logo_alignment:"left",
+    width:Math.min(380,Math.max(210,Math.floor(holder.clientWidth||300)))
+   });
+   // The original button must remain available if the SDK loaded but did
+   // not render its real Google control (browser policy/extensions).
+   requestAnimationFrame(()=>{
+    if(!holder.childElementCount){useLegacyGoogleLogin();return;}
+    $("google-auth").hidden=true;
+   });
+  })().catch(()=>useLegacyGoogleLogin());
+ };
+ document.head.append(sdk);
+}
+void installGoogleIdentity();
 $("resend-signup-email").onclick=()=>void execute(async()=>{
  if(!pendingEmail)throw Error("請先輸入電子信箱");
  await requestSignupEmail(pendingEmail);
@@ -102,8 +166,10 @@ $("resend-signup-email").onclick=()=>void execute(async()=>{
 $("change-signup-email").onclick=()=>{pendingEmail="";renderSignupStep();msg("");$("signup-email").focus()};
 async function execute(job,operation="general"){
  if(busy)return;busy=true;document.querySelectorAll("button").forEach(b=>b.disabled=true);msg("正在處理…");
- try{await job()}catch(error){msg(customerFacingError(error,operation==="general"?(active==="signup"?"signup":"login"):operation),true)}
+ let ok=false;
+ try{await job();ok=true}catch(error){msg(customerFacingError(error,operation==="general"?(active==="signup"?"signup":"login"):operation),true)}
  finally{busy=false;document.querySelectorAll("button").forEach(b=>b.disabled=false)}
+ return ok;
 }
 async function rpc(name,args={}){const {data,error}=await sb.rpc(name,args);if(error)throw Error(error.message);return data}
 function showAuth(user){
