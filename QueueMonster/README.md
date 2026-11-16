@@ -3,7 +3,7 @@
 完整專案由 `store-operations/` 更名為 `QueueMonster/`，包含網站、後端、資料庫遷移、測試與既有 Next.js 程式。
 
 - [GitHub Pages 測試站](https://hub-google.github.io/LINE/booking/)
-- [Cloudflare 正式網址（目前仍為 GitHub Pages 過渡代理，待正式版隔離完成）](https://queue.monsterport.com/)
+- [Cloudflare 正式網址（固定讀取獨立 release 快照，不隨 main 更新）](https://queue.monsterport.com/)
 - [測試站／正式站發布規則與 Cloudflare 串接狀態](./docs/DEPLOYMENT-ENVIRONMENTS.md)
 - [網站程式與整合說明](./saas/README.md)
 - [專案完整網址清單](./URLS.md)
