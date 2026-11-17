@@ -94,7 +94,7 @@ async function syncSwapForm(){
   const source=fresh.isDemo?fresh.shifts:
    fresh.shifts.filter(s=>fresh.members.some(m=>m.id===s.member_id&&m.user_id===fresh.userId));
   if(!source.length)throw new Error('目前沒有自己可交換的已發布班次');
-  swapFormCache.set(form,fresh);
+  swapFormCache.set(form,{...fresh,checkedAt:Date.now()});
   fillSwapSelect(from,source,fresh.members,sourceBefore);
   from.disabled=false;
   rebuildSwapTargets(form,fresh);
@@ -117,3 +117,26 @@ document.addEventListener('change',event=>{
  const form=event.target.closest(SWAP_UI_SELECTOR),cached=form&&swapFormCache.get(form);
  if(cached)rebuildSwapTargets(form,cached);
 });
+
+
+// The server remains authoritative. Capture submission before the app's normal
+// form handler so unsynced/stale swaps cannot be submitted via Enter or a crafted DOM.
+function workforceSwapCanSubmit(form,cache,now=Date.now()){
+ if(!cache||!Number.isFinite(cache.checkedAt)||now-cache.checkedAt>120000)return false;
+ const from=form.querySelector('[name="source_shift_id"]');
+ const to=form.querySelector('[name="target_shift_id"]');
+ if(!from?.value||!to?.value||from.value===to.value)return false;
+ const first=cache.shifts.find(s=>s.id===from.value&&s.status==='published');
+ const other=cache.shifts.find(s=>s.id===to.value&&s.status==='published');
+ if(!first||!other||first.member_id===other.member_id)return false;
+ return !!(cache.isDemo||cache.members.some(m=>m.id===first.member_id&&m.user_id===cache.userId));
+}
+document.addEventListener('submit',event=>{
+ const form=event.target?.closest(SWAP_UI_SELECTOR);
+ if(!form)return;
+ if(workforceSwapCanSubmit(form,swapFormCache.get(form)))return;
+ event.preventDefault();
+ event.stopImmediatePropagation();
+ const status=form.querySelector('[data-swap-sync-status]');
+ if(status)status.textContent='目前班表未同步或已過期，請關閉換班表單重新開啟。';
+},true);
