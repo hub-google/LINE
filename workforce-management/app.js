@@ -4,6 +4,8 @@ const API='https://unapiwajmgqqtdkixaab.supabase.co';
 const KEY='sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy'; // Publishable, never service_role.
 const DEMO_ID='98d3505c-cbe6-46ed-a95a-13672e6d98f4';
 const wfMiniMode=new URLSearchParams(location.search).get('mini')==='1';
+const wfMiniEnvironment=new URLSearchParams(location.search).get('line_env')||'developing';
+const wfMiniEnvironmentNames={developing:'開發測試',review:'送審測試',published:'正式發布'};
 const TABS={
  overview:['工作總覽','掌握團隊今天的排班、打卡及待審事項。'],
  schedule:['排班管理','查看、建立與發布班表，避免排班時間重疊。'],
@@ -1538,14 +1540,15 @@ render=function(){
  heading();
  const info=app.lineState||{};
  const cfg=app.lineConfig||{};
- const activeLiffId=wfMiniMode?cfg.miniLiffId:cfg.liffId;
+ const activeMiniConfig=cfg.miniEnvironments?.[wfMiniEnvironment];
+ const activeLiffId=wfMiniMode?activeMiniConfig?.liffId:cfg.liffId;
  const linkInfo=app.mode==='demo'
   ?'<div class="notice">公開 Demo 不能綁定 LINE 身分，也不會向真實 LINE 帳號發送訊息。請登入企業帳號後綁定。</div>'
   :!app.token?'<div class="notice">請先登入企業帳號。</div>'
   :'<div class="bar-row"><span>此員工 LINE 身分</span><strong>'+
      esc(info.error?'無法確認：'+info.error:info.linked?'已驗證綁定':'尚未綁定')+'</strong></div>'+
    '<div class="bar-row"><span>LIFF 設定</span><strong>'+
-     esc(wfMiniMode?(cfg.miniConfigured?'已設定 MINI App Channel':'尚未設定 MINI App Channel'):(cfg.loginConfigured?'已設定登入 Channel':'尚未設定登入 Channel'))+'</strong></div>'+
+     esc(wfMiniMode?(activeMiniConfig?.configured?'已設定 MINI App Channel（'+(wfMiniEnvironmentNames[wfMiniEnvironment]||'未知環境')+'）':'尚未設定 MINI App Channel'):(cfg.loginConfigured?'已設定登入 Channel':'尚未設定登入 Channel'))+'</strong></div>'+
    '<div class="bar-row"><span>平台訊息發送</span><strong>'+
      esc(cfg.messagingConfigured?'LINE token 已設定（送達仍須測試）':'尚未設定訊息 token')+'</strong></div>'+
    '<div class="flex"><button class="btn primary" data-line="bind" '+(!activeLiffId?'disabled':'')+'>以 LINE 驗證並綁定</button>'+
@@ -1590,12 +1593,14 @@ async function initializeWFMini(){
  if(wfMiniInitPromise)return wfMiniInitPromise;
  wfMiniInitPromise=(async()=>{
   const config=await lineEndpoint();
-  if(!config.miniLiffId||!config.miniConfigured)throw Error('尚未設定 LINE MINI App Channel，請完成 LINE Developers 與 Supabase 設定');
-  if(!/^[0-9]+-[A-Za-z0-9]+$/.test(config.miniLiffId))throw Error('MINI App LIFF ID 格式不正確');
-  wfMiniChannelLiffId=config.miniLiffId;
+  if(!Object.hasOwn(wfMiniEnvironmentNames,wfMiniEnvironment))throw Error('未知的 MINI App 環境');
+  const selected=config.miniEnvironments?.[wfMiniEnvironment];
+  if(!selected?.configured||!selected.liffId)throw Error('尚未設定工作怪獸 '+wfMiniEnvironmentNames[wfMiniEnvironment]+' Channel');
+  if(!/^[0-9]+-[A-Za-z0-9]+$/.test(selected.liffId))throw Error('MINI App LIFF ID 格式不正確');
+  wfMiniChannelLiffId=selected.liffId;
   const liff=await loadLineSdk();
   if(!liff)throw Error('LINE SDK 載入失敗');
-  await liff.init({liffId:config.miniLiffId,withLoginOnExternalBrowser:false});
+  await liff.init({liffId:selected.liffId,withLoginOnExternalBrowser:false});
   return liff;
  })();
  return wfMiniInitPromise;
@@ -1603,7 +1608,7 @@ async function initializeWFMini(){
 async function connectWorkforceLine(){
  if(app.mode!=='real'||!app.token)throw Error('請先登入企業帳號');
  const config=await lineEndpoint();
- const selectedId=wfMiniMode?config.miniLiffId:config.liffId;
+ const selectedId=wfMiniMode?config.miniEnvironments?.[wfMiniEnvironment]?.liffId:config.liffId;
  if(!selectedId)throw Error(wfMiniMode?'尚未設定 WF MINI App LIFF ID':'平台尚未提供此人資入口的 LIFF ID');
  const liff=wfMiniMode?await initializeWFMini():await loadLineSdk();
  if(!liff)throw Error('LINE SDK 初始化失敗');
@@ -1613,7 +1618,7 @@ async function connectWorkforceLine(){
  if(!idToken)throw Error('LINE 尚未授權 openid 身分，請重新授權');
  // The edge function independently verifies the LINE token and current Supabase employee membership.
  const result=await lineEndpoint({action:'bind',tenant_id:app.tenantId,id_token:idToken,
-  channel_type:wfMiniMode?'mini':'login'});
+  channel_type:wfMiniMode?'mini':'login',channel_env:wfMiniMode?wfMiniEnvironment:null});
  if(result.linked){banner('LINE 身分驗證與員工綁定完成');await refreshLineStatus();}
 }
 if(wfMiniMode){
@@ -1625,7 +1630,7 @@ if(wfMiniMode){
     wfMiniBanner('已連接 LINE MINI App。請登入 WF 企業帳號，到「LINE 通知」綁定員工身分。');
    }else{
     wfMiniBanner('尚未登入 LINE。可從 LINE 開啟 MINI App，或使用原本的 WF 企業帳號登入。',
-     'https://liff.line.me/'+encodeURIComponent(wfMiniChannelLiffId));
+     'https://miniapp.line.me/'+encodeURIComponent(wfMiniChannelLiffId));
    }
   }catch(error){wfMiniBanner(error.message||'MINI App 初始化失敗');}
  })();
