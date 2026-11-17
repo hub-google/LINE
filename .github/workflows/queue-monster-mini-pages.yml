@@ -7,7 +7,7 @@ on:
     paths:
       - "QueueMonster/miniapp/**"
       - "QueueMonster/supabase/functions/qm-mini-session/**"
-      - "QueueMonster/tests/mini-app-isolation.test.mjs"
+      - "QueueMonster/miniapp/tests/mini-app-isolation.test.mjs"
       - ".github/workflows/queue-monster-mini-pages.yml"
   workflow_dispatch:
 
@@ -35,7 +35,7 @@ jobs:
         run: |
           node --check QueueMonster/miniapp/build-mini.mjs
           node --check QueueMonster/miniapp/qm-mini-nav.js
-          node --test QueueMonster/tests/mini-app-isolation.test.mjs
+          node --test QueueMonster/miniapp/tests/mini-app-isolation.test.mjs
       - name: Build Developing, Review and Published separately
         run: |
           set -euo pipefail
