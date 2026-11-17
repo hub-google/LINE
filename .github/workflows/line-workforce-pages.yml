@@ -55,6 +55,7 @@ jobs:
           node --test workforce-management/tests/workforce-import-and-swap.test.mjs
           node --test workforce-management/tests/workforce-archive-export.test.mjs
           node --test workforce-management/tests/workforce-line-monitor.test.mjs
+          node --test workforce-management/tests/workforce-security-role-guard.test.mjs
       - name: Deploy workforce website and independent WF MINI App to existing gh-pages branch
         shell: bash
         run: |
