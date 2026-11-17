@@ -73,6 +73,36 @@ async function verifyLineIdentity(idToken:string,accessToken:string,clientId:str
   if(!name||name.length>60)throw Error("LINE_PROFILE_SCOPE_REQUIRED");
   return {sub,name};
 }
+async function ensureMiniShopLink(
+  db:ReturnType<typeof admin>,uid:string,slug:string,sub:string,name:string,clientId:string,
+){
+  if(!/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug))throw Error("BAD_MERCHANT");
+  const {data:tenant,error:te}=await db.from("qm_tenants").select("id")
+    .eq("slug",slug).eq("status","ACTIVE").maybeSingle();
+  if(te)throw te;
+  if(!tenant)throw Error("TENANT_NOT_FOUND");
+  const linkQuery=()=>db.from("qm_line_links").select("line_sub,login_channel_id")
+    .eq("tenant_id",tenant.id).eq("user_id",uid).maybeSingle();
+  const {data:previous,error:pe}=await linkQuery();
+  if(pe)throw pe;
+  if(previous){
+    if(previous.line_sub!==sub)throw Error("LINE_ACCOUNT_CHANGED");
+    // Preserve original web channel ID when the same Supabase user ID already
+    // has a legacy LINE link. MINI uses its own auth storage key anyway.
+    return;
+  }
+  const {error:insertError}=await db.from("qm_line_links").insert({
+    tenant_id:tenant.id,user_id:uid,line_sub:sub,display_name:name,
+    login_channel_id:clientId,updated_at:new Date().toISOString(),
+    is_following:null,friendship_updated_at:null
+  });
+  if(insertError){
+    if(insertError.code!=="23505")throw insertError;
+    const {data:race,error:raceError}=await linkQuery();
+    if(raceError)throw raceError;
+    if(race?.line_sub!==sub)throw Error("LINE_ACCOUNT_CHANGED");
+  }
+}
 Deno.serve(async req=>{
   const origin=req.headers.get("origin");
   if(origin&&!permittedOrigins.has(origin))return result(403,{error:"ORIGIN_DENIED"},origin);
@@ -102,6 +132,8 @@ Deno.serve(async req=>{
       const age=Date.now()-Date.parse(identity?.updated_at||"");
       if(!identity||identity.login_channel_id!==clientId||!Number.isFinite(age)||age< -60000||age>30*86400000)
         return result(401,{error:"LINE_REAUTH_REQUIRED"},origin);
+      if(action==="resume")await ensureMiniShopLink(db,uid,String(body.slug||""),
+        identity.line_sub,identity.display_name,clientId);
       return result(200,{ok:true,linked:true,displayName:identity.display_name,
         isFollowing:null,recipientReachability:"UNKNOWN",friendCheckStatus:"MINI_VERIFIED"},origin);
     }
@@ -110,6 +142,8 @@ Deno.serve(async req=>{
     if(idToken.length>10000||accessToken.length>10000||(!idToken&&!accessToken))
       return result(400,{error:"LINE_LOGIN_TOKEN_REQUIRED"},origin);
     const profile=await verifyLineIdentity(idToken,accessToken,clientId);
+    if(action==="link")await ensureMiniShopLink(db,uid,String(body.slug||""),
+      profile.sub,profile.name,clientId);
     const [existing,legacy,storeLinks]=await Promise.all([
       db.from("qm_mini_line_identities").select("line_sub").eq("user_id",uid).maybeSingle(),
       db.from("qm_platform_line_identities").select("line_sub").eq("user_id",uid).maybeSingle(),
@@ -131,6 +165,8 @@ Deno.serve(async req=>{
     const denied=["INVALID_LINE_ID_TOKEN","LINE_CHANNEL_MISMATCH","LINE_TOKEN_EXPIRED","LINE_IDENTITY_MISMATCH",
       "INVALID_LINE_IDENTITY","LINE_PROFILE_SCOPE_REQUIRED"].includes(msg);
     if(!denied)console.error("MINI auth error",msg);
-    return result(denied?401:503,{error:denied?msg:"MINI_AUTH_UNAVAILABLE"},origin);
+    const status=denied?401:msg==="LINE_ACCOUNT_CHANGED"?409:
+      msg==="TENANT_NOT_FOUND"?404:msg==="BAD_MERCHANT"?400:503;
+    return result(status,{error:status===503?"MINI_AUTH_UNAVAILABLE":msg},origin);
   }
 });
