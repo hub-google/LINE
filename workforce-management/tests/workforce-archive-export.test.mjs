@@ -8,7 +8,7 @@ const to=appSource.indexOf("document.addEventListener('click',async event=>{",fr
 assert.ok(from>0&&to>from,'Archive module should exist');
 const fragment=appSource.slice(from,to);
 
-function harness({rowsPerTable={},failTable='',changeTenant=false,roleValue='owner'}={}){
+function harness({rowsPerTable={},failTable='',changeTenant=false,roleValue='owner',notificationMode='ok'}={}){
  const app={mode:'real',token:'authenticated-jwt',tenantId:'tenant-A',user:{id:'user-A'},
   data:{members:[]},tab:'backup'};
  const TABS={};
@@ -20,8 +20,19 @@ function harness({rowsPerTable={},failTable='',changeTenant=false,roleValue='own
  let downloads=0,archiveText='',requests=[];
  class BlobMock{constructor(parts){archiveText=parts.join('');}}
  const URLMock={createObjectURL:()=>'/local-json-file',revokeObjectURL(){}};
- const call=async(url)=>{
+ const call=async(url,method,body)=>{
   requests.push(url);
+  if(url==='/rest/v1/rpc/wm_export_notification_archive'){
+   if(notificationMode==='error')throw Error('NOTIFICATIONS_RPC_DENIED');
+   const offset=body.p_offset,limit=body.p_limit;
+   const total=rowsPerTable.wm_notifications??1;
+   const actualCount=notificationMode==='missing'&&offset>=500?0:total;
+   const rows=Array.from({length:Math.max(0,Math.min(limit,actualCount-offset))},
+    (_,i)=>({id:'n-'+(notificationMode==='duplicate'&&offset>=500?i:offset+i),
+      tenant_id:notificationMode==='foreign'?'tenant-B':'tenant-A'}));
+   return {tenant_id:'tenant-A',offset,limit,
+    total_count:notificationMode==='changed'&&offset>=500?total+1:total,rows};
+  }
   const table=url.match(/\/rest\/v1\/(wm_[a-z_]+)/)?.[1];
   const offset=Number(url.match(/[&?]offset=(\d+)/)?.[1]||0);
   const limit=Number(url.match(/[&?]limit=(\d+)/)?.[1]||500);
@@ -86,4 +97,21 @@ test('Archive includes neither anonymous invitation tokens nor LINE account bind
  assert.ok(selected.includes('wm_punches'));
  assert.ok(selected.includes('wm_requests'));
  assert.match(appSource,/非同一時間點/);
+});
+
+test('Notification archive retrieves complete authorized history beyond inbox RLS',async()=>{
+ const h=harness({rowsPerTable:{wm_notifications:1201}});
+ const counts=await h.api.wfExportTenantArchive();
+ assert.equal(counts.wm_notifications,1201);
+ assert.equal(h.downloads,1);
+ assert.equal(JSON.parse(h.archiveText).tables.wm_notifications.length,1201);
+ assert.equal(h.requests.filter(x=>x==='/rest/v1/rpc/wm_export_notification_archive').length,3);
+});
+
+test('Notification archive fails closed when RPC errors, changes counts, duplicates or crosses tenant',async()=>{
+ for(const mode of ['error','changed','duplicate','foreign','missing']){
+  const h=harness({rowsPerTable:{wm_notifications:1001},notificationMode:mode});
+  await assert.rejects(h.api.wfExportTenantArchive(),undefined,mode);
+  assert.equal(h.downloads,0,'should never download partial notification archive '+mode);
+ }
 });
