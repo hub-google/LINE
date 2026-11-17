@@ -46,7 +46,7 @@ test("one reservation result screen confirms success with correct edit/cancel ac
  assert.match(html,/修改預約日期／人數/);
  assert.match(html,/修改姓名／電話/);
  assert.match(html,/取消預約/);
- assert.match(html,/booking-line-reply/,"connected merchant OA offers confirmation through LINE");
+ assert.doesNotMatch(html,/booking-line-reply/,"connected merchant OA must not show the obsolete manual LINE reply button");
  h.lineState.lineConfig.merchantOaConnected=false;
  h.lineState.lineConfig.messagingReady=false;
  assert.doesNotMatch(h.renderCustomerDetail(),/booking-line-reply/,"unbound merchants cannot send LINE notice");
