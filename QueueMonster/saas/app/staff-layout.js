@@ -6,6 +6,7 @@ import {staffState} from "./state/staffState.js";
 import {head,message,renderHome} from "./shared-ui.js";
 import {platformRender} from "./platform-view.js";
 import {staffRender} from "./staff-view.js";
+import {enhanceSettingsHints} from "./settings-hints.js";
 import {customerRender} from "./customer-booking.js";
 import {customerHistoryDialog} from "./staff-history.js";
 
@@ -47,7 +48,7 @@ export function enhanceStaffUI(){
  }
 }
 
-export function render(){document.body.dataset.portal=routeState.view;head();routeState.$("root").innerHTML=message()+(routeState.view==="platform"?platformRender():routeState.view==="staff"?staffRender():routeState.view==="customer"?customerRender():renderHome())+customerHistoryDialog()+'<footer>排隊怪獸服務 ・ <a href="privacy.html">隱私權說明</a> ・ <a href="terms.html">使用條款</a></footer>';enhanceStaffUI()}
+export function render(){document.body.dataset.portal=routeState.view;head();routeState.$("root").innerHTML=message()+(routeState.view==="platform"?platformRender():routeState.view==="staff"?staffRender():routeState.view==="customer"?customerRender():renderHome())+customerHistoryDialog()+'<footer>排隊怪獸服務 ・ <a href="privacy.html">隱私權說明</a> ・ <a href="terms.html">使用條款</a></footer>';enhanceStaffUI();enhanceSettingsHints(routeState.$("root"))}
 
 export function initializeStaffLayout(){
 staffLayoutState.staffUiExpanded=new Map();
