@@ -40,12 +40,12 @@ export function renderCouponAdmin(){
  '<div class="staff-actionbar">'+btn("儲存優惠碼","pickup-coupon-save","primary")+
  (couponState.edit?btn("取消編輯","pickup-coupon-clear","outline"):'')+'</div>');
 }
-export function initializeCouponInputs(){
+export function initializeCouponInputs(onChange=()=>{}){
  document.addEventListener("input",event=>{
   if(event.target?.id==="pickup-coupon-code"){
    couponState.code=event.target.value.toUpperCase().replace(/[^A-Z0-9-]/g,"").slice(0,24);
    event.target.value=couponState.code;
-   couponState.preview=null;
+   couponState.preview=null;onChange();
   }
  });
 }
