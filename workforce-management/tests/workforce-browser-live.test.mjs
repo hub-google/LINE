@@ -29,14 +29,17 @@ async function startBrowser(){
  browser.stderr.on('data',x=>{stderr=(stderr+String(x)).slice(-2400);});
  let port;
  try{
-  for(let i=0;i<80;i++){
+  // A busy GitHub Actions runner can take much longer than 8 seconds to
+  // initialize Chrome. Wait a bounded 30 seconds before reporting failure.
+  const startupDeadline=Date.now()+30000;
+  while(Date.now()<startupDeadline){
    if(browser.exitCode!==null)throw Error('Chrome exited: '+stderr);
    try{
     const raw=await readFile(path.join(dir,'DevToolsActivePort'),'utf8');
     port=Number(raw.split('\n')[0]);
     if(port>0)break;
    }catch{}
-   await sleep(100);
+   await sleep(250);
   }
   if(!port)throw Error('Chrome debugger never started: '+stderr);
   const targets=await (await fetch('http://127.0.0.1:'+port+'/json/list')).json();
