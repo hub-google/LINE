@@ -9,7 +9,7 @@ import {render} from "./staff-layout.js";
 import {selectCustomerDetail} from "./customer-detail.js";
 import {customerNoticeSuffix,sendOrderReply,lineReplyHandoff} from "./line-session.js";
 import {normalizeTaiwanPhone,isValidTaiwanPhone,TW_LANDLINE_AREAS,getTaiwanLandlineHint,isValidTaiwanPhoneParts} from "./tw-phone.js";
-import {pickupEntries,pickupCartAmount,pickupCartCount,pickupAdd,pickupRemove,pickupChosen,pickupSpecsLabel,parsePickupOptions,pickupGroupFromUrl,pickupGroupShareUrl,pickupGroupLeaveUrl,pickupRestoreOrder} from "./pickup-upgrades.js";
+import {pickupEntries,pickupCartAmount,pickupCartCount,pickupAdd,pickupRemove,pickupChosen,pickupSpecsLabel,parsePickupOptions,pickupGroupFromUrl,pickupGroupShareUrl,pickupGroupLeaveUrl,pickupRestoreOrder,pickupCatalogDate} from "./pickup-upgrades.js";
 import {couponState,renderCouponCustomer,renderCouponAdmin,loadCouponAdmin,handleCouponAction,initializeCouponInputs} from "./pickup-coupons.js";
 import {pickupChime} from "./pickup-alerts.js";
 
@@ -37,7 +37,7 @@ export async function loadPickupData(){
       pickupState.cart={};pickupState.slot="";pickupState.requestId="";pickupState.method="scheduled";pickupState.confirming=false;pickupState.phoneType="mobile";pickupState.phone="";pickupState.phoneArea="02";pickupState.phoneLocal="";pickupState.customerHistory=null;pickupState.customerHistoryPage=1
     }
     if(!pickupState.customer||routeState.customerTab==="order"){
-      try{pickupState.customer=await rpc("so_pickup_public",{p_slug:routeState.slug,p_date:pickupState.day});}
+      try{pickupState.customer=await rpc("so_pickup_public",{p_slug:routeState.slug,p_date:pickupCatalogDate(pickupState.method,pickupState.day,taipei())});}
       catch(err){console.warn("取餐服務資料不可用",err);pickupState.customer=null;}
     }
     if(routeState.customerTab==="order"||(routeState.customerTab==="detail"&&routeState.detailKind==="order")){
@@ -425,7 +425,15 @@ export async function handlePickupAction(ev,b,a,id){
  }
  if(a==="pickup-review-back"){pickupState.confirming=false;render();return true;}
  if(a==="pickup-method"){
-   pickupState.method=b.dataset.value==="immediate"?"immediate":"scheduled";pickupState.confirming=false;render();return true;
+   const next=b.dataset.value==="immediate"?"immediate":"scheduled",previous=pickupState.method;
+   if(next!==previous){
+     try{
+       const catalog=await rpc("so_pickup_public",{p_slug:routeState.slug,
+         p_date:pickupCatalogDate(next,pickupState.day,taipei())});
+       pickupState.customer=catalog;pickupState.method=next;
+     }catch(error){window.alert("切換取餐方式失敗："+error.message);return true;}
+   }
+   pickupState.confirming=false;pickupState.requestId="";render();return true;
  }
  if(a==="pickup-option-open"){pickupState.configuringItemId=id;pickupState.confirming=false;render();return true;}
  if(a==="pickup-option-close"){pickupState.configuringItemId="";render();return true;}
