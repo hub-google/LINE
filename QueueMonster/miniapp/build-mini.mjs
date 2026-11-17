@@ -47,9 +47,17 @@ try{
       .replace("</body>","<script src=\"https://static.line-scdn.net/liff/edge/2/sdk.js\" defer></script><script defer src=\"./qm-mini-nav.js\"></script></body>"));
   }
   await patch(path.join(staged,"app/line-session.js"),text=>{
-    const config='if(res.ok){lineState.lineConfig=await res.json();lineState.lineConfigSlug=merchant;}';
-    text=requireReplace(text,config,
-      'if(res.ok){lineState.lineConfig={...(await res.json()),liffId:"'+id+'",loginReady:true};lineState.lineConfigSlug=merchant;}',"mini liff config");
+    // LIFF IDs are public, fixed values. Do not call an Edge Function every
+    // time a customer opens a shop merely to retrieve a known public LIFF ID.
+    const configStart=text.indexOf("export async function bridgeConfig(){");
+    const configEnd=text.indexOf("export function customerUrl(",configStart);
+    if(configStart<0||configEnd<0)throw Error("MINI bridge markers changed");
+    text=text.slice(0,configStart)+
+      'export async function bridgeConfig(){ const merchant=isSafeMerchant(routeState.slug)?routeState.slug:"";'+
+      ' if(lineState.lineConfig!==null&&lineState.lineConfigSlug===merchant)return lineState.lineConfig;'+
+      ' lineState.lineConfig={liffId:"'+id+'",loginReady:true,messagingReady:false,miniApp:true};'+
+      ' lineState.lineConfigSlug=merchant;return lineState.lineConfig;}\n\n'+
+      text.slice(configEnd);
     text=requireReplace(text,'lineState.LINE_BRIDGE_URL=lineState.SB_URL+"/functions/v1/line-bridge";',
       'lineState.LINE_BRIDGE_URL=lineState.SB_URL+"/functions/v1/line-bridge";\nlineState.MINI_BRIDGE_URL=lineState.SB_URL+"/functions/v1/qm-mini-session";',"mini bridge");
     const begin=text.indexOf("export async function resumeVerifiedLineSession()");
@@ -89,6 +97,11 @@ try{
       'const bridge=SB_URL+"/functions/v1/line-bridge?action=config";',
       'const bridge=SB_URL+"/functions/v1/qm-mini-session?action=config&env='+env+'";',"mini directory config");
     text=requireReplace(text,'"so_site_header_identity"','"so_mini_header_identity"',"mini directory identity");
+    // Directory store browsing is static; it never needs to query an Edge
+    // Function solely for an already-known environment LIFF ID.
+    text=requireReplace(text,
+      'const confPromise=fetch(bridge,{cache:"no-store"}).then(r=>r.ok?r.json():{}).catch(()=>({}));',
+      'const confPromise=Promise.resolve({liffId:"'+id+'",loginReady:true});',"mini static directory config");
     text=requireReplace(text,'"line-saas-customer-session-v2"',
       '"queue-mini-customer-session-v1-'+env+'"',"mini directory independent auth");
     text=text.replaceAll('"so_my_platform_records_page"','"so_mini_platform_records_page"');
