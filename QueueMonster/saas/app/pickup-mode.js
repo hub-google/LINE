@@ -113,7 +113,7 @@ export async function loadPickupData(){
       try{pickupState.history=await rpc("so_pickup_history",{p_slug:routeState.slug,p_page:pickupState.historyPage,p_filter:pickupState.historyFilter});}
       catch(err){console.warn("訂餐歷史暫時不可用",err);pickupState.history=null;}
     }
-    if(["orders","customers"].includes(staffState.staffTab)
+    if(staffState.staffTab==="customers"
        && ["OWNER","MANAGER","PLATFORM"].includes(staffState.staff?.role)){
       try{pickupState.repeatCustomers=await rpc("so_pickup_repeat_customers",{p_slug:routeState.slug,p_limit:30});}
       catch(error){pickupState.repeatCustomers=null;console.warn("熟客分析尚不可用",error);}
