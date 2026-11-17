@@ -40,13 +40,13 @@ export function renderStaffMenu({t,isManager,html}){
      (selected?btn("取消編輯","menu-edit-clear","outline"):"")+'</div>')+'</div>':"");
    if(isManager&&selected&&selected.kind!=="SERVICE"){
      html+=box("此餐點的規格與每日限量",
-       '<p class="small">每行一組規格，選項用「、」分開。名稱後加 * 表示必選，+ 表示可複選。例：甜度*：正常=0、半糖=0；加料+：珍珠=10、椰果=10。顧客下單會由資料庫重新驗證加價。</p>'+
+       '<p class="small">每行一組規格，選項用「、」分開。名稱後加 * 表示必選，+ 表示可複選。例：甜度*：正常=0、半糖=0；加料+：珍珠=10、椰果=10。送出訂單時會重新確認加價金額。</p>'+
        '<label for="pickup-extras-text">商品規格設定（可留空）</label>'+
        '<textarea id="pickup-extras-text" class="field" rows="5" placeholder="甜度*：正常=0、半糖=0、無糖=0&#10;加料+：珍珠=10、布丁=15">'+
        esc(pickupOptionsText(selected.pickup_options||[]))+'</textarea>'+
        field("每日可販售份數（留空不限量，0 為售完）","pickup-extras-stock",
          selected.pickup_daily_limit??"","number",'min="0" max="100000" placeholder="不限量"')+
-       '<p class="small">每日限量依台灣時間的「取餐日期」計算，取消訂單會釋放名額；同時下單時資料庫會檢查是否超賣。</p>'+
+       '<p class="small">每日限量依台灣時間的「取餐日期」計算，取消訂單會釋放名額；同時下單也會檢查剩餘數量。</p>'+
        '<div class="staff-actionbar">'+btn("儲存規格與庫存","pickup-extras-save","primary",'data-id="'+esc(selected.id)+'"')+'</div>');
    }
    const defaultUnitIds=new Set((serviceUnitsState.unitConfig?.units||[]).filter(u=>u.is_default).map(u=>u.id));
