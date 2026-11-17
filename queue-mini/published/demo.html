@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="line-saas-build" content="7cb3be79e1bf349abc895cb6c2dbc5a615f89346">
+<meta name="theme-color" content="#ffffff">
+<meta name="robots" content="index,follow">
+<meta name="description" content="排隊怪獸免登入操作體驗：真實介面風格模擬早餐店線上點餐、美髮店線上預約、維修店現場取號、診所預約與多診間叫號。直接切換顧客端與店家端查看操作和通知。">
+<link rel="canonical" href="https://hub-google.github.io/LINE/booking/demo.html">
+<link rel="icon" type="image/svg+xml" href="./monster-mascot.svg">
+<title>免登入功能試用｜排隊怪獸 Queuing Monster</title>
+<link rel="stylesheet" href="./assets/index/page-CG5F3R24.css?build=7cb3be79e1bf349abc895cb6c2dbc5a615f89346">
+<link rel="stylesheet" href="./booking-theme.css?build=7cb3be79e1bf349abc895cb6c2dbc5a615f89346">
+<link rel="stylesheet" href="./monster-world.css?build=7cb3be79e1bf349abc895cb6c2dbc5a615f89346">
+<script defer src="./version-watch.js?build=7cb3be79e1bf349abc895cb6c2dbc5a615f89346"></script>
+<link rel="stylesheet" href="./assets/demo/mobile-ui-IHHIOMDD.css?build=7cb3be79e1bf349abc895cb6c2dbc5a615f89346"><link rel="stylesheet" href="./assets/demo/desktop-ui-LM6JSRZN.css?build=7cb3be79e1bf349abc895cb6c2dbc5a615f89346"><link rel="stylesheet" href="./site-auth.css?build=7cb3be79e1bf349abc895cb6c2dbc5a615f89346"><link rel="stylesheet" href="./assets/marketing/shared-header-FWYUAM4C.css?build=7cb3be79e1bf349abc895cb6c2dbc5a615f89346"><script defer src="./assets/marketing/shared-header-52KOYCLY.js?build=7cb3be79e1bf349abc895cb6c2dbc5a615f89346"></script><script defer src="./site-auth.js?build=7cb3be79e1bf349abc895cb6c2dbc5a615f89346"></script>
+
+</head>
+<body class="mobile-demo" data-portal="customer">
+<div id="marketing-header"><a href="./home.html">排隊怪獸</a></div>
+<main>
+<section class="demo-intro">
+<span class="demo-badge">免費試用 · 不必註冊</span>
+<h1>你的店，也能<span>更從容。</span></h1>
+<p>先從叫號開始，也能直接切換點餐或預約。選擇情境後立即操作，不必再點進門市首頁。完成操作後可以免費建立自己的店家。LINE 訊息為條件式示意，正式推播僅使用店家自行綁定的 LINE OA。</p>
+<div class="demo-scenes" aria-label="試用情境">
+<button class="demo-scene active" data-scene="repair" aria-pressed="true"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5a5 5 0 0 0-6 6L4 17a2 2 0 1 0 3 3l4.5-4.5a5 5 0 0 0 6-6L14 12l-2-2z"/></svg></span><span class="demo-scene-copy"><strong>維修店</strong><small>取號、叫號、過號恢復</small></span></button>
+<button class="demo-scene" data-scene="breakfast" aria-pressed="false"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h16M5 10l2-5h10l2 5M4 10l2 8h12l2-8M9 14h6M7 20h10"/></svg></span><span class="demo-scene-copy"><strong>早餐店</strong><small>線上點餐、取餐進度</small></span></button>
+<button class="demo-scene" data-scene="salon" aria-pressed="false"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="m8.2 8.2 11 11M8.2 15.8l11-11"/></svg></span><span class="demo-scene-copy"><strong>美髮店</strong><small>預約、設計師、報到</small></span></button>
+<button class="demo-scene" data-scene="clinic" aria-pressed="false"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 6v8M8 10h8M9 21v-4h6v4"/></svg></span><span class="demo-scene-copy"><strong>診所</strong><small>預約、報到、三診間叫號</small></span></button>
+</div>
+<div class="demo-controls">
+<div class="demo-label" id="demo-scene">維修店｜現場取號</div>
+<div class="roles" role="group" aria-label="切換顧客與店家操作畫面">
+<button data-role="customer" class="active" aria-pressed="true">顧客端</button>
+<button data-role="staff" aria-pressed="false">店家端</button>
+</div>
+</div>
+</section>
+<div class="demo-stage">
+<div class="mobile-device">
+<div id="root" class="container" aria-live="polite"></div></div>
+<aside id="notifications" class="demo-notice-pane" aria-label="顧客 LINE 通知及網站回饋模擬"></aside>
+</div>
+<aside id="demo-conversion" class="demo-conversion" hidden aria-label="完成示範後免費建立店家">
+  <button type="button" class="demo-conversion-close" data-act="dismiss-conversion" aria-label="關閉建立店家提示">×</button>
+  <div class="demo-conversion-copy">
+    <span>體驗完成 · 不用付費</span>
+    <strong id="demo-conversion-message">已完成示範操作</strong>
+    <p>想用自己的店名與服務？建立店家帳號就能開始設定。</p>
+  </div>
+  <a id="demo-register-link" class="demo-conversion-link" href="./merchant-register.html?mode=signup&amp;from=demo">免費建立我的店家 <span aria-hidden="true">→</span></a>
+</aside>
+</main>
+<footer class="demo-foot">
+<p>所有操作資料只在目前瀏覽頁面暫存，不呼叫正式 Supabase、LINE 或店家服務。此頁不需要登入。</p>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn outline" data-act="reset">重設本產業</button><a id="demo-footer-signup" class="demo-action-link" href="./merchant-register.html?mode=signup&amp;from=demo">免費建立我的店家</a></div>
+</footer>
+<script defer src="./assets/demo/real-flow-CELWHUPM.js?build=7cb3be79e1bf349abc895cb6c2dbc5a615f89346"></script>
+<script defer src="./assets/demo/signup-conversion-DMHF7BCY.js?build=7cb3be79e1bf349abc895cb6c2dbc5a615f89346"></script>
+</body>
+</html>

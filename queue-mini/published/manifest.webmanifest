@@ -1,0 +1,20 @@
+{
+  "name": "排隊怪獸｜線上預約與取號",
+  "short_name": "排隊怪獸",
+  "description": "排隊怪獸提供門市預約、現場取號、叫號與店家管理服務。",
+  "id": "./home.html",
+  "start_url": "./home.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FCF7FF",
+  "theme_color": "#462B52",
+  "lang": "zh-TW",
+  "icons": [
+    {
+      "src": "./monster-mascot.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

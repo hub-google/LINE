@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-Hant"><head>
+<meta name="line-saas-build" content="7cb3be79e1bf349abc895cb6c2dbc5a615f89346">
+<script defer src="./version-watch.js?build=7cb3be79e1bf349abc895cb6c2dbc5a615f89346"></script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>找店家與線上預約、候位取號、線上點餐｜排隊怪獸</title>
+<meta name="description" content="搜尋使用排隊怪獸的餐廳、早餐店、診所、美髮美容與其他門市，查詢店家提供的 LINE 線上預約、排隊取號、即時叫號看板與線上點餐服務。依店家實際開放項目查看預約、候位或取餐進度。">
+<link rel="canonical" href="https://hub-google.github.io/LINE/booking/directory.html">
+<script>/* Preserve every published personal-history URL. */
+(()=>{const query=new URLSearchParams(location.search);
+ const oldMode=query.get("mode");
+ if(!["mine","last-board","game"].includes(oldMode))return;
+ if(oldMode==="game")query.set("mode","search");
+ else query.delete("mode");
+ query.delete("section");
+ const target=new URL(oldMode==="game"?"./directory.html":"./my-records.html",location.href);
+ target.search=query.toString();
+ location.replace(target.href);
+})();</script>
+<link rel="stylesheet" href="./assets/directory/page-73JM3D6R.css?build=7cb3be79e1bf349abc895cb6c2dbc5a615f89346"><link rel="stylesheet" href="./site-auth.css?build=7cb3be79e1bf349abc895cb6c2dbc5a615f89346"><link rel="stylesheet" href="./monster-world.css?build=7cb3be79e1bf349abc895cb6c2dbc5a615f89346"><link rel="stylesheet" href="./assets/marketing/shared-header-FWYUAM4C.css?build=7cb3be79e1bf349abc895cb6c2dbc5a615f89346"><script defer src="./assets/marketing/shared-header-52KOYCLY.js?build=7cb3be79e1bf349abc895cb6c2dbc5a615f89346"></script><script defer src="./site-auth.js?build=7cb3be79e1bf349abc895cb6c2dbc5a615f89346"></script><link rel="icon" type="image/svg+xml" href="./monster-mascot.svg"><style>/* Directory search header is now the shared marketing navigation; keep its own hero separately. */
+body[data-monster-page="directory"] .page-header .hero-heading{margin-top:0}
+body[data-monster-page="directory"] .page-header{padding-top:45px}
+</style><meta name="robots" content="noindex,nofollow"><link rel="stylesheet" href="./qm-mini.css"></head>
+<body data-monster-page="directory">
+<div id="marketing-header"><a href="./home.html">排隊怪獸</a></div>
+<header class="page-header">
+ <div class="container">
+  <div class="hero-heading">
+   <h1 class="eyebrow">搜尋店家，立即使用服務</h1>
+   <p>預約、現場取號、即時叫號看板，都能從這裡找到。</p>
+  </div>
+ </div>
+</header>
+<main class="container">
+ <section class="main-panel">
+  <div id="explore-list" class="explore-list">
+  <div class="search-wrap">
+   <label for="keyword">搜尋店家名稱或地點</label>
+   <div class="search-field">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+    <input id="keyword" class="search" type="search" placeholder="例如：餐廳名稱、地區、門市" aria-label="輸入店家名稱或地點" autocomplete="off">
+   </div>
+  </div>
+  <details id="explore-filters" class="filter-details" aria-label="搜尋篩選" open>
+    <summary class="filter-summary" id="filter-summary">進階篩選 <span class="filter-chevron" aria-hidden="true"></span></summary>
+    <div class="explore-filter-row" role="group" aria-label="篩選條件">
+    <label>店家類別<select id="explore-category"><option value="全部">全部類別</option></select></label>
+    <label>地區<select id="explore-area"><option value="全部">所有地區</option></select></label>
+    <label>服務類型<select id="explore-service">
+      <option value="全部">全部服務</option><option value="預約">提供預約</option><option value="取號">提供取號</option><option value="點餐">提供線上點餐</option><option value="看板">提供叫號看板</option>
+    </select></label>
+    <label>排序<select id="explore-sort"><option value="popular">熱門排行</option><option value="name">店家名稱</option><option value="category">依店家分類</option></select></label>
+    </div>
+   </details>
+   <div class="intro-row">
+    <div id="intro" class="intro-copy" role="status"><strong>正在載入店家</strong><p>資料更新中，請稍後。</p></div>
+    <span class="public-note">公開看板</span>
+   </div>
+  <div class="results-header"><h2 id="results-heading">熱門店家排行</h2><span id="result-count" class="result-count" aria-live="polite">載入中</span></div>
+  <div class="merchant-grid" id="results" aria-live="polite"></div>
+  <div id="result-pages" class="result-pages hidden" aria-label="搜尋結果分頁">
+    <button type="button" id="page-prev">上一頁</button><span id="page-label">第 1 頁</span>
+    <button type="button" id="page-next">下一頁</button>
+  </div>
+  </div>
+
+ </section>
+</main>
+<footer class="footer"><div class="container">預約與取號將使用 LINE 驗證身分，叫號看板不需登入。　<a href="privacy.html">隱私權說明</a>　·　<a href="terms.html">服務條款</a></div></footer>
+<script type="module" src="./assets/directory/main-XCKC3ERW.js?build=7cb3be79e1bf349abc895cb6c2dbc5a615f89346"></script><script src="https://static.line-scdn.net/liff/edge/2/sdk.js" defer></script><script defer src="./qm-mini-nav.js"></script></body></html>
