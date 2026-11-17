@@ -1,0 +1,76 @@
+name: Work｜獨立 LINE OA 後端部署（專用 Secrets）
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "DEPLOY to promote Work-only Supabase Edge Function"
+        required: true
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/workforce-backend-deploy.yml"
+      - "workforce-management/supabase/functions/wm-line/index.ts"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: work-backend-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.confirmation == 'DEPLOY') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[work-edge-deploy-once]')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      WORK_LINE_MESSAGING_ACCESS_TOKEN: ${{ secrets.WORK_LINE_MESSAGING_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify required encrypted deployment credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ] || [ -z "$WORK_LINE_MESSAGING_ACCESS_TOKEN" ]; then
+            echo "::error::Required encrypted Supabase or Work LINE secret is not configured"
+            exit 1
+          fi
+      - uses: supabase/setup-cli@v3
+        with:
+          version: latest
+      - name: Sync Work OA token only and deploy wm-line without touching QueueMonster
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          env_file="$(mktemp)"
+          trap 'rm -f "$env_file"' EXIT
+          printf 'WORK_LINE_MESSAGING_ACCESS_TOKEN=%s\n' "$WORK_LINE_MESSAGING_ACCESS_TOKEN" > "$env_file"
+          supabase secrets set --env-file "$env_file" --project-ref unapiwajmgqqtdkixaab --yes
+          mkdir -p supabase/functions/wm-line
+          cp workforce-management/supabase/functions/wm-line/index.ts supabase/functions/wm-line/index.ts
+          supabase functions deploy wm-line --project-ref unapiwajmgqqtdkixaab --no-verify-jwt --use-api --yes
+      - name: Verify CORS allows only Work and existing GitHub Pages
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.error,json
+          url="https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/wm-line"
+          for origin in ["https://hub-google.github.io","https://work.monsterport.com"]:
+            req=urllib.request.Request(url,headers={"Origin":origin,"Accept":"application/json"})
+            with urllib.request.urlopen(req,timeout=25) as response:
+              assert response.status==200, "Health endpoint failed"
+              assert response.headers.get("Access-Control-Allow-Origin")==origin, "Allowed origin missing"
+              result=json.load(response)
+              assert result.get("messagingConfigured") is True,"Work OA messaging token not active"
+          try:
+            urllib.request.urlopen(urllib.request.Request(url,headers={"Origin":"https://untrusted.invalid"}),timeout=25)
+          except urllib.error.HTTPError as error:
+            assert error.code==403, "Disallowed origin expected 403"
+          else:
+            raise AssertionError("Untrusted origin was allowed")
+          print("Work-specific LINE OA configured; permitted CORS origins pass, unknown origin blocked.")
+          PY
