@@ -63,8 +63,10 @@ test('Employees cannot call management LINE delivery statistics RPC',async()=>{
 
 test('LINE binding status ignores results for an obsolete tenant',async()=>{
  const h=harness();
+ const pending=h.api.refreshLineStatus();
  h.app.tenantId='tenant-two';
- await h.api.refreshLineStatus();
+ await pending;
  assert.equal(h.metricsCalls,1);
- assert.equal(h.app.lineState.linked,true);
+ assert.equal(h.app.lineState,null);
+ assert.equal(h.app.lineConfig,null);
 });
