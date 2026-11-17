@@ -852,3 +852,13 @@ body[data-portal="staff"] .schedule-session-item>.settings-help-button{
   }
   .settings-help-popover{font-size:14px;padding:13px 15px}
 }
+
+/* QueueMonster kitchen preparation view — responsive and readable on tablets or TVs. */
+.qm-kitchen-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px;margin:16px 0}
+.qm-kitchen-card{background:var(--surface,#fff);border:2px solid var(--border,#d8e0ea);border-radius:16px;padding:20px;box-shadow:0 2px 8px #00000008;min-width:0}
+.qm-kitchen-number{font-size:clamp(1.65rem,3vw,2.5rem);font-variant-numeric:tabular-nums}
+.qm-kitchen-time{font-size:clamp(1.15rem,2vw,1.6rem);font-weight:800}
+.qm-kitchen-items{border-block:1px solid var(--border,#d8e0ea);padding:10px 0;margin-bottom:10px}
+.qm-kitchen-items p{font-size:clamp(1.07rem,1.6vw,1.3rem);margin:8px 0;line-height:1.4}
+.qm-kitchen-card .staff-actionbar{flex-wrap:wrap}
+@media (max-width:600px){.qm-kitchen-card{padding:14px}.qm-kitchen-grid{gap:10px}}
