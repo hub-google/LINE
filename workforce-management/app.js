@@ -3021,7 +3021,8 @@ async function wfExportTenantArchive(progress=null){
  }finally{setTimeout(()=>URL.revokeObjectURL(url),5000);}
  return counts;
 }
-$('appContent').addEventListener('click',async event=>{
+document.addEventListener('click',async event=>{
+ if(!event.target.closest('#appContent, #pageActions'))return;
  const button=event.target.closest('[data-wf-archive="download"]');
  if(!button||button.disabled||app.tab!=='backup'||app.archiveBusy)return;
  if(!confirm('此檔包含企業員工個資、出勤及假勤紀錄。確認在受控裝置下載並妥善加密保存？'))return;
