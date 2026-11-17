@@ -112,7 +112,7 @@ async function demo(action='snapshot',data={}){return call('/rest/v1/rpc/wm_demo
 async function query(table,params=''){return call('/rest/v1/'+table+'?'+params,'GET',null,app.token);}
 async function reload(silent=false){
  if(app.busy){app.reloadQueued=true;$('connectionLabel').textContent='資料更新中';return;}
- const loadingMode=app.mode,loadingToken=app.token;
+ const loadingMode=app.mode,loadingAuthGeneration=wfAuthGeneration;
  app.busy=true;$('connectionLabel').textContent='資料更新中';if(!silent)$('appContent').innerHTML='<div class="loading">資料更新中，請稍後...</div>';
  try{
   if(app.mode==='demo'){
@@ -165,16 +165,16 @@ async function reload(silent=false){
     }
    }
   }
-  if(app.reloadQueued||loadingMode!==app.mode||loadingToken!==app.token){
+  if(app.reloadQueued||loadingMode!==app.mode||loadingAuthGeneration!==wfAuthGeneration){
    app.busy=false;app.reloadQueued=false;app.data=null;return reload(true);
   }
   $('connectionLabel').textContent=app.data?'資料已同步':'尚未登入';
   if(!silent)banner(app.data?'已取得最新資料':'請先登入或建立企業');
  }catch(e){$('connectionLabel').textContent='資料庫連線異常';if(!silent)banner(e.message,true);$('appContent').innerHTML='<div class="error">'+esc(e.message)+'<p><button class="btn" id="retryLoad" data-action="retryLoad">重新載入</button></p></div>';app.busy=false;
-  if(app.reloadQueued||loadingMode!==app.mode||loadingToken!==app.token){app.reloadQueued=false;return reload(true);}
+  if(app.reloadQueued||loadingMode!==app.mode||loadingAuthGeneration!==wfAuthGeneration){app.reloadQueued=false;return reload(true);}
   return;}
  app.busy=false;
- if(app.reloadQueued||loadingMode!==app.mode||loadingToken!==app.token){app.reloadQueued=false;return reload(true);}
+ if(app.reloadQueued||loadingMode!==app.mode||loadingAuthGeneration!==wfAuthGeneration){app.reloadQueued=false;return reload(true);}
  render();
 }
 async function action(name,data){
