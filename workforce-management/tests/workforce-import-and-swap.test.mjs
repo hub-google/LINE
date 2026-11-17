@@ -16,12 +16,14 @@ test('Employee import CSV quotes branch names, line breaks, and formulas',()=>{
  const document={createElement:()=>({click(){},remove(){}}),body:{appendChild(){}}};
  const factory=new Function('app','Blob','URL','document','setTimeout',
   app.slice(csvStart,csvEnd)+app.slice(start,end)+';return downloadCsv;');
- const download=factory({data:{branches:[{name:'甲,乙\\n"測試"=1+1'}]}},MockBlob,
+ const branchName='甲,乙'+String.fromCharCode(10)+'"測試"=1+1';
+ const download=factory({data:{branches:[{name:branchName}]}},MockBlob,
   {createObjectURL:()=>'/blob',revokeObjectURL(){}},document,()=>{});
  download();
- assert.ok(data.startsWith('\\uFEFF'));
- assert.match(data,/"CSV001","測試小華","甲,乙\\n""測試""=1\\+1"/);
- assert.match(data,/"CSV002","測試小林","甲,乙\\n""測試""=1\\+1"/);
+ assert.equal(data.charCodeAt(0),0xFEFF);
+ const expected='"甲,乙'+String.fromCharCode(10)+'""測試""=1+1"';
+ assert.ok(data.includes('"CSV001","測試小華",'+expected+',"員工","正職"'));
+ assert.ok(data.includes('"CSV002","測試小林",'+expected+',"員工","兼職"'));
  assert.equal((data.match(/"甲,乙/g)||[]).length,2);
 });
 
@@ -34,7 +36,7 @@ test('Employee import CSV neutralizes spreadsheet formula prefixes',()=>{
 });
 
 test('Published schedule cards correctly count overflow beyond fifty items',()=>{
- assert.match(app,/shifts\\.length-\\(compact\\?3:50\\)/);
+ assert.ok(app.includes('(shifts.length-(compact?3:50))'));
 });
 
 test('Failed shift-refresh keeps the old swap form disabled',async()=>{
