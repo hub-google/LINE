@@ -60,3 +60,47 @@ test("方案 UI 有新增、刪除、名稱、場次、七日選擇、儲存，c
  assert.match(source,/const d=capture\(\);\s*try\{\s*validate\(d\);\s*const count=batchApplyPlan/);
  assert.match(source,/p_data:\{enabled:d\.enabled,weekdays:d\.weekdays,templates:d\.templates\}/);
 });
+
+test("獨立儲存營業方案不會一起寫入尚未儲存的星期與其他方案",()=>{
+ const first=source.indexOf("function persistedPlanPayload("),last=source.indexOf("function draft(){",first);
+ assert.ok(first>=0&&last>first);
+ const api=new Function(
+  'const initialTemplates={default:[{name:"第 1 場",start:"09:00",end:"12:00",capacity:10}]};'+
+  'const clone=x=>JSON.parse(JSON.stringify(x));const planKey=k=>/^plan_[a-z0-9_]+$/.test(k);'+
+  'const serviceUnitsState={schedulePlanBaseline:{}};'+source.slice(first,last)+
+  ';return {persistedPlanPayload,serviceUnitsState};')();
+ const base=fixture();
+ const saved={enabled:false,weekdays:structuredClone(base.weekdays),templates:structuredClone(base.templates)};
+ api.serviceUnitsState.schedulePlanBaseline=structuredClone(base.templates);
+ const draft=structuredClone(base);
+ draft.enabled=true;
+ draft.weekdays["2"]="week_day_1";
+ draft.templates.plan_a[0].name="已改為晚班";
+ draft.templates.plan_b[0].name="其他尚未儲存的修改";
+ draft.templates.week_day_1[0].name="星期一尚未儲存";
+ const payload=api.persistedPlanPayload(saved,draft,"plan_a");
+ assert.equal(payload.enabled,false);
+ assert.deepEqual(payload.weekdays,saved.weekdays);
+ assert.equal(payload.templates.plan_a[0].name,"已改為晚班");
+ assert.equal(payload.templates.plan_b[0].name,"全日班");
+ assert.equal(payload.templates.week_day_1[0].name,"舊場");
+ assert.equal(saved.templates.plan_a[0].name,"早餐");
+ const removed=api.persistedPlanPayload(saved,draft,"plan_a",true);
+ assert.equal(removed.templates.plan_a,undefined);
+ assert.equal(removed.templates.week_day_1[0].name,"舊場");
+ assert.equal(removed.templates.plan_b[0].name,"全日班");
+});
+test("方案具有真正的儲存、編輯、刪除操作與分區色塊",()=>{
+ const css=readFileSync(new URL("../saas/booking-theme.css",import.meta.url),"utf8");
+ for(const token of ["schedule-plan-save","schedule-plan-edit","schedule-plan-remove",
+  "schedule-plan-actions","schedule-plan-save-btn","schedule-plan-edit-btn","schedule-plan-delete-btn",
+  "schedule-module-plans","schedule-module-weekly","schedule-module-special","schedule-batch-box"])
+  assert.ok(source.includes(token)||css.includes(token),token);
+ assert.match(source,/if\(a==="schedule-plan-save"\)/);
+ assert.match(source,/if\(a==="schedule-plan-edit"\)/);
+ assert.match(source,/if\(a==="schedule-plan-remove"\)/);
+ assert.match(source,/p_data:payload/);
+ assert.match(source,/clearPlanDraft\(\)/);
+ assert.match(css,/\.schedule-plan-details\{[^}]*background/);
+ assert.match(css,/@media\(max-width:560px\)/);
+});
