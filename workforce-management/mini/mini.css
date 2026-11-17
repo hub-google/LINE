@@ -1,0 +1,25 @@
+/* 工作怪獸 LINE MINI App — isolated mobile-first skin. Not loaded by /workforce/. */
+:root{color-scheme:light}
+body{background:#f7f8fa}
+.sidebar{background:#182d37}
+.sidebar .brand b{color:#fff}
+.sidebar .brand small{color:#b4c6c9}
+.sidebar .mark{background:#e4f5ed;color:#137856}
+.sidebar nav button.active{background:#31504f}
+.topbar{background:#fff}
+.mini-entry{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#f0f8f4;border:1px solid #cfe9db;border-radius:14px;padding:12px 15px;margin-bottom:17px;color:#235946;font-size:13px}
+.mini-entry[hidden],.mini-entry [hidden]{display:none!important}
+.mini-entry-mark{font-size:11px;white-space:nowrap;letter-spacing:.03em;font-weight:750;color:#188751}
+.mini-entry #wfMiniText{flex:1 1 200px}
+.mini-entry #wfMiniOpen{margin-left:auto}
+.btn.primary{background:#1a7957;border-color:#1a7957}
+@media(max-width:760px){
+  .topbar{height:58px;padding:0 13px}
+  main{padding:15px 13px calc(72px + env(safe-area-inset-bottom, 0px))}
+  .page-head{margin:14px 0 17px}
+  .page-head h1{font-size:24px;letter-spacing:-.55px}
+  .mini-entry{padding:12px 14px}
+  .mini-entry #wfMiniOpen{width:100%;text-align:center}
+  .panel,.stat{border-radius:16px;box-shadow:0 3px 16px rgba(20,44,54,.025)}
+  .sidebar{padding-top:calc(24px + env(safe-area-inset-top,0px))}
+}
