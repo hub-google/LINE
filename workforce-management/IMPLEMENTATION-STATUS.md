@@ -122,3 +122,32 @@
 測試網站：https://hub-google.github.io/LINE/workforce/
 
 限制：上述為程序模擬、資料庫交易與部署測試，不等同已完成所有實際手機／LINE OA／跨企業端到端與法遵驗收。
+
+
+## 2026-11-17｜main-only 靜態版修正與 QA（本節優先於先前歷史紀錄）
+
+**部署限制**：僅修改 GitHub `main` 與 GitHub Pages 測試工作流程；`release` 作為 Cloudflare 正式版保持原樣。Cloudflare Pages 使用 `workforce-management/cf-pages-build.mjs` 產出 HTML/CSS/JS，未新增 Cloudflare Worker、Pages Functions、R2 或 D1。**Supabase 既有 Auth、資料表、RPC 與 Edge Function 仍作為後端；此輪沒有修改共用 Supabase 的生產資料。**
+
+### 本輪確實寫入 main 的項目
+
+| 範圍 | 程式結果 | 可證明的測試範圍 |
+|---|---|---|
+| Auth | 登入/註冊視窗狀態重置、同頁多請求共用一次 refresh、登出/換帳號使舊 refresh 失效、刷新 JWT 不多跑整份資料 | 7 項驗證函式與模擬請求測試成功 |
+| 排班換班 | 無法取得最新班表則禁止送出；提交前檢查班次是否已發布、不同員工、本人權限及 120 秒同步期限 | 6 項 CSV/換班安全檢查成功 |
+| CSV | 門市名稱含逗號、換行、引號或試算表公式時安全引用；排班卡片超過 50 筆的剩餘數字正確 | 同上 |
+| 手動企業營運資料匯出 | Owner/HR 可從純靜態網站取得 22 類既有 RLS 授權資料，按 500 筆分頁，防中途換企業及部分檔案下載 | 5 項授權、分頁、故障、切換企業模擬測試成功 |
+| LINE 通知中心 | 顯示已綁定、待處理、LINE API 已接受、已略過筆數；JWT 過期僅重試一次，切換企業後忽略舊回應 | 4 項權限、登入和狀態測試成功 |
+| LINE MINI/圖文選單 | 維持各環境 LIFF ID 與六格選單的既有程式，沒有將檢查結果當作 LINE 正式驗收 | 15 項程式合約/模擬測試成功 |
+| 部署 | GitHub Pages 工作流程限定 `main`，並檢查 `dist` 無 `_worker.js` 或 `functions/`；Cloudflare Production 仍指 `release` | 透過 GitHub/Cloudflare 設定讀取確認 |
+
+上述測試屬程式合約及模擬測試；是否由最新一次 GitHub Actions Runner 全部成功，以該次工作流程記錄為準。不得把模擬測試寫成已執行實體手機、真人 OA 收訊或企業法遵審核。
+
+### 尚有外部依賴或完整產品缺口，不能標為已完成
+
+- **LINE**：必須用真正的 LINE 開發／Review／Published 帳號、實際 OA 好友及兩個不同 Provider 測試身分綁定、推播收訊和封鎖情境；如有企業自有 OA，還需取得該企業授權、Channel/Webhook 與配額設計。單憑 Token 已設定不能推定送達。
+- **行動裝置**：iPhone 與 Android 的相機、GPS 權限拒絕、漂移、短效 QR 重播、LINE WebView 關閉重開皆須現場測試。
+- **人資完整法遵**：週年/曆年特休、補休、變形工時、休息日、法定加班和薪資介接需分版本實作、法遵審核及實際企業案例。
+- **完整備援**：本輪 JSON 僅為當下手動營運資料匯出，無法代替 Supabase Auth、Storage 附件、資料庫交易一致性快照、排程及完整還原演練。依法保存出勤五年的責任仍須另行保障。
+- **商用驗收**：127 組情境尚未逐一保留當期多角色 E2E 證據；高併發/跨租戶滲透測試、付費方案、客服營運與企業流程仍不能宣告全數完成。
+
+法遵參考：[勞動基準法第 30 條（全國法規資料庫）](https://law.moj.gov.tw/LawClass/LawAll.aspx?PCode=N0030001)。原始打卡不得因補卡或行政試算而被直接覆寫。
