@@ -3,7 +3,8 @@
 const API='https://unapiwajmgqqtdkixaab.supabase.co';
 const KEY='sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy'; // Publishable, never service_role.
 const DEMO_ID='98d3505c-cbe6-46ed-a95a-13672e6d98f4';
-const wfMiniMode=new URLSearchParams(location.search).get('mini')==='1';
+// The LINE MINI App has its own independently deployed page; the original /workforce/ is always a normal website.
+const wfMiniMode=/(?:^|\/)workforce-mini(?:\/|\/index\.html)?$/.test(location.pathname);
 const wfMiniEnvironment=new URLSearchParams(location.search).get('line_env')||'developing';
 const wfMiniEnvironmentNames={developing:'開發測試',review:'送審測試',published:'正式發布'};
 const TABS={
@@ -252,7 +253,7 @@ function settings(){
 }
 function noTenant(){
  heading();
- $('appContent').innerHTML='<div class="panel"><h2>'+(wfMiniMode?'WF｜LINE MINI App 員工入口':'歡迎使用 LINE Workforce')+'</h2><p class="muted">'+(app.token?'目前帳號尚未加入任何企業，你可以建立自己的測試企業。':wfMiniMode?'請先登入 WF 企業帳號；LINE 身分不會自動取得企業權限。':'請登入企業帳號，或使用上方公開 DEMO 直接試用。')+'</p><button class="btn primary" data-action="'+(app.token?'createTenant':'login')+'">'+(app.token?'建立企業':'企業登入')+'</button> <button class="btn" data-action="demoMode">使用公開 DEMO</button></div>';
+ $('appContent').innerHTML='<div class="panel"><h2>'+(wfMiniMode?'WF｜LINE MINI App 員工入口':'歡迎使用 LINE Workforce')+'</h2><p class="muted">'+(app.token?'目前帳號尚未加入任何企業，你可以建立自己的測試企業。':wfMiniMode?'請先登入 WF 企業帳號；LINE 身分不會自動取得企業權限。':'請登入企業帳號，或使用上方公開 DEMO 直接試用。')+'</p><button class="btn primary" data-action="'+(app.token?'createTenant':'login')+'">'+(app.token?'建立企業':'企業登入')+'</button> '+(wfMiniMode?'':'<button class="btn" data-action="demoMode">使用公開 DEMO</button>')+'</div>';
 }
 function render(){
  $('modePill').textContent=app.mode==='demo'?'公開 DEMO':'企業模式';
@@ -2301,7 +2302,7 @@ $('overlay').addEventListener('submit',async e=>{
  try{
   const values=Object.fromEntries(new FormData(form).entries());
   if(form.dataset.form==='wf_forgot_password'){
-   const redirect=location.origin+location.pathname;
+   const redirect=wfMiniMode?location.origin+'/LINE/workforce/':location.origin+location.pathname;
    // This redirect must be allowlisted in Supabase Auth URL Configuration.
    await call('/auth/v1/recover?redirect_to='+encodeURIComponent(redirect),'POST',{email:String(values.email||'').trim()});
    closeModal();
