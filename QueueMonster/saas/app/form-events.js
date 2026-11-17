@@ -17,7 +17,7 @@ import {render} from "./staff-layout.js";
 import {act,load,rpc} from "./data-loading.js";
 import {loadBookingCalendar} from "./booking-calendar.js";
 import {availableUnits} from "./service-units.js";
-import {applyScheduleSessionCount,applySpecialScheduleMode} from "./schedule-settings.js";
+import {applyScheduleSessionCount} from "./schedule-settings.js";
 import {ticketStatusRpc} from "./actions/staff-queue-actions.js";
 import {fetchBookingEditSlots} from "./booking-edit.js";
 import {customerNoticeSuffix,notifyLineCalled,sendLineNotice} from "./line-session.js";
@@ -59,9 +59,6 @@ document.addEventListener("change",async ev=>{
  }
  if(el.dataset.scheduleWeekdayCount||el.dataset.schedulePlanCount||el.id==="schedule-special-count"){
   applyScheduleSessionCount(el);return;
- }
- if(el.id==="schedule-special-mode"||el.id==="schedule-special-template"){
-  applySpecialScheduleMode(el);return;
  }
  if(el.id==="menu-kind"){
    const custom=el.value==="__CUSTOM__";
