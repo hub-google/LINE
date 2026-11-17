@@ -2314,7 +2314,7 @@ $('overlay').addEventListener('submit',async e=>{
  try{
   const values=Object.fromEntries(new FormData(form).entries());
   if(form.dataset.form==='wf_forgot_password'){
-   const redirect=wfMiniMode?location.origin+'/LINE/workforce/':location.origin+location.pathname;
+   const redirect=location.origin+(wfMiniMode?(location.pathname.startsWith('/LINE/workforce-mini')?'/LINE/workforce/':'/'):location.pathname);
    // This redirect must be allowlisted in Supabase Auth URL Configuration.
    await call('/auth/v1/recover?redirect_to='+encodeURIComponent(redirect),'POST',{email:String(values.email||'').trim()});
    closeModal();
@@ -2330,7 +2330,7 @@ $('overlay').addEventListener('submit',async e=>{
    if(!response.ok)throw Error(result.msg||result.message||result.error_description||'密碼更新失敗');
    wfRecoveryAccessToken=null;
    sessionStorage.removeItem('wm_auth');
-   app.token=null;app.user=null;app.data=null;app.tenants=[];app.mode='demo';app.tenantId=DEMO_ID;
+   app.token=null;app.user=null;app.data=null;app.tenants=[];app.mode=wfMiniMode?'real':'demo';app.tenantId=wfMiniMode?'':DEMO_ID;
    closeModal();await reload(true);
    banner('密碼已更新，請使用新密碼重新登入');
   }
