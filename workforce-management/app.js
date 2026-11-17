@@ -2952,6 +2952,8 @@ app.archiveBusy=false;
 const wfBeforeArchiveRender=render;
 render=function(){
  wfBeforeArchiveRender();
+ const archiveNav=document.querySelector('#nav [data-tab="backup"]');
+ if(archiveNav)archiveNav.hidden=app.mode!=='real'||!app.data||!['owner','hr'].includes(role());
  if(!app.data||app.tab!=='backup')return;
  heading();
  if(app.mode!=='real'||!app.token||!['owner','hr'].includes(role())){
