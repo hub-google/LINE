@@ -25,7 +25,6 @@ function savedCredential(label){
 export function renderOaSettings({isManager}){
  const connected=!!lineState.lineConfig?.merchantOaConnected;
  const account=lineState.lineConfig?.botBasicId||"";
- const webhook=lineState.LINE_BRIDGE_URL+"?action=webhook&merchant="+encodeURIComponent(routeState.slug);
  const status='<div class="oa-status-row"><div><span class="oa-overline">MESSAGING API</span>'+
   '<h3>店家 LINE OA</h3><p class="oa-summary">把一次點餐，變成長期顧客關係。顧客完成點餐後，可引導加入店家 LINE OA 好友；加入後可在 LINE 接收、查閱訂單狀態通知，也能直接向店家詢問訂單或取餐問題。持續累積品牌好友，有助於提升回訪與回購機會。</p><p class="oa-summary">顧客需自行同意加入好友，系統不會強制自動加好友。</p></div>'+
   '<span class="oa-connection-chip '+(connected?'is-connected':'is-unbound')+'">'+
@@ -45,15 +44,12 @@ export function renderOaSettings({isManager}){
       newCredentialField("Channel secret","own-oa-secret","Basic settings → Channel secret"))+
    '</div>'+
    (connected?'<p class="oa-safety-note">基於安全考量，已儲存的憑證不會載入網頁，也無法檢視或複製。</p>':'')+
-   (connected?'<div class="oa-webhook-section"><div class="oa-step-title"><strong>Webhook URL</strong><span>在 LINE Messaging API 啟用 Use webhook</span></div>'+
-     '<div class="oa-webhook-entry"><input id="own-oa-webhook" class="field" type="text" readonly value="'+esc(webhook)+'" aria-label="Webhook URL">'+
-     '<button class="btn outline" type="button" data-act="copy-oa-webhook">複製網址</button></div></div>':'')+
    (!connected?'<div class="oa-settings-actions">'+
      btn("驗證並連接 LINE OA","connect-own-oa","primary")+'</div>':'');
  }else{
   setup='<p class="oa-read-only">僅店家管理者可管理 LINE OA 憑證。</p>';
  }
  const footer='<div class="oa-guide-link"><a href="./merchant-center.html#mode-own" target="_blank" rel="noopener noreferrer">查看 LINE OA 串接教學 ↗</a>'+
-  '<span>Webhook 網址可複製；Token 與 Secret 不提供複製。</span></div>';
+  '<span>已儲存的 Token 與 Secret 不會在網頁上顯示或提供複製。</span></div>';
  return box("LINE 官方帳號串接",'<div class="oa-settings">'+status+accountInfo+setup+footer+'</div>');
 }
