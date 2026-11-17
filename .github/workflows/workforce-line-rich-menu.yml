@@ -21,6 +21,7 @@ on:
       - ".github/workflows/workforce-line-rich-menu.yml"
       - ".github/scripts/publish_workforce_rich_menu.py"
       - ".github/scripts/test_workforce_rich_menu.py"
+      - ".github/scripts/audit_workforce_git_secrets.py"
 
 permissions:
   contents: read
