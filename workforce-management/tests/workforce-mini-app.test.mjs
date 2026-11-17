@@ -49,6 +49,48 @@ test('Cloudflare Work /mini/ is recognized as MINI and chooses Published, while 
  }
 });
 
+test('Optional private-device login survives a new WebView while shared-device login does not',()=>{
+ const start=client.indexOf("const WF_AUTH_KEY=");
+ const end=client.indexOf("// The LINE MINI App",start);
+ assert.ok(start>0&&end>start);
+ const script=client.slice(start,end);
+ const local=new Map(),session=new Map();
+ const storage=map=>({
+  getItem:key=>map.has(key)?map.get(key):null,
+  setItem:(key,value)=>map.set(key,String(value)),
+  removeItem:key=>map.delete(key),
+ });
+ let now=Date.now();
+ class MockDate extends Date {static now(){return now;}}
+ const auth=new Function('sessionStorage','localStorage','Date',script+
+  ';return {read:wfReadAuth,save:wfSaveAuth,clear:wfClearAuth};')(
+    storage(session),storage(local),MockDate);
+ const state={token:'old-jwt',refresh_token:'refresh-one',user:{id:'employee-uuid'}};
+ auth.save(state,false);
+ session.clear();
+ assert.equal(auth.read(),null,'shared-device sessions must not persist');
+ auth.save(state,true);
+ session.clear();
+ assert.deepEqual(auth.read(),state,'private-device session should recover');
+ const rotated={...state,token:'new-jwt',refresh_token:'refresh-two'};
+ auth.save(rotated,true);
+ session.clear();
+ assert.deepEqual(auth.read(),rotated,'rotated refresh token must replace stale token');
+ now+=8*86400000;
+ session.clear();
+ assert.equal(auth.read(),null,'remember-me access must expire');
+ auth.save(rotated,true);
+ auth.clear();
+ assert.equal(auth.read(),null,'explicit logout must erase both stores');
+ assert.match(client,/name="remember" value="yes"/);
+ assert.match(client,/wfClearAuth\(\);if\(previous\)/);
+});
+
+test('Password recovery goes to the correct Work origin and never enables public MINI demo',()=>{
+ assert.match(client,/location\.pathname\.startsWith\('\/LINE\/workforce-mini'\)\?'\/LINE\/workforce\/'\:'\/'/);
+ assert.match(client,/app\.mode=wfMiniMode\?'real':'demo';app\.tenantId=wfMiniMode\?'':DEMO_ID/);
+});
+
 test('MINI uses the same Supabase tenancy, separate LINE context, no public demo by default',()=>{
  assert.match(client,/if\(wfMiniMode&&!app\.token\)\{app\.mode='real'/);
  assert.match(client,/app\.mode=wfMiniMode\?'real':'demo'/);
