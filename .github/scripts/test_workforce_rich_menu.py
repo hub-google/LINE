@@ -35,11 +35,11 @@ class WorkforceMenuTests(unittest.TestCase):
                 module.menu_body(name)
 
     def test_wrong_oa_channel_refuses_operation_even_when_token_is_supplied(self):
-        with self.assertRaisesRegex(RuntimeError,"Invalid WF_LINE_MESSAGING_CHANNEL_ID secret"):
+        with self.assertRaisesRegex(RuntimeError,"Invalid WORK_LINE_MESSAGING_CHANNEL_ID secret"):
             module.publish("developing","not-a-real-token-123456789012345678901","bad")
 
     def test_line_credentials_are_never_logged_on_invalid_token(self):
-        with self.assertRaisesRegex(RuntimeError,"Missing WF_LINE_MESSAGING_ACCESS_TOKEN"):
+        with self.assertRaisesRegex(RuntimeError,"Missing WORK_LINE_MESSAGING_ACCESS_TOKEN"):
             module.publish("developing","","2012650797")
 
     def test_no_menu_is_published_when_validation_fails(self):
@@ -48,6 +48,17 @@ class WorkforceMenuTests(unittest.TestCase):
                 with self.assertRaises(RuntimeError):
                     module.publish("published","x"*50,"2012650797")
                 api.assert_not_called()
+
+    def test_work_secrets_are_used_consistently(self):
+        workflow=Path(__file__).resolve().parent.parent / "workflows" / "workforce-line-rich-menu.yml"
+        publisher=SCRIPT.read_text(encoding="utf-8")
+        deployment=workflow.read_text(encoding="utf-8")
+        self.assertNotIn("WF_LINE_", publisher + deployment)
+        for name in ("WORK_LINE_MESSAGING_CHANNEL_ID",
+                     "WORK_LINE_MESSAGING_CHANNEL_SECRET",
+                     "WORK_LINE_MESSAGING_ACCESS_TOKEN"):
+            self.assertIn(name, publisher)
+            self.assertIn(name, deployment)
 
     def test_png_meets_line_image_requirements(self):
         payload=module.generate_image()

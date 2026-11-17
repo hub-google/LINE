@@ -7,8 +7,10 @@
 - **工作怪獸 Messaging API Channel ID**：使用者已提供；只需於 GitHub Secrets 內儲存，公開程式碼不列出其數值。
 - **工作怪獸 MINI App**：Developing `2012649404-nz3TBQdG`、Published `2012649406-KzlLEZT6`（均為公開 LIFF ID；不是保密的 Access Token）。
 - **QueueMonster OA**：既有 `LINE_MESSAGING_*` Secrets 與 `line-rich-menu.yml` 完全不動。
-- **工作怪獸 OA**：只能使用下面命名為 `WF_*` 的新 Secrets；不與任何其他產品共用。
+- **工作怪獸 OA**：只能使用下面命名為 `WORK_*` 的新 Secrets；不與任何其他產品共用。
 - **原本 WF 網站** `/LINE/workforce/` 不變，獨立的 MINI App 為 `/LINE/workforce-mini/`。
+
+**專案正式名稱：Work（工作怪獸）**；預定正式網址：`https://work.monsterport.com/`。此項僅記錄命名與目標網域；DNS／正式網頁及 LINE Endpoint 不因本次 Secret 改名而自動切換。
 
 ## 需要用 GitHub 網頁安全地新增（不能提交到程式碼）
 
@@ -16,13 +18,13 @@
 
 | Repository Secret 名稱 | 應填內容 |
 | --- | --- |
-| `WF_LINE_MESSAGING_CHANNEL_ID` | 工作怪獸 Messaging API 的公開 Channel ID |
-| `WF_LINE_MESSAGING_CHANNEL_SECRET` | 工作怪獸 Messaging API Channel Secret（不可提交） |
-| `WF_LINE_MESSAGING_ACCESS_TOKEN` | 工作怪獸 Messaging API Channel access token（不可提交） |
+| `WORK_LINE_MESSAGING_CHANNEL_ID` | 工作怪獸 Messaging API 的公開 Channel ID |
+| `WORK_LINE_MESSAGING_CHANNEL_SECRET` | 工作怪獸 Messaging API Channel Secret（不可提交） |
+| `WORK_LINE_MESSAGING_ACCESS_TOKEN` | 工作怪獸 Messaging API Channel access token（不可提交） |
 
 *名稱須完全一致，區分大小寫。不要貼到 Commit、Issue、PR、workflow_dispatch 文字輸入、README、log、前端 JS，或 GitHub Actions Repository Variables。*
 
-**MINI App 本身不需要新增任意「MINI App token」Secret**：LIFF ID／Channel ID 是公開標識，身分綁定必須由後端驗證 LINE ID Token。真正的 OAuth/LINE Channel Secret 若日後需要，須由 LINE 官方另行發出，且使用獨立的 `WF_MINI_...` Secret，**不能複製 Messaging API 的 Channel Secret 當成 MINI App Secret**。
+**MINI App 本身不需要新增任意「MINI App token」Secret**：LIFF ID／Channel ID 是公開標識，身分綁定必須由後端驗證 LINE ID Token。真正的 OAuth/LINE Channel Secret 若日後需要，須由 LINE 官方另行發出，且使用獨立的 `WORK_MINI_...` Secret，**不能複製 Messaging API 的 Channel Secret 當成 MINI App Secret**。
 
 ## 發布工作怪獸 OA 六格圖文選單
 

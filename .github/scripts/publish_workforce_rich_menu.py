@@ -168,9 +168,9 @@ def validate_token(token: str, channel_id: str) -> None:
 
 def publish(environment: str, token: str, channel_id: str) -> str:
     if not (channel_id.isdecimal() and len(channel_id) >= 8):
-        raise RuntimeError("Invalid WF_LINE_MESSAGING_CHANNEL_ID secret")
+        raise RuntimeError("Invalid WORK_LINE_MESSAGING_CHANNEL_ID secret")
     if not token or len(token)<32:
-        raise RuntimeError("Missing WF_LINE_MESSAGING_ACCESS_TOKEN secret")
+        raise RuntimeError("Missing WORK_LINE_MESSAGING_ACCESS_TOKEN secret")
     validate_token(token,channel_id)
     info=call("api.line.me","/v2/bot/info","GET",token)
     if not info.get("userId","").startswith("U"):
@@ -207,7 +207,7 @@ def publish(environment: str, token: str, channel_id: str) -> str:
 
 
 def main():
-    environment=os.environ.get("WF_LINE_OA_ENV","developing")
+    environment=os.environ.get("WORK_LINE_OA_ENV","developing")
     menu=menu_body(environment)
     png=generate_image()
     print(f"WORKFORCE {environment} image validated: {W}x{H}, {len(png)} bytes.")
@@ -215,10 +215,10 @@ def main():
     if "--validate" in sys.argv:
         print("Validated 6 distinct MINI App URI targets; no API request made.")
         return
-    channel=os.environ.get("WF_LINE_MESSAGING_CHANNEL_ID","")
-    token=os.environ.get("WF_LINE_MESSAGING_ACCESS_TOKEN","")
-    if not os.environ.get("WF_LINE_MESSAGING_CHANNEL_SECRET"):
-        raise RuntimeError("Missing WF_LINE_MESSAGING_CHANNEL_SECRET secret")
+    channel=os.environ.get("WORK_LINE_MESSAGING_CHANNEL_ID","")
+    token=os.environ.get("WORK_LINE_MESSAGING_ACCESS_TOKEN","")
+    if not os.environ.get("WORK_LINE_MESSAGING_CHANNEL_SECRET"):
+        raise RuntimeError("Missing WORK_LINE_MESSAGING_CHANNEL_SECRET secret")
     publish(environment,token,channel)
 
 if __name__=="__main__":
