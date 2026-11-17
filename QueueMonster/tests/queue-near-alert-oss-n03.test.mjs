@@ -47,7 +47,7 @@ test("OSS-N03: LINE worker rechecks preference and sends via existing deduped pa
   assert.match(bridge,/so_queue_near_alert_eligibility/);
   assert.match(bridge,/ticket\.status !== "WAITING"/);
   assert.match(bridge,/pushNotice\(db, tenant, ticket\.user_id, "QUEUE_NEAR", ticket\.id/);
-  assert.match(bridge,/liffQueueProgressLink\(await shopLinkContext\(db, tenant\), ticket\.id\)/);
+  assert.match(bridge,/liffQueueProgressLink\(tenant, ticket\.id\)/);
   assert.match(bridge,/qm_line_push_log/);
 });
 

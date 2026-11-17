@@ -84,6 +84,7 @@ test("merchants cannot override Queue Monster LINE Login; OA messaging remains i
   assert.match(bridge,/expectedChannelId === Deno.env.get\("LINE_LOGIN_CHANNEL_ID"\)/);
   assert.doesNotMatch(bridge,/own\?\.liff_id|ownOa\?\.liffId|merchantLiffId|shop\.liffId/);
   assert.match(bridge,/p_liff_id:""/);
+  assert.match(bridge,/if \(\(!linked\?\.display_name\?\.trim\(\) \|\|/);
   assert.match(bridge,/const id=platformCustomerLiffId\(\)/);
   assert.match(bridge,/ownOa\?\.token/);
   assert.match(bridge,/LINE_MESSAGING_ACCESS_TOKEN/);

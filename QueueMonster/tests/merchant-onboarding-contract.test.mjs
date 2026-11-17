@@ -295,8 +295,8 @@ test("merchant LINE OA basic connection does not require webhook; optional autom
  assert.match(settings,/own-oa-token/);
  assert.match(settings,/own-oa-secret/);
  assert.match(settings,/請填寫兩項 LINE Messaging API 憑證/);
- assert.match(settings,/進階設定：LINE Login／LIFF（選填）/);
- assert.match(settings,/一般 LINE OA 串接不需要填寫 LIFF ID/);
+ assert.doesNotMatch(settings,/進階設定：LINE Login|own-oa-liff/);
+ assert.doesNotMatch(actions,/own-oa-liff|liffId,botToken/);
  assert.match(settings,/connected\?'<div class="oa-webhook-section"/);
  assert.match(settings,/Use webhook/);
  assert.match(settings,/Webhook URL/);

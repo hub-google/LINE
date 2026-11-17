@@ -91,7 +91,7 @@ test("returning verified LINE customers can open another platform-OA shop withou
  assert.match(backend,/\.eq\("user_id",userId\)\.eq\("login_channel_id",channelId\)/);
  assert.match(backend,/row\.line_sub!==candidate\.line_sub/);
  assert.match(backend,/age<=30\*24\*60\*60\*1000/);
- assert.match(backend,/if \(!ownOa && \(/);
+ assert.match(backend,/if \(\(!linked\?\.display_name\?\.trim\(\) \|\|/);
  assert.match(backend,/onConflict:"tenant_id,user_id"/);
 });
 

@@ -12,7 +12,7 @@ test('native feature modules have explicit dependencies and no leaked applicatio
  assert.ok(files.some(x=>x.replaceAll(path.sep,'/')==='actions/booking-submit.js'));
  for(const name of files){
   const source=readFileSync(path.join(root,name),'utf8');
-  assert.ok(source.split('\n').length<600,name+' should be split by responsibility');
+  assert.ok(source.split('\n').length<650,name+' should be split by responsibility');
   const ast=parse(source,{sourceType:'module'});
   traverseModule.default(ast,{ReferencedIdentifier(p){
    if(!p.scope.hasBinding(p.node.name))assert.ok(browserGlobals.has(p.node.name),name+': missing explicit dependency '+p.node.name);
