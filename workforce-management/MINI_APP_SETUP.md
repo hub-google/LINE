@@ -31,7 +31,7 @@
 
 ## 限制與未啟用項目
 
-- MINI App 是網頁技術，GPS 仍需授權；實機精度、防定位造假、異常打卡不能靠 Channel 建立自動保證。
+- MINI App 是網頁技術，**不免除定位授權**，GPS 仍需由手機同意；實機精度、防定位造假、異常打卡不能靠 Channel 建立自動保證。
 - `wm-line` 既有的通知是平台 LINE OA Messaging API，不是 MINI App Service Message API。申請 Verified MINI App 與服務訊息樣板、通知 Token 流程是另一項工作；台灣認證申請通常要求 certified provider 資格。不得聲稱可以直接無限免費通知。
 - 不收集 Channel Secret，也不需把公開 Channel ID 設為 Supabase Secret；原先 `LINE_LOGIN_CHANNEL_ID`、`LINE_LIFF_ID` 與 `LINE_MESSAGING_ACCESS_TOKEN` 不更動。
 - 如果已綁定的 LINE userId 與新 MINI App LINE userId 不同，後端拒絕覆蓋，必須先釐清 Provider/帳號，再由原員工本人依權限解除綁定。
