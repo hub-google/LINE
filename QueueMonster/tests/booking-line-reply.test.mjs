@@ -85,7 +85,7 @@ test('backend refuses another customer, tenant, OA, cancelled or deleted booking
 test('merchant booking confirmations can use Push API without merchant webhook',()=>{
  assert.doesNotMatch(source,/if \(eventKind === "RESERVED"\) return reply\(/);
  assert.doesNotMatch(source,/if \(job\.event_kind === "RESERVED"\) return/);
- assert.match(source,/eventKind: eventKind/);
+ assert.match(source,/event_kind: eventKind/);
  assert.match(source,/https:\/\/api\.line\.me\/v2\/bot\/message\/push/);
 });
 test('valid owner receives a card through reply endpoint only',async()=>{
