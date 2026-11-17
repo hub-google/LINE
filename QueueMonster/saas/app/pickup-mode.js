@@ -47,8 +47,11 @@ async function pickupChime(){
   }catch(error){void ctx.close().catch(()=>{});throw error;}
 }
 function syncPickupLive(){
-  const active=routeState.view==="staff"&&staffState.staffTab==="orders"&&!!staffState.staff&&!!lineState.supa;
+  const active=!!lineState.supa&&((routeState.view==="staff"&&staffState.staffTab==="orders"&&!!staffState.staff)
+  ||(routeState.view==="customer"&&routeState.customerTab==="order"&&!!customerState.customer));
   const slug=active?routeState.slug:"";
+  const allowed=()=>routeState.slug===slug&&((routeState.view==="staff"&&staffState.staffTab==="orders")
+      ||(routeState.view==="customer"&&routeState.customerTab==="order"));
   if(pickupLiveChannel&&pickupLiveSlug===slug)return;
   if(pickupLiveChannel){
     const old=pickupLiveChannel;pickupLiveChannel=null;pickupLiveSlug="";
@@ -60,11 +63,11 @@ function syncPickupLive(){
     pickupLiveChannel=lineState.supa.channel("queue-board:"+slug,{config:{private:false,broadcast:{self:false}}})
       .on("broadcast",{event:"invalidate"},message=>{
         if(message?.payload?.kind&&message.payload.kind!=="pickup")return;
-        if(pickupLivePending||document.hidden||routeState.view!=="staff"||staffState.staffTab!=="orders")return;
+        if(pickupLivePending||document.hidden||!allowed())return;
         pickupLivePending=true;
         setTimeout(async()=>{
           pickupLivePending=false;
-          if(routeState.view!=="staff"||staffState.staffTab!=="orders"||routeState.slug!==slug)return;
+          if(!allowed())return;
           try{await loadPickupData();render();}catch(error){console.warn("取餐即時更新失敗",error);}
         },700);
       }).subscribe();
@@ -234,7 +237,7 @@ export function renderCustomerPickup(){
  if(!s.enabled)return box("尚未開放線上點餐",'<p>店家暫停接受新訂單，既有訂單仍可查看。</p>'+(orderCards||'<p>目前沒有訂餐紀錄。</p>')+historyControls);
  const available=(d.slots||[]).filter(x=>x.left>0);
  return box("線上點餐",
-  '<p class="muted">直接使用本店上架菜單，送出後可在此追蹤接單、製餐、可取餐與已取餐進度。</p>'+
+  '<p class="muted">直接使用本店上架菜單，送出後可在此追蹤接單、製餐、可取餐與已取餐進度。</p>'+btn('更新訂單進度','pickup-refresh','outline')+
   pickupGroupPanel()+
   (featuredCancelCard?'<section role="region" aria-label="新訂單取消倒數" style="margin:10px 0 18px"><h3>訂單已送出</h3>'+featuredCancelCard+'</section>':
   '<p class="notice"><strong>下單後 15 秒內可取消。</strong>送出訂單後會顯示倒數；倒數結束，訂單才會交給店家接單，之後無法自行取消。</p>')+
@@ -277,7 +280,7 @@ export function renderCustomerPickup(){
   '<p class="small">此處僅建立訂單，不會線上收款；請依店家現場方式結帳。</p>'+
   (pickupState.groupId?(
     pickupState.groupData?.submitted?'<p class="notice">團購已完成下單。請到上方查看訂單狀態。</p>':
-    '<div class="staff-actionbar">'+btn("儲存我的餐點到團購","pickup-group-save","primary",!count?'disabled':'')+
+    '<div class="staff-actionbar">'+btn("儲存我的餐點到團購","pickup-group-save","primary")+
       (pickupState.groupData?.owner?btn("主揪送出整張訂單","pickup-group-submit","outline",((immediate&&!openNow)||(!immediate&&!pickupState.slot))?'disabled':''):'')+'</div>'
    ):(pickupState.confirming?'<div class="inset" role="group" aria-label="確認訂餐內容"><strong>請核對送出前的訂餐內容</strong>'+
     '<p>聯絡電話：'+esc(normalizeTaiwanPhone(pickupContactPhone()))+'</p>'+
