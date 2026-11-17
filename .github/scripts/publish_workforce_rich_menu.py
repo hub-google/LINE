@@ -13,7 +13,6 @@ import urllib.request
 from PIL import Image, ImageDraw, ImageFont
 
 W, H = 2500, 1686
-EXPECTED_CHANNEL = "2012650797"
 MINI = {
     "developing": "2012649404-nz3TBQdG",
     "published": "2012649406-KzlLEZT6",
@@ -168,8 +167,8 @@ def validate_token(token: str, channel_id: str) -> None:
 
 
 def publish(environment: str, token: str, channel_id: str) -> str:
-    if channel_id != EXPECTED_CHANNEL:
-        raise RuntimeError("Unexpected WORKFORCE Channel ID; refuse to alter an unrelated OA")
+    if not (channel_id.isdecimal() and len(channel_id) >= 8):
+        raise RuntimeError("Invalid WF_LINE_MESSAGING_CHANNEL_ID secret")
     if not token or len(token)<32:
         raise RuntimeError("Missing WF_LINE_MESSAGING_ACCESS_TOKEN secret")
     validate_token(token,channel_id)
