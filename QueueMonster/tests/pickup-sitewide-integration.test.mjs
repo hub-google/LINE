@@ -281,3 +281,24 @@ test("pickup upgrades: sound, kitchen, loyal customers and merchant-ready notifi
  assert.match(notifications,/MERCHANT_OA_NOT_CONNECTED/);
  assert.match(notifications,/qm_line_notice_outbox|PICKUP_EVENT/);
 });
+
+
+test("pickup customer coupons are merchant-scoped, protected, and priced by the server",()=>{
+ const schema=source("supabase/migrations/20261117184500_qm_pickup_customer_coupon_redemption.sql");
+ const guard=source("supabase/migrations/20261117190000_qm_pickup_coupon_idempotent_checkout.sql");
+ const frontend=source("saas/app/pickup-coupons.js");
+ const pickup=source("saas/app/pickup-mode.js");
+ for(const token of ["CREATE TABLE IF NOT EXISTS public.qm_pickup_coupons",
+   "CREATE TABLE IF NOT EXISTS public.qm_pickup_coupon_uses",
+   "ENABLE ROW LEVEL SECURITY","REVOKE ALL ON public.qm_pickup_coupons",
+   "so_pickup_coupon_preview","so_pickup_coupon_save","so_pickup_coupon_admin",
+   "so_pickup_place_with_coupon","FOR UPDATE","v_order.total-c_discount"])
+   if(token!=="v_order.total-c_discount")assert.ok(schema.includes(token),"coupon server missing "+token);
+ assert.match(schema,/total=v_order.total-v_discount/);
+ assert.match(guard,/request_id=p_request_id/);
+ assert.match(guard,/existing',true/);
+ for(const token of ["pickup-coupon-preview","pickup-coupon-save","renderCouponAdmin","renderCouponCustomer"])
+   assert.ok(frontend.includes(token),"coupon UI missing "+token);
+ assert.match(pickup,/so_pickup_place_with_coupon/);
+ assert.match(frontend,/estimated_payable/);
+});
