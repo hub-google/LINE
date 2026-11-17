@@ -27,7 +27,8 @@ test("build stages copies; never rewrites original Queue Monster source",()=>{
  assert.match(build,/so_mini_platform_records_page/);
 });
 test("publishing is scoped exclusively to queue-mini",()=>{
- assert.match(workflow,/rm -rf "\$site\/queue-mini"/);
+ assert.match(workflow,/rm -rf "\$site\/queue-mini\/developing"/);
+ assert.ok(!workflow.includes('rm -rf "$site/queue-mini"'),"auto deploy must preserve review/published");
  assert.match(workflow,/git -C "\$site" add -A -- queue-mini\//);
  assert.doesNotMatch(workflow,/git -C "\$site" add -A -- booking/);
  assert.doesNotMatch(workflow,/git -C "\$site" add -A -- queue-prod/);
