@@ -803,3 +803,52 @@ body[data-portal="staff"] .staff-picker-secondary>.staff-choice{flex:1 1 100%;mi
  .schedule-plan-status{font-size:11px}
  .schedule-plan-detail-body{padding:10px}
 }
+
+
+/* Merchant settings: contextual explanations shared by every settings category. */
+body[data-portal="staff"] .settings-help-label-row{
+  display:flex;align-items:center;gap:7px;max-width:100%;width:fit-content;
+  margin:8px 0 5px;min-width:0;
+}
+body[data-portal="staff"] .settings-help-label-row>label{
+  margin:0;min-width:0;max-width:100%;
+}
+body[data-portal="staff"] .settings-help-checkbox-row{
+  width:100%;align-items:center;
+}
+body[data-portal="staff"] .settings-help-checkbox-row>label.checklist{
+  flex:0 1 auto;min-width:0;
+}
+body[data-portal="staff"] .settings-help-button{
+  display:inline-grid;place-items:center;flex:0 0 auto;
+  width:19px;height:19px;padding:0;border:1px solid #BCA7CA;border-radius:999px;
+  background:#F7F0FB;color:#694A7C;font:700 12px/1 system-ui,sans-serif;
+  cursor:help;vertical-align:middle;box-shadow:none;touch-action:manipulation;
+}
+body[data-portal="staff"] .settings-help-button:hover,
+body[data-portal="staff"] .settings-help-button[aria-expanded="true"]{
+  background:#674780;color:#FFF;border-color:#674780;
+}
+body[data-portal="staff"] .settings-help-button:focus-visible{
+  outline:3px solid #AC8EC7;outline-offset:3px;
+}
+body[data-portal="staff"] .schedule-plan-banner>.settings-help-button,
+body[data-portal="staff"] .schedule-session-item>.settings-help-button{
+  margin-left:4px;
+}
+.settings-help-popover{
+  position:fixed;z-index:100000;box-sizing:border-box;
+  max-width:calc(100vw - 24px);padding:12px 14px;
+  border:1px solid #E5D4EC;border-radius:12px;
+  background:#FFF;color:#392E40;
+  font:500 13px/1.65 system-ui,"Microsoft JhengHei",sans-serif;
+  white-space:normal;overflow-wrap:anywhere;
+  box-shadow:0 12px 30px rgba(54,34,67,.2);
+}
+.settings-help-popover[hidden]{display:none!important}
+@media(max-width:620px){
+  body[data-portal="staff"] .settings-help-button{
+    width:24px;height:24px;font-size:13px;cursor:pointer;
+  }
+  .settings-help-popover{font-size:14px;padding:13px 15px}
+}
