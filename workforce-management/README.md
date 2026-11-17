@@ -3,7 +3,7 @@
 > **2026-11-04 實際開發版**：已擴充真實 Supabase 資料庫及 GitHub Pages 網頁。**PRD 有部分功能尚未完成**，包括正式 LINE 登入／通知、完整法定假勤與跨店進階排班。
 
 **[開啟 GitHub Pages 人資測試站](https://hub-google.github.io/LINE/workforce/)**  
-[獨立「工作怪獸」MINI App 網頁](https://hub-google.github.io/LINE/workforce-mini/)｜[三環境 Endpoint 與實機驗收](./MINI_APP_SETUP.md)  
+[獨立「工作怪獸」MINI App 網頁](https://hub-google.github.io/LINE/workforce-mini/)｜[三環境 Endpoint 與實機驗收](./MINI_APP_SETUP.md)｜[LINE OA 固定入口與圖文選單](./line-oa/README.md)  
 [完整 PRD](./PRD.md)｜[最新實作與驗收狀態](./IMPLEMENTATION-STATUS.md)｜[資料庫執行順序](./supabase/MIGRATION-ORDER.md)
 
 這是 `hub-google/LINE/workforce-management/` 的**獨立人資 SaaS 產品**，和 `QueueMonster/` 預約叫號分開。**不要在公開 DEMO 輸入真實員工個資、薪資或健康資訊**；其資料為全體訪客共享的虛構公司案例。
@@ -23,6 +23,7 @@
 |---|---|
 | [PRD.md](./PRD.md) | 唯一的原始產品需求範圍，保留既定全部項目 |
 | [MINI_APP_SETUP.md](./MINI_APP_SETUP.md) | 工作怪獸的 Developing／Review／Published 對照 URL、身分綁定及實機驗收 |
+| [line-oa/README.md](./line-oa/README.md) / [line-oa/rich-menu.published.json](./line-oa/rich-menu.published.json) | 每日固定入口：獨立 LINE OA 六格圖文選單、Published MINI App 永久連結，不必每天掃 QR |
 | [IMPLEMENTATION-STATUS.md](./IMPLEMENTATION-STATUS.md) | 功能完成狀態、測試證據與尚未交付項目 |
 | [app.js](./app.js) / [index.html](./index.html) / [style.css](./style.css) | **原本 WF 網站**，保留公開 DEMO 與企業登入；資料連到 Supabase |
 | [mini/index.html](./mini/index.html) / [mini/mini.css](./mini/mini.css) | **另一套 LINE MINI App 專屬入口**，獨立靜態部署到 `/workforce-mini/`，共用原本資料及業務邏輯 |
