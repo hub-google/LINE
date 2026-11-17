@@ -27,13 +27,6 @@ if(a==="save-customer-homepage"){
   });
   return true;
 }
- if(a==="copy-oa-webhook"){
-  const target=routeState.$("own-oa-webhook");
-  if(!target?.value)return true;
-  try{await navigator.clipboard.writeText(target.value);showActionFeedback("Webhook 網址已複製","success");}
-  catch(_){showActionFeedback("無法自動複製，請選取 Webhook 網址手動複製","warning");}
-  return true;
- }
  if(a==="toggle-oa-visibility"){
   const target=b.dataset.target||"";
   if(!["own-oa-token","own-oa-secret"].includes(target))return true;
@@ -76,7 +69,7 @@ if(a==="save-customer-homepage"){
      throw Error(message||"LINE OA 綁定失敗（"+(data.error||"HTTP "+res.status)+"），請確認 LINE 設定與管理權限。");
    }
    lineState.lineConfig=null;lineState.lineConfigSlug="";
-   return "Messaging API 已驗證連接。若要啟用自動回覆，請至 LINE Developers 開啟 Use webhook，並確認 LINE OA 訊息功能正常。";
+   return "Messaging API 已驗證連接。請以手機確認店家 LINE OA 通知是否正常送達。";
   });return true;
  }
  if(a==="save-directory"){await act(async()=>{const enabled=!!routeState.$("directory-enabled")?.checked;await rpc("so_set_directory_listing",{p_slug:routeState.slug,p_enabled:enabled,p_oa_mode:"PLATFORM"});return enabled?"門市已開放在排隊怪獸平台搜尋":"門市已取消公開搜尋（原有專屬連結仍可使用）";});return true;}
