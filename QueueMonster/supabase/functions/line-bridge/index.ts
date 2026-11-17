@@ -1298,31 +1298,7 @@ Deno.serve(async (req: Request) => {
         expiresInSeconds:600},origin);
     }
     if (payload.action === "booking-reply-command") {
-      const slug=String(payload.slug||""),bookingId=String(payload.reservationId||"");
-      if(!/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug)||!validUUID(bookingId))
-        return reply(400,{error:"BAD_REQUEST"},origin);
-      const {data:tenant,error:tenantError}=await db.from("qm_tenants").select("id")
-        .eq("slug",slug).eq("status","ACTIVE").maybeSingle();
-      if(tenantError)throw tenantError;
-      if(!tenant)return reply(404,{error:"TENANT_NOT_FOUND"},origin);
-      // Merchant OA webhook-based booking confirmations are no longer supported.
       return reply(410,{error:"MERCHANT_WEBHOOK_DISABLED"},origin);
-      /* Legacy code intentionally unreachable; kept for data migration compatibility.
-      const own=await merchantLineConfig(db,tenant.id);
-      if(!own||!/^@[a-z0-9_.-]{2,100}$/i.test(own.basicId||""))
-        return reply(409,{error:"MERCHANT_OA_NOT_CONNECTED"},origin);
-      const {data:booking,error:bookingError}=await db.from("qm_reservations")
-        .select("id,tenant_id,user_id,status").eq("id",bookingId)
-        .eq("tenant_id",tenant.id).eq("user_id",user.id)
-        .is("deleted_at",null).maybeSingle();
-      if(bookingError)throw bookingError;
-      if(!booking||booking.status!=="CONFIRMED")
-        return reply(404,{error:"BOOKING_NOT_OWNED_OR_CONFIRMED"},origin);
-      const command="確認預約 "+booking.id+" "+await issueBookingReplyProof(booking);
-      return reply(200,{ok:true,command,
-        oaMessageUrl:"https://line.me/R/oaMessage/"+encodeURIComponent(own.basicId)+"/?"+encodeURIComponent(command),
-        expiresInSeconds:600},origin);
-      */
     }
     if (payload.action === "connect-merchant-oa" || payload.action === "disconnect-merchant-oa") {
       const slug = String(payload.slug || "");
