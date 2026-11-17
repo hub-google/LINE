@@ -37,6 +37,7 @@ jobs:
           node --test workforce-management/tests/workforce-prd.test.mjs
           node --test workforce-management/tests/workforce-button-clicks.test.mjs
           node --test workforce-management/tests/workforce-mini-app.test.mjs
+          node --test workforce-management/tests/workforce-mini-behavior.test.mjs
       - name: Deploy workforce website and independent WF MINI App to existing gh-pages branch
         shell: bash
         run: |
@@ -80,6 +81,17 @@ jobs:
         continue-on-error: true
         run: |
           node --test workforce-management/tests/workforce-live.test.mjs
+      - name: Verify deployed MINI App public configuration and reject anonymous LINE binding
+        id: mini_api_smoke
+        timeout-minutes: 2
+        continue-on-error: true
+        run: |
+          node --test workforce-management/tests/workforce-mini-live.test.mjs
+      - name: Mark MINI App gateway failure
+        if: ${{ steps.mini_api_smoke.outcome == 'failure' }}
+        run: |
+          echo "::error title=WF MINI App gateway verification failed::Check deployed wm-line GET configuration, CORS and unauthorized binding protection."
+          exit 1
       - name: Mark remote API smoke failure without concealing deployment
         if: ${{ steps.live_api_smoke.outcome == 'failure' }}
         run: |
