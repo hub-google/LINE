@@ -1,23 +1,35 @@
 <!doctype html>
-<html lang="zh-Hant"><head>
-<meta name="google-site-verification" content="D29vbKoSvOxX_-Z9QPCAYka4wu-c3sk59TPEn3FM4nQ" />
-<meta name="line-saas-build" content="400cdbec4a3d861a4409f9276fcab04117f74e8f">
-<meta name="theme-color" content="#462B52">
-<link rel="manifest" href="./manifest.webmanifest">
-<script src="./assets/home/register-pwa-5AWZJM62.js?build=400cdbec4a3d861a4409f9276fcab04117f74e8f"></script>
-<!-- Preserve existing view/merchant/LIFF callbacks; only bare legacy/booking roots enter marketing home. -->
-<!-- LINE MINI App: no marketing redirect before LIFF initialization -->
-<script defer src="./version-watch.js?build=400cdbec4a3d861a4409f9276fcab04117f74e8f"></script>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>排隊怪獸｜顧客預約、取號與門市管理</title>
-<meta name="description" content="排隊怪獸提供線上預約、現場取號與即時叫號，協助店家輕鬆管理顧客服務。">
-<link rel="stylesheet" href="./assets/index/page-CG5F3R24.css?build=400cdbec4a3d861a4409f9276fcab04117f74e8f">
-<link rel="stylesheet" href="./booking-theme.css?build=400cdbec4a3d861a4409f9276fcab04117f74e8f">
-<link rel="stylesheet" href="./site-auth.css?build=400cdbec4a3d861a4409f9276fcab04117f74e8f"><script defer src="./site-auth.js?build=400cdbec4a3d861a4409f9276fcab04117f74e8f"></script><link rel="stylesheet" href="./monster-world.css?build=400cdbec4a3d861a4409f9276fcab04117f74e8f"><link rel="stylesheet" href="./assets/roles/oa-settings-CJ4VKOAB.css?build=400cdbec4a3d861a4409f9276fcab04117f74e8f"><link rel="icon" type="image/svg+xml" href="./monster-mascot.svg"><meta name="robots" content="noindex,nofollow"><link rel="stylesheet" href="./qm-mini.css"></head>
-<body data-monster-page="index">
-<header><div class="top">
-<a class="brand" href="./home.html" aria-label="排隊怪獸首頁"><span class="brandmark" aria-hidden="true"></span>排隊怪獸<small>線上預約・現場取號・門市管理</small></a>
-<nav class="headlinks" id="headlinks"></nav><div class="site-auth-slot" id="site-auth-root" aria-label="使用者登入狀態"><span class="site-auth-name" role="status">正在確認登入狀態</span></div>
-</div></header>
-<div class="container" id="root"><div class="card"><h2>資料更新中，請稍後</h2></div></div>
-<script type="module" src="./assets/app/main-VHFJHFBF.js?build=400cdbec4a3d861a4409f9276fcab04117f74e8f"></script><script src="https://static.line-scdn.net/liff/edge/2/sdk.js" defer></script><script defer src="./qm-mini-nav.js"></script></body></html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="cache-control" content="no-store">
+  <title>排隊怪獸｜改用一般網頁</title>
+  <style>body{margin:0;min-height:100vh;display:grid;place-items:center;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Noto Sans TC",sans-serif;background:#f8fafc;color:#172033}main{width:min(440px,calc(100% - 40px));text-align:center;padding:28px 24px;border:1px solid #e2e8f0;border-radius:18px;background:white;box-sizing:border-box}h1{font-size:22px;margin:0 0 8px}p{margin:0 0 20px;color:#566273}a{display:inline-block;padding:12px 18px;border-radius:10px;background:#2563eb;color:white;text-decoration:none;font-weight:650}</style>
+</head>
+<body>
+<main>
+  <h1>排隊怪獸已改用一般網頁</h1>
+  <p>LINE MINI App 已暫停使用。正在帶您前往排隊怪獸網站，原有預約、取號、訂餐功能仍可使用。</p>
+  <a id="open" href="https://queue.monsterport.com/">前往排隊怪獸網站</a>
+</main>
+<script>
+(function(){
+  const origin="https://queue.monsterport.com";
+  const url=new URL("/",origin);
+  const p=new URLSearchParams(location.search);
+  if("index"==="index"){
+    url.searchParams.set("view","customer");
+    const merchant=p.get("merchant")||"";
+    const tab=p.get("tab")||"";
+    if(/^[a-z0-9][a-z0-9-]{2,39}$/.test(merchant))url.searchParams.set("merchant",merchant);
+    if(["home","reserve","queue","order","progress","mine","detail"].includes(tab))url.searchParams.set("tab",tab);
+  }
+  const link=document.getElementById("open");
+  link.href=url.href;
+  window.location.replace(url.href);
+})();
+</script>
+</body>
+</html>
