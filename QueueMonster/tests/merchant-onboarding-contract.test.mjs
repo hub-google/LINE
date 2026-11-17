@@ -287,7 +287,7 @@ test("production release contains no customer-visible QA or infrastructure copy"
  assert.ok(read("saas/template.html").includes("merchant-center.html#setup"),"retired preview directs visitors to live merchant guide");
 });
 
-test("merchant LINE OA basic connection does not require webhook; optional automatic reply explains extra setup",()=>{
+test("merchant LINE OA only asks for Messaging API credentials, without unnecessary webhook controls",()=>{
  const settings=read("saas/app/staff/oa-settings.js");
  const actions=read("saas/app/actions/merchant-settings.js");
  const guide=read("saas/merchant-center.html");
@@ -297,9 +297,7 @@ test("merchant LINE OA basic connection does not require webhook; optional autom
  assert.match(settings,/請填寫兩項 LINE Messaging API 憑證/);
  assert.doesNotMatch(settings,/進階設定：LINE Login|own-oa-liff/);
  assert.doesNotMatch(actions,/own-oa-liff|liffId,botToken/);
- assert.match(settings,/connected\?'<div class="oa-webhook-section"/);
- assert.match(settings,/Use webhook/);
- assert.match(settings,/Webhook URL/);
+ assert.doesNotMatch(settings,/oa-webhook-section|Use webhook|Webhook URL|own-oa-webhook|copy-oa-webhook/);
  assert.match(actions,/Messaging API 已驗證連接/);
  assert.doesNotMatch(guide,/複製 Webhook URL|Use webhook|訊息回傳網址/);
 });

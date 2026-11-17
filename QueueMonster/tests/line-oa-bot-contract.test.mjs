@@ -100,5 +100,5 @@ test("merchant OA settings omit legacy LINE Login fields and credential/disconne
   assert.match(oaSettings,/btn\("驗證並連接 LINE OA","connect-own-oa","primary"\)/);
   assert.match(oaSettings,/savedCredential\("Channel access token \(long-lived\)"\)/);
   assert.match(oaSettings,/savedCredential\("Channel secret"\)/);
-  assert.match(oaSettings,/copy-oa-webhook/);
+  assert.doesNotMatch(oaSettings,/copy-oa-webhook|own-oa-webhook|Webhook URL/);
 });
