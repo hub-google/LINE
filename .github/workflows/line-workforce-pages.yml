@@ -91,6 +91,11 @@ jobs:
           git -C "$pubdir" push origin HEAD:gh-pages
           echo "Workforce website: https://hub-google.github.io/LINE/workforce/"
           echo "LINE MINI App: https://hub-google.github.io/LINE/workforce-mini/"
+      - name: Verify real Work browser flows in headless Chrome (desktop + mobile)
+        timeout-minutes: 3
+        run: |
+          node --check workforce-management/tests/workforce-browser-live.test.mjs
+          node --test workforce-management/tests/workforce-browser-live.test.mjs
       # A remote Supabase outage must not suppress a locally validated front-end build.
       # Keep the run failed if the live API is genuinely inaccessible; deploy independently.
       - name: Verify deployed Supabase APIs
