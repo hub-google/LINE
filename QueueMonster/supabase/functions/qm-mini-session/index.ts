@@ -142,8 +142,6 @@ Deno.serve(async req=>{
     if(idToken.length>10000||accessToken.length>10000||(!idToken&&!accessToken))
       return result(400,{error:"LINE_LOGIN_TOKEN_REQUIRED"},origin);
     const profile=await verifyLineIdentity(idToken,accessToken,clientId);
-    if(action==="link")await ensureMiniShopLink(db,uid,String(body.slug||""),
-      profile.sub,profile.name,clientId);
     const [existing,legacy,storeLinks]=await Promise.all([
       db.from("qm_mini_line_identities").select("line_sub").eq("user_id",uid).maybeSingle(),
       db.from("qm_platform_line_identities").select("line_sub").eq("user_id",uid).maybeSingle(),
@@ -153,6 +151,8 @@ Deno.serve(async req=>{
     if([existing.data?.line_sub,legacy.data?.line_sub,...(storeLinks.data||[]).map(x=>x.line_sub)]
        .some(x=>x&&x!==profile.sub))
       return result(409,{error:"LINE_ACCOUNT_CHANGED"},origin);
+    if(action==="link")await ensureMiniShopLink(db,uid,String(body.slug||""),
+      profile.sub,profile.name,clientId);
     const {error:saveError}=await db.from("qm_mini_line_identities").upsert({
       user_id:uid,line_sub:profile.sub,display_name:profile.name,login_channel_id:clientId,
       updated_at:new Date().toISOString()
