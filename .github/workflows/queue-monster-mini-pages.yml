@@ -1,0 +1,74 @@
+name: Queue Monster｜LINE MINI App 獨立測試部署
+on:
+  push:
+    branches:
+      - main
+      - feat/queue-mini-app-isolated-20261117
+    paths:
+      - "QueueMonster/miniapp/**"
+      - "QueueMonster/supabase/functions/qm-mini-session/**"
+      - "QueueMonster/tests/mini-app-isolation.test.mjs"
+      - ".github/workflows/queue-monster-mini-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Serialize all gh-pages pushes; no release/booking/saas paths are changed.
+concurrency:
+  group: line-saas-gh-pages
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Install existing front-end build tooling
+        run: npm ci --prefix .github/frontend
+      - name: Verify MINI-only sources
+        run: |
+          node --check QueueMonster/miniapp/build-mini.mjs
+          node --check QueueMonster/miniapp/qm-mini-nav.js
+          node --test QueueMonster/tests/mini-app-isolation.test.mjs
+      - name: Build Developing, Review and Published separately
+        run: |
+          set -euo pipefail
+          node QueueMonster/miniapp/build-mini.mjs "$RUNNER_TEMP/queue-mini-dist"
+          for env in developing review published; do
+            root="$RUNNER_TEMP/queue-mini-dist/$env"
+            test -s "$root/index.html"
+            test -s "$root/directory.html"
+            test -s "$root/my-records.html"
+            test -s "$root/qm-mini.css"
+            test -s "$root/qm-mini-nav.js"
+            test -s "$root/mini-env.json"
+            test -s "$root/release.json"
+            grep -q "$GITHUB_SHA" "$root/release.json"
+          done
+          grep -R -q "2012649101-EFX2gymX" "$RUNNER_TEMP/queue-mini-dist/developing/assets"
+          grep -R -q "2012649102-rNb39YpL" "$RUNNER_TEMP/queue-mini-dist/review/assets"
+          grep -R -q "2012649103-s6KPdX4H" "$RUNNER_TEMP/queue-mini-dist/published/assets"
+      - name: Publish ONLY /LINE/queue-mini/
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin refs/heads/gh-pages:refs/remotes/origin/gh-pages
+          site="$RUNNER_TEMP/qm-mini-gh-pages"
+          git worktree add --detach "$site" origin/gh-pages
+          rm -rf "$site/queue-mini"
+          mkdir -p "$site/queue-mini"
+          cp -a "$RUNNER_TEMP/queue-mini-dist/." "$site/queue-mini/"
+          git -C "$site" add -A -- queue-mini/
+          if git -C "$site" diff --cached --quiet; then
+            echo "MINI App already current."
+            exit 0
+          fi
+          git -C "$site" -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "deploy: independent Queue Monster LINE MINI App $GITHUB_SHA"
+          git -C "$site" push origin HEAD:gh-pages
+          echo "Published /LINE/queue-mini/ only; existing /booking /saas /queue-prod remain unchanged."
