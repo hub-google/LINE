@@ -118,7 +118,7 @@ if(a==="save-customer-homepage"){
      await rpc("so_menu_save",{p_slug:routeState.slug,p_kind:item.kind,p_name:item.name,
        p_description:item.description||"",p_price:item.price,
        p_sort_order:item.sort_order,p_active:!item.active,p_item_id:item.id});
-     return "「"+item.name+"」已"+(item.active?"停用":"上架");
+     return "「"+item.name+"」已"+(item.active?"下架":"上架");
    });return true;
  }
  if(a==="save-number-prefix"){
