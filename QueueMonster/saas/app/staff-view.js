@@ -5,7 +5,7 @@ import {renderStaffCalendar} from "./staff/calendar.js";
 import {renderStaffQueue} from "./staff/queue.js";
 import {renderStaffMembers} from "./staff/members.js";
 import {renderStaffSettings} from "./staff/settings.js";
-import {renderStaffPickup} from "./pickup-mode.js";
+import {renderStaffPickup,renderPickupLoyalCustomers} from "./pickup-mode.js";
 import {authState} from "./state/authState.js";
 
 import {sharedUiState} from "./state/sharedUiState.js";
@@ -74,6 +74,7 @@ export function staffRender(){
  }
  else if(staffState.staffTab==="customers"){
   html=renderStaffSettings({t,isManager,html,customersOnly:true});
+  if(isManager)html+=renderPickupLoyalCustomers();
  }
  return layout(t.onboarding_complete===false?"填寫店家資料":t.name,"企業員工營運後台",menu,html);
 }
