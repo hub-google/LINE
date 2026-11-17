@@ -33,6 +33,7 @@ jobs:
         run: |
           node --test workforce-management/tests/workforce-prd.test.mjs
           node --test workforce-management/tests/workforce-button-clicks.test.mjs
+          node --test workforce-management/tests/workforce-mini-app.test.mjs
       - name: Deploy only workforce to existing gh-pages branch
         shell: bash
         run: |
