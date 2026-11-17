@@ -104,3 +104,20 @@ test("方案具有真正的儲存、編輯、刪除操作與分區色塊",()=>{
  assert.match(css,/\.schedule-plan-details\{[^}]*background/);
  assert.match(css,/@media\(max-width:560px\)/);
 });
+
+test("方案及場次名稱只在一個標題欄顯示，且維持可修改欄位",()=>{
+  const i=source.indexOf("const planCards="),j=source.indexOf("const selectedPlan=",i),card=source.slice(i,j);
+  assert.ok(i>=0&&j>i);
+  assert.equal((card.match(/data-schedule-plan-name/g)||[]).length,1);
+  assert.match(card,/schedule-plan-banner[\s\S]*data-schedule-plan-name/);
+  assert.doesNotMatch(card,/schedule-plan-title|<strong>'\+esc\(title\)/);
+  const a=source.indexOf("function windowEditor("),b=source.indexOf("\nexport function applyScheduleSessionCount",a);
+  assert.ok(a>=0&&b>a);
+  const editor=new Function('const esc=x=>String(x);'+source.slice(a,b)+';return windowEditor;')();
+  const sample={name:"第 1 場",start:"09:00",end:"12:00",capacity:10};
+  const html=editor(sample,0,"data-schedule-plan-window",[],false);
+  assert.equal((html.match(/第 1 場/g)||[]).length,1);
+  assert.equal((html.match(/data-schedule-field="name"/g)||[]).length,1);
+  assert.doesNotMatch(html,/<strong>第 |<label>場次名稱<\/label>/);
+  assert.match(editor(sample,0,"data-schedule-plan-window",[],true),/data-schedule-field="name"[^>]*disabled/);
+});

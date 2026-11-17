@@ -254,15 +254,14 @@ function validate(d){
  }
 }
 function windowEditor(w,i,marker,unitOptions,locked=false){
- const disabled=locked?" disabled":"";
- return '<div class="inset schedule-session-editor" '+marker+'="'+i+'">'+
-  '<strong>第 '+(i+1)+' 場</strong>'+
-  '<div class="grid"><div><label>場次名稱</label><input class="field" data-schedule-field="name" maxlength="60" value="'+esc(w.name)+'"'+disabled+'></div>'+
-  '<div><label>名額（人）</label><input class="field" data-schedule-field="capacity" type="number" min="1" max="300" value="'+esc(w.capacity)+'"'+disabled+'></div></div>'+
-  '<div class="grid"><div><label>開始時間</label><input class="field" data-schedule-field="start" type="time" value="'+esc(w.start)+'"'+disabled+'></div>'+
-  '<div><label>結束時間</label><input class="field" data-schedule-field="end" type="time" value="'+esc(w.end)+'"'+disabled+'></div></div>'+
-  '<label>服務窗口（選填）</label><select class="field" data-schedule-field="unit_id"'+disabled+'><option value="">一般場次</option>'+
-  unitOptions.map(u=>'<option value="'+esc(u.id)+'"'+(u.id===w.unit_id?' selected':'')+'>'+esc(u.name)+'</option>').join("")+'</select></div>';
+  const disabled=locked?" disabled":"";
+  return '<div class="inset schedule-session-editor" '+marker+'="'+i+'">'+
+   '<input class="field schedule-session-name" data-schedule-field="name" aria-label="場次名稱" maxlength="60" value="'+esc(w.name)+'"'+disabled+'>'+
+   '<div class="grid"><div><label>名額（人）</label><input class="field" data-schedule-field="capacity" type="number" min="1" max="300" value="'+esc(w.capacity)+'"'+disabled+'></div>'+
+   '<div><label>服務窗口（選填）</label><select class="field" data-schedule-field="unit_id"'+disabled+'><option value="">一般場次</option>'+
+   unitOptions.map(u=>'<option value="'+esc(u.id)+'"'+(u.id===w.unit_id?' selected':'')+'>'+esc(u.name)+'</option>').join("")+'</select></div></div>'+
+   '<div class="grid"><div><label>開始時間</label><input class="field" data-schedule-field="start" type="time" value="'+esc(w.start)+'"'+disabled+'></div>'+
+   '<div><label>結束時間</label><input class="field" data-schedule-field="end" type="time" value="'+esc(w.end)+'"'+disabled+'></div></div></div>';
 }
 export function applyScheduleSessionCount(el){
  const raw=String(el.value).trim(),count=Number(raw);
@@ -311,12 +310,11 @@ export function renderScheduleSettings(isManager){
   const isEditing=serviceUnitsState.scheduleEditingPlan===key;
   const opened=isEditing||serviceUnitsState.scheduleEditTemplate===key;
   return '<section class="schedule-plan-panel'+(isEditing?' is-editing':'')+'" data-schedule-plan-panel="'+esc(key)+'">'+
-   '<div class="schedule-plan-banner"><span class="schedule-plan-indicator"></span><strong>'+esc(title)+'</strong>'+
-   '<span class="schedule-plan-status">'+(isEditing?'編輯中・尚未儲存':'營業方案')+'</span></div>'+
-   '<div class="schedule-plan-inner"><div class="schedule-plan-head">'+
-   '<div class="schedule-plan-title"><label for="schedule-plan-name-'+esc(key)+'">方案名稱</label>'+
-   '<input id="schedule-plan-name-'+esc(key)+'" data-schedule-plan-name="'+esc(key)+'" class="field" maxlength="40" value="'+esc(title)+'"'+(isEditing?'':' disabled')+'></div>'+
-   '<div class="schedule-plan-size"><label for="schedule-plan-count-'+esc(key)+'">場次數</label>'+
+   '<div class="schedule-plan-banner"><span class="schedule-plan-indicator"></span>'+
+  '<input id="schedule-plan-name-'+esc(key)+'" data-schedule-plan-name="'+esc(key)+'" class="field schedule-plan-name" aria-label="方案名稱" maxlength="40" value="'+esc(title)+'"'+(isEditing?'':' disabled')+'>'+
+  (isEditing?'<span class="schedule-plan-status">編輯中・尚未儲存</span>':'')+'</div>'+
+  '<div class="schedule-plan-inner"><div class="schedule-plan-head">'+
+  '<div class="schedule-plan-size"><label for="schedule-plan-count-'+esc(key)+'">場次數</label>'+
    '<input id="schedule-plan-count-'+esc(key)+'" class="field" type="number" min="0" max="50" step="1" data-schedule-plan-count="'+esc(key)+'" value="'+count+'"'+(isEditing?'':' disabled')+'></div>'+
    '<div class="schedule-plan-actions">'+
    btn("儲存方案","schedule-plan-save","primary schedule-plan-save-btn",'data-key="'+esc(key)+'"'+(isEditing?'':' disabled'))+
