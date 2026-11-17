@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scan all reachable Git refs, including historical blobs, for WF secrets.
+"""Scan all reachable Git refs, including historical blobs, for Work secrets.
 
 Does not print or persist secret values or matching source lines.
 All exact matches use encrypted GitHub Actions Secrets injected only at runtime.
@@ -10,7 +10,7 @@ import re
 import subprocess
 import sys
 
-ENV_KEYS=("WF_LINE_MESSAGING_ACCESS_TOKEN","WF_LINE_MESSAGING_CHANNEL_SECRET")
+ENV_KEYS=("WORK_LINE_MESSAGING_ACCESS_TOKEN","WORK_LINE_MESSAGING_CHANNEL_SECRET")
 # Generic high-confidence credential *assignments*, not ordinary 32-char IDs.
 SUSPECT=re.compile(
     rb"(?:LINE_[A-Z_]*(?:SECRET|TOKEN)|channel_secret|channel_access_token)"
@@ -82,7 +82,7 @@ def scan():
         print(f"Scanned {blobs} distinct historical Git blobs across {inspected} reachable objects.")
         print(f"High-confidence literal credential assignments found: {len(suspect_paths)}.")
         if missing:
-            print("::warning title=Exact history check incomplete::WF OA Secrets are not yet configured; exact-value matching skipped for: "+", ".join(missing))
+            print("::warning title=Exact history check incomplete::Work OA Secrets are not yet configured; exact-value matching skipped for: "+", ".join(missing))
         else:
             print("Exact comparison against configured WF OA secrets completed.")
         if exact_paths:
