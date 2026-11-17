@@ -82,12 +82,14 @@ function options(items,labelFn,selected=''){return items.map(x=>'<option value="
 function role(){if(app.mode==='demo')return 'owner';return (app.data?.members||[]).find(x=>x.tenant_id===app.tenantId&&x.user_id===app.user?.id)?.role||'employee';}
 function manager(){return app.mode==='demo'||['owner','hr','manager'].includes(role());}
 function banner(m,err=false){$('toast').insertAdjacentHTML('beforeend','<div class="toast '+(err?'error':'')+'">'+esc(m)+'</div>');setTimeout(()=>{const e=$('toast').firstElementChild;if(e)e.remove();},4800);}
-async function call(url,method='GET',data=null,token=KEY,retry=true){const headers={apikey:KEY};if(token!==KEY)headers.Authorization='Bearer '+token;if(data!==null)headers['Content-Type']='application/json';if(method==='POST'||method==='PATCH')headers.Prefer=(method==='POST'&&['/rest/v1/wm_tenants','/rest/v1/wm_members'].includes(url)?'return=minimal':'return=representation');const res=await fetch(API+url,{method,headers,body:data===null?undefined:JSON.stringify(data),cache:'no-store'});const text=await res.text();let j;try{j=text?JSON.parse(text):null;}catch{j={message:text.slice(0,200)};}if(!res.ok&&res.status===401&&retry&&token!==KEY){const renewed=(app.token&&token!==app.token)?app.token:await renewSession();return call(url,method,data,renewed,false);}if(!res.ok)throw Error(j?.message||j?.error_description||j?.error||'連線失敗 ('+res.status+')');return j;}
+let wfAuthGeneration=0;
+async function call(url,method='GET',data=null,token=KEY,retry=true){const requestGeneration=wfAuthGeneration;const headers={apikey:KEY};if(token!==KEY)headers.Authorization='Bearer '+token;if(data!==null)headers['Content-Type']='application/json';if(method==='POST'||method==='PATCH')headers.Prefer=(method==='POST'&&['/rest/v1/wm_tenants','/rest/v1/wm_members'].includes(url)?'return=minimal':'return=representation');const res=await fetch(API+url,{method,headers,body:data===null?undefined:JSON.stringify(data),cache:'no-store'});const text=await res.text();let j;try{j=text?JSON.parse(text):null;}catch{j={message:text.slice(0,200)};}if(!res.ok&&res.status===401&&retry&&token!==KEY){if(requestGeneration!==wfAuthGeneration)throw Error('登入身分已變更，請重新操作');const renewed=(app.token&&token!==app.token)?app.token:await renewSession();return call(url,method,data,renewed,false);}if(!res.ok)throw Error(j?.message||j?.error_description||j?.error||'連線失敗 ('+res.status+')');return j;}
 let wfRenewInFlight=null;
 // Parallel API reads can all expire together. Supabase rotates refresh tokens,
 // so deduplicate refreshes to prevent valid users being signed out.
 async function renewSession(){
  if(wfRenewInFlight)return wfRenewInFlight;
+ const generation=wfAuthGeneration,expectedUser=app.user?.id;
  wfRenewInFlight=(async()=>{
   const saved=wfReadAuth()||{};
   if(!saved.refresh_token)throw Error('登入已過期，請重新登入企業帳號');
@@ -97,6 +99,7 @@ async function renewSession(){
   });
   const value=await response.json();
   if(!response.ok||!value.access_token)throw Error('登入有效期已結束，請重新登入');
+  if(generation!==wfAuthGeneration||!app.token||app.user?.id!==expectedUser||app.mode!=='real')throw Error('登入身分已變更，舊憑證更新已取消');
   app.token=value.access_token;app.user=value.user||saved.user;
   wfSaveAuth({token:app.token,user:app.user,
    refresh_token:value.refresh_token||saved.refresh_token,expires_at:value.expires_at||0},!!wfRememberedAuth());
@@ -465,7 +468,7 @@ document.addEventListener('click',async e=>{
  else if(a==='approve')await approve(id,true);else if(a==='reject')await approve(id,false);
  else if(a==='cancelShift'||a==='publishShift'){if(confirm('確認更新班別狀態？'))await action('shift_status',{id,status:a==='cancelShift'?'cancelled':'published'});}
  else if(a==='createTenant')showTenant();else if(a==='login')showAuth();
- else if(a==='demoMode'){app.mode='demo';app.token=null;app.tenantId=DEMO_ID;app.tenants=[];await reload(true);}
+ else if(a==='demoMode'){wfAuthGeneration++;wfClearAuth();app.mode='demo';app.token=null;app.user=null;app.data=null;app.tenantId=DEMO_ID;app.tenants=[];await reload(true);}
  else if(a==='retryLoad')await reload();
  }catch(e){banner(e.message||'操作失敗，請重試',true);}
 });
@@ -480,7 +483,7 @@ $('overlay').addEventListener('submit',async e=>{
    if(register && !result.access_token){banner('註冊已送出，請先到信箱完成驗證');closeModal();return;}
    const token=result.access_token||result.session?.access_token,user=result.user||result.session?.user;
    if(!token||!user)throw Error('登入未取得有效工作階段，請確認信箱驗證');
-   app.token=token;app.user=user;app.mode='real';app.tenantId='';
+   wfAuthGeneration++;app.token=token;app.user=user;app.mode='real';app.tenantId='';
    wfSaveAuth({token,user,refresh_token:result.refresh_token||result.session?.refresh_token||null,expires_at:result.expires_at||result.session?.expires_at||0},f.remember==='yes');
    closeModal();
    const invited=new URLSearchParams(location.hash.slice(1)).get('invite');
@@ -523,7 +526,7 @@ $('overlay').addEventListener('submit',async e=>{
   }
  }catch(err){banner(err.message,true);submit.disabled=false;}
 });
-function logout(){const previous=app.token;app.token=null;app.user=null;app.data=null;app.tenants=[];app.mode=wfMiniMode?'real':'demo';app.tenantId=wfMiniMode?'':DEMO_ID;wfClearAuth();if(previous)void fetch(API+'/auth/v1/logout',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+previous}}).catch(()=>{});reload(true);banner('已登出企業模式');}
+function logout(){wfAuthGeneration++;const previous=app.token;app.token=null;app.user=null;app.data=null;app.tenants=[];app.mode=wfMiniMode?'real':'demo';app.tenantId=wfMiniMode?'':DEMO_ID;wfClearAuth();if(previous)void fetch(API+'/auth/v1/logout',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+previous}}).catch(()=>{});reload(true);banner('已登出企業模式');}
 try{const saved=wfReadAuth();if(saved?.token&&saved?.user){app.token=saved.token;app.user=saved.user;app.mode='real';app.tenantId='';}}catch{}
 if(wfMiniMode&&!app.token){app.mode='real';app.tenantId='';}
 reload(true);
@@ -2383,7 +2386,7 @@ $('overlay').addEventListener('submit',async e=>{
    const result=await response.json().catch(()=>({}));
    if(!response.ok)throw Error(result.msg||result.message||result.error_description||'密碼更新失敗');
    wfRecoveryAccessToken=null;
-   wfClearAuth();
+   wfAuthGeneration++;wfClearAuth();
    app.token=null;app.user=null;app.data=null;app.tenants=[];app.mode=wfMiniMode?'real':'demo';app.tenantId=wfMiniMode?'':DEMO_ID;
    closeModal();await reload(true);
    banner('密碼已更新，請使用新密碼重新登入');
