@@ -48,7 +48,7 @@ if(a==="save-customer-homepage"){
   if(closed)closed.hidden=!visible;
   return true;
  }
- if(a==="connect-own-oa"{
+ if(a==="connect-own-oa"){
   await act(async()=>{
    if(lineState.lineConfig?.merchantOaConnected)throw Error("此店家已綁定 LINE OA。");
    {
