@@ -32,6 +32,8 @@ LINE Developers Console 的 Web app settings 中設定各環境 Endpoint URL。*
  
 ## 開發與更新
  
-- 修改 `QueueMonster/miniapp/**`，推入 `main` 後新 workflow 將重新部署三個 MINI 快照。
+- 當 `main` 的 `QueueMonster/saas/**` 或 `QueueMonster/miniapp/**` 更新，專屬 workflow 會重新建置三環境，但**只自動部署 Developing**。Review／Published 既有快照保持不變。
+- 確認 Developing 功能並完成 LINE App 實機驗收後，在 `queue-monster-mini-promote.yml` 手動選擇 `review` 並輸入 `REVIEW`；審查與公開確認後才手動選擇 `published` 並輸入 `PUBLISH`。此流程不會發布原本的 Cloudflare 網站。
+- 每次部署前，會執行 Chromium 頁面驗證、MINI 的 LINE 頻道識別配置檢查以及正式 Edge Function 的公開唯讀／拒絕未授權請求測試。
 - `main` 的原網站建置規則、`release` 的正式發布工作流程與 Cloudflare 現有網域不變。
 - 本版 Edge Function 已以 `qm-mini-session` 部署到既有 Supabase 專案；資料庫新增物件需同樣保持獨立。
