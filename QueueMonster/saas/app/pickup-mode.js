@@ -328,7 +328,31 @@ export function renderStaffPickup(){
   (o.status!=="NEW"?action(o,"恢復待接單","NEW"):"")+'</div></details>':"")+'</div>';
  const h=pickupState.history||{},past=h.orders||[],maxPage=Math.max(1,Math.ceil(Number(h.total||0)/25));
  const choose=(f,label)=>btn(label,"pickup-history-filter",pickupState.historyFilter===f?"primary":"outline",'data-filter="'+f+'"');
- return box("取餐訂單管理",
+ const toolbar='<div class="staff-actionbar" style="margin:12px 0">'+
+   btn(pickupState.soundOn?"關閉接單提示音":"開啟接單提示音","pickup-sound-toggle",
+      pickupState.soundOn?"primary":"outline")+
+   btn(pickupState.kitchenMode?"返回一般訂單":"廚房大字模式","pickup-kitchen-toggle","outline")+
+   btn("重新整理訂單","pickup-refresh","outline")+
+   (pickupState.newOrderCount>0?'<strong role="status">新增 '+pickupState.newOrderCount+' 筆訂單</strong>':'')+'</div>';
+ if(pickupState.kitchenMode||new URLSearchParams(location.search).get("kitchen")==="1"){
+   pickupState.kitchenMode=true;
+   return box("廚房出餐大字看板",toolbar+
+     '<p class="small">依預計開始製作及取餐時間排序，訂單狀態由原本的店家權限控制。請按「開啟接單提示音」授權瀏覽器播放，資料使用即時事件更新，不額外每秒輪詢。</p>'+
+     '<div class="staff-actionbar">'+btn("切換全螢幕","pickup-kitchen-fullscreen","outline")+'</div>'+
+     '<div class="qm-kitchen-grid">'+(active.length?active.map(o=>
+       '<section class="qm-kitchen-card" aria-label="訂單 '+esc(o.number)+'">'+
+       '<div class="listline"><strong class="qm-kitchen-number">'+esc(o.number)+'</strong><strong>'+esc(staffStatusText[o.status]||o.status)+'</strong></div>'+
+       '<p class="qm-kitchen-time">取餐 '+esc(o.pickup_at)+'</p>'+
+       '<p class="small">建議製作 '+esc(o.prepare_at)+(o.can_prepare?'':'・尚未到製作時間')+'</p>'+
+       '<div class="qm-kitchen-items">'+(o.items||[]).map(i=>'<p>'+esc(i.name)+esc(pickupSpecsLabel(i))+' × <strong>'+esc(i.qty)+'</strong></p>').join('')+'</div>'+
+       (o.note?'<p class="notice">備註：'+esc(o.note)+'</p>':'')+
+       (canUpdate?'<div class="staff-actionbar">'+
+          (o.status==="NEW"?action(o,"接單","ACCEPTED"):o.status==="ACCEPTED"&&o.can_prepare?action(o,"開始製作","PREPARING"): '')+
+          (o.status!=="READY"?action(o,"完成待取","READY"):action(o,"已取餐","PICKED_UP"))+
+        '</div>':'')+
+       '</section>').join(""):'<p class="muted">目前沒有待出餐訂單。</p>')+'</div>');
+ }
+ return box("取餐訂單管理",toolbar+
   '<p class="small">依約定取餐時間排序。可切換接單、已完成待取或取消訂單；誤操作可以更正，所有變更均保留稽核紀錄。</p>'+
   '<p><strong>待處理 '+active.length+' 筆</strong></p>'+
   (active.length?active.map(card).join(""):'<p class="muted">目前沒有待處理訂單。</p>')+
@@ -339,6 +363,19 @@ export function renderStaffPickup(){
   '<span>第 '+pickupState.historyPage+'／'+maxPage+' 頁</span>'+
   btn("下一頁","pickup-history-page","outline",'data-page="'+(pickupState.historyPage+1)+'"'+(pickupState.historyPage>=maxPage?' disabled':''))+'</div></details>');
 
+}
+
+
+export function renderPickupLoyalCustomers(){
+ const customers=pickupState.repeatCustomers;
+ if(!Array.isArray(customers))return box("訂餐熟客分析",'<p class="small">目前無法載入本店熟客分析；請稍後重新整理。</p>');
+ return box("訂餐熟客分析（最多 30 位）",
+ '<p class="small">僅管理者可查看本店訂餐客戶，按照有效訂單筆數排序。金額為訂單總額，不代表已實際收款。資料僅供本店使用。</p>'+
+ (customers.length?
+  '<div class="scroll"><table class="rows"><thead><tr><th>顧客</th><th>有效訂單</th><th>累計訂單金額</th><th>最常訂的餐點</th><th>最近訂購</th></tr></thead><tbody>'+
+  customers.map(c=>'<tr><td>'+esc(c.name)+'</td><td>'+esc(c.orders)+' 筆</td><td>'+money(c.amount)+'</td>'+
+    '<td>'+esc(c.favorite||'—')+'</td><td>'+esc(c.last_order?new Date(c.last_order).toLocaleDateString("zh-TW",{timeZone:"Asia/Taipei"}):'—')+'</td></tr>').join("")+
+  '</tbody></table></div>':'<p class="muted">目前沒有可統計的訂單。</p>'));
 }
 
 export async function handlePickupAction(ev,b,a,id){
