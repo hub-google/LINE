@@ -442,7 +442,8 @@ export async function handleScheduleAction(ev,b,a,id){
   if(serviceUnitsState.scheduleEditingPlan!==key)return true;
   const d=capture();
   if(!planKey(key)||!d.templates[key])return true;
-  const payload=persistedPlanPayload(serviceUnitsState.scheduleConfig||{},d,key);
+  if(!serviceUnitsState.scheduleConfig){window.alert("無法取得最新營業排程，請重新整理後再儲存");return true;}
+  const payload=persistedPlanPayload(serviceUnitsState.scheduleConfig,d,key);
   try{validate(payload);}catch(error){window.alert(error.message);return true;}
   const title=templateTitle(key,d.templates[key]);
   await act(async()=>{
@@ -457,7 +458,8 @@ export async function handleScheduleAction(ev,b,a,id){
   if(serviceUnitsState.scheduleEditingPlan&&serviceUnitsState.scheduleEditingPlan!==key){
    window.alert("請先儲存或取消正在編輯的方案");return true;
   }
-  const payload=persistedPlanPayload(serviceUnitsState.scheduleConfig||{},d,key,true);
+  if(!serviceUnitsState.scheduleConfig){window.alert("無法取得最新營業排程，請重新整理後再刪除");return true;}
+  const payload=persistedPlanPayload(serviceUnitsState.scheduleConfig,d,key,true);
   if(Object.keys(payload.templates).filter(planKey).length<1){window.alert("請至少保留一組營業方案");return true;}
   if((serviceUnitsState.scheduleConfig?.exceptions||[]).some(x=>x.template_key===key)){
    window.alert("特殊日期仍使用這個方案，請先修改特殊日期設定");return true;
