@@ -1,41 +1,47 @@
-# WF｜LINE MINI App 接入與驗收（2026-11-17）
+# 工作怪獸（WF）｜LINE MINI App 上線與驗收（2026-11-17）
 
-WF 的 MINI App 是**原有 Workforce 網頁的第二個入口**，不是第二份程式或第二個資料庫。公開網站 `https://hub-google.github.io/LINE/workforce/` 保持可用；MINI App 入口是：
+## 接入狀態與架構
 
-`https://hub-google.github.io/LINE/workforce/?mini=1`
+- 已接入三個 LINE MINI App 內部 Channel 的**公開** Channel ID／LIFF ID。無須把這些公開 ID 再放到 Supabase Secrets。
+- 同一個 GitHub Pages WF 前端、Supabase Auth、`wm_` 租戶 RLS/RPC、同一套員工與排班資料；LINE 不取代企業帳號及企業角色權限。
+- `wm-line` Edge Function 依 `channel_env` 選擇指定 Channel ID，向 LINE 的 `/oauth2/v2.1/verify` 驗證 ID Token，核對 `aud`、`sub`、過期日以及在職員工身分。未知環境拒絕，不回退其他 Channel。
+- 原有一般網頁與 LIFF 通道保留；新的 LINE MINI App 以 `?mini=1` 進入。
+- 尚未完成：LINE Console 端 Pointing Endpoints／Scopes、LINE iOS/Android 實機驗收。**不保證認證或免費 LINE 服務訊息已啟用。**
 
-**上線狀態**：前端、Edge Function 雙 Channel 驗證已實作；**尚未建立／配置新的 LINE MINI App Channel ID 和 LIFF ID，因此尚無可用的正式 LINE MINI App 連結**。不能用舊的 LINE Login LIFF ID 假裝 MINI App 已啟用。
+## LINE Console：三個 Endpoint 的對照（不同環境必須使用各自的 LIFF ID）
 
-## LINE Developers 必要設定（Channel 擁有者操作）
+| 環境 | LINE 開啟網址 | Endpoint URL |
+| --- | --- | --- |
+| Developing | https://miniapp.line.me/2012649404-nz3TBQdG | https://hub-google.github.io/LINE/workforce/?mini=1 |
+| Review | https://miniapp.line.me/2012649405-ADWLM7h9 | https://hub-google.github.io/LINE/workforce/?mini=1&line_env=review |
+| Published | https://miniapp.line.me/2012649406-KzlLEZT6 | https://hub-google.github.io/LINE/workforce/?mini=1&line_env=published |
 
-1. 進入 [LINE Developers](https://developers.line.biz/console/)；在 WF 原 LINE Login Channel 的 **同一 Provider** 下建立「LINE MINI App」Channel（服務地區：Taiwan）。同一 Provider 可以對應同一 LINE userId；若 Provider 不同，不可假設 userId 相同。
-2. 在 MINI App Channel 內將 Endpoint URL 設為 `https://hub-google.github.io/LINE/workforce/?mini=1`，Size 使用 Full，Scopes 至少包含 `openid`；如需顯示 LINE 個人資料另開 `profile`。依 LINE Console 的 Developing / Review / Published 環境選定待測的 LIFF ID。
-3. 在 Supabase 專案 `unapiwajmgqqtdkixaab` 的 **Edge Function Secrets** 中設定兩個**新**環境變數：
-   - `LINE_MINI_APP_CHANNEL_ID`：MINI App Channel ID（純數字）。
-   - `LINE_MINI_APP_LIFF_ID`：該 Channel 的完整 LIFF ID（例如 `1234567890-AbcdEfgh`，只是格式示意）。
-   保留原有 `LINE_LOGIN_CHANNEL_ID`、`LINE_LIFF_ID`、`LINE_MESSAGING_ACCESS_TOKEN`，不可覆蓋或清空。
-4. 保留既有部署 `wm-line` Edge Function（`verify_jwt=false` 是為了匿名讀取公開 Channel 設定；**所有寫入仍須 Supabase JWT、企業及在職員工驗證**）。
-5. 從 LINE 的 MINI App Channel 測試連結打開，在同一頁面登入既有 WF 企業帳號，再進入「LINE 通知」點「以 LINE 驗證並綁定」。同意後，後端會向 LINE 驗證 ID Token 的 `aud`，與准許的 MINI Channel ID 完全一致才進行既有員工綁定。
-6. 測試員工、主管、管理者各角色的首頁／排班／打卡／請假／簽核與登出，並分別測試 iOS、Android 的定位許可、拒絕和精度不足。MINI App **不免除定位授權**，也不表示 GPS 防造假已經實測通過。
+進入 [LINE Developers](https://developers.line.biz/console/) → 工作怪獸（LINE MINI App）→ Web app settings；對應設定各 Endpoint。MINI App Size 設 Full；在 Scopes 選取 **openid**（取得 ID Token 必要）。`profile` 可留著、`chat_message.write` 不需要。`Add friend` 可繼續 Off，不影響員工身份綁定。核對 Basic settings 的**Provider** 與 WF 原 LINE Login 和 OA Channel 所在 Provider；若不同，`line_sub` 可能不同，平台 OA 推播未必可達，程式不會默默覆蓋既有員工綁定。
 
-## 設計與安全範圍
+官方說明：Review 只供 LINE 審核人員使用；Developing 需為有授權的 Admin/Tester；Published 才供一般使用者。未認證 Published 可發布但少部分進階能力不可用。[LINE MINI App Console Guide](https://developers.line.biz/en/docs/line-mini-app/discover/console-guide/)。
 
-- 未設定 MINI Channel 時會明確顯示「尚未設定」，不會自動切回舊 LIFF、亂綁錯的 Channel 或使用假 LINE 身分。
-- LINE 身分與 Supabase 企業帳號**不是同一種登入憑證**：LINE 身分本身不授予員工資料、租戶、薪資或核准權限。保留原本 Supabase Auth、wm_ RLS／RPC、企業與角色權限。
-- 不能以 `liff.getProfile()`、`getDecodedIDToken()` 或客戶端 userId 直接授權。後端向 LINE 驗證 ID Token 後，才將身分綁定至目前登入的在職員工。
-- 未認證（Unverified）MINI App 不保證具有免費服務訊息功能；現有 `wm-line` 通知仍為原本平台 OA 發送，不在本次改動中改成免費 MINI Service Messages。
-- 網頁外部瀏覽器仍允許使用原本電子郵件登入，未在 LINE 登入時可透過 `https://liff.line.me/<LIFF_ID>` 導回 MINI App。
-- 手機定位仍由瀏覽器／LINE WebView 要求權限；不新增背景定位或保證 GPS 公尺級精度。
+## 實機驗收路徑
 
-## 開發者檢查
+1. 將自己的 LINE 帳號加入 MINI App 的 Admin/Tester；完成上方 Developing Endpoint 與 Scopes 後，在手機 LINE 內開啟：https://miniapp.line.me/2012649404-nz3TBQdG
+2. 確認顯示「工作怪獸」WF 畫面；若看到官方預設頁，回 LINE Console 檢查 Endpoint 是否儲存。
+3. 在 WF 使用原本**正式企業帳號**登入；需是已被授權、在職的企業員工。公開 Demo 不能綁定真實 LINE 身分。
+4. 打開「LINE 通知」→「以 LINE 驗證並綁定」。後端驗證該 Developing ID Token 與企業在職員工；成功顯示已綁定，不能跨企業取得未授權資料。
+5. 測試上下班打卡、GPS 許可與拒絕（前端需授權，沒有定位權限不可假裝 GPS 精準）、排班、請假、加班、補卡、員工通知及主管簽核；iPhone／Android 兩者都要測。
+6. 確定 Developing 沒問題後，再交付 LINE 審核 Review；Published 依 LINE Console 的發布／認證要求對外開放。Published 必須使用上述 Published Endpoint，否則會有 LIFF ID 與 Channel audience 不符的問題。
+
+## 限制與未啟用項目
+
+- MINI App 是網頁技術，GPS 仍需授權；實機精度、防定位造假、異常打卡不能靠 Channel 建立自動保證。
+- `wm-line` 既有的通知是平台 LINE OA Messaging API，不是 MINI App Service Message API。申請 Verified MINI App 與服務訊息樣板、通知 Token 流程是另一項工作；台灣認證申請通常要求 certified provider 資格。不得聲稱可以直接無限免費通知。
+- 不收集 Channel Secret，也不需把公開 Channel ID 設為 Supabase Secret；原先 `LINE_LOGIN_CHANNEL_ID`、`LINE_LIFF_ID` 與 `LINE_MESSAGING_ACCESS_TOKEN` 不更動。
+- 如果已綁定的 LINE userId 與新 MINI App LINE userId 不同，後端拒絕覆蓋，必須先釐清 Provider/帳號，再由原員工本人依權限解除綁定。
+- 不可拿 LINE profile 的可修改資訊、手機 GPS 前端回報值直接當作企業員工授權憑證。
+
+## 自動化檢查
 
 ```bash
 node --check workforce-management/app.js
+node --test workforce-management/tests/workforce-mini-app.test.mjs
 node --test workforce-management/tests/workforce-prd.test.mjs
 node --test workforce-management/tests/workforce-button-clicks.test.mjs
-node --test workforce-management/tests/workforce-mini-app.test.mjs
 ```
-
-**外部依賴**：LINE Channel 建立、Channel ID／LIFF ID 的 Secret 設置、LINE 手機實機驗證和（如需認證）LINE 送審皆不能只靠推送 GitHub 程式碼完成。
-
-官方文件：[將網站接入 MINI App](https://developers.line.biz/en/docs/line-mini-app/develop/web-to-mini-app/)｜[台灣 MINI App 建立](https://developers.line.biz/en/docs/line-mini-app/develop/develop-overview/)
