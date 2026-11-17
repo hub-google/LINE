@@ -350,17 +350,17 @@ export function renderScheduleSettings(isManager){
     '<p class="small schedule-closed-hint">目前公休；將場次數改為 1～50，即可自行新增當日場次。</p>')+
    '</details></section>';
  }).join("");
- const planSection='<h3 style="margin:20px 0 10px">營業方案</h3>'+
-  '<p class="small">每個方案可自訂名稱及 0～50 場，再套用到多個星期。修改方案不會自動改動已套用的星期。</p>'+
+ const planSection='<section class="schedule-module schedule-module-plans"><div class="schedule-module-heading"><h3>營業方案</h3></div>'+
+  '<div class="schedule-module-body"><p class="small">每個方案可自訂名稱及 0～50 場；先按「編輯方案」修改，再按「儲存方案」。已套用的星期不會自動改變。</p>'+
   '<div class="schedule-plan-list">'+planCards+'</div>'+
-  '<div class="staff-actionbar" style="margin:12px 0">'+btn("＋ 新增營業方案","schedule-plan-add","outline")+'</div>';
- const batchSection='<section class="schedule-batch-box"><h3>批次套用營業方案</h3>'+
-  '<label for="schedule-batch-plan">選擇營業方案</label>'+
+  '<div class="staff-actionbar schedule-plan-add-bar">'+btn("＋ 新增營業方案","schedule-plan-add","primary")+'</div></div></section>';
+ const batchSection='<section class="schedule-module schedule-batch-box"><div class="schedule-module-heading"><h3>批次套用營業方案</h3></div>'+
+  '<div class="schedule-module-body"><label for="schedule-batch-plan">選擇營業方案</label>'+
   '<select id="schedule-batch-plan" class="field">'+batchOptions+'</select>'+
   '<p class="schedule-batch-label">套用到哪些星期？</p>'+
   '<div class="schedule-day-checks">'+batchDays+'</div>'+
   '<div class="schedule-batch-actions">'+btn("套用到勾選的星期","schedule-batch-apply","primary")+'</div>'+
-  '<p class="small">套用會取代所選星期目前的場次設定，不會更動其他星期；確認後請按下方「儲存每週營業排程」。</p></section>';
+  '<p class="small">套用會取代所選星期目前的場次，不影響其他星期；完成後請按「儲存每週營業排程」。</p></div></section>';
  const specialWindows=e.windows||[emptyWindow()];
  const specialWindowEditor=specialWindows.map((w,i)=>windowEditor(w,i,'data-schedule-special-window',unitOptions)).join("");
  const specialCount=e.mode==="CLOSED"?0:specialWindows.length;
@@ -377,12 +377,11 @@ export function renderScheduleSettings(isManager){
   '<label class="checklist"><input type="checkbox" id="schedule-enabled"'+(d.enabled?" checked":"")+'> 啟用每週自動排程</label>'+
   (!d.enabled?'<p class="small">尚未啟用時仍保留原有指定日期場次；完成下面的設定並儲存後才會自動套用。</p>':"")+
   planSection+batchSection+
-  '<h3 style="margin:20px 0 10px">細部調整</h3>'+
+  '<section class="schedule-module schedule-module-weekly"><div class="schedule-module-heading"><h3>每週細部調整</h3></div><div class="schedule-module-body">'+
   '<p class="small">以下是套用後的七天排程摘要。若某一天需要不同內容，可展開「個別調整」修改，其他星期不受影響。</p>'+week+
   '<div class="staff-actionbar" style="margin:16px 0">'+btn("儲存每週營業排程","schedule-weekly-save","primary")+
-  btn("放棄尚未儲存的修改","schedule-weekly-reset","outline")+'</div>'+
-  '<hr style="margin:24px 0">'+
-  '<h3 style="margin:0 0 8px">特殊日期（節假日、裝修、臨時調整）</h3>'+
+  btn("放棄尚未儲存的修改","schedule-weekly-reset","outline")+'</div></div></section>'+
+  '<section class="schedule-module schedule-module-special"><div class="schedule-module-heading"><h3>特殊日期（節假日、裝修、臨時調整）</h3></div><div class="schedule-module-body">'+
   '<p class="small">直接填寫這段期間每天的場次數：0 場為公休，1～50 場可逐場設定時間、名額與服務窗口。特殊日期會優先於每週排程。</p>'+
   '<div class="grid"><div>'+field("開始日期","schedule-special-start",e.start,"date")+'</div><div>'+field("結束日期","schedule-special-end",e.end,"date")+'</div></div>'+
   '<div class="schedule-special-count"><label for="schedule-special-count">每天場次數（0 為公休）</label>'+
@@ -393,7 +392,7 @@ export function renderScheduleSettings(isManager){
    field("備註（選填）","schedule-special-note",e.note,"text",'maxlength="120" placeholder="例如：店內裝修、國定假日"')+
   '<div class="staff-actionbar" style="margin:16px 0">'+btn("套用特殊日期","schedule-special-save","primary")+'</div>'+
   '<h3 style="margin:20px 0 12px">已設定的特殊日期</h3>'+list+
-  '<p class="small">臨時公休與裝修：套用前會先檢查受影響的有效預約、候位與訂餐數量，必須確認後才能儲存。已成立的紀錄不會被自動取消；請至預約管理、叫號與訂餐紀錄逐筆聯繫／安排顧客。</p>');
+  '<p class="small">臨時公休與裝修：套用前會先檢查受影響的有效預約、候位與訂餐數量，必須確認後才能儲存。已成立的紀錄不會被自動取消；請至預約管理、叫號與訂餐紀錄逐筆聯繫／安排顧客。</p></div></section>');
 }
 export async function handleScheduleAction(ev,b,a,id){
  if(!a.startsWith("schedule-"))return false;
