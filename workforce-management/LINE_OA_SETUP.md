@@ -4,7 +4,7 @@
 
 ## 服務隔離
 
-- **工作怪獸 Messaging API Channel ID**：`2012650797`（此為公開識別碼）。
+- **工作怪獸 Messaging API Channel ID**：使用者已提供；只需於 GitHub Secrets 內儲存，公開程式碼不列出其數值。
 - **工作怪獸 MINI App**：Developing `2012649404-nz3TBQdG`、Published `2012649406-KzlLEZT6`（均為公開 LIFF ID；不是保密的 Access Token）。
 - **QueueMonster OA**：既有 `LINE_MESSAGING_*` Secrets 與 `line-rich-menu.yml` 完全不動。
 - **工作怪獸 OA**：只能使用下面命名為 `WF_*` 的新 Secrets；不與任何其他產品共用。
