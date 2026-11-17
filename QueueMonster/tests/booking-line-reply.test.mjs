@@ -82,13 +82,11 @@ test('backend refuses another customer, tenant, OA, cancelled or deleted booking
  const cross=await ctx.api.bookingReplyMessage(dbMock({booking}),id,'customer','other-shop');
  assert.match(cross.text,/無法取得/);
 });
-test('new reservation push and outbox paths cannot consume LINE push quota',async()=>{
- const ctx=backend({fetch:()=>{throw Error('Unexpected network call')}});
- const db={from(){throw Error('Unexpected database call')}};
- const response=await ctx.api.pushNotice(db,{id:'shop'},'user','RESERVED',id,'message',null);
- assert.equal((await response.json()).reason,'REPLY_REQUIRED');
- const job=await ctx.api.dispatchOutboxItem(db,{event_kind:'RESERVED'},null);
- assert.equal(job.status,'SKIPPED');
+test('merchant booking confirmations can use Push API without merchant webhook',()=>{
+ assert.doesNotMatch(source,/if \(eventKind === "RESERVED"\) return reply\(/);
+ assert.doesNotMatch(source,/if \(job\.event_kind === "RESERVED"\) return/);
+ assert.match(source,/eventKind: eventKind/);
+ assert.match(source,/https:\/\/api\.line\.me\/v2\/bot\/message\/push/);
 });
 test('valid owner receives a card through reply endpoint only',async()=>{
  const ctx=backend();
