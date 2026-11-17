@@ -31,6 +31,7 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
     const boardFit=installBoardFullscreenFit();
     const localTime=date=>new Intl.DateTimeFormat("zh-TW",{timeZone:"Asia/Taipei",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(date);
     const validSlug=/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug);
+    $("shop-home-link").href=validSlug?"./?view=customer&merchant="+encodeURIComponent(slug)+"&tab=home":"./home.html";
     let lastSuccess=null,loading=false,refreshQueued=false;
     let lastData=null,staleFromFailure=false,disabled=false;
     let liveSync=null;
