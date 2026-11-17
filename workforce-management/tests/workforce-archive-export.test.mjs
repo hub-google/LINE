@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 
 const source=readFileSync(new URL('../app.js',import.meta.url),'utf8');
 const gateway=readFileSync(new URL('../supabase/migrations/20261117195000_workforce_archive_gateway.sql',import.meta.url),'utf8');
+const retirement=readFileSync(new URL('../supabase/migrations/20261117200200_workforce_retire_legacy_archive.sql',import.meta.url),'utf8');
 const start=source.indexOf('const WF_ARCHIVE_TABLES=');
 const end=source.indexOf("document.addEventListener('click',async event=>{",start);
 assert.ok(start>0&&end>start,'Archive feature must exist');
@@ -118,4 +119,10 @@ test('Allowlisted RPC excludes invitation credentials, linked LINE identities an
  assert.match(gateway,/REVOKE ALL ON FUNCTION public\.wm_archive_table_page/);
  assert.match(gateway,/TO authenticated/);
  assert.match(source,/非同一時間點/);
+});
+
+test('Superseded per-notification export has been retired without a second authorization path',()=>{
+ assert.doesNotMatch(source,/wm_export_notification_archive/);
+ assert.match(retirement,/DROP FUNCTION public\.wm_export_notification_archive/);
+ assert.match(retirement,/to_regprocedure\('public\.wm_archive_table_page/);
 });
