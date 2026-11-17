@@ -58,6 +58,8 @@ jobs:
         run: |
           npm exec --prefix .github/frontend -- playwright install --with-deps chromium
           node QueueMonster/miniapp/tests/browser-smoke.mjs "$RUNNER_TEMP/queue-mini-dist"
+      - name: Verify live MINI backend and reject unauthorized requests
+        run: node QueueMonster/miniapp/tests/edge-health.mjs
       - name: Publish ONLY /LINE/queue-mini/
         shell: bash
         run: |
