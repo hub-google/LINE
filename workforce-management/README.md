@@ -1,6 +1,6 @@
 # LINE Workforce｜員工排班、打卡與請假管理
 
-> **2026-11-04 實際開發版**：已擴充真實 Supabase 資料庫及 GitHub Pages 網頁。**PRD 有部分功能尚未完成**，包括正式 LINE 登入／通知、完整法定假勤與跨店進階排班。
+> **2026-11-17 main 測試版**：持續完善靜態網站、登入、換班、LINE 發送監控及手動企業資料匯出。`release` 為 Cloudflare 正式版，**不因 main 修改而部署**。本 README 不表示 LINE 實際送達、全項法遵或完整災難復原已驗收。
 
 **[開啟 GitHub Pages 人資測試站](https://hub-google.github.io/LINE/workforce/)**  
 [獨立「工作怪獸」MINI App 網頁](https://hub-google.github.io/LINE/workforce-mini/)｜[三環境 Endpoint 與實機驗收](./MINI_APP_SETUP.md)｜[LINE OA 固定入口與圖文選單](./line-oa/README.md)  
@@ -16,6 +16,8 @@
 4. **請假／加班／補卡**：申請、核准／駁回、撤回，核准更正另建稽核資料，不覆寫原始打卡。
 5. **通知收件匣**：班表及假勤狀態異動產生站內通知；尚非 LINE OA 真正推播。
 6. **月度工時與月結**：按月試算，鎖定月結快照，後續開更正單及 CSV 匯出（**非正式法定薪資計算**）。
+7. **企業資料匯出（僅正式 Owner／HR）**：手動分頁下載 22 組企業營運紀錄 JSON；權限不足、換企業或分頁失敗均取消下載，不會輸出半成品。**不含附件實體、Auth 或資料庫還原，不能取代定期備份**。
+8. **LINE 發送統計**：有權限管理員可查已綁定、待處理、API 已接受及略過筆數；**API 接受不等於實際送達／已讀**。
 
 ## 主要檔案
 
@@ -37,7 +39,7 @@
 - 正式企業：Supabase Auth + 每次讀寫驗證 `tenant_id`／成員角色；員工邀請使用短效、單次、資料庫只存雜湊的憑證。
 - 公開 Demo：後端僅允許讀寫**固定虛構企業**，不需登入 LINE，也不可藉此存取正式公司資料；所有 Demo 變更皆會共同顯示。
 - **LINE 整合**：一般 LIFF 綁定、既有 OA 通知與 LINE MINI App 前後端接入程式已具備，並已加入工作怪獸三組 MINI App 公開 Channel ID；**原本 `/workforce/` 與 MINI `/workforce-mini/` 是獨立靜態網站**，共用相同 Supabase 資料與核心業務程式；仍需在 LINE Developers 確認各環境 Endpoint、openid scope，並完成手機實機驗收；**不代表 LINE 已完成認證或免費服務訊息已啟用**。
-- **尚未正式完成**：MINI App Endpoint／Scopes 設定與實機驗收、店家自有 OA／總公司 OA Rich Menu、LINE 通知實際送達驗收、動態 QR 防作弊實機驗收、臺灣完整法規計算及薪資整合。
+- **尚未正式完成**：MINI App Endpoint／Scopes 與手機實機驗收、LINE OA 真實收訊證明及不同 Provider 對應、企業自有 OA、多角色跨企業完整 E2E、動態 QR/GPS 實機測試、臺灣完整法遵與薪資串接、真正可還原的自動備份及壓力測試。
 - 各 SQL 變更已實際套用至目前 Supabase；因不同 SQL 重新定義相同函式，**不得將所有 migration 依檔名排序執行**，必須依照 MIGRATION-ORDER.md。
 
 此文件只記錄已完成工作，不新增 PRD 以外的產品功能。
