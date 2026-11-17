@@ -94,7 +94,7 @@ async function waitFor(devtools,expression,timeoutMs=25000){
 }
 async function navigate(devtools,url){
  await devtools.send('Page.navigate',{url});
- await waitFor(devtools,"document.readyState==='complete'",22000);
+ await waitFor(devtools,"location.href.startsWith("+JSON.stringify(url)+") && document.readyState==='complete'",22000);
 }
 
 test('Real Chrome desktop and 390px mobile Work UI can navigate and open all three leave forms', {timeout:110000},async()=>{
