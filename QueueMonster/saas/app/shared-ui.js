@@ -153,9 +153,9 @@ export function layout(title,subtitle,menu,body){
  const safeLogo=/^https:\/\/[^\s<>"']{1,490}$/i.test(logo)?logo:"";
  const customerHeading=merchant?
   '<div class="customer-shop-identity">'+
-   '<div class="customer-shop-avatar">'+(safeLogo?
+   '<a class="customer-shop-avatar" href="'+esc(sharedUiState.route("customer",routeState.slug,"home"))+'" aria-label="返回此店家首頁">'+(safeLogo?
     '<img src="'+esc(safeLogo)+'" alt="'+esc(title)+' 店家 LOGO" loading="eager" referrerpolicy="no-referrer">':
-    '<span class="customer-shop-avatar-fallback" aria-hidden="true">'+esc(String(title||"店家").slice(0,2))+'</span>')+'</div>'+
+    '<span class="customer-shop-avatar-fallback" aria-hidden="true">'+esc(String(title||"店家").slice(0,2))+'</span>')+'</a>'+
    '<div class="customer-shop-title"><div class="customer-shop-overline">店家預約與取號</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div></div>':
   '<div><div class="eyebrow">'+(routeState.view==="customer"?"排隊怪獸 · 顧客服務":routeState.view==="staff"?"排隊怪獸 · 門市管理":"排隊怪獸 · 平台管理")+'</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div>';
  const poweredBy=merchant?'<div class="customer-platform-credit">預約及取號服務由 <a href="./home.html" aria-label="前往排隊怪獸平台首頁"><span class="customer-platform-icon" aria-hidden="true"></span>排隊怪獸</a> 提供</div>':"";
@@ -180,7 +180,7 @@ export function head(){
  routeState.$("headlinks").innerHTML=links.map(([key,label])=>
   '<a href="'+esc(destinations[key])+'" class="'+((view==="platform"&&key==="headquarters")||(view==="staff"&&key==="merchant")||(view==="customer"&&key==="customer")?"active":"")+'">'+label+'</a>').join("");
  const brand=document.querySelector("header .brand");
- if(brand)brand.setAttribute("href",view==="platform"?destinations.headquarters:view==="staff"?destinations.merchant:"./home.html");
+ if(brand)brand.setAttribute("href","./home.html");
 }
 
 export function message(){return (feedbackState.err?'<div class="error" role="alert">'+esc(feedbackState.err)+'</div>':"")+(feedbackState.flash?'<div class="notice" role="status">'+esc(feedbackState.flash)+'</div>':"")}
