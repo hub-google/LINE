@@ -2984,7 +2984,13 @@ render=function(){
   (app.archiveBusy?' disabled':'')+'>'+
   (app.archiveBusy?'正在整理資料…':'下載本企業營運資料 JSON')+'</button>'+
   '<p class="muted" id="wmArchiveProgress" role="status" aria-live="polite">'+
-  (app.archiveBusy?'正在從資料庫分頁讀取，請勿切換企業。':'僅在按鈕觸發後查詢，不會自動排程。')+'</p>';
+  (app.archiveBusy?'正在從資料庫分頁讀取，請勿切換企業。':'僅在按鈕觸發後查詢，不會自動排程。')+'</p>'+
+  '<hr><p><strong>驗證已下載的資料檔案</strong></p>'+
+  '<p class="muted">只在瀏覽器內檢查檔案格式、企業識別、33 類資料筆數、重複紀錄與資料歸屬；不會上傳。'+
+  '這不是完整資料庫還原，也不是防竄改的數位簽章驗證。</p>'+
+  '<div class="field"><label for="wmArchiveVerifyFile">選擇本企業的封存 JSON 檔</label>'+
+  '<input type="file" id="wmArchiveVerifyFile" accept=".json,application/json"></div>'+
+  '<button type="button" class="btn" data-wf-archive="verify">檢查封存檔案</button>';
  $('appContent').innerHTML=panel('企業營運資料匯出',content);
 };
 function wfAssertArchiveAccess(tenant,generation,userId){
@@ -3053,10 +3059,54 @@ async function wfExportTenantArchive(progress=null){
  }finally{setTimeout(()=>URL.revokeObjectURL(url),5000);}
  return counts;
 }
+function wfValidateArchiveContent(content,tenant){
+ let archive;
+ try{archive=JSON.parse(content);}catch{throw Error('封存檔不是有效 JSON');}
+ if(!archive||archive.format!=='workforce-operational-export-v2'||
+  archive.tenant_id!==tenant||!archive.tables||!archive.table_counts)
+  throw Error('封存格式或所屬企業不符合');
+ const names=Object.keys(archive.tables);
+ const counts=Object.keys(archive.table_counts);
+ if(names.length!==WF_ARCHIVE_TABLES.length||
+  counts.length!==WF_ARCHIVE_TABLES.length||
+  names.some(x=>!WF_ARCHIVE_TABLES.includes(x))||
+  counts.some(x=>!WF_ARCHIVE_TABLES.includes(x)))
+  throw Error('封存資料類別不完整或含額外表格');
+ let total=0;
+ for(const table of WF_ARCHIVE_TABLES){
+  const rows=archive.tables[table],expected=archive.table_counts[table];
+  if(!Array.isArray(rows)||!Number.isSafeInteger(expected)||expected<0||
+   expected>WF_ARCHIVE_MAX_ROWS||rows.length!==expected)
+   throw Error(table+' 封存筆數不一致');
+  const seen=new Set();
+  for(const row of rows){
+   const id=row&&wfArchiveRowKey(table,row);
+   const parent=table==='wm_tenants'?row?.id:row?.tenant_id;
+   if(!id||parent!==tenant||seen.has(id))
+    throw Error(table+' 有重複識別碼或混入其他企業紀錄');
+   seen.add(id);
+  }
+  total+=expected;
+ }
+ return {tables:names.length,records:total};
+}
 document.addEventListener('click',async event=>{
  if(!event.target.closest('#appContent, #pageActions'))return;
- const button=event.target.closest('[data-wf-archive="download"]');
+ const button=event.target.closest('[data-wf-archive]');
  if(!button||button.disabled||app.tab!=='backup'||app.archiveBusy)return;
+ if(button.dataset.wfArchive==='verify'){
+  const file=$('wmArchiveVerifyFile')?.files?.[0];
+  if(!file){banner('請先選擇封存 JSON 檔',true);return;}
+  if(file.size>100*1024*1024){banner('檔案超過 100 MB，請使用桌面資料驗證工具',true);return;}
+  button.disabled=true;
+  try{
+   const result=wfValidateArchiveContent(await file.text(),app.tenantId);
+   banner('檔案結構檢查通過：'+result.tables+' 類、'+result.records+' 筆。請妥善保管。');
+  }catch(error){banner(error.message||'封存檔案驗證失敗',true);}
+  finally{button.disabled=false;}
+  return;
+ }
+ if(button.dataset.wfArchive!=='download')return;
  if(!confirm('此檔包含企業員工個資、出勤及假勤紀錄。確認在受控裝置下載並妥善加密保存？'))return;
  app.archiveBusy=true;button.disabled=true;
  const progress=$('wmArchiveProgress');
