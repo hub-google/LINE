@@ -2,18 +2,13 @@ name: Work｜正式網域 Auth Redirect 安全設定
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/workforce-auth-domain.yml"
-      - ".github/scripts/sync-work-auth-domain.py"
 
 permissions:
   contents: read
 
 jobs:
   sync:
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[work-auth-domain-once]')) }}
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:

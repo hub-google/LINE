@@ -32,6 +32,14 @@ jobs:
           test -s workforce-management/mini/mini.css
           grep -q 'app.js' workforce-management/index.html
           grep -q 'mini.css' workforce-management/mini/index.html
+      - name: Validate Cloudflare Work static build locally without triggering Cloudflare
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check workforce-management/cf-pages-build.mjs
+          (cd workforce-management && node ./cf-pages-build.mjs)
+          test -s workforce-management/dist/index.html
+          test -s workforce-management/dist/mini/index.html
       - name: Verify workforce PRD contracts
         run: |
           node --test workforce-management/tests/workforce-prd.test.mjs
