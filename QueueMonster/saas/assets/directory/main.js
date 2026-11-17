@@ -76,11 +76,8 @@ function e(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;
 function customerUrl(slug,tab,oaMode="PLATFORM"){
  return customerEntryUrl(slug,{surface:"directory",tab,oaMode,liffId,platformChatEntry});
 }
-function badges(t){
- const m=t.modules||{};
- return '<span class="badge">'+e(t.category||"其他")+'</span>'+
- (m.reservation?'<span class="badge">線上預約</span>':"")+(m.queue?'<span class="badge">現場取號</span>':"")+(m.pickup?'<span class="badge">線上點餐</span>':"")+
- (t.oa_mode==="PLATFORM"?'<span class="badge">平台 LINE 服務</span>':"");
+function categoryBadge(t){
+ return '<span class="badge">'+e(t.category||"其他")+'</span>';
 }
 function renderMyRecords(){
  const title=document.getElementById("results-heading"),count=document.getElementById("result-count");
@@ -238,16 +235,14 @@ function render(){
       (services.pickup?'<a class="btn secondary" href="'+e(orderHref)+'">立即點餐</a>':"")+
       (services.queue&&services.calling?'<a class="btn secondary" href="'+boardHref+'">叫號看板</a>':"");
   }
-  const badges=badgesForStore(t);
+  const category=categoryBadge(t);
   const rank=!isHistorySection&&!searching&&Number(t.popularity_rank)>0?
     '<span class="rank-number'+(Number(t.popularity_rank)<=3?' leading':'')+'">#'+Number(t.popularity_rank)+'</span>':"";
-  const metric=rank?'<p class="popularity-metrics">近30天 · 預約 '+Number(t.booking_count||0)+' · 取號 '+Number(t.ticket_count||0)+' · 訂餐 '+Number(t.order_count||0)+'</p>':"";
   const cover=primaryHref?'<a class="card-cover" href="'+e(primaryHref)+'" aria-label="開啟 '+name+'"></a>':"";
   return '<article class="merchant-card">'+cover+
    '<div class="card-content"><div class="card-top"><span class="shop-icon" aria-hidden="true">'+
    (logo?'<img src="'+e(logo)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'▤')+'</span>'+
-   '<div class="shop-details"><div class="rank-line">'+rank+'<h3 class="shop-name" style="margin:0">'+name+'</h3></div><div class="badges">'+badges+'</div></div></div>'+
-   metric+
+   '<div class="shop-details"><div class="rank-line">'+rank+'<h3 class="shop-name" style="margin:0">'+name+'</h3>'+category+'</div></div></div>'+
    (desc?'<p class="shop-desc">'+desc+'</p>':"")+
    (address?'<p class="shop-address">地點：'+address+'</p>':"")+
    (isHistorySection?'<p class="shop-desc">最近預約 '+Number(t.booking_count||0)+' 筆 · 取號 '+Number(t.ticket_count||0)+' 筆</p>':"")+
@@ -256,7 +251,6 @@ function render(){
    '</div></div></article>';
  }).join("");
 }
-function badgesForStore(t){return badges(t);}
 function safeLogo(src){return safeMerchantLogoUrl(src,{directory:true});}
 async function loadSearch(){
  if(isHistorySection)return render();
