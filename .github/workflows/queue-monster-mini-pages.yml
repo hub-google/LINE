@@ -6,6 +6,7 @@ on:
       - feat/queue-mini-app-isolated-20261117
     paths:
       - "QueueMonster/miniapp/**"
+      - "QueueMonster/saas/**"
       - "QueueMonster/supabase/functions/qm-mini-session/**"
       - "QueueMonster/miniapp/tests/mini-app-isolation.test.mjs"
       - ".github/workflows/queue-monster-mini-pages.yml"
@@ -67,9 +68,12 @@ jobs:
           git fetch origin refs/heads/gh-pages:refs/remotes/origin/gh-pages
           site="$RUNNER_TEMP/qm-mini-gh-pages"
           git worktree add --detach "$site" origin/gh-pages
-          rm -rf "$site/queue-mini"
-          mkdir -p "$site/queue-mini"
-          cp -a "$RUNNER_TEMP/queue-mini-dist/." "$site/queue-mini/"
+          # Push to main updates the Developing snapshot only.
+          # Review and Published are promoted manually after in-LINE validation.
+          rm -rf "$site/queue-mini/developing"
+          mkdir -p "$site/queue-mini/developing"
+          cp -a "$RUNNER_TEMP/queue-mini-dist/developing/." "$site/queue-mini/developing/"
+          cp "$RUNNER_TEMP/queue-mini-dist/index.html" "$site/queue-mini/index.html"
           git -C "$site" add -A -- queue-mini/
           if git -C "$site" diff --cached --quiet; then
             echo "MINI App already current."
@@ -77,4 +81,4 @@ jobs:
           fi
           git -C "$site" -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "deploy: independent Queue Monster LINE MINI App $GITHUB_SHA"
           git -C "$site" push origin HEAD:gh-pages
-          echo "Published /LINE/queue-mini/ only; existing /booking /saas /queue-prod remain unchanged."
+          echo "Published /LINE/queue-mini/developing only; review/published and /booking /saas /queue-prod remain unchanged."
