@@ -76,7 +76,7 @@ export function renderPickupSettings(isManager){
    select("pickup-capacity-basis",[["ORDERS","每時段訂單筆數"],["ITEMS","每時段餐點總份數"]],s.capacity_basis||"ORDERS")+
    field("每時段最多可接數量（依上方單位）","pickup-capacity",s.slot_capacity||5,"number",'min="1" max="300"')+
    field("至少提前幾分鐘下單","pickup-notice",s.min_notice_minutes??20,"number",'min="0" max="1440"')+
-   field("可提前預訂天數（0～30）","pickup-days",s.days_ahead??7,"number",'min="0" max="30"')+'</div></div>'+
+   field("可提前預訂天數（0～30）","pickup-days",s.days_ahead??3,"number",'min="0" max="30"')+'</div></div>'+
    field("預估製作時間（分鐘）","pickup-prep",s.prep_minutes??20,"number",'min="1" max="180"')+
    '<p class="small">取餐時段容量可選「訂單數」或「餐點份數」。選擇份數後，08:00 的 20 份漢堡會占用 20 份容量；已成立訂單的取餐時間不變。</p>'+
    '<div class="staff-actionbar">'+btn("儲存取餐設定","pickup-save","primary")+'</div>')+
