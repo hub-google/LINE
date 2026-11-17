@@ -361,7 +361,7 @@ export function renderScheduleSettings(isManager){
   '<label class="checklist"><input type="checkbox" id="schedule-enabled"'+(d.enabled?" checked":"")+'> 啟用每週自動排程</label>'+
   (!d.enabled?'<p class="small">尚未啟用時仍保留原有指定日期場次；完成下面的設定並儲存後才會自動套用。</p>':"")+
   planSection+batchSection+
-  '<h3 style="margin:20px 0 10px">每週固定規則</h3>'+
+  '<h3 style="margin:20px 0 10px">細部調整</h3>'+
   '<p class="small">以下是套用後的七天排程摘要。若某一天需要不同內容，可展開「個別調整」修改，其他星期不受影響。</p>'+week+
   '<div class="staff-actionbar" style="margin:16px 0">'+btn("儲存每週營業排程","schedule-weekly-save","primary")+
   btn("放棄尚未儲存的修改","schedule-weekly-reset","outline")+'</div>'+
@@ -397,7 +397,8 @@ export async function handleScheduleAction(ev,b,a,id){
    validate(d);
    const count=batchApplyPlan(d,source,days);
    serviceUnitsState.scheduleEditWeekday="";
-   serviceUnitsState.scheduleBatchDays=[];
+   // Keep the selected weekdays checked after applying, so users can review the selection.
+   serviceUnitsState.scheduleBatchDays=days;
    render();
    showActionFeedback("已將「"+(source==="off"?"公休":templateTitle(source,d.templates[source]))+
      "」套用到 "+count+" 天；尚未儲存，請按「儲存每週營業排程」。","success");
