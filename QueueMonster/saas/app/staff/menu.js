@@ -19,10 +19,10 @@ export function renderStaffMenu({t,isManager,html}){
     (items.length?'<div class="scroll"><table class="rows"><thead><tr><th>類型</th><th>名稱與說明</th><th>價格</th><th>上架狀態</th><th>線上點餐</th><th>操作</th></tr></thead><tbody>'+
       items.map(item=>'<tr><td>'+esc(item.kind==="MENU"?"餐點":item.kind==="SERVICE"?"服務":item.kind)+'</td><td><strong>'+esc(item.name)+'</strong>'+
        (item.description?'<div class="small">'+esc(item.description)+'</div>':'')+'</td>'+
-       '<td>'+esc(menuPrice(item)||"未設定")+'</td><td>'+esc(item.active?"上架中":"已停用")+'</td><td>'+
+       '<td>'+esc(menuPrice(item)||"未設定")+'</td><td>'+esc(item.active?"上架中":"已下架")+'</td><td>'+
   (item.kind==="SERVICE"?"非餐點":!item.pickup_enabled?"未開放訂餐":item.pickup_sold_out?"暫時售完":"可訂餐")+'</td><td>'+
        (isManager?btn(selected?.id===item.id?"編輯中":"編輯","menu-edit",selected?.id===item.id?"primary":"outline",'data-id="'+esc(item.id)+'"')+' '+
-        btn(item.active?"停用":"重新上架","menu-toggle","secondary",'data-id="'+esc(item.id)+'"')+
+        btn(item.active?"下架":"重新上架","menu-toggle","secondary",'data-id="'+esc(item.id)+'"')+
  (item.kind!=="SERVICE"?'<div class="staff-actionbar">'+
  btn(item.pickup_enabled?"關閉訂餐":"開放訂餐","pickup-menu-enabled","outline",'data-id="'+esc(item.id)+'"')+
  btn(item.pickup_sold_out?"恢復供應":"暫時售完","pickup-menu-sold-out","outline",'data-id="'+esc(item.id)+'"')+'</div>':""):'—')+
