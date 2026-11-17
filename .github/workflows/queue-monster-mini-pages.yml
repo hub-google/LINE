@@ -1,15 +1,5 @@
 name: Queue Monster｜LINE MINI App 獨立測試部署
 on:
-  push:
-    branches:
-      - main
-      - feat/queue-mini-app-isolated-20261117
-    paths:
-      - "QueueMonster/miniapp/**"
-      - "QueueMonster/saas/**"
-      - "QueueMonster/supabase/functions/qm-mini-session/**"
-      - "QueueMonster/miniapp/tests/mini-app-isolation.test.mjs"
-      - ".github/workflows/queue-monster-mini-pages.yml"
   workflow_dispatch:
 
 permissions:
@@ -22,6 +12,7 @@ concurrency:
 
 jobs:
   build-and-publish:
+    if: ${{ false }} # MINI App paused; keep workflow for future reactivation.
     runs-on: ubuntu-24.04
     timeout-minutes: 16
     steps:
