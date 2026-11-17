@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
 const code=readFileSync(new URL('../app.js',import.meta.url),'utf8');
-const from=code.indexOf('async function call(');
+const from=code.indexOf('let wfAuthGeneration=0;');
 const to=code.indexOf('async function demo(',from);
 assert.ok(from>0&&to>from,'Supabase client and refresh logic must be present');
 const authClient=code.slice(from,to);
 
 function makeClient({refreshFails=false}={}){
- const app={token:'expired-token',user:{id:'employee'}};
+ const app={mode:'real',token:'expired-token',user:{id:'employee'}};
  const saved={token:'expired-token',user:app.user,refresh_token:'valid-refresh'};
  let refreshCalls=0,requestCalls=0;
  const fetch=async(url,options)=>{
@@ -59,6 +59,23 @@ test('Rejected refresh does not leave a permanently pending refresh promise',asy
  await assert.rejects(client.renewSession(),/登入有效期已結束/);
  await assert.rejects(client.renewSession(),/登入有效期已結束/);
  assert.equal(client.refreshCalls,2);
+});
+
+test('Logout while refresh is pending never restores the old user session',async()=>{
+ const app={mode:'real',token:'expired-token',user:{id:'employee'}};
+ let release,stores=0;
+ const fetch=async()=>new Promise(resolve=>{release=resolve;});
+ const make=new Function('fetch','API','KEY','app','wfReadAuth','wfSaveAuth','wfRememberedAuth',
+  authClient+';return {renewSession,signOut:()=>{wfAuthGeneration++;app.token=null;app.user=null;}};');
+ const client=make(fetch,'https://example.supabase.co','anon',app,
+  ()=>({user:{id:'employee'},refresh_token:'refresh-one'}),()=>{stores++},()=>null);
+ const pending=client.renewSession();
+ client.signOut();
+ release({ok:true,json:async()=>({access_token:'stale-session-token',refresh_token:'refresh-two',user:{id:'employee'}})});
+ await assert.rejects(pending,/登入身分已變更/);
+ assert.equal(app.token,null);
+ assert.equal(app.user,null);
+ assert.equal(stores,0);
 });
 
 test('Opening login always resets stale registration selection',()=>{
