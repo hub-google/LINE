@@ -689,6 +689,10 @@ body[data-portal="staff"] .staff-picker-secondary>.staff-choice{flex:1 1 100%;mi
 .schedule-weekday-count{display:flex;align-items:center;flex-wrap:wrap;gap:9px}
 .schedule-weekday-count .field{max-width:112px;width:100px;min-height:43px;text-align:center;font-weight:700;font-size:16px}
 .schedule-weekday-count span{font-size:13px;color:#7b7284;white-space:nowrap}
+.schedule-weekday-copy{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:11px}
+.schedule-weekday-copy label{font-size:13px;font-weight:650;color:#75657f;margin:0;white-space:nowrap}
+.schedule-weekday-copy .field{min-height:36px;max-width:220px;width:auto;flex:1 1 160px;padding:6px 10px;font-size:13px}
+.schedule-weekday-copy .btn{min-height:36px;padding:7px 16px;font-size:13px;white-space:nowrap}
 .schedule-weekday-details{margin:13px 0 0;border-top:1px solid #eee4f1;padding-top:12px}
 .schedule-weekday-details>summary{cursor:pointer;color:#663c80;font-weight:650;font-size:14px;padding:4px 0}
 .schedule-session-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr));gap:12px;margin-top:12px}
@@ -705,5 +709,8 @@ body[data-portal="staff"] .staff-picker-secondary>.staff-choice{flex:1 1 100%;mi
  .schedule-weekday-count{gap:6px;justify-content:flex-end}
  .schedule-weekday-count .field{width:68px;min-width:58px;max-width:80px;font-size:15px;padding:8px 4px}
  .schedule-weekday-count span{font-size:11px}
+ .schedule-weekday-copy{gap:7px}
+ .schedule-weekday-copy label{flex-basis:100%}
+ .schedule-weekday-copy .field{max-width:none;min-width:0}
  .schedule-session-list{grid-template-columns:minmax(0,1fr)}
 }
