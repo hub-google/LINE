@@ -52,7 +52,7 @@ function harness({rowsPerTable={},failTable='',changeTenant=false,
  };
  const api=new Function('app','TABS','document','$','render','heading','panel','role',
   'call','Blob','URL','setTimeout','today','wfAuthGeneration',
-  script+';return {wfArchivePages,wfExportTenantArchive,WF_ARCHIVE_TABLES};')(
+  script+';return {wfArchivePages,wfExportTenantArchive,wfValidateArchiveContent,WF_ARCHIVE_TABLES};')(
    app,TABS,document,()=>({}),()=>{},()=>{},()=>'',()=>roleValue,
    call,BlobMock,URLMock,()=>{},()=> '2026-11-17',0);
  return {api,app,requests,get downloads(){return downloads;},get file(){return file;}};
@@ -125,4 +125,33 @@ test('Superseded per-notification export has been retired without a second autho
  assert.doesNotMatch(source,/wm_export_notification_archive/);
  assert.match(retirement,/DROP FUNCTION public\.wm_export_notification_archive/);
  assert.match(retirement,/to_regprocedure\('public\.wm_archive_table_page/);
+});
+
+test('Local-only archive validation accepts a complete download and rejects tampering',async()=>{
+ const h=harness({rowsPerTable:{wm_notifications:503}});
+ await h.api.wfExportTenantArchive();
+ const check=h.api.wfValidateArchiveContent;
+ const valid=check(h.file,'tenant-A');
+ assert.equal(valid.tables,33);
+ assert.ok(valid.records>=535);
+
+ assert.throws(()=>check('{broken','tenant-A'),/JSON/);
+ assert.throws(()=>check(h.file,'tenant-B'),/企業/);
+
+ const parsed=JSON.parse(h.file);
+ const edited=JSON.parse(h.file);
+ edited.table_counts.wm_notifications++;
+ assert.throws(()=>check(JSON.stringify(edited),'tenant-A'),/筆數不一致/);
+
+ const omitted=JSON.parse(h.file);
+ delete omitted.tables.wm_punches;
+ assert.throws(()=>check(JSON.stringify(omitted),'tenant-A'),/類別不完整/);
+
+ const foreign=JSON.parse(h.file);
+ foreign.tables.wm_notifications[0].tenant_id='other-tenant';
+ assert.throws(()=>check(JSON.stringify(foreign),'tenant-A'),/混入其他企業/);
+
+ const duplicated=JSON.parse(h.file);
+ duplicated.tables.wm_notifications[1].id=duplicated.tables.wm_notifications[0].id;
+ assert.throws(()=>check(JSON.stringify(duplicated),'tenant-A'),/重複識別碼/);
 });
