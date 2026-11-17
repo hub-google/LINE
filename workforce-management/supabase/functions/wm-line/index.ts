@@ -22,14 +22,14 @@ function miniChannel(env:string){
 const miniEnvironments=Object.fromEntries(
  Object.entries(MINI_CHANNELS).map(([env,data])=>[env,{liffId:data.liffId,configured:true}])
 );
-const PLATFORM_TOKEN=Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN")||"";
-const WEBSITE="https://hub-google.github.io";
+const WORK_OA_TOKEN=Deno.env.get("WORK_LINE_MESSAGING_ACCESS_TOKEN")||"";
+const ALLOWED_ORIGINS=new Set(["https://hub-google.github.io","https://work.monsterport.com"]);
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function respond(status:number,data:unknown,origin:string|null=null){
  const h:Record<string,string>={"Content-Type":"application/json","Cache-Control":"no-store",
    "Vary":"Origin","Access-Control-Allow-Headers":"authorization, apikey, content-type",
    "Access-Control-Allow-Methods":"GET, POST, OPTIONS"};
- if(origin===WEBSITE)h["Access-Control-Allow-Origin"]=WEBSITE;
+ if(origin&&ALLOWED_ORIGINS.has(origin))h["Access-Control-Allow-Origin"]=origin;
  return new Response(JSON.stringify(data),{status,headers:h});
 }
 function message(e:unknown){return e instanceof Error?e.message:"UNKNOWN";}
@@ -86,7 +86,7 @@ async function sendBatch(tenant:string,limit:number){
     try{
      const out=await fetch("https://api.line.me/v2/bot/message/push",{
       method:"POST",headers:{"Content-Type":"application/json",
-       Authorization:"Bearer "+PLATFORM_TOKEN,"X-Line-Retry-Key":job.id},
+       Authorization:"Bearer "+WORK_OA_TOKEN,"X-Line-Retry-Key":job.id},
       body:JSON.stringify({to:job.line_sub,messages:[{type:"text",
        text:(String(job.title)+"\n"+String(job.body||"")).slice(0,4500)}]})});
      ok=out.ok;reason=ok?"":("LINE_HTTP_"+out.status);
@@ -102,12 +102,12 @@ async function sendBatch(tenant:string,limit:number){
 
 Deno.serve(async req=>{
  const origin=req.headers.get("origin");
- if(origin&&origin!==WEBSITE)return respond(403,{error:"ORIGIN_DENIED"});
+ if(origin&&!ALLOWED_ORIGINS.has(origin))return respond(403,{error:"ORIGIN_DENIED"});
  if(req.method==="OPTIONS")return respond(200,{},origin);
  if(req.method==="GET")return respond(200,{
   liffId:LIFF_ID||null,loginConfigured:!!LINE_LOGIN_ID,
   miniLiffId:MINI_CHANNELS.developing.liffId,miniConfigured:true,miniEnvironments,
-  messagingConfigured:!!PLATFORM_TOKEN,mode:"platform"},origin);
+  messagingConfigured:!!WORK_OA_TOKEN,mode:"platform"},origin);
  if(req.method!=="POST")return respond(405,{error:"METHOD_NOT_ALLOWED"},origin);
  try{
   const input=await req.json();
@@ -117,7 +117,7 @@ Deno.serve(async req=>{
    if(!/^[0-9a-f]{64}$/i.test(secret))return respond(403,{error:"CRON_SECRET_REQUIRED"},origin);
    const result=await db("rpc/wm_line_cron_valid","POST",{p_secret:secret});
    if(result!==true)return respond(403,{error:"CRON_NOT_AUTHORIZED"},origin);
-   if(!PLATFORM_TOKEN)return respond(503,{error:"LINE_MESSAGING_NOT_CONFIGURED"},origin);
+   if(!WORK_OA_TOKEN)return respond(503,{error:"LINE_MESSAGING_NOT_CONFIGURED"},origin);
    const tenants=await db("rpc/wm_line_pending_tenants","POST",{p_limit:3});
    let processed=0,sent=0,failed=0,remaining=10;
    for(const t of tenants||[]){
@@ -136,7 +136,7 @@ Deno.serve(async req=>{
     encodeURIComponent(tenant)+"&member_id=eq."+encodeURIComponent(m.id)+
     "&revoked_at=is.null&limit=1");
    return respond(200,{linked:!!rows?.length,verifiedAt:rows?.[0]?.verified_at||null,
-    mode:rows?.[0]?.mode||"platform",messagingConfigured:!!PLATFORM_TOKEN,
+    mode:rows?.[0]?.mode||"platform",messagingConfigured:!!WORK_OA_TOKEN,
     liffId:LIFF_ID||null,miniLiffId:MINI_CHANNELS.developing.liffId,
     miniConfigured:true,miniEnvironments},origin);
   }
@@ -162,7 +162,7 @@ Deno.serve(async req=>{
   }
   if(action==="flush"){
    if(!["owner","hr"].includes(m.role))throw new Error("MANAGER_PERMISSION_REQUIRED");
-   if(!PLATFORM_TOKEN)return respond(503,{error:"LINE_MESSAGING_NOT_CONFIGURED"},origin);
+   if(!WORK_OA_TOKEN)return respond(503,{error:"LINE_MESSAGING_NOT_CONFIGURED"},origin);
    const result=await sendBatch(tenant,Math.min(10,Math.max(1,Number(input.limit)||5)));
    return respond(200,result,origin);
   }
