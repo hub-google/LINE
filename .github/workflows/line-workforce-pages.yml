@@ -42,6 +42,8 @@ jobs:
           (cd workforce-management && node ./cf-pages-build.mjs)
           test -s workforce-management/dist/index.html
           test -s workforce-management/dist/mini/index.html
+          test ! -e workforce-management/dist/_worker.js
+          test ! -d workforce-management/dist/functions
       - name: Verify workforce PRD contracts
         run: |
           node --test workforce-management/tests/workforce-prd.test.mjs
@@ -52,6 +54,7 @@ jobs:
           node --test workforce-management/tests/workforce-auth-session.test.mjs
           node --test workforce-management/tests/workforce-import-and-swap.test.mjs
           node --test workforce-management/tests/workforce-archive-export.test.mjs
+          node --test workforce-management/tests/workforce-line-monitor.test.mjs
       - name: Deploy workforce website and independent WF MINI App to existing gh-pages branch
         shell: bash
         run: |
