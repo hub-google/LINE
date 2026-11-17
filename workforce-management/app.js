@@ -3,6 +3,42 @@
 const API='https://unapiwajmgqqtdkixaab.supabase.co';
 const KEY='sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy'; // Publishable, never service_role.
 const DEMO_ID='98d3505c-cbe6-46ed-a95a-13672e6d98f4';
+// Explicit opt-in for private devices; shared devices retain session-only authentication.
+const WF_AUTH_KEY='wm_auth',WF_REMEMBER_KEY='wm_auth_remember_v1';
+function wfRememberedAuth(){
+ try{
+  const r=JSON.parse(localStorage.getItem(WF_REMEMBER_KEY)||'null');
+  if(!r)return null;
+  if(!Number.isFinite(r.until)||r.until<=Date.now()||!r.session?.refresh_token){
+   localStorage.removeItem(WF_REMEMBER_KEY);return null;
+  }
+  return r.session;
+ }catch{return null;}
+}
+function wfReadAuth(){
+ try{
+  const s=JSON.parse(sessionStorage.getItem(WF_AUTH_KEY)||'null');
+  if(s?.token&&s?.user)return s;
+  const r=wfRememberedAuth();
+  if(r?.token&&r?.user){sessionStorage.setItem(WF_AUTH_KEY,JSON.stringify(r));return r;}
+ }catch{}
+ return null;
+}
+function wfSaveAuth(session,remember){
+ try{sessionStorage.setItem(WF_AUTH_KEY,JSON.stringify(session));}catch{}
+ try{
+  if(remember){
+   const prior=JSON.parse(localStorage.getItem(WF_REMEMBER_KEY)||'null');
+   const until=prior?.until>Date.now()?prior.until:Date.now()+7*86400000;
+   localStorage.setItem(WF_REMEMBER_KEY,JSON.stringify({session,until}));
+  }else localStorage.removeItem(WF_REMEMBER_KEY);
+ }catch{}
+}
+function wfClearAuth(){
+ try{sessionStorage.removeItem(WF_AUTH_KEY);}catch{}
+ try{localStorage.removeItem(WF_REMEMBER_KEY);}catch{}
+}
+
 // The LINE MINI App has its own independently deployed page; the original /workforce/ is always a normal website.
 const wfMiniMode=/(?:^|\/)(?:workforce-mini|mini)(?:\/|\/index\.html)?$/.test(location.pathname);
 // Cloudflare serves MINI at /mini/, while the separate GitHub Pages test entry is /workforce-mini/.
@@ -48,7 +84,7 @@ function manager(){return app.mode==='demo'||['owner','hr','manager'].includes(r
 function banner(m,err=false){$('toast').insertAdjacentHTML('beforeend','<div class="toast '+(err?'error':'')+'">'+esc(m)+'</div>');setTimeout(()=>{const e=$('toast').firstElementChild;if(e)e.remove();},4800);}
 async function call(url,method='GET',data=null,token=KEY,retry=true){const headers={apikey:KEY};if(token!==KEY)headers.Authorization='Bearer '+token;if(data!==null)headers['Content-Type']='application/json';if(method==='POST'||method==='PATCH')headers.Prefer=(method==='POST'&&['/rest/v1/wm_tenants','/rest/v1/wm_members'].includes(url)?'return=minimal':'return=representation');const res=await fetch(API+url,{method,headers,body:data===null?undefined:JSON.stringify(data),cache:'no-store'});const text=await res.text();let j;try{j=text?JSON.parse(text):null;}catch{j={message:text.slice(0,200)};}if(!res.ok&&res.status===401&&retry&&token!==KEY){const renewed=await renewSession();return call(url,method,data,renewed,false);}if(!res.ok)throw Error(j?.message||j?.error_description||j?.error||'連線失敗 ('+res.status+')');return j;}
 async function renewSession(){
- let saved={};try{saved=JSON.parse(sessionStorage.getItem('wm_auth')||'{}')}catch{}
+ const saved=wfReadAuth()||{};
  if(!saved.refresh_token)throw Error('登入已過期，請重新登入企業帳號');
  const response=await fetch(API+'/auth/v1/token?grant_type=refresh_token',{
   method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},
@@ -57,8 +93,8 @@ async function renewSession(){
  const value=await response.json();
  if(!response.ok||!value.access_token)throw Error('登入有效期已結束，請重新登入');
  app.token=value.access_token;app.user=value.user||saved.user;
- sessionStorage.setItem('wm_auth',JSON.stringify({token:app.token,user:app.user,
-  refresh_token:value.refresh_token||saved.refresh_token,expires_at:value.expires_at||0}));
+ wfSaveAuth({token:app.token,user:app.user,
+  refresh_token:value.refresh_token||saved.refresh_token,expires_at:value.expires_at||0},!!wfRememberedAuth());
  return app.token;
 }
 async function demo(action='snapshot',data={}){return call('/rest/v1/rpc/wm_demo_api','POST',{p_action:action,p_data:data});}
@@ -359,7 +395,7 @@ function showEmployee(){openModal('新增員工',modalForm('employee',[
 function showBranch(){openModal('新增分店',modalForm('branch',[{name:'name',label:'分店名稱',html:input('name','text','','maxlength="60"'),wide:true}],'建立分店'));}
 function showAuth(){
  const body='<div class="tabs-secondary"><button type="button" class="active" id="loginTab">登入</button><button type="button" id="registerTab">註冊</button></div>'+
- '<form data-form="auth"><div class="form-grid"><div class="field wide"><label>電子郵件</label><input type="email" name="email" required autocomplete="email"></div><div class="field wide"><label>密碼</label><input type="password" name="password" minlength="8" required autocomplete="current-password"></div></div><div class="modal-actions"><button class="btn primary" type="submit" id="authSubmit">登入</button></div></form>'+
+ '<form data-form="auth"><div class="form-grid"><div class="field wide"><label>電子郵件</label><input type="email" name="email" required autocomplete="email"></div><div class="field wide"><label>密碼</label><input type="password" name="password" minlength="8" required autocomplete="current-password"></div></div><div class="field wide"><label><input type="checkbox" name="remember" value="yes"> 這台個人裝置記住登入 7 天（共用裝置勿選）</label></div><div class="modal-actions"><button class="btn primary" type="submit" id="authSubmit">登入</button></div></form>'+
  '<div class="auth-note">正式企業採 Supabase Auth 與資料表 RLS 權限驗證，僅建立帳號不會自動加入他人企業。新帳號可能需要先完成電子郵件驗證。</div>';
  openModal('企業帳號登入',body);
  $('loginTab').onclick=()=>authTab(false);$('registerTab').onclick=()=>authTab(true);
@@ -427,7 +463,7 @@ $('overlay').addEventListener('submit',async e=>{
    const token=result.access_token||result.session?.access_token,user=result.user||result.session?.user;
    if(!token||!user)throw Error('登入未取得有效工作階段，請確認信箱驗證');
    app.token=token;app.user=user;app.mode='real';app.tenantId='';
-   sessionStorage.setItem('wm_auth',JSON.stringify({token,user,refresh_token:result.refresh_token||result.session?.refresh_token||null,expires_at:result.expires_at||result.session?.expires_at||0}));
+   wfSaveAuth({token,user,refresh_token:result.refresh_token||result.session?.refresh_token||null,expires_at:result.expires_at||result.session?.expires_at||0},f.remember==='yes');
    closeModal();
    const invited=new URLSearchParams(location.hash.slice(1)).get('invite');
    if(invited){
@@ -469,8 +505,8 @@ $('overlay').addEventListener('submit',async e=>{
   }
  }catch(err){banner(err.message,true);submit.disabled=false;}
 });
-function logout(){app.token=null;app.user=null;app.data=null;app.tenants=[];app.mode=wfMiniMode?'real':'demo';app.tenantId=wfMiniMode?'':DEMO_ID;sessionStorage.removeItem('wm_auth');reload(true);banner('已登出企業模式');}
-try{const saved=JSON.parse(sessionStorage.getItem('wm_auth')||'null');if(saved?.token&&saved?.user){app.token=saved.token;app.user=saved.user;app.mode='real';app.tenantId='';}}catch{}
+function logout(){const previous=app.token;app.token=null;app.user=null;app.data=null;app.tenants=[];app.mode=wfMiniMode?'real':'demo';app.tenantId=wfMiniMode?'':DEMO_ID;wfClearAuth();if(previous)void fetch(API+'/auth/v1/logout',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+previous}}).catch(()=>{});reload(true);banner('已登出企業模式');}
+try{const saved=wfReadAuth();if(saved?.token&&saved?.user){app.token=saved.token;app.user=saved.user;app.mode='real';app.tenantId='';}}catch{}
 if(wfMiniMode&&!app.token){app.mode='real';app.tenantId='';}
 reload(true);
 
@@ -2329,7 +2365,7 @@ $('overlay').addEventListener('submit',async e=>{
    const result=await response.json().catch(()=>({}));
    if(!response.ok)throw Error(result.msg||result.message||result.error_description||'密碼更新失敗');
    wfRecoveryAccessToken=null;
-   sessionStorage.removeItem('wm_auth');
+   wfClearAuth();
    app.token=null;app.user=null;app.data=null;app.tenants=[];app.mode=wfMiniMode?'real':'demo';app.tenantId=wfMiniMode?'':DEMO_ID;
    closeModal();await reload(true);
    banner('密碼已更新，請使用新密碼重新登入');
