@@ -74,3 +74,17 @@ test("merchant OA Messaging API form requires only token and secret, deriving Ch
   assert.match(guide,/https:\/\/developers\.line\.biz\/console\//);
   assert.match(guide,/單純發送 LINE 通知，不需要設定 LIFF ID/);
 });
+
+test("merchants cannot override Queue Monster LINE Login; OA messaging remains independent", () => {
+  const ui=readFileSync(path.join(root,"saas/app/staff/oa-settings.js"),"utf8");
+  const actions=readFileSync(path.join(root,"saas/app/actions/merchant-settings.js"),"utf8");
+  assert.doesNotMatch(ui,/own-oa-liff|merchantLiffId|進階設定：LINE Login/);
+  assert.doesNotMatch(actions,/own-oa-liff|liffId,botToken/);
+  assert.match(bridge,/const liffId = platformLiff/);
+  assert.match(bridge,/expectedChannelId === Deno.env.get\("LINE_LOGIN_CHANNEL_ID"\)/);
+  assert.doesNotMatch(bridge,/own\?\.liff_id|ownOa\?\.liffId|merchantLiffId|shop\.liffId/);
+  assert.match(bridge,/p_liff_id:""/);
+  assert.match(bridge,/const id=platformCustomerLiffId\(\)/);
+  assert.match(bridge,/ownOa\?\.token/);
+  assert.match(bridge,/LINE_MESSAGING_ACCESS_TOKEN/);
+});

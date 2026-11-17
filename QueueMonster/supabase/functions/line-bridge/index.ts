@@ -44,7 +44,7 @@ async function identity(req: Request, db: ReturnType<typeof service>) {
   return data.user;
 }
 type MerchantLineConfig = {
-  liffId: string; channelId: string; token: string; channelSecret: string;
+  channelId: string; token: string; channelSecret: string;
   botUserId: string; basicId: string; displayName: string;
 };
 async function merchantLineConfig(db: ReturnType<typeof service>, tenantId: string): Promise<MerchantLineConfig | null> {
@@ -248,13 +248,13 @@ async function oaAddFriendUrl(overrideToken?: string): Promise<string | null> {
   } catch { return null; }
 }
 
-type ShopInfo = { id: string; slug: string; name: string; address?: string | null; phone?: string | null; liffId?: string | null };
-async function shopLinkContext(db: ReturnType<typeof service>, shop: ShopInfo): Promise<ShopInfo> {
-  const own = await merchantLineConfig(db, shop.id);
-  return own ? { ...shop, liffId: own.liffId } : shop;
+type ShopInfo = { id: string; slug: string; name: string; address?: string | null; phone?: string | null };
+function platformCustomerLiffId(): string {
+  // Use the Queue Monster LIFF on the main domain when configured, otherwise its legacy LIFF.
+  return Deno.env.get("LINE_LIFF_ID_QUEUE") || Deno.env.get("LINE_LIFF_ID") || "";
 }
 function liffManageLink(shop: ShopInfo, kind: "reservation" | "ticket", refId: string, mode: string): string | null {
-  const id = shop.liffId || Deno.env.get("LINE_LIFF_ID") || "";
+  const id = platformCustomerLiffId();
   if (!/^\d{8,}-[A-Za-z0-9]+$/.test(id)) return null;
   const query = new URLSearchParams({
     view: "customer", merchant: shop.slug, tab: "mine",
@@ -263,13 +263,13 @@ function liffManageLink(shop: ShopInfo, kind: "reservation" | "ticket", refId: s
   return "https://liff.line.me/" + id + "/?" + query.toString();
 }
 function liffPickupLink(shop: ShopInfo): string | null {
-  const id = shop.liffId || Deno.env.get("LINE_LIFF_ID") || "";
+  const id = platformCustomerLiffId();
   if (!/^\d{8,}-[A-Za-z0-9]+$/.test(id)) return null;
   const query = new URLSearchParams({ view: "customer", merchant: shop.slug, tab: "order" });
   return "https://liff.line.me/" + id + "/?" + query.toString();
 }
 function liffQueueProgressLink(shop: ShopInfo, ticketId: string): string | null {
-  const id=shop.liffId || Deno.env.get("LINE_LIFF_ID") || "";
+  const id=platformCustomerLiffId();
   if (!/^\d{8,}-[A-Za-z0-9]+$/.test(id)) return null;
   const query=new URLSearchParams({
     view:"customer",merchant:shop.slug,tab:"progress",ticket:ticketId,
@@ -415,10 +415,10 @@ async function ticketProgressNotice(
     ...shopDetails(tenant),
     "叫號進度可能變動，請以最新資訊為準。",
   ], [
-    { label: "查看即時叫號網頁", uri: liffQueueProgressLink(await shopLinkContext(db, tenant), ticket.id) },
+    { label: "查看即時叫號網頁", uri: liffQueueProgressLink(tenant, ticket.id) },
     { label: "叫號進度", postback: "queue_progress:" + ticket.id },
     ...(ticket.status === "WAITING"
-      ? [{ label: "取消排隊", uri: liffManageLink(await shopLinkContext(db, tenant), "ticket", ticket.id, "cancel") }]
+      ? [{ label: "取消排隊", uri: liffManageLink(tenant, "ticket", ticket.id, "cancel") }]
       : []),
   ]);
 }
@@ -440,8 +440,8 @@ async function reservationConfirmationNotice(db: ReturnType<typeof service>, ten
     ...shopDetails(tenant),
     "如需調整，可使用下方按鈕。",
   ], [
-    ...(booking.service_session_id ? [] : [{ label: "編輯預約", uri: liffManageLink(await shopLinkContext(db, tenant), "reservation", booking.id, "edit") }]),
-    { label: "取消預約", uri: liffManageLink(await shopLinkContext(db, tenant), "reservation", booking.id, "cancel") },
+    ...(booking.service_session_id ? [] : [{ label: "編輯預約", uri: liffManageLink(tenant, "reservation", booking.id, "edit") }]),
+    { label: "取消預約", uri: liffManageLink(tenant, "reservation", booking.id, "cancel") },
   ]);
 }
 
@@ -590,7 +590,7 @@ async function dispatchOutboxItem(
         ...(itemLines.length ? ["餐點：" + itemLines.join("、")] : []),
         "訂單金額：NT$ " + Number(order.total || 0).toLocaleString("zh-TW"),
         ...shopDetails(tenant),
-      ], [{label:"查看取餐進度",uri:liffPickupLink(await shopLinkContext(db, tenant))}]), origin);
+      ], [{label:"查看取餐進度",uri:liffPickupLink(tenant)}]), origin);
   } else if (job.event_kind === "RESERVATION_REMINDER_24H" ||
       job.event_kind === "RESERVATION_REMINDER_2H") {
     const { data: reminder, error: reminderError } = await db.from("qm_booking_reminder_jobs")
@@ -621,7 +621,7 @@ async function dispatchOutboxItem(
         ...selectedServicesText(booking.selected_items), ...shopDetails(tenant),
       ], [{
         label: "查看我的預約",
-        uri: liffManageLink(await shopLinkContext(db, tenant), "reservation", booking.id, "view"),
+        uri: liffManageLink(tenant, "reservation", booking.id, "view"),
       }]), origin);
   } else if (job.event_kind === "QUEUE_NEAR") {
     const { data: ticket, error } = await db.from("qm_tickets")
@@ -651,7 +651,7 @@ async function dispatchOutboxItem(
         "實際叫號順序請以門市即時進度為準。",
       ], [{
         label: "查看即時叫號網頁",
-        uri: liffQueueProgressLink(await shopLinkContext(db, tenant), ticket.id),
+        uri: liffQueueProgressLink(tenant, ticket.id),
       }]), origin);
   } else if (job.event_kind === "CALLED" || job.event_kind.startsWith("TICKET_")) {
     const isCreated = job.event_kind === "TICKET_CREATED";
@@ -680,7 +680,7 @@ async function dispatchOutboxItem(
           "目前狀態："+(ticket.status==="HOLD"?"保留中":"候位中"),
           "此號碼已從取消狀態恢復，請依即時叫號網頁確認最新排序。",
           ...shopDetails(tenant),
-        ],[{label:"查看即時叫號網頁",uri:liffQueueProgressLink(await shopLinkContext(db,tenant),ticket.id)}]),origin);
+        ],[{label:"查看即時叫號網頁",uri:liffQueueProgressLink(tenant,ticket.id)}]),origin);
     } else {
       if (ticket.status !== "CANCELLED") return { status: "SKIPPED", reason: "TICKET_NOT_CANCELLED" };
       result = await pushNotice(db, tenant, ticket.user_id, "TICKET_CANCELLED", job.reference_id,
@@ -689,7 +689,7 @@ async function dispatchOutboxItem(
           "取消號碼：" + ticketNumber(ticket),
           "此號碼已不在候位名單中。",
           ...shopDetails(tenant),
-        ], [{ label: "查看我的紀錄", uri: liffManageLink(await shopLinkContext(db, tenant), "ticket", ticket.id, "view") }]), origin);
+        ], [{ label: "查看我的紀錄", uri: liffManageLink(tenant, "ticket", ticket.id, "view") }]), origin);
     }
   } else {
     const field = job.event_kind === "RESERVED" ? "id"
@@ -711,7 +711,7 @@ async function dispatchOutboxItem(
           "預約姓名：" + (booking.customer_name || "未提供"),
           "聯絡電話：" + (booking.customer_phone || "未提供"),
           ...selectedServicesText(booking.selected_items), ...shopDetails(tenant),
-        ], [{ label: "查看我的紀錄", uri: liffManageLink(await shopLinkContext(db, tenant), "reservation", booking.id, "view") }]), origin);
+        ], [{ label: "查看我的紀錄", uri: liffManageLink(tenant, "reservation", booking.id, "view") }]), origin);
     } else {
       if (booking.status !== "CONFIRMED") return { status: "SKIPPED", reason: "BOOKING_NOT_CONFIRMED" };
       const isNew = job.event_kind === "RESERVED" || job.event_kind === "RESERVATION_RESTORED";
@@ -725,8 +725,8 @@ async function dispatchOutboxItem(
               "聯絡電話：" + (booking.customer_phone || "未提供"),
               ...selectedServicesText(booking.selected_items), ...shopDetails(tenant),
             ], [
-              { label: "編輯預約", uri: liffManageLink(await shopLinkContext(db, tenant), "reservation", booking.id, "edit") },
-              { label: "取消預約", uri: liffManageLink(await shopLinkContext(db, tenant), "reservation", booking.id, "cancel") },
+              { label: "編輯預約", uri: liffManageLink(tenant, "reservation", booking.id, "edit") },
+              { label: "取消預約", uri: liffManageLink(tenant, "reservation", booking.id, "cancel") },
             ]), origin);
     }
   }
@@ -1037,7 +1037,7 @@ async function webhook(req: Request, origin: string | null, merchantSlug = "") {
           if (tenant && (!merchantTenantId || tenant.id===merchantTenantId)) {
             const own=await merchantLineConfig(db,tenant.id);
             if (merchantTenantId || !own) {
-              const id=own?.liffId || Deno.env.get("LINE_LIFF_ID") || "";
+              const id=platformCustomerLiffId();
               if (id) notice={type:"text",text:tenant.name+"｜請點下方連結開始預約\n"+
                 "https://liff.line.me/"+encodeURIComponent(id)+"/?view=customer&merchant="+encodeURIComponent(tenant.slug)+"&tab="+
                 (entry[1]==="預約"?"reserve":entry[1]==="取號"?"queue":"order")+
@@ -1230,13 +1230,13 @@ Deno.serve(async (req: Request) => {
   }
   if (req.method === "GET" && url.searchParams.get("action") === "config") {
     const merchant = url.searchParams.get("merchant") || "";
-    let own: { liff_id: string; bot_basic_id: string | null; messaging_channel_id: string | null } | null = null;
+    let own: { bot_basic_id: string | null; messaging_channel_id: string | null } | null = null;
     if (/^[a-z0-9][a-z0-9-]{2,39}$/.test(merchant)) {
       const db = service();
       const { data: tenant } = await db.from("qm_tenants").select("id").eq("slug", merchant).eq("status", "ACTIVE").maybeSingle();
       if (tenant) {
         const { data: config } = await db.from("qm_line_merchant_oas")
-          .select("liff_id,bot_basic_id,messaging_channel_id").eq("tenant_id", tenant.id).eq("status", "ACTIVE").maybeSingle();
+          .select("bot_basic_id,messaging_channel_id").eq("tenant_id", tenant.id).eq("status", "ACTIVE").maybeSingle();
         own = config;
       }
     }
@@ -1244,17 +1244,17 @@ Deno.serve(async (req: Request) => {
     // Never send the GitHub Pages LIFF to the queue domain if queue LIFF is not ready.
     const queueSite = url.searchParams.get("site") === "queue";
     const platformLiff = Deno.env.get(queueSite ? "LINE_LIFF_ID_QUEUE" : "LINE_LIFF_ID") || "";
-    const liffId = own?.liff_id || platformLiff;
+    const liffId = platformLiff;
     const expectedChannelId = /^([0-9]{8,})-[A-Za-z0-9]+$/.exec(liffId)?.[1] || null;
     const platformFriendUrl = own ? null : await oaAddFriendUrl();
     return reply(200, {
-      liffId: liffId || null, merchantLiffId: own?.liff_id || null,
+      liffId: liffId || null,
       messagingChannelId: own?.messaging_channel_id || null, merchantOaConnected: !!own,
       botBasicId: own?.bot_basic_id || platformFriendUrl?.split("/").pop() || null,
       loginReady: !!expectedChannelId,
       messagingReady: !!own || !!Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN"),
       loginChannelMatchesLiff: !!expectedChannelId &&
-        (!!own || expectedChannelId === Deno.env.get("LINE_LOGIN_CHANNEL_ID")),
+        expectedChannelId === Deno.env.get("LINE_LOGIN_CHANNEL_ID"),
     }, origin);
   }
   if (req.method !== "POST") return reply(405, { error: "METHOD_NOT_ALLOWED" }, origin);
@@ -1336,11 +1336,10 @@ Deno.serve(async (req: Request) => {
         if (error) throw error;
         return reply(200,{ok:true,disconnected:true},origin);
       }
-      const liffId = typeof payload.liffId === "string" ? payload.liffId.trim() : "";
+      // Ignore legacy LIFF fields from older clients; LINE login is platform-owned.
       const botToken = typeof payload.botToken === "string" ? payload.botToken.trim() : "";
       const channelSecret = typeof payload.channelSecret === "string" ? payload.channelSecret.trim() : "";
-      if ((liffId !== "" && !/^\d{8,}-[A-Za-z0-9]+$/.test(liffId)) ||
-          botToken.length<32 || botToken.length>4096 ||
+      if (botToken.length<32 || botToken.length>4096 ||
           !/^[0-9a-f]{32}$/i.test(channelSecret))
         return reply(400,{error:"LINE_CHANNEL_FIELDS_INVALID"},origin);
       // Verify the token and derive the Messaging API Channel ID from LINE directly.
@@ -1370,7 +1369,7 @@ Deno.serve(async (req: Request) => {
       if (!/^U[0-9a-f]{32}$/i.test(String(bot.userId||"")))
         return reply(400,{error:"LINE_BOT_PROFILE_INVALID"},origin);
       const { error } = await db.rpc("so_merchant_oa_save_messaging_secret",{
-        p_tenant_id:tenant.id,p_messaging_channel_id:messagingChannelId,p_liff_id:liffId,
+        p_tenant_id:tenant.id,p_messaging_channel_id:messagingChannelId,p_liff_id:"",
         p_bot_user_id:bot.userId,p_basic_id:String(bot.basicId||""),
         p_display_name:String(bot.displayName||""),
         p_token:botToken,p_channel_secret:channelSecret,p_actor:user.id,
@@ -1381,9 +1380,9 @@ Deno.serve(async (req: Request) => {
       }
       return reply(200,{
         ok:true,connected:true,displayName:String(bot.displayName||""),
-        basicId:String(bot.basicId||""),messagingChannelId,liffEnabled:!!liffId,
+        basicId:String(bot.basicId||""),messagingChannelId,liffEnabled:false,
         webhookUrl:"https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/line-bridge?action=webhook&merchant="+encodeURIComponent(slug),
-        note:liffId?"Messaging API connected; verify LINE Login and Messaging API share a Provider":"Messaging API connected; LINE Login uses platform LIFF until merchant LIFF is configured",
+        note:"Messaging API connected; LINE login is managed by Queue Monster",
       },origin);
     }
     // A customer can verify their LINE identity for Queue Monster itself.
@@ -1436,19 +1435,18 @@ Deno.serve(async (req: Request) => {
         .select("id").eq("slug", slug).eq("status", "ACTIVE").maybeSingle();
       if (tenantError) throw tenantError;
       if (!tenant) return reply(404, { error: "TENANT_NOT_FOUND" }, origin);
-      const ownOa = await merchantLineConfig(db, tenant.id);
-      // LIFF ID is issued to a LINE Login channel, not a Messaging API channel.
+            // LIFF ID is issued to a LINE Login channel, not a Messaging API channel.
       // Both channels must be owned by the same LINE Provider for user ID parity.
       const expectedChannelId = /^([0-9]{8,})-[A-Za-z0-9]+$/.exec(
-        ownOa?.liffId || Deno.env.get("LINE_LIFF_ID") || "")?.[1] || "";
+        Deno.env.get("LINE_LIFF_ID") || "")?.[1] || "";
       let { data: linked, error: linkError } = await db.from("qm_line_links")
         .select("display_name,line_sub,is_following,updated_at,login_channel_id")
         .eq("tenant_id", tenant.id).eq("user_id", user.id).maybeSingle();
       if (linkError) throw linkError;
       // The same verified platform LINE account can use any platform-OA shop.
       // Only this explicit merchant access creates a tenant-scoped link.
-      // Merchant-owned OA channels continue through their own LINE login.
-      if (!ownOa && (!linked?.display_name?.trim() ||
+      // Merchant OA remains independent and handles messaging only.
+      if ((!linked?.display_name?.trim() ||
           linked.login_channel_id!==expectedChannelId ||
           Date.now()-Date.parse(String(linked.updated_at||""))>30*24*60*60*1000)) {
         const verified=await reusablePlatformLineIdentity(db,user.id,expectedChannelId);
@@ -1492,7 +1490,7 @@ Deno.serve(async (req: Request) => {
       // LIFF ID is issued to a LINE Login channel, not a Messaging API channel.
       // Both channels must be owned by the same LINE Provider for user ID parity.
       const expectedChannelId = /^([0-9]{8,})-[A-Za-z0-9]+$/.exec(
-        ownOa?.liffId || Deno.env.get("LINE_LIFF_ID") || "")?.[1] || "";
+        Deno.env.get("LINE_LIFF_ID") || "")?.[1] || "";
       const line = await lineVerify(idToken, accessToken, {
         channelId:expectedChannelId, botToken:ownOa?.token
       });
@@ -1637,7 +1635,7 @@ Deno.serve(async (req: Request) => {
           "目前狀態："+(ticket.status==="HOLD"?"保留中":"候位中"),
           "此號碼已從取消狀態恢復，請依即時叫號網頁確認最新排序。",
           ...shopDetails(tenant),
-        ],[{label:"查看即時叫號網頁",uri:liffQueueProgressLink(await shopLinkContext(db,tenant),ticket.id)}]),origin);
+        ],[{label:"查看即時叫號網頁",uri:liffQueueProgressLink(tenant,ticket.id)}]),origin);
     }
     if (payload.action === "notify-ticket-cancel" || payload.action === "notify-reservation-cancel" || payload.action === "notify-reservation-updated") {
       const slug = String(payload.slug || "");
@@ -1661,7 +1659,7 @@ Deno.serve(async (req: Request) => {
             "取消號碼：" + ticketNumber(ticket),
             "此號碼已不在候位名單中。",
             ...shopDetails(tenant),
-          ], [{ label: "查看我的紀錄", uri: liffManageLink(await shopLinkContext(db, tenant), "ticket", ticket.id, "view") }]), origin);
+          ], [{ label: "查看我的紀錄", uri: liffManageLink(tenant, "ticket", ticket.id, "view") }]), origin);
       }
       const { data: booking } = await db.from("qm_reservations")
         .select("id,user_id,status,booking_date,booking_time,party_size,customer_name,customer_phone,line_cancel_event_id,line_update_event_id,selected_items")
@@ -1683,15 +1681,15 @@ Deno.serve(async (req: Request) => {
           return reply(409, { error: "RESERVATION_NOT_CANCELLED" }, origin);
         return pushNotice(db, tenant, booking.user_id, "RESERVATION_CANCELLED", booking.line_cancel_event_id,
           flexNotice("預約已取消", detail, [
-            { label: "查看我的紀錄", uri: liffManageLink(await shopLinkContext(db, tenant), "reservation", booking.id, "view") },
+            { label: "查看我的紀錄", uri: liffManageLink(tenant, "reservation", booking.id, "view") },
           ]), origin);
       }
       if (booking.status !== "CONFIRMED" || !booking.line_update_event_id)
         return reply(409, { error: "RESERVATION_NOT_UPDATED" }, origin);
       return pushNotice(db, tenant, booking.user_id, "RESERVATION_UPDATED", booking.line_update_event_id,
         flexNotice("預約已更新", [...detail, "以下為目前最新的預約資訊。"], [
-          { label: "編輯預約", uri: liffManageLink(await shopLinkContext(db, tenant), "reservation", booking.id, "edit") },
-          { label: "取消預約", uri: liffManageLink(await shopLinkContext(db, tenant), "reservation", booking.id, "cancel") },
+          { label: "編輯預約", uri: liffManageLink(tenant, "reservation", booking.id, "edit") },
+          { label: "取消預約", uri: liffManageLink(tenant, "reservation", booking.id, "cancel") },
         ]), origin);
     }
     return reply(400, { error: "UNKNOWN_ACTION" }, origin);

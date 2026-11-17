@@ -49,14 +49,6 @@ export function renderOaSettings({isManager}){
    (connected?'<div class="oa-webhook-section"><div class="oa-step-title"><strong>Webhook URL</strong><span>在 LINE Messaging API 啟用 Use webhook</span></div>'+
      '<div class="oa-webhook-entry"><input id="own-oa-webhook" class="field" type="text" readonly value="'+esc(webhook)+'" aria-label="Webhook URL">'+
      '<button class="btn outline" type="button" data-act="copy-oa-webhook">複製網址</button></div></div>':'')+
-   ((!connected||replacing)?
-    '<details class="oa-advanced"><summary>進階設定：LINE Login／LIFF（選填）</summary>'+
-     '<div class="oa-advanced-content"><label for="own-oa-liff">LIFF ID</label>'+
-     '<input id="own-oa-liff" class="field" type="text" autocomplete="off" value="'+
-      esc(connected?(lineState.lineConfig?.merchantLiffId||""):"")+
-     '" placeholder="不需要可留空"><p>一般 LINE OA 串接不需要填寫 LIFF ID。</p></div></details>':
-    '<details class="oa-advanced"><summary>進階設定：LINE Login／LIFF</summary>'+
-     '<div class="oa-advanced-content"><p>一般 LINE OA 串接不需要 LIFF ID；如須更換進階設定，請選「更換憑證」。</p></div></details>')+
    '<div class="oa-settings-actions">'+
      (connected&&!replacing?
        btn("更換憑證","replace-own-oa","outline")+

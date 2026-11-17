@@ -63,11 +63,9 @@ if(a==="save-customer-homepage"){
      if(lineState.lineConfig?.merchantOaConnected && !(lineState.oaReplacing===true&&lineState.oaReplacingSlug===routeState.slug))throw Error("請先按「更換憑證」再輸入新資料。");
      const channelSecret=val("own-oa-secret");
      const botToken=val("own-oa-token");
-     const liffId=val("own-oa-liff");
-     if(!/^[0-9a-fA-F]{32}$/.test(channelSecret))throw Error("Channel secret 格式不正確：必須為 32 位十六進位字元。");
+          if(!/^[0-9a-fA-F]{32}$/.test(channelSecret))throw Error("Channel secret 格式不正確：必須為 32 位十六進位字元。");
      if(botToken.length<32)throw Error("Channel access token (long-lived) 尚未填寫或格式不完整。");
-     if(liffId&&!/^[0-9]{8,}-[A-Za-z0-9]+$/.test(liffId))throw Error("LIFF ID 格式不正確：應為「數字-英數字」，不是 Messaging API Channel ID；不需要 LINE 登入可留空。");
-     payload={action:"connect-merchant-oa",slug:routeState.slug,liffId,botToken,channelSecret};
+          payload={action:"connect-merchant-oa",slug:routeState.slug,botToken,channelSecret};
    }
    if(!authState.session?.access_token)throw Error("請先登入企業管理者帳號");
    const res=await fetch(lineState.LINE_BRIDGE_URL,{
