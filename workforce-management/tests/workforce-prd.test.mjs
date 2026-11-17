@@ -6,6 +6,16 @@ import vm from 'node:vm';
 const src=readFileSync(new URL('../app.js',import.meta.url),'utf8');
 const migration=name=>readFileSync(new URL('../supabase/migrations/'+name,import.meta.url),'utf8');
 
+test('Latest Work GPS migration rejects spoofable accuracy and preserves punch idempotency',()=>{
+ const sql=migration('20261117151000_workforce_gps_accuracy_guard.sql');
+ assert.match(sql,/p_accuracy > 100/);
+ assert.match(sql,/least\(p_accuracy,30\)/);
+ assert.match(sql,/v_row\.member_id is distinct from p_member/);
+ assert.match(src,/gpsRequired/);
+ assert.match(src,/payload\.accuracy>100/);
+ assert.match(src,/補卡申請/);
+});
+
 test('Workforce client remains syntactically valid and contains only publishable key',()=>{
  assert.doesNotThrow(()=>new vm.Script(src));
  assert.match(src,/sb_publishable_/);
