@@ -112,7 +112,7 @@ async function demo(action='snapshot',data={}){return call('/rest/v1/rpc/wm_demo
 async function query(table,params=''){return call('/rest/v1/'+table+'?'+params,'GET',null,app.token);}
 async function reload(silent=false){
  if(app.busy){app.reloadQueued=true;$('connectionLabel').textContent='資料更新中';return;}
- const loadingMode=app.mode,loadingToken=app.token;
+ const loadingMode=app.mode,loadingAuthGeneration=wfAuthGeneration;
  app.busy=true;$('connectionLabel').textContent='資料更新中';if(!silent)$('appContent').innerHTML='<div class="loading">資料更新中，請稍後...</div>';
  try{
   if(app.mode==='demo'){
@@ -165,16 +165,16 @@ async function reload(silent=false){
     }
    }
   }
-  if(app.reloadQueued||loadingMode!==app.mode||loadingToken!==app.token){
+  if(app.reloadQueued||loadingMode!==app.mode||loadingAuthGeneration!==wfAuthGeneration){
    app.busy=false;app.reloadQueued=false;app.data=null;return reload(true);
   }
   $('connectionLabel').textContent=app.data?'資料已同步':'尚未登入';
   if(!silent)banner(app.data?'已取得最新資料':'請先登入或建立企業');
  }catch(e){$('connectionLabel').textContent='資料庫連線異常';if(!silent)banner(e.message,true);$('appContent').innerHTML='<div class="error">'+esc(e.message)+'<p><button class="btn" id="retryLoad" data-action="retryLoad">重新載入</button></p></div>';app.busy=false;
-  if(app.reloadQueued||loadingMode!==app.mode||loadingToken!==app.token){app.reloadQueued=false;return reload(true);}
+  if(app.reloadQueued||loadingMode!==app.mode||loadingAuthGeneration!==wfAuthGeneration){app.reloadQueued=false;return reload(true);}
   return;}
  app.busy=false;
- if(app.reloadQueued||loadingMode!==app.mode||loadingToken!==app.token){app.reloadQueued=false;return reload(true);}
+ if(app.reloadQueued||loadingMode!==app.mode||loadingAuthGeneration!==wfAuthGeneration){app.reloadQueued=false;return reload(true);}
  render();
 }
 async function action(name,data){
@@ -1014,10 +1014,17 @@ function csvRows(text){
  return out;
 }
 function downloadCsv(){
- const b=app.data?.branches?.[0]?.name||'台北總店';
- const data='\uFEFF員工編號,姓名,分店,角色,聘僱類型\r\nCSV001,測試小華,'+b+',員工,正職\r\nCSV002,測試小林,'+b+',員工,兼職';
- const blob=new Blob([data],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
- a.href=url;a.download='workforce-employee-template.csv';document.body.appendChild(a);a.click();a.remove();
+ const branchName=app.data?.branches?.[0]?.name||'台北總店';
+ const rows=[
+  ['員工編號','姓名','分店','角色','聘僱類型'],
+  ['CSV001','測試小華',branchName,'員工','正職'],
+  ['CSV002','測試小林',branchName,'員工','兼職']
+ ];
+ // A user-defined branch name may contain commas, quotes, newlines or formula prefixes.
+ // Apply the same injection-safe CSV quoting used by attendance exports.
+ const data='\uFEFF'+rows.map(row=>row.map(reportCell).join(',')).join('\r\n');
+ const blob=new Blob([data],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');
+ link.href=url;link.download='workforce-employee-template.csv';document.body.appendChild(link);link.click();link.remove();
  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function openCsvImport(){
@@ -1491,7 +1498,7 @@ function dateCard(day,compact=false){
  shifts.slice(0,compact?3:50).map(x=>'<div class="shift-card" '+(manager()?'draggable="true"':'')+
   ' data-shift-id="'+esc(x.id)+'"><b>'+personLabel(x.member_id)+'</b>'+
   '<span>'+taiTime(x.starts_at)+'–'+taiTime(x.ends_at)+'</span></div>').join('')+
- (shifts.length>(compact?3:50)?'<small>另 '+(shifts.length-3)+' 筆</small>':'')+
+ (shifts.length>(compact?3:50)?'<small>另 '+(shifts.length-(compact?3:50))+' 筆</small>':'')+
  (!shifts.length?'<small class="muted">無班次</small>':'')+'</div>';
 }
 const formerCalendar=schedule;
@@ -1583,24 +1590,43 @@ document.querySelector('#nav').insertAdjacentHTML('beforeend',
  '<button type="button" data-tab="line"><span>▣</span> LINE 通知</button>');
 app.lineState=null;
 app.lineConfig=null;
-async function lineEndpoint(data=null){
+app.lineDelivery=null;
+async function lineEndpoint(data=null,retry=true){
  const headers={apikey:KEY};
  if(data)headers['Content-Type']='application/json';
  if(app.mode==='real'&&app.token)headers.Authorization='Bearer '+app.token;
+ const initialToken=app.mode==='real'?app.token:null,generation=wfAuthGeneration;
  const res=await fetch(API+'/functions/v1/wm-line',{
   method:data?'POST':'GET',headers,body:data?JSON.stringify(data):undefined,cache:'no-store'});
+ if(res.status===401&&retry&&initialToken){
+  if(generation!==wfAuthGeneration)throw Error('登入身分已變更，請重新操作');
+  if(initialToken===app.token)await renewSession();
+  return lineEndpoint(data,false);
+ }
  const result=await res.json().catch(()=>({error:'LINE_RESPONSE_INVALID'}));
  if(!res.ok)throw Error(result.error||'LINE 服務發生問題 ('+res.status+')');
  return result;
 }
 async function refreshLineStatus(){
- if(app.mode!=='real'||!app.token||!app.tenantId){app.lineState=null;return;}
+ if(app.mode!=='real'||!app.token||!app.tenantId){
+  app.lineState=null;app.lineDelivery=null;return;
+ }
+ const tenant=app.tenantId,generation=wfAuthGeneration;
  try{
-  const [config,linked]=await Promise.all([
-   lineEndpoint(),lineEndpoint({action:'status',tenant_id:app.tenantId})]);
-  app.lineConfig=config;app.lineState=linked;
+  const authorized=['owner','hr'].includes(role());
+  const [config,linked,delivery]=await Promise.all([
+   lineEndpoint(),lineEndpoint({action:'status',tenant_id:tenant}),
+   authorized?call('/rest/v1/rpc/wm_line_delivery_status','POST',
+    {p_tenant:tenant},app.token).catch(error=>({error:error.message})):Promise.resolve(null)
+  ]);
+  if(tenant!==app.tenantId||generation!==wfAuthGeneration)return;
+  app.lineConfig=config;app.lineState=linked;app.lineDelivery=delivery;
   if(app.tab==='line')render();
- }catch(error){app.lineState={error:error.message};if(app.tab==='line')render();}
+ }catch(error){
+  if(tenant!==app.tenantId||generation!==wfAuthGeneration)return;
+  app.lineState={error:error.message};app.lineDelivery=null;
+  if(app.tab==='line')render();
+ }
 }
 const priorLineRender=render;
 render=function(){
@@ -1609,6 +1635,7 @@ render=function(){
  heading();
  const info=app.lineState||{};
  const cfg=app.lineConfig||{};
+ const delivery=app.lineDelivery;
  const activeMiniConfig=cfg.miniEnvironments?.[wfMiniEnvironment];
  const activeLiffId=wfMiniMode?activeMiniConfig?.liffId:cfg.liffId;
  const linkInfo=app.mode==='demo'
@@ -1625,6 +1652,12 @@ render=function(){
      '<button class="btn" data-line="refresh">重新檢查</button></div>'+
    '<p class="muted">LINE 綁定僅供已登入且在職的企業員工。MINI App 與一般 LIFF 使用不同 Channel；必須完成對應 Channel 設定後才可驗證員工身分。</p>';
  const controls=app.mode==='real'&&['owner','hr'].includes(role())?
+   (delivery?.error?'<div class="notice">LINE 佇列統計無法讀取：'+esc(delivery.error)+'</div>':
+    delivery?'<div class="bar-row"><span>已綁定 LINE 員工</span><strong>'+esc(delivery.linked)+'</strong></div>'+
+     '<div class="bar-row"><span>待處理（含重試）</span><strong>'+esc(delivery.pending)+'</strong></div>'+
+     '<div class="bar-row"><span>LINE API 已接受</span><strong>'+esc(delivery.sent)+'</strong></div>'+
+     '<div class="bar-row"><span>已略過</span><strong>'+esc(delivery.skipped)+'</strong></div>':
+     '<div class="notice">正在讀取通知發送統計…</div>')+
    '<button class="btn" data-line="flush">發送待處理 LINE 通知（最多 5 筆）</button>':'';
  $('appContent').innerHTML=
   panel('我的 LINE 身分與 OA 狀態',linkInfo)+
@@ -2880,4 +2913,124 @@ $('appContent').addEventListener('submit',async event=>{
    '、審核 '+out.actions+'、更正 '+out.adjustments+' 筆');
  }catch(err){banner(err.message||'出勤歷史匯出失敗',true);}
  finally{if(submit&&submit.isConnected)submit.disabled=false;}
+});
+
+
+/* HR-OPS: manually downloadable owner/HR operational archive. Browser-only:
+   no Cloudflare Worker, no scheduled jobs, no authentication secrets, no writes.
+   This is NOT an atomic Supabase backup or a database restore mechanism. */
+const WF_ARCHIVE_TABLES=[
+ ['wm_tenants','id','id,name,is_demo','id'],
+ ['wm_branches','id','*','tenant_id'],
+ ['wm_departments','id','*','tenant_id'],
+ ['wm_members','id','id,tenant_id,branch_id,user_id,display_name,employee_code,role,employment_type,status,created_at,department_id,reports_to,job_title,hired_on,left_on,skills','tenant_id'],
+ ['wm_shifts','id','*','tenant_id'],
+ ['wm_punches','id','*','tenant_id'],
+ ['wm_requests','id','*','tenant_id'],
+ ['wm_request_actions','id','*','tenant_id'],
+ ['wm_notifications','id','*','tenant_id'],
+ ['wm_leave_entitlements','id','*','tenant_id'],
+ ['wm_leave_policies','id','*','tenant_id'],
+ ['wm_period_closures','id','*','tenant_id'],
+ ['wm_period_adjustments','id','*','tenant_id'],
+ ['wm_attendance_adjustments','id','*','tenant_id'],
+ ['wm_attendance_anomalies','id','*','tenant_id'],
+ ['wm_availability','id','*','tenant_id'],
+ ['wm_shift_templates','id','*','tenant_id'],
+ ['wm_staffing_requirements','id','*','tenant_id'],
+ ['wm_schedule_rules','effective_from','*','tenant_id'],
+ ['wm_member_branches','id','*','tenant_id'],
+ ['wm_branch_qr_settings','branch_id','*','tenant_id'],
+ ['wm_request_documents','id','*','tenant_id']
+];
+const WF_ARCHIVE_PAGE_SIZE=500;
+const WF_ARCHIVE_MAX_ROWS=50000;
+TABS.backup=['企業營運資料匯出','由企業負責人或人資手動下載營運資料，供內部保存與稽核。'];
+document.querySelector('#nav').insertAdjacentHTML('beforeend',
+ '<button type="button" data-tab="backup"><span>▣</span> 資料匯出</button>');
+app.archiveBusy=false;
+const wfBeforeArchiveRender=render;
+render=function(){
+ wfBeforeArchiveRender();
+ const archiveNav=document.querySelector('#nav [data-tab="backup"]');
+ if(archiveNav)archiveNav.hidden=app.mode!=='real'||!app.data||!['owner','hr'].includes(role());
+ if(!app.data||app.tab!=='backup')return;
+ heading();
+ if(app.mode!=='real'||!app.token||!['owner','hr'].includes(role())){
+  $('appContent').innerHTML=panel('權限限制',
+   '<p>只有正式企業的負責人或人資管理者可以匯出企業營運資料。</p>');
+  return;
+ }
+ const content='<p>按下後會由此裝置直接向 Supabase 讀取企業資料，分頁核對後下載 JSON。'
+  +'不使用 Cloudflare Worker，也不會將備份上傳到第三方儲存空間。</p>'+
+  '<p class="muted">包含員工個資、班表、打卡、請假、簽核、通知、月結等營運紀錄。'
+  +'不包含帳號密碼、Auth 工作階段、邀請密鑰、附件原始檔或整個資料庫的還原能力。'
+  +'執行期間有人修改資料可能造成非同一時間點的結果；這不是完整或具交易一致性的備份。</p>'+
+  '<div class="notice warning">檔案包含敏感個資，請儲存在受控、加密的裝置，'
+  +'不要透過公開聊天群組或不受信任的雲端硬碟傳送。'
+  +'雇主仍須另行確保出勤紀錄至少保存五年及可依法提供。</div>'+
+  '<button type="button" class="btn primary" data-wf-archive="download"'+
+  (app.archiveBusy?' disabled':'')+'>'+
+  (app.archiveBusy?'正在整理資料…':'下載本企業營運資料 JSON')+'</button>'+
+  '<p class="muted" id="wmArchiveProgress" role="status" aria-live="polite">'+
+  (app.archiveBusy?'正在從資料庫分頁讀取，請勿切換企業。':'僅在按鈕觸發後查詢，不會自動排程。')+'</p>';
+ $('appContent').innerHTML=panel('企業營運資料匯出',content);
+};
+function wfAssertArchiveAccess(tenant,generation,userId){
+ if(app.mode!=='real'||!app.token||!['owner','hr'].includes(role())||
+  app.tenantId!==tenant||app.user?.id!==userId||wfAuthGeneration!==generation)
+  throw Error('企業或登入身分已變更，取消資料匯出');
+}
+async function wfArchivePages(table,order,columns,scope,tenant,generation,userId,progress){
+ const result=[];
+ const filter=scope+'=eq.'+encodeURIComponent(tenant);
+ for(let offset=0;;offset+=WF_ARCHIVE_PAGE_SIZE){
+  wfAssertArchiveAccess(tenant,generation,userId);
+  const values=await call('/rest/v1/'+table+'?select='+encodeURIComponent(columns)+
+   '&'+filter+'&order='+order+'.asc&limit='+WF_ARCHIVE_PAGE_SIZE+
+   '&offset='+offset,'GET',null,app.token);
+  if(!Array.isArray(values))throw Error(table+' 回傳格式不正確，停止匯出');
+  result.push(...values);
+  if(result.length>WF_ARCHIVE_MAX_ROWS)
+   throw Error(table+' 已超過每次 '+WF_ARCHIVE_MAX_ROWS+' 筆的安全限制，未產生不完整檔案');
+  if(progress)progress.textContent='已讀取 '+table+'：'+result.length+' 筆';
+  if(values.length<WF_ARCHIVE_PAGE_SIZE)break;
+ }
+ return result;
+}
+async function wfExportTenantArchive(progress=null){
+ const tenant=app.tenantId,generation=wfAuthGeneration,userId=app.user?.id;
+ wfAssertArchiveAccess(tenant,generation,userId);
+ const started=new Date().toISOString(),tables={},counts={};
+ for(const [table,order,columns,scope] of WF_ARCHIVE_TABLES){
+  const rows=await wfArchivePages(table,order,columns,scope,tenant,generation,userId,progress);
+  tables[table]=rows;counts[table]=rows.length;
+ }
+ wfAssertArchiveAccess(tenant,generation,userId);
+ const file={format:'workforce-operational-export-v1',tenant_id:tenant,
+  started_at_utc:started,finished_at_utc:new Date().toISOString(),
+  limitations:'RLS-scoped, non-transactional operational data export. No Auth accounts, storage objects, invite secrets, LINE tokens, or automated recovery.',
+  table_counts:counts,tables};
+ const text=JSON.stringify(file);
+ const blob=new Blob([text],{type:'application/json;charset=utf-8'});
+ const url=URL.createObjectURL(blob);
+ try{
+  const anchor=document.createElement('a');
+  anchor.href=url;anchor.download='workforce-export-'+tenant.slice(0,8)+'-'+today()+'.json';
+  document.body.appendChild(anchor);anchor.click();anchor.remove();
+ }finally{setTimeout(()=>URL.revokeObjectURL(url),5000);}
+ return counts;
+}
+document.addEventListener('click',async event=>{
+ if(!event.target.closest('#appContent, #pageActions'))return;
+ const button=event.target.closest('[data-wf-archive="download"]');
+ if(!button||button.disabled||app.tab!=='backup'||app.archiveBusy)return;
+ if(!confirm('此檔包含企業員工個資、出勤及假勤紀錄。確認在受控裝置下載並妥善加密保存？'))return;
+ app.archiveBusy=true;button.disabled=true;
+ const progress=$('wmArchiveProgress');
+ try{
+  const counts=await wfExportTenantArchive(progress);
+  banner('企業營運資料已下載：'+Object.values(counts).reduce((sum,n)=>sum+n,0)+' 筆');
+ }catch(error){banner(error.message||'匯出失敗，沒有產生不完整的檔案',true);}
+ finally{app.archiveBusy=false;if(app.tab==='backup')render();}
 });
