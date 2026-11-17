@@ -1,0 +1,59 @@
+name: Work｜手動發布 Cloudflare 正式版（release 專用）
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Enter RELEASE to publish only Work's tested main snapshot"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: work-release-only
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: ${{ github.ref == 'refs/heads/main' && inputs.confirmation == 'RELEASE' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Validate Work and build static Pages assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check workforce-management/app.js
+          node --check workforce-management/swap-sync.js
+          node --test workforce-management/tests/workforce-mini-app.test.mjs
+          node --test workforce-management/tests/workforce-mini-oa-entry.test.mjs
+          (cd workforce-management && node ./cf-pages-build.mjs)
+          test -s workforce-management/dist/index.html
+          test -s workforce-management/dist/mini/index.html
+      - name: Promote Work files only to release branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin release
+          worktree="$RUNNER_TEMP/work-release"
+          git worktree add --detach "$worktree" origin/release
+          mkdir -p "$worktree/workforce-management/mini" "$worktree/workforce-management/vendor"
+          for file in index.html app.js swap-sync.js style.css cf-pages-build.mjs; do
+            cp "workforce-management/$file" "$worktree/workforce-management/$file"
+          done
+          cp workforce-management/mini/index.html workforce-management/mini/mini.css "$worktree/workforce-management/mini/"
+          cp workforce-management/vendor/qrcode.min.js workforce-management/vendor/QR-CODE-LICENSE "$worktree/workforce-management/vendor/"
+          git -C "$worktree" add -- workforce-management/index.html workforce-management/app.js workforce-management/swap-sync.js workforce-management/style.css workforce-management/cf-pages-build.mjs workforce-management/mini/index.html workforce-management/mini/mini.css workforce-management/vendor/qrcode.min.js workforce-management/vendor/QR-CODE-LICENSE
+          if git -C "$worktree" diff --cached --quiet; then
+            echo "Work release is already up to date"
+            exit 0
+          fi
+          git -C "$worktree" -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "release(work): approved static snapshot $GITHUB_SHA"
+          git -C "$worktree" push origin HEAD:release
+          echo "Work release branch promoted; only Cloudflare Pages production from release is eligible"
