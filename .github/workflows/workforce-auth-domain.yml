@@ -1,0 +1,27 @@
+name: Work｜正式網域 Auth Redirect 安全設定
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/workforce-auth-domain.yml"
+      - ".github/scripts/sync-work-auth-domain.py"
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[work-auth-domain-once]')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Append Work Auth callback safely and verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/sync-work-auth-domain.py
