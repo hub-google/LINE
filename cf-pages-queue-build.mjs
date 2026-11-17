@@ -92,7 +92,7 @@ if (fs.existsSync(sw)) {
     '$1"$2-cf-pages-v1"');
   fs.writeFileSync(sw, content);
 }
-fs.writeFileSync(path.join(output, '_headers'),
+// The former Worker redirected this old homepage URL back to the canonical root.\nfs.writeFileSync(path.join(output, '_redirects'), '/home.html / 302\\n');\nfs.writeFileSync(path.join(output, '_headers'),
   '/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n' +
   '/*.html\n  Cache-Control: no-cache\n' +
   '/release.json\n  Cache-Control: no-store\n' +
