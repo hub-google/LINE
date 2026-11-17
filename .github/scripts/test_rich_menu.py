@@ -44,6 +44,16 @@ class RichMenuContract(unittest.TestCase):
         self.assertTrue(any("merchant-center.html#publish" in d for d in merchant))
         self.assertFalse(any("聯絡平台" in title or "客服" in title for title, *_ in richmenu.MERCHANT_ITEMS))
 
+    def test_platform_oa_menu_uses_liff_for_booking_entry(self):
+        items = richmenu.customer_items_for_platform_liff("1234567890-AbCdEf")
+        for title, caption, glyph, action in items[:4]:
+            self.assertTrue(action["uri"].startswith("https://liff.line.me/1234567890-AbCdEf/directory.html?mode=search&entry=platform-oa"))
+        self.assertIn("service=%E9%A0%90%E7%B4%84", items[1][3]["uri"])
+        self.assertIn("service=%E5%8F%96%E8%99%9F", items[2][3]["uri"])
+        self.assertEqual(items[4][3]["uri"], richmenu.BASE+"my-records.html")
+        with self.assertRaises(RuntimeError):
+            richmenu.customer_items_for_platform_liff("")
+
     def test_both_rendered_pngs(self):
         pictures = [richmenu.create_image(richmenu.CUSTOMER_ITEMS, 0),
                     richmenu.create_image(richmenu.MERCHANT_ITEMS, 1)]

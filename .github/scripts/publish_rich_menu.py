@@ -7,6 +7,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import urllib.error
 import urllib.request
 
@@ -28,6 +29,37 @@ CUSTOMER_ITEMS = [
     ("我的紀錄", "跨店預約・取號・訂餐", "dashboard", {"type":"uri","label":"我的紀錄","uri":BASE+"my-records.html"}),
     ("常見問題", "快速了解平台使用方式", "guide", {"type":"uri","label":"常見問題","uri":BASE+"home.html#faq"}),
 ]
+
+
+def customer_items_for_platform_liff(liff_id):
+    """Use an official-OA LIFF entry for store discovery, preserving chat context."""
+    if not re.fullmatch(r"\d{8,}-[A-Za-z0-9]+", liff_id or ""):
+        raise RuntimeError("Queue Monster platform LIFF is not configured")
+    root = "https://liff.line.me/" + liff_id + "/directory.html?mode=search&entry=platform-oa"
+    service = {
+        "搜尋店家": "",
+        "線上預約": "&service=%E9%A0%90%E7%B4%84",
+        "現場取號": "&service=%E5%8F%96%E8%99%9F",
+        "線上點餐": "&service=%E9%BB%9E%E9%A4%90",
+    }
+    return [(title, caption, glyph, {**action, "uri":root+service[title] if title in service else action["uri"]})
+            for title, caption, glyph, action in CUSTOMER_ITEMS]
+
+
+def configured_platform_liff_id():
+    """Read the live public LIFF ID, never store it in a Worker or expose secrets."""
+    url = "https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/line-bridge?action=config&site=queue"
+    try:
+        with urllib.request.urlopen(url, timeout=25) as response:
+            config = json.load(response)
+    except (urllib.error.URLError, ValueError) as exc:
+        raise RuntimeError("Unable to verify live platform LIFF config") from exc
+    liff_id = config.get("liffId")
+    if not config.get("loginReady") or not config.get("messagingReady") or not re.fullmatch(r"\d{8,}-[A-Za-z0-9]+", str(liff_id or "")):
+        raise RuntimeError("Platform LIFF / messaging is not ready; refusing to publish broken menu URLs")
+    return liff_id
+
+
 MERCHANT_ITEMS = [
     ("免費叫號體驗", "免註冊直接試用", "play", {"type":"uri","label":"免費叫號體驗","uri":BASE+"demo.html"}),
     ("了解平台功能", "預約・叫號・點餐", "features", {"type":"uri","label":"了解平台功能","uri":BASE+"for-merchants.html"}),
@@ -235,7 +267,7 @@ def main():
     print("Live LINE OA display name: "+(live_name or "(unknown)"))
     if live_name!="排隊怪獸":
         print("::warning title=OA account name not updated::Change the official account display name to 排隊怪獸 in LINE Official Account Manager; Messaging API cannot rename the actual OA.")
-    customers=publish_menu(token,CUSTOMER_ITEMS,0,"platform-customers-")
+    customers=publish_menu(token,customer_items_for_platform_liff(configured_platform_liff_id()),0,"platform-customers-")
     merchants=publish_menu(token,MERCHANT_ITEMS,1,"platform-merchants-")
     sync_alias(token,CUSTOMER_ALIAS,customers)
     sync_alias(token,MERCHANT_ALIAS,merchants)

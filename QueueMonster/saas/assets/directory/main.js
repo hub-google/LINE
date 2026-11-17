@@ -8,6 +8,7 @@ const bridge=SB_URL+"/functions/v1/line-bridge?action=config";
 const sb=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"line-saas-customer-session-v2"}});
 const params=new URLSearchParams(location.search),mode=["search","queue","mine","last-board"].includes(params.get("mode"))?params.get("mode"):"search";
 // Old personal record links all show the same combined history page.
+const platformChatEntry=params.get("entry")==="platform-oa";
 const isQueueSection=mode==="queue";
 const isHistorySection=location.pathname.endsWith("/my-records.html")||mode==="mine"||mode==="last-board";
 // LINE OA service links open the matching real-store filter, never a demo or blank search.
@@ -73,7 +74,7 @@ function setupExploreFilters(){
 
 function e(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function customerUrl(slug,tab,oaMode="PLATFORM"){
- return customerEntryUrl(slug,{surface:"directory",tab,oaMode,liffId});
+ return customerEntryUrl(slug,{surface:"directory",tab,oaMode,liffId,platformChatEntry});
 }
 function badges(t){
  const m=t.modules||{};
@@ -331,7 +332,21 @@ document.addEventListener("click",async event=>{
  if(!/^[a-z0-9][a-z0-9-]{2,39}$/.test(merchant))return;
  // No second LIFF redirect for merchants sharing the headquarters OA.
  const selected=all.find(shop=>shop.slug===merchant);
- if(selected?.oa_mode==="PLATFORM"||anchor.dataset.oaMode==="PLATFORM")return;
+ if(selected?.oa_mode==="PLATFORM"||anchor.dataset.oaMode==="PLATFORM"){
+  // From the official OA, always retain the LIFF URL so chat_message.write
+  // remains available after choosing a store from the directory.
+  if(platformChatEntry&&!liffId){
+   event.preventDefault();
+   try{
+    const response=await fetch(bridge+"&site=queue",{cache:"no-store"});
+    if(!response.ok)throw Error("PLATFORM_LIFF_UNAVAILABLE");
+    const cfg=await response.json();
+    if(!/^\d{8,}-[A-Za-z0-9]+$/.test(String(cfg.liffId||"")))throw Error("PLATFORM_LIFF_UNAVAILABLE");
+    location.assign("https://liff.line.me/"+encodeURIComponent(cfg.liffId)+"/?"+original.searchParams.toString());
+   }catch(_){location.assign(original.href);}
+  }
+  return;
+ }
  event.preventDefault();
  const query=new URLSearchParams();
  query.set("view","customer");query.set("merchant",merchant);
@@ -367,7 +382,7 @@ async function load(){
  }
  try{
   // Parallelize LINE config and identity; guests can see the sign-in CTA without config.
-  const confPromise=fetch(bridge,{cache:"no-store"}).then(r=>r.ok?r.json():{}).catch(()=>({}));
+  const confPromise=fetch(bridge+((platformChatEntry||location.hostname==="queue.monsterport.com")?"&site=queue":""),{cache:"no-store"}).then(r=>r.ok?r.json():{}).catch(()=>({}));
   if(needsIdentity){
     els.intro.innerHTML='<strong>我的紀錄</strong><p>預約、取號、訂餐三種紀錄同時呈現，並可點開所屬店家的詳細資訊。</p>';
     const session=await sb.auth.getSession();

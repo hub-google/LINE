@@ -23,6 +23,14 @@ test("directory platform and own-OA entrypoints keep their own routing semantics
  assert.equal(customerEntryUrl("abc",{surface:"directory",tab:"queue",oaMode:"MERCHANT"}),
    "./?view=customer&merchant=abc&tab=queue");
 });
+test("platform OA directory entry retains one-to-one LIFF context for a booking",()=>{
+ assert.equal(customerEntryUrl("abc",{surface:"directory",tab:"reserve",oaMode:"PLATFORM",liffId:"L123",platformChatEntry:true}),
+   "https://liff.line.me/L123/?view=customer&merchant=abc&tab=reserve&entry=platform-oa");
+ assert.equal(customerEntryUrl("abc",{surface:"directory",tab:"reserve",oaMode:"PLATFORM",platformChatEntry:true}),
+   "./?view=customer&merchant=abc&tab=reserve&entry=platform-oa");
+ assert.equal(customerEntryUrl("own",{surface:"directory",tab:"reserve",oaMode:"MERCHANT",liffId:"L123",platformChatEntry:true}),
+   "https://liff.line.me/L123/?view=customer&merchant=own&tab=reserve");
+});
 test("all logo entrypoints share policy while preserving search's former URL normalization",()=>{
  const plain="https://example.com/logo.png";
  assert.equal(safeMerchantLogoUrl(plain),plain);

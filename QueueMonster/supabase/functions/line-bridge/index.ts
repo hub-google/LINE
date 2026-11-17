@@ -794,11 +794,19 @@ async function dispatchPendingNotices(req: Request, origin: string | null): Prom
 // Platform-wide OA replies are navigation only. All private operations still
 // require verified LINE identity and tenant-scoped RPCs on the website.
 const PLATFORM_ENTRY = "https://hub-google.github.io/LINE/booking/";
+function platformDirectoryLink(service = ""): string {
+  const liffId = platformCustomerLiffId();
+  if (!/^\d{8,}-[A-Za-z0-9]+$/.test(liffId))
+    return PLATFORM_ENTRY+"directory.html?mode=search"+(service?"&service="+encodeURIComponent(service):"");
+  const query = new URLSearchParams({mode:"search",entry:"platform-oa"});
+  if (service) query.set("service",service);
+  return "https://liff.line.me/"+encodeURIComponent(liffId)+"/directory.html?"+query.toString();
+}
 // Use record-specific URLs for the platform OA; no fictitious platform queue board.
 function platformBotMessage(command: string, welcome = false): Record<string, unknown> {
   const input = command.trim().toLowerCase().slice(0, 120);
   let title = "排隊怪獸｜請選擇要使用的服務";
-  let link = PLATFORM_ENTRY+"directory.html?mode=search";
+  let link = platformDirectoryLink();
   let label = "找店家預約";
   if (welcome) {
     title = "歡迎加入排隊怪獸！可搜尋店家、預約、取號、線上點餐並查看紀錄。未綁 LINE OA 的店家，可由顧客在本帳號發出確認訊息，免費取得預約、取號及訂餐卡；日後主動叫號或提醒不屬於免費即時回覆。";
@@ -812,7 +820,7 @@ function platformBotMessage(command: string, welcome = false): Record<string, un
     label = "操作教學";
   } else if (!/訂單紀錄|訂餐紀錄|取餐紀錄/.test(input) && /點餐|訂餐|取餐|外帶|餐點/.test(input)) {
     title = "尋找提供線上點餐的店家，選好商品後可依該店設定預約取餐時間；取餐進度請到「我的紀錄」查看。";
-    link = PLATFORM_ENTRY+"directory.html?mode=search&service=%E9%BB%9E%E9%A4%90";
+    link = platformDirectoryLink("點餐");
     label = "尋找線上點餐";
   } else if (/遊戲|逛街|探索/.test(input)) {
     title = "開啟遊戲逛街模式，探索公開店家。";
@@ -832,15 +840,15 @@ function platformBotMessage(command: string, welcome = false): Record<string, un
     label = "我的紀錄";
   } else if (/叫號|看板|進度|輪到|排到/.test(input)) {
     title = "先搜尋店家，再查看該店公開叫號看板；自己的號碼請到「取號紀錄」查詢。";
-    link = PLATFORM_ENTRY+"directory.html?mode=search&service=%E7%9C%8B%E6%9D%BF";
+    link = platformDirectoryLink("看板");
     label = "尋找店家看板";
   } else if (/取號|抽號|排隊|候位|領號/.test(input)) {
     title = "搜尋有開放現場取號的店家，進入門市後即可取號。";
-    link = PLATFORM_ENTRY+"directory.html?mode=search&service=%E5%8F%96%E8%99%9F";
+    link = platformDirectoryLink("取號");
     label = "尋找現場取號";
   } else if (/預約|找店|訂位|掛號/.test(input)) {
     title = "搜尋有提供預約服務的店家，再選擇日期及場次。";
-    link = PLATFORM_ENTRY+"directory.html?mode=search&service=%E9%A0%90%E7%B4%84";
+    link = platformDirectoryLink("預約");
     label = "搜尋線上預約";
   }
   return {
@@ -850,8 +858,8 @@ function platformBotMessage(command: string, welcome = false): Record<string, un
       items: [
         {type:"action",action:{type:"uri",label,uri:link}},
         {type:"action",action:{type:"uri",label:"我的紀錄",uri:PLATFORM_ENTRY+"my-records.html"}},
-        {type:"action",action:{type:"uri",label:"現場取號",uri:PLATFORM_ENTRY+"directory.html?mode=search&service=%E5%8F%96%E8%99%9F"}},
-        {type:"action",action:{type:"uri",label:"線上預約",uri:PLATFORM_ENTRY+"directory.html?mode=search&service=%E9%A0%90%E7%B4%84"}},
+        {type:"action",action:{type:"uri",label:"現場取號",uri:platformDirectoryLink("取號")}},
+        {type:"action",action:{type:"uri",label:"線上預約",uri:platformDirectoryLink("預約")}},
       ],
     },
   };

@@ -16,6 +16,15 @@ test('external browser, QR context and group never send booking information',asy
   assert.equal((await requestBookingReply(liff,id,own)).requested,false);
  }
 });
+test('ungranted LINE chat scope falls back without sending from the user',async()=>{
+ const sent=[];
+ const result=await requestBookingReply({id:own.expectedLiffId,isInClient:()=>true,getContext:()=>({type:'utou'}),permission:{query:async permission=>{
+  assert.equal(permission,'chat_message.write');return {state:'prompt'};
+ }},sendMessages:async messages=>sent.push(messages)},id,{oaMode:'PLATFORM',fromPlatformChat:true,expectedLiffId:own.expectedLiffId});
+ assert.equal(result.requested,false);
+ assert.equal(result.reason,'LINE_CHAT_SCOPE_REQUIRED');
+ assert.equal(sent.length,0);
+});
 test('SDK rejection preserves a retry command without a push fallback',async()=>{
  const result=await requestBookingReply({id:own.expectedLiffId,isInClient:()=>true,getContext:()=>({type:'utou'}),sendMessages:async()=>{throw Error('403')}},id,own);
  assert.equal(result.requested,false);assert.equal(result.command,'確認預約 '+id);

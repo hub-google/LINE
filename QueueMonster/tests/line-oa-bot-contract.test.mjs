@@ -43,7 +43,9 @@ test("bot links to working public booking entry points without bypassing verifie
   assert.match(bridge, /my-records\.html/);
   assert.match(bridge, /merchant-register\.html/);
   assert.match(bridge, /歡迎加入排隊怪獸！/);
-  assert.match(bridge, /service=%E9%BB%9E%E9%A4%90/);
+  assert.match(bridge, /platformDirectoryLink\("點餐"\)/);
+  assert.match(bridge, /entry:"platform-oa"/);
+  assert.match(bridge, /return "https:\/\/liff\.line\.me\/"/);
   assert.match(bridge, /MERCHANT_OA_NOT_CONNECTED/);
   assert.doesNotMatch(bridge, /merchantOa\?\.token \|\| Deno\.env\.get\("LINE_MESSAGING_ACCESS_TOKEN"\)/);
   assert.match(richMenu, /CUSTOMER_ALIAS = "platform-booking-customers"/);

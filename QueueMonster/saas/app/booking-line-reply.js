@@ -13,6 +13,11 @@ export async function requestBookingReply(liff, reservationId, config = {}) {
      typeof liff.sendMessages!=="function"||
      (config.expectedLiffId && liff.id && liff.id!==config.expectedLiffId))
     return {requested:false,command,reason:"MERCHANT_CHAT_REQUIRED"};
+  // Do not silently attempt a send when LINE says the user has not approved chat_message.write.
+  if(typeof liff.permission?.query==="function"){
+    const scope=await liff.permission.query("chat_message.write");
+    if(scope?.state!=="granted")return {requested:false,command,reason:"LINE_CHAT_SCOPE_REQUIRED"};
+  }
   await liff.sendMessages([{type:"text",text:command}]);
   return {requested:true,command};
  }catch(_){return {requested:false,command,reason:"LINE_SEND_FAILED"};}

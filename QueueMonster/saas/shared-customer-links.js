@@ -1,12 +1,17 @@
 // Shared, side-effect-free customer entry URL and public logo validation.
 // Individual entrypoints pass their existing routing context and session policy.
 export function customerEntryUrl(slug,{
-  surface="merchant",tab="",oaMode="PLATFORM",liffId="",currentSlug="",origin="",bookingPath=""
+  surface="merchant",tab="",oaMode="PLATFORM",liffId="",currentSlug="",origin="",bookingPath="",platformChatEntry=false
 }={}){
  const query="?view=customer&merchant="+encodeURIComponent(slug)+
-   (surface==="directory"?"&tab="+encodeURIComponent(tab):"");
+   (surface==="directory"?"&tab="+encodeURIComponent(tab):"")+
+   (surface==="directory"&&oaMode==="PLATFORM"&&platformChatEntry===true?"&entry=platform-oa":"");
  if(surface==="directory"){
-  if(oaMode==="PLATFORM"||!liffId)return "./"+query;
+  if(oaMode==="PLATFORM"){
+   if(platformChatEntry===true&&liffId)return "https://liff.line.me/"+encodeURIComponent(liffId)+"/"+query;
+   return "./"+query;
+  }
+  if(!liffId)return "./"+query;
   return "https://liff.line.me/"+encodeURIComponent(liffId)+"/"+query;
  }
  const canonical=origin+bookingPath+query;
