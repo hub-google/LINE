@@ -221,3 +221,63 @@ test("pickup item availability controls reach the merchant handler and editing s
  assert.match(menu,/id="menu-edit-panel"/);
  assert.match(merchant,/scrollIntoView\(\{behavior:"smooth",block:"start"\}\)/);
 });
+
+
+test("pickup upgrades: variant editor, server repricing, daily stock and history reorder",async()=>{
+ const {parsePickupOptions,pickupOptionsText,pickupAdd,pickupCartAmount,pickupCartCount,pickupRemove}=
+  await import("../saas/app/pickup-upgrades.js");
+ const variants=parsePickupOptions("甜度*：正常=0、半糖=0\n加料+：珍珠=10、布丁=15");
+ assert.equal(variants[0].name,"甜度");
+ assert.equal(variants[0].required,true);
+ assert.equal(variants[1].multiple,true);
+ assert.equal(variants[1].choices[1].price,15);
+ assert.deepEqual(parsePickupOptions(pickupOptionsText(variants)),variants);
+ assert.throws(()=>parsePickupOptions("亂寫的設定"),/規格格式/);
+ const item={id:"p1",name:"珍珠奶茶",price:50,pickup_options:variants};
+ const cart={};
+ pickupAdd(cart,"p1",[{group:0,choice:0}],1);
+ pickupAdd(cart,"p1",[{group:0,choice:0},{group:1,choice:0}],1);
+ assert.equal(pickupCartCount(cart),2);
+ assert.equal(pickupCartAmount(cart,[item]),110);
+ pickupRemove(cart,"p1");
+ assert.equal(pickupCartCount(cart),1);
+ const ui=source("saas/app/pickup-mode.js");
+ const menu=source("saas/app/staff/menu.js");
+ const schema=source("supabase/migrations/20261117172000_qm_pickup_ordering_upgrade_options_stock_groups_customers.sql");
+ const priceSql=source("supabase/migrations/20261117173500_qm_pickup_server_priced_options_availability.sql");
+ for(const token of ["pickup-option-add","pickup-repeat","pickup-extras-save","daily_remaining"])assert.ok(ui.includes(token),token);
+ assert.match(menu,/pickup-extras-text/);
+ assert.match(schema,/qm_pickup_daily_stock_guard/);
+ assert.match(schema,/pg_advisory_xact_lock/);
+ assert.match(priceSql,/v_row.pickup_options/);
+ assert.match(priceSql,/v_row.price\+v_extra/);
+});
+
+test("pickup upgrades: collaborative checkout has tenant ACL and finalized group locking",()=>{
+ const schema=source("supabase/migrations/20261117172000_qm_pickup_ordering_upgrade_options_stock_groups_customers.sql");
+ const fix=source("supabase/migrations/20261117181000_qm_pickup_group_concurrent_edit_lock.sql");
+ for(const token of ["so_pickup_group_create","so_pickup_group_view","so_pickup_group_save",
+   "so_pickup_group_submit","qm_pickup_group_authorize","owner_user_id<>auth.uid()",
+   "ENABLE ROW LEVEL SECURITY","REVOKE ALL ON public.qm_pickup_groups"])
+   assert.ok(schema.includes(token),"group order guard missing "+token);
+ assert.match(fix,/FOR UPDATE/);
+ assert.match(fix,/g.submitted_order_id IS NOT NULL/);
+ const ui=source("saas/app/pickup-mode.js");
+ for(const token of ["pickup-group-copy","pickup-group-save","pickup-group-submit"])
+   assert.ok(ui.includes(token));
+});
+
+test("pickup upgrades: sound, kitchen, loyal customers and merchant-ready notifications",()=>{
+ const pickup=source("saas/app/pickup-mode.js");
+ const staff=source("saas/app/staff-view.js");
+ const css=source("saas/booking-theme.css");
+ const notifications=source("supabase/functions/line-bridge/index.ts");
+ for(const token of ["pickup-sound-toggle","pickup-kitchen-toggle","pickup-kitchen-fullscreen",
+   "renderPickupLoyalCustomers","so_pickup_repeat_customers","pickup-refresh"])
+   assert.ok(pickup.includes(token),"pickup operation missing "+token);
+ assert.match(staff,/renderPickupLoyalCustomers/);
+ assert.match(css,/\.qm-kitchen-grid/);
+ assert.match(notifications,/READY:"餐點可取餐"/);
+ assert.match(notifications,/MERCHANT_OA_NOT_CONNECTED/);
+ assert.match(notifications,/qm_line_notice_outbox|PICKUP_EVENT/);
+});
