@@ -38,23 +38,17 @@
 
 `greenfield-salon` 是既有示範商家代碼；正式商家請換成自己的代碼。後台須有相應權限。
 
-## QueueMonster 新網域（2026-11-16）
+## Cloudflare 正式網域（2026-11-17，現行）
 
-- **新首頁：`https://queue.monsterport.com/`（不加 `home.html`）**。訪問新網域根路徑時直接提供品牌首頁，`/home.html` 舊路徑導向 `/`。
-- 顧客／店員／總部功能保留原根路徑查詢參數，例如 `/?view=customer&merchant=...`、`/?view=staff&merchant=...`、`/?view=platform`。
-- Cloudflare Worker：`monsterport-queue-bridge`；來源 [`cloudflare/monsterport-queue-bridge.mjs`](./cloudflare/monsterport-queue-bridge.mjs)。
-- Supabase `line-bridge` 自第 161 版允許 `https://queue.monsterport.com`，仍保留舊 GitHub Pages 與 `qm` 來源。
-- **現已切分部署**：Worker 的上游固定是 GitHub Pages 獨立正式快照 `https://hub-google.github.io/LINE/queue-prod/`，不是測試用的 `/LINE/booking/`。修改 `main` 只更新 GitHub Pages 測試站，正式站要將通過測試的版本發布到 `release` 才更新。這不是 Cloudflare Pages 原生託管，舊網址和 Supabase 資料庫保持不變。
-- LINE LIFF Endpoint 與 Supabase Auth Redirect URL 須再檢查新網址授權；在認證完成前，不得移除舊 LIFF App／改動現有店家 QR Code。
-
-## MonsterPort 過渡部署（2026-11-16）
-
-- Cloudflare Worker：`monsterport-qm-bridge`，綁定 `qm.monsterport.com`，原始碼存放於 [`cloudflare/monsterport-qm-bridge.mjs`](./cloudflare/monsterport-qm-bridge.mjs)。
-- 這是反向代理過渡部署，靜態網站仍從 `hub-google.github.io/LINE/booking/` 取得，不是 Cloudflare Pages 原生託管。
-- 現有 GitHub Pages 網址、`gh-pages` 部署、Supabase 與 LINE API 不得直接移除。後端資料庫沒有搬遷。
-- Cloudflare Pages GitHub 專案曾遭遇 Git 整合 HTTP 401 錯誤。**現在不依賴該整合**；由 Cloudflare Worker 代理獨立 release 快照，已能達成正式網站不跟著日常測試版更新。
-- `queue.monsterport.com` 的品牌首頁和 `/?view=platform` 已於 2026-11-16 驗證 HTTP 200 且載入 `release` 快照 `6c125e77`；Supabase Auth Redirect URLs、Google OAuth、LINE LIFF Endpoint、各店家 QR Code、PWA、預約／取號／訂餐的真人驗收仍不可省略。
-- `site-auth.js` 與 `app/line-session.js` 允許單頁返回網址使用舊 `/LINE/booking/` 或新網域根目錄路徑。
+- 正式：**https://queue.monsterport.com/**（品牌首頁為根路徑）。
+- 顧客、店員、平台維持原有查詢參數路由 `/?view=customer&merchant=...`、`/?view=staff&merchant=...`、`/?view=platform`；由 Cloudflare Pages 靜態建置腳本完成客戶端路由兼容。
+- Cloudflare Pages 專案：`monsterport-queue`；來源 GitHub `hub-google/LINE` 的 `gh-pages/queue-prod/`，由 `gh-pages` 根目錄 `cf-pages-queue-build.mjs` 建置成靜態 `dist/`。
+- DNS：`queue.monsterport.com` → CNAME `monsterport-queue.pages.dev`（Cloudflare Proxy 開啟）。
+- **不再使用 Worker 中轉**：舊 `monsterport-queue-bridge` 保留程式但已移除網域綁定。Cloudflare Pages 專案不使用 Functions，靜態資源不消耗 Workers requests。
+- `main` 更新 GitHub Pages 測試站，只有正式發布到 `release` 並更新 `gh-pages/queue-prod/` 後，Cloudflare Pages 才更新正式站。
+- 資料庫、Supabase Auth、LINE LIFF 與 LINE OA 通知全部沿用原後端，沒有搬遷。
+- 詳細部署流程與注意事項：[`docs/DEPLOYMENT-ENVIRONMENTS.md`](./docs/DEPLOYMENT-ENVIRONMENTS.md)。
+- Google、LINE 真人登入及實際預約／訂餐／通知仍需由具權限的測試帳號做端對端驗收，不能只依網頁 HTTP 200 判定完成。
 
 ## 雙網站登入設定（2026-11-16）
 
