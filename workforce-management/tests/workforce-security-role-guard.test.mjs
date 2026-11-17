@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const migration=readFileSync(new URL('../supabase/migrations/20261117091700_workforce_null_role_authorization_guard.sql',import.meta.url),'utf8');
+const employment=readFileSync(new URL('../supabase/migrations/20261117092800_workforce_employment_status_role_guard.sql',import.meta.url),'utf8');
 const functions=[
  'wm_adjust_closed_month','wm_close_month','wm_grant_leave_hours',
  'wm_line_delivery_status','wm_month_report','wm_org_invite','wm_org_set_member',
@@ -22,4 +23,12 @@ test('privilege fix cannot modify or erase another product table',()=>{
  assert.match(migration,/EXECUTE corrected_definition/);
  assert.doesNotMatch(migration,/DROP TABLE|TRUNCATE|DELETE FROM|UPDATE public\./i);
  assert.doesNotMatch(migration,/so_|qm_|ti_|chance_/);
+});
+
+test('employee employment lifecycle rejects an absent or foreign tenant role',()=>{
+ assert.match(employment,/wm_set_employment_status/);
+ assert.match(employment,/p\.prosecdef=true/);
+ assert.match(employment,/COALESCE\(\\1 NOT IN \\2, TRUE\)/);
+ assert.match(employment,/matching_roles|regexp_count\(prior_definition,pattern/);
+ assert.doesNotMatch(employment,/UPDATE public\.wm_members|DELETE FROM public\./i);
 });
