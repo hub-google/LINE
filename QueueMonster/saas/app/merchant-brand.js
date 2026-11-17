@@ -78,12 +78,17 @@ export function merchantProfileFields(prefix,tenant={}){
  const value=(key,fallback="")=>blank?"":(tenant[key]??fallback);
  const accent=merchantAccent(value("accent","#523B70"));
  const category=value("directory_category","其他");
+ const selectedCategory=merchantBrandState.MERCHANT_CATEGORIES.includes(category)?category:"其他";
+ const customCategory=selectedCategory==="其他"&&category!=="其他"?category:"";
  return '<div class="merchant-profile">'+
   '<div class="merchant-profile-section"><h3>店家識別與品牌</h3>'+
    merchantLogoControl(prefix,value("logo_url"))+
    '<div class="grid"><div>'+field("企業／店家名稱",prefix+"-name",value("name"),"text",'maxlength="100" autocomplete="organization"')+'</div>'+
-   '<div><label for="'+prefix+'-directory-category">店家分類</label><select class="field" id="'+prefix+'-directory-category">'+
-   merchantBrandState.MERCHANT_CATEGORIES.map(c=>'<option value="'+esc(c)+'" '+(c===category?'selected':'')+'>'+esc(c)+'</option>').join("")+'</select></div></div>'+
+   '<div class="merchant-category-control"><label for="'+prefix+'-directory-category">店家分類</label><select class="field" id="'+prefix+'-directory-category" data-merchant-category="'+prefix+'">'+
+   merchantBrandState.MERCHANT_CATEGORIES.map(c=>'<option value="'+esc(c)+'" '+(c===selectedCategory?'selected':'')+'>'+esc(c)+'</option>').join("")+'</select>'+
+   '<div class="merchant-category-custom" id="'+prefix+'-category-custom-wrap"'+(selectedCategory==="其他"?'':' hidden')+'>'+
+   '<label for="'+prefix+'-directory-category-custom">自訂分類名稱（選填）</label>'+
+   '<input class="field" type="text" id="'+prefix+'-directory-category-custom" maxlength="30" placeholder="不填寫則使用「其他」" value="'+esc(customCategory)+'"></div></div></div>'+
    '<label for="'+prefix+'-description">網站簡介</label><textarea class="field merchant-description" id="'+prefix+'-description" maxlength="500" rows="3" placeholder="讓顧客快速了解店家提供的服務">'+esc(value("description"))+'</textarea>'+
    merchantColorControl(prefix,accent)+'</div>'+
   '<div class="merchant-profile-section"><h3>店家聯絡資訊</h3>'+
@@ -108,9 +113,13 @@ export function merchantOperatingFields(prefix,tenant={}){
 }
 
 export function merchantProfilePatch(prefix,previous={}){
+ const chosenCategory=val(prefix+"-directory-category")||"其他";
+ const customCategory=String(val(prefix+"-directory-category-custom")||"").trim();
+ const resolvedCategory=chosenCategory==="其他"?(customCategory||"其他"):chosenCategory;
+ if([...resolvedCategory].length>30)throw Error("自訂店家分類最多 30 個字");
  const p={
   name:val(prefix+"-name"),phone:val(prefix+"-phone"),address:val(prefix+"-address"),
-  description:val(prefix+"-description"),directory_category:val(prefix+"-directory-category")||"其他",
+  description:val(prefix+"-description"),directory_category:resolvedCategory,
   accent:val(prefix+"-accent"),logo_url:val(prefix+"-logo"),
   open_time:String(val(prefix+"-open")||previous.open_time||"10:00").slice(0,5),
   close_time:String(val(prefix+"-close")||previous.close_time||"20:00").slice(0,5),
@@ -182,6 +191,12 @@ document.addEventListener("input",event=>{
  if(picker)merchantSetAccent(picker.dataset.colorPicker,picker.value);
 });
 document.addEventListener("change",event=>{
+ const category=event.target.closest?.("select[data-merchant-category]");
+ if(category){
+  const custom=routeState.$(category.dataset.merchantCategory+"-category-custom-wrap");
+  if(custom)custom.hidden=category.value!=="其他";
+  return;
+ }
  const picker=event.target.closest?.("input[data-color-picker]");
  if(picker){merchantSetAccent(picker.dataset.colorPicker,picker.value);return;}
  const input=event.target.closest?.("input[data-logo-file]");
