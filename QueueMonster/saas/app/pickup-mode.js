@@ -27,6 +27,51 @@ const modeName={DISABLED:"僅立即取餐",OPTIONAL:"顧客可選立即或預約
 const uuid=()=>{if(!globalThis.crypto?.randomUUID)throw Error("瀏覽器不支援安全訂單識別");return crypto.randomUUID();};
 const lines=o=>(o.items||[]).map(i=>esc(i.name)+esc(pickupSpecsLabel(i))+" × "+esc(i.qty)).join("、");
 
+
+let pickupLiveChannel=null,pickupLiveSlug="",pickupLivePending=false;
+async function pickupChime(){
+  const Ctx=window.AudioContext||window.webkitAudioContext;
+  if(!Ctx)throw Error("此瀏覽器不支援接單提示音");
+  const ctx=new Ctx();
+  try{
+    await ctx.resume();
+    for(const [i,freq] of [880,1175].entries()){
+      const oscillator=ctx.createOscillator(),gain=ctx.createGain(),start=ctx.currentTime+i*.19;
+      oscillator.type="sine";oscillator.frequency.value=freq;
+      gain.gain.setValueAtTime(.0001,start);
+      gain.gain.exponentialRampToValueAtTime(.12,start+.025);
+      gain.gain.exponentialRampToValueAtTime(.0001,start+.17);
+      oscillator.connect(gain);gain.connect(ctx.destination);
+      oscillator.start(start);oscillator.stop(start+.18);
+    }
+    setTimeout(()=>void ctx.close().catch(()=>{}),650);
+  }catch(error){void ctx.close().catch(()=>{});throw error;}
+}
+function syncPickupLive(){
+  const active=routeState.view==="staff"&&staffState.staffTab==="orders"&&!!staffState.staff&&!!lineState.supa;
+  const slug=active?routeState.slug:"";
+  if(pickupLiveChannel&&pickupLiveSlug===slug)return;
+  if(pickupLiveChannel){
+    const old=pickupLiveChannel;pickupLiveChannel=null;pickupLiveSlug="";
+    void lineState.supa?.removeChannel(old).catch(()=>{});
+  }
+  if(!slug)return;
+  pickupLiveSlug=slug;
+  try{
+    pickupLiveChannel=lineState.supa.channel("queue-board:"+slug,{config:{private:false,broadcast:{self:false}}})
+      .on("broadcast",{event:"invalidate"},message=>{
+        if(message?.payload?.kind&&message.payload.kind!=="pickup")return;
+        if(pickupLivePending||document.hidden||routeState.view!=="staff"||staffState.staffTab!=="orders")return;
+        pickupLivePending=true;
+        setTimeout(async()=>{
+          pickupLivePending=false;
+          if(routeState.view!=="staff"||staffState.staffTab!=="orders"||routeState.slug!==slug)return;
+          try{await loadPickupData();render();}catch(error){console.warn("取餐即時更新失敗",error);}
+        },700);
+      }).subscribe();
+  }catch(error){console.warn("無法訂閱取餐事件，可按重新整理取得新訂單",error);}
+}
+
 export async function loadPickupData(){
   if(routeState.view==="customer"&&customerState.customer){
     if(!pickupState.day)pickupState.day=taipei();
@@ -52,15 +97,28 @@ export async function loadPickupData(){
     if(pickupState.customer?.settings?.schedule_mode==="REQUIRED")pickupState.method="scheduled";
     if(!pickupState.customer?.slots?.some(x=>x.time===pickupState.slot&&x.left>0))pickupState.slot="";
   }else if(routeState.view==="customer"){pickupState.customer=null;}
-  if(routeState.view==="staff"&&staffState.staff&&["orders","settings","dashboard","calendar"].includes(staffState.staffTab)){
-    if(pickupState.staffSlug!==routeState.slug){pickupState.staff=null;pickupState.staffSlug=routeState.slug;}
+  if(routeState.view==="staff"&&staffState.staff&&["orders","settings","dashboard","calendar","customers"].includes(staffState.staffTab)){
+    if(pickupState.staffSlug!==routeState.slug){pickupState.staff=null;pickupState.staffSlug=routeState.slug;pickupState.soundSeen=null;pickupState.repeatCustomers=null;}
     try{pickupState.staff=await rpc("so_pickup_staff",{p_slug:routeState.slug});}
     catch(err){console.warn("取餐店家資料不可用",err);pickupState.staff=null;}
     if(staffState.staffTab==="orders"){
+      const current=new Set((pickupState.staff?.orders||[]).filter(o=>o.status==="NEW").map(o=>o.id));
+      if(pickupState.soundSeen instanceof Set){
+        const fresh=[...current].filter(id=>!pickupState.soundSeen.has(id));
+        pickupState.newOrderCount=fresh.length;
+        if(fresh.length&&pickupState.soundOn)void pickupChime().catch(error=>console.warn("接單提示音無法播放",error));
+      }
+      pickupState.soundSeen=current;
       try{pickupState.history=await rpc("so_pickup_history",{p_slug:routeState.slug,p_page:pickupState.historyPage,p_filter:pickupState.historyFilter});}
       catch(err){console.warn("訂餐歷史暫時不可用",err);pickupState.history=null;}
     }
+    if(["orders","customers"].includes(staffState.staffTab)
+       && ["OWNER","MANAGER","PLATFORM"].includes(staffState.staff?.role)){
+      try{pickupState.repeatCustomers=await rpc("so_pickup_repeat_customers",{p_slug:routeState.slug,p_limit:30});}
+      catch(error){pickupState.repeatCustomers=null;console.warn("熟客分析尚不可用",error);}
+    }
   }
+  syncPickupLive();
 }
 
 export function renderPickupSettings(isManager){
@@ -338,6 +396,26 @@ export async function handlePickupAction(ev,b,a,id){
      pickupState.cart={};pickupState.note="";
      return "團購已送出："+result.number+"（15 秒內可取消）";
    });return true;
+ }
+ if(a==="pickup-refresh"){await load();return true;}
+ if(a==="pickup-sound-toggle"){
+   pickupState.soundOn=!pickupState.soundOn;
+   if(pickupState.soundOn){
+     try{await pickupChime();}catch(error){pickupState.soundOn=false;window.alert(error.message);}
+   }
+   render();return true;
+ }
+ if(a==="pickup-kitchen-toggle"){
+   pickupState.kitchenMode=!pickupState.kitchenMode;
+   const u=new URL(location.href);
+   if(pickupState.kitchenMode)u.searchParams.set("kitchen","1");else u.searchParams.delete("kitchen");
+   history.replaceState(null,"",u.pathname+u.search+u.hash);
+   render();return true;
+ }
+ if(a==="pickup-kitchen-fullscreen"){
+   try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}
+   catch(error){window.alert("此瀏覽器無法切換全螢幕："+error.message);}
+   return true;
  }
  if(a==="pickup-customer-history-page"){
     const page=Number(b.dataset.page),max=Math.max(1,Math.ceil(Number(pickupState.customerHistory?.total||0)/25));
