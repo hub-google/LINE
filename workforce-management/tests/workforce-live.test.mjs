@@ -77,3 +77,16 @@ test('live LINE Workforce backend configuration returns no private token',async(
  assert.equal(typeof data.mode,'string');
  assert.doesNotMatch(body,/sb_secret_|LINE_MESSAGING_ACCESS_TOKEN/);
 });
+
+test('unauthenticated tenant-wide archive is denied by the live database',async()=>{
+ const response=await liveFetch(url+'/rest/v1/rpc/wm_archive_table_page',{
+  method:'POST',
+  headers:{apikey:key,'Content-Type':'application/json'},
+  body:JSON.stringify({p_tenant:'00000000-0000-0000-0000-000000000000',
+   p_table:'wm_notifications',p_offset:0,p_limit:1})
+ });
+ const body=await response.text();
+ assert.ok(response.status===401||response.status===403,
+  'Unauthenticated archival request must fail, not '+response.status+': '+body.slice(0,200));
+ assert.doesNotMatch(body,/"rows":\s*\[/);
+});
