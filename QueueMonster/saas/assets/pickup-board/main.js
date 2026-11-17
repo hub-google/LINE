@@ -6,6 +6,7 @@ import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2
 const $=id=>document.getElementById(id);
 const slug=new URLSearchParams(location.search).get("merchant")||"";
 const valid=/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug);
+$("shop-home-link").href=valid?"./?view=customer&merchant="+encodeURIComponent(slug)+"&tab=home":"./home.html";
 const client=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{
  auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}
 });
