@@ -9,7 +9,7 @@ import {render} from "./staff-layout.js";
 import {selectCustomerDetail} from "./customer-detail.js";
 import {customerNoticeSuffix,sendOrderReply,lineReplyHandoff} from "./line-session.js";
 import {normalizeTaiwanPhone,isValidTaiwanPhone,TW_LANDLINE_AREAS,getTaiwanLandlineHint,isValidTaiwanPhoneParts} from "./tw-phone.js";
-import {pickupEntries,pickupCartAmount,pickupCartCount,pickupAdd,pickupRemove,pickupChosen,pickupSpecsLabel,parsePickupOptions} from "./pickup-upgrades.js";
+import {pickupEntries,pickupCartAmount,pickupCartCount,pickupAdd,pickupRemove,pickupChosen,pickupSpecsLabel,parsePickupOptions,pickupGroupFromUrl,pickupGroupShareUrl,pickupGroupLeaveUrl,pickupRestoreOrder} from "./pickup-upgrades.js";
 import {couponState,renderCouponCustomer,renderCouponAdmin,loadCouponAdmin,handleCouponAction,initializeCouponInputs} from "./pickup-coupons.js";
 import {pickupChime} from "./pickup-alerts.js";
 
@@ -44,8 +44,8 @@ export async function loadPickupData(){
       try{pickupState.customerHistory=await rpc("so_pickup_my_orders",{p_slug:routeState.slug,p_page:pickupState.customerHistoryPage});}
       catch(e){console.warn("無法讀取訂餐完整歷史",e);pickupState.customerHistory=null;}
     }
-    const fromUrl=new URLSearchParams(location.search).get("group")||"";
-    if(/^[0-9a-f-]{36}$/i.test(fromUrl))pickupState.groupId=fromUrl;
+    const fromUrl=pickupGroupFromUrl(location.href);
+    if(fromUrl)pickupState.groupId=fromUrl;
     if(pickupState.groupId&&pickupState.customer){
       try{pickupState.groupData=await rpc("so_pickup_group_view",{p_slug:routeState.slug,p_group:pickupState.groupId});}
       catch(error){pickupState.groupData=null;console.warn("團購資料暫時無法讀取",error);}
@@ -118,7 +118,7 @@ function pickupGroupPanel(){
     btn("建立團體訂餐","pickup-group-create","outline")+'</div>';
  }
  if(!group)return '<div class="inset"><p class="alert">團購連結無法使用。請確認已完成本店顧客身分綁定，或退出團購。</p>'+btn("退出團購","pickup-group-leave","outline")+'</div>';
- const link=new URL(location.href);link.searchParams.set("group",pickupState.groupId);link.searchParams.set("tab","order");
+ const link=pickupGroupShareUrl(location.href,pickupState.groupId);
  const catalog=pickupState.customer?.items||[];
  const participants=(group.participants||[]).map(p=>{
    const names=(p.items||[]).map(line=>{
@@ -342,18 +342,18 @@ export async function handlePickupAction(ev,b,a,id){
    await act(async()=>{
      const g=await rpc("so_pickup_group_create",{p_slug:routeState.slug});
      pickupState.groupId=g.id;
-     const url=new URL(location.href);url.searchParams.set("group",g.id);url.searchParams.set("tab","order");
+     const url=pickupGroupShareUrl(location.href,g.id);
      history.replaceState(null,"",url.pathname+url.search+url.hash);
      return "團購已建立，請複製分享連結邀請朋友";
    });return true;
  }
  if(a==="pickup-group-leave"){
    pickupState.groupId="";pickupState.groupData=null;pickupState.cart={};
-   const url=new URL(location.href);url.searchParams.delete("group");history.replaceState(null,"",url.pathname+url.search+url.hash);
+   const url=pickupGroupLeaveUrl(location.href);history.replaceState(null,"",url.pathname+url.search+url.hash);
    render();return true;
  }
  if(a==="pickup-group-copy"){
-   const url=new URL(location.href);url.searchParams.set("group",pickupState.groupId);url.searchParams.set("tab","order");
+   const url=pickupGroupShareUrl(location.href,pickupState.groupId);
    try{await navigator.clipboard.writeText(url.href);window.alert("團購連結已複製");}
    catch(_){window.prompt("請複製團購網址",url.href);}
    return true;
@@ -463,18 +463,7 @@ export async function handlePickupAction(ev,b,a,id){
  if(a==="pickup-repeat"){
    const order=(pickupState.customerHistory?.orders||pickupState.customer?.orders||[]).find(x=>x.id===id);
    if(!order)return true;
-   const items=pickupState.customer?.items||[];
-   const next={};let skipped=0;
-   for(const line of (order.items||[])){
-     const item=items.find(x=>x.id===line.id);
-     if(!item||item.daily_remaining===0){skipped++;continue;}
-     const specs=(line.options||[]).map(x=>({group:Number(x.group),choice:Number(x.choice)}));
-     if(specs.length!==pickupChosen(item,specs).length){skipped++;continue;}
-     if((item.pickup_options||[]).some((g,i)=>g.required&&!specs.some(x=>x.group===i))){skipped++;continue;}
-     const want=Math.max(1,Math.min(20,Number(line.qty||1)));
-     const left=item.daily_remaining==null?want:Math.max(0,Math.min(want,Number(item.daily_remaining)));
-     if(left>0)pickupAdd(next,item.id,specs,left);else skipped++;
-   }
+   const {cart:next,skipped}=pickupRestoreOrder(order.items||[],pickupState.customer?.items||[]);
    if(!pickupCartCount(next)){window.alert("原訂單餐點已停售、缺貨或規格變更，請重新選擇");return true;}
    pickupState.cart=next;pickupState.confirming=false;pickupState.requestId="";render();
    if(skipped)window.alert("已加入仍可訂購餐點；有 "+skipped+" 項因停售、缺貨或規格變動未加入。");
