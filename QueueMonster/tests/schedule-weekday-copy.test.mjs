@@ -67,11 +67,11 @@ test("拒絕自己複製自己、無效星期或不存在的來源場次",()=>{
  assert.throws(()=>copyWeekdaySettings(d,5,2),/不存在/);
 });
 
-test("畫面提供每一天的套用操作，先收集未儲存編輯再複製",()=>{
- assert.match(source,/data-schedule-copy-source/);
- assert.match(source,/schedule-weekday-copy/);
- assert.match(source,/const d=capture\(\);\s*try\{\s*const count=copyWeekdaySettings/);
- assert.match(source,/serviceUnitsState\.scheduleEditWeekday=String\(target\)/);
- assert.match(source,/請按「儲存每週營業排程」才會正式生效/);
+test("新版顯示多方案批次套用並保留個別星期調整",()=>{
+ assert.match(source,/schedule-batch-plan/);
+ assert.match(source,/data-schedule-batch-day/);
+ assert.match(source,/schedule-batch-apply/);
+ assert.match(source,/data-schedule-plan-panel/);
+ assert.match(source,/schedule-weekday-panel/);
  assert.match(source,/p_action:"weekly"/);
 });

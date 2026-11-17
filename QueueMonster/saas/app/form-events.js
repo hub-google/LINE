@@ -57,7 +57,7 @@ document.addEventListener("change",async ev=>{
    }
    return;
  }
- if(el.dataset.scheduleWeekdayCount||el.id==="schedule-special-count"){
+ if(el.dataset.scheduleWeekdayCount||el.dataset.schedulePlanCount||el.id==="schedule-special-count"){
   applyScheduleSessionCount(el);return;
  }
  if(el.id==="schedule-special-mode"||el.id==="schedule-special-template"){

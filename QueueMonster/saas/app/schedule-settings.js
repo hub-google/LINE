@@ -9,6 +9,33 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 const initialTemplates={default:[{title:"基本場次",name:"第 1 場",start:"09:00",end:"12:00",capacity:10}]};
 const MAX_SESSIONS=50;
 const weekdayKey=day=>"week_day_"+day;
+const planKey=key=>/^plan_[a-z0-9_]+$/.test(key);
+const closedPlan=windows=>windows?.[0]?.plan_closed===true;
+const planCount=windows=>closedPlan(windows)?0:(windows?.length||0);
+const PLAN_LIMIT=100;
+function planSignature(windows){
+ return JSON.stringify((windows||[]).map(({title,plan_closed,...window})=>window));
+}
+function batchApplyPlan(config,source,days){
+ if(source!=="off"&&(!planKey(source)||!Array.isArray(config.templates[source])))
+  throw Error("請選擇有效的營業方案");
+ const targets=[...new Set(days.map(String))];
+ if(!targets.length||targets.some(day=>!/^[1-7]$/.test(day)))throw Error("請勾選至少一個有效星期");
+ const windows=source==="off"?null:config.templates[source];
+ if(windows&&!closedPlan(windows)&&(!windows.length||windows.length>MAX_SESSIONS))
+  throw Error("來源方案的場次設定無效");
+ for(const day of targets){
+  const key=weekdayKey(day);
+  if(!windows||closedPlan(windows)){
+   config.weekdays[day]="off";
+   continue;
+  }
+  config.templates[key]=clone(windows).map(({title,plan_closed,...window},i)=>
+   i===0?{...window,title:"星期"+weekdays[Number(day)-1]}:window);
+  config.weekdays[day]=key;
+ }
+ return targets.length;
+}
 const validCount=n=>Number.isInteger(n)&&n>=0&&n<=MAX_SESSIONS;
 function copyWeekdaySettings(config,sourceDay,targetDay){
  const from=String(sourceDay),to=String(targetDay);
@@ -68,9 +95,35 @@ function draft(){
     if(templates[key].length)templates[key][0].title="星期"+weekdays[i-1];
    }
   }
+  // Existing shops start with named plans inferred from their current distinct weekday patterns.
+  // Plans are saved as ordinary non-active templates; individual weekdays stay independent copies.
+  if(!Object.keys(templates).some(planKey)){
+   const seen=new Set();
+   const samples=[];
+   for(let i=1;i<=7;i++){
+    const key=weekdaysRule[String(i)];
+    if(key==="off"||!Array.isArray(templates[key])||!templates[key].length)continue;
+    const signature=planSignature(templates[key]);
+    if(!seen.has(signature)){seen.add(signature);samples.push(templates[key]);}
+   }
+   if(!samples.length)samples.push(templates.default||Object.values(templates)[0]||[emptyWindow()]);
+   for(const sample of samples){
+    if(Object.keys(templates).length>=PLAN_LIMIT)break;
+    const n=Object.keys(templates).filter(planKey).length+1;
+    const key="plan_"+n;
+    const windows=clone(sample);
+    windows[0].title="方案 "+n;
+    templates[key]=windows;
+   }
+  }
   serviceUnitsState.scheduleDraft={enabled:c.enabled===true,weekdays:weekdaysRule,templates};
-  serviceUnitsState.scheduleEditWeekday=serviceUnitsState.scheduleEditWeekday||"1";
-  serviceUnitsState.scheduleEditTemplate=Object.keys(templates)[0];
+  const plans=Object.keys(templates).filter(planKey);
+  serviceUnitsState.scheduleEditWeekday=serviceUnitsState.scheduleEditWeekday||"";
+  serviceUnitsState.scheduleEditTemplate=plans.includes(serviceUnitsState.scheduleEditTemplate)?
+   serviceUnitsState.scheduleEditTemplate:(plans[0]||"");
+  serviceUnitsState.scheduleSelectedPlan=plans.includes(serviceUnitsState.scheduleSelectedPlan)?
+   serviceUnitsState.scheduleSelectedPlan:(plans[0]||"off");
+  serviceUnitsState.scheduleBatchDays=[];
  }
  return serviceUnitsState.scheduleDraft;
 }
@@ -89,13 +142,35 @@ function templateTitle(key,windows){
 }
 function templateOptions(templates,selected,off=false){
  return (off?'<option value="off"'+(selected==="off"?" selected":"")+'>公休（無場次）</option>':"")+
- Object.entries(templates).map(([key,windows])=>
+ Object.entries(templates).filter(([,windows])=>!closedPlan(windows)).map(([key,windows])=>
   '<option value="'+esc(key)+'"'+(selected===key?" selected":"")+'>'+esc(templateTitle(key,windows))+'</option>').join("");
 }
 function capture(){
  const d=draft(),e=exceptionDraft();
  const enabled=document.getElementById("schedule-enabled");
  if(enabled)d.enabled=enabled.checked;
+ const batchPlan=document.getElementById("schedule-batch-plan");
+ if(batchPlan)serviceUnitsState.scheduleSelectedPlan=batchPlan.value;
+ const days=document.querySelectorAll("[data-schedule-batch-day]");
+ if(days.length)serviceUnitsState.scheduleBatchDays=[...days].filter(el=>el.checked).map(el=>el.value);
+ for(const panel of document.querySelectorAll("[data-schedule-plan-panel]")){
+  const key=panel.dataset.schedulePlanPanel;
+  if(!planKey(key)||!Array.isArray(d.templates[key]))continue;
+  const name=(panel.querySelector("[data-schedule-plan-name]")?.value||"").trim();
+  const windows=[];
+  for(const line of panel.querySelectorAll("[data-schedule-plan-window]")){
+   const read=field=>line.querySelector('[data-schedule-field="'+field+'"]')?.value||"";
+   const w={name:read("name").trim(),start:read("start"),end:read("end"),capacity:Number(read("capacity"))};
+   if(read("unit_id"))w.unit_id=read("unit_id");
+   windows.push(w);
+  }
+  if(windows.length){
+   windows[0].title=name;
+   d.templates[key]=windows;
+  }else if(d.templates[key].length){
+   d.templates[key][0].title=name;
+  }
+ }
  for(const el of document.querySelectorAll("[data-schedule-weekday]"))
   d.weekdays[el.dataset.scheduleWeekday]=el.value;
  for(const panel of document.querySelectorAll("[data-schedule-weekday-panel]")){
@@ -144,7 +219,12 @@ function groupedExceptions(exceptions){
  return result;
 }
 function validate(d){
- if(!Object.keys(d.templates).length)throw Error("請先新增場次模板");
+ if(!Object.keys(d.templates).length||Object.keys(d.templates).length>PLAN_LIMIT)
+  throw Error("場次模板總數必須為 1～100 組");
+ for(const [key,windows] of Object.entries(d.templates).filter(([key])=>planKey(key))){
+  const title=String(windows?.[0]?.title||"").trim();
+  if(!title||title.length>40)throw Error("營業方案名稱需為 1～40 字");
+ }
  for(let i=1;i<=7;i++)if(!["off",...Object.keys(d.templates)].includes(d.weekdays[String(i)]))
   throw Error("星期"+weekdays[i-1]+"的模板不存在");
  for(const [key,windows] of Object.entries(d.templates)){
@@ -170,7 +250,21 @@ export function applyScheduleSessionCount(el){
   window.alert("場次數請輸入 0～50 的整數");render();return;
  }
  const d=capture();
- if(el.dataset.scheduleWeekdayCount){
+ if(el.dataset.schedulePlanCount){
+  const key=String(el.dataset.schedulePlanCount);
+  const windows=d.templates[key];
+  if(!planKey(key)||!windows)return;
+  const name=templateTitle(key,windows);
+  if(count===0){
+   d.templates[key]=[{...emptyWindow(),title:name,plan_closed:true}];
+  }else{
+   const base=closedPlan(windows)?[]:windows;
+   d.templates[key]=resizeWindows(base,count);
+   d.templates[key][0].title=name;
+   for(const w of d.templates[key])delete w.plan_closed;
+  }
+  serviceUnitsState.scheduleEditTemplate=key;
+ }else if(el.dataset.scheduleWeekdayCount){
   const day=String(el.dataset.scheduleWeekdayCount),key=weekdayKey(day);
   const current=d.templates[key]||[];
   d.weekdays[day]=count===0?"off":key;
@@ -200,29 +294,57 @@ export function applySpecialScheduleMode(el){
 export function renderScheduleSettings(isManager){
  const c=serviceUnitsState.scheduleConfig||{};
  if(!isManager)return box("智慧營業排程",'<p class="small">僅店家管理者可以編輯每週場次及特殊營業日期。</p>');
- const d=draft(),e=exceptionDraft(),keys=Object.keys(d.templates);
+ const d=draft(),e=exceptionDraft(),keys=Object.keys(d.templates).filter(key=>!closedPlan(d.templates[key]));
  if(!keys.includes(e.template_key))e.template_key=keys[0]||"";
  const unitOptions=(serviceUnitsState.unitConfig?.units||[]).filter(u=>u.active&&!u.is_default);
+ const plans=Object.entries(d.templates).filter(([key])=>planKey(key));
+ const planCards=plans.map(([key,windows])=>{
+  const count=planCount(windows),title=templateTitle(key,windows);
+  const isEditing=serviceUnitsState.scheduleEditTemplate===key;
+  return '<section class="schedule-plan-panel" data-schedule-plan-panel="'+esc(key)+'">'+
+   '<div class="schedule-plan-head"><div class="schedule-plan-title"><label for="schedule-plan-name-'+esc(key)+'">方案名稱</label>'+
+   '<input id="schedule-plan-name-'+esc(key)+'" data-schedule-plan-name="'+esc(key)+'" class="field" maxlength="40" value="'+esc(title)+'"></div>'+
+   '<div class="schedule-plan-size"><label for="schedule-plan-count-'+esc(key)+'">場次數</label>'+
+   '<input id="schedule-plan-count-'+esc(key)+'" class="field" type="number" min="0" max="50" step="1" data-schedule-plan-count="'+esc(key)+'" value="'+count+'"></div>'+
+   btn("刪除","schedule-plan-remove","outline",'data-key="'+esc(key)+'"')+'</div>'+
+   '<details class="schedule-plan-details"'+(isEditing?' open':'')+'><summary>編輯場次內容（'+(count?count+" 場":"公休")+"）</summary>"+
+   (count?'<div class="schedule-session-list">'+windows.map((w,i)=>windowEditor(w,i,'data-schedule-plan-window',unitOptions)).join("")+'</div>':
+    '<p class="small">此方案為公休，套用到的星期將不開放場次。</p>')+'</details></section>';
+ }).join("");
+ const selectedPlan=serviceUnitsState.scheduleSelectedPlan;
+ const batchOptions='<option value="off"'+(selectedPlan==="off"?" selected":"")+'>公休（0 場）</option>'+
+  plans.map(([key,windows])=>'<option value="'+esc(key)+'"'+(selectedPlan===key?' selected':'')+'>'+
+    esc(templateTitle(key,windows))+'（'+(planCount(windows)||"公休")+(planCount(windows)?" 場":"")+'）</option>').join("");
+ const selectedDays=serviceUnitsState.scheduleBatchDays||[];
+ const batchDays=weekdays.map((name,i)=>'<label class="schedule-day-check"><input type="checkbox" data-schedule-batch-day value="'+(i+1)+'"'+
+   (selectedDays.includes(String(i+1))?' checked':'')+'> 週'+name+'</label>').join("");
  const week=weekdays.map((day,i)=>{
   const key=String(i+1),templateKey=d.weekdays[key];
   const windows=templateKey==="off"?[]:(d.templates[templateKey]||[]);
-  const copyChoices=weekdays.map((name,j)=>{
-   const from=String(j+1);
-   if(from===key)return "";
-   const sourceKey=d.weekdays[from];
-   const count=sourceKey==="off"?0:(d.templates[sourceKey]?.length||0);
-   return '<option value="'+from+'">星期'+name+'（'+(count?count+" 場":"公休")+'）</option>';
-  }).join("");
+  const preview=windows.length?windows.slice(0,2).map(w=>esc(w.start)+'–'+esc(w.end)).join('、')+
+   (windows.length>2?' 等':''):'當天不營業';
   return '<section class="schedule-weekday-panel" data-schedule-weekday-panel="'+key+'">'+
-   '<div class="schedule-weekday-head"><label for="schedule-weekday-count-'+key+'">星期'+day+'</label>'+
-   '<div class="schedule-weekday-count"><input class="field" id="schedule-weekday-count-'+key+'" data-schedule-weekday-count="'+key+'" type="number" min="0" max="50" step="1" value="'+windows.length+'"><span>場（0 為公休）</span></div></div>'+
-   '<div class="schedule-weekday-copy"><label for="schedule-weekday-copy-source-'+key+'">套用其他星期</label>'+
-   '<select class="field" id="schedule-weekday-copy-source-'+key+'" data-schedule-copy-source="'+key+'"><option value="">選擇星期</option>'+copyChoices+'</select>'+
-   btn("套用","schedule-weekday-copy","outline",'data-day="'+key+'"')+'</div>'+
-   (windows.length?'<details class="schedule-weekday-details"'+(serviceUnitsState.scheduleEditWeekday===key?' open':'')+'><summary>設定星期'+day+'的 '+windows.length+' 場時間與名額</summary>'+
-    '<div class="schedule-session-list">'+windows.map((w,j)=>windowEditor(w,j,'data-schedule-weekday-window',unitOptions)).join("")+'</div></details>':
-    '<p class="small schedule-closed-hint">這一天公休，不開放場次。</p>')+'</section>';
+   '<div class="schedule-weekday-head"><strong>星期'+day+'</strong><div class="schedule-weekday-overview"><span>'+
+   (windows.length?windows.length+' 場':'公休')+'</span><small>'+preview+'</small></div></div>'+
+   '<details class="schedule-weekday-details"'+(serviceUnitsState.scheduleEditWeekday===key?' open':'')+'>'+
+   '<summary>個別調整星期'+day+'</summary>'+
+   '<div class="schedule-weekday-count"><label for="schedule-weekday-count-'+key+'">場次數（0 為公休）</label>'+
+   '<input class="field" id="schedule-weekday-count-'+key+'" data-schedule-weekday-count="'+key+'" type="number" min="0" max="50" step="1" value="'+windows.length+'"></div>'+
+   (windows.length?'<div class="schedule-session-list">'+windows.map((w,j)=>windowEditor(w,j,'data-schedule-weekday-window',unitOptions)).join("")+'</div>':
+    '<p class="small schedule-closed-hint">目前公休；將場次數改為 1～50，即可自行新增當日場次。</p>')+
+   '</details></section>';
  }).join("");
+ const planSection='<h3 style="margin:20px 0 10px">營業方案</h3>'+
+  '<p class="small">每個方案可自訂名稱及 0～50 場，再套用到多個星期。修改方案不會自動改動已套用的星期。</p>'+
+  '<div class="schedule-plan-list">'+planCards+'</div>'+
+  '<div class="staff-actionbar" style="margin:12px 0">'+btn("＋ 新增營業方案","schedule-plan-add","outline")+'</div>';
+ const batchSection='<section class="schedule-batch-box"><h3>批次套用營業方案</h3>'+
+  '<label for="schedule-batch-plan">選擇營業方案</label>'+
+  '<select id="schedule-batch-plan" class="field">'+batchOptions+'</select>'+
+  '<p class="schedule-batch-label">套用到哪些星期？</p>'+
+  '<div class="schedule-day-checks">'+batchDays+'</div>'+
+  '<div class="schedule-batch-actions">'+btn("套用到勾選的星期","schedule-batch-apply","primary")+'</div>'+
+  '<p class="small">套用會取代所選星期目前的場次設定，不會更動其他星期；確認後請按下方「儲存每週營業排程」。</p></section>';
  const specialWindows=e.windows||[emptyWindow()];
  const specialWindowEditor=specialWindows.map((w,i)=>windowEditor(w,i,'data-schedule-special-window',unitOptions)).join("");
  const specialCount=e.mode==="CLOSED"?0:e.mode==="TEMPLATE"?(d.templates[e.template_key]?.length||0):specialWindows.length;
@@ -238,8 +360,9 @@ export function renderScheduleSettings(isManager){
   '<p class="small">只需設定一次，往後每週自動套用；特殊日期優先於每週規則。適用預約、取號與線上點餐，並保留既有預約和訂單。</p>'+
   '<label class="checklist"><input type="checkbox" id="schedule-enabled"'+(d.enabled?" checked":"")+'> 啟用每週自動排程</label>'+
   (!d.enabled?'<p class="small">尚未啟用時仍保留原有指定日期場次；完成下面的設定並儲存後才會自動套用。</p>':"")+
-  '<h3 style="margin:20px 0 12px">每週固定規則</h3>'+
-  '<p class="small">每一天可設定 0～50 場（0 場為公休）。也能從「套用其他星期」複製所有場次名稱、時間、名額與服務窗口；套用後仍可單獨調整，最後請記得儲存。</p>'+week+
+  planSection+batchSection+
+  '<h3 style="margin:20px 0 10px">每週固定規則</h3>'+
+  '<p class="small">以下是套用後的七天排程摘要。若某一天需要不同內容，可展開「個別調整」修改，其他星期不受影響。</p>'+week+
   '<div class="staff-actionbar" style="margin:16px 0">'+btn("儲存每週營業排程","schedule-weekly-save","primary")+
   btn("放棄尚未儲存的修改","schedule-weekly-reset","outline")+'</div>'+
   '<hr style="margin:24px 0">'+
@@ -266,18 +389,46 @@ export function renderScheduleSettings(isManager){
 }
 export async function handleScheduleAction(ev,b,a,id){
  if(!a.startsWith("schedule-"))return false;
- if(a==="schedule-weekday-copy"){
-  const target=b.dataset.day,source=document.getElementById("schedule-weekday-copy-source-"+target)?.value;
-  if(!source){window.alert("請先選擇要套用的星期");return true;}
+ if(a==="schedule-batch-apply"){
+  const source=document.getElementById("schedule-batch-plan")?.value||"";
+  const days=[...document.querySelectorAll("[data-schedule-batch-day]:checked")].map(el=>el.value);
   const d=capture();
   try{
-   const count=copyWeekdaySettings(d,source,target);
-   serviceUnitsState.scheduleEditWeekday=String(target);
+   validate(d);
+   const count=batchApplyPlan(d,source,days);
+   serviceUnitsState.scheduleEditWeekday="";
+   serviceUnitsState.scheduleBatchDays=[];
    render();
-   showActionFeedback("已將星期"+weekdays[Number(source)-1]+"的"+(count?count+" 場設定":"公休設定")+
-    "複製到星期"+weekdays[Number(target)-1]+"；請按「儲存每週營業排程」才會正式生效。","success");
+   showActionFeedback("已將「"+(source==="off"?"公休":templateTitle(source,d.templates[source]))+
+     "」套用到 "+count+" 天；尚未儲存，請按「儲存每週營業排程」。","success");
   }catch(error){window.alert(error.message);}
   return true;
+ }
+ if(a==="schedule-plan-add"){
+  const d=capture();
+  if(Object.keys(d.templates).length>=PLAN_LIMIT){
+   window.alert("目前模板已達 100 組上限，請先移除不再使用的營業方案");return true;
+  }
+  const key="plan_"+Date.now().toString(36)+"_"+Object.keys(d.templates).length;
+  d.templates[key]=[{...emptyWindow(),title:"新營業方案"}];
+  serviceUnitsState.scheduleEditTemplate=key;
+  serviceUnitsState.scheduleSelectedPlan=key;
+  render();return true;
+ }
+ if(a==="schedule-plan-remove"){
+  const d=capture(),key=b.dataset.key;
+  if(!planKey(key)||!d.templates[key])return true;
+  if(Object.keys(d.templates).filter(planKey).length<=1){
+   window.alert("請至少保留一組營業方案");return true;
+  }
+  if((serviceUnitsState.scheduleConfig?.exceptions||[]).some(x=>x.template_key===key)){
+   window.alert("特殊日期仍使用這個方案，請先修改特殊日期設定");return true;
+  }
+  if(!window.confirm("確定刪除「"+templateTitle(key,d.templates[key])+"」？已套用的星期會保留原設定。"))return true;
+  delete d.templates[key];
+  if(serviceUnitsState.scheduleEditTemplate===key)serviceUnitsState.scheduleEditTemplate=Object.keys(d.templates).find(planKey)||"";
+  if(serviceUnitsState.scheduleSelectedPlan===key)serviceUnitsState.scheduleSelectedPlan=serviceUnitsState.scheduleEditTemplate;
+  render();return true;
  }
  if(a==="schedule-special-copy-template"){
   const d=capture(),e=exceptionDraft(),windows=d.templates[e.template_key];
