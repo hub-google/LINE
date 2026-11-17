@@ -697,7 +697,7 @@ body[data-portal="staff"] .staff-picker-secondary>.staff-choice{flex:1 1 100%;mi
 .schedule-weekday-details>summary{cursor:pointer;color:#663c80;font-weight:650;font-size:14px;padding:4px 0}
 .schedule-session-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr));gap:12px;margin-top:12px}
 .schedule-session-editor{margin:0!important;min-width:0}
-.schedule-session-editor>strong{color:#603b80;display:block;margin-bottom:8px}
+.schedule-session-editor>.schedule-session-name{display:block;width:100%;min-height:44px;margin-bottom:12px;padding:8px 12px;background:#f1e5fa;border:1px solid #dfcce9;border-left:4px solid #82479e;border-radius:7px;color:#562f79;font-size:16px;font-weight:750}
 .schedule-closed-hint{margin:8px 0 0;color:#899188}
 .schedule-special-count{border:1px solid #e9dceb;background:#fbf8fd;border-radius:13px;padding:12px 14px;margin:16px 0}
 .schedule-special-count label{display:block;font-weight:650;margin-bottom:9px;color:#554062}
@@ -720,8 +720,6 @@ body[data-portal="staff"] .staff-picker-secondary>.staff-choice{flex:1 1 100%;mi
 .schedule-plan-panel{border:1px solid #e5dce9;border-radius:16px;background:#fff;padding:14px 16px;min-width:0}
 .schedule-plan-head{display:flex;align-items:flex-end;flex-wrap:wrap;gap:12px}
 .schedule-plan-head label{display:block;margin:0 0 5px;font-size:12px;font-weight:650;color:#675b73}
-.schedule-plan-title{flex:1 1 190px;min-width:155px}
-.schedule-plan-title .field{width:100%;min-height:42px}
 .schedule-plan-size{flex:0 0 94px}
 .schedule-plan-size .field{width:100%;min-height:42px;text-align:center;font-weight:700}
 .schedule-plan-head>.btn{min-height:42px}
@@ -760,14 +758,14 @@ body[data-portal="staff"] .staff-picker-secondary>.staff-choice{flex:1 1 100%;mi
 .schedule-plan-panel{padding:0;border:1px solid #e0d0e9;border-radius:16px;background:#fff;overflow:hidden;box-shadow:0 3px 12px rgba(65,36,88,.05)}
 .schedule-plan-panel.is-editing{border-color:#ad83ca;box-shadow:0 0 0 2px rgba(122,70,157,.07)}
 .schedule-plan-banner{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,#eee2f9,#faf7fc);padding:12px 16px;border-bottom:1px solid #e8dff0;color:#4e2970}
-.schedule-plan-banner strong{font-size:15px}
+.schedule-plan-banner .schedule-plan-name{flex:1 1 220px;min-width:0;max-width:620px;min-height:40px;padding:6px 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:#4e2970;font-size:17px;font-weight:800}
+.schedule-plan-banner .schedule-plan-name:not(:disabled){border-color:#c8a8dc;background:#fff}
 .schedule-plan-indicator{display:block;flex:none;width:5px;height:21px;background:#7d45a0;border-radius:5px}
 .schedule-plan-status{margin-left:auto;font-size:12px;font-weight:600;color:#79688b}
 .schedule-plan-panel.is-editing .schedule-plan-status{color:#68368e}
 .schedule-plan-inner{padding:16px}
 .schedule-plan-head{align-items:flex-end;gap:12px}
 .schedule-plan-head label{font-size:13px;color:#594968;font-weight:700}
-.schedule-plan-title{flex:1 1 270px}
 .schedule-plan-size{flex:0 0 105px}
 .schedule-plan-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
 .schedule-plan-actions .btn{min-height:42px;white-space:nowrap}
@@ -777,6 +775,8 @@ body[data-portal="staff"] .staff-picker-secondary>.staff-choice{flex:1 1 100%;mi
 .schedule-plan-delete-btn{border:1px solid #e7aabb!important;color:#bd3655!important;background:#fff8fa!important}
 .schedule-plan-delete-btn:hover{background:#fdeaf0!important}
 .schedule-plan-panel input:disabled,.schedule-plan-panel select:disabled{opacity:1;background:#fbf9fc;color:#74697d;cursor:default}
+.schedule-plan-panel .schedule-plan-banner .schedule-plan-name:disabled{background:transparent;color:#4e2970;-webkit-text-fill-color:#4e2970}
+.schedule-plan-panel .schedule-session-editor>.schedule-session-name:disabled{background:#f1e5fa;color:#562f79;-webkit-text-fill-color:#562f79}
 .schedule-plan-details{margin-top:16px;padding:0;border:1px solid #c6e1d0;background:#f7fcf8;border-radius:14px;overflow:hidden}
 .schedule-plan-details>summary{display:list-item;padding:13px 15px;background:#e6f4e9;color:#326a47;font-size:14px;font-weight:750}
 .schedule-plan-details[open]>summary{border-bottom:1px solid #cbe4d1}
@@ -784,7 +784,6 @@ body[data-portal="staff"] .staff-picker-secondary>.staff-choice{flex:1 1 100%;mi
 .schedule-plan-detail-body{padding:14px}
 .schedule-plan-detail-body .schedule-session-list{margin-top:0}
 .schedule-plan-detail-body .schedule-session-editor{padding:13px;border:1px solid #e4d6ea;border-radius:13px;background:#fff}
-.schedule-plan-detail-body .schedule-session-editor>strong{background:#f1e5fa;border-left:4px solid #82479e;border-radius:6px;color:#562f79;padding:8px 11px}
 .schedule-plan-add-bar{margin:16px 0 0}
 .schedule-module.schedule-batch-box{padding:0;background:#fff}
 .schedule-batch-box>.schedule-module-body>label{display:block;font-weight:700;margin-bottom:8px;color:#554466}
@@ -797,7 +796,6 @@ body[data-portal="staff"] .staff-picker-secondary>.staff-choice{flex:1 1 100%;mi
 @media(max-width:560px){
  .schedule-module-heading{padding:13px 15px}
  .schedule-module-body,.schedule-plan-inner{padding:13px}
- .schedule-plan-title{flex-basis:100%}
  .schedule-plan-size{flex:1 1 100px}
  .schedule-plan-actions{width:100%;gap:7px}
  .schedule-plan-actions .btn{flex:1 1 105px;padding:8px;font-size:12px}
