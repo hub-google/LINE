@@ -1014,10 +1014,17 @@ function csvRows(text){
  return out;
 }
 function downloadCsv(){
- const b=app.data?.branches?.[0]?.name||'台北總店';
- const data='\uFEFF員工編號,姓名,分店,角色,聘僱類型\r\nCSV001,測試小華,'+b+',員工,正職\r\nCSV002,測試小林,'+b+',員工,兼職';
- const blob=new Blob([data],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
- a.href=url;a.download='workforce-employee-template.csv';document.body.appendChild(a);a.click();a.remove();
+ const branchName=app.data?.branches?.[0]?.name||'台北總店';
+ const rows=[
+  ['員工編號','姓名','分店','角色','聘僱類型'],
+  ['CSV001','測試小華',branchName,'員工','正職'],
+  ['CSV002','測試小林',branchName,'員工','兼職']
+ ];
+ // A user-defined branch name may contain commas, quotes, newlines or formula prefixes.
+ // Apply the same injection-safe CSV quoting used by attendance exports.
+ const data='\uFEFF'+rows.map(row=>row.map(reportCell).join(',')).join('\r\n');
+ const blob=new Blob([data],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');
+ link.href=url;link.download='workforce-employee-template.csv';document.body.appendChild(link);link.click();link.remove();
  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function openCsvImport(){
@@ -1491,7 +1498,7 @@ function dateCard(day,compact=false){
  shifts.slice(0,compact?3:50).map(x=>'<div class="shift-card" '+(manager()?'draggable="true"':'')+
   ' data-shift-id="'+esc(x.id)+'"><b>'+personLabel(x.member_id)+'</b>'+
   '<span>'+taiTime(x.starts_at)+'–'+taiTime(x.ends_at)+'</span></div>').join('')+
- (shifts.length>(compact?3:50)?'<small>另 '+(shifts.length-3)+' 筆</small>':'')+
+ (shifts.length>(compact?3:50)?'<small>另 '+(shifts.length-(compact?3:50))+' 筆</small>':'')+
  (!shifts.length?'<small class="muted">無班次</small>':'')+'</div>';
 }
 const formerCalendar=schedule;
