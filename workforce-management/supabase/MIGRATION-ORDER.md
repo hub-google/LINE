@@ -52,12 +52,13 @@
 46. [`20261117151000_workforce_gps_accuracy_guard.sql`](./migrations/20261117151000_workforce_gps_accuracy_guard.sql)
 47. [`20261117091700_workforce_null_role_authorization_guard.sql`](./migrations/20261117091700_workforce_null_role_authorization_guard.sql) — 緊急跨企業授權修正，**須在第 46 份之後執行**，勿以檔名排序。
 48. [`20261117092800_workforce_employment_status_role_guard.sql`](./migrations/20261117092800_workforce_employment_status_role_guard.sql) — 補強 `wm_set_employment_status`，**須在第 47 份之後執行**。
+49. [`20261117192300_workforce_notification_complete_export.sql`](./migrations/20261117192300_workforce_notification_complete_export.sql) — 僅 Owner／HR 的完整通知匯出 RPC，**須在第 48 份之後執行**。
 
 ## 已部署情況與重建注意事項
 
 - 前四份最初透過 Supabase `apply_migration` 套用，已在遠端遷移歷史中。
 - 第 5–20 份先前以 Supabase SQL 即時套用，**已真正存在遠端資料庫，但尚未另外登記進 `supabase_migrations.schema_migrations`**。檔案已提交到 GitHub 作為版本化原始資料。請勿在同一正式環境直接重跑全套 SQL；重建應先於隔離的空資料庫依序測試。
-- 第 21–48 份以 Supabase migration 或 SQL 套用（具體 SQL 版本已提交 GitHub）；**先遵照順序在隔離資料庫演練，不要在已建立的正式資料庫整套重跑**。
+- 第 21–49 份以 Supabase migration 或 SQL 套用（具體 SQL 版本已提交 GitHub）；**先遵照順序在隔離資料庫演練，不要在已建立的正式資料庫整套重跑**。
 - LINE Edge Function 程式另存於 [../functions/wm-line/index.ts](../functions/wm-line/index.ts)；LINE 排程建立於第 38 份。
 - 不執行清空或 TRUNCATE，原預約／叫號和人資 DEMO 資料皆保留。
 - 函式及 RLS 的完整正式驗證，必須使用不同權限的真實測試帳號及資料庫交易測試；不能單憑部署判定全案完成。
@@ -67,3 +68,5 @@
 - **2026-11-17 NULL 角色權限修正（第 47 份）：** 已於既有 Workforce Supabase 後端正式套用，僅替換 13 個 `public.wm_*` SECURITY DEFINER 函式的角色拒絕判斷；在回滾交易演練及正式交易中，以實際員工／HR 身分確認跨企業薪資、月報、LINE 統計均受拒絕，企業 HR 的本企業薪資統計仍可用。**此變更影響共用 Supabase 後端，但不修改 `release` 前端分支；其他產品 schema 和資料未動。**
 
 - **2026-11-17 就業狀態授權補強（第 48 份）：** 已在回滾演練驗證後套用共用 Supabase，修正 `wm_set_employment_status` 未授權跨企業人員的空角色拒絕問題；既有員工狀態、分店與原始出勤資料均未更動。
+
+- **2026-11-17 第 49 份驗收：** 在交易回滾測試後套用通知完整匯出 RPC；一般人事收件匣 RLS 保留個人可見，Owner／HR 以特殊匯出 RPC 取得指定企業全部通知並核對筆數。實測 HR 一般視圖 13 筆、授權匯出 75 筆，員工或跨企業要求拒絕；其他專案資料未更動。
