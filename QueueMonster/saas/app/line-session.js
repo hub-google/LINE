@@ -260,6 +260,14 @@ export async function bookingReplyHandoff(reservationId){
 }
 export async function sendActionReply(kind,recordId){
  const config=await bridgeConfig();
+ // Merchant OAs do not configure a webhook: send eligible notifications via Push API instead.
+ // LINE may reject delivery if the recipient is not linked/reachable or the OA has no quota.
+ if(config.merchantOaConnected===true){
+   if(kind==="reservation")return sendLineNotice("notify-reservation",{reservationId:recordId});
+   if(kind==="ticket")return sendLineNotice("notify-ticket",{ticketId:recordId});
+   // Order status messages are queued by the pickup workflow, not a chat reply.
+   return "";
+ }
  let handoff;
  try{handoff=await lineReplyHandoff(kind,recordId);}
  catch(_){return "提醒暫時無法送出；資料已儲存，請在單筆紀錄頁重試。";}
