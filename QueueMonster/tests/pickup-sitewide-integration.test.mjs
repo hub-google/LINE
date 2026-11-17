@@ -305,7 +305,7 @@ test("pickup customer coupons are merchant-scoped, protected, and priced by the 
 
 test("pickup regression: LINE group invitation, shared live socket and multi-variant stock",async()=>{
  const {pickupGroupFromUrl,pickupGroupShareUrl,pickupGroupLeaveUrl,pickupRestoreOrder,
-   pickupCartCount,pickupCartAmount}=await import("../saas/app/pickup-upgrades.js");
+   pickupCartCount,pickupCartAmount,pickupCatalogDate}=await import("../saas/app/pickup-upgrades.js");
  const group="1b6331cb-992a-4a0d-aee0-290834ab1b11";
  const liff="https://hub-google.github.io/LINE/booking/?view=customer&liff.state="+
    encodeURIComponent("/booking/?merchant=qa-shop&tab=order&group="+group);
@@ -333,4 +333,9 @@ test("pickup regression: LINE group invitation, shared live socket and multi-var
  assert.match(source("saas/app/startup.js"),/createStoreLiveSync/,
    "existing store live-sync remains the only socket");
  assert.match(pickup,/pickupGroupFromUrl\(location\.href\)/);
+ assert.equal(pickupCatalogDate("immediate","2026-11-19","2026-11-17"),"2026-11-17",
+   "immediate orders should show today's remaining inventory");
+ assert.equal(pickupCatalogDate("scheduled","2026-11-19","2026-11-17"),"2026-11-19");
+ assert.match(pickup,/p_date:pickupCatalogDate\(next,pickupState.day,taipei\(\)\)/);
+
 });
