@@ -111,7 +111,7 @@ export function queueProgressBoard(){
       "（台灣時間）。"+'</p>'+
    queueNearAlertControls(own||fallbackTicket,ownStatus)+
    '<div class="staff-actionbar">'+
-      (own?.id&&lineState.lineConfig?.messagingReady===true?
+      (own?.id&&lineState.lineConfig?.messagingReady===true&&lineState.lineConfig?.merchantOaConnected!==true?
        btn("透過 LINE 取得取號確認","queue-line-reply","primary",'data-id="'+esc(own.id)+'"'):"")+
       btn("重新整理進度","queue-refresh","outline")+
       btn("返回歷史紀錄","cross-back","secondary")+
