@@ -1,47 +1,52 @@
-# 工作怪獸（WF）｜LINE MINI App 上線與驗收（2026-11-17）
+# 工作怪獸 MINI App｜獨立網站、同一後端
 
-## 接入狀態與架構
+更新：2026-11-17
 
-- 已接入三個 LINE MINI App 內部 Channel 的**公開** Channel ID／LIFF ID。無須把這些公開 ID 再放到 Supabase Secrets。
-- 同一個 GitHub Pages WF 前端、Supabase Auth、`wm_` 租戶 RLS/RPC、同一套員工與排班資料；LINE 不取代企業帳號及企業角色權限。
-- `wm-line` Edge Function 依 `channel_env` 選擇指定 Channel ID，向 LINE 的 `/oauth2/v2.1/verify` 驗證 ID Token，核對 `aud`、`sub`、過期日以及在職員工身分。未知環境拒絕，不回退其他 Channel。
-- 原有一般網頁與 LIFF 通道保留；新的 LINE MINI App 以 `?mini=1` 進入。
-- 尚未完成：LINE Console 端 Pointing Endpoints／Scopes、LINE iOS/Android 實機驗收。**不保證認證或免費 LINE 服務訊息已啟用。**
+## 不會取代原本 WF 網頁
 
-## LINE Console：三個 Endpoint 的對照（不同環境必須使用各自的 LIFF ID）
+| 服務 | 網址 | 用途 |
+|---|---|---|
+| **原本 WF 網頁** | https://hub-google.github.io/LINE/workforce/ | 一般瀏覽器、主管、人資、桌面管理 |
+| **工作怪獸 MINI App** | https://hub-google.github.io/LINE/workforce-mini/ | 專用 MINI App 網頁，從 LINE 啟動 |
 
-| 環境 | LINE 開啟網址 | Endpoint URL |
-| --- | --- | --- |
-| Developing | https://miniapp.line.me/2012649404-nz3TBQdG | https://hub-google.github.io/LINE/workforce/?mini=1 |
-| Review | https://miniapp.line.me/2012649405-ADWLM7h9 | https://hub-google.github.io/LINE/workforce/?mini=1&line_env=review |
-| Published | https://miniapp.line.me/2012649406-KzlLEZT6 | https://hub-google.github.io/LINE/workforce/?mini=1&line_env=published |
+**兩個獨立網站入口**：各自有自己的 `index.html`、打包部署目錄與版本號；MINI App 多一份專用 `mini.css`，原本網頁不載入它。兩邊共用相同版本的業務邏輯（`app.js`）、Supabase Auth、`wm_` 資料表、RPC、員工資料與角色。部署將同一版本的 JavaScript 複製到兩個不同靜態目錄，不另外建一份資料庫、不增加 Cloudflare Worker。
 
-進入 [LINE Developers](https://developers.line.biz/console/) → 工作怪獸（LINE MINI App）→ Web app settings；對應設定各 Endpoint。MINI App Size 設 Full；在 Scopes 選取 **openid**（取得 ID Token 必要）。`profile` 可留著、`chat_message.write` 不需要。`Add friend` 可繼續 Off，不影響員工身份綁定。核對 Basic settings 的**Provider** 與 WF 原 LINE Login 和 OA Channel 所在 Provider；若不同，`line_sub` 可能不同，平台 OA 推播未必可達，程式不會默默覆蓋既有員工綁定。
+### LINE Developers 三個 Endpoint URL
 
-官方說明：Review 只供 LINE 審核人員使用；Developing 需為有授權的 Admin/Tester；Published 才供一般使用者。未認證 Published 可發布但少部分進階能力不可用。[LINE MINI App Console Guide](https://developers.line.biz/en/docs/line-mini-app/discover/console-guide/)。
+進入 [LINE Developers Console](https://developers.line.biz/console/) → 「工作怪獸」的 **LINE MINI App Channel** → **Web app settings**。請把原本的 `/LINE/workforce/?mini=1` 或官方預設 URL 改成：
 
-## 實機驗收路徑
+| LINE 環境 | MINI App 連結 | 必須填寫的 Endpoint URL |
+|---|---|---|
+| Developing | https://miniapp.line.me/2012649404-nz3TBQdG | **https://hub-google.github.io/LINE/workforce-mini/** |
+| Review | https://miniapp.line.me/2012649405-ADWLM7h9 | **https://hub-google.github.io/LINE/workforce-mini/?line_env=review** |
+| Published | https://miniapp.line.me/2012649406-KzlLEZT6 | **https://hub-google.github.io/LINE/workforce-mini/?line_env=published** |
 
-1. 將自己的 LINE 帳號加入 MINI App 的 Admin/Tester；完成上方 Developing Endpoint 與 Scopes 後，在手機 LINE 內開啟：https://miniapp.line.me/2012649404-nz3TBQdG
-2. 確認顯示「工作怪獸」WF 畫面；若看到官方預設頁，回 LINE Console 檢查 Endpoint 是否儲存。
-3. 在 WF 使用原本**正式企業帳號**登入；需是已被授權、在職的企業員工。公開 Demo 不能綁定真實 LINE 身分。
-4. 打開「LINE 通知」→「以 LINE 驗證並綁定」。後端驗證該 Developing ID Token 與企業在職員工；成功顯示已綁定，不能跨企業取得未授權資料。
-5. 測試上下班打卡、GPS 許可與拒絕（前端需授權，沒有定位權限不可假裝 GPS 精準）、排班、請假、加班、補卡、員工通知及主管簽核；iPhone／Android 兩者都要測。
-6. 確定 Developing 沒問題後，再交付 LINE 審核 Review；Published 依 LINE Console 的發布／認證要求對外開放。Published 必須使用上述 Published Endpoint，否則會有 LIFF ID 與 Channel audience 不符的問題。
+LINE Console 的 Review 和 Published 設定是否立即生效，依認證狀態及官方審核／發布同步規則而定；若目前只能改 Developing，先設定 Developing，Review/Published 階段再檢查正確值。
 
-## 限制與未啟用項目
+**Scopes**：必須啟用 `openid`（讓 `liff.getIDToken()` 可以取得 ID Token）；`profile` 可保留。`chat_message.write` 非必要，暫時不啟用。MINI App Size 保留 full，Add friend option 保留 Off 即可。請核對 MINI App Provider 與舊 LINE Login/OA Provider 是否一致，否則相同人的 userId 未必相同。 <https://developers.line.biz/en/reference/liff/>
 
-- MINI App 是網頁技術，**不免除定位授權**，GPS 仍需由手機同意；實機精度、防定位造假、異常打卡不能靠 Channel 建立自動保證。
-- `wm-line` 既有的通知是平台 LINE OA Messaging API，不是 MINI App Service Message API。申請 Verified MINI App 與服務訊息樣板、通知 Token 流程是另一項工作；台灣認證申請通常要求 certified provider 資格。不得聲稱可以直接無限免費通知。
-- 不收集 Channel Secret，也不需把公開 Channel ID 設為 Supabase Secret；原先 `LINE_LOGIN_CHANNEL_ID`、`LINE_LIFF_ID` 與 `LINE_MESSAGING_ACCESS_TOKEN` 不更動。
-- 如果已綁定的 LINE userId 與新 MINI App LINE userId 不同，後端拒絕覆蓋，必須先釐清 Provider/帳號，再由原員工本人依權限解除綁定。
-- 不可拿 LINE profile 的可修改資訊、手機 GPS 前端回報值直接當作企業員工授權憑證。
+## 系統已完成的部分
 
-## 自動化檢查
+1. LINE 前端 SDK 使用每個環境對應的 LIFF ID，`/workforce/` 不會初始化 MINI App。
+2. Supabase `wm-line` Edge Function 以 LINE 官方 Verify ID Token 端點驗證 JWT audience、有效期限與使用者 LINE 身分，僅允許已登入且在職的企業成員綁定。
+3. 保留既有平台 OA 通知，若新的 LINE 身分和舊綁定不一致，不靜默覆蓋。
+4. 公開的 Channel ID、LIFF ID 已寫入專用程式與後端；**不必額外提供 Channel Secret 或 Access Token**。
+5. GitHub Actions 分別發布 `/workforce/` 與 `/workforce-mini/`，保留其他 LINE 產品的部署目錄不動。
 
-```bash
-node --check workforce-management/app.js
-node --test workforce-management/tests/workforce-mini-app.test.mjs
-node --test workforce-management/tests/workforce-prd.test.mjs
-node --test workforce-management/tests/workforce-button-clicks.test.mjs
-```
+## 手機實機完整驗收
+
+1. 將測試者 LINE 帳號加入 LINE MINI App Channel 的 Tester／Admin（Developing 只開放授權帳號）。
+2. 開啟 [Developing MINI App](https://miniapp.line.me/2012649404-nz3TBQdG)，確認是「工作怪獸」而不是原本 WF 網頁或 LINE 預設頁。
+3. 企業帳號登入（Supabase 企業身分），進入「LINE 通知」→「以 LINE 驗證並綁定」。預期只綁到自己所屬公司的在職員工；驗證失敗不得寫入綁定。
+4. 用主管、員工各一組帳號操作出勤打卡、排班、請假、補卡、加班、簽核、站內通知、匯出；驗證不同角色權限、不得跨企業查改。
+5. iPhone 與 Android 實測 GPS 授權同意／拒絕、室內定位誤差、超出打卡範圍、假定位及 QR 方案。MINI App **不免除定位授權**，也不等於已通過 GPS 防作弊實機驗收。
+6. 在 Chrome/Safari 開啟原本 [WF 網頁](https://hub-google.github.io/LINE/workforce/)：檢查預設公開 Demo、企業帳號登入、網頁管理／匯出均無回歸。
+7. Developing 驗收通過再依 LINE Console 送 Review，發布 Published。Review 通道預設給 LINE 審核人員使用，Published 通道才是一般使用者入口。
+
+## 尚未完成（需 LINE Console／手機）
+
+- LINE Console 每個環境 Endpoint 改為 **獨立的** `/workforce-mini/`，並確認 `openid` scope。
+- LINE 手機端真實身分綁定、GPS、企業全流程 E2E 驗收。
+- LINE MINI App 認證及 MINI App Service Messages 審核。原本 `wm-line` 平台 OA 推播**不是**免費 MINI App 服務通知，不會自動切換。
+
+官方參考：[LINE MINI App Console Guide](https://developers.line.biz/en/docs/line-mini-app/discover/console-guide/)｜[LINE MINI App Getting started](https://developers.line.biz/en/docs/line-mini-app/develop/develop-overview/)。

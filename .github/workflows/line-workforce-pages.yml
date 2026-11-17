@@ -28,13 +28,16 @@ jobs:
           node --check workforce-management/vendor/qrcode.min.js
           test -s workforce-management/index.html
           test -s workforce-management/style.css
+          test -s workforce-management/mini/index.html
+          test -s workforce-management/mini/mini.css
           grep -q 'app.js' workforce-management/index.html
+          grep -q 'mini.css' workforce-management/mini/index.html
       - name: Verify workforce PRD contracts
         run: |
           node --test workforce-management/tests/workforce-prd.test.mjs
           node --test workforce-management/tests/workforce-button-clicks.test.mjs
           node --test workforce-management/tests/workforce-mini-app.test.mjs
-      - name: Deploy only workforce to existing gh-pages branch
+      - name: Deploy workforce website and independent WF MINI App to existing gh-pages branch
         shell: bash
         run: |
           set -euo pipefail
@@ -49,14 +52,26 @@ jobs:
           mkdir -p "$pubdir/workforce/vendor"
           cp workforce-management/vendor/qrcode.min.js workforce-management/vendor/QR-CODE-LICENSE "$pubdir/workforce/vendor/"
           printf '%s\n' "$GITHUB_SHA" > "$pubdir/workforce/build.txt"
-          git -C "$pubdir" add -- workforce/
+          # Separate LINE MINI App website. Its entry page and stylesheet are independent;
+          # only the versioned business logic + database integration are shared.
+          mkdir -p "$pubdir/workforce-mini/vendor"
+          cp workforce-management/mini/index.html "$pubdir/workforce-mini/index.html"
+          cp workforce-management/mini/mini.css "$pubdir/workforce-mini/mini.css"
+          cp workforce-management/app.js workforce-management/swap-sync.js workforce-management/style.css "$pubdir/workforce-mini/"
+          cp workforce-management/vendor/qrcode.min.js workforce-management/vendor/QR-CODE-LICENSE "$pubdir/workforce-mini/vendor/"
+          sed -i "s@./style.css@./style.css?v=$GITHUB_SHA@g" "$pubdir/workforce-mini/index.html"
+          sed -i "s@./mini.css@./mini.css?v=$GITHUB_SHA@g" "$pubdir/workforce-mini/index.html"
+          sed -i "s@./app.js@./app.js?v=$GITHUB_SHA@g" "$pubdir/workforce-mini/index.html"
+          printf '%s\n' "$GITHUB_SHA" > "$pubdir/workforce-mini/build.txt"
+          git -C "$pubdir" add -- workforce/ workforce-mini/
           if git -C "$pubdir" diff --cached --quiet; then
             echo "No workforce changes to deploy."
             exit 0
           fi
           git -C "$pubdir" -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "deploy: workforce $GITHUB_SHA"
           git -C "$pubdir" push origin HEAD:gh-pages
-          echo "Deployment target: https://hub-google.github.io/LINE/workforce/"
+          echo "Workforce website: https://hub-google.github.io/LINE/workforce/"
+          echo "LINE MINI App: https://hub-google.github.io/LINE/workforce-mini/"
       # A remote Supabase outage must not suppress a locally validated front-end build.
       # Keep the run failed if the live API is genuinely inaccessible; deploy independently.
       - name: Verify deployed Supabase APIs
