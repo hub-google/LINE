@@ -66,3 +66,34 @@ test('Failed shift-refresh keeps the old swap form disabled',async()=>{
  assert.equal(cache.has(form),false);
  assert.match(notice.textContent,/network not reachable/);
 });
+
+test('Swap submit guard accepts only fresh and authorized distinct published shifts',()=>{
+ const start=swap.indexOf('function workforceSwapCanSubmit(');
+ const end=swap.indexOf("document.addEventListener('submit'",start);
+ assert.ok(start>0&&end>start);
+ const canSubmit=new Function(swap.slice(start,end)+';return workforceSwapCanSubmit;')();
+ const from={value:'one'},to={value:'two'};
+ const form={querySelector:s=>s.includes('source_shift_id')?from:to};
+ const cache={checkedAt:10000,isDemo:false,userId:'user-1',
+  members:[{id:'employee-one',user_id:'user-1'}],
+  shifts:[
+   {id:'one',member_id:'employee-one',status:'published'},
+   {id:'two',member_id:'employee-two',status:'published'},
+   {id:'draft',member_id:'employee-two',status:'draft'}
+  ]};
+ assert.equal(canSubmit(form,cache,20000),true);
+ assert.equal(canSubmit(form,cache,200001),false,'stale form must fail');
+ to.value='draft';
+ assert.equal(canSubmit(form,cache,20000),false,'draft target must fail');
+ to.value='one';
+ assert.equal(canSubmit(form,cache,20000),false,'identical shifts must fail');
+ to.value='two';
+ cache.members[0].user_id='another-user';
+ assert.equal(canSubmit(form,cache,20000),false,'employee cannot swap for someone else');
+});
+
+test('Swaps must be blocked on Enter submission when synchronization failed',()=>{
+ assert.match(swap,/document\.addEventListener\('submit',event=>/);
+ assert.match(swap,/event\.stopImmediatePropagation\(\)/);
+ assert.match(swap,/workforceSwapCanSubmit\(form,swapFormCache\.get\(form\)\)/);
+});
