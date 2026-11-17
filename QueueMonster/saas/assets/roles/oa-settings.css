@@ -30,10 +30,6 @@ body[data-portal="staff"] .oa-credential-input>.field{display:block;width:100%;m
 .oa-saved-credential strong{font-size:12px;white-space:nowrap;color:#27694b}
 .oa-mask-lock{margin-left:auto;font-size:15px}
 .oa-safety-note{font-size:12px;color:#806b8c;line-height:1.6;margin:10px 0 0}
-.oa-webhook-section{margin-top:22px;padding-top:1px;border-top:1px solid #f1e7f6}
-.oa-webhook-entry{display:flex;gap:9px;align-items:stretch;min-width:0}
-body[data-portal="staff"] .oa-webhook-entry .field{min-width:0;flex:1;width:0;border-color:#d8c5e6;color:#554666;font-size:12px}
-.oa-webhook-entry .btn{flex:none;white-space:nowrap}
 .oa-advanced{margin:20px 0 8px;border:1px solid #ebdfef;border-radius:11px;background:#fdfbfe}
 .oa-advanced>summary{cursor:pointer;padding:13px 15px;color:#67467b;font-size:13px;font-weight:800}
 .oa-advanced-content{padding:0 15px 15px}
@@ -48,8 +44,5 @@ body[data-portal="staff"] .oa-settings-actions>.btn{min-height:43px}
  .oa-credential-grid{grid-template-columns:minmax(0,1fr);gap:14px}
  .oa-status-row h3{font-size:18px!important}
  .oa-connection-chip{padding:7px 9px;font-size:12px}
- .oa-webhook-entry{flex-direction:column}
- body[data-portal="staff"] .oa-webhook-entry .field{width:100%;flex:auto}
- .oa-webhook-entry .btn{width:100%}
  .oa-settings-actions>.btn{flex:1 1 140px}
 }
