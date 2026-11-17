@@ -84,8 +84,8 @@ try{
       'const bridge=SB_URL+"/functions/v1/qm-mini-session?action=config&env='+env+'";',"mini directory config");
     text=requireReplace(text,'"so_site_header_identity"','"so_mini_header_identity"',"mini directory identity");
     text=text.replaceAll('"so_my_platform_records_page"','"so_mini_platform_records_page"');
-    const begin=text.indexOf(' // Resolve a merchant\'s own LIFF app');
-    const end=text.indexOf(' async function load(){',begin);
+    const begin=text.indexOf("// Resolve a merchant's own LIFF app");
+    const end=text.indexOf('async function load(){',begin);
     if(begin<0||end<0)throw Error("mini store click markers changed");
     text=text.slice(0,begin)+
       ' // All shop links remain inside this MINI App; never switch to a merchant LIFF.\n'+text.slice(end);
