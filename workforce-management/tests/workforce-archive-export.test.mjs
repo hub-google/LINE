@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 
 const appSource=readFileSync(new URL('../app.js',import.meta.url),'utf8');
 const from=appSource.indexOf('const WF_ARCHIVE_TABLES=');
-const to=appSource.indexOf("$('appContent').addEventListener('click',async event=>{",from);
+const to=appSource.indexOf("document.addEventListener('click',async event=>{",from);
 assert.ok(from>0&&to>from,'Archive module should exist');
 const fragment=appSource.slice(from,to);
 
