@@ -129,21 +129,15 @@ function draft(){
 }
 function exceptionDraft(){
  if(!serviceUnitsState.scheduleExceptionDraft){
-  const keys=Object.keys(draft().templates);
   serviceUnitsState.scheduleExceptionDraft={
-   start:taipei(),end:taipei(),mode:"CLOSED",template_key:keys[0]||"",
-   note:"",windows:[{name:"特殊營業場",start:"10:00",end:"15:00",capacity:10}]
+   start:taipei(),end:taipei(),mode:"CLOSED",
+   note:"",windows:[{name:"第 1 場",start:"10:00",end:"15:00",capacity:10}]
   };
  }
  return serviceUnitsState.scheduleExceptionDraft;
 }
 function templateTitle(key,windows){
  return String(windows?.[0]?.title||key);
-}
-function templateOptions(templates,selected,off=false){
- return (off?'<option value="off"'+(selected==="off"?" selected":"")+'>公休（無場次）</option>':"")+
- Object.entries(templates).filter(([,windows])=>!closedPlan(windows)).map(([key,windows])=>
-  '<option value="'+esc(key)+'"'+(selected===key?" selected":"")+'>'+esc(templateTitle(key,windows))+'</option>').join("");
 }
 function capture(){
  const d=draft(),e=exceptionDraft();
@@ -192,7 +186,6 @@ function capture(){
  }
  const input=(id,key)=>{const el=document.getElementById(id);if(el)e[key]=el.value;};
  input("schedule-special-start","start");input("schedule-special-end","end");
- input("schedule-special-mode","mode");input("schedule-special-template","template_key");
  input("schedule-special-note","note");
  const specialWindows=[];
  for(const line of document.querySelectorAll("[data-schedule-special-window]")){
@@ -275,27 +268,15 @@ export function applyScheduleSessionCount(el){
   serviceUnitsState.scheduleEditWeekday=day;
  }else if(el.id==="schedule-special-count"){
   const e=exceptionDraft();
-  const windows=e.mode==="TEMPLATE" ? clone(d.templates[e.template_key]||[]) : (e.windows||[]);
   e.mode=count===0?"CLOSED":"CUSTOM";
-  if(count>0)e.windows=resizeWindows(windows,count).map(({title,...w})=>w);
+  if(count>0)e.windows=resizeWindows(e.windows||[],count).map(({title,...w})=>w);
  }
  render();
 }
-export function applySpecialScheduleMode(el){
- capture();
- const e=exceptionDraft();
- if(el.id==="schedule-special-mode"){
-  if(!["CLOSED","CUSTOM","TEMPLATE"].includes(el.value))return;
-  e.mode=el.value;
- }else if(el.id==="schedule-special-template")e.template_key=el.value;
- render();
-}
-
 export function renderScheduleSettings(isManager){
  const c=serviceUnitsState.scheduleConfig||{};
  if(!isManager)return box("智慧營業排程",'<p class="small">僅店家管理者可以編輯每週場次及特殊營業日期。</p>');
- const d=draft(),e=exceptionDraft(),keys=Object.keys(d.templates).filter(key=>!closedPlan(d.templates[key]));
- if(!keys.includes(e.template_key))e.template_key=keys[0]||"";
+ const d=draft(),e=exceptionDraft();
  const unitOptions=(serviceUnitsState.unitConfig?.units||[]).filter(u=>u.active&&!u.is_default);
  const plans=Object.entries(d.templates).filter(([key])=>planKey(key));
  const planCards=plans.map(([key,windows])=>{
@@ -347,11 +328,11 @@ export function renderScheduleSettings(isManager){
   '<p class="small">套用會取代所選星期目前的場次設定，不會更動其他星期；確認後請按下方「儲存每週營業排程」。</p></section>';
  const specialWindows=e.windows||[emptyWindow()];
  const specialWindowEditor=specialWindows.map((w,i)=>windowEditor(w,i,'data-schedule-special-window',unitOptions)).join("");
- const specialCount=e.mode==="CLOSED"?0:e.mode==="TEMPLATE"?(d.templates[e.template_key]?.length||0):specialWindows.length;
+ const specialCount=e.mode==="CLOSED"?0:specialWindows.length;
  const exceptions=groupedExceptions(c.exceptions||[]).slice(0,40);
  const list=exceptions.length?
    exceptions.map(x=>'<div class="listline"><span><strong>'+esc(x.start)+(x.end!==x.start?'～'+esc(x.end):"")+'</strong><div class="small">'+
-     esc(x.mode==="CLOSED"?"不營業":x.template_key?"套用 "+templateTitle(x.template_key,d.templates[x.template_key]):"自訂營業時段")+
+     esc(x.mode==="CLOSED"?"公休（0 場）":"臨時營業（"+(x.windows?.length||c.templates?.[x.template_key]?.length||0)+" 場）")+
      (x.note?' · '+esc(x.note):"")+'</div></span>'+
      btn("編輯","schedule-special-edit","outline",'data-start="'+esc(x.start)+'" data-end="'+esc(x.end)+'"')+
      btn("移除此設定","schedule-special-remove","outline",'data-start="'+esc(x.start)+'" data-end="'+esc(x.end)+'"')+'</div>').join(""):
@@ -367,21 +348,13 @@ export function renderScheduleSettings(isManager){
   btn("放棄尚未儲存的修改","schedule-weekly-reset","outline")+'</div>'+
   '<hr style="margin:24px 0">'+
   '<h3 style="margin:0 0 8px">特殊日期（節假日、裝修、臨時調整）</h3>'+
-  '<p class="small">同一處即可設定整日不營業，或臨時改用其他場次及營業時間。指定日期的設定會覆蓋每週規則。</p>'+
+  '<p class="small">直接填寫這段期間每天的場次數：0 場為公休，1～50 場可逐場設定時間、名額與服務窗口。特殊日期會優先於每週排程。</p>'+
   '<div class="grid"><div>'+field("開始日期","schedule-special-start",e.start,"date")+'</div><div>'+field("結束日期","schedule-special-end",e.end,"date")+'</div></div>'+
-  '<label for="schedule-special-mode">這段期間的營業安排</label>'+
-  '<select id="schedule-special-mode" class="field">'+
-   [["CLOSED","不營業（休假／裝修）"],["TEMPLATE","改套用其他場次模板"],["CUSTOM","臨時調整營業時間"]].map(([v,label])=>
-    '<option value="'+v+'"'+(e.mode===v?" selected":"")+'>'+label+'</option>').join("")+'</select>'+
-  '<div class="schedule-special-count"><label for="schedule-special-count">特殊日期場次數（0～50）</label>'+
+  '<div class="schedule-special-count"><label for="schedule-special-count">每天場次數（0 為公休）</label>'+
    '<input class="field" type="number" id="schedule-special-count" min="0" max="50" step="1" value="'+specialCount+'"></div>'+
-  '<div data-schedule-template-choice style="'+(e.mode==="CLOSED"?"display:none;":"")+'">'+
-   '<label for="schedule-special-template">套用已有場次設定</label>'+
-   '<select id="schedule-special-template" class="field">'+templateOptions(d.templates,e.template_key)+'</select></div>'+
-   '<div data-schedule-custom style="'+(e.mode==="CUSTOM"?"":"display:none;")+'">'+
-   '<p class="small">可自訂 0～50 場，各場均可調整時間、名額與服務窗口。</p>'+
-   '<div class="staff-actionbar">'+btn("帶入所選模板的全部場次","schedule-special-copy-template","outline")+'</div>'+
-   specialWindowEditor+'</div>'+
+  (specialCount?
+   '<div class="schedule-session-list" aria-label="特殊日期場次設定">'+specialWindowEditor+'</div>':
+   '<p class="small schedule-closed-hint">這段日期不營業，不開放預約、取號與訂餐。</p>')+
    field("備註（選填）","schedule-special-note",e.note,"text",'maxlength="120" placeholder="例如：店內裝修、國定假日"')+
   '<div class="staff-actionbar" style="margin:16px 0">'+btn("套用特殊日期","schedule-special-save","primary")+'</div>'+
   '<h3 style="margin:20px 0 12px">已設定的特殊日期</h3>'+list+
@@ -431,12 +404,6 @@ export async function handleScheduleAction(ev,b,a,id){
   if(serviceUnitsState.scheduleSelectedPlan===key)serviceUnitsState.scheduleSelectedPlan=serviceUnitsState.scheduleEditTemplate;
   render();return true;
  }
- if(a==="schedule-special-copy-template"){
-  const d=capture(),e=exceptionDraft(),windows=d.templates[e.template_key];
-  if(!windows){window.alert("請先選擇要帶入的場次模板");return true;}
-  e.mode="CUSTOM";e.windows=clone(windows).map(({title,...w})=>w);
-  render();return true;
- }
  if(a==="schedule-special-slot-add"){
   capture();const e=exceptionDraft();
   if(e.windows.length>=MAX_SESSIONS){window.alert("特殊日期最多可設定 50 場");return true;}
@@ -460,10 +427,13 @@ export async function handleScheduleAction(ev,b,a,id){
   const x=(cfg.exceptions||[]).find(v=>v.date===b.dataset.start);
   if(!x)return true;
   const e=exceptionDraft();
+  // Historical special dates may reference weekly templates: copy the saved windows
+  // into the standalone editor so changing this date cannot alter the weekly plan.
+  const savedWindows=x.windows?.length?x.windows:
+   (x.template_key?cfg.templates?.[x.template_key]:null);
   Object.assign(e,{start:b.dataset.start,end:b.dataset.end,note:x.note||"",
-    mode:x.mode==="CLOSED"?"CLOSED":x.template_key?"TEMPLATE":"CUSTOM",
-    template_key:x.template_key||Object.keys(draft().templates)[0],
-    windows:x.windows?.length?clone(x.windows):[emptyWindow()]});
+    mode:x.mode==="CLOSED"?"CLOSED":"CUSTOM",
+    windows:savedWindows?.length?clone(savedWindows).map(({title,...w})=>w):[emptyWindow()]});
   render();return true;
  }
  if(a==="schedule-weekly-reset"){
@@ -509,25 +479,26 @@ export async function handleScheduleAction(ev,b,a,id){
  if(a==="schedule-special-save"){
   capture();const e=exceptionDraft();
   if(!e.start||!e.end||e.end<e.start){window.alert("請確認特殊日期的開始與結束日");return true;}
-  const data={start:e.start,end:e.end,note:e.note||"",mode:e.mode==="CLOSED"?"CLOSED":"CUSTOM"};
-  if(e.mode==="TEMPLATE"){
-   const windows=draft().templates[e.template_key];
-   if(!Array.isArray(windows)||!windows.length){window.alert("請選擇有效的場次模板");return true;}
-   // Unsaved weekly drafts can be applied to special dates without enabling the weekly schedule.
-   // Retain the template reference only when it exactly matches the persisted version.
-   const saved=serviceUnitsState.scheduleConfig?.templates?.[e.template_key];
-   if(saved&&JSON.stringify(saved)===JSON.stringify(windows))data.template_key=e.template_key;
-   else data.windows=clone(windows).map(({title,...w})=>w);
+  const countInput=document.getElementById("schedule-special-count");
+  const countRaw=String(countInput?.value??"").trim();
+  const count=Number(countRaw);
+  if(!countRaw||!validCount(count)){window.alert("場次數請輸入 0～50 的整數");return true;}
+  if(count>0&&e.windows.length!==count){
+   applyScheduleSessionCount(countInput);
+   window.alert("場次欄位已更新，請確認各場的時間與名額後再次套用");
+   return true;
   }
-  if(e.mode==="CUSTOM")data.windows=e.windows;
-  if(data.mode==="CUSTOM"&&!data.template_key){
-   if(!Array.isArray(data.windows)||data.windows.length<1||data.windows.length>MAX_SESSIONS){window.alert("請設定 1～50 個場次");return true;}
-   for(const w of data.windows){
+  e.mode=count===0?"CLOSED":"CUSTOM";
+  const data={start:e.start,end:e.end,note:e.note||"",mode:e.mode};
+  if(e.mode==="CUSTOM"){
+   if(!Array.isArray(e.windows)||e.windows.length<1||e.windows.length>MAX_SESSIONS){window.alert("請設定 1～50 個場次");return true;}
+   for(const w of e.windows){
     if(!w.name||!/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(w.start)||!/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(w.end)
       ||w.start>=w.end||!Number.isInteger(w.capacity)||w.capacity<1||w.capacity>300){
      window.alert("特殊日期的場次名稱、時間或名額無效，請逐場確認");return true;
     }
    }
+   data.windows=e.windows;
   }
   if(data.mode==="CLOSED"){
    try{
