@@ -470,8 +470,7 @@ async function pushNotice(
   message: string | Record<string, unknown>,
   origin: string | null,
 ) {
-  // Booking confirmations are reply-only, including legacy callers and the outbox.
-  if (eventKind === "RESERVED") return reply(200, {ok:true,sent:false,reason:"REPLY_REQUIRED"}, origin);
+  // Booking confirmations use the merchant OA Push API (no merchant webhook required).
   const merchantOa = await merchantLineConfig(db, tenant.id);
   // Platform headquarters OA is for discovery/help only, never merchant event pushes.
   // Merchant alerts require that merchant's own successfully connected LINE OA.
@@ -546,7 +545,6 @@ type NoticeJob = {
 async function dispatchOutboxItem(
   db: ReturnType<typeof service>, job: NoticeJob, origin: string | null,
 ): Promise<{ status: "SENT" | "SKIPPED" | "RETRY"; reason?: string }> {
-  if (job.event_kind === "RESERVED") return {status:"SKIPPED",reason:"REPLY_REQUIRED"};
   const { data: tenant, error: tenantErr } = await db.from("qm_tenants")
     .select("id,slug,name,status,address,phone").eq("id", job.tenant_id).maybeSingle();
   if (tenantErr) throw tenantErr;
@@ -1218,7 +1216,10 @@ Deno.serve(async (req: Request) => {
   }
   if (url.searchParams.get("action") === "webhook") {
     if (req.method !== "POST") return reply(405, { error: "METHOD_NOT_ALLOWED" }, origin);
-    return webhook(req, origin, url.searchParams.get("merchant") || "");
+    // Only Queue Monster\u0027s own LINE OA has an active webhook. Retired merchant URLs
+    // acknowledge legacy LINE deliveries without reading events or sending replies.
+    if (url.searchParams.has("merchant")) return reply(200, {ok:true,ignored:true}, origin);
+    return webhook(req, origin);
   }
   if (url.searchParams.get("action") === "dispatch-pending") {
     if (req.method !== "POST") return reply(405, { error: "METHOD_NOT_ALLOWED" }, origin);
@@ -1275,8 +1276,10 @@ Deno.serve(async (req: Request) => {
       if(tenantError)throw tenantError;
       if(!tenant)return reply(404,{error:"TENANT_NOT_FOUND"},origin);
       const own=await merchantLineConfig(db,tenant.id);
-      const platformBot=own?null:await oaAddFriendUrl();
-      const botBasicId=own?.basicId||platformBot?.split("/").pop()||"";
+      // Merchant OA incoming webhook is retired; only the platform OA accepts reply commands.
+      if (own) return reply(409,{error:"MERCHANT_WEBHOOK_DISABLED"},origin);
+      const platformBot=await oaAddFriendUrl();
+      const botBasicId=platformBot?.split("/").pop()||"";
       if(!/^@[a-z0-9_.-]{2,100}$/i.test(botBasicId))
         return reply(409,{error:"LINE_OA_NOT_AVAILABLE"},origin);
       let query=db.from(confirmationTable(typedKind)).select("id,tenant_id,user_id,status")
@@ -1302,6 +1305,9 @@ Deno.serve(async (req: Request) => {
         .eq("slug",slug).eq("status","ACTIVE").maybeSingle();
       if(tenantError)throw tenantError;
       if(!tenant)return reply(404,{error:"TENANT_NOT_FOUND"},origin);
+      // Merchant OA webhook-based booking confirmations are no longer supported.
+      return reply(410,{error:"MERCHANT_WEBHOOK_DISABLED"},origin);
+      /* Legacy code intentionally unreachable; kept for data migration compatibility.
       const own=await merchantLineConfig(db,tenant.id);
       if(!own||!/^@[a-z0-9_.-]{2,100}$/i.test(own.basicId||""))
         return reply(409,{error:"MERCHANT_OA_NOT_CONNECTED"},origin);
@@ -1316,6 +1322,7 @@ Deno.serve(async (req: Request) => {
       return reply(200,{ok:true,command,
         oaMessageUrl:"https://line.me/R/oaMessage/"+encodeURIComponent(own.basicId)+"/?"+encodeURIComponent(command),
         expiresInSeconds:600},origin);
+      */
     }
     if (payload.action === "connect-merchant-oa" || payload.action === "disconnect-merchant-oa") {
       const slug = String(payload.slug || "");
@@ -1381,7 +1388,6 @@ Deno.serve(async (req: Request) => {
       return reply(200,{
         ok:true,connected:true,displayName:String(bot.displayName||""),
         basicId:String(bot.basicId||""),messagingChannelId,liffEnabled:false,
-        webhookUrl:"https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/line-bridge?action=webhook&merchant="+encodeURIComponent(slug),
         note:"Messaging API connected; LINE login is managed by Queue Monster",
       },origin);
     }
