@@ -714,3 +714,34 @@ body[data-portal="staff"] .staff-picker-secondary>.staff-choice{flex:1 1 100%;mi
  .schedule-weekday-copy .field{max-width:none;min-width:0}
  .schedule-session-list{grid-template-columns:minmax(0,1fr)}
 }
+
+/* Multi-plan editor: compact plans, one batch day picker, and collapsible weekday overrides. */
+.schedule-plan-list{display:grid;gap:12px}
+.schedule-plan-panel{border:1px solid #e5dce9;border-radius:16px;background:#fff;padding:14px 16px;min-width:0}
+.schedule-plan-head{display:flex;align-items:flex-end;flex-wrap:wrap;gap:12px}
+.schedule-plan-head label{display:block;margin:0 0 5px;font-size:12px;font-weight:650;color:#675b73}
+.schedule-plan-title{flex:1 1 190px;min-width:155px}
+.schedule-plan-title .field{width:100%;min-height:42px}
+.schedule-plan-size{flex:0 0 94px}
+.schedule-plan-size .field{width:100%;min-height:42px;text-align:center;font-weight:700}
+.schedule-plan-head>.btn{min-height:42px}
+.schedule-plan-details{margin-top:12px;padding-top:12px;border-top:1px solid #f0e8f1}
+.schedule-plan-details>summary{font-weight:650;color:#603b80;cursor:pointer;font-size:14px}
+.schedule-batch-box{margin:20px 0 24px;padding:18px;border:1px solid #dfcbe9;border-radius:17px;background:#faf7fc}
+.schedule-batch-box h3{margin:0 0 13px;color:#55366b}
+.schedule-batch-box>label{font-weight:650;font-size:13px;display:block;margin-bottom:7px}
+.schedule-batch-box>select{max-width:480px}
+.schedule-batch-label{font-weight:650;font-size:13px;margin:17px 0 9px}
+.schedule-day-checks{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}
+.schedule-day-check{display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid #e0d5e7;border-radius:10px;background:#fff;min-height:44px;padding:6px;font-weight:650;font-size:13px;color:#4b3b54;cursor:pointer}
+.schedule-day-check input{margin:0;accent-color:#6d4087}
+.schedule-day-check:has(input:checked){background:#f0e7f7;border-color:#ad87c4}
+.schedule-batch-actions{margin:16px 0 10px}
+.schedule-weekday-overview{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.schedule-weekday-overview span{font-weight:750;color:#4d3b5b;white-space:nowrap}
+.schedule-weekday-overview small{color:#877b90;font-size:12px}
+.schedule-weekday-head>strong{font-weight:750;font-size:15px;color:#405b4c}
+.schedule-weekday-details .schedule-weekday-count{margin:12px 0;justify-content:flex-start}
+.schedule-weekday-details .schedule-weekday-count label{font-size:13px;color:#675b73;margin:0 6px 0 0}
+@media(max-width:720px){.schedule-day-checks{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:420px){.schedule-day-checks{grid-template-columns:repeat(2,minmax(0,1fr))}.schedule-weekday-overview{gap:6px}.schedule-weekday-overview small{width:100%}.schedule-plan-panel{padding:12px}}
