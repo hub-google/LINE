@@ -79,9 +79,9 @@ test("bare booking or legacy SaaS roots open the dedicated booking homepage with
  }
 });
 
-test("headquarters OA directory links platform shops directly to their merchant websites",()=>{
+test("directory preserves platform OA LIFF context while opening store services",()=>{
  assert.match(directory,/function customerUrl\(slug,tab,oaMode="PLATFORM"\)/);
- assert.match(directory,/customerEntryUrl\(slug,\{surface:"directory",tab,oaMode,liffId\}\)/);
+ assert.match(directory,/customerEntryUrl\(slug,\{surface:"directory",tab,oaMode,liffId,platformChatEntry\}\)/);
  assert.match(directory,/selected\?\.oa_mode==="PLATFORM"/);
  assert.match(directory,/customerUrl\(t\.slug,"reserve",t\.oa_mode\)/);
  assert.match(directory,/customerUrl\(t\.slug,"queue",t\.oa_mode\)/);
