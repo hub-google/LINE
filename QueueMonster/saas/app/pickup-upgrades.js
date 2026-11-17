@@ -1,5 +1,7 @@
 // Shared pickup helpers. No second catalogue, pricing source or network service.
 export const pickupEntries=cart=>Object.values(cart||{}).filter(x=>x&&Number(x.qty)>0);
+// Immediate pickup consumes today\x27s inventory, regardless of a previously selected reservation date.
+export const pickupCatalogDate=(method,scheduledDay,today)=>method==="immediate"?today:scheduledDay;
 export function pickupCartKey(id,options=[]){
   return String(id)+"|"+(options||[]).slice().sort((a,b)=>a.group-b.group||a.choice-b.choice)
     .map(x=>Number(x.group)+":"+Number(x.choice)).join(",");
