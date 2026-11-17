@@ -74,13 +74,13 @@ try{
     // Separate Supabase auth identities prevent MINI links from overwriting
     // existing web LIFF login_channel_id on the same GitHub Pages origin.
     text=requireReplace(text,'"line-saas-customer-session-v2"',
-      '"queue-mini-customer-session-v1"',"mini independent session key");
+      '"queue-mini-customer-session-v1-'+env+'"',"mini independent session key");
     return text;
   });
   await patch(path.join(staged,"site-auth.js"),text=>{
     text=requireReplace(text,'"so_site_header_identity"','"so_mini_header_identity"',"mini identity header");
     return requireReplace(text,'"line-saas-customer-session-v2"',
-      '"queue-mini-customer-session-v1"',"mini header independent auth");
+      '"queue-mini-customer-session-v1-'+env+'"',"mini header independent auth");
   });
   await patch(path.join(staged,"shared-customer-links.js"),text=>
     requireReplace(text,'"https://liff.line.me/"','"https://miniapp.line.me/"',"mini deep links"));
@@ -90,7 +90,7 @@ try{
       'const bridge=SB_URL+"/functions/v1/qm-mini-session?action=config&env='+env+'";',"mini directory config");
     text=requireReplace(text,'"so_site_header_identity"','"so_mini_header_identity"',"mini directory identity");
     text=requireReplace(text,'"line-saas-customer-session-v2"',
-      '"queue-mini-customer-session-v1"',"mini directory independent auth");
+      '"queue-mini-customer-session-v1-'+env+'"',"mini directory independent auth");
     text=text.replaceAll('"so_my_platform_records_page"','"so_mini_platform_records_page"');
     const begin=text.indexOf("// Resolve a merchant's own LIFF app");
     const end=text.indexOf('async function load(){',begin);
