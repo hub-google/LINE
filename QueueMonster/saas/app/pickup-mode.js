@@ -50,7 +50,15 @@ export async function loadPickupData(){
       try{pickupState.groupData=await rpc("so_pickup_group_view",{p_slug:routeState.slug,p_group:pickupState.groupId});}
       catch(error){pickupState.groupData=null;console.warn("團購資料暫時無法讀取",error);}
     }
-    if(pickupState.customer?.settings?.schedule_mode==="DISABLED")pickupState.method="immediate";
+    if(pickupState.customer?.settings?.schedule_mode==="DISABLED"){
+      // A store can switch to immediate-only while the customer still has
+      // a future reservation day selected; reload today's stock once.
+      if(pickupState.method!=="immediate"&&pickupState.day!==taipei()){
+        try{pickupState.customer=await rpc("so_pickup_public",{p_slug:routeState.slug,p_date:taipei()});}
+        catch(error){console.warn("無法讀取今日餐點庫存",error);pickupState.customer=null;}
+      }
+      pickupState.method="immediate";
+    }
     if(pickupState.customer?.settings?.schedule_mode==="REQUIRED")pickupState.method="scheduled";
     if(!pickupState.customer?.slots?.some(x=>x.time===pickupState.slot&&x.left>0))pickupState.slot="";
   }else if(routeState.view==="customer"){pickupState.customer=null;}
