@@ -253,14 +253,15 @@ function validate(d){
     throw Error("模板「"+templateTitle(key,windows)+"」的場次時間或名額無效");
  }
 }
-function windowEditor(w,i,marker,unitOptions){
+function windowEditor(w,i,marker,unitOptions,locked=false){
+ const disabled=locked?" disabled":"";
  return '<div class="inset schedule-session-editor" '+marker+'="'+i+'">'+
   '<strong>第 '+(i+1)+' 場</strong>'+
-  '<div class="grid"><div><label>場次名稱</label><input class="field" data-schedule-field="name" maxlength="60" value="'+esc(w.name)+'"></div>'+
-  '<div><label>名額（人）</label><input class="field" data-schedule-field="capacity" type="number" min="1" max="300" value="'+esc(w.capacity)+'"></div></div>'+
-  '<div class="grid"><div><label>開始時間</label><input class="field" data-schedule-field="start" type="time" value="'+esc(w.start)+'"></div>'+
-  '<div><label>結束時間</label><input class="field" data-schedule-field="end" type="time" value="'+esc(w.end)+'"></div></div>'+
-  '<label>服務窗口（選填）</label><select class="field" data-schedule-field="unit_id"><option value="">一般場次</option>'+
+  '<div class="grid"><div><label>場次名稱</label><input class="field" data-schedule-field="name" maxlength="60" value="'+esc(w.name)+'"'+disabled+'></div>'+
+  '<div><label>名額（人）</label><input class="field" data-schedule-field="capacity" type="number" min="1" max="300" value="'+esc(w.capacity)+'"'+disabled+'></div></div>'+
+  '<div class="grid"><div><label>開始時間</label><input class="field" data-schedule-field="start" type="time" value="'+esc(w.start)+'"'+disabled+'></div>'+
+  '<div><label>結束時間</label><input class="field" data-schedule-field="end" type="time" value="'+esc(w.end)+'"'+disabled+'></div></div>'+
+  '<label>服務窗口（選填）</label><select class="field" data-schedule-field="unit_id"'+disabled+'><option value="">一般場次</option>'+
   unitOptions.map(u=>'<option value="'+esc(u.id)+'"'+(u.id===w.unit_id?' selected':'')+'>'+esc(u.name)+'</option>').join("")+'</select></div>';
 }
 export function applyScheduleSessionCount(el){
@@ -307,16 +308,24 @@ export function renderScheduleSettings(isManager){
  const plans=Object.entries(d.templates).filter(([key])=>planKey(key));
  const planCards=plans.map(([key,windows])=>{
   const count=planCount(windows),title=templateTitle(key,windows);
-  const isEditing=serviceUnitsState.scheduleEditTemplate===key;
-  return '<section class="schedule-plan-panel" data-schedule-plan-panel="'+esc(key)+'">'+
-   '<div class="schedule-plan-head"><div class="schedule-plan-title"><label for="schedule-plan-name-'+esc(key)+'">方案名稱</label>'+
-   '<input id="schedule-plan-name-'+esc(key)+'" data-schedule-plan-name="'+esc(key)+'" class="field" maxlength="40" value="'+esc(title)+'"></div>'+
+  const isEditing=serviceUnitsState.scheduleEditingPlan===key;
+  const opened=isEditing||serviceUnitsState.scheduleEditTemplate===key;
+  return '<section class="schedule-plan-panel'+(isEditing?' is-editing':'')+'" data-schedule-plan-panel="'+esc(key)+'">'+
+   '<div class="schedule-plan-banner"><span class="schedule-plan-indicator"></span><strong>'+esc(title)+'</strong>'+
+   '<span class="schedule-plan-status">'+(isEditing?'編輯中・尚未儲存':'營業方案')+'</span></div>'+
+   '<div class="schedule-plan-inner"><div class="schedule-plan-head">'+
+   '<div class="schedule-plan-title"><label for="schedule-plan-name-'+esc(key)+'">方案名稱</label>'+
+   '<input id="schedule-plan-name-'+esc(key)+'" data-schedule-plan-name="'+esc(key)+'" class="field" maxlength="40" value="'+esc(title)+'"'+(isEditing?'':' disabled')+'></div>'+
    '<div class="schedule-plan-size"><label for="schedule-plan-count-'+esc(key)+'">場次數</label>'+
-   '<input id="schedule-plan-count-'+esc(key)+'" class="field" type="number" min="0" max="50" step="1" data-schedule-plan-count="'+esc(key)+'" value="'+count+'"></div>'+
-   btn("刪除","schedule-plan-remove","outline",'data-key="'+esc(key)+'"')+'</div>'+
-   '<details class="schedule-plan-details"'+(isEditing?' open':'')+'><summary>編輯場次內容（'+(count?count+" 場":"公休")+"）</summary>"+
-   (count?'<div class="schedule-session-list">'+windows.map((w,i)=>windowEditor(w,i,'data-schedule-plan-window',unitOptions)).join("")+'</div>':
-    '<p class="small">此方案為公休，套用到的星期將不開放場次。</p>')+'</details></section>';
+   '<input id="schedule-plan-count-'+esc(key)+'" class="field" type="number" min="0" max="50" step="1" data-schedule-plan-count="'+esc(key)+'" value="'+count+'"'+(isEditing?'':' disabled')+'></div>'+
+   '<div class="schedule-plan-actions">'+
+   btn("儲存方案","schedule-plan-save","primary schedule-plan-save-btn",'data-key="'+esc(key)+'"'+(isEditing?'':' disabled'))+
+   btn(isEditing?"取消編輯":"編輯方案","schedule-plan-edit","outline schedule-plan-edit-btn",'data-key="'+esc(key)+'"')+
+   btn("刪除方案","schedule-plan-remove","outline schedule-plan-delete-btn",'data-key="'+esc(key)+'"')+'</div></div>'+
+   '<details class="schedule-plan-details"'+(opened?' open':'')+'><summary>編輯場次內容（'+(count?count+" 場":"公休")+"）</summary>"+
+   '<div class="schedule-plan-detail-body">'+
+   (count?'<div class="schedule-session-list">'+windows.map((w,i)=>windowEditor(w,i,'data-schedule-plan-window',unitOptions,!isEditing)).join("")+'</div>':
+    '<p class="small">此方案為公休，套用到的星期將不開放場次。</p>')+'</div></details></div></section>';
  }).join("");
  const selectedPlan=serviceUnitsState.scheduleSelectedPlan;
  const batchOptions='<option value="off"'+(selectedPlan==="off"?" selected":"")+'>公休（0 場）</option>'+
