@@ -79,6 +79,31 @@ function resizeWindows(windows,count){
  return list;
 }
 const emptyWindow=()=>({name:"新增場次",start:"09:00",end:"12:00",capacity:10});
+
+function persistedPlanPayload(config,d,key,remove=false){
+ const templates=config.templates&&Object.keys(config.templates).length?clone(config.templates):clone(initialTemplates);
+ const baseline=serviceUnitsState.schedulePlanBaseline||{};
+ if(!Object.keys(templates).some(planKey))
+  for(const [k,windows] of Object.entries(baseline))if(planKey(k))templates[k]=clone(windows);
+ const weekdaysRule={};
+ for(let i=1;i<=7;i++){
+  const day=String(i),existing=config.weekdays?.[day]||"off";
+  weekdaysRule[day]=existing;
+  if(existing!=="off"&&!templates[existing]&&baseline[existing])templates[existing]=clone(baseline[existing]);
+ }
+ if(remove)delete templates[key];else templates[key]=clone(d.templates[key]);
+ return {enabled:config.enabled===true,weekdays:weekdaysRule,templates};
+}
+function revertPlanChanges(d,key){
+ const original=serviceUnitsState.schedulePlanBaseline?.[key];
+ if(original)d.templates[key]=clone(original);
+ else{delete d.templates[key];if(serviceUnitsState.scheduleSelectedPlan===key)serviceUnitsState.scheduleSelectedPlan="off";}
+}
+function clearPlanDraft(){
+ serviceUnitsState.scheduleDraft=null;
+ serviceUnitsState.schedulePlanBaseline=null;
+ serviceUnitsState.scheduleEditingPlan="";
+}
 function draft(){
  if(!serviceUnitsState.scheduleDraft){
   const c=serviceUnitsState.scheduleConfig||{};
@@ -116,6 +141,7 @@ function draft(){
     templates[key]=windows;
    }
   }
+  serviceUnitsState.schedulePlanBaseline=clone(templates);
   serviceUnitsState.scheduleDraft={enabled:c.enabled===true,weekdays:weekdaysRule,templates};
   const plans=Object.keys(templates).filter(planKey);
   serviceUnitsState.scheduleEditWeekday=serviceUnitsState.scheduleEditWeekday||"";
@@ -378,31 +404,71 @@ export async function handleScheduleAction(ev,b,a,id){
   }catch(error){window.alert(error.message);}
   return true;
  }
+
  if(a==="schedule-plan-add"){
   const d=capture();
-  if(Object.keys(d.templates).length>=PLAN_LIMIT){
-   window.alert("目前模板已達 100 組上限，請先移除不再使用的營業方案");return true;
-  }
+  if(Object.keys(d.templates).length>=PLAN_LIMIT){window.alert("營業方案已達上限，請先刪除舊方案");return true;}
+  if(serviceUnitsState.scheduleEditingPlan){window.alert("請先儲存或取消正在編輯的方案");return true;}
   const key="plan_"+Date.now().toString(36)+"_"+Object.keys(d.templates).length;
   d.templates[key]=[{...emptyWindow(),title:"新營業方案"}];
-  serviceUnitsState.scheduleEditTemplate=key;
-  serviceUnitsState.scheduleSelectedPlan=key;
-  render();return true;
+  serviceUnitsState.scheduleEditTemplate=key;serviceUnitsState.scheduleEditingPlan=key;
+  serviceUnitsState.scheduleSelectedPlan=key;render();return true;
+ }
+ if(a==="schedule-plan-edit"){
+  const d=capture(),key=b.dataset.key;
+  if(!planKey(key)||!d.templates[key])return true;
+  const previous=serviceUnitsState.scheduleEditingPlan;
+  if(previous===key){
+   revertPlanChanges(d,key);serviceUnitsState.scheduleEditingPlan="";
+   if(!d.templates[key])serviceUnitsState.scheduleEditTemplate=Object.keys(d.templates).find(planKey)||"";
+   render();return true;
+  }
+  if(previous){
+   if(!window.confirm("目前的方案尚未儲存，切換編輯將放棄修改。確定繼續？"))return true;
+   revertPlanChanges(d,previous);
+  }
+  serviceUnitsState.scheduleEditingPlan=key;serviceUnitsState.scheduleEditTemplate=key;render();return true;
+ }
+ if(a==="schedule-plan-save"){
+  const key=b.dataset.key;
+  if(serviceUnitsState.scheduleEditingPlan!==key)return true;
+  const d=capture();
+  if(!planKey(key)||!d.templates[key])return true;
+  const payload=persistedPlanPayload(serviceUnitsState.scheduleConfig||{},d,key);
+  try{validate(payload);}catch(error){window.alert(error.message);return true;}
+  const title=templateTitle(key,d.templates[key]);
+  await act(async()=>{
+   await rpc("so_schedule_manage",{p_slug:routeState.slug,p_action:"weekly",p_data:payload});
+   clearPlanDraft();serviceUnitsState.scheduleEditTemplate=key;
+   return "「"+title+"」已儲存；已套用的星期不受影響";
+  });return true;
  }
  if(a==="schedule-plan-remove"){
   const d=capture(),key=b.dataset.key;
   if(!planKey(key)||!d.templates[key])return true;
-  if(Object.keys(d.templates).filter(planKey).length<=1){
-   window.alert("請至少保留一組營業方案");return true;
+  if(serviceUnitsState.scheduleEditingPlan&&serviceUnitsState.scheduleEditingPlan!==key){
+   window.alert("請先儲存或取消正在編輯的方案");return true;
   }
+  const payload=persistedPlanPayload(serviceUnitsState.scheduleConfig||{},d,key,true);
+  if(Object.keys(payload.templates).filter(planKey).length<1){window.alert("請至少保留一組營業方案");return true;}
   if((serviceUnitsState.scheduleConfig?.exceptions||[]).some(x=>x.template_key===key)){
    window.alert("特殊日期仍使用這個方案，請先修改特殊日期設定");return true;
   }
-  if(!window.confirm("確定刪除「"+templateTitle(key,d.templates[key])+"」？已套用的星期會保留原設定。"))return true;
-  delete d.templates[key];
-  if(serviceUnitsState.scheduleEditTemplate===key)serviceUnitsState.scheduleEditTemplate=Object.keys(d.templates).find(planKey)||"";
-  if(serviceUnitsState.scheduleSelectedPlan===key)serviceUnitsState.scheduleSelectedPlan=serviceUnitsState.scheduleEditTemplate;
-  render();return true;
+  const title=templateTitle(key,d.templates[key]);
+  if(!window.confirm("確定刪除「"+title+"」？刪除會立即儲存，已套用的星期不受影響。"))return true;
+  try{validate(payload);}catch(error){window.alert(error.message);return true;}
+  if(!serviceUnitsState.schedulePlanBaseline?.[key]&&!serviceUnitsState.scheduleConfig?.templates?.[key]){
+   delete d.templates[key];serviceUnitsState.scheduleEditingPlan="";
+   if(serviceUnitsState.scheduleEditTemplate===key)serviceUnitsState.scheduleEditTemplate=Object.keys(d.templates).find(planKey)||"";
+   if(serviceUnitsState.scheduleSelectedPlan===key)serviceUnitsState.scheduleSelectedPlan="off";
+   render();return true;
+  }
+  await act(async()=>{
+   await rpc("so_schedule_manage",{p_slug:routeState.slug,p_action:"weekly",p_data:payload});
+   clearPlanDraft();serviceUnitsState.scheduleEditTemplate="";
+   serviceUnitsState.scheduleSelectedPlan="off";
+   return "「"+title+"」已刪除；已套用的星期不受影響";
+  });return true;
  }
  if(a==="schedule-special-slot-add"){
   capture();const e=exceptionDraft();
@@ -437,7 +503,7 @@ export async function handleScheduleAction(ev,b,a,id){
   render();return true;
  }
  if(a==="schedule-weekly-reset"){
-  serviceUnitsState.scheduleDraft=null;serviceUnitsState.scheduleExceptionDraft=null;render();return true;
+  clearPlanDraft();serviceUnitsState.scheduleExceptionDraft=null;render();return true;
  }
  if(a==="schedule-template-add"){
   const d=capture(),name=val("schedule-new-template-name").trim();
@@ -473,7 +539,7 @@ export async function handleScheduleAction(ev,b,a,id){
   await act(async()=>{
    await rpc("so_schedule_manage",{p_slug:routeState.slug,p_action:"weekly",
     p_data:{enabled:d.enabled,weekdays:d.weekdays,templates:d.templates}});
-   serviceUnitsState.scheduleDraft=null;return d.enabled?"每週排程已啟用並儲存":"每週排程已儲存，目前未啟用";
+   clearPlanDraft();return d.enabled?"每週排程已啟用並儲存":"每週排程已儲存，目前未啟用";
   });return true;
  }
  if(a==="schedule-special-save"){
@@ -516,7 +582,7 @@ export async function handleScheduleAction(ev,b,a,id){
   }
   await act(async()=>{
    await rpc("so_schedule_manage",{p_slug:routeState.slug,p_action:"exception_set",p_data:data});
-   serviceUnitsState.scheduleDraft=null;serviceUnitsState.scheduleExceptionDraft=null;
+   clearPlanDraft();serviceUnitsState.scheduleExceptionDraft=null;
    return data.mode==="CLOSED"
     ?"休業日期已儲存。請至預約管理、叫號與訂餐紀錄逐筆處理既有顧客。"
     :"特殊營業日期已套用，新預約／取號／訂餐將依此規則判斷";
@@ -527,7 +593,7 @@ export async function handleScheduleAction(ev,b,a,id){
   await act(async()=>{
    await rpc("so_schedule_manage",{p_slug:routeState.slug,p_action:"exception_delete",
     p_data:{start:b.dataset.start,end:b.dataset.end}});
-   serviceUnitsState.scheduleDraft=null;
+   clearPlanDraft();
    return "已移除特殊日期設定，恢復每週規則";
   });return true;
  }
