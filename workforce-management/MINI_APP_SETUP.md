@@ -50,3 +50,12 @@ LINE Console 的 Review 和 Published 設定是否立即生效，依認證狀態
 - LINE MINI App 認證及 MINI App Service Messages 審核。原本 `wm-line` 平台 OA 推播**不是**免費 MINI App 服務通知，不會自動切換。
 
 官方參考：[LINE MINI App Console Guide](https://developers.line.biz/en/docs/line-mini-app/discover/console-guide/)｜[LINE MINI App Getting started](https://developers.line.biz/en/docs/line-mini-app/develop/develop-overview/)。
+
+
+## 日常使用：從 LINE OA 固定選單進入（不必每天掃 QR）
+
+掃描 QR 或 LINE MINI App Published 連結只適合第一次導流；員工每天打卡應使用獨立「工作怪獸」LINE OA 的圖文選單。「工作怪獸」MINI App 的 Channel 並不會自動產生 LINE OA。OA 需要另外建立和管理，並放入正確的 Published 永久連結（而非 GitHub Pages 直連網頁）。
+
+已新增六格圖文選單設定及 LIFF 初始化後的 `tab` 深連結路由，詳細設定見 [LINE OA 固定入口](./line-oa/README.md)。只有 Verified MINI App 才能在正式環境使用 LINE 的官方手機主畫面捷徑；不能將未認證 Published 誤當成可加手機桌面的版本。
+
+**登入注意**：目前 WF 將 Supabase 登入保存在 `sessionStorage`，LINE WebView 關閉後不保證仍保持登入；此為登入工作階段安全問題，不可透過把 OA 選單設成固定入口而視為已解決。

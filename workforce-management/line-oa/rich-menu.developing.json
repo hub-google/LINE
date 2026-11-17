@@ -1,0 +1,89 @@
+{
+  "size": {
+    "width": 2500,
+    "height": 1686
+  },
+  "selected": true,
+  "name": "工作怪獸-developing-v1",
+  "chatBarText": "工作怪獸｜打卡・排班",
+  "areas": [
+    {
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "uri",
+        "label": "上下班打卡",
+        "uri": "https://miniapp.line.me/2012649404-nz3TBQdG/?tab=punch"
+      }
+    },
+    {
+      "bounds": {
+        "x": 833,
+        "y": 0,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "uri",
+        "label": "我的班表",
+        "uri": "https://miniapp.line.me/2012649404-nz3TBQdG/?tab=schedule"
+      }
+    },
+    {
+      "bounds": {
+        "x": 1666,
+        "y": 0,
+        "width": 834,
+        "height": 843
+      },
+      "action": {
+        "type": "uri",
+        "label": "差勤申請",
+        "uri": "https://miniapp.line.me/2012649404-nz3TBQdG/?tab=requests"
+      }
+    },
+    {
+      "bounds": {
+        "x": 0,
+        "y": 843,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "uri",
+        "label": "通知紀錄",
+        "uri": "https://miniapp.line.me/2012649404-nz3TBQdG/?tab=inbox"
+      }
+    },
+    {
+      "bounds": {
+        "x": 833,
+        "y": 843,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "uri",
+        "label": "工作總覽",
+        "uri": "https://miniapp.line.me/2012649404-nz3TBQdG/?tab=overview"
+      }
+    },
+    {
+      "bounds": {
+        "x": 1666,
+        "y": 843,
+        "width": 834,
+        "height": 843
+      },
+      "action": {
+        "type": "uri",
+        "label": "審核中心",
+        "uri": "https://miniapp.line.me/2012649404-nz3TBQdG/?tab=approvals"
+      }
+    }
+  ]
+}
