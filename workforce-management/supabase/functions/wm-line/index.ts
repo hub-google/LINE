@@ -142,6 +142,12 @@ Deno.serve(async req=>{
   }
   if(action==="bind"){
    const verified=await lineValidate(String(input.id_token||""),String(input.channel_type||"login"),String(input.channel_env||"developing"));
+   // Keep existing OA recipients stable: LINE user IDs from different providers may differ.
+   // A different LINE account requires explicit unbinding; never silently overwrite a verified identity.
+   const existing=await db("wm_line_links?select=line_sub&tenant_id=eq."+
+    encodeURIComponent(tenant)+"&member_id=eq."+encodeURIComponent(m.id)+
+    "&revoked_at=is.null&limit=1");
+   if(existing?.length&&existing[0].line_sub!==verified.sub)throw new Error("LINE_ACCOUNT_MISMATCH_UNBIND_FIRST");
    // The Supabase user must first authenticate and be an existing, active member.
    await db("wm_line_links?on_conflict=tenant_id,member_id","POST",[
     {tenant_id:tenant,member_id:m.id,user_id:actor,line_sub:verified.sub,
