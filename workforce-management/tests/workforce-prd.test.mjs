@@ -235,7 +235,7 @@ test('real Auth onboarding uses safe minimal-response inserts without exposing p
 test('real login reloads tenant data after switching from an unfinished public demo load',()=>{
  assert.ok(src.includes("if(app.busy){app.reloadQueued=true;$('connectionLabel').textContent='資料更新中';return;}"));
  assert.ok(src.includes("app.busy=false;app.reloadQueued=false;app.data=null;return reload(true);"));
- assert.match(src,/loadingMode!==app\.mode\|\|loadingToken!==app\.token/);
+ assert.match(src,/loadingMode!==app\.mode\|\|loadingAuthGeneration!==wfAuthGeneration/);
 });
 test('evidence RLS invokes only a granted, identity-checked private predicate',()=>{
  const sql=migration('20261105102630_workforce_evidence_rls_authenticated_execute.sql');
