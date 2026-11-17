@@ -2920,28 +2920,39 @@ $('appContent').addEventListener('submit',async event=>{
    no Cloudflare Worker, no scheduled jobs, no authentication secrets, no writes.
    This is NOT an atomic Supabase backup or a database restore mechanism. */
 const WF_ARCHIVE_TABLES=[
- ['wm_tenants','id','id,name,is_demo','id'],
- ['wm_branches','id','*','tenant_id'],
- ['wm_departments','id','*','tenant_id'],
- ['wm_members','id','id,tenant_id,branch_id,user_id,display_name,employee_code,role,employment_type,status,created_at,department_id,reports_to,job_title,hired_on,left_on,skills','tenant_id'],
- ['wm_shifts','id','*','tenant_id'],
- ['wm_punches','id','*','tenant_id'],
- ['wm_requests','id','*','tenant_id'],
- ['wm_request_actions','id','*','tenant_id'],
- ['wm_notifications','id','*','tenant_id'],
- ['wm_leave_entitlements','id','*','tenant_id'],
- ['wm_leave_policies','id','*','tenant_id'],
- ['wm_period_closures','id','*','tenant_id'],
- ['wm_period_adjustments','id','*','tenant_id'],
- ['wm_attendance_adjustments','id','*','tenant_id'],
- ['wm_attendance_anomalies','id','*','tenant_id'],
- ['wm_availability','id','*','tenant_id'],
- ['wm_shift_templates','id','*','tenant_id'],
- ['wm_staffing_requirements','id','*','tenant_id'],
- ['wm_schedule_rules','effective_from','*','tenant_id'],
- ['wm_member_branches','id','*','tenant_id'],
- ['wm_branch_qr_settings','branch_id','*','tenant_id'],
- ['wm_request_documents','id','*','tenant_id']
+ 'wm_tenants',
+ 'wm_branches',
+ 'wm_departments',
+ 'wm_members',
+ 'wm_shifts',
+ 'wm_punches',
+ 'wm_requests',
+ 'wm_request_actions',
+ 'wm_notifications',
+ 'wm_leave_entitlements',
+ 'wm_leave_policies',
+ 'wm_period_closures',
+ 'wm_period_adjustments',
+ 'wm_attendance_adjustments',
+ 'wm_attendance_anomalies',
+ 'wm_attendance_rules',
+ 'wm_availability',
+ 'wm_availability_policies',
+ 'wm_shift_templates',
+ 'wm_staffing_requirements',
+ 'wm_schedule_rules',
+ 'wm_member_branches',
+ 'wm_branch_qr_settings',
+ 'wm_request_documents',
+ 'wm_leave_amendment_steps',
+ 'wm_leave_amendments',
+ 'wm_leave_cancellations',
+ 'wm_line_deliveries',
+ 'wm_org_role_audit',
+ 'wm_request_approval_steps',
+ 'wm_shift_revisions',
+ 'wm_audit',
+ 'wm_qr_uses'
 ];
 const WF_ARCHIVE_PAGE_SIZE=500;
 const WF_ARCHIVE_MAX_ROWS=50000;
@@ -2981,68 +2992,56 @@ function wfAssertArchiveAccess(tenant,generation,userId){
   app.tenantId!==tenant||app.user?.id!==userId||wfAuthGeneration!==generation)
   throw Error('企業或登入身分已變更，取消資料匯出');
 }
-async function wfArchiveCompleteNotifications(tenant,generation,userId,progress){
- const records=[];
- const ids=new Set();
+function wfArchiveRowKey(table,row){
+ if(table==='wm_qr_uses')return row.challenge_id&&row.member_id
+  ?row.challenge_id+':'+row.member_id:null;
+ if(table==='wm_branch_qr_settings')return row.branch_id;
+ if(['wm_attendance_rules','wm_availability_policies','wm_schedule_rules'].includes(table))
+  return row.tenant_id;
+ return row.id;
+}
+async function wfArchivePages(table,tenant,generation,userId,progress){
+ const records=[],seen=new Set();
  let expected=null;
  for(let offset=0;;offset+=WF_ARCHIVE_PAGE_SIZE){
   wfAssertArchiveAccess(tenant,generation,userId);
-  const response=await call('/rest/v1/rpc/wm_export_notification_archive','POST',{
-   p_tenant:tenant,p_offset:offset,p_limit:WF_ARCHIVE_PAGE_SIZE
+  const page=await call('/rest/v1/rpc/wm_archive_table_page','POST',{
+   p_tenant:tenant,p_table:table,p_offset:offset,p_limit:WF_ARCHIVE_PAGE_SIZE
   },app.token);
   wfAssertArchiveAccess(tenant,generation,userId);
-  const total=Number(response?.total_count);
-  const page=response?.rows;
-  if(response?.tenant_id!==tenant||response?.offset!==offset||
-   !Number.isSafeInteger(total)||total<0||!Array.isArray(page)||
-   page.length>WF_ARCHIVE_PAGE_SIZE)
-   throw Error('通知匯出資料格式或企業不正確');
+  const total=page?.total_count,values=page?.rows;
+  if(page?.tenant_id!==tenant||page?.table!==table||page?.offset!==offset||
+   !Number.isSafeInteger(total)||total<0||!Array.isArray(values)||
+   values.length>WF_ARCHIVE_PAGE_SIZE)
+   throw Error(table+' 回傳資料格式或企業不正確，取消匯出');
   if(expected===null)expected=total;
-  if(total!==expected)throw Error('通知數量在匯出期間變動，為避免漏資料已取消匯出');
-  if(expected>WF_ARCHIVE_MAX_ROWS)throw Error('通知筆數超過安全下載上限');
-  for(const item of page){
-   if(!item?.id||item.tenant_id!==tenant||ids.has(item.id))
-    throw Error('通知資料重複或跨企業，已取消匯出');
-   ids.add(item.id);
-   records.push(item);
+  if(total!==expected)throw Error(table+' 匯出期間筆數變動，已取消匯出');
+  if(expected>WF_ARCHIVE_MAX_ROWS)throw Error(table+' 超過每次匯出安全上限');
+  for(const row of values){
+   const key=row&&wfArchiveRowKey(table,row);
+   const owner=table==='wm_tenants'?row?.id:row?.tenant_id;
+   if(owner!==tenant||!key||seen.has(key))
+    throw Error(table+' 含跨企業資料或重複識別碼，取消匯出');
+   seen.add(key);records.push(row);
   }
-  if(progress)progress.textContent='已讀取完整通知：'+records.length+' / '+expected+' 筆';
-  if(page.length<WF_ARCHIVE_PAGE_SIZE)break;
- }
- if(records.length!==expected)throw Error('通知資料筆數不足，已取消不完整的備份');
- return records;
-}
-async function wfArchivePages(table,order,columns,scope,tenant,generation,userId,progress){
- if(table==='wm_notifications')
-  return wfArchiveCompleteNotifications(tenant,generation,userId,progress);
- const result=[];
- const filter=scope+'=eq.'+encodeURIComponent(tenant);
- for(let offset=0;;offset+=WF_ARCHIVE_PAGE_SIZE){
-  wfAssertArchiveAccess(tenant,generation,userId);
-  const values=await call('/rest/v1/'+table+'?select='+encodeURIComponent(columns)+
-   '&'+filter+'&order='+order+'.asc&limit='+WF_ARCHIVE_PAGE_SIZE+
-   '&offset='+offset,'GET',null,app.token);
-  if(!Array.isArray(values))throw Error(table+' 回傳格式不正確，停止匯出');
-  result.push(...values);
-  if(result.length>WF_ARCHIVE_MAX_ROWS)
-   throw Error(table+' 已超過每次 '+WF_ARCHIVE_MAX_ROWS+' 筆的安全限制，未產生不完整檔案');
-  if(progress)progress.textContent='已讀取 '+table+'：'+result.length+' 筆';
+  if(progress)progress.textContent='已取得 '+table+'：'+records.length+' / '+expected+' 筆';
   if(values.length<WF_ARCHIVE_PAGE_SIZE)break;
  }
- return result;
+ if(records.length!==expected)throw Error(table+' 筆數不足，已取消不完整匯出');
+ return records;
 }
 async function wfExportTenantArchive(progress=null){
  const tenant=app.tenantId,generation=wfAuthGeneration,userId=app.user?.id;
  wfAssertArchiveAccess(tenant,generation,userId);
  const started=new Date().toISOString(),tables={},counts={};
- for(const [table,order,columns,scope] of WF_ARCHIVE_TABLES){
-  const rows=await wfArchivePages(table,order,columns,scope,tenant,generation,userId,progress);
+ for(const table of WF_ARCHIVE_TABLES){
+  const rows=await wfArchivePages(table,tenant,generation,userId,progress);
   tables[table]=rows;counts[table]=rows.length;
  }
  wfAssertArchiveAccess(tenant,generation,userId);
- const file={format:'workforce-operational-export-v1',tenant_id:tenant,
+ const file={format:'workforce-operational-export-v2',tenant_id:tenant,
   started_at_utc:started,finished_at_utc:new Date().toISOString(),
-  limitations:'RLS-scoped, non-transactional operational data export. No Auth accounts, storage objects, invite secrets, LINE tokens, or automated recovery.',
+  limitations:'Authorization-scoped non-transactional export. No Auth accounts, private wages, storage objects, LINE bindings, invite or QR secrets, or automated recovery.',
   table_counts:counts,tables};
  const text=JSON.stringify(file);
  const blob=new Blob([text],{type:'application/json;charset=utf-8'});
