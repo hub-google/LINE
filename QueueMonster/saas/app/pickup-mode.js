@@ -10,6 +10,7 @@ import {selectCustomerDetail} from "./customer-detail.js";
 import {customerNoticeSuffix,sendOrderReply,lineReplyHandoff} from "./line-session.js";
 import {normalizeTaiwanPhone,isValidTaiwanPhone,TW_LANDLINE_AREAS,getTaiwanLandlineHint,isValidTaiwanPhoneParts} from "./tw-phone.js";
 import {pickupEntries,pickupCartAmount,pickupCartCount,pickupAdd,pickupRemove,pickupChosen,pickupSpecsLabel,parsePickupOptions} from "./pickup-upgrades.js";
+import {couponState,renderCouponCustomer,renderCouponAdmin,loadCouponAdmin,handleCouponAction,initializeCouponInputs} from "./pickup-coupons.js";
 
 // The existing store, LINE identity and so_menu_items catalogue remain the source of truth.
 // This module owns only pickup-specific presentation and form state.
@@ -77,7 +78,7 @@ export async function loadPickupData(){
   if(routeState.view==="customer"&&customerState.customer){
     if(!pickupState.day)pickupState.day=taipei();
     if(pickupState.customerSlug!==routeState.slug){
-      pickupState.customer=null;pickupState.customerSlug=routeState.slug;pickupState.groupId="";pickupState.groupData=null;
+      pickupState.customer=null;pickupState.customerSlug=routeState.slug;pickupState.groupId="";pickupState.groupData=null;couponState.code="";couponState.preview=null;
       pickupState.cart={};pickupState.slot="";pickupState.requestId="";pickupState.method="scheduled";pickupState.confirming=false;pickupState.phoneType="mobile";pickupState.phone="";pickupState.phoneArea="02";pickupState.phoneLocal="";pickupState.customerHistory=null;pickupState.customerHistoryPage=1
     }
     if(!pickupState.customer||routeState.customerTab==="order"){
@@ -115,7 +116,7 @@ export async function loadPickupData(){
     }
     if(staffState.staffTab==="customers"
        && ["OWNER","MANAGER","PLATFORM"].includes(staffState.staff?.role)){
-      try{pickupState.repeatCustomers=await rpc("so_pickup_repeat_customers",{p_slug:routeState.slug,p_limit:30});}
+      try{pickupState.repeatCustomers=await rpc("so_pickup_repeat_customers",{p_slug:routeState.slug,p_limit:30});await loadCouponAdmin();}
       catch(error){pickupState.repeatCustomers=null;console.warn("熟客分析尚不可用",error);}
     }
   }
@@ -276,6 +277,7 @@ export function renderCustomerPickup(){
         '<div style="min-width:0">'+field("市話號碼","pickup-customer-local",pickupState.phoneLocal,"tel",'inputmode="numeric" pattern="[0-9]*" maxlength="8" placeholder="例如：'+esc(getTaiwanLandlineHint(pickupState.phoneArea).example)+'（臺灣市話，半形數字）"')+'</div></div>')+
    '</div>'+
    '<div style="margin-top:12px">'+field("給店家的備註（最多 200 字）","pickup-note",pickupState.note,"text",'maxlength="200" placeholder="例如：不要加辣"')+'</div>'+
+  renderCouponCustomer(total,pickupState.groupId)+
   '<div class="listline"><strong>共 '+esc(count)+' 份</strong><strong>'+money(total)+'</strong></div>'+
   '<p class="small">此處僅建立訂單，不會線上收款；請依店家現場方式結帳。</p>'+
   (pickupState.groupId?(
@@ -361,17 +363,18 @@ export function renderStaffPickup(){
 }
 export function renderPickupLoyalCustomers(){
  const customers=pickupState.repeatCustomers;
- if(!Array.isArray(customers))return box("訂餐熟客分析",'<p class="small">目前無法載入本店熟客分析；請稍後重新整理。</p>');
+ if(!Array.isArray(customers))return box("訂餐熟客分析",'<p class="small">目前無法載入本店熟客分析；請稍後重新整理。</p>')+renderCouponAdmin();
  return box("訂餐熟客分析（最多 30 位）",
  '<p class="small">僅管理者可查看本店訂餐客戶，按照有效訂單筆數排序。金額為訂單總額，不代表已實際收款。資料僅供本店使用。</p>'+
  (customers.length?
   '<div class="scroll"><table class="rows"><thead><tr><th>顧客</th><th>有效訂單</th><th>累計訂單金額</th><th>最常訂的餐點</th><th>最近訂購</th></tr></thead><tbody>'+
   customers.map(c=>'<tr><td>'+esc(c.name)+'</td><td>'+esc(c.orders)+' 筆</td><td>'+money(c.amount)+'</td>'+
     '<td>'+esc(c.favorite||'—')+'</td><td>'+esc(c.last_order?new Date(c.last_order).toLocaleDateString("zh-TW",{timeZone:"Asia/Taipei"}):'—')+'</td></tr>').join("")+
-  '</tbody></table></div>':'<p class="muted">目前沒有可統計的訂單。</p>'));
+  '</tbody></table></div>':'<p class="muted">目前沒有可統計的訂單。</p>'))+renderCouponAdmin();
 }
 export async function handlePickupAction(ev,b,a,id){
  if(!a.startsWith("pickup-"))return false;
+ if(a.startsWith("pickup-coupon-"))return await handleCouponAction(a,b,pickupCartAmount(pickupState.cart,pickupState.customer?.items||[]));
  if(a==="pickup-line-reply"){
    if(!id)return true;
    await act(async()=>{
@@ -563,16 +566,20 @@ export async function handlePickupAction(ev,b,a,id){
    const items=pickupEntries(pickupState.cart).map(x=>({id:x.id,qty:x.qty,options:x.options||[]}));
    if(!items.length)return true;
    if(pickupState.method!=="immediate"&&!pickupState.slot)return true;
+   const couponCode=couponState.code.trim().toUpperCase(),usingCoupon=!!couponCode;
+   if(usingCoupon&&(!couponState.preview||couponState.preview.code!==couponCode||couponState.preview.cartAmount!==pickupCartAmount(pickupState.cart,pickupState.customer?.items||[]))){window.alert("請先按「套用優惠碼」，確認訂單符合折抵條件");return true;}
    try{if(!pickupState.requestId)pickupState.requestId=uuid();}catch(e){window.alert(e.message);return true;}
    let placed=false;
    await act(async()=>{
-     const res=await rpc("so_pickup_place_phone",{p_slug:routeState.slug,
+     const args={p_slug:routeState.slug,
        p_date:pickupState.method==="immediate"?null:pickupState.day,
        p_time:pickupState.method==="immediate"?null:pickupState.slot,
        p_items:items,p_note:pickupState.note,p_request_id:pickupState.requestId,
        p_immediate:pickupState.method==="immediate",
-       p_customer_phone:normalizeTaiwanPhone(pickupContactPhone())});
-     pickupState.cart={};pickupState.note="";pickupState.requestId="";pickupState.confirming=false;placed=true;
+       p_customer_phone:normalizeTaiwanPhone(pickupContactPhone())};
+     if(usingCoupon)args.p_coupon_code=couponCode;
+     const res=await rpc(usingCoupon?"so_pickup_place_with_coupon":"so_pickup_place_phone",args);
+     pickupState.cart={};pickupState.note="";pickupState.requestId="";pickupState.confirming=false;couponState.code="";couponState.preview=null;placed=true;
      if(!selectCustomerDetail("order",res.id))routeState.customerTab="order";
      const notice=await sendOrderReply(res.id);
       return "訂單 "+res.number+" 已送出。15 秒內可取消，倒數後交給店家接單"+customerNoticeSuffix(notice);
@@ -604,7 +611,7 @@ export async function handlePickupAction(ev,b,a,id){
  return false;
 }
 export function initializePickupMode(){
- pickupState.day=taipei();
+ pickupState.day=taipei();initializeCouponInputs(()=>{pickupState.requestId="";pickupState.confirming=false;});
  // Countdown updates only the DOM; no 1-second API requests.
  setInterval(()=>{
    document.querySelectorAll("[data-pickup-grace-until]").forEach(el=>{
