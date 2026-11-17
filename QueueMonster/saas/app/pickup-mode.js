@@ -9,12 +9,13 @@ import {render} from "./staff-layout.js";
 import {selectCustomerDetail} from "./customer-detail.js";
 import {customerNoticeSuffix,sendOrderReply,lineReplyHandoff} from "./line-session.js";
 import {normalizeTaiwanPhone,isValidTaiwanPhone,TW_LANDLINE_AREAS,getTaiwanLandlineHint,isValidTaiwanPhoneParts} from "./tw-phone.js";
+import {pickupEntries,pickupCartAmount,pickupCartCount,pickupAdd,pickupRemove,pickupChosen,pickupSpecsLabel,parsePickupOptions} from "./pickup-upgrades.js";
 
 // The existing store, LINE identity and so_menu_items catalogue remain the source of truth.
 // This module owns only pickup-specific presentation and form state.
 export const pickupState={
   customer:null,staff:null,customerSlug:"",staffSlug:"",
-  day:"",slot:"",method:"scheduled",cart:{},note:"",requestId:"",history:null,historyPage:1,historyFilter:"closed",customerHistory:null,customerHistoryPage:1,phoneType:"mobile",phone:"",phoneArea:"02",phoneLocal:"",confirming:false
+  day:"",slot:"",method:"scheduled",cart:{},note:"",requestId:"",history:null,historyPage:1,historyFilter:"closed",customerHistory:null,customerHistoryPage:1,phoneType:"mobile",phone:"",phoneArea:"02",phoneLocal:"",confirming:false,configuringItemId:"",groupId:"",groupData:null,soundOn:false,soundSeen:null,repeatCustomers:null,kitchenMode:false
 };
 const statusText={NEW:"待店家接單",ACCEPTED:"已接單・待製作",PREPARING:"製作中",
   READY:"已完成待取",PICKED_UP:"已取餐",REJECTED:"店家已取消訂單",CANCELLED:"已取消"};
@@ -24,7 +25,7 @@ const validPickupContactPhone=()=>isValidTaiwanPhoneParts(pickupState.phoneType,
 const money=n=>"NT$ "+Number(n||0).toLocaleString("zh-TW",{maximumFractionDigits:2});
 const modeName={DISABLED:"僅立即取餐",OPTIONAL:"顧客可選立即或預約取餐",REQUIRED:"必須選擇取餐時間"};
 const uuid=()=>{if(!globalThis.crypto?.randomUUID)throw Error("瀏覽器不支援安全訂單識別");return crypto.randomUUID();};
-const lines=o=>(o.items||[]).map(i=>esc(i.name)+" × "+esc(i.qty)).join("、");
+const lines=o=>(o.items||[]).map(i=>esc(i.name)+esc(pickupSpecsLabel(i))+" × "+esc(i.qty)).join("、");
 
 export async function loadPickupData(){
   if(routeState.view==="customer"&&customerState.customer){
@@ -90,6 +91,22 @@ export function renderPickupSettings(isManager){
     btn("儲存訂餐員工權限","pickup-staff-permissions-save","primary")):"");
 }
 
+
+function renderPickupOptionEditor(){
+ const item=(pickupState.customer?.items||[]).find(x=>x.id===pickupState.configuringItemId);
+ if(!item)return "";
+ return '<div class="inset" role="region" aria-label="客製餐點規格" style="margin:12px 0;border:2px solid var(--border,#e5e7eb)">'+
+   '<h3>選擇 '+esc(item.name)+' 的規格</h3>'+
+   (item.pickup_options||[]).map((g,i)=>'<div style="margin:12px 0"><strong>'+esc(g.name)+(g.required?'（必選）':'（選填）')+'</strong>'+
+     (g.multiple?
+       '<div class="staff-actionbar">'+(g.choices||[]).map((c,j)=>'<label class="checklist"><input type="checkbox" data-pickup-multi="'+i+'" value="'+j+'"> '+esc(c.name)+(Number(c.price)>0?' +'+money(c.price):'')+'</label>').join('')+'</div>':
+       '<select class="field" data-pickup-single="'+i+'"><option value="">'+(g.required?'請選擇':'不加選項')+'</option>'+
+       (g.choices||[]).map((c,j)=>'<option value="'+j+'">'+esc(c.name)+(Number(c.price)>0?' +'+money(c.price):'')+'</option>').join('')+'</select>')+
+    '</div>').join('')+
+   '<div class="staff-actionbar">'+btn("加入購物車","pickup-option-add","primary",'data-id="'+esc(item.id)+'"')+
+   btn("取消","pickup-option-close","outline")+'</div></div>';
+}
+
 export function renderCustomerPickup(){
  const d=pickupState.customer;
  if(!d)return box("線上點餐",'<p class="muted">正在讀取店家菜單，若持續無法載入請重新整理。</p>');
@@ -97,8 +114,8 @@ export function renderCustomerPickup(){
  
  const immediate=pickupState.method==="immediate";
  const openNow=s.open_now!==false;
- const total=(d.items||[]).reduce((sum,x)=>sum+Number(x.price||0)*(pickupState.cart[x.id]||0),0);
- const count=Object.values(pickupState.cart).reduce((a,b)=>a+b,0);
+ const total=pickupCartAmount(pickupState.cart,d.items||[]);
+ const count=pickupCartCount(pickupState.cart);
  const customerOrders=pickupState.customerHistory?.orders||d.orders||[];
  const historyTotal=Number(pickupState.customerHistory?.total??customerOrders.length);
  const historyMax=Math.max(1,Math.ceil(historyTotal/25));
@@ -117,6 +134,8 @@ export function renderCustomerPickup(){
   return '<div class="inset" style="margin-top:10px"><div class="listline"><strong>'+esc(o.number)+'</strong><span>'+esc(canCancel?"可取消・倒數中":statusText[o.status]||o.status)+'</span></div>'+
    '<p class="small">取餐：'+esc(o.pickup_at)+(o.scheduled?"（預約）":"（即時）")+'</p>'+
    '<p>'+lines(o)+'</p><p><strong>'+money(o.total)+'</strong></p>'+
+    (o.status==='READY'?'<p class="notice" role="status"><strong>餐點已完成，可以到店取餐！</strong></p>':'')+
+    btn('再點一次','pickup-repeat','outline','data-id="'+esc(o.id)+'"')+
    (canCancel?'<div data-pickup-grace-until="'+deadline+'" role="status" aria-live="off">'+
     '<p class="notice" style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span>可取消訂單剩餘時間</span><strong style="font-size:1.45em;font-variant-numeric:tabular-nums"><span class="pickup-grace-seconds">'+remaining+'</span> 秒</strong></p>'+
     '<p class="small">倒數結束後訂單會送給店家，無法自行取消。</p>'+
@@ -145,11 +164,20 @@ export function renderCustomerPickup(){
    '</select></div></div>'+
    (available.length?"":'<p class="alert">本日沒有可預約時段，請更換日期或稍後再試。</p>'))+
   '<h3 style="margin:18px 0 10px">選擇餐點</h3>'+
-  (d.items||[]).map(i=>'<div class="listline" style="align-items:center;gap:10px"><div style="flex:1;min-width:0"><strong>'+esc(i.name)+'</strong>'+
-   '<p class="small">'+esc(i.description||"")+'</p><strong>'+money(i.price)+'</strong></div>'+
-   '<div class="staff-actionbar">'+btn("－","pickup-qty","outline",'data-id="'+esc(i.id)+'" data-delta="-1" aria-label="減少 '+esc(i.name)+'"')+
-   '<strong>'+esc(pickupState.cart[i.id]||0)+'</strong>'+
-   btn("＋","pickup-qty","outline",'data-id="'+esc(i.id)+'" data-delta="1" aria-label="增加 '+esc(i.name)+'"')+'</div></div>').join("")+
+  (d.items||[]).map(i=>{
+    const qty=pickupEntries(pickupState.cart).filter(x=>x.id===i.id).reduce((sum,x)=>sum+x.qty,0);
+    const left=i.daily_remaining==null?null:Number(i.daily_remaining);
+    const soldOut=left!==null&&left<=0;
+    const options=Array.isArray(i.pickup_options)&&i.pickup_options.length>0;
+    return '<div class="listline" style="align-items:center;gap:10px"><div style="flex:1;min-width:0"><strong>'+esc(i.name)+'</strong>'+
+      '<p class="small">'+esc(i.description||"")+'</p><strong>'+money(i.price)+'</strong>'+
+      (left===null?'':'<p class="small">'+(soldOut?'今日已售完':'當日尚可預訂 '+esc(left)+' 份')+'</p>')+'</div>'+
+      '<div class="staff-actionbar">'+btn("－","pickup-qty","outline",'data-id="'+esc(i.id)+'" data-delta="-1" aria-label="減少 '+esc(i.name)+'"'+(qty? '':' disabled'))+
+      '<strong>'+esc(qty)+'</strong>'+
+      btn(options?"選規格＋":"＋",options?"pickup-option-open":"pickup-qty","outline",
+       'data-id="'+esc(i.id)+'"'+(options?'':' data-delta="1"')+' aria-label="增加 '+esc(i.name)+'"'+(soldOut||left!==null&&qty>=left?' disabled':''))+
+      '</div></div>';
+  }).join("")+renderPickupOptionEditor()+
   '<div style="margin-top:12px"><label for="pickup-phone-type">聯絡電話類型</label><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
    '<select class="field" id="pickup-phone-type" style="width:140px;max-width:100%"><option value="mobile" '+(pickupState.phoneType==="mobile"?"selected":"")+'>手機</option><option value="landline" '+(pickupState.phoneType==="landline"?"selected":"")+'>市話</option></select>'+
    '</div>'+
@@ -165,7 +193,7 @@ export function renderCustomerPickup(){
   (pickupState.confirming?'<div class="inset" role="group" aria-label="確認訂餐內容"><strong>請核對送出前的訂餐內容</strong>'+
     '<p>聯絡電話：'+esc(normalizeTaiwanPhone(pickupContactPhone()))+'</p>'+
     '<p>預計取餐：'+(immediate?'立即取餐（以店家接單為準）':esc(pickupState.day)+' '+esc(pickupState.slot))+'</p>'+
-    '<p>餐點：'+(d.items||[]).filter(i=>pickupState.cart[i.id]>0).map(i=>esc(i.name)+' × '+esc(pickupState.cart[i.id])).join('、')+'</p>'+
+    '<p>餐點：'+pickupEntries(pickupState.cart).map(line=>{const i=(d.items||[]).find(x=>x.id===line.id);return esc(i?.name||'餐點')+esc((pickupChosen(i,line.options)||[]).length?'（'+pickupChosen(i,line.options).map(x=>x.choice_name).join('／')+'）':'')+' × '+esc(line.qty)}).join('、')+'</p>'+
     '<p>金額：'+money(total)+'（以送出時店家菜單價格重新計算）</p>'+
     '<p>備註：'+esc(pickupState.note||'無')+'</p><div class="staff-actionbar">'+
     btn("返回修改","pickup-review-back","outline")+btn("確定送出訂單","pickup-submit","primary")+'</div></div>':
@@ -243,19 +271,76 @@ export async function handlePickupAction(ev,b,a,id){
  }
  if(a==="pickup-review"){
    if(!validPickupContactPhone()){window.alert(pickupState.phoneType==="mobile"?"請輸入 09 開頭、10 碼的台灣手機號碼":"市話區碼與電話號碼格式錯誤，請依區碼確認位數及號碼開頭");return true;}
-   if(!Object.values(pickupState.cart).some(n=>n>0)){window.alert("請先選擇餐點");return true;}
+   if(!pickupCartCount(pickupState.cart)){window.alert("請先選擇餐點");return true;}
    pickupState.confirming=true;render();return true;
  }
  if(a==="pickup-review-back"){pickupState.confirming=false;render();return true;}
  if(a==="pickup-method"){
    pickupState.method=b.dataset.value==="immediate"?"immediate":"scheduled";pickupState.confirming=false;render();return true;
  }
+ if(a==="pickup-option-open"){pickupState.configuringItemId=id;pickupState.confirming=false;render();return true;}
+ if(a==="pickup-option-close"){pickupState.configuringItemId="";render();return true;}
+ if(a==="pickup-option-add"){
+   const item=(pickupState.customer?.items||[]).find(x=>x.id===id);
+   if(!item)return true;
+   const selections=[];
+   for(const [i,g] of (item.pickup_options||[]).entries()){
+     if(g.multiple){
+       document.querySelectorAll('input[data-pickup-multi="'+i+'"]:checked').forEach(el=>selections.push({group:i,choice:Number(el.value)}));
+     }else{
+       const value=document.querySelector('select[data-pickup-single="'+i+'"]')?.value;
+       if(value!==""&&value!=null)selections.push({group:i,choice:Number(value)});
+     }
+     if(g.required&&!selections.some(x=>x.group===i)){window.alert("請選擇「"+g.name+"」");return true;}
+   }
+   const remaining=item.daily_remaining==null?Infinity:Number(item.daily_remaining);
+   const existing=pickupEntries(pickupState.cart).filter(x=>x.id===id).reduce((s,x)=>s+x.qty,0);
+   if(existing>=remaining){window.alert("此餐點今日剩餘數量不足");return true;}
+   pickupAdd(pickupState.cart,id,selections,1);
+   pickupState.configuringItemId="";pickupState.requestId="";pickupState.confirming=false;render();return true;
+ }
  if(a==="pickup-qty"){
-   const menu=pickupState.customer?.items||[];
-   if(!menu.some(x=>x.id===id))return true;
-   const qty=Math.max(0,Math.min(20,(pickupState.cart[id]||0)+Number(b.dataset.delta||0)));
-   if(qty)pickupState.cart[id]=qty;else delete pickupState.cart[id];
+   const item=(pickupState.customer?.items||[]).find(x=>x.id===id);
+   if(!item)return true;
+   const delta=Number(b.dataset.delta||0);
+   if(delta>0){
+     const existing=pickupEntries(pickupState.cart).filter(x=>x.id===id).reduce((s,x)=>s+x.qty,0);
+     if(item.daily_remaining!=null&&existing>=Number(item.daily_remaining)){window.alert("此餐點今日剩餘數量不足");return true;}
+     if((item.pickup_options||[]).length){pickupState.configuringItemId=id;render();return true;}
+     pickupAdd(pickupState.cart,id,[],1);
+   }else pickupRemove(pickupState.cart,id);
    pickupState.requestId="";pickupState.confirming=false;render();return true;
+ }
+ if(a==="pickup-repeat"){
+   const order=(pickupState.customerHistory?.orders||pickupState.customer?.orders||[]).find(x=>x.id===id);
+   if(!order)return true;
+   const items=pickupState.customer?.items||[];
+   const next={};let skipped=0;
+   for(const line of (order.items||[])){
+     const item=items.find(x=>x.id===line.id);
+     if(!item||item.daily_remaining===0){skipped++;continue;}
+     const specs=(line.options||[]).map(x=>({group:Number(x.group),choice:Number(x.choice)}));
+     if(specs.length!==pickupChosen(item,specs).length){skipped++;continue;}
+     if((item.pickup_options||[]).some((g,i)=>g.required&&!specs.some(x=>x.group===i))){skipped++;continue;}
+     const want=Math.max(1,Math.min(20,Number(line.qty||1)));
+     const left=item.daily_remaining==null?want:Math.max(0,Math.min(want,Number(item.daily_remaining)));
+     if(left>0)pickupAdd(next,item.id,specs,left);else skipped++;
+   }
+   if(!pickupCartCount(next)){window.alert("原訂單餐點已停售、缺貨或規格變更，請重新選擇");return true;}
+   pickupState.cart=next;pickupState.confirming=false;pickupState.requestId="";render();
+   if(skipped)window.alert("已加入仍可訂購餐點；有 "+skipped+" 項因停售、缺貨或規格變動未加入。");
+   window.scrollTo({top:0,behavior:"smooth"});return true;
+ }
+ if(a==="pickup-extras-save"){
+   const value=routeState.$("pickup-extras-text")?.value||"";
+   let options;try{options=parsePickupOptions(value);}catch(e){window.alert(e.message);return true;}
+   const raw=routeState.$("pickup-extras-stock")?.value?.trim()||"";
+   const limit=raw===""?null:Number(raw);
+   if(limit!==null&&(!Number.isInteger(limit)||limit<0||limit>100000)){window.alert("每日限量請輸入 0～100000 或留空");return true;}
+   await act(async()=>{
+     await rpc("so_pickup_save_extras",{p_slug:routeState.slug,p_item_id:id,p_options:options,p_daily_limit:limit});
+     return "商品規格與每日限量已儲存";
+   });return true;
  }
  if(a==="pickup-staff-permissions-save"){
    const canView=!!routeState.$("pickup-staff-view")?.checked;
@@ -284,7 +369,7 @@ export async function handlePickupAction(ev,b,a,id){
    if(!validPickupContactPhone()){
      pickupState.confirming=false;window.alert("請填寫有效的台灣手機或市話");render();return true;
    }
-   const items=Object.entries(pickupState.cart).filter(([,qty])=>qty>0).map(([itemId,qty])=>({id:itemId,qty}));
+   const items=pickupEntries(pickupState.cart).map(x=>({id:x.id,qty:x.qty,options:x.options||[]}));
    if(!items.length)return true;
    if(pickupState.method!=="immediate"&&!pickupState.slot)return true;
    try{if(!pickupState.requestId)pickupState.requestId=uuid();}catch(e){window.alert(e.message);return true;}
