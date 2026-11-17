@@ -165,7 +165,7 @@ function showHelp(button, pin = false) {
 }
 
 function helpButtonOf(target) {
-  return target instanceof Element ? target.closest(".settings-help-button") : null;
+  return typeof target?.closest === "function" ? target.closest(".settings-help-button") : null;
 }
 
 function installHelpEvents() {
