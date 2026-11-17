@@ -94,6 +94,12 @@ test('Opening login always resets stale registration selection',()=>{
  assert.equal(elements.authSubmit.textContent,'登入');
 });
 
+test('Refreshing a JWT does not unnecessarily reload all employee datasets',()=>{
+ assert.match(code,/const loadingMode=app\.mode,loadingAuthGeneration=wfAuthGeneration/);
+ assert.equal((code.match(/loadingAuthGeneration!==wfAuthGeneration/g)||[]).length,3);
+ assert.doesNotMatch(code,/loadingToken!==app\.token/);
+});
+
 test('Work frontends remain static and Cloudflare has no Worker entrypoint',()=>{
  const build=readFileSync(new URL('../cf-pages-build.mjs',import.meta.url),'utf8');
  const website=readFileSync(new URL('../index.html',import.meta.url),'utf8');
