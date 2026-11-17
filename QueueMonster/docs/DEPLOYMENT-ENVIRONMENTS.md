@@ -1,53 +1,52 @@
-# 排隊怪獸：測試版與正式版發布架構
+# 排隊怪獸：正式站／測試站部署架構
 
-更新：2026-11-16
+更新：2026-11-17（已切換為 Cloudflare Pages 靜態託管）
 
-## 操作規則（不需要 Cloudflare Pages GitHub 授權）
+## 現況（以此節為準）
 
-| 操作 | 原始碼分支 | GitHub Pages 測試站 | Cloudflare 網域正式站 |
-| --- | --- | --- | --- |
-| 平常 Push | `main` | 自動更新 `/LINE/booking/` | 不更新 |
-| 說「發布正式版」 | 手動啟動 `.github/workflows/queue-monster-production-release.yml`，輸入 `RELEASE` | 測試站保持原狀 | 新版靜態快照發布至 `/LINE/queue-prod/`，同步推進 `release` |
-| 直接 Push `release` | `release` | 不更新 | 觸發正式版回歸測試及快照發布 |
+- **正式網址**：https://queue.monsterport.com/，Cloudflare Pages 專案 `monsterport-queue`，正式來源分支為 `gh-pages`，網站目錄 `queue-prod/`。
+- **測試網址**：https://hub-google.github.io/LINE/booking/；平常 `main` 更新測試站，不影響正式版。
+- **DNS**：`queue.monsterport.com` 的 proxied CNAME 指向 `monsterport-queue.pages.dev`。
+- **Worker**：舊 `monsterport-queue-bridge` 程式暫留作回溯，但已**移除 `queue.monsterport.com` 的 Worker Custom Domain**；此正式網域不再透過 Worker 反向代理 GitHub Pages。
+- **Pages Functions**：不使用。HTML／CSS／JS／圖片皆為 Cloudflare Pages 靜態資產，不占 Cloudflare Workers 執行請求。
+- **資料庫／登入／通知**：仍沿用原 Supabase 專案 `unapiwajmgqqtdkixaab`、原 LINE OA Webhook、LIFF、Google OAuth 設定，未搬遷資料庫。
 
-### 兩個入口
+## 發布流程
 
-- 測試：`https://hub-google.github.io/LINE/booking/`，由 `main` → `line-saas-pages.yml` → GitHub Pages 的 `gh-pages/booking/`。
-- 正式：`https://queue.monsterport.com/`，由 Cloudflare Worker `monsterport-queue-bridge` → **獨立正式快照** `https://hub-google.github.io/LINE/queue-prod/`；正式快照由 `queue-monster-production-release.yml` 建置到 `gh-pages/queue-prod/`。
+| 操作 | 實際效果 |
+|---|---|
+| Push `main` | GitHub Actions `line-saas-pages.yml` 更新 `gh-pages/booking/` 測試站；不變動正式版 |
+| 手動發布正式版 | 執行 `.github/workflows/queue-monster-production-release.yml`，確認輸入 `RELEASE`，完成測試後更新 `gh-pages/queue-prod/` 並推進 `release` |
+| Push `release` | 觸發正式版回歸測試、靜態建置及 `gh-pages/queue-prod/` 快照發布 |
+| `gh-pages/queue-prod/**` 更新 | Cloudflare Pages `monsterport-queue` 自動建置 `gh-pages` 的 `queue-prod/` 並部署到正式網域 |
 
-**部署隔離**：`main` 改版不改動 `queue-prod/`。只有有意修改 `release` 或手動發布正式版才更新。這不是 Cloudflare Pages 原生靜態託管，而是 Cloudflare Worker + GitHub Pages **獨立快照**的架構。網址由 Cloudflare 維護，無需 Cloudflare Pages GitHub App，沒有 Pages 的 500 次建置配額問題，但靜態檔案依然依賴 GitHub Pages 可用性。
+**重點**：Cloudflare Pages 的 Git source 指向 `gh-pages`，而不是 `main`，並使用 include paths `queue-prod/**` 避免測試版更新觸發正式版建置。正式版本的唯一來源仍為通過原工作流程驗證的 `queue-prod/` 快照。
 
-## 技術設定
+## CF Pages 靜態相容層
 
-- Cloudflare zone：`monsterport.com`；Worker 自訂網域：`queue.monsterport.com`。
-- Worker 對外使用 `/` 直接顯示品牌首頁；`/?view=...` 保留顧客、店員、總部入口；`/home.html` 自動導回 `/`。
-- Worker 從固定 `/LINE/queue-prod/` 取檔並把已知的舊 GitHub Pages 絕對連結映射回正式網域。
-- `release.json` 的 `build` 由來源 commit SHA 生成。對比正式 `https://queue.monsterport.com/release.json` 與測試 `https://hub-google.github.io/LINE/booking/release.json` 可檢查版本是否隔離。
-- 發布流程只改寫 `gh-pages/queue-prod/`；日常測試工作流程只改寫 `gh-pages/booking/` 和舊版相容 `gh-pages/saas/`。兩工作流程共用 concurrency group，以免同時推送 `gh-pages` 互相覆蓋。
-- 不改動 Supabase、Google/LINE OAuth、LIFF ID、店家 QR Code 或 DNS。
-- 正式版發布需通過 JavaScript 語法、關鍵 regression tests、靜態建置及靜態檔案檢查；失敗不應更新 `queue-prod/`。
+Cloudflare Pages build command：`node ../cf-pages-queue-build.mjs`。建置工作目錄 `queue-prod`，發佈目錄 `dist`。
 
-## 2026-11-16 已完成部署驗證
+程式存於 `gh-pages` 根目錄的 `cf-pages-queue-build.mjs`，位置獨立於每次更新的 `queue-prod/`，不會被原正式發版流程清除。
 
-- GitHub `release` 分支已切到 `6c125e771d73aa3991b0f850ffb137efc4540385`。
-- GitHub Actions <https://github.com/hub-google/LINE/actions/runs/43836861082>：回歸測試、靜態建置、`gh-pages/queue-prod/` 上傳全部成功。
-- 正式來源 `gh-pages/queue-prod/release.json` 的 `build` 與 `release` SHA 完全一致。
-- Cloudflare Worker `monsterport-queue-bridge` 已更新並綁定 `queue.monsterport.com`，100% 流量指向新 Worker 版本。
-- 透過 Cloudflare Browser Rendering 實測：`https://queue.monsterport.com/release.json` HTTP 200，版本為 `6c125e77`；`/` HTTP 200、品牌首頁標題正確；`/?view=platform` HTTP 200、載入相同正式版本。回應有 `X-MonsterPort-Bridge: independent-release-origin`。
-- 新增 `QueueMonster/tests/queue-deployment-isolation.test.mjs`，在日常測試部署和重大版本發布都檢查測試／正式上游路徑不交叉。
-- Google／LINE 真實帳號登入、實際預約及通知屬動態端對端流程，未進行真人授權，**不宣稱已完成這些驗收**。
+建置腳本在靜態部署階段（**非每次訪客請求**）處理：
+1. 將原本的 `home.html` 作為正式 `index.html`，因此 `/` 直接顯示品牌首頁，無須 `/home.html`。
+2. 將原本應用程式的 `index.html` 複製為 `app.html`；有 `?view=`、`?merchant=`、LINE/OAuth 回呼等參數時，由瀏覽器導向 `app.html` 載入後還原瀏覽器網址為根路徑。
+3. 於**建置時**改寫 GitHub Pages 舊的絕對連結為 `https://queue.monsterport.com`，取代舊 Worker 的逐請求改寫。
+4. 產生 `_headers`（雜湊靜態資源長快取、HTML／release.json／Service Worker 適當更新），更新 PWA 快取命名。
+5. 保留全部正式版 HTML、CSS、JavaScript、圖像與 API 設定；後端仍直接連原 Supabase。
 
-## 首次切換記錄／未來復核
+## 2026-11-17 驗證
 
-1. 確認 `release` 分支及 `.github/workflows/queue-monster-production-release.yml` 存在。
-2. 觸發**第一次** release 分支發布，確認 `https://hub-google.github.io/LINE/queue-prod/release.json` 真的存在、對應 release commit。
-3. 才將 Cloudflare Worker `monsterport-queue-bridge` 的 upstream 固定為 `/LINE/queue-prod`，避免先切造成 404；保留上一個 Worker 版本以便回滾。
-4. 確認 `https://queue.monsterport.com/`（品牌首頁）、`/?view=platform`、`/release.json`、HTML／CSS／JS、OAuth 路由、訂單與叫號，並在未發布時確認正式 `release.json` SHA 不變。
-5. Google／LINE 真人帳號登入與真實訂單通知仍需實機驗收，切勿以靜態頁面測試代替。
+- Cloudflare Pages 靜態 GitHub build 與 deploy 均為 `success`，`uses_functions=false`。
+- 自訂網域狀態、DNS CNAME、憑證驗證皆已 `active`。
+- Worker Custom Domain 清單已不含 `queue.monsterport.com`。
+- 透過 Cloudflare Browser Rendering 實測正式 `/` 顯示品牌首頁、`/?view=staff` 載入應用程式、`/board.html?merchant=demo-clinic` 載入叫號看板。
+- 尚未對實際商家完成真人 Google／LINE 登入、真正訂單建立、LINE 通知收件等端對端操作；**不可把頁面可載入視為上述交易已驗證**。
 
-## 已知限制
+## 注意事項
 
-- GitHub Free + Public Repo 的 GitHub Pages 可照常使用；改成 Private Repo，GitHub Pages 將不能在 GitHub Free 下運作。
-- 兩站仍共用正式 Supabase 資料庫；程式部署隔離不等於資料隔離。不要拿正式顧客資料測試。
-- Cloudflare Pages 的 GitHub 直連曾在建立專案時失敗，HTTP 401 / code 8000011。此部署方案**不需要**進行該授權。未來如果要完全離開 GitHub Pages 才需另行遷移。
-- 回滾：可用舊 `release` SHA 重建 `queue-prod/`；GitHub Pages 版本本身不應隨便重置歷史。回滾網頁不會還原 Supabase 資料庫變更。
+- 5 萬人／日的**靜態網頁瀏覽**不占 Workers 請求額度；但 Supabase 的 Auth、Postgres、Realtime、API 流量及 LINE OA 各有不同免費方案限制。不能據此宣稱整套服務可不受限制地免費支援 5 萬位活躍使用者。
+- 不要回頭把 `queue.monsterport.com` 綁回 Worker，或將正式 Pages 直接連到 `main`。
+- 改動 `cf-pages-queue-build.mjs`（在 `gh-pages` 根目錄）後，因 Pages path filter 僅納入 `queue-prod/**`，請手動觸發 Pages 重新部署。
+- 保留 GitHub Pages 原測試入口、既有 LIFF 及 QR Code 兼容，不隨意重設 Supabase 授權及資料庫。正式版網頁回滾不會回滾資料庫 schema。
+- 如果 Pages 發生故障，先檢查 Pages Git build、Custom Domains 及 DNS；舊 Worker 仍有原始碼但未綁網域，不應直接恢復以免再次消耗大量 Worker 次數。
