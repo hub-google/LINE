@@ -2981,7 +2981,40 @@ function wfAssertArchiveAccess(tenant,generation,userId){
   app.tenantId!==tenant||app.user?.id!==userId||wfAuthGeneration!==generation)
   throw Error('企業或登入身分已變更，取消資料匯出');
 }
+async function wfArchiveCompleteNotifications(tenant,generation,userId,progress){
+ const records=[];
+ const ids=new Set();
+ let expected=null;
+ for(let offset=0;;offset+=WF_ARCHIVE_PAGE_SIZE){
+  wfAssertArchiveAccess(tenant,generation,userId);
+  const response=await call('/rest/v1/rpc/wm_export_notification_archive','POST',{
+   p_tenant:tenant,p_offset:offset,p_limit:WF_ARCHIVE_PAGE_SIZE
+  },app.token);
+  wfAssertArchiveAccess(tenant,generation,userId);
+  const total=Number(response?.total_count);
+  const page=response?.rows;
+  if(response?.tenant_id!==tenant||response?.offset!==offset||
+   !Number.isSafeInteger(total)||total<0||!Array.isArray(page)||
+   page.length>WF_ARCHIVE_PAGE_SIZE)
+   throw Error('通知匯出資料格式或企業不正確');
+  if(expected===null)expected=total;
+  if(total!==expected)throw Error('通知數量在匯出期間變動，為避免漏資料已取消匯出');
+  if(expected>WF_ARCHIVE_MAX_ROWS)throw Error('通知筆數超過安全下載上限');
+  for(const item of page){
+   if(!item?.id||item.tenant_id!==tenant||ids.has(item.id))
+    throw Error('通知資料重複或跨企業，已取消匯出');
+   ids.add(item.id);
+   records.push(item);
+  }
+  if(progress)progress.textContent='已讀取完整通知：'+records.length+' / '+expected+' 筆';
+  if(page.length<WF_ARCHIVE_PAGE_SIZE)break;
+ }
+ if(records.length!==expected)throw Error('通知資料筆數不足，已取消不完整的備份');
+ return records;
+}
 async function wfArchivePages(table,order,columns,scope,tenant,generation,userId,progress){
+ if(table==='wm_notifications')
+  return wfArchiveCompleteNotifications(tenant,generation,userId,progress);
  const result=[];
  const filter=scope+'=eq.'+encodeURIComponent(tenant);
  for(let offset=0;;offset+=WF_ARCHIVE_PAGE_SIZE){
