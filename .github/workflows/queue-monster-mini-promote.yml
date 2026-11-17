@@ -18,10 +18,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   promote:
-    if: >-
-      github.ref == 'refs/heads/main' &&
-      ((inputs.target == 'review' && inputs.confirmation == 'REVIEW') ||
-       (inputs.target == 'published' && inputs.confirmation == 'PUBLISH'))
+    if: ${{ false }} # MINI App paused; no manual promotion while disabled.
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     steps:
