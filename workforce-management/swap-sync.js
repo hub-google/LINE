@@ -100,8 +100,11 @@ async function syncSwapForm(){
   rebuildSwapTargets(form,fresh);
  }catch(error){
   if(!form.isConnected)return;
-  from.disabled=false;to.disabled=false;if(submit)submit.disabled=false;
-  notice.textContent=error instanceof Error?error.message:'同步班表失敗，請更新頁面後重試';
+  // Fail closed: options generated from stale or unauthorized data must never submit.
+  swapFormCache.delete(form);
+  from.disabled=true;to.disabled=true;if(submit)submit.disabled=true;
+  notice.textContent=(error instanceof Error?error.message:'同步班表失敗')+
+   '。尚未同步最新班表，請關閉表單後重新開啟。';
  }
 }
 // The original app handles the newSwap click first; this listener refreshes the
