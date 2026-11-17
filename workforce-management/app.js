@@ -411,11 +411,20 @@ function csvSave(){
 async function clockPunch(kindValue){
  const member=$('punchMember')?.value||getSelected();if(!member)return banner('請先選擇員工',true);
  const key='wm-'+crypto.randomUUID();const payload={member_id:member,kind:kindValue,key};
- // Location is optional for demo unless a branch has gps_required; production validation lives in wm_clock.
- if(navigator.geolocation&&(app.mode==='real'||branch(person(member)?.branch_id)?.gps_required)){
-  try{const pos=await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,timeout:5000,maximumAge:0}));payload.latitude=pos.coords.latitude;payload.longitude=pos.coords.longitude;payload.accuracy=pos.coords.accuracy;}
-  catch{ /* Server will reject if the relevant branch requires GPS. */ }
+ // GPS-required locations fail clearly when device position is unavailable or too inaccurate.
+ // Database wm_clock enforces at most 100m reported accuracy and 30m drift allowance.
+ const gpsRequired=!!branch(person(member)?.branch_id)?.gps_required;
+ if(gpsRequired&&!navigator.geolocation)throw Error('裝置無法取得定位，請改用補卡申請');
+ if(navigator.geolocation&&(app.mode==='real'||gpsRequired)){
+  try{
+   const pos=await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,timeout:8000,maximumAge:0}));
+   payload.latitude=pos.coords.latitude;payload.longitude=pos.coords.longitude;payload.accuracy=pos.coords.accuracy;
+  }catch(error){
+   if(gpsRequired)throw Error('無法取得定位，請允許位置存取，或改用補卡申請');
+  }
  }
+ if(gpsRequired&&(!Number.isFinite(payload.accuracy)||payload.accuracy>100))
+  throw Error('定位誤差過大（必須在 100 公尺內），請移到訊號較佳處重試');
  await action('clock',payload);
 }
 async function approve(id,approved){if(!confirm(approved?'確定要核准這筆申請？':'確定要駁回這筆申請？'))return;const note=approved?'':'主管駁回';await action('decide',{id,status:approved?'approved':'rejected',note});}
