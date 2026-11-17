@@ -1590,24 +1590,43 @@ document.querySelector('#nav').insertAdjacentHTML('beforeend',
  '<button type="button" data-tab="line"><span>▣</span> LINE 通知</button>');
 app.lineState=null;
 app.lineConfig=null;
-async function lineEndpoint(data=null){
+app.lineDelivery=null;
+async function lineEndpoint(data=null,retry=true){
  const headers={apikey:KEY};
  if(data)headers['Content-Type']='application/json';
  if(app.mode==='real'&&app.token)headers.Authorization='Bearer '+app.token;
+ const initialToken=app.mode==='real'?app.token:null,generation=wfAuthGeneration;
  const res=await fetch(API+'/functions/v1/wm-line',{
   method:data?'POST':'GET',headers,body:data?JSON.stringify(data):undefined,cache:'no-store'});
+ if(res.status===401&&retry&&initialToken){
+  if(generation!==wfAuthGeneration)throw Error('登入身分已變更，請重新操作');
+  if(initialToken===app.token)await renewSession();
+  return lineEndpoint(data,false);
+ }
  const result=await res.json().catch(()=>({error:'LINE_RESPONSE_INVALID'}));
  if(!res.ok)throw Error(result.error||'LINE 服務發生問題 ('+res.status+')');
  return result;
 }
 async function refreshLineStatus(){
- if(app.mode!=='real'||!app.token||!app.tenantId){app.lineState=null;return;}
+ if(app.mode!=='real'||!app.token||!app.tenantId){
+  app.lineState=null;app.lineDelivery=null;return;
+ }
+ const tenant=app.tenantId,generation=wfAuthGeneration;
  try{
-  const [config,linked]=await Promise.all([
-   lineEndpoint(),lineEndpoint({action:'status',tenant_id:app.tenantId})]);
-  app.lineConfig=config;app.lineState=linked;
+  const authorized=['owner','hr'].includes(role());
+  const [config,linked,delivery]=await Promise.all([
+   lineEndpoint(),lineEndpoint({action:'status',tenant_id:tenant}),
+   authorized?call('/rest/v1/rpc/wm_line_delivery_status','POST',
+    {p_tenant:tenant},app.token).catch(error=>({error:error.message})):Promise.resolve(null)
+  ]);
+  if(tenant!==app.tenantId||generation!==wfAuthGeneration)return;
+  app.lineConfig=config;app.lineState=linked;app.lineDelivery=delivery;
   if(app.tab==='line')render();
- }catch(error){app.lineState={error:error.message};if(app.tab==='line')render();}
+ }catch(error){
+  if(tenant!==app.tenantId||generation!==wfAuthGeneration)return;
+  app.lineState={error:error.message};app.lineDelivery=null;
+  if(app.tab==='line')render();
+ }
 }
 const priorLineRender=render;
 render=function(){
@@ -1616,6 +1635,7 @@ render=function(){
  heading();
  const info=app.lineState||{};
  const cfg=app.lineConfig||{};
+ const delivery=app.lineDelivery;
  const activeMiniConfig=cfg.miniEnvironments?.[wfMiniEnvironment];
  const activeLiffId=wfMiniMode?activeMiniConfig?.liffId:cfg.liffId;
  const linkInfo=app.mode==='demo'
@@ -1632,6 +1652,12 @@ render=function(){
      '<button class="btn" data-line="refresh">重新檢查</button></div>'+
    '<p class="muted">LINE 綁定僅供已登入且在職的企業員工。MINI App 與一般 LIFF 使用不同 Channel；必須完成對應 Channel 設定後才可驗證員工身分。</p>';
  const controls=app.mode==='real'&&['owner','hr'].includes(role())?
+   (delivery?.error?'<div class="notice">LINE 佇列統計無法讀取：'+esc(delivery.error)+'</div>':
+    delivery?'<div class="bar-row"><span>已綁定 LINE 員工</span><strong>'+esc(delivery.linked)+'</strong></div>'+
+     '<div class="bar-row"><span>待處理（含重試）</span><strong>'+esc(delivery.pending)+'</strong></div>'+
+     '<div class="bar-row"><span>LINE API 已接受</span><strong>'+esc(delivery.sent)+'</strong></div>'+
+     '<div class="bar-row"><span>已略過</span><strong>'+esc(delivery.skipped)+'</strong></div>':
+     '<div class="notice">正在讀取通知發送統計…</div>')+
    '<button class="btn" data-line="flush">發送待處理 LINE 通知（最多 5 筆）</button>':'';
  $('appContent').innerHTML=
   panel('我的 LINE 身分與 OA 狀態',linkInfo)+
