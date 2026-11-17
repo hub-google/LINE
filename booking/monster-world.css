@@ -884,3 +884,11 @@ body[data-monster-page="index"][data-portal="customer"] .customer-service-switch
 body[data-monster-page="index"][data-portal="customer"] .customer-service-switcher button:focus-visible{
  outline:3px solid var(--merchant-accent,#693C8B);outline-offset:2px
 }
+
+/* Custom merchant category is optional and only displayed when "Other" is selected. */
+.merchant-category-control{min-width:0}
+.merchant-category-control>select{width:100%}
+.merchant-category-custom{margin-top:11px;min-width:0}
+.merchant-category-custom[hidden]{display:none!important}
+.merchant-category-custom>label{display:block;margin-bottom:5px;font-size:13px}
+.merchant-category-custom>.field{width:100%}
