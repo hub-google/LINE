@@ -10,6 +10,17 @@ const bridge = readFileSync(path.join(root, "supabase/functions/line-bridge/inde
 const directory = readFileSync(path.join(root, "saas/directory.html"), "utf8");
 const richMenu = readFileSync(path.join(root, "../.github/scripts/publish_rich_menu.py"), "utf8");
 
+test("only Queue Monster platform OA accepts webhook events; merchant configuration exposes no endpoint", () => {
+  const own=readFileSync(path.join(root,"saas/app/staff/oa-settings.js"),"utf8");
+  const actions=readFileSync(path.join(root,"saas/app/actions/merchant-settings.js"),"utf8");
+  assert.doesNotMatch(own,/Webhook URL|own-oa-webhook|copy-oa-webhook|oa-webhook-section/);
+  assert.doesNotMatch(actions,/copy-oa-webhook|Use webhook/);
+  assert.match(bridge,/url\.searchParams\.has\("merchant"\)\) return reply\(200, \{ok:true,ignored:true\}, origin\)/);
+  assert.match(bridge,/return webhook\(req, origin\)/);
+  assert.doesNotMatch(bridge,/webhookUrl:/);
+  assert.match(bridge,/LINE_MESSAGING_CHANNEL_SECRET/);
+});
+
 test("platform OA accepts signed text events without intercepting merchant-owned OA messages", () => {
   assert.match(bridge, /\["follow", "unfollow", "postback", "message"\]/);
   assert.match(bridge, /if \(event\.type === "message"\)/);
