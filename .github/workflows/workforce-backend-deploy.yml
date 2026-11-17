@@ -7,11 +7,6 @@ on:
         description: "DEPLOY to promote Work-only Supabase Edge Function"
         required: true
         type: string
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/workforce-backend-deploy.yml"
-      - "workforce-management/supabase/functions/wm-line/index.ts"
 
 permissions:
   contents: read
@@ -22,7 +17,7 @@ concurrency:
 
 jobs:
   deploy:
-    if: ${{ (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.confirmation == 'DEPLOY') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[work-edge-deploy-once]')) }}
+    if: ${{ github.ref == 'refs/heads/main' && inputs.confirmation == 'DEPLOY' }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     env:
