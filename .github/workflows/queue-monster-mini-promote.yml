@@ -1,0 +1,67 @@
+name: Queue Monster｜LINE MINI App Review／Published 手動發布
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: '只更新選取的 MINI 環境，不更動原網站'
+        required: true
+        type: choice
+        options: [review, published]
+      confirmation:
+        description: 'Review 請輸入 REVIEW；Published 請輸入 PUBLISH'
+        required: true
+        type: string
+permissions:
+  contents: write
+concurrency:
+  group: line-saas-gh-pages
+  cancel-in-progress: false
+jobs:
+  promote:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      ((inputs.target == 'review' && inputs.confirmation == 'REVIEW') ||
+       (inputs.target == 'published' && inputs.confirmation == 'PUBLISH'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - name: Checkout approved source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Install frontend tools
+        run: npm ci --prefix .github/frontend
+      - name: Validate MINI App
+        run: |
+          node --test QueueMonster/miniapp/tests/mini-app-isolation.test.mjs
+          node --check QueueMonster/miniapp/build-mini.mjs
+      - name: Build isolated MINI environments
+        run: |
+          node QueueMonster/miniapp/build-mini.mjs "$RUNNER_TEMP/queue-mini-dist"
+          test -s "$RUNNER_TEMP/queue-mini-dist/${{ inputs.target }}/index.html"
+      - name: Browser and backend verification
+        run: |
+          npm exec --prefix .github/frontend -- playwright install --with-deps chromium
+          node QueueMonster/miniapp/tests/browser-smoke.mjs "$RUNNER_TEMP/queue-mini-dist"
+          node QueueMonster/miniapp/tests/edge-health.mjs
+      - name: Publish ONLY approved MINI environment
+        shell: bash
+        env:
+          TARGET: ${{ inputs.target }}
+        run: |
+          set -euo pipefail
+          case "$TARGET" in review|published) ;; *) exit 1 ;; esac
+          git fetch origin refs/heads/gh-pages:refs/remotes/origin/gh-pages
+          site="$RUNNER_TEMP/qm-mini-gh-pages"
+          git worktree add --detach "$site" origin/gh-pages
+          rm -rf "$site/queue-mini/$TARGET"
+          mkdir -p "$site/queue-mini/$TARGET"
+          cp -a "$RUNNER_TEMP/queue-mini-dist/$TARGET/." "$site/queue-mini/$TARGET/"
+          git -C "$site" add -A -- "queue-mini/$TARGET/"
+          if git -C "$site" diff --cached --quiet; then
+            echo "$TARGET already at requested revision"
+            exit 0
+          fi
+          git -C "$site" -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "promote: Queue Monster MINI $TARGET $GITHUB_SHA"
+          git -C "$site" push origin HEAD:gh-pages
