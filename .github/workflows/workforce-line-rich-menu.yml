@@ -1,0 +1,87 @@
+name: WF 工作怪獸 LINE OA 圖文選單（獨立憑證）
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: "Validate only, or publish directly to the WORKFORCE OA"
+        required: true
+        type: choice
+        options: [validate, publish]
+        default: validate
+      mini_environment:
+        description: "MINI App route for the OA's six permanent shortcuts"
+        required: true
+        type: choice
+        options: [developing, published]
+        default: developing
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/workforce-line-rich-menu.yml"
+      - ".github/scripts/publish_workforce_rich_menu.py"
+      - ".github/scripts/test_workforce_rich_menu.py"
+      - ".github/scripts/audit_workforce_git_secrets.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: workforce-line-oa-rich-menu
+  cancel-in-progress: false
+
+jobs:
+  audit-history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      WF_LINE_MESSAGING_CHANNEL_SECRET: ${{ secrets.WF_LINE_MESSAGING_CHANNEL_SECRET }}
+      WF_LINE_MESSAGING_ACCESS_TOKEN: ${{ secrets.WF_LINE_MESSAGING_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan all Git history reachable from branches and tags (redacted results)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/audit_workforce_git_secrets.py
+      - name: Block publishing until exact secret audit is enabled
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.operation == 'publish' }}
+        shell: bash
+        run: |
+          if [ -z "$WF_LINE_MESSAGING_CHANNEL_SECRET" ] || [ -z "$WF_LINE_MESSAGING_ACCESS_TOKEN" ]; then
+            echo "::error title=Missing WF secrets::Configure both secrets before publishing."
+            exit 1
+          fi
+  workforce-rich-menu:
+    needs: audit-history
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      WF_LINE_OA_ENV: ${{ inputs.mini_environment || 'developing' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install reproducible image renderer
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check Pillow
+          sudo DEBIAN_FRONTEND=noninteractive timeout 150 apt-get install -y -qq fonts-noto-cjk
+      - name: Validate WORKFORCE menu layout and publicly shareable MINI App routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/scripts/publish_workforce_rich_menu.py
+          python3 -m unittest discover -s .github/scripts -p 'test_workforce_rich_menu.py' -v
+          python3 .github/scripts/publish_workforce_rich_menu.py --validate
+      - name: Publish WORKFORCE OA rich menu (secrets never printed)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.operation == 'publish' }}
+        shell: bash
+        env:
+          WF_LINE_MESSAGING_CHANNEL_ID: ${{ secrets.WF_LINE_MESSAGING_CHANNEL_ID }}
+          WF_LINE_MESSAGING_CHANNEL_SECRET: ${{ secrets.WF_LINE_MESSAGING_CHANNEL_SECRET }}
+          WF_LINE_MESSAGING_ACCESS_TOKEN: ${{ secrets.WF_LINE_MESSAGING_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/publish_workforce_rich_menu.py
