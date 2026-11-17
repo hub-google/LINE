@@ -11,6 +11,7 @@ import {customerNoticeSuffix,sendOrderReply,lineReplyHandoff} from "./line-sessi
 import {normalizeTaiwanPhone,isValidTaiwanPhone,TW_LANDLINE_AREAS,getTaiwanLandlineHint,isValidTaiwanPhoneParts} from "./tw-phone.js";
 import {pickupEntries,pickupCartAmount,pickupCartCount,pickupAdd,pickupRemove,pickupChosen,pickupSpecsLabel,parsePickupOptions} from "./pickup-upgrades.js";
 import {couponState,renderCouponCustomer,renderCouponAdmin,loadCouponAdmin,handleCouponAction,initializeCouponInputs} from "./pickup-coupons.js";
+import {pickupChime} from "./pickup-alerts.js";
 
 // The existing store, LINE identity and so_menu_items catalogue remain the source of truth.
 // This module owns only pickup-specific presentation and form state.
@@ -28,52 +29,6 @@ const modeName={DISABLED:"僅立即取餐",OPTIONAL:"顧客可選立即或預約
 const uuid=()=>{if(!globalThis.crypto?.randomUUID)throw Error("瀏覽器不支援安全訂單識別");return crypto.randomUUID();};
 const lines=o=>(o.items||[]).map(i=>esc(i.name)+esc(pickupSpecsLabel(i))+" × "+esc(i.qty)).join("、");
 
-let pickupLiveChannel=null,pickupLiveSlug="",pickupLivePending=false;
-async function pickupChime(){
-  const Ctx=window.AudioContext||window.webkitAudioContext;
-  if(!Ctx)throw Error("此瀏覽器不支援接單提示音");
-  const ctx=new Ctx();
-  try{
-    await ctx.resume();
-    for(const [i,freq] of [880,1175].entries()){
-      const oscillator=ctx.createOscillator(),gain=ctx.createGain(),start=ctx.currentTime+i*.19;
-      oscillator.type="sine";oscillator.frequency.value=freq;
-      gain.gain.setValueAtTime(.0001,start);
-      gain.gain.exponentialRampToValueAtTime(.12,start+.025);
-      gain.gain.exponentialRampToValueAtTime(.0001,start+.17);
-      oscillator.connect(gain);gain.connect(ctx.destination);
-      oscillator.start(start);oscillator.stop(start+.18);
-    }
-    setTimeout(()=>void ctx.close().catch(()=>{}),650);
-  }catch(error){void ctx.close().catch(()=>{});throw error;}
-}
-function syncPickupLive(){
-  const active=!!lineState.supa&&((routeState.view==="staff"&&staffState.staffTab==="orders"&&!!staffState.staff)
-  ||(routeState.view==="customer"&&routeState.customerTab==="order"&&!!customerState.customer));
-  const slug=active?routeState.slug:"";
-  const allowed=()=>routeState.slug===slug&&((routeState.view==="staff"&&staffState.staffTab==="orders")
-      ||(routeState.view==="customer"&&routeState.customerTab==="order"));
-  if(pickupLiveChannel&&pickupLiveSlug===slug)return;
-  if(pickupLiveChannel){
-    const old=pickupLiveChannel;pickupLiveChannel=null;pickupLiveSlug="";
-    void lineState.supa?.removeChannel(old).catch(()=>{});
-  }
-  if(!slug)return;
-  pickupLiveSlug=slug;
-  try{
-    pickupLiveChannel=lineState.supa.channel("queue-board:"+slug,{config:{private:false,broadcast:{self:false}}})
-      .on("broadcast",{event:"invalidate"},message=>{
-        if(message?.payload?.kind&&message.payload.kind!=="pickup")return;
-        if(pickupLivePending||document.hidden||!allowed())return;
-        pickupLivePending=true;
-        setTimeout(async()=>{
-          pickupLivePending=false;
-          if(!allowed())return;
-          try{await loadPickupData();render();}catch(error){console.warn("取餐即時更新失敗",error);}
-        },700);
-      }).subscribe();
-  }catch(error){console.warn("無法訂閱取餐事件，可按重新整理取得新訂單",error);}
-}
 export async function loadPickupData(){
   if(routeState.view==="customer"&&customerState.customer){
     if(!pickupState.day)pickupState.day=taipei();
@@ -120,7 +75,7 @@ export async function loadPickupData(){
       catch(error){pickupState.repeatCustomers=null;console.warn("熟客分析尚不可用",error);}
     }
   }
-  syncPickupLive();
+  // Shared createStoreLiveSync handles Realtime and the Free-plan API fallback.
 }
 export function renderPickupSettings(isManager){
  const data=pickupState.staff;
