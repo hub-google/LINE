@@ -65,3 +65,72 @@ export function parsePickupOptions(text){
     return {name,required:flags.includes("*"),multiple:flags.includes("+"),choices};
   });
 }
+
+// Preserve a group invitation after LINE LIFF returns through ?liff.state=...
+// Explicit query values win; do not trust unvalidated invitation identifiers.
+export function pickupGroupFromUrl(href){
+ const u=new URL(href);
+ const direct=u.searchParams.get("group");
+ const isUuid=value=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value||"");
+ if(direct!==null)return isUuid(direct)?direct:"";
+ const state=u.searchParams.get("liff.state")||"";
+ const mark=state.indexOf("?");
+ const nested=mark>=0?new URLSearchParams(state.slice(mark+1)).get("group"):"";
+ return isUuid(nested)?nested:"";
+}
+export function pickupGroupShareUrl(href,id){
+ const url=new URL(href);
+ url.searchParams.set("group",id);
+ url.searchParams.set("tab","order");
+ return url;
+}
+export function pickupGroupLeaveUrl(href){
+ const url=new URL(href);
+ url.searchParams.delete("group");
+ const state=url.searchParams.get("liff.state");
+ if(state&&state.includes("?")){
+  const at=state.indexOf("?");
+  const inner=new URLSearchParams(state.slice(at+1));
+  inner.delete("group");
+  url.searchParams.set("liff.state",state.slice(0,at+1)+inner.toString());
+ }
+ return url;
+}
+
+// Restore only current variants and aggregate available stock across every
+// specification of a product. Never silently substitute a renamed choice.
+export function pickupRestoreOrder(lines,items=[]){
+ const byId=new Map(items.map(x=>[x.id,x]));
+ const cart={},used=new Map();
+ let skipped=0;
+ for(const line of Array.isArray(lines)?lines:[]){
+  const item=byId.get(line?.id);
+  if(!item){skipped++;continue;}
+  const selections=(Array.isArray(line.options)?line.options:[])
+    .map(x=>({group:Number(x.group),choice:Number(x.choice)}));
+  const resolved=pickupChosen(item,selections);
+  const unchanged=resolved.length===selections.length &&
+    (line.options||[]).every((x,i)=>!x.group_name&&!x.choice_name||
+      ((!x.group_name||x.group_name===resolved[i]?.group_name)&&
+       (!x.choice_name||x.choice_name===resolved[i]?.choice_name)));
+  const required=(item.pickup_options||[]).every((g,i)=>
+    !g.required||selections.some(x=>x.group===i));
+  const single=(item.pickup_options||[]).every((g,i)=>g.multiple||
+    selections.filter(x=>x.group===i).length<=1);
+  const unique=new Set(selections.map(x=>x.group+":"+x.choice)).size===selections.length;
+  if(!unchanged||!required||!single||!unique){skipped++;continue;}
+  const already=used.get(item.id)||0;
+  const available=item.daily_remaining==null?Infinity:
+    Math.max(0,Number(item.daily_remaining)-already);
+  const requested=Math.max(1,Math.min(20,Number(line.qty)||1));
+  const accepted=Math.min(requested,available);
+  if(accepted<=0){skipped++;continue;}
+  const key=pickupCartKey(item.id,selections);
+  const current=cart[key]?.qty||0;
+  pickupAdd(cart,item.id,selections,accepted);
+  const actual=(cart[key]?.qty||0)-current;
+  used.set(item.id,already+actual);
+  if(actual<requested)skipped++;
+ }
+ return {cart,skipped};
+}
