@@ -4,8 +4,11 @@ const API='https://unapiwajmgqqtdkixaab.supabase.co';
 const KEY='sb_publishable_L09XC4Tekm6cZaPTTczm3g_Aap-SOSy'; // Publishable, never service_role.
 const DEMO_ID='98d3505c-cbe6-46ed-a95a-13672e6d98f4';
 // The LINE MINI App has its own independently deployed page; the original /workforce/ is always a normal website.
-const wfMiniMode=/(?:^|\/)workforce-mini(?:\/|\/index\.html)?$/.test(location.pathname);
-const wfMiniEnvironment=new URLSearchParams(location.search).get('line_env')||'developing';
+const wfMiniMode=/(?:^|\/)(?:workforce-mini|mini)(?:\/|\/index\.html)?$/.test(location.pathname);
+// Cloudflare serves MINI at /mini/, while the separate GitHub Pages test entry is /workforce-mini/.
+// The official Work domain defaults to Published; test and review deployments require an explicit environment.
+const wfMiniEnvironment=new URLSearchParams(location.search).get('line_env')||
+ (location.hostname==='work.monsterport.com'?'published':'developing');
 const wfMiniEnvironmentNames={developing:'開發測試',review:'送審測試',published:'正式發布'};
 // OA rich-menu deep links are deliberately read only after liff.init() resolves.
 // LINE temporarily stores link parameters in liff.state during initialization.
