@@ -27,7 +27,6 @@ const modeName={DISABLED:"僅立即取餐",OPTIONAL:"顧客可選立即或預約
 const uuid=()=>{if(!globalThis.crypto?.randomUUID)throw Error("瀏覽器不支援安全訂單識別");return crypto.randomUUID();};
 const lines=o=>(o.items||[]).map(i=>esc(i.name)+esc(pickupSpecsLabel(i))+" × "+esc(i.qty)).join("、");
 
-
 let pickupLiveChannel=null,pickupLiveSlug="",pickupLivePending=false;
 async function pickupChime(){
   const Ctx=window.AudioContext||window.webkitAudioContext;
@@ -71,7 +70,6 @@ function syncPickupLive(){
       }).subscribe();
   }catch(error){console.warn("無法訂閱取餐事件，可按重新整理取得新訂單",error);}
 }
-
 export async function loadPickupData(){
   if(routeState.view==="customer"&&customerState.customer){
     if(!pickupState.day)pickupState.day=taipei();
@@ -120,7 +118,6 @@ export async function loadPickupData(){
   }
   syncPickupLive();
 }
-
 export function renderPickupSettings(isManager){
  const data=pickupState.staff;
  if(!data)return box("線上點餐與取餐設定",'<p class="muted">尚無法取得取餐服務設定，請確認資料庫已更新或重新整理。</p>');
@@ -155,8 +152,6 @@ export function renderPickupSettings(isManager){
     btn("儲存訂餐員工權限","pickup-staff-permissions-save","primary")):"");
 }
 
-
-
 function pickupGroupPanel(){
  const group=pickupState.groupData;
  if(!pickupState.groupId){
@@ -182,7 +177,6 @@ function pickupGroupPanel(){
    '<h4>大家已選的餐點</h4>'+(participants||'<p class="small">尚無參與者。</p>')+
    '<div class="staff-actionbar">'+btn("更新團購名單","pickup-group-refresh","outline")+btn("退出團購","pickup-group-leave","outline")+'</div></div>';
 }
-
 function renderPickupOptionEditor(){
  const item=(pickupState.customer?.items||[]).find(x=>x.id===pickupState.configuringItemId);
  if(!item)return "";
@@ -197,7 +191,6 @@ function renderPickupOptionEditor(){
    '<div class="staff-actionbar">'+btn("加入購物車","pickup-option-add","primary",'data-id="'+esc(item.id)+'"')+
    btn("取消","pickup-option-close","outline")+'</div></div>';
 }
-
 export function renderCustomerPickup(){
  const d=pickupState.customer;
  if(!d)return box("線上點餐",'<p class="muted">正在讀取店家菜單，若持續無法載入請重新整理。</p>');
@@ -298,7 +291,6 @@ export function renderCustomerPickup(){
     '<h3 style="margin:20px 0 8px">我的取餐進度（'+historyTotal+' 筆）</h3>'+otherOrderCards+historyControls:
     (featuredCancelCard?historyControls:'<p class="small">還沒有取餐訂單。</p>')));
 }
-
 export function renderStaffPickup(){
  const d=pickupState.staff;
  if(!d)return box("取餐訂單",'<p class="muted">目前無法讀取取餐訂單，請重新整理。</p>');
@@ -364,8 +356,6 @@ export function renderStaffPickup(){
   btn("下一頁","pickup-history-page","outline",'data-page="'+(pickupState.historyPage+1)+'"'+(pickupState.historyPage>=maxPage?' disabled':''))+'</div></details>');
 
 }
-
-
 export function renderPickupLoyalCustomers(){
  const customers=pickupState.repeatCustomers;
  if(!Array.isArray(customers))return box("訂餐熟客分析",'<p class="small">目前無法載入本店熟客分析；請稍後重新整理。</p>');
@@ -377,7 +367,6 @@ export function renderPickupLoyalCustomers(){
     '<td>'+esc(c.favorite||'—')+'</td><td>'+esc(c.last_order?new Date(c.last_order).toLocaleDateString("zh-TW",{timeZone:"Asia/Taipei"}):'—')+'</td></tr>').join("")+
   '</tbody></table></div>':'<p class="muted">目前沒有可統計的訂單。</p>'));
 }
-
 export async function handlePickupAction(ev,b,a,id){
  if(!a.startsWith("pickup-"))return false;
  if(a==="pickup-line-reply"){
@@ -611,7 +600,6 @@ export async function handlePickupAction(ev,b,a,id){
  // handled by handleMerchantSettings later in the click-action chain.
  return false;
 }
-
 export function initializePickupMode(){
  pickupState.day=taipei();
  // Countdown updates only the DOM; no 1-second API requests.
