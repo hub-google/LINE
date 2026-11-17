@@ -1,5 +1,4 @@
 name: Work 工作怪獸 LINE OA 圖文選單（獨立憑證）
-# One-shot Work OA publish; protected by exact commit-message gate and channel identity check.
 
 on:
   workflow_dispatch:
@@ -48,7 +47,7 @@ jobs:
           set -euo pipefail
           python3 .github/scripts/audit_workforce_git_secrets.py
       - name: Block publishing until exact secret audit is enabled
-        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.operation == 'publish') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[work-oa-publish-once]')) }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.operation == 'publish' }}
         shell: bash
         run: |
           if [ -z "$WORK_LINE_MESSAGING_CHANNEL_SECRET" ] || [ -z "$WORK_LINE_MESSAGING_ACCESS_TOKEN" ]; then
@@ -60,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      WORK_LINE_OA_ENV: ${{ inputs.mini_environment || (github.event_name == 'push' && contains(github.event.head_commit.message, '[work-oa-publish-once]') && 'published') || 'developing' }}
+      WORK_LINE_OA_ENV: ${{ inputs.mini_environment || 'developing' }}
     steps:
       - uses: actions/checkout@v4
       - name: Install reproducible image renderer
@@ -77,7 +76,7 @@ jobs:
           python3 -m unittest discover -s .github/scripts -p 'test_workforce_rich_menu.py' -v
           python3 .github/scripts/publish_workforce_rich_menu.py --validate
       - name: Publish WORKFORCE OA rich menu (secrets never printed)
-        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.operation == 'publish') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[work-oa-publish-once]')) }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.operation == 'publish' }}
         shell: bash
         env:
           WORK_LINE_MESSAGING_CHANNEL_ID: ${{ secrets.WORK_LINE_MESSAGING_CHANNEL_ID }}
