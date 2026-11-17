@@ -97,7 +97,7 @@ async function navigate(devtools,url){
  await waitFor(devtools,"location.href.startsWith("+JSON.stringify(url)+") && document.readyState==='complete'",22000);
 }
 
-test('Real Chrome desktop and 390px mobile Work UI can navigate and open all three leave forms', {timeout:110000},async()=>{
+test('Real Chrome Work E2E checks all core tabs, three request forms, login dialog, mobile and MINI', {timeout:110000},async()=>{
  const c=await startBrowser();
  try{
   await navigate(c,BASE+'workforce/');
@@ -115,6 +115,23 @@ test('Real Chrome desktop and 390px mobile Work UI can navigate and open all thr
    await evaluate(c,"document.querySelector('#overlay [data-action=\"closeModal\"]').click()");
    await waitFor(c,"document.querySelector('#overlay').hidden");
   }
+  // Every core DEMO section must render in the real browser. No writes.
+  for(const tab of [
+   'schedule','punch','qr','employees','inbox','reports',
+   'periods','anomalies','line','settings'
+  ]){
+   const selector='#nav button[data-tab="'+tab+'"]';
+   assert.equal(await evaluate(c,"!!document.querySelector("+JSON.stringify(selector)+")"),true,tab+' is missing');
+   await evaluate(c,"document.querySelector("+JSON.stringify(selector)+").click()");
+   await waitFor(c,"document.querySelector("+JSON.stringify(selector)+")?.classList.contains('active')");
+   assert.equal(await evaluate(c,"!!document.querySelector('#appContent')?.textContent?.trim()"),true,tab+' did not render');
+  }
+  // Public DEMO must never advertise the sensitive tenant archive as accessible.
+  assert.equal(await evaluate(c,"document.querySelector('[data-tab=\"backup\"]')?.hidden"),true);
+  await evaluate(c,"document.querySelector('#authBtn').click()");
+  await waitFor(c,"!document.querySelector('#overlay')?.hidden && !!document.querySelector('#overlay [role=\"dialog\"]')");
+  await evaluate(c,"document.querySelector('#overlay [data-action=\"closeModal\"]').click()");
+  await waitFor(c,"document.querySelector('#overlay').hidden");
   await c.send('Emulation.setDeviceMetricsOverride',{
    width:390,height:844,deviceScaleFactor:3,mobile:true
   });
