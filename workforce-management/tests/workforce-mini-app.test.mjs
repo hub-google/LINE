@@ -30,6 +30,25 @@ test('Original /workforce/ remains standard website, MINI has separate static en
  assert.match(workflow,/workforce-management\/app\.js workforce-management\/swap-sync\.js workforce-management\/style\.css "\$pubdir\/workforce-mini\/"/);
  assert.match(setup,/\/LINE\/workforce-mini\//);
 });
+test('Cloudflare Work /mini/ is recognized as MINI and chooses Published, while GitHub Pages stays Developing',()=>{
+ const start=client.indexOf('const wfMiniMode=');
+ const end=client.indexOf('const wfMiniMenuTabs=',start);
+ assert.ok(start>=0&&end>start);
+ const select=new Function('location',client.slice(start,end)+';return {mode:wfMiniMode,env:wfMiniEnvironment};');
+ for(const [url,mode,env] of [
+  ['https://work.monsterport.com/',false,'published'],
+  ['https://work.monsterport.com/mini/',true,'published'],
+  ['https://work.monsterport.com/mini/index.html',true,'published'],
+  ['https://work.monsterport.com/mini/?line_env=review',true,'review'],
+  ['https://hub-google.github.io/LINE/workforce/',false,'developing'],
+  ['https://hub-google.github.io/LINE/workforce-mini/',true,'developing'],
+  ['https://hub-google.github.io/LINE/workforce-mini/?line_env=published',true,'published'],
+ ]){
+  const location=new URL(url);
+  assert.deepEqual(select(location),{mode,env},url);
+ }
+});
+
 test('MINI uses the same Supabase tenancy, separate LINE context, no public demo by default',()=>{
  assert.match(client,/if\(wfMiniMode&&!app\.token\)\{app\.mode='real'/);
  assert.match(client,/app\.mode=wfMiniMode\?'real':'demo'/);
