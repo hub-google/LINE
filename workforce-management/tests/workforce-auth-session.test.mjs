@@ -99,8 +99,8 @@ test('Work frontends remain static and Cloudflare has no Worker entrypoint',()=>
  const website=readFileSync(new URL('../index.html',import.meta.url),'utf8');
  const mini=readFileSync(new URL('../mini/index.html',import.meta.url),'utf8');
  assert.match(build,/Built static Work site/);
- assert.doesNotMatch(build,/wrangler deploy|_worker\\.js|functions\\//);
- assert.match(website,/app\\.js/);
- assert.match(mini,/app\\.js/);
+ assert.doesNotMatch(build,/wrangler deploy|_worker\.js|functions\//);
+ assert.match(website,/app\.js/);
+ assert.match(mini,/app\.js/);
  assert.match(code,/\/functions\/v1\/wm-line/); // Supabase backend, not Cloudflare Worker.
 });
