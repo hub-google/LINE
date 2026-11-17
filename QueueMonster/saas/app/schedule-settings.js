@@ -1,4 +1,5 @@
 import {serviceUnitsState} from "./state/serviceUnitsState.js";
+import {staffState} from "./state/staffState.js";
 import {routeState} from "./state/routeState.js";
 import {act,rpc,val} from "./data-loading.js";
 import {render} from "./staff-layout.js";
@@ -305,6 +306,11 @@ export function renderScheduleSettings(isManager){
  const d=draft(),e=exceptionDraft();
  const unitOptions=(serviceUnitsState.unitConfig?.units||[]).filter(u=>u.active&&!u.is_default);
  const plans=Object.entries(d.templates).filter(([key])=>planKey(key));
+ const minNotice=staffState.staff?.bookingPolicy?.min_notice_minutes??0;
+ const bookingNoticeSection='<section class="schedule-module schedule-module-notice"><div class="schedule-module-heading"><h3>預約受理限制</h3></div>'+
+  '<div class="schedule-module-body"><p class="small">最晚提前多久接受預約？填 0 表示不限制。休息時間與公休請透過下面的場次及特殊日期管理。儲存本設定時會清除舊版每日休息時間。</p>'+
+  '<div style="max-width:360px">'+field("最晚提前預約分鐘數","schedule-min-notice",minNotice,"number",'min="0" max="10080" step="1"')+'</div>'+
+  '<div class="staff-actionbar" style="margin:14px 0 0">'+btn("儲存提前預約限制","save-booking-policy","primary")+'</div></div></section>';
  const planCards=plans.map(([key,windows])=>{
   const count=planCount(windows),title=templateTitle(key,windows);
   const isEditing=serviceUnitsState.scheduleEditingPlan===key;
@@ -374,7 +380,7 @@ export function renderScheduleSettings(isManager){
   '<p class="small">只需設定一次，往後每週自動套用；特殊日期優先於每週規則。適用預約、取號與線上點餐，並保留既有預約和訂單。</p>'+
   '<label class="checklist"><input type="checkbox" id="schedule-enabled"'+(d.enabled?" checked":"")+'> 啟用每週自動排程</label>'+
   (!d.enabled?'<p class="small">尚未啟用時仍保留原有指定日期場次；完成下面的設定並儲存後才會自動套用。</p>':"")+
-  planSection+batchSection+
+  bookingNoticeSection+planSection+batchSection+
   '<section class="schedule-module schedule-module-weekly"><div class="schedule-module-heading"><h3>每週細部調整</h3></div><div class="schedule-module-body">'+
   '<p class="small">以下是套用後的七天排程摘要。若某一天需要不同內容，可展開「個別調整」修改，其他星期不受影響。</p>'+week+
   '<div class="staff-actionbar" style="margin:16px 0">'+btn("儲存每週營業排程","schedule-weekly-save","primary")+

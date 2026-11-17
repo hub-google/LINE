@@ -84,17 +84,16 @@ if(a==="noop-queue-session"){return true;}
   }
   if(a==="save-booking-policy"){
    await act(async()=>{
-     // Keep the old closed-day values intact while schedules move to one editor.
+     const minutes=Number(val("schedule-min-notice"));
+     if(!Number.isInteger(minutes)||minutes<0||minutes>10080)throw Error("提前預約分鐘數必須是 0～10080 的整數");
+     // Keep historical closures, while retiring the legacy daily break interval.
      const policy=staffState.staff?.bookingPolicy||{};
-     const dates=policy.closed_dates||[];
-     const days=policy.closed_weekdays||[];
      await rpc("so_set_booking_policy",{
-       p_slug:routeState.slug,p_closed_weekdays:days,p_closed_dates:dates,
-       p_break_start:val("policy-break-start"),p_break_end:val("policy-break-end"),
-       p_min_notice_minutes:Number(val("policy-notice")||0)
+       p_slug:routeState.slug,p_closed_weekdays:policy.closed_weekdays||[],p_closed_dates:policy.closed_dates||[],
+       p_break_start:"",p_break_end:"",p_min_notice_minutes:minutes
      });
-     return "預約營業規則已更新";
+     return "提前預約限制已儲存；舊版每日休息時間已清除，請以營業排程管理休息時段";
    });return true;
- }
+  }
 return false;
 }

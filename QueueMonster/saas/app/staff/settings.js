@@ -78,14 +78,6 @@ export function renderStaffSettings({t,isManager,html,customersOnly=false}){
      '</div><div><label for="hold-return-mode">恢復後順位</label><select id="hold-return-mode" class="field">'+
      [["END","返回隊尾"],["ORIGINAL","返回原順位"]].map(([v,name])=>'<option value="'+v+'" '+((staffState.staff.queue_hold_policy?.return_mode||"END")===v?"selected":"")+'>'+name+'</option>').join("")+
      '</select></div></div><div class="staff-actionbar">'+btn("儲存候位保留規則","save-hold-policy","primary")+'</div>'):"")],
-["catalog",(isManager?box("預約提前限制與休息時間",
-      '<p class="small">設定預約最晚提前時間及中場休息。營業日期、場次及公休請到「營業排程」管理；既有預約不會自動取消。</p>'+
-      '<p class="settings-guidance">每週公休、特殊日期及加開場次請統一至「營業排程」。既有公休資料保留；啟用每週排程後以新規則優先。</p>'+
-      '<div class="staff-actionbar">'+btn("前往營業排程","settings-section","outline",'data-section="operations"')+'</div>'+
-      '<div class="grid"><div>'+field("每日休息開始（可留空）","policy-break-start",policy.break_start||"","time")+
-      field("最晚提前預約分鐘數","policy-notice",policy.min_notice_minutes??0,"number",'min="0" max="10080"')+'</div>'+
-      '<div>'+field("每日休息結束（可留空）","policy-break-end",policy.break_end||"","time")+'</div></div>'+
-      '<div style="margin-top:14px">'+btn("儲存預約營業規則","save-booking-policy","primary")+'</div>'):"")],
 ["catalog",(isManager?box("預約送出前二次確認",
     '<p class="small">預設開啟。顧客會先看到預約內容，再決定是否真正送出。</p>'+
     '<label class="checklist"><input id="policy-confirm-required" type="checkbox" '+(policy.require_confirmation!==false?"checked":"")+'>送出前顯示確認卡</label>'+
