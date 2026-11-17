@@ -1,0 +1,50 @@
+/* MINI-only presentation. The web release and its original CSS are unchanged. */
+:root{color-scheme:light}
+html{scroll-padding-top:76px}
+body.qm-mini{background:#f7f8fa!important;padding-top:61px!important;padding-bottom:82px!important;
+  font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC","Microsoft JhengHei",sans-serif!important}
+body.qm-mini::before{display:none!important}
+.qm-mini-header{position:fixed;z-index:200;top:0;left:0;right:0;height:61px;
+  padding:0 max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left));
+  background:rgba(255,255,255,.97);border-bottom:1px solid #e8e8ed;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;color:#19191d;
+  box-sizing:border-box;box-shadow:none;backdrop-filter:blur(16px)}
+.qm-mini-header .qm-brand{display:flex;align-items:center;gap:10px;text-decoration:none;
+  color:#17171b;font-size:17px;font-weight:750;letter-spacing:-.03em}
+.qm-mini-header .qm-brand img{width:33px;height:33px;object-fit:contain}
+.qm-mini-header .qm-environment{font-size:11px;letter-spacing:.02em;color:#777985;font-weight:600}
+.qm-mini-bottom{position:fixed;bottom:0;left:0;right:0;z-index:200;
+  display:flex;align-items:stretch;justify-content:space-around;gap:4px;
+  min-height:58px;padding:5px max(10px,env(safe-area-inset-right))
+  max(9px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));
+  background:rgba(255,255,255,.97);border-top:1px solid #e8e8ed;
+  box-sizing:border-box;backdrop-filter:blur(18px)}
+.qm-mini-bottom a{flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;text-align:center;min-width:0;
+  text-decoration:none!important;border-radius:12px;font-size:11px;font-weight:650;color:#7b7b85!important;
+  line-height:1.25;white-space:nowrap}
+.qm-mini-bottom a[aria-current="page"]{color:#53347d!important;background:#f3edf8}
+.qm-mini-bottom svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;
+  stroke-linejoin:round;stroke-linecap:round}
+body.qm-mini[data-monster-page="index"]>header{display:none!important}
+body.qm-mini #marketing-header{display:none!important}
+body.qm-mini .container{max-width:960px}
+body.qm-mini .card,body.qm-mini .main-panel,body.qm-mini .merchant-card,
+body.qm-mini .staff-record{border:1px solid #eeeef1!important;
+  border-radius:17px!important;box-shadow:0 2px 14px rgba(17,24,39,.035)!important;
+  background:#fff!important}
+body.qm-mini .btn,body.qm-mini button{border-radius:11px}
+body.qm-mini .page-header{padding-top:14px!important;background:none!important}
+body.qm-mini .page-header .hero-heading{margin-top:0!important}
+body.qm-mini .page-header h1{font-weight:800;letter-spacing:-.025em}
+body.qm-mini .site-auth-slot{max-width:100%}
+@media(min-width:900px){
+ body.qm-mini .qm-mini-header,body.qm-mini .qm-mini-bottom{padding-left:calc((100vw - 800px)/2);
+   padding-right:calc((100vw - 800px)/2)}
+}
+@media(max-width:520px){
+ body.qm-mini .container{padding-left:14px!important;padding-right:14px!important}
+ body.qm-mini .page-header{padding-left:0!important;padding-right:0!important}
+ body.qm-mini .merchant-card{margin-bottom:12px}
+ body.qm-mini .card-actions{gap:8px}
+}
