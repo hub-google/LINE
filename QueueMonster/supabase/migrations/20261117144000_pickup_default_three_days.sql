@@ -1,6 +1,6 @@
 -- New or unset pickup settings default to three days.
 -- Existing merchants' stored days_ahead values, including an intentional 7, are preserved.
-alter table public.so_pickup_settings
+alter table public.qm_pickup_settings
   alter column days_ahead set default 3;
 
 -- Older pickup RPCs build an in-memory settings row when a merchant has never saved
