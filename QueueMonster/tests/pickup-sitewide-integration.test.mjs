@@ -302,3 +302,35 @@ test("pickup customer coupons are merchant-scoped, protected, and priced by the 
  assert.match(pickup,/so_pickup_place_with_coupon/);
  assert.match(frontend,/estimated_payable/);
 });
+
+test("pickup regression: LINE group invitation, shared live socket and multi-variant stock",async()=>{
+ const {pickupGroupFromUrl,pickupGroupShareUrl,pickupGroupLeaveUrl,pickupRestoreOrder,
+   pickupCartCount,pickupCartAmount}=await import("../saas/app/pickup-upgrades.js");
+ const group="1b6331cb-992a-4a0d-aee0-290834ab1b11";
+ const liff="https://hub-google.github.io/LINE/booking/?view=customer&liff.state="+
+   encodeURIComponent("/booking/?merchant=qa-shop&tab=order&group="+group);
+ assert.equal(pickupGroupFromUrl(liff),group,"LIFF callback retains group code");
+ assert.equal(pickupGroupFromUrl(pickupGroupLeaveUrl(liff).href),"","leave clears nested LIFF invitation");
+ const shared=pickupGroupShareUrl(liff,group);
+ assert.equal(shared.searchParams.get("tab"),"order");
+ assert.equal(shared.searchParams.get("group"),group);
+ assert.equal(pickupGroupFromUrl(liff+"&group=bad"),"","invalid explicit code is not accepted");
+ const item={id:"d1",price:65,pickup_options:[{name:"甜度",required:true,multiple:false,choices:[
+   {name:"正常",price:0},{name:"半糖",price:10}]}],daily_remaining:1};
+ const normal={id:"d1",qty:1,options:[{group:0,choice:0,group_name:"甜度",choice_name:"正常"}]};
+ const half={id:"d1",qty:1,options:[{group:0,choice:1,group_name:"甜度",choice_name:"半糖"}]};
+ const restored=pickupRestoreOrder([normal,half],[item]);
+ assert.equal(pickupCartCount(restored.cart),1,"two variants cannot exceed aggregate item stock");
+ assert.equal(restored.skipped,1);
+ const stale={...half,options:[{group:0,choice:1,group_name:"甜度",choice_name:"改過的名稱"}]};
+ assert.equal(pickupCartCount(pickupRestoreOrder([stale],[{...item,daily_remaining:20}]).cart),0,
+   "old names cannot silently map to a different current variant");
+ const valid=pickupRestoreOrder([half],[{...item,daily_remaining:20}]);
+ assert.equal(pickupCartAmount(valid.cart,[item]),75,"reorder uses current catalogue price");
+ const pickup=source("saas/app/pickup-mode.js");
+ assert.doesNotMatch(pickup,/\.channel\("queue-board:/,
+   "pickup must not create a second Realtime socket");
+ assert.match(source("saas/app/startup.js"),/createStoreLiveSync/,
+   "existing store live-sync remains the only socket");
+ assert.match(pickup,/pickupGroupFromUrl\(location\.href\)/);
+});
