@@ -7,6 +7,9 @@ const ANON_KEY=Deno.env.get("SUPABASE_ANON_KEY")||"";
 const LINE_LOGIN_ID=Deno.env.get("LINE_LOGIN_CHANNEL_ID")||
  (Deno.env.get("LINE_LIFF_ID")||"").split("-")[0];
 const LIFF_ID=Deno.env.get("LINE_LIFF_ID")||"";
+// Dedicated LINE MINI App channel. Never substitute its audience with the legacy LINE Login channel.
+const MINI_APP_CHANNEL_ID=Deno.env.get("LINE_MINI_APP_CHANNEL_ID")||"";
+const MINI_APP_LIFF_ID=Deno.env.get("LINE_MINI_APP_LIFF_ID")||"";
 const PLATFORM_TOKEN=Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN")||"";
 const WEBSITE="https://hub-google.github.io";
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -48,17 +51,20 @@ async function member(tenant:string,userId:string){
  if(!ts?.length||ts[0].is_demo)throw new Error("DEMO_NOT_ELIGIBLE_FOR_LINE");
  return m;
 }
-async function lineValidate(token:string){
- if(!LINE_LOGIN_ID||!/^[0-9]{8,}$/.test(LINE_LOGIN_ID))throw new Error("LINE_LOGIN_CHANNEL_NOT_CONFIGURED");
+async function lineValidate(token:string,type:string="login"){
+ if(type!=="login"&&type!=="mini")throw new Error("INVALID_LINE_CHANNEL_TYPE");
+ const channelId=type==="mini"?MINI_APP_CHANNEL_ID:LINE_LOGIN_ID;
+ if(!channelId||!/^[0-9]{8,}$/.test(channelId))throw new Error(
+  type==="mini"?"LINE_MINI_APP_CHANNEL_NOT_CONFIGURED":"LINE_LOGIN_CHANNEL_NOT_CONFIGURED");
  if(!token||token.length>5000)throw new Error("MISSING_LINE_ID_TOKEN");
  const result=await fetch("https://api.line.me/oauth2/v2.1/verify",{
   method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},
-  body:new URLSearchParams({id_token:token,client_id:LINE_LOGIN_ID})});
+  body:new URLSearchParams({id_token:token,client_id:channelId})});
  if(!result.ok)throw new Error("LINE_ID_TOKEN_INVALID");
  const line=await result.json();
- if(line.aud!==LINE_LOGIN_ID||!/^U[0-9a-f]{32}$/i.test(line.sub||"")
+ if(line.aud!==channelId||!/^U[0-9a-f]{32}$/i.test(line.sub||"")
    ||Number(line.exp||0)*1000<=Date.now())throw new Error("LINE_IDENTITY_INVALID");
- return String(line.sub);
+ return {sub:String(line.sub),channelId};
 }
 async function sendBatch(tenant:string,limit:number){
     const claimed=await db("rpc/wm_line_claim","POST",{p_tenant:tenant,p_limit:Math.min(10,Math.max(1,Number(limit)||5))});
@@ -88,6 +94,7 @@ Deno.serve(async req=>{
  if(req.method==="OPTIONS")return respond(200,{},origin);
  if(req.method==="GET")return respond(200,{
   liffId:LIFF_ID||null,loginConfigured:!!LINE_LOGIN_ID,
+  miniLiffId:MINI_APP_LIFF_ID||null,miniConfigured:!!MINI_APP_CHANNEL_ID&&!!MINI_APP_LIFF_ID,
   messagingConfigured:!!PLATFORM_TOKEN,mode:"platform"},origin);
  if(req.method!=="POST")return respond(405,{error:"METHOD_NOT_ALLOWED"},origin);
  try{
@@ -118,14 +125,15 @@ Deno.serve(async req=>{
     "&revoked_at=is.null&limit=1");
    return respond(200,{linked:!!rows?.length,verifiedAt:rows?.[0]?.verified_at||null,
     mode:rows?.[0]?.mode||"platform",messagingConfigured:!!PLATFORM_TOKEN,
-    liffId:LIFF_ID||null},origin);
+    liffId:LIFF_ID||null,miniLiffId:MINI_APP_LIFF_ID||null,
+    miniConfigured:!!MINI_APP_CHANNEL_ID&&!!MINI_APP_LIFF_ID},origin);
   }
   if(action==="bind"){
-   const sub=await lineValidate(String(input.id_token||""));
+   const verified=await lineValidate(String(input.id_token||""),String(input.channel_type||"login"));
    // The Supabase user must first authenticate and be an existing, active member.
    await db("wm_line_links?on_conflict=tenant_id,member_id","POST",[
-    {tenant_id:tenant,member_id:m.id,user_id:actor,line_sub:sub,
-      login_channel_id:LINE_LOGIN_ID,mode:"platform",revoked_at:null,
+    {tenant_id:tenant,member_id:m.id,user_id:actor,line_sub:verified.sub,
+      login_channel_id:verified.channelId,mode:"platform",revoked_at:null,
       verified_at:new Date().toISOString()}]);
    return respond(200,{linked:true,mode:"platform"},origin);
   }
