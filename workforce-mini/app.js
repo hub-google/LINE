@@ -7,6 +7,14 @@ const DEMO_ID='98d3505c-cbe6-46ed-a95a-13672e6d98f4';
 const wfMiniMode=/(?:^|\/)workforce-mini(?:\/|\/index\.html)?$/.test(location.pathname);
 const wfMiniEnvironment=new URLSearchParams(location.search).get('line_env')||'developing';
 const wfMiniEnvironmentNames={developing:'開發測試',review:'送審測試',published:'正式發布'};
+// OA rich-menu deep links are deliberately read only after liff.init() resolves.
+// LINE temporarily stores link parameters in liff.state during initialization.
+const wfMiniMenuTabs=new Set(['punch','schedule','requests','approvals','inbox','overview']);
+function wfMiniOpenRequestedTab(){
+ if(!wfMiniMode)return;
+ const target=new URLSearchParams(location.search).get('tab');
+ if(target&&wfMiniMenuTabs.has(target))setTab(target);
+}
 const TABS={
  overview:['工作總覽','掌握團隊今天的排班、打卡及待審事項。'],
  schedule:['排班管理','查看、建立與發布班表，避免排班時間重疊。'],
@@ -1602,6 +1610,7 @@ async function initializeWFMini(){
   const liff=await loadLineSdk();
   if(!liff)throw Error('LINE SDK 載入失敗');
   await liff.init({liffId:selected.liffId,withLoginOnExternalBrowser:false});
+  wfMiniOpenRequestedTab();
   return liff;
  })();
  return wfMiniInitPromise;
