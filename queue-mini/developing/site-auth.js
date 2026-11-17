@@ -5,7 +5,7 @@ const mount=document.getElementById("site-auth-root");
 if(!mount)return;
 const {SUPABASE_URL:SB_URL,SUPABASE_PUBLISHABLE_KEY:SB_KEY}=await import("./public-config.js");
 const RETURN_KEY="line-site-auth-return-v1";
-const CUSTOMER_KEY="queue-mini-customer-session-v1";
+const CUSTOMER_KEY="queue-mini-customer-session-v1-developing";
 const current=new URL(location.href);
 const customer=createClient(SB_URL,SB_KEY,{
  auth:{storageKey:CUSTOMER_KEY,persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}
