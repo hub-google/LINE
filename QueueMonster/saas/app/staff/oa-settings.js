@@ -28,7 +28,7 @@ export function renderOaSettings({isManager}){
  const replacing=connected&&lineState.oaReplacing===true&&lineState.oaReplacingSlug===routeState.slug;
  const webhook=lineState.LINE_BRIDGE_URL+"?action=webhook&merchant="+encodeURIComponent(routeState.slug);
  const status='<div class="oa-status-row"><div><span class="oa-overline">MESSAGING API</span>'+
-  '<h3>店家 LINE OA</h3><p class="oa-summary">使用店家自己的 LINE 官方帳號。</p></div>'+
+  '<h3>店家 LINE OA</h3><p class="oa-summary">把一次點餐，變成長期顧客關係。顧客完成點餐後，可引導加入店家 LINE OA 好友；加入後可在 LINE 接收、查閱訂單狀態通知，也能直接向店家詢問訂單或取餐問題。持續累積品牌好友，有助於提升回訪與回購機會。</p><p class="oa-summary">顧客需自行同意加入好友，系統不會強制自動加好友。</p></div>'+
   '<span class="oa-connection-chip '+(connected?'is-connected':'is-unbound')+'">'+
   (connected?'已連接':'尚未連接')+'</span></div>';
  const accountInfo=connected?
