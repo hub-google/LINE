@@ -8,7 +8,7 @@ const edge=readFileSync(new URL('../supabase/functions/wm-line/index.ts',import.
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const setup=readFileSync(new URL('../MINI_APP_SETUP.md',import.meta.url),'utf8');
 
-test('WF MINI App uses same static app but a distinct opt-in endpoint',()=>{
+test('WF MINI is opt-in and uses the existing tenant-authenticated application',()=>{
  assert.doesNotThrow(()=>new vm.Script(client));
  assert.match(client,/new URLSearchParams\(location\.search\)\.get\('mini'\)==='1'/);
  assert.match(client,/if\(wfMiniMode&&!app\.token\)\{app\.mode='real'/);
@@ -18,32 +18,33 @@ test('WF MINI App uses same static app but a distinct opt-in endpoint',()=>{
  assert.match(html,/id="wfMiniOpen"/);
  assert.match(setup,/workforce\/\?mini=1/);
 });
-
-test('MINI initializer uses separate LIFF ID and no forged fallback',()=>{
- assert.match(client,/if\(!config\.miniLiffId\|\|!config\.miniConfigured\)throw Error/);
- assert.match(client,/liff\.init\(\{liffId:config\.miniLiffId,withLoginOnExternalBrowser:false\}\)/);
- assert.match(client,/const selectedId=wfMiniMode\?config\.miniLiffId:config\.liffId/);
- assert.match(client,/channel_type:wfMiniMode\?'mini':'login'/);
- assert.match(client,/if\(app\.mode!=='real'\|\|!app\.token\)throw Error\('請先登入企業帳號'\)/);
- assert.doesNotMatch(client,/line_sub\s*:\s*liff\.getProfile/);
+test('LINE internal channel identity follows Developing Review Published environment',()=>{
+ for(const [name,id] of [['developing','2012649404-nz3TBQdG'],['review','2012649405-ADWLM7h9'],['published','2012649406-KzlLEZT6']]){
+  assert.ok(edge.includes(name+':{channelId:"'+id.split('-')[0]+'",liffId:"'+id+'"}'),name);
+  assert.ok(setup.includes(id),name+' documentation');
+ }
+ assert.match(client,/config\.miniEnvironments\?\.\[wfMiniEnvironment\]/);
+ assert.match(client,/liff\.init\(\{liffId:selected\.liffId,withLoginOnExternalBrowser:false\}\)/);
+ assert.match(client,/channel_env:wfMiniMode\?wfMiniEnvironment:null/);
+ assert.match(client,/if\(!Object\.hasOwn\(wfMiniEnvironmentNames,wfMiniEnvironment\)\)throw/);
 });
-
-test('edge checks active tenant Supabase user and correct LINE token audience',()=>{
- assert.match(edge,/const MINI_APP_CHANNEL_ID=Deno\.env\.get\("LINE_MINI_APP_CHANNEL_ID"\)/);
- assert.match(edge,/const MINI_APP_LIFF_ID=Deno\.env\.get\("LINE_MINI_APP_LIFF_ID"\)/);
+test('edge verifies LINE ID token against correct internal channel',()=>{
  assert.match(edge,/if\(type!=="login"&&type!=="mini"\)throw/);
+ assert.match(edge,/type==="mini"\?miniChannel\(env\)\.channelId:LINE_LOGIN_ID/);
  assert.match(edge,/client_id:channelId/);
  assert.match(edge,/line\.aud!==channelId/);
  assert.match(edge,/const actor=await getUser\(req\)/);
  assert.match(edge,/const m=await member\(tenant,actor\)/);
  assert.match(edge,/line_sub:verified\.sub/);
  assert.match(edge,/login_channel_id:verified\.channelId/);
- assert.match(edge,/miniConfigured:!!MINI_APP_CHANNEL_ID&&!!MINI_APP_LIFF_ID/);
+ assert.match(edge,/LINE_ACCOUNT_MISMATCH_UNBIND_FIRST/);
+ assert.match(edge,/miniEnvironments/);
 });
-
-test('MINI launch does not change geolocation validation or public demo isolation',()=>{
- assert.match(client,/wm_clock/);
+test('MINI authorization cannot grant company access without Supabase login',()=>{
+ assert.match(client,/if\(app\.mode!=='real'\|\|!app\.token\)throw Error\('請先登入企業帳號'\)/);
+ assert.match(edge,/NO_ACTIVE_MEMBERSHIP/);
+ assert.match(edge,/DEMO_NOT_ELIGIBLE_FOR_LINE/);
+ assert.doesNotMatch(client,/line_sub\s*:\s*liff\.getProfile/);
  assert.match(client,/getCurrentPosition/);
- assert.match(client,/const DEMO_ID='98d3505c-cbe6-46ed-a95a-13672e6d98f4'/);
  assert.match(setup,/不免除定位授權/);
 });
