@@ -18,7 +18,7 @@ test('Original /workforce/ remains standard website, MINI has separate static en
  assert.match(client,/location\.pathname/);
  assert.doesNotMatch(client,/get\('mini'\)==='1'/);
  assert.doesNotMatch(website,/id="wfMiniBanner"/);
- assert.match(website,/<title>LINE Workforce/);
+ assert.match(website,/<title>Work 工作怪獸/);
  assert.match(mini,/<title>工作怪獸/);
  assert.match(mini,/id="wfMiniBanner"/);
  assert.match(mini,/id="wfMiniText"/);
