@@ -10,6 +10,24 @@ const initialTemplates={default:[{title:"基本場次",name:"第 1 場",start:"0
 const MAX_SESSIONS=50;
 const weekdayKey=day=>"week_day_"+day;
 const validCount=n=>Number.isInteger(n)&&n>=0&&n<=MAX_SESSIONS;
+function copyWeekdaySettings(config,sourceDay,targetDay){
+ const from=String(sourceDay),to=String(targetDay);
+ if(!/^[1-7]$/.test(from)||!/^[1-7]$/.test(to)||from===to)
+  throw Error("請選擇不同的來源星期");
+ const sourceKey=config.weekdays[from];
+ if(sourceKey==="off"){
+  config.weekdays[to]="off";
+  return 0;
+ }
+ const sourceWindows=config.templates[sourceKey];
+ if(!Array.isArray(sourceWindows)||!sourceWindows.length||sourceWindows.length>MAX_SESSIONS)
+  throw Error("來源星期的場次設定不存在");
+ const targetKey=weekdayKey(to),windows=clone(sourceWindows);
+ windows[0].title="星期"+weekdays[Number(to)-1];
+ config.templates[targetKey]=windows;
+ config.weekdays[to]=targetKey;
+ return windows.length;
+}
 const clock=m=>String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");
 function resizeWindows(windows,count){
  const list=clone(windows||[]).slice(0,count);
@@ -188,9 +206,19 @@ export function renderScheduleSettings(isManager){
  const week=weekdays.map((day,i)=>{
   const key=String(i+1),templateKey=d.weekdays[key];
   const windows=templateKey==="off"?[]:(d.templates[templateKey]||[]);
+  const copyChoices=weekdays.map((name,j)=>{
+   const from=String(j+1);
+   if(from===key)return "";
+   const sourceKey=d.weekdays[from];
+   const count=sourceKey==="off"?0:(d.templates[sourceKey]?.length||0);
+   return '<option value="'+from+'">星期'+name+'（'+(count?count+" 場":"公休")+'）</option>';
+  }).join("");
   return '<section class="schedule-weekday-panel" data-schedule-weekday-panel="'+key+'">'+
    '<div class="schedule-weekday-head"><label for="schedule-weekday-count-'+key+'">星期'+day+'</label>'+
    '<div class="schedule-weekday-count"><input class="field" id="schedule-weekday-count-'+key+'" data-schedule-weekday-count="'+key+'" type="number" min="0" max="50" step="1" value="'+windows.length+'"><span>場（0 為公休）</span></div></div>'+
+   '<div class="schedule-weekday-copy"><label for="schedule-weekday-copy-source-'+key+'">套用其他星期</label>'+
+   '<select class="field" id="schedule-weekday-copy-source-'+key+'" data-schedule-copy-source="'+key+'"><option value="">選擇星期</option>'+copyChoices+'</select>'+
+   btn("套用","schedule-weekday-copy","outline",'data-day="'+key+'"')+'</div>'+
    (windows.length?'<details class="schedule-weekday-details"'+(serviceUnitsState.scheduleEditWeekday===key?' open':'')+'><summary>設定星期'+day+'的 '+windows.length+' 場時間與名額</summary>'+
     '<div class="schedule-session-list">'+windows.map((w,j)=>windowEditor(w,j,'data-schedule-weekday-window',unitOptions)).join("")+'</div></details>':
     '<p class="small schedule-closed-hint">這一天公休，不開放場次。</p>')+'</section>';
@@ -211,7 +239,7 @@ export function renderScheduleSettings(isManager){
   '<label class="checklist"><input type="checkbox" id="schedule-enabled"'+(d.enabled?" checked":"")+'> 啟用每週自動排程</label>'+
   (!d.enabled?'<p class="small">尚未啟用時仍保留原有指定日期場次；完成下面的設定並儲存後才會自動套用。</p>':"")+
   '<h3 style="margin:20px 0 12px">每週固定規則</h3>'+
-  '<p class="small">每一天自行填入 0～50 場。輸入數字並離開欄位後，該星期下方會顯示對應數量的場次設定；0 場就是公休。</p>'+week+
+  '<p class="small">每一天可設定 0～50 場（0 場為公休）。也能從「套用其他星期」複製所有場次名稱、時間、名額與服務窗口；套用後仍可單獨調整，最後請記得儲存。</p>'+week+
   '<div class="staff-actionbar" style="margin:16px 0">'+btn("儲存每週營業排程","schedule-weekly-save","primary")+
   btn("放棄尚未儲存的修改","schedule-weekly-reset","outline")+'</div>'+
   '<hr style="margin:24px 0">'+
@@ -238,6 +266,19 @@ export function renderScheduleSettings(isManager){
 }
 export async function handleScheduleAction(ev,b,a,id){
  if(!a.startsWith("schedule-"))return false;
+ if(a==="schedule-weekday-copy"){
+  const target=b.dataset.day,source=document.getElementById("schedule-weekday-copy-source-"+target)?.value;
+  if(!source){window.alert("請先選擇要套用的星期");return true;}
+  const d=capture();
+  try{
+   const count=copyWeekdaySettings(d,source,target);
+   serviceUnitsState.scheduleEditWeekday=String(target);
+   render();
+   showActionFeedback("已將星期"+weekdays[Number(source)-1]+"的"+(count?count+" 場設定":"公休設定")+
+    "複製到星期"+weekdays[Number(target)-1]+"；請按「儲存每週營業排程」才會正式生效。","success");
+  }catch(error){window.alert(error.message);}
+  return true;
+ }
  if(a==="schedule-special-copy-template"){
   const d=capture(),e=exceptionDraft(),windows=d.templates[e.template_key];
   if(!windows){window.alert("請先選擇要帶入的場次模板");return true;}
