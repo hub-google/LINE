@@ -357,18 +357,25 @@ export async function handleScheduleAction(ev,b,a,id){
  if(a==="schedule-special-save"){
   capture();const e=exceptionDraft();
   if(!e.start||!e.end||e.end<e.start){window.alert("請確認特殊日期的開始與結束日");return true;}
-  if(!serviceUnitsState.scheduleConfig?.enabled){window.alert("請先啟用並儲存每週自動排程");return true;}
   const data={start:e.start,end:e.end,note:e.note||"",mode:e.mode==="CLOSED"?"CLOSED":"CUSTOM"};
-  if(e.mode==="TEMPLATE")data.template_key=e.template_key;
-  if(e.mode==="CUSTOM"){
-   if(!Array.isArray(e.windows)||e.windows.length<1||e.windows.length>MAX_SESSIONS){window.alert("請設定 1～50 個場次");return true;}
-   for(const w of e.windows){
+  if(e.mode==="TEMPLATE"){
+   const windows=draft().templates[e.template_key];
+   if(!Array.isArray(windows)||!windows.length){window.alert("請選擇有效的場次模板");return true;}
+   // Unsaved weekly drafts can be applied to special dates without enabling the weekly schedule.
+   // Retain the template reference only when it exactly matches the persisted version.
+   const saved=serviceUnitsState.scheduleConfig?.templates?.[e.template_key];
+   if(saved&&JSON.stringify(saved)===JSON.stringify(windows))data.template_key=e.template_key;
+   else data.windows=clone(windows).map(({title,...w})=>w);
+  }
+  if(e.mode==="CUSTOM")data.windows=e.windows;
+  if(data.mode==="CUSTOM"&&!data.template_key){
+   if(!Array.isArray(data.windows)||data.windows.length<1||data.windows.length>MAX_SESSIONS){window.alert("請設定 1～50 個場次");return true;}
+   for(const w of data.windows){
     if(!w.name||!/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(w.start)||!/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(w.end)
       ||w.start>=w.end||!Number.isInteger(w.capacity)||w.capacity<1||w.capacity>300){
      window.alert("特殊日期的場次名稱、時間或名額無效，請逐場確認");return true;
     }
    }
-   data.windows=e.windows;
   }
   if(data.mode==="CLOSED"){
    try{
