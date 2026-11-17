@@ -44,13 +44,11 @@ if(a==="save-customer-homepage"){
  if(a==="connect-own-oa"){
   await act(async()=>{
    if(lineState.lineConfig?.merchantOaConnected)throw Error("此店家已綁定 LINE OA。");
-   {
-     const channelSecret=val("own-oa-secret");
-     const botToken=val("own-oa-token");
-          if(!/^[0-9a-fA-F]{32}$/.test(channelSecret))throw Error("Channel secret 格式不正確：必須為 32 位十六進位字元。");
-     if(botToken.length<32)throw Error("Channel access token (long-lived) 尚未填寫或格式不完整。");
-          payload={action:"connect-merchant-oa",slug:routeState.slug,botToken,channelSecret};
-   }
+   const channelSecret=val("own-oa-secret");
+   const botToken=val("own-oa-token");
+   if(!/^[0-9a-fA-F]{32}$/.test(channelSecret))throw Error("Channel secret 格式不正確：必須為 32 位十六進位字元。");
+   if(botToken.length<32)throw Error("Channel access token (long-lived) 尚未填寫或格式不完整。");
+   const payload={action:"connect-merchant-oa",slug:routeState.slug,botToken,channelSecret};
    if(!authState.session?.access_token)throw Error("請先登入企業管理者帳號");
    const res=await fetch(lineState.LINE_BRIDGE_URL,{
     method:"POST",
