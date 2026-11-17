@@ -35,8 +35,8 @@ class WorkforceMenuTests(unittest.TestCase):
                 module.menu_body(name)
 
     def test_wrong_oa_channel_refuses_operation_even_when_token_is_supplied(self):
-        with self.assertRaisesRegex(RuntimeError,"Unexpected WORKFORCE Channel ID"):
-            module.publish("developing","not-a-real-token-123456789012345678901","0000000000")
+        with self.assertRaisesRegex(RuntimeError,"Invalid WF_LINE_MESSAGING_CHANNEL_ID secret"):
+            module.publish("developing","not-a-real-token-123456789012345678901","bad")
 
     def test_line_credentials_are_never_logged_on_invalid_token(self):
         with self.assertRaisesRegex(RuntimeError,"Missing WF_LINE_MESSAGING_ACCESS_TOKEN"):
