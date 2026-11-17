@@ -44,7 +44,7 @@ try{
   for(const name of ["directory.html","my-records.html"]){
     await patch(path.join(staged,name),html=>requireReplace(html,"</head>",
       '<meta name="robots" content="noindex,nofollow"><link rel="stylesheet" href="./qm-mini.css"></head>',name+" styles")
-      .replace("</body>","<script defer src=\"./qm-mini-nav.js\"></script></body>"));
+      .replace("</body>","<script src=\"https://static.line-scdn.net/liff/edge/2/sdk.js\" defer></script><script defer src=\"./qm-mini-nav.js\"></script></body>"));
   }
   await patch(path.join(staged,"app/line-session.js"),text=>{
     const config='if(res.ok){lineState.lineConfig=await res.json();lineState.lineConfigSlug=merchant;}';
