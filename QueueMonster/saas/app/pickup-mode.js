@@ -31,7 +31,7 @@ export async function loadPickupData(){
   if(routeState.view==="customer"&&customerState.customer){
     if(!pickupState.day)pickupState.day=taipei();
     if(pickupState.customerSlug!==routeState.slug){
-      pickupState.customer=null;pickupState.customerSlug=routeState.slug;
+      pickupState.customer=null;pickupState.customerSlug=routeState.slug;pickupState.groupId="";pickupState.groupData=null;
       pickupState.cart={};pickupState.slot="";pickupState.requestId="";pickupState.method="scheduled";pickupState.confirming=false;pickupState.phoneType="mobile";pickupState.phone="";pickupState.phoneArea="02";pickupState.phoneLocal="";pickupState.customerHistory=null;pickupState.customerHistoryPage=1
     }
     if(!pickupState.customer||routeState.customerTab==="order"){
@@ -41,6 +41,12 @@ export async function loadPickupData(){
     if(routeState.customerTab==="order"||(routeState.customerTab==="detail"&&routeState.detailKind==="order")){
       try{pickupState.customerHistory=await rpc("so_pickup_my_orders",{p_slug:routeState.slug,p_page:pickupState.customerHistoryPage});}
       catch(e){console.warn("無法讀取訂餐完整歷史",e);pickupState.customerHistory=null;}
+    }
+    const fromUrl=new URLSearchParams(location.search).get("group")||"";
+    if(/^[0-9a-f-]{36}$/i.test(fromUrl))pickupState.groupId=fromUrl;
+    if(pickupState.groupId&&pickupState.customer){
+      try{pickupState.groupData=await rpc("so_pickup_group_view",{p_slug:routeState.slug,p_group:pickupState.groupId});}
+      catch(error){pickupState.groupData=null;console.warn("團購資料暫時無法讀取",error);}
     }
     if(pickupState.customer?.settings?.schedule_mode==="DISABLED")pickupState.method="immediate";
     if(pickupState.customer?.settings?.schedule_mode==="REQUIRED")pickupState.method="scheduled";
@@ -91,6 +97,33 @@ export function renderPickupSettings(isManager){
     btn("儲存訂餐員工權限","pickup-staff-permissions-save","primary")):"");
 }
 
+
+
+function pickupGroupPanel(){
+ const group=pickupState.groupData;
+ if(!pickupState.groupId){
+  return '<div class="inset"><strong>和朋友一起點餐？</strong><p class="small">建立團購連結後，朋友可各自選餐，主揪統一送出一筆訂單。</p>'+
+    btn("建立團體訂餐","pickup-group-create","outline")+'</div>';
+ }
+ if(!group)return '<div class="inset"><p class="alert">團購連結無法使用。請確認已完成本店顧客身分綁定，或退出團購。</p>'+btn("退出團購","pickup-group-leave","outline")+'</div>';
+ const link=new URL(location.href);link.searchParams.set("group",pickupState.groupId);link.searchParams.set("tab","order");
+ const catalog=pickupState.customer?.items||[];
+ const participants=(group.participants||[]).map(p=>{
+   const names=(p.items||[]).map(line=>{
+     const item=catalog.find(x=>x.id===line.id);
+     const opts=pickupChosen(item,line.options||[]).map(x=>x.choice_name);
+     return esc(item?.name||"餐點")+(opts.length?"（"+esc(opts.join("／"))+"）":"")+" × "+esc(line.qty);
+   }).join("、");
+   return '<div class="listline"><strong>'+esc(p.name)+(p.mine?"（我）":"")+'</strong><span class="small">'+(names||"尚未選餐")+'</span></div>';
+ }).join("");
+ return '<div class="inset" style="margin:12px 0">'+
+   '<strong>團體訂餐・'+(group.owner?"你是主揪":"參與點餐")+'</strong>'+
+   (group.submitted?'<p class="notice">團購已結單，訂單 '+esc(group.order?.number||"")+'；狀態：'+esc(pickupStatusLabel(group.order?.status)||"已送出")+'</p>':
+     '<p class="small">把下方連結分享給朋友，大家各自選餐並按「儲存我的餐點」，最後由主揪一次送出。有效期限 24 小時。</p>'+
+     '<input class="field" readonly aria-label="團購分享連結" value="'+esc(link.href)+'">'+btn("複製團購連結","pickup-group-copy","outline"))+
+   '<h4>大家已選的餐點</h4>'+(participants||'<p class="small">尚無參與者。</p>')+
+   '<div class="staff-actionbar">'+btn("更新團購名單","pickup-group-refresh","outline")+btn("退出團購","pickup-group-leave","outline")+'</div></div>';
+}
 
 function renderPickupOptionEditor(){
  const item=(pickupState.customer?.items||[]).find(x=>x.id===pickupState.configuringItemId);
@@ -151,6 +184,7 @@ export function renderCustomerPickup(){
  const available=(d.slots||[]).filter(x=>x.left>0);
  return box("線上點餐",
   '<p class="muted">直接使用本店上架菜單，送出後可在此追蹤接單、製餐、可取餐與已取餐進度。</p>'+
+  pickupGroupPanel()+
   (featuredCancelCard?'<section role="region" aria-label="新訂單取消倒數" style="margin:10px 0 18px"><h3>訂單已送出</h3>'+featuredCancelCard+'</section>':
   '<p class="notice"><strong>下單後 15 秒內可取消。</strong>送出訂單後會顯示倒數；倒數結束，訂單才會交給店家接單，之後無法自行取消。</p>')+
   (s.schedule_mode==="OPTIONAL"?'<div class="staff-actionbar">'+
@@ -190,14 +224,18 @@ export function renderCustomerPickup(){
    '<div style="margin-top:12px">'+field("給店家的備註（最多 200 字）","pickup-note",pickupState.note,"text",'maxlength="200" placeholder="例如：不要加辣"')+'</div>'+
   '<div class="listline"><strong>共 '+esc(count)+' 份</strong><strong>'+money(total)+'</strong></div>'+
   '<p class="small">此處僅建立訂單，不會線上收款；請依店家現場方式結帳。</p>'+
-  (pickupState.confirming?'<div class="inset" role="group" aria-label="確認訂餐內容"><strong>請核對送出前的訂餐內容</strong>'+
+  (pickupState.groupId?(
+    pickupState.groupData?.submitted?'<p class="notice">團購已完成下單。請到上方查看訂單狀態。</p>':
+    '<div class="staff-actionbar">'+btn("儲存我的餐點到團購","pickup-group-save","primary",!count?'disabled':'')+
+      (pickupState.groupData?.owner?btn("主揪送出整張訂單","pickup-group-submit","outline",((immediate&&!openNow)||(!immediate&&!pickupState.slot))?'disabled':''):'')+'</div>'
+   ):(pickupState.confirming?'<div class="inset" role="group" aria-label="確認訂餐內容"><strong>請核對送出前的訂餐內容</strong>'+
     '<p>聯絡電話：'+esc(normalizeTaiwanPhone(pickupContactPhone()))+'</p>'+
     '<p>預計取餐：'+(immediate?'立即取餐（以店家接單為準）':esc(pickupState.day)+' '+esc(pickupState.slot))+'</p>'+
     '<p>餐點：'+pickupEntries(pickupState.cart).map(line=>{const i=(d.items||[]).find(x=>x.id===line.id);return esc(i?.name||'餐點')+esc((pickupChosen(i,line.options)||[]).length?'（'+pickupChosen(i,line.options).map(x=>x.choice_name).join('／')+'）':'')+' × '+esc(line.qty)}).join('、')+'</p>'+
     '<p>金額：'+money(total)+'（以送出時店家菜單價格重新計算）</p>'+
     '<p>備註：'+esc(pickupState.note||'無')+'</p><div class="staff-actionbar">'+
     btn("返回修改","pickup-review-back","outline")+btn("確定送出訂單","pickup-submit","primary")+'</div></div>':
-    btn("下一步：確認訂單內容","pickup-review","primary full",(!count||(immediate&&!openNow)||(!immediate&&!pickupState.slot))?"disabled":""))+
+    btn("下一步：確認訂單內容","pickup-review","primary full",(!count||(immediate&&!openNow)||(!immediate&&!pickupState.slot))?"disabled":"")))+
   (customerOrders.length>(featuredCancelCard?1:0)?
     '<h3 style="margin:20px 0 8px">我的取餐進度（'+historyTotal+' 筆）</h3>'+otherOrderCards+historyControls:
     (featuredCancelCard?historyControls:'<p class="small">還沒有取餐訂單。</p>')));
@@ -253,6 +291,52 @@ export async function handlePickupAction(ev,b,a,id){
      const handoff=await lineReplyHandoff("order",id);
      location.assign(handoff.oaMessageUrl);
      return "正在開啟 LINE 聊天室；請按傳送取得訂餐確認卡";
+   });return true;
+ }
+ if(a==="pickup-group-create"){
+   await act(async()=>{
+     const g=await rpc("so_pickup_group_create",{p_slug:routeState.slug});
+     pickupState.groupId=g.id;
+     const url=new URL(location.href);url.searchParams.set("group",g.id);url.searchParams.set("tab","order");
+     history.replaceState(null,"",url.pathname+url.search+url.hash);
+     return "團購已建立，請複製分享連結邀請朋友";
+   });return true;
+ }
+ if(a==="pickup-group-leave"){
+   pickupState.groupId="";pickupState.groupData=null;pickupState.cart={};
+   const url=new URL(location.href);url.searchParams.delete("group");history.replaceState(null,"",url.pathname+url.search+url.hash);
+   render();return true;
+ }
+ if(a==="pickup-group-copy"){
+   const url=new URL(location.href);url.searchParams.set("group",pickupState.groupId);url.searchParams.set("tab","order");
+   try{await navigator.clipboard.writeText(url.href);window.alert("團購連結已複製");}
+   catch(_){window.prompt("請複製團購網址",url.href);}
+   return true;
+ }
+ if(a==="pickup-group-refresh"){await load();return true;}
+ if(a==="pickup-group-save"){
+   if(!pickupState.groupId||pickupState.groupData?.submitted)return true;
+   const items=pickupEntries(pickupState.cart).map(x=>({id:x.id,qty:x.qty,options:x.options||[]}));
+   await act(async()=>{
+     await rpc("so_pickup_group_save",{p_slug:routeState.slug,p_group:pickupState.groupId,p_items:items});
+     return "你的團購餐點已儲存";
+   });return true;
+ }
+ if(a==="pickup-group-submit"){
+   if(!pickupState.groupId||!pickupState.groupData?.owner||pickupState.groupData.submitted)return true;
+   if(!validPickupContactPhone()){window.alert("主揪請先填寫有效的聯絡電話");return true;}
+   if(pickupState.method!=="immediate"&&!pickupState.slot){window.alert("請先選取餐時間");return true;}
+   if(!window.confirm("確定統一送出團體訂單？送出後其他人不能再修改。"))return true;
+   await act(async()=>{
+     const result=await rpc("so_pickup_group_submit",{
+       p_slug:routeState.slug,p_group:pickupState.groupId,
+       p_date:pickupState.method==="immediate"?null:pickupState.day,
+       p_time:pickupState.method==="immediate"?null:pickupState.slot,
+       p_note:pickupState.note,p_immediate:pickupState.method==="immediate",
+       p_customer_phone:normalizeTaiwanPhone(pickupContactPhone())
+     });
+     pickupState.cart={};pickupState.note="";
+     return "團購已送出："+result.number+"（15 秒內可取消）";
    });return true;
  }
  if(a==="pickup-customer-history-page"){
