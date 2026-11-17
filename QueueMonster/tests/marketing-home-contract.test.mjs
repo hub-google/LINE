@@ -321,3 +321,21 @@ test("public introduction and demo pages share one header and the same navigatio
  const syntax=spawnSync(process.execPath,["--check"],{input:js,encoding:"utf8"});
  assert.equal(syntax.status,0,syntax.stderr);
 });
+
+test("directory merchant cards expose enabled actions without duplicate labels or activity counts",()=>{
+ const script=read("saas/assets/directory/main.js");
+ const style=read("saas/assets/directory/page.css");
+ assert.match(script,/function categoryBadge\(t\)/);
+ assert.match(script,/const category=categoryBadge\(t\)/);
+ for(const label of ["線上預約","現場取號","線上點餐","平台 LINE 服務"]){
+  assert.ok(!script.includes('<span class="badge">'+label+'</span>'),"duplicate status badge: "+label);
+ }
+ assert.doesNotMatch(script,/popularity-metrics|近30天 · 預約/);
+ assert.match(script,/services\.reservation\?'<a class="btn"/);
+ assert.match(script,/services\.queue\?'<a class="btn/);
+ assert.match(script,/services\.pickup\?'<a class="btn secondary"/);
+ assert.match(script,/services\.queue&&services\.calling/);
+ assert.match(style,/\.merchant-card\{[^}]*min-height:180px/);
+ const check=spawnSync(process.execPath,["--input-type=module","--check"],{input:script,encoding:"utf8"});
+ assert.equal(check.status,0,check.stderr);
+});
