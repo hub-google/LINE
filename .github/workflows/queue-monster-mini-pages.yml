@@ -54,6 +54,10 @@ jobs:
           grep -R -q "2012649101-EFX2gymX" "$RUNNER_TEMP/queue-mini-dist/developing/assets"
           grep -R -q "2012649102-rNb39YpL" "$RUNNER_TEMP/queue-mini-dist/review/assets"
           grep -R -q "2012649103-s6KPdX4H" "$RUNNER_TEMP/queue-mini-dist/published/assets"
+      - name: Exercise MINI UI in Chromium
+        run: |
+          npm exec --prefix .github/frontend -- playwright install --with-deps chromium
+          node QueueMonster/miniapp/tests/browser-smoke.mjs "$RUNNER_TEMP/queue-mini-dist"
       - name: Publish ONLY /LINE/queue-mini/
         shell: bash
         run: |
