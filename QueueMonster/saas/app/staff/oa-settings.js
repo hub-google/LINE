@@ -25,7 +25,6 @@ function savedCredential(label){
 export function renderOaSettings({isManager}){
  const connected=!!lineState.lineConfig?.merchantOaConnected;
  const account=lineState.lineConfig?.botBasicId||"";
- const replacing=connected&&lineState.oaReplacing===true&&lineState.oaReplacingSlug===routeState.slug;
  const webhook=lineState.LINE_BRIDGE_URL+"?action=webhook&merchant="+encodeURIComponent(routeState.slug);
  const status='<div class="oa-status-row"><div><span class="oa-overline">MESSAGING API</span>'+
   '<h3>店家 LINE OA</h3><p class="oa-summary">把一次點餐，變成長期顧客關係。顧客完成點餐後，可引導加入店家 LINE OA 好友；加入後可在 LINE 接收、查閱訂單狀態通知，也能直接向店家詢問訂單或取餐問題。持續累積品牌好友，有助於提升回訪與回購機會。</p><p class="oa-summary">顧客需自行同意加入好友，系統不會強制自動加好友。</p></div>'+
@@ -37,25 +36,20 @@ export function renderOaSettings({isManager}){
  let setup='';
  if(isManager){
   setup='<div class="oa-step-title"><strong>Messaging API 憑證</strong>'+
-   '<span>'+(connected&&!replacing?'已儲存，不需重新填寫':'從 LINE Developers 取得')+'</span></div>'+
+   '<span>'+(connected?'已儲存，不需重新填寫':'從 LINE Developers 取得')+'</span></div>'+
    '<div class="oa-credential-grid">'+
-    (connected&&!replacing?
+    (connected?
       savedCredential("Channel access token (long-lived)")+
       savedCredential("Channel secret"):
       newCredentialField("Channel access token (long-lived)","own-oa-token","Messaging API → Issue")+
       newCredentialField("Channel secret","own-oa-secret","Basic settings → Channel secret"))+
    '</div>'+
-   (connected&&!replacing?'<p class="oa-safety-note">基於安全考量，已儲存的憑證不會載入網頁，也無法檢視或複製。需要更換時，請重新輸入新憑證。</p>':'')+
+   (connected?'<p class="oa-safety-note">基於安全考量，已儲存的憑證不會載入網頁，也無法檢視或複製。</p>':'')+
    (connected?'<div class="oa-webhook-section"><div class="oa-step-title"><strong>Webhook URL</strong><span>在 LINE Messaging API 啟用 Use webhook</span></div>'+
      '<div class="oa-webhook-entry"><input id="own-oa-webhook" class="field" type="text" readonly value="'+esc(webhook)+'" aria-label="Webhook URL">'+
      '<button class="btn outline" type="button" data-act="copy-oa-webhook">複製網址</button></div></div>':'')+
-   '<div class="oa-settings-actions">'+
-     (connected&&!replacing?
-       btn("更換憑證","replace-own-oa","outline")+
-       btn("解除綁定","disconnect-own-oa","outline"):
-       btn(connected?"儲存並驗證新憑證":"驗證並連接 LINE OA","connect-own-oa","primary")+
-       (replacing?btn("取消更換","cancel-replace-own-oa","outline"):""))+
-   '</div>';
+   (!connected?'<div class="oa-settings-actions">'+
+     btn("驗證並連接 LINE OA","connect-own-oa","primary")+'</div>':'');
  }else{
   setup='<p class="oa-read-only">僅店家管理者可管理 LINE OA 憑證。</p>';
  }

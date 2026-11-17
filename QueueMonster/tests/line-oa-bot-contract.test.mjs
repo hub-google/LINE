@@ -89,3 +89,16 @@ test("merchants cannot override Queue Monster LINE Login; OA messaging remains i
   assert.match(bridge,/ownOa\?\.token/);
   assert.match(bridge,/LINE_MESSAGING_ACCESS_TOKEN/);
 });
+
+test("merchant OA settings omit legacy LINE Login fields and credential/disconnect controls", () => {
+  const oaSettings=readFileSync(path.join(root,"saas/app/staff/oa-settings.js"),"utf8");
+  const action=readFileSync(path.join(root,"saas/app/actions/merchant-settings.js"),"utf8");
+  assert.doesNotMatch(oaSettings,/進階設定：LINE Login|own-oa-liff|LIFF ID/);
+  assert.doesNotMatch(oaSettings,/更換憑證|解除綁定|取消更換|replace-own-oa|disconnect-own-oa/);
+  assert.doesNotMatch(action,/replace-own-oa|disconnect-own-oa|cancel-replace-own-oa/);
+  assert.match(oaSettings,/!connected\?'<div class="oa-settings-actions">/);
+  assert.match(oaSettings,/btn\("驗證並連接 LINE OA","connect-own-oa","primary"\)/);
+  assert.match(oaSettings,/savedCredential\("Channel access token \(long-lived\)"\)/);
+  assert.match(oaSettings,/savedCredential\("Channel secret"\)/);
+  assert.match(oaSettings,/copy-oa-webhook/);
+});

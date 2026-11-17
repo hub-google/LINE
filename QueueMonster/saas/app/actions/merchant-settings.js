@@ -27,13 +27,6 @@ if(a==="save-customer-homepage"){
   });
   return true;
 }
- if(a==="replace-own-oa"){
-  if(!lineState.lineConfig?.merchantOaConnected)return true;
-  lineState.oaReplacing=true;lineState.oaReplacingSlug=routeState.slug;render();return true;
- }
- if(a==="cancel-replace-own-oa"){
-  lineState.oaReplacing=false;lineState.oaReplacingSlug="";render();return true;
- }
  if(a==="copy-oa-webhook"){
   const target=routeState.$("own-oa-webhook");
   if(!target?.value)return true;
@@ -55,12 +48,10 @@ if(a==="save-customer-homepage"){
   if(closed)closed.hidden=!visible;
   return true;
  }
- if(a==="connect-own-oa"||a==="disconnect-own-oa"){
-  if(a==="disconnect-own-oa"&&!confirm("確定解除本店 LINE OA 綁定？店家 LINE 通知將停止，平台 OA 不會代發；原預約和取號仍保留。"))return true;
+ if(a==="connect-own-oa"{
   await act(async()=>{
-   let payload={action:"disconnect-merchant-oa",slug:routeState.slug};
-   if(a==="connect-own-oa"){
-     if(lineState.lineConfig?.merchantOaConnected && !(lineState.oaReplacing===true&&lineState.oaReplacingSlug===routeState.slug))throw Error("請先按「更換憑證」再輸入新資料。");
+   if(lineState.lineConfig?.merchantOaConnected)throw Error("此店家已綁定 LINE OA。");
+   {
      const channelSecret=val("own-oa-secret");
      const botToken=val("own-oa-token");
           if(!/^[0-9a-fA-F]{32}$/.test(channelSecret))throw Error("Channel secret 格式不正確：必須為 32 位十六進位字元。");
@@ -85,10 +76,7 @@ if(a==="save-customer-homepage"){
      throw Error(message||"LINE OA 綁定失敗（"+(data.error||"HTTP "+res.status)+"），請確認 LINE 設定與管理權限。");
    }
    lineState.lineConfig=null;lineState.lineConfigSlug="";
-   lineState.oaReplacing=false;lineState.oaReplacingSlug="";
-   return a==="connect-own-oa"
-     ?"Messaging API 已驗證連接。一般綁定不需要 Webhook；若要啟用自動回覆，再到 LINE Developers 開啟 Use webhook，並用手機確認回覆是否正常。"
-     :"已解除自有 LINE OA；平台 OA 不會代發店家通知";
+   return "Messaging API 已驗證連接。若要啟用自動回覆，請至 LINE Developers 開啟 Use webhook，並確認 LINE OA 訊息功能正常。";
   });return true;
  }
  if(a==="save-directory"){await act(async()=>{const enabled=!!routeState.$("directory-enabled")?.checked;await rpc("so_set_directory_listing",{p_slug:routeState.slug,p_enabled:enabled,p_oa_mode:"PLATFORM"});return enabled?"門市已開放在排隊怪獸平台搜尋":"門市已取消公開搜尋（原有專屬連結仍可使用）";});return true;}
