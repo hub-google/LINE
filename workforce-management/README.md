@@ -3,7 +3,7 @@
 > **2026-11-04 實際開發版**：已擴充真實 Supabase 資料庫及 GitHub Pages 網頁。**PRD 有部分功能尚未完成**，包括正式 LINE 登入／通知、完整法定假勤與跨店進階排班。
 
 **[開啟 GitHub Pages 人資測試站](https://hub-google.github.io/LINE/workforce/)**  
-[LINE MINI App 專用入口（Channel 尚待配置）](https://hub-google.github.io/LINE/workforce/?mini=1)｜[MINI App 建立與驗收步驟](./MINI_APP_SETUP.md)  
+[LINE MINI App 開發測試入口](https://hub-google.github.io/LINE/workforce/?mini=1)｜[MINI App 建立與驗收步驟](./MINI_APP_SETUP.md)  
 [完整 PRD](./PRD.md)｜[最新實作與驗收狀態](./IMPLEMENTATION-STATUS.md)｜[資料庫執行順序](./supabase/MIGRATION-ORDER.md)
 
 這是 `hub-google/LINE/workforce-management/` 的**獨立人資 SaaS 產品**，和 `QueueMonster/` 預約叫號分開。**不要在公開 DEMO 輸入真實員工個資、薪資或健康資訊**；其資料為全體訪客共享的虛構公司案例。
@@ -22,7 +22,7 @@
 | 檔案 | 功能 |
 |---|---|
 | [PRD.md](./PRD.md) | 唯一的原始產品需求範圍，保留既定全部項目 |
-| [MINI_APP_SETUP.md](./MINI_APP_SETUP.md) | LINE MINI App 的 Channel、Endpoint、Env Secrets、身分綁定及實機驗收 |
+| [MINI_APP_SETUP.md](./MINI_APP_SETUP.md) | 工作怪獸的 Developing／Review／Published 對照 URL、身分綁定及實機驗收 |
 | [IMPLEMENTATION-STATUS.md](./IMPLEMENTATION-STATUS.md) | 功能完成狀態、測試證據與尚未交付項目 |
 | [app.js](./app.js) / [index.html](./index.html) / [style.css](./style.css) | 維持同一支響應式網頁；資料實際連到 Supabase |
 | [tests/workforce-prd.test.mjs](./tests/workforce-prd.test.mjs) | 核心合約、排班計算、CSV 解析與 SQL 安全限制測試 |
@@ -34,8 +34,8 @@
 - 資料庫：既有 `unapiwajmgqqtdkixaab` Supabase 專案，僅新增 `wm_` 前綴的表、RPC 及安全規則。
 - 正式企業：Supabase Auth + 每次讀寫驗證 `tenant_id`／成員角色；員工邀請使用短效、單次、資料庫只存雜湊的憑證。
 - 公開 Demo：後端僅允許讀寫**固定虛構企業**，不需登入 LINE，也不可藉此存取正式公司資料；所有 Demo 變更皆會共同顯示。
-- **LINE 整合**：一般 LIFF 綁定、既有 OA 通知與 LINE MINI App 前後端接入程式已具備，但 MINI App 仍需由 Channel 擁有者建立 MINI App Channel、設定 Endpoint 與兩個 Supabase Edge Secrets 後才能進行實機驗收；**不代表 LINE 已完成認證或免費服務訊息已啟用**。
-- **尚未正式完成**：MINI App Channel 配置與實機驗收、店家自有 OA／總公司 OA Rich Menu、LINE 通知實際送達驗收、動態 QR 防作弊實機驗收、臺灣完整法規計算及薪資整合。
+- **LINE 整合**：一般 LIFF 綁定、既有 OA 通知與 LINE MINI App 前後端接入程式已具備，且已加入工作怪獸三組 MINI App 公開 Channel ID；仍需在 LINE Developers 確認各環境 Endpoint、openid scope，並完成手機實機驗收；**不代表 LINE 已完成認證或免費服務訊息已啟用**。
+- **尚未正式完成**：MINI App Endpoint／Scopes 設定與實機驗收、店家自有 OA／總公司 OA Rich Menu、LINE 通知實際送達驗收、動態 QR 防作弊實機驗收、臺灣完整法規計算及薪資整合。
 - 各 SQL 變更已實際套用至目前 Supabase；因不同 SQL 重新定義相同函式，**不得將所有 migration 依檔名排序執行**，必須依照 MIGRATION-ORDER.md。
 
 此文件只記錄已完成工作，不新增 PRD 以外的產品功能。

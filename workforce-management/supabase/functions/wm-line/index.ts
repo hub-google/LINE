@@ -7,9 +7,21 @@ const ANON_KEY=Deno.env.get("SUPABASE_ANON_KEY")||"";
 const LINE_LOGIN_ID=Deno.env.get("LINE_LOGIN_CHANNEL_ID")||
  (Deno.env.get("LINE_LIFF_ID")||"").split("-")[0];
 const LIFF_ID=Deno.env.get("LINE_LIFF_ID")||"";
-// Dedicated LINE MINI App channel. Never substitute its audience with the legacy LINE Login channel.
-const MINI_APP_CHANNEL_ID=Deno.env.get("LINE_MINI_APP_CHANNEL_ID")||"";
-const MINI_APP_LIFF_ID=Deno.env.get("LINE_MINI_APP_LIFF_ID")||"";
+// LINE MINI App Channel/LIFF IDs are public identifiers, not secrets.
+// The Developing, Review, Published audiences are distinct and never interchangeable.
+const MINI_CHANNELS={
+ developing:{channelId:"2012649404",liffId:"2012649404-nz3TBQdG"},
+ review:{channelId:"2012649405",liffId:"2012649405-ADWLM7h9"},
+ published:{channelId:"2012649406",liffId:"2012649406-KzlLEZT6"},
+} as const;
+type MiniEnvironment=keyof typeof MINI_CHANNELS;
+function miniChannel(env:string){
+ if(!Object.prototype.hasOwnProperty.call(MINI_CHANNELS,env))throw new Error("INVALID_MINI_ENVIRONMENT");
+ return MINI_CHANNELS[env as MiniEnvironment];
+}
+const miniEnvironments=Object.fromEntries(
+ Object.entries(MINI_CHANNELS).map(([env,data])=>[env,{liffId:data.liffId,configured:true}])
+);
 const PLATFORM_TOKEN=Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN")||"";
 const WEBSITE="https://hub-google.github.io";
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -51,9 +63,9 @@ async function member(tenant:string,userId:string){
  if(!ts?.length||ts[0].is_demo)throw new Error("DEMO_NOT_ELIGIBLE_FOR_LINE");
  return m;
 }
-async function lineValidate(token:string,type:string="login"){
+async function lineValidate(token:string,type:string="login",env:string="developing"){
  if(type!=="login"&&type!=="mini")throw new Error("INVALID_LINE_CHANNEL_TYPE");
- const channelId=type==="mini"?MINI_APP_CHANNEL_ID:LINE_LOGIN_ID;
+ const channelId=type==="mini"?miniChannel(env).channelId:LINE_LOGIN_ID;
  if(!channelId||!/^[0-9]{8,}$/.test(channelId))throw new Error(
   type==="mini"?"LINE_MINI_APP_CHANNEL_NOT_CONFIGURED":"LINE_LOGIN_CHANNEL_NOT_CONFIGURED");
  if(!token||token.length>5000)throw new Error("MISSING_LINE_ID_TOKEN");
@@ -94,7 +106,7 @@ Deno.serve(async req=>{
  if(req.method==="OPTIONS")return respond(200,{},origin);
  if(req.method==="GET")return respond(200,{
   liffId:LIFF_ID||null,loginConfigured:!!LINE_LOGIN_ID,
-  miniLiffId:MINI_APP_LIFF_ID||null,miniConfigured:!!MINI_APP_CHANNEL_ID&&!!MINI_APP_LIFF_ID,
+  miniLiffId:MINI_CHANNELS.developing.liffId,miniConfigured:true,miniEnvironments,
   messagingConfigured:!!PLATFORM_TOKEN,mode:"platform"},origin);
  if(req.method!=="POST")return respond(405,{error:"METHOD_NOT_ALLOWED"},origin);
  try{
@@ -125,11 +137,17 @@ Deno.serve(async req=>{
     "&revoked_at=is.null&limit=1");
    return respond(200,{linked:!!rows?.length,verifiedAt:rows?.[0]?.verified_at||null,
     mode:rows?.[0]?.mode||"platform",messagingConfigured:!!PLATFORM_TOKEN,
-    liffId:LIFF_ID||null,miniLiffId:MINI_APP_LIFF_ID||null,
-    miniConfigured:!!MINI_APP_CHANNEL_ID&&!!MINI_APP_LIFF_ID},origin);
+    liffId:LIFF_ID||null,miniLiffId:MINI_CHANNELS.developing.liffId,
+    miniConfigured:true,miniEnvironments},origin);
   }
   if(action==="bind"){
-   const verified=await lineValidate(String(input.id_token||""),String(input.channel_type||"login"));
+   const verified=await lineValidate(String(input.id_token||""),String(input.channel_type||"login"),String(input.channel_env||"developing"));
+   // Keep existing OA recipients stable: LINE user IDs from different providers may differ.
+   // A different LINE account requires explicit unbinding; never silently overwrite a verified identity.
+   const existing=await db("wm_line_links?select=line_sub&tenant_id=eq."+
+    encodeURIComponent(tenant)+"&member_id=eq."+encodeURIComponent(m.id)+
+    "&revoked_at=is.null&limit=1");
+   if(existing?.length&&existing[0].line_sub!==verified.sub)throw new Error("LINE_ACCOUNT_MISMATCH_UNBIND_FIRST");
    // The Supabase user must first authenticate and be an existing, active member.
    await db("wm_line_links?on_conflict=tenant_id,member_id","POST",[
     {tenant_id:tenant,member_id:m.id,user_id:actor,line_sub:verified.sub,
