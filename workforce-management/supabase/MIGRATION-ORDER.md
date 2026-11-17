@@ -54,12 +54,13 @@
 48. [`20261117092800_workforce_employment_status_role_guard.sql`](./migrations/20261117092800_workforce_employment_status_role_guard.sql) — 補強 `wm_set_employment_status`，**須在第 47 份之後執行**。
 49. [`20261117192300_workforce_notification_complete_export.sql`](./migrations/20261117192300_workforce_notification_complete_export.sql) — 僅 Owner／HR 的完整通知匯出 RPC，**須在第 48 份之後執行**。
 50. [`20261117195000_workforce_archive_gateway.sql`](./migrations/20261117195000_workforce_archive_gateway.sql) — 整合 33 類營運資料的 Owner／HR 權限及分頁 API，**須在第 49 份之後執行**。
+51. [`20261117200200_workforce_retire_legacy_archive.sql`](./migrations/20261117200200_workforce_retire_legacy_archive.sql) — 主版已驗收統一 API 後，移除舊通知專用 RPC，**須在第 50 份之後執行**。
 
 ## 已部署情況與重建注意事項
 
 - 前四份最初透過 Supabase `apply_migration` 套用，已在遠端遷移歷史中。
 - 第 5–20 份先前以 Supabase SQL 即時套用，**已真正存在遠端資料庫，但尚未另外登記進 `supabase_migrations.schema_migrations`**。檔案已提交到 GitHub 作為版本化原始資料。請勿在同一正式環境直接重跑全套 SQL；重建應先於隔離的空資料庫依序測試。
-- 第 21–50 份以 Supabase migration 或 SQL 套用（具體 SQL 版本已提交 GitHub）；**先遵照順序在隔離資料庫演練，不要在已建立的正式資料庫整套重跑**。
+- 第 21–51 份以 Supabase migration 或 SQL 套用（具體 SQL 版本已提交 GitHub）；**先遵照順序在隔離資料庫演練，不要在已建立的正式資料庫整套重跑**。
 - LINE Edge Function 程式另存於 [../functions/wm-line/index.ts](../functions/wm-line/index.ts)；LINE 排程建立於第 38 份。
 - 不執行清空或 TRUNCATE，原預約／叫號和人資 DEMO 資料皆保留。
 - 函式及 RLS 的完整正式驗證，必須使用不同權限的真實測試帳號及資料庫交易測試；不能單憑部署判定全案完成。
@@ -73,3 +74,5 @@
 - **2026-11-17 第 49 份驗收：** 在交易回滾測試後套用通知完整匯出 RPC；一般人事收件匣 RLS 保留個人可見，Owner／HR 以特殊匯出 RPC 取得指定企業全部通知並核對筆數。實測 HR 一般視圖 13 筆、授權匯出 75 筆，員工或跨企業要求拒絕；其他專案資料未更動。
 
 - **2026-11-17 第 50 份驗收：** 授權封存 API 已透過交易回滾演練及正式套用；針對 HR 測試 33 種白名單資料來源、完整通知數量核對、跨企業/一般員工/邀請憑證表格存取拒絕。前端所有 33 類資料均走同一授權函式，避免混用個人 RLS 清單造成漏匯出。仍非 Auth／Storage 備份及跨表交易一致性還原。
+
+- **2026-11-17 第 51 份驗收：** GitHub Pages 兩個測試入口的 `app.js` 與 `main` 一致，均使用 `wm_archive_table_page`。原通知專用 RPC 已回滾演練確認無相依性後正式移除；統一 API 保留。避免重複維護兩條相同用途的後端程式。
