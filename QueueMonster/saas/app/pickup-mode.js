@@ -123,7 +123,7 @@ export async function loadPickupData(){
 }
 export function renderPickupSettings(isManager){
  const data=pickupState.staff;
- if(!data)return box("線上點餐與取餐設定",'<p class="muted">尚無法取得取餐服務設定，請確認資料庫已更新或重新整理。</p>');
+ if(!data)return box("線上點餐與取餐設定",'<p class="muted">暫時無法取得取餐設定，請重新整理或稍後再試。</p>');
  const s=data.settings||{};
  const select=(id,options,value)=>'<select class="field" id="'+id+'">'+options.map(([v,label])=>
    '<option value="'+esc(v)+'" '+(String(v)===String(value)?"selected":"")+'>'+esc(label)+'</option>').join("")+'</select>';
