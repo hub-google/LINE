@@ -98,15 +98,25 @@ if (fs.existsSync(sw)) {
     '$1"$2-cf-pages-v1"');
   fs.writeFileSync(sw, content);
 }
-// The former Worker redirected this old homepage URL back to the canonical root.
+// Discover the real platform LINE OA (not the LINE Login channel or a merchant's OA).
+// This is build-time only; a visitor's /feedback request uses a single static
+// HTTP 302, without loading the website, LIFF, or invoking any Worker/Function.
+const lineInfo = await fetch('https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/line-bridge?action=config&site=queue',
+  { signal: AbortSignal.timeout(12000) });
+if (!lineInfo.ok) throw new Error('Platform LINE OA lookup failed: HTTP ' + lineInfo.status);
+const lineConfig = await lineInfo.json();
+const lineBasicId = String(lineConfig.botBasicId || '');
+if (!/^@[a-z0-9_.-]{2,100}$/i.test(lineBasicId)) throw new Error('Platform LINE OA basicId was not provided or invalid');
+const lineTarget = 'https://line.me/R/ti/p/' + encodeURIComponent(lineBasicId);
+fs.rmSync(path.join(output, 'feedback.html'), { force: true });
 fs.writeFileSync(path.join(output, '_redirects'), [
   '/home.html / 302',
-  // Cloudflare Pages automatically serves /feedback from feedback.html.
-  // Do not rewrite /feedback to /feedback.html: Pages canonicalizes it back,
-  // causing ERR_TOO_MANY_REDIRECTS.
-  '/line-group /feedback 302',
+  '/feedback ' + lineTarget + ' 302',
+  '/feedback.html ' + lineTarget + ' 302',
+  '/line-group ' + lineTarget + ' 302',
   '',
-].join('\n'));
+].join('\\n'));
+console.log('QueueMonster platform OA verified; one-hop /feedback target: ' + lineTarget);
 fs.writeFileSync(path.join(output, '_headers'),
   '/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n' +
   '/*.html\n  Cache-Control: no-cache\n' +
