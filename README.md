@@ -1,5 +1,7 @@
 # LINE — 四個獨立產品
 
+> **LINE LIFF 自動管理與憑證使用（已實際成功建立/修改）**：請先查看 [LIFF 管理作業手冊](./.github/scripts/LINE-LIFF-MANAGEMENT.md)。原有 GitHub Actions 可利用加密的 LINE Login 憑證建立新 LIFF、修改名稱與檢查其他 LIFF 無異動；不要誤稱必須手工新增。
+
 這個 repository 不是單一產品，而是四個面向不同客群、可獨立部署與銷售的 LINE 相關產品。其中原「LINE 預約」產品的正式名稱為 **Queue Monster（排隊怪獸）**，專案識別名稱為 [**`QueueMonster`**](./QueueMonster/)。
 
 | 目錄 | 產品 | 主要客群 | 技術 |
