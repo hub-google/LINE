@@ -830,6 +830,9 @@ function platformBotMessage(command: string, welcome = false): Record<string, un
   let title = "排隊怪獸｜請選擇要使用的服務";
   let link = platformDirectoryLink();
   let label = "找店家預約";
+  if (/^(選單|功能選單|快速回覆|快捷選單|主選單|顯示選單)$/.test(input.replace(/\s+/g,""))) {
+    return {type:"text",text:"選擇要使用的快捷功能：",quickReply:platformQuickReply()};
+  }
   if (welcome) {
     title = "歡迎加入排隊怪獸！可搜尋店家、預約、取號、線上點餐並查看紀錄。未綁 LINE OA 的店家，可由顧客在本帳號發出確認訊息，免費取得預約、取號及訂餐卡；日後主動叫號或提醒不屬於免費即時回覆。";
   } else if (!/客服|協助|幫助|問題|聯絡|人工/.test(input) && /商家|店家開通|申請開通|店員|管理後台|後台/.test(input)) {
@@ -838,7 +841,7 @@ function platformBotMessage(command: string, welcome = false): Record<string, un
     label = "申請商家開通";
   } else if (/客服|協助|幫助|問題|聯絡|人工|回饋|建議/.test(input)) {
     // Support is handled inside this official LINE chat, not on a redirect page.
-    return {type:"text",text:PLATFORM_FEEDBACK_REPLY};
+    return {type:"text",text:PLATFORM_FEEDBACK_REPLY,quickReply:platformQuickReply()};
   } else if (!/訂單紀錄|訂餐紀錄|取餐紀錄/.test(input) && /點餐|訂餐|取餐|外帶|餐點/.test(input)) {
     title = "尋找提供線上點餐的店家，選好商品後可依該店設定預約取餐時間；取餐進度請到「我的紀錄」查看。";
     link = platformDirectoryLink("點餐");
@@ -1106,7 +1109,7 @@ async function webhook(req: Request, origin: string | null, merchantSlug = "") {
           if (!token) throw new Error("LINE_MESSAGING_NOT_CONFIGURED");
           const text = command === "platform:guide" ? PLATFORM_GUIDE_REPLY : PLATFORM_FEEDBACK_REPLY;
           const sent = await replyToLine(token, replyToken,
-            {type:"text",text},
+            {type:"text",text,quickReply:platformQuickReply()},
             (event.deliveryContext as {isRedelivery?:unknown}|undefined)?.isRedelivery===true);
           if (sent) processed++; else duplicates++;
           continue;
@@ -1189,7 +1192,7 @@ async function webhook(req: Request, origin: string | null, merchantSlug = "") {
           const token = Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
           const replyToken = event.replyToken;
           const message = feedbackEntry
-            ? { type: "text", text: PLATFORM_FEEDBACK_REPLY }
+            ? { type: "text", text: PLATFORM_FEEDBACK_REPLY, quickReply: platformQuickReply() }
             : Deno.env.get("LINE_PLATFORM_WELCOME_REPLY") === "true"
               ? platformBotMessage("", true)
               : null;
