@@ -83,13 +83,13 @@ function renderMyRecords(){
  const title=document.getElementById("results-heading"),count=document.getElementById("result-count");
  document.getElementById("result-pages").classList.add("hidden");
  title.textContent="我的紀錄";
- const login="./?view=customer&tab=mine&site_login=1&site_return="+encodeURIComponent("my-records.html");
+ // The shared header owns direct LINE authentication across every page.
  if(mineIdentityState!=="ready"){
   const pending=mineIdentityState==="loading",guest=mineIdentityState==="guest";
   count.textContent=pending?"確認身分中":guest?"請先登入 LINE":"暫時無法取得";
   els.results.innerHTML='<div class="empty" role="status">'+
    (pending?'<strong>正在確認 LINE 身分</strong><p>將同時顯示預約、取號與訂單紀錄。</p>':
-    guest?'<strong>請先使用 LINE 登入</strong><p>登入後可在同一頁查看全部三種紀錄。</p><p><a class="btn" href="'+e(login)+'">LINE 登入後查看</a></p>':
+    guest?'<strong>請先使用 LINE 登入</strong><p>登入後可在同一頁查看全部三種紀錄。</p><p><button type="button" class="btn" data-site-line-login>LINE 登入後查看</button></p>':
     '<strong>紀錄暫時無法讀取</strong><p>請稍後重試或確認 LINE 已完成授權。</p>')+'</div>';
   return;
  }
