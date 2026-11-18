@@ -8,6 +8,7 @@ Does not alter the Queue Monster LIFF apps or any other service.
 import json
 import os
 import re
+import sys
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -99,5 +100,61 @@ def main():
     print("CTEE_PUBLIC_LIFF_ID=" + liff_id)
 
 
+def rename_queue_liff():
+    """Rename only the existing official-site LIFF; preserve both endpoints and the CTEE app."""
+    channel = os.environ.get("LINE_LOGIN_CHANNEL_ID", "").strip()
+    secret = os.environ.get("LINE_LOGIN_CHANNEL_SECRET", "").strip()
+    if channel != CHANNEL or not secret:
+        raise RuntimeError("Missing or mismatched LINE Login channel credentials")
+    result = api("Get channel access token", "POST",
+        "https://api.line.me/v2/oauth/accessToken",
+        form={"grant_type": "client_credentials", "client_id": channel, "client_secret": secret})
+    token = result.get("access_token", "")
+    if not token:
+        raise RuntimeError("LINE Login channel token was not issued")
+    apps = api("Read LIFF apps before rename", "GET", BASE, token=token).get("apps", [])
+    target_id = "2012346974-jSefrnfw"
+    target_name = "排隊怪獸－官方網站"
+    expected_endpoints = {
+        "2012346974-bmC3fZuf": "https://hub-google.github.io/LINE/booking/",
+        target_id: "https://queue.monsterport.com/",
+        "2012346974-oasuaJGG": ENDPOINT,
+    }
+    before = {}
+    for app_id, endpoint in expected_endpoints.items():
+        matches = [a for a in apps if a.get("liffId") == app_id]
+        if len(matches) != 1:
+            raise RuntimeError("One of the three expected LIFF apps is missing or duplicated")
+        app = matches[0]
+        if (app.get("view") or {}).get("url") != endpoint:
+            raise RuntimeError("Expected LIFF endpoint changed; refusing to rename")
+        before[app_id] = app
+    if before[target_id].get("description") != target_name:
+        api("Rename Queue official LIFF", "PUT",
+            BASE + "/" + urllib.parse.quote(target_id, safe=""),
+            token=token, body={"description": target_name})
+        print("Renamed Queue Monster official-site LIFF to Chinese.")
+    else:
+        print("Queue Monster official-site LIFF already uses the Chinese name.")
+    checked = api("Read LIFF apps after rename", "GET", BASE, token=token).get("apps", [])
+    after = {a.get("liffId"): a for a in checked}
+    if after.get(target_id, {}).get("description") != target_name:
+        raise RuntimeError("Queue LIFF Chinese name not confirmed by read-back")
+    for app_id, old in before.items():
+        new = after.get(app_id)
+        if not new:
+            raise RuntimeError("LIFF missing after rename")
+        for key in ("liffId", "view", "scope", "features", "permanentLinkPattern", "botPrompt"):
+            if new.get(key) != old.get(key):
+                raise RuntimeError("Unexpected LIFF field changed: " + key)
+        if app_id != target_id and new.get("description") != old.get("description"):
+            raise RuntimeError("Another LIFF name changed unexpectedly")
+    print("Verified: Queue name Chinese; all three LIFF IDs, endpoints and scopes unchanged.")
+    print("QUEUE_PUBLIC_LIFF_ID=" + target_id)
+
+
 if __name__ == "__main__":
-    main()
+    if "--rename-queue" in sys.argv:
+        rename_queue_liff()
+    else:
+        main()
