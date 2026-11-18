@@ -153,8 +153,72 @@ def rename_queue_liff():
     print("QUEUE_PUBLIC_LIFF_ID=" + target_id)
 
 
+def ensure_ctee_share_liff():
+    """Make a tiny share-only LIFF without changing existing reader/queue apps."""
+    channel = os.environ.get("LINE_LOGIN_CHANNEL_ID", "").strip()
+    secret = os.environ.get("LINE_LOGIN_CHANNEL_SECRET", "").strip()
+    if channel != CHANNEL or not secret:
+        raise RuntimeError("Missing or incorrect LINE Login channel credentials")
+    token_result = api("LINE Login channel access token", "POST",
+        "https://api.line.me/v2/oauth/accessToken",
+        form={"grant_type": "client_credentials", "client_id": channel, "client_secret": secret})
+    token = token_result.get("access_token", "")
+    if not token:
+        raise RuntimeError("LINE Login channel access token missing")
+    before = api("LINE LIFF read before share creation", "GET", BASE, token=token).get("apps", [])
+    endpoints = {
+        "2012346974-bmC3fZuf": "https://hub-google.github.io/LINE/booking/",
+        "2012346974-jSefrnfw": "https://queue.monsterport.com/",
+        "2012346974-oasuaJGG": ENDPOINT,
+    }
+    original = {}
+    for app_id, expected in endpoints.items():
+        matches = [app for app in before if app.get("liffId") == app_id]
+        if len(matches) != 1 or (matches[0].get("view") or {}).get("url") != expected:
+            raise RuntimeError("Existing LIFF missing or changed; refusing to create another")
+        original[app_id] = matches[0]
+    target_url = "https://hub-google.github.io/ctee-line-bot/share.html"
+    matches = [app for app in before if (app.get("view") or {}).get("url") == target_url]
+    if len(matches) > 1:
+        raise RuntimeError("Duplicate share-only LIFF endpoints; refusing to choose")
+    if matches:
+        share_id = matches[0].get("liffId", "")
+        existing_scopes = set(matches[0].get("scope") or [])
+        if not SCOPES.issubset(existing_scopes):
+            api("Add required share scopes", "PUT",
+                BASE + "/" + urllib.parse.quote(share_id, safe=""), token=token,
+                body={"scope": sorted(existing_scopes | SCOPES)})
+        print("Reused existing lightweight CTEE share LIFF.")
+    else:
+        created = api("Create lightweight CTEE share LIFF", "POST", BASE, token=token,
+            body={"view": {"type": "full", "url": target_url},
+                  "description": "工商時報－快速分享",
+                  "features": {"qrCode": False},
+                  "permanentLinkPattern": "concat",
+                  "scope": ["openid", "profile", "chat_message.write"],
+                  "botPrompt": "none"})
+        share_id = created.get("liffId", "")
+        print("Created lightweight CTEE share-only LIFF.")
+    if not re.fullmatch(r"2012346974-[A-Za-z0-9]+", share_id) or share_id in original:
+        raise RuntimeError("Invalid or conflicting share-only LIFF ID")
+    after = api("LINE LIFF verify after share creation", "GET", BASE, token=token).get("apps", [])
+    apps = {app.get("liffId"): app for app in after}
+    target = apps.get(share_id)
+    if not target or (target.get("view") or {}).get("url") != target_url:
+        raise RuntimeError("Share LIFF Endpoint did not verify")
+    if not SCOPES.issubset(set(target.get("scope") or [])):
+        raise RuntimeError("Share LIFF scopes did not verify")
+    for old_id, old in original.items():
+        if apps.get(old_id) != old:
+            raise RuntimeError("Existing LIFF configuration changed unexpectedly")
+    print("Verified fast-share LIFF, all three original apps unchanged.")
+    print("CTEE_SHARE_PUBLIC_LIFF_ID=" + share_id)
+
+
 if __name__ == "__main__":
     if "--rename-queue" in sys.argv:
         rename_queue_liff()
+    elif "--ensure-share" in sys.argv:
+        ensure_ctee_share_liff()
     else:
         main()
