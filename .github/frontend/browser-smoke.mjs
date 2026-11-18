@@ -13,7 +13,7 @@ const server=http.createServer((req,res)=>{
  const relative=decodeURIComponent(url.pathname.replace(/^\/(source|booking|LINE\/booking)\//,''));
  const file=path.resolve(base,relative);
  if(!file.startsWith(base+path.sep)){res.writeHead(403).end();return;}
- try{res.setHeader('Content-Type',({'.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.json':'application/json','.html':'text/html'})[path.extname(file)]||'application/octet-stream');res.end(fs.readFileSync(file));}catch{res.writeHead(404).end();}
+ try{res.setHeader('Content-Type',({'.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.json':'application/json','.html':'text/html','.mp4':'video/mp4'})[path.extname(file)]||'application/octet-stream');res.end(fs.readFileSync(file));}catch{res.writeHead(404).end();}
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 let browser;
@@ -41,7 +41,22 @@ try{
  assert.equal(mascot.height,443,'Mascot source height');
  assert.ok(mascot.painted>1500,'Mascot must actually render rather than showing a broken/blank SVG');
  console.log('Shared mascot rendered in Chromium:',JSON.stringify(mascot));
- // Brand intro remains hidden without an MP4, but its preview is fully interactive.
+ // Production-built homepage must display an intrusive, user-dismissible intro on every entry.
+ await page.goto(baseUrl+'/home.html?__line_build=refresh&__line_fresh=1795019991930',{waitUntil:'domcontentloaded'});
+ const autoIntro=page.getByRole('dialog',{name:'排隊怪獸品牌介紹影片'});
+ await autoIntro.waitFor({state:'visible',timeout:10000});
+ assert.equal(await page.locator('.qm-intro-movie').isVisible(),true,'Uploaded MP4 must be visible automatically');
+ assert.match(await page.locator('.qm-intro-movie').getAttribute('src'),/assets\\/videos\\/intro\\.mp4/);
+ await autoIntro.getByRole('button',{name:/跳過影片/}).click();
+ assert.equal(await autoIntro.isVisible(),false,'Visitor can manually dismiss brand intro');
+ await page.reload({waitUntil:'domcontentloaded'});
+ await autoIntro.waitFor({state:'visible',timeout:10000});
+ await autoIntro.getByRole('button',{name:/跳過影片/}).click();
+ await page.getByRole('button',{name:/觀看品牌介紹影片/}).click();
+ await autoIntro.waitFor({state:'visible',timeout:10000});
+ await autoIntro.getByRole('button',{name:/跳過影片/}).click();
+ console.log('Brand intro automatically opened on each entry, and manual replay/skip passed.');
+ // Source preview without a generated manifest still offers an explicit placeholder.
  assert.equal(await page.locator('#qm-intro-overlay').count(),0,'No forced intro without a video');
  await page.goto(baseUrl+'/booking/home.html?intro_preview=1',{waitUntil:'domcontentloaded'});
  const introDialog=page.getByRole('dialog',{name:'排隊怪獸品牌介紹影片'});

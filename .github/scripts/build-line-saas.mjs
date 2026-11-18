@@ -35,7 +35,7 @@ await copyFile(path.join(src, "public-config.js"), path.join(dest, "public-confi
 const introSource=path.join(src,"assets/videos/intro.mp4");
 const introDest=path.join(dest,"assets/videos");
 await mkdir(introDest,{recursive:true});
-const introManifest={enabled:false,videoUrl:"./assets/videos/intro.mp4",version:null,repeatDays:7};
+const introManifest={enabled:false,videoUrl:"./assets/videos/intro.mp4",version:null};
 let introStat=null;
 try{introStat=await stat(introSource)}catch(error){if(error.code!=="ENOENT")throw error}
 if(introStat){

@@ -4,53 +4,9 @@
  if(document.body?.dataset.monsterPage!=="home")return;
  const replayButton=document.getElementById("watch-intro-video");
  if(!replayButton)return;
- const query=new URLSearchParams(location.search),preview=query.get("intro_preview")==="1";
- const acceptedParams=new Set(["utm_source","utm_medium","utm_campaign","utm_content","utm_term","gclid","fbclid"]);
+ const preview=new URLSearchParams(location.search).get("intro_preview")==="1";
  const manifestUrl=new URL("./assets/videos/intro-video.json",location.href);
- let manifest=null,overlay=null,video=null,priorFocus=null,touched=false;
- document.addEventListener("pointerdown",()=>{touched=true},{once:true,capture:true});
- const storageKey=version=>"qm-home-intro-shown:"+version;
- const shownRecently=version=>{
-  try{
-   const stamp=Number(localStorage.getItem(storageKey(version)));
-   return stamp>0&&Date.now()>=stamp&&Date.now()-stamp<7*86400000;
-  }catch{return false}
- };
- const saveExposure=version=>{
-  try{localStorage.setItem(storageKey(version),String(Date.now()))}catch{}
- };
- const eligible=()=>!preview&&!touched&&!document.hidden&&!location.hash
-  &&![...query.keys()].some(key=>!acceptedParams.has(key))
-  &&!/Line\/[0-9]/i.test(navigator.userAgent)
-  &&window.liff?.isInClient?.()!==true
-  &&window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches!==true;
- function guestStatus(){
-  const mount=document.getElementById("site-auth-root");
-  if(!mount)return false;
-  if(mount.querySelector(".site-auth-feedback"))return false;
-  if(mount.querySelector(".site-auth-profile")||mount.textContent?.includes("登出"))return false;
-  if(mount.querySelector(".site-auth-customer-login")&&mount.querySelector(".site-auth-merchant-login"))return true;
-  return null;
- }
- function awaitGuest(){
-  return new Promise(resolve=>{
-   let observer,timer,complete=false;
-   const finish=value=>{
-    if(complete)return;
-    complete=true;clearTimeout(timer);observer?.disconnect();resolve(value);
-   };
-   const initial=guestStatus();
-   if(initial!==null){finish(initial);return}
-   const mount=document.getElementById("site-auth-root");
-   if(!mount){finish(false);return}
-   observer=new MutationObserver(()=>{
-    const result=guestStatus();
-    if(result!==null)finish(result);
-   });
-   observer.observe(mount,{subtree:true,childList:true});
-   timer=setTimeout(()=>finish(false),8000);
-  });
- }
+ let manifest=null,overlay=null,video=null,priorFocus=null;
  function dismiss(){
   if(!overlay||overlay.hidden)return;
   if(video){video.pause();video.removeAttribute("src");video.load();video=null}
@@ -113,7 +69,6 @@
   panel.hidden=false;
   document.documentElement.classList.add("qm-intro-locked");
   panel.querySelector(".qm-intro-skip").focus({preventScroll:true});
-  if(!manual&&manifest)saveExposure(manifest.version);
   if(video)video.play().catch(()=>{/* User can play using native controls. */});
  }
  async function init(){
@@ -132,8 +87,9 @@
    replayButton.addEventListener("click",()=>open(true));
   }
   if(preview){open(true);return}
-  if(!manifest||!eligible()||shownRecently(manifest.version))return;
-  if(await awaitGuest())if(eligible())open(false);
+  // Open on EVERY homepage entry (including cache-busting query parameters and signed-in visitors).
+  // Dismissal is exclusively a visitor action; no time/frequency or login gate.
+  if(manifest)open(false);
  }
  void init();
 })();

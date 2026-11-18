@@ -13,10 +13,12 @@ test("brand intro is isolated on homepage and mobile responsive",()=>{
  assert.match(css,/@media\(max-width:540px\)/);
  assert.match(css,/#watch-intro-video\[hidden\]/);
 });
-test("campaign fails closed, respects visitors and accepts uploads without a source edit",()=>{
+test("campaign auto-opens on every homepage visit, with no login or seven-day suppression",()=>{
  const source=read("saas/assets/home/intro-video.js"),build=read("../.github/scripts/build-line-saas.mjs");
- for(const term of ["intro-video.json","enabled===true","intro_preview","awaitGuest","localStorage","navigator.userAgent","prefers-reduced-motion","aria-modal","跳過影片","video.play().catch","demo.html"])
+ for(const term of ["intro-video.json","enabled===true","intro_preview","aria-modal","跳過影片","video.play().catch","demo.html","if(manifest)open(false)"])
   assert.ok(source.includes(term),"Missing "+term);
+ for(const forbidden of ["awaitGuest","shownRecently","acceptedParams","localStorage","navigator.userAgent","saveExposure"])
+  assert.ok(!source.includes(forbidden),"Intro must not suppress homepage opening via "+forbidden);
  for(const term of ["intro.mp4","createHash","25*1024*1024","ftyp","introManifest.enabled=true","intro-video.json"])
   assert.ok(build.includes(term),"Missing build step "+term);
 });

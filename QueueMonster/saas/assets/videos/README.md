@@ -1,21 +1,20 @@
 # 排隊怪獸品牌介紹影片
 
-此功能已接入首頁。影片不存在時不會彈窗，也不會顯示重播按鈕。
+首頁 `home.html` 已整合真正的開屏廣告：**每次進入首頁都自動彈出影片**。不是首頁單純的「觀看影片」按鈕。
 
-## 後補影片
-將檔案上傳至 main 分支下的 QueueMonster/saas/assets/videos/intro.mp4。
-請使用橫式 16:9 的 H.264 MP4，長度約 45 秒，建議 10–15 MB，檔案上限 25 MiB。
-GitHub Actions 會自動複製影片並產生 assets/videos/intro-video.json。
-無影片時 enabled 為 false；上傳正確的影片後 enabled 自動為 true，無須再次修改程式。
-影片內容雜湊就是廣告版本號；替換影片會重置新版本的七日曝光紀錄。
+## 影片與部署
+- 上傳或替換 `QueueMonster/saas/assets/videos/intro.mp4`，建議橫式 16:9、H.264 MP4、約 45 秒，單檔上限 25 MiB。
+- `main` 的 GitHub Pages 測試站：`https://hub-google.github.io/LINE/booking/home.html`。
+- `release` 才用於 Cloudflare Pages 正式站；上傳影片本身不會自動更新正式版。
+- GitHub Actions 產生 `assets/videos/intro-video.json`，影片存在且符合檔案檢查即啟用，影片缺失則不自動彈出。
+- `version` 使用影片 SHA-256 前 16 碼，便於後續換片追蹤。
 
-## 行為
-第一次進入行銷首頁的未登入訪客會看到可隨時跳過的靜音自動播放影片。
-每個版本每七天最多自動顯示一次；手動重播不限次數。
-已登入、LINE LIFF、帶有業務參數的深層連結與已開始操作頁面的訪客不自動顯示。
-Esc / 背景點擊可關閉，原生播放器支援聲量、進度與全螢幕。
-無影片時可開啟 home.html?intro_preview=1 查看開屏樣式，顯示明確的無影片預覽。
+## 首頁開屏行為
+1. **每次進入首頁都彈出**，包含帶有 `__line_build`、`__line_fresh` 等查詢參數、已登入使用者，以及 LINE 內建瀏覽器。沒有七天限制或 localStorage 曝光抑制。
+2. 影片靜音自動播放、手機使用 `playsinline`；瀏覽器若拒絕播放，可使用播放器控制項自行開始。
+3. 不會因影片播完自動關閉；使用者須點「跳過影片」、按 Escape 或點背景自行關閉。
+4. 關閉後可在首頁按「觀看品牌介紹影片」再次播放，不會因跳過而在下次首頁造訪消失。
+5. **只在行銷首頁 `home.html` 彈出**。不在取號、預約、點餐、店家管理或 LIFF 直接操作頁插入廣告。
+6. `home.html?intro_preview=1` 可強制開啟預覽；沒有影片時會顯示佔位內容。
 
-## 發布
-main 更新 GitHub Pages 測試網站，release 更新 queue.monsterport.com 正式站。
-建議先驗收測試站，再將 main 直接同步到 release；兩者程式相同而發布環境不同。
+開屏不依賴 Supabase 身分查詢，也不會等待登入狀態完成，因此登入服務暫時不可用也不影響彈窗顯示。影片本身仍使用原站靜態資源，不新增 Worker、R2、資料庫或第三方播放器。
