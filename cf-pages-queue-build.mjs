@@ -51,6 +51,12 @@ function copy(src, dest) {
 }
 copy(source, output);
 
+// Keep the feedback-only LINE entry independent of the auto-refreshed queue-prod
+// snapshot: GitHub Actions replaces that whole directory on each release.
+const feedbackTemplate = path.resolve(source, '..', 'feedback-entry.html');
+if (!fs.existsSync(feedbackTemplate)) throw new Error('Missing feedback-entry.html in gh-pages root');
+fs.copyFileSync(feedbackTemplate, path.join(output, 'feedback.html'));
+
 const app = path.join(output, 'index.html');
 const home = path.join(output, 'home.html');
 if (!fs.existsSync(app) || !fs.existsSync(home)) {
