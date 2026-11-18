@@ -1015,7 +1015,7 @@ async function webhook(req: Request, origin: string | null, merchantSlug = "") {
           source?.type !== "user" || typeof source.userId !== "string" ||
           !/^U[a-f0-9]{32}$/i.test(source.userId) ||
           typeof time !== "number" || !Number.isFinite(time) || !Number.isFinite(new Date(time).getTime())) {
-        console.warn("LINE follow event missing valid identifier or timestamp");
+        // Invalid webhook events are intentionally ignored; avoid logging expected rejects.
         continue;
       }
       if (event.type === "message") {
