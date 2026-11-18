@@ -2,20 +2,25 @@ name: Manage LINE LIFF apps
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/create-ctee-liff.yml
+    inputs:
+      operation:
+        description: "Choose one LIFF administration operation"
+        required: true
+        type: choice
+        default: ensure-ctee
+        options:
+          - ensure-ctee
+          - rename-queue
 
 permissions:
   contents: read
 
 concurrency:
-  group: ctee-liff-provisioning
+  group: line-liff-management
   cancel-in-progress: false
 
 jobs:
-  provision:
+  manage:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
@@ -23,7 +28,20 @@ jobs:
       LINE_LOGIN_CHANNEL_SECRET: ${{ secrets.LINE_LOGIN_CHANNEL_SECRET }}
     steps:
       - uses: actions/checkout@v4
-      - name: Compile and validate provisioning script
+      - name: Validate LIFF management script
         run: python3 -m py_compile .github/scripts/create-ctee-liff.py
-      - name: Safely rename Queue official LIFF using LINE API and verify all apps unchanged
-        run: python3 .github/scripts/create-ctee-liff.py --rename-queue
+      - name: Create or reuse CTEE LIFF, or safely rename Queue LIFF
+        shell: bash
+        env:
+          LIFF_OPERATION: ${{ inputs.operation }}
+        run: |
+          set -euo pipefail
+          case "$LIFF_OPERATION" in
+            ensure-ctee)
+              python3 .github/scripts/create-ctee-liff.py ;;
+            rename-queue)
+              python3 .github/scripts/create-ctee-liff.py --rename-queue ;;
+            *)
+              echo "::error title=Unknown operation::Allowed actions: ensure-ctee, rename-queue"
+              exit 2 ;;
+          esac
