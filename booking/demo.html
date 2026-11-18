@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="line-saas-build" content="a558bc6b06d625b8f1d7d01b6d00d781c4ec4678">
+<meta name="line-saas-build" content="bd343dbf98935481201f46067d131c9c4738d349">
 <meta name="theme-color" content="#ffffff">
 <meta name="robots" content="index,follow">
 <meta name="description" content="排隊怪獸免登入操作體驗：真實介面風格模擬早餐店線上點餐、美髮店線上預約、維修店現場取號、診所預約與多診間叫號。直接切換顧客端與店家端查看操作和通知。">
 <link rel="canonical" href="https://hub-google.github.io/LINE/booking/demo.html">
 <link rel="icon" type="image/svg+xml" href="./monster-mascot.svg">
 <title>免登入功能試用｜排隊怪獸 Queuing Monster</title>
-<link rel="stylesheet" href="./assets/index/page-CG5F3R24.css?build=a558bc6b06d625b8f1d7d01b6d00d781c4ec4678">
-<link rel="stylesheet" href="./booking-theme.css?build=a558bc6b06d625b8f1d7d01b6d00d781c4ec4678">
-<link rel="stylesheet" href="./monster-world.css?build=a558bc6b06d625b8f1d7d01b6d00d781c4ec4678">
-<script defer src="./version-watch.js?build=a558bc6b06d625b8f1d7d01b6d00d781c4ec4678"></script>
-<link rel="stylesheet" href="./assets/demo/mobile-ui-IHHIOMDD.css?build=a558bc6b06d625b8f1d7d01b6d00d781c4ec4678"><link rel="stylesheet" href="./assets/demo/desktop-ui-LM6JSRZN.css?build=a558bc6b06d625b8f1d7d01b6d00d781c4ec4678"><link rel="stylesheet" href="./site-auth.css?build=a558bc6b06d625b8f1d7d01b6d00d781c4ec4678"><link rel="stylesheet" href="./assets/marketing/shared-header-FWYUAM4C.css?build=a558bc6b06d625b8f1d7d01b6d00d781c4ec4678"><script defer src="./assets/marketing/shared-header-XD4YQPH3.js?build=a558bc6b06d625b8f1d7d01b6d00d781c4ec4678"></script><script defer src="./site-auth.js?build=a558bc6b06d625b8f1d7d01b6d00d781c4ec4678"></script>
+<link rel="stylesheet" href="./assets/index/page-CG5F3R24.css?build=bd343dbf98935481201f46067d131c9c4738d349">
+<link rel="stylesheet" href="./booking-theme.css?build=bd343dbf98935481201f46067d131c9c4738d349">
+<link rel="stylesheet" href="./monster-world.css?build=bd343dbf98935481201f46067d131c9c4738d349">
+<script defer src="./version-watch.js?build=bd343dbf98935481201f46067d131c9c4738d349"></script>
+<link rel="stylesheet" href="./assets/demo/mobile-ui-U3ARBGY6.css?build=bd343dbf98935481201f46067d131c9c4738d349"><link rel="stylesheet" href="./assets/demo/desktop-ui-SFVOGDN5.css?build=bd343dbf98935481201f46067d131c9c4738d349"><link rel="stylesheet" href="./site-auth.css?build=bd343dbf98935481201f46067d131c9c4738d349"><link rel="stylesheet" href="./assets/marketing/shared-header-NHFO7BZ6.css?build=bd343dbf98935481201f46067d131c9c4738d349"><script defer src="./assets/marketing/shared-header-RGQJUIML.js?build=bd343dbf98935481201f46067d131c9c4738d349"></script><script defer src="./site-auth.js?build=bd343dbf98935481201f46067d131c9c4738d349"></script>
 
 </head>
 <body class="mobile-demo" data-portal="customer">
@@ -23,20 +23,28 @@
 <section class="demo-intro">
 <span class="demo-badge">免費試用 · 不必註冊</span>
 <h1>你的店，也能<span>更從容。</span></h1>
-<p>先從叫號開始，也能直接切換點餐或預約。選擇情境後立即操作，不必再點進門市首頁。完成操作後可以免費建立自己的店家。LINE 訊息為條件式示意，正式推播僅使用店家自行綁定的 LINE OA。</p>
-<div class="demo-scenes" aria-label="試用情境">
-<button class="demo-scene active" data-scene="repair" aria-pressed="true"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5a5 5 0 0 0-6 6L4 17a2 2 0 1 0 3 3l4.5-4.5a5 5 0 0 0 6-6L14 12l-2-2z"/></svg></span><span class="demo-scene-copy"><strong>維修店</strong><small>取號、叫號、過號恢復</small></span></button>
-<button class="demo-scene" data-scene="breakfast" aria-pressed="false"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h16M5 10l2-5h10l2 5M4 10l2 8h12l2-8M9 14h6M7 20h10"/></svg></span><span class="demo-scene-copy"><strong>早餐店</strong><small>線上點餐、取餐進度</small></span></button>
-<button class="demo-scene" data-scene="salon" aria-pressed="false"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="m8.2 8.2 11 11M8.2 15.8l11-11"/></svg></span><span class="demo-scene-copy"><strong>美髮店</strong><small>預約、設計師、報到</small></span></button>
-<button class="demo-scene" data-scene="clinic" aria-pressed="false"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 6v8M8 10h8M9 21v-4h6v4"/></svg></span><span class="demo-scene-copy"><strong>診所</strong><small>預約、報到、三診間叫號</small></span></button>
-</div>
+<p>免登入體驗排隊怪獸的實際操作流程。先選擇客戶端或店家端，再挑選店型，即可直接操作取號、點餐、預約或管理功能。此頁僅模擬資料；LINE 通知為示意，正式推播需由店家自行綁定 LINE OA。</p>
 <div class="demo-controls">
-<div class="demo-label" id="demo-scene">維修店｜現場取號</div>
-<div class="roles" role="group" aria-label="切換顧客與店家操作畫面">
-<button data-role="customer" class="active" aria-pressed="true">顧客端</button>
-<button data-role="staff" aria-pressed="false">店家端</button>
+  <div class="demo-picker-title"><span class="demo-step" aria-hidden="true">1</span><div><strong>先選擇體驗身分</strong><small>切換後可直接比較客戶操作與店家管理畫面</small></div></div>
+  <div class="roles" role="group" aria-label="選擇客戶端或店家端">
+    <button type="button" data-role="customer" class="active" aria-pressed="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20v-2a7 7 0 0 1 14 0v2"/></svg>
+      <span class="demo-role-copy"><strong>客戶端</strong><small>取號、點餐、線上預約</small></span>
+    </button>
+    <button type="button" data-role="staff" aria-pressed="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7" width="16" height="14" rx="2"/><path d="M9 7V5a3 3 0 0 1 6 0v2M4 12h16"/></svg>
+      <span class="demo-role-copy"><strong>店家端</strong><small>接單、預約管理、叫號</small></span>
+    </button>
+  </div>
 </div>
+<div class="demo-picker-title demo-scene-heading"><span class="demo-step" aria-hidden="true">2</span><div><strong>再選擇店家情境</strong><small>四種店型可自由切換，保留剛才選的身分</small></div></div>
+<div class="demo-scenes" aria-label="試用情境">
+<button type="button" class="demo-scene active" data-scene="repair" aria-pressed="true"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14.5 6.5a5 5 0 0 0-6 6L4 17a2 2 0 1 0 3 3l4.5-4.5a5 5 0 0 0 6-6L14 12l-2-2z"/></svg></span><span class="demo-scene-copy"><strong>維修店</strong><small>現場取號、叫號與過號處理</small></span></button>
+<button type="button" class="demo-scene" data-scene="breakfast" aria-pressed="false"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 10h16M5 10l2-5h10l2 5M4 10l2 8h12l2-8M9 14h6M7 20h10"/></svg></span><span class="demo-scene-copy"><strong>早餐店</strong><small>立即／預約取餐、訂單進度</small></span></button>
+<button type="button" class="demo-scene" data-scene="salon" aria-pressed="false"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="m8.2 8.2 11 11M8.2 15.8l11-11"/></svg></span><span class="demo-scene-copy"><strong>美髮店</strong><small>設計師預約、修改與報到</small></span></button>
+<button type="button" class="demo-scene" data-scene="clinic" aria-pressed="false"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 6v8M8 10h8M9 21v-4h6v4"/></svg></span><span class="demo-scene-copy"><strong>診所</strong><small>分診間預約、報到及叫號</small></span></button>
 </div>
+<div class="demo-current-selection" id="demo-scene" role="status">目前體驗：維修店｜現場取號｜客戶端</div>
 </section>
 <div class="demo-stage">
 <div class="mobile-device">
@@ -57,7 +65,7 @@
 <p>所有操作資料只在目前瀏覽頁面暫存，不呼叫正式 Supabase、LINE 或店家服務。此頁不需要登入。</p>
 <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn outline" data-act="reset">重設本產業</button><a id="demo-footer-signup" class="demo-action-link" href="./merchant-register.html?mode=signup&amp;from=demo">免費建立我的店家</a></div>
 </footer>
-<script defer src="./assets/demo/real-flow-ZMHNLHBT.js?build=a558bc6b06d625b8f1d7d01b6d00d781c4ec4678"></script>
-<script defer src="./assets/demo/signup-conversion-WR5HOFLN.js?build=a558bc6b06d625b8f1d7d01b6d00d781c4ec4678"></script>
+<script defer src="./assets/demo/real-flow-M4BDDE77.js?build=bd343dbf98935481201f46067d131c9c4738d349"></script>
+<script defer src="./assets/demo/signup-conversion-WR5HOFLN.js?build=bd343dbf98935481201f46067d131c9c4738d349"></script>
 </body>
 </html>
