@@ -78,17 +78,19 @@ function draw(status,message){
    holder.append(plain,logout);
   }
  }else{
-  const mode=portalMode();
-  const login=el("button",mode==="customer"?"site-auth-button site-auth-login":"site-auth-button");
-  login.type="button";login.disabled=busy;
-  if(mode==="customer"){
-   login.append(document.createTextNode("使用 LINE 登入"));
-   login.addEventListener("click",startLineLogin);
-  }else{
-   login.textContent=mode==="headquarters"?"總部登入":"店家登入";
-   login.addEventListener("click",()=>location.assign(mode==="headquarters"?"./platform-login.html":"./merchant-register.html?mode=login"));
-  }
-  holder.append(login);
+  // Every shared header offers both independent account entrances when signed out.
+  const customerLogin=el("button","site-auth-button site-auth-login site-auth-customer-login","消費者登入");
+  customerLogin.type="button";
+  customerLogin.disabled=busy;
+  customerLogin.title="使用 LINE 帳號登入";
+  customerLogin.setAttribute("aria-label","消費者登入（LINE）");
+  customerLogin.addEventListener("click",startLineLogin);
+  const merchantLogin=el("button","site-auth-button site-auth-merchant-login","店家登入");
+  merchantLogin.type="button";
+  merchantLogin.disabled=busy;
+  merchantLogin.title="使用 Email 或 Google 帳號登入";
+  merchantLogin.addEventListener("click",()=>location.assign("./merchant-register.html?mode=login"));
+  holder.append(customerLogin,merchantLogin);
  }
  if(message){const hint=el("div","site-auth-feedback",message);hint.setAttribute("role","alert");holder.append(hint);}
  mount.append(holder);
@@ -266,13 +268,15 @@ async function getIdentity(){
    needsPasswordSetup:emailAccount && staffUser.user_metadata?.queue_monster_password_pending===true
   };
  }
- if(!preferOperator)return lineIdentity;
- if(!operatorIdentity)return null;
- if(mode==="headquarters"){
+ // A signed-in merchant also remains visible on customer/marketing headers,
+ // and a signed-in customer remains visible on merchant/marketing headers.
+ // Never display a second login button while either identity is active.
+ if(mode==="headquarters"&&operatorIdentity){
   const role=await operator.rpc("so_my_context");
-  if(role.error||role.data?.platform_admin!==true)return null;
+  if(role.error||role.data?.platform_admin!==true)operatorIdentity=null;
  }
- return operatorIdentity;
+ if(lineIdentity&&operatorIdentity)return preferOperator?operatorIdentity:lineIdentity;
+ return operatorIdentity||lineIdentity;
 }
 async function refresh(){
  if(busy)return;
@@ -288,8 +292,15 @@ async function logOut(){
  if(busy||!currentIdentity)return;
  busy=true;draw("linked");
  try{
-  const result=await currentIdentity.client.auth.signOut();
-  if(result.error)throw result.error;
+  // Clear both independently stored sessions so "登出" really returns the
+  // shared header to its two-login guest state, even after older dual logins.
+  const sessions=await Promise.all([customer,operator].map(async client=>{
+   const session=await client.auth.getSession();
+   if(session.error)throw session.error;
+   if(!session.data?.session)return;
+   const signedOut=await client.auth.signOut();
+   if(signedOut.error)throw signedOut.error;
+  }));
   if(currentIdentity.type==="operator"){try{localStorage.removeItem("line_saas_real_qa_v1")}catch(_){}}
   try{sessionStorage.removeItem(RETURN_KEY)}catch(_){}
   currentIdentity=null;
