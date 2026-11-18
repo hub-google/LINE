@@ -229,6 +229,8 @@ test("real-flow demo reproduces guest creation, merchant status changes and LINE
  click("[data-act]",{act:"order-status",id:"B003",value:"REJECTED"});
  assert.match(el("root").innerHTML,/已拒單|店家已取消訂單/);
  click("[data-scene]",{scene:"repair"});
+ assert.match(el("root").innerHTML,/叫號操作/,"Selecting another industry keeps the merchant role");
+ click("[data-role]",{role:"customer"});
  assert.match(el("root").innerHTML,/立即線上取號/);
  click("[data-act]",{act:"take-number"});
  assert.match(el("root").innerHTML,/R015/);
@@ -239,6 +241,8 @@ test("real-flow demo reproduces guest creation, merchant status changes and LINE
  change({dataset:{statusKind:"ticket",id:"R013"},value:"PASSED",matches:s=>s==="[data-status-kind]"});
  assert.match(el("root").innerHTML,/已過號/);
  click("[data-scene]",{scene:"salon"});
+ assert.match(el("root").innerHTML,/搜尋與篩選預約/,"Selecting another industry keeps the merchant role");
+ click("[data-role]",{role:"customer"});
  assert.match(el("root").innerHTML,/選擇預約日期與時間/);
  input("contact-name","示範顧客");input("contact-phone","0912345678");
  click("[data-act]",{act:"unit",value:"Ken"});
@@ -248,6 +252,8 @@ test("real-flow demo reproduces guest creation, merchant status changes and LINE
  click("[data-role]",{role:"staff"});
  assert.match(el("root").innerHTML,/預約管理/);
  click("[data-scene]",{scene:"clinic"});
+ assert.match(el("root").innerHTML,/搜尋與篩選預約/,"Selecting another industry keeps the merchant role");
+ click("[data-role]",{role:"customer"});
  assert.match(el("root").innerHTML,/選擇預約場次/);
  for(const doctor of ["小兒科 陳醫師(1診)","小兒科 王醫師(2診)","皮膚科 張醫師(3診)"]){
   assert.ok(el("root").innerHTML.includes(doctor),doctor+" should appear in clinic booking options");
