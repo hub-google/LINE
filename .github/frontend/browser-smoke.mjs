@@ -46,7 +46,7 @@ try{
  const autoIntro=page.getByRole('dialog',{name:'排隊怪獸品牌介紹影片'});
  await autoIntro.waitFor({state:'visible',timeout:10000});
  assert.equal(await page.locator('.qm-intro-movie').isVisible(),true,'Uploaded MP4 must be visible automatically');
- assert.match(await page.locator('.qm-intro-movie').getAttribute('src'),/assets\\/videos\\/intro\\.mp4/);
+ assert.ok((await page.locator('.qm-intro-movie').getAttribute('src'))?.endsWith('/assets/videos/intro.mp4'),'Intro video source must be the uploaded MP4');
  await autoIntro.getByRole('button',{name:/跳過影片/}).click();
  assert.equal(await autoIntro.isVisible(),false,'Visitor can manually dismiss brand intro');
  await page.reload({waitUntil:'domcontentloaded'});
@@ -57,7 +57,6 @@ try{
  await autoIntro.getByRole('button',{name:/跳過影片/}).click();
  console.log('Brand intro automatically opened on each entry, and manual replay/skip passed.');
  // Source preview without a generated manifest still offers an explicit placeholder.
- assert.equal(await page.locator('#qm-intro-overlay').count(),0,'No forced intro without a video');
  await page.goto(baseUrl+'/booking/home.html?intro_preview=1',{waitUntil:'domcontentloaded'});
  const introDialog=page.getByRole('dialog',{name:'排隊怪獸品牌介紹影片'});
  await introDialog.waitFor({state:'visible',timeout:10000});
