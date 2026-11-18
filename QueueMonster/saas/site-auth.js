@@ -78,15 +78,7 @@ function draw(status,message){
    holder.append(plain,logout);
   }
  }else{
-  if(portalMode()==="headquarters"){
-   // The headquarters route requires administrator credentials, never a LINE customer login.
-   const headquartersLogin=el("button","site-auth-button","總部登入");
-   headquartersLogin.type="button";
-   headquartersLogin.disabled=busy;
-   headquartersLogin.addEventListener("click",()=>location.assign("./platform-login.html"));
-   holder.append(headquartersLogin);
-  }else{
-  // All other pages offer both entrances until one account is signed in.
+  // Every site page uses the same two guest entry buttons.
   const customerLogin=el("button","site-auth-button site-auth-login site-auth-customer-login","消費者登入");
   customerLogin.type="button";
   customerLogin.disabled=busy;
@@ -99,7 +91,7 @@ function draw(status,message){
   merchantLogin.title="使用 Email 或 Google 帳號登入";
   merchantLogin.addEventListener("click",()=>location.assign("./merchant-register.html?mode=login"));
   holder.append(customerLogin,merchantLogin);
-  }
+  
  }
  if(message){const hint=el("div","site-auth-feedback",message);hint.setAttribute("role","alert");holder.append(hint);}
  mount.append(holder);
@@ -317,11 +309,8 @@ async function getIdentity(){
  // A signed-in merchant also remains visible on customer/marketing headers,
  // and a signed-in customer remains visible on merchant/marketing headers.
  // Never display a second login button while either identity is active.
- if(mode==="headquarters"){
-  if(!operatorIdentity)return null;
-  const role=await operator.rpc("so_my_context");
-  return !role.error&&role.data?.platform_admin===true?operatorIdentity:null;
- }
+ // Account display is consistent across every page. Headquarters data access
+ // remains separately protected by its dedicated permissions checks.
  if(lineIdentity&&operatorIdentity)return preferOperator?operatorIdentity:lineIdentity;
  return operatorIdentity||lineIdentity;
 }
