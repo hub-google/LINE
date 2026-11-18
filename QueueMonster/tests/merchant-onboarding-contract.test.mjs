@@ -198,8 +198,9 @@ test("customer, merchant and headquarters views never mix login and navigation l
  assert.match(shared,/view==="staff"/);
  assert.match(shared,/\["browse","搜尋店家"\]/);
  const auth=read("saas/site-auth.js");
- assert.ok(auth.includes('return lineIdentity'));
- assert.ok(auth.includes("return operatorIdentity"));
+ assert.match(auth,/if\(lineIdentity&&operatorIdentity\)return preferOperator\?operatorIdentity:lineIdentity;/);
+ assert.match(auth,/return operatorIdentity\|\|lineIdentity;/);
+ assert.match(auth,/if\(mode==="headquarters"\)\{/);
 });
 test("merchant can independently enable reservation, queue and pickup via shared service controls",()=>{
  const modes=read("supabase/migrations/20261109093000_merchant_service_mode_switch.sql");
