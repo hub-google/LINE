@@ -1,0 +1,29 @@
+name: Provision independent CTEE LIFF
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/create-ctee-liff.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ctee-liff-provisioning
+  cancel-in-progress: false
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      LINE_LOGIN_CHANNEL_ID: ${{ secrets.LINE_LOGIN_CHANNEL_ID }}
+      LINE_LOGIN_CHANNEL_SECRET: ${{ secrets.LINE_LOGIN_CHANNEL_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and validate provisioning script
+        run: python3 -m py_compile .github/scripts/create-ctee-liff.py
+      - name: Create/reuse CTEE LIFF and verify Queue Monster LIFF apps remain unchanged
+        run: python3 .github/scripts/create-ctee-liff.py
