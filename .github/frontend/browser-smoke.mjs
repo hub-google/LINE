@@ -41,6 +41,15 @@ try{
  assert.equal(mascot.height,443,'Mascot source height');
  assert.ok(mascot.painted>1500,'Mascot must actually render rather than showing a broken/blank SVG');
  console.log('Shared mascot rendered in Chromium:',JSON.stringify(mascot));
+ // Brand intro remains hidden without an MP4, but its preview is fully interactive.
+ assert.equal(await page.locator('#qm-intro-overlay').count(),0,'No forced intro without a video');
+ await page.goto(baseUrl+'/booking/home.html?intro_preview=1',{waitUntil:'domcontentloaded'});
+ const introDialog=page.getByRole('dialog',{name:'排隊怪獸品牌介紹影片'});
+ await introDialog.waitFor({state:'visible',timeout:10000});
+ assert.equal(await page.locator('.qm-intro-empty').isVisible(),true,'Placeholder preview must be visible');
+ await introDialog.getByRole('button',{name:/跳過影片/}).click();
+ assert.equal(await page.locator('#qm-intro-overlay').isVisible(),false,'Skip must dismiss the preview');
+ console.log('Brand intro preview and dismissal passed.');
  // Execute the real source graph; these checks do not use the legacy lexical adapter.
  // Native-module smoke must not depend on external Supabase or LINE services reaching network-idle.
  await page.goto(baseUrl+'/LINE/booking/index.html?view=staff&merchant=greenfield-salon',{waitUntil:'domcontentloaded'});
