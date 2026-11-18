@@ -10,6 +10,12 @@
 
 > 依據 [PRD.md](./PRD.md) 規劃之企業級門市營運系統。
 
+## Supabase 日誌策略（2026-11-18）
+
+QueueMonster 與其他產品共用 Supabase 專案 `unapiwajmgqqtdkixaab`。排隊怪獸的 Edge Functions 不在正常成功路徑使用 `console.log`、`console.info` 或 `console.debug`；已忽略的無效 LINE Webhook 事件不再額外警告。真正的 LINE 派送失敗、資料庫失敗及登入異常仍保留必要的錯誤紀錄，避免為省日誌而失去查錯能力。回歸測試：`QueueMonster/tests/quiet-server-logging.test.mjs`。
+
+**範圍限制：** Supabase 自動產生的 Postgres `pg_cron` 開始／完成日誌、Edge Function HTTP 及執行環境日誌並非程式的 `console.log`，不能靠前端或 Edge Function 刪除訊息來消除。其中 `cron.log_statement` 是整個 Supabase Postgres 專案共用設定，不能只對某個排隊怪獸 job 關閉。為避免影響同資料庫其他產品，此次不調整此設定，也不降低五秒取餐排程及每分鐘 LINE 派送排程的頻率。日誌用量不會因此歸零；Logs Query 另由查閱日誌的累計掃描量計算。
+
 ## Supabase 資料表命名規範（2026-11-12 已上線）
 
 排隊怪獸的資料存於共用 Supabase 專案 `unapiwajmgqqtdkixaab`。**所有 QueueMonster 實體資料表一律以 `qm_` 開頭**（Queuing Monster）；新功能不得再新增 `so_` 實體表。
