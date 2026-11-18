@@ -15,7 +15,7 @@ test("brand intro is isolated on homepage and mobile responsive",()=>{
 });
 test("campaign fails closed, respects visitors and accepts uploads without a source edit",()=>{
  const source=read("saas/assets/home/intro-video.js"),build=read("../.github/scripts/build-line-saas.mjs");
- for(const term of ["intro-video.json","enabled===true","intro_preview","awaitGuest","localStorage","Line/","prefers-reduced-motion","aria-modal","跳過影片","video.play().catch","demo.html"])
+ for(const term of ["intro-video.json","enabled===true","intro_preview","awaitGuest","localStorage","navigator.userAgent","prefers-reduced-motion","aria-modal","跳過影片","video.play().catch","demo.html"])
   assert.ok(source.includes(term),"Missing "+term);
  for(const term of ["intro.mp4","createHash","25*1024*1024","ftyp","introManifest.enabled=true","intro-video.json"])
   assert.ok(build.includes(term),"Missing build step "+term);
