@@ -101,7 +101,9 @@ if (fs.existsSync(sw)) {
 // The former Worker redirected this old homepage URL back to the canonical root.
 fs.writeFileSync(path.join(output, '_redirects'), [
   '/home.html / 302',
-  '/feedback /feedback.html 200',
+  // Cloudflare Pages automatically serves /feedback from feedback.html.
+  // Do not rewrite /feedback to /feedback.html: Pages canonicalizes it back,
+  // causing ERR_TOO_MANY_REDIRECTS.
   '/line-group /feedback 302',
   '',
 ].join('\n'));
