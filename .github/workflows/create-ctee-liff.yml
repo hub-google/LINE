@@ -7,10 +7,16 @@ on:
         description: "Choose one LIFF administration operation"
         required: true
         type: choice
-        default: ensure-ctee
+        default: ensure-ctee-share
         options:
           - ensure-ctee
           - rename-queue
+          - ensure-ctee-share
+
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/create-ctee-liff.yml
 
 permissions:
   contents: read
@@ -33,7 +39,7 @@ jobs:
       - name: Create or reuse CTEE LIFF, or safely rename Queue LIFF
         shell: bash
         env:
-          LIFF_OPERATION: ${{ inputs.operation }}
+          LIFF_OPERATION: ${{ inputs.operation || 'ensure-ctee-share' }}
         run: |
           set -euo pipefail
           case "$LIFF_OPERATION" in
@@ -41,7 +47,9 @@ jobs:
               python3 .github/scripts/create-ctee-liff.py ;;
             rename-queue)
               python3 .github/scripts/create-ctee-liff.py --rename-queue ;;
+            ensure-ctee-share)
+              python3 .github/scripts/create-ctee-liff.py --ensure-share ;;
             *)
-              echo "::error title=Unknown operation::Allowed actions: ensure-ctee, rename-queue"
+              echo "::error title=Unknown operation::Allowed actions: ensure-ctee, rename-queue, ensure-ctee-share"
               exit 2 ;;
           esac
