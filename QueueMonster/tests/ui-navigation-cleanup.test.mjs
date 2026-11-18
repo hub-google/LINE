@@ -73,8 +73,8 @@ test("first-time customers see booking or queue before public board with one LIN
  const style=read("monster-world.css");
  assert.match(source,/routeState\.customerTab==="reserve"\?"線上預約"/);
  assert.match(source,/routeState\.customerTab==="queue"\?"現場取號"/);
- assert.match(source,/lineLoginUrl\(\)/);
- assert.match(source,/LINE 登入<\/a>/);
+ assert.match(source,/data-site-line-login/);
+ assert.match(source,/LINE 登入<\/button>/);
  assert.match(source,/為避免機器人或惡意假預約，請先透過 LINE 登入/);
  assert.match(source,/customer-entry-card/);
  assert.match(source,/customer-public-board-link/);
