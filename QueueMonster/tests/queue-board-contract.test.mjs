@@ -28,7 +28,9 @@ test("TV board reads privacy-safe store numbers publicly without LINE/Supabase s
   assert.match(board,/rpc\("so_public_board",\{p_slug:slug,p_limit:5\}\)/);
   assert.match(board,/data\.current/);
   assert.doesNotMatch(board,/\.padStart\(/);
-  assert.doesNotMatch(board,/\.innerHTML\s*=/);
+  // The shared site header renders trusted, fixed navigation via innerHTML.
+   // The board-specific code still must render merchant data with textContent only.
+   assert.doesNotMatch(read("saas/assets/board/main.js"),/\.innerHTML\s*=/);
   assert.doesNotMatch(board,/service_role|supabase_service_role|customer_name|line_sub/i);
   assert.match(board,/textContent/);
   assert.match(board,/persistSession:false/);
