@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "./helpers/source-fs.mjs";
+import {readFileSync as readRawFileSync} from "node:fs";
 import {fileURLToPath} from "node:url";
 import path from "node:path";
 
@@ -124,7 +125,8 @@ test("customer-facing pages share one design system; retired template redirects 
   assert.match(html,new RegExp('<body data-monster-page="'+page+'">'),page+" is missing brand scope");
   assert.match(html,/monster-world\.css/,page+" is missing shared stylesheet");
   if(page==="merchant-register"){
-   assert.ok(html.indexOf("monster-world.css")>html.lastIndexOf("</style>"),"shared brand stylesheet must override the legacy merchant style");
+   const raw=readRawFileSync(path.join(root,"saas/merchant-register.html"),"utf8");
+    assert.ok(raw.indexOf("monster-world.css")>raw.indexOf("assets/merchant-register/page.css"),"shared brand stylesheet must override the legacy merchant style");
   }
  }
  const legacyTemplate=read("saas/template.html");
