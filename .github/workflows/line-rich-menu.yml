@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/line-rich-menu.yml'
       - '.github/scripts/publish_rich_menu.py'
+      - '.github/scripts/test_rich_menu.py'
 
 permissions:
   contents: read
