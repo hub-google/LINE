@@ -13,11 +13,6 @@ on:
           - rename-queue
           - ensure-ctee-share
 
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/create-ctee-liff.yml
-
 permissions:
   contents: read
 
