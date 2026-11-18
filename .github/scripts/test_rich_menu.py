@@ -44,7 +44,7 @@ class RichMenuContract(unittest.TestCase):
         self.assertEqual(len(items), 6)
         self.assertIn("/directory.html?mode=search&entry=platform-oa", items[0][3]["uri"])
         self.assertIn("site_return=my-records.html%3Fscope%3Dactive", items[1][3]["uri"])
-        self.assertIn("site_return=directory.html%3Fmode%3Dfrequent", items[2][3]["uri"])
+        self.assertIn("site_return=directory.html%3Fmode%3Dfrequent%26entry%3Dplatform-oa", items[2][3]["uri"])
         self.assertIn("site_return=my-records.html%3Fscope%3Dhistory", items[3][3]["uri"])
         self.assertIn("directory.html?mode=search&entry=platform-oa", items[4][3]["uri"])
         self.assertEqual(items[5][3]["type"], "postback")
