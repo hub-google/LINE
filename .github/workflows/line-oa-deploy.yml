@@ -45,6 +45,41 @@ jobs:
           version: latest
       - name: Check LINE OA command and webhook contract
         run: node --test QueueMonster/tests/dual-domain-auth-contract.test.mjs QueueMonster/tests/line-oa-bot-contract.test.mjs QueueMonster/tests/booking-line-reply.test.mjs QueueMonster/tests/queue-near-alert-oss-n03.test.mjs QueueMonster/tests/queue-monster-table-prefix.test.mjs QueueMonster/tests/line-notice-permanent-retry-regression.test.mjs
+      - name: Validate real LINE Messaging API supports the three-button template and Quick Reply
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json,os,urllib.parse,urllib.request
+          queue="https://queue.monsterport.com/"
+          config_url="https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/line-bridge?action=config&site=queue"
+          cfg=json.load(urllib.request.urlopen(config_url,timeout=25))
+          liff=cfg.get("liffId")
+          if not liff or not cfg.get("messagingReady"):
+            raise RuntimeError("Queue LIFF/Messaging not ready for Quick Reply validation")
+          history="https://liff.line.me/"+urllib.parse.quote(liff,safe="")+"/?"+urllib.parse.urlencode({
+            "view":"customer","entry":"platform-oa","site_return":"my-records.html?scope=history",
+          })
+          actions=[
+            {"type":"uri","label":"免費體驗","uri":queue+"demo.html"},
+            {"type":"postback","label":"操作教學","data":"platform:guide","displayText":"操作教學"},
+            {"type":"uri","label":"歷史紀錄","uri":history},
+          ]
+          message={
+            "type":"template",
+            "altText":"排隊怪獸｜免費體驗、操作教學、歷史紀錄",
+            "template":{"type":"buttons","title":"排隊怪獸｜快捷功能",
+                        "text":"以下三項功能可以直接開啟，無須重新加入好友。","actions":actions},
+            "quickReply":{"items":[{"type":"action","action":action} for action in actions]},
+          }
+          data=json.dumps({"messages":[message]},ensure_ascii=False).encode("utf-8")
+          req=urllib.request.Request("https://api.line.me/v2/bot/message/validate/reply",
+            data=data,method="POST",headers={
+            "Authorization":"Bearer "+os.environ["LINE_MESSAGING_ACCESS_TOKEN"],
+            "Content-Type":"application/json"})
+          with urllib.request.urlopen(req,timeout=30) as response:
+            if response.status != 200: raise RuntimeError("LINE message validation failed")
+          print("LINE API accepted persistent three-button template with three Quick Replies.")
+          PY
       - name: Provision separate queue LIFF without changing existing GitHub Pages LIFF
         shell: bash
         run: python3 .github/scripts/sync-queue-auth-domains.py --liff-only
