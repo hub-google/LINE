@@ -67,8 +67,8 @@ test("only server-verified LINE account data is shown, not anonymous Supabase us
  assert.match(index,/incomingParam\("site_return"\)/);
  assert.match(index,/location\.replace\(destination\.pathname\+destination\.search\)/);
 });
-function createScenario({lineName="",customerSession=false,staffName="",staffProvider="email",url="https://hub-google.github.io/LINE/booking/directory.html?mode=game"}={}){
- const state={signedOut:null,navigated:null,reloaded:false};
+function createScenario({lineName="",customerSession=false,staffName="",staffProvider="email",lineAlreadyLoggedIn=false,configReady=true,url="https://hub-google.github.io/LINE/booking/directory.html?mode=game"}={}){
+ const state={signedOut:null,navigated:null,reloaded:false,liffLogin:null,liffId:null};
  function node(tag){
   return {tag,className:"",textContent:"",children:[],title:"",disabled:false,handlers:{},
    setAttribute(name,value){this[name]=value},
@@ -83,8 +83,16 @@ function createScenario({lineName="",customerSession=false,staffName="",staffPro
   createElement:node,createTextNode(text){const n=node("text");n.textContent=text;return n},
   addEventListener(){}};
  const current=new URL(url);
- const location={href:url,origin:current.origin,pathname:current.pathname,search:current.search,assign(target){state.navigated=target},reload(){state.reloaded=true}};
- const window={addEventListener(){}};
+ const location={href:url,origin:current.origin,hostname:current.hostname,pathname:current.pathname,search:current.search,assign(target){state.navigated=target},reload(){state.reloaded=true}};
+ const window={
+  addEventListener(){},
+  liff:{
+   async init({liffId}){state.liffId=liffId},
+   isInClient(){return false},
+   isLoggedIn(){return lineAlreadyLoggedIn},
+   login({redirectUri}){state.liffLogin=redirectUri}
+  }
+ };
  const memory={};const sessionStorage={setItem(k,v){memory[k]=v},getItem(k){return memory[k]??null},removeItem(k){delete memory[k]}};
  const localStorage={removeItem(){}};
  function clientFor(type){
@@ -105,7 +113,8 @@ function createScenario({lineName="",customerSession=false,staffName="",staffPro
  const clients=[clientFor("customer"),clientFor("operator")];
  let index=0;
  const createClient=()=>clients[index++];
- const sandbox={createClient,document:doc,window,location,localStorage,sessionStorage,URL,URLSearchParams,Date,Promise,console};
+ const fetch=async()=>({ok:configReady,async json(){return {liffId:"2012346974-bmC3fZuf"}}});
+ const sandbox={createClient,document:doc,window,location,localStorage,sessionStorage,URL,URLSearchParams,Date,Promise,console,fetch};
  const executable=code.replace('const {createClient}=await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");','const createClient=globalThis.__siteAuthCreateClient;')
    .replace('const {SUPABASE_URL:SB_URL,SUPABASE_PUBLISHABLE_KEY:SB_KEY}=await import("./public-config.js");',
      'const SB_URL="https://test.supabase.co";const SB_KEY="test-publishable-key";');
@@ -129,9 +138,11 @@ test("anonymous visitor sees functional LINE login and retains return destinatio
  assert.ok(login,"missing login button");
  assert.equal(login.textContent,"消費者登入");
  assert.equal(controlsList.filter(x=>x.tag==="button").length,2,"guest header offers consumer and merchant entry");
- login.handlers.click();
- assert.ok(ui.state.navigated);
- const dest=new URL(ui.state.navigated);
+ await login.handlers.click();
+ assert.equal(ui.state.navigated,null,"do not navigate to an intermediate Queue Monster login page");
+ assert.equal(ui.state.liffId,"2012346974-bmC3fZuf");
+ assert.ok(ui.state.liffLogin,"should invoke LIFF login immediately");
+ const dest=new URL(ui.state.liffLogin);
  assert.equal(dest.pathname,"/LINE/booking/");
  assert.equal(dest.searchParams.get("view"),"customer");
  assert.equal(dest.searchParams.get("merchant"),null);
@@ -143,8 +154,9 @@ test("LINE login uses the selected merchant, not a built-in sample store",async(
  await flush();
  const login=controls(ui.rootNode).find(x=>x.tag==="button");
  assert.ok(login);
- login.handlers.click();
- const dest=new URL(ui.state.navigated);
+ await login.handlers.click();
+ assert.equal(ui.state.navigated,null,"do not open an intermediate customer page");
+ const dest=new URL(ui.state.liffLogin);
  assert.equal(dest.searchParams.get("merchant"),"store-123");
  assert.equal(dest.searchParams.get("view"),"customer");
  assert.match(dest.searchParams.get("site_return")||"",/merchant=store-123/);
@@ -159,8 +171,9 @@ test("home and directory LINE logins do not require a merchant",async()=>{
   const login=controls(ui.rootNode).find(x=>x.tag==="button");
   assert.ok(login);
   assert.equal(login.textContent,"消費者登入");
-  login.handlers.click();
-  const dest=new URL(ui.state.navigated);
+  await login.handlers.click();
+  assert.equal(ui.state.navigated,null);
+  const dest=new URL(ui.state.liffLogin);
   assert.equal(dest.searchParams.get("view"),"customer");
   assert.equal(dest.searchParams.get("merchant"),null);
   assert.match(dest.searchParams.get("site_return")||"",/\.html/);
@@ -172,10 +185,33 @@ test("unscoped login keeps shop QR code context when present",async()=>{
  await flush();
  const login=controls(ui.rootNode).find(x=>x.tag==="button");
  assert.ok(login);
- login.handlers.click();
- const dest=new URL(ui.state.navigated);
+ await login.handlers.click();
+ assert.equal(ui.state.navigated,null,"do not open an intermediate customer page");
+ const dest=new URL(ui.state.liffLogin);
  assert.equal(dest.searchParams.get("merchant"),"store-123");
  assert.match(dest.searchParams.get("site_return")||"",/board\.html/);
+});
+test("existing LIFF login reuses the session without opening another authorization window",async()=>{
+ const ui=createScenario({lineAlreadyLoggedIn:true,url:"https://hub-google.github.io/LINE/booking/demo.html"});
+ await flush();
+ const login=controls(ui.rootNode).find(x=>x.tag==="button");
+ await login.handlers.click();
+ assert.equal(ui.state.liffLogin,null);
+ assert.equal(new URL(ui.state.navigated).pathname,"/LINE/booking/");
+ assert.equal(new URL(ui.state.navigated).searchParams.get("site_return"),"demo.html");
+});
+test("LINE configuration failure does not send customers to an intermediate login page",async()=>{
+ const ui=createScenario({configReady:false});
+ await flush();
+ const login=controls(ui.rootNode).find(x=>x.tag==="button");
+ await login.handlers.click();
+ assert.equal(ui.state.navigated,null);
+ assert.equal(ui.state.liffLogin,null);
+ assert.match(JSON.stringify(ui.rootNode),/無法開啟 LINE 登入/);
+});
+test("public LINE callback allows returning to the original demo or guide",()=>{
+ const session=read("saas/app/line-session.js");
+ assert.match(session,/for-merchants\|for-customers\|demo/);
 });
 test("verified LINE user appears by real display name and logout signs out active customer session",async()=>{
  const ui=createScenario({customerSession:true,lineName:"預約人王小姐"});
@@ -300,7 +336,7 @@ test("iPhone customer entry asks consent before starting external LINE login",()
  const directoryJs=read("saas/assets/directory/main.js");
  const directoryHtml=read("saas/directory.html");
  const directoryCss=read("saas/assets/directory/page.css");
- assert.match(code,/start\.searchParams\.set\("site_login","1"\)/);
+ assert.match(code,/liff\.login\(\{redirectUri:start\.href\}\)/);
  assert.match(session,/new URLSearchParams\(location\.search\)\.get\("site_login"\)==="1"/);
  assert.match(session,/lineState\.lineLinkStatus="not-logged-in"/);
  assert.doesNotMatch(session,/if\(!window\.liff\.isInClient\(\)\)window\.liff\.login/);
