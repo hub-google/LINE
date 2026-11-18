@@ -57,7 +57,7 @@ try{
  await autoIntro.getByRole('button',{name:/跳過影片/}).click();
  console.log('Brand intro automatically opened on each entry, and manual replay/skip passed.');
  // Source preview without a generated manifest still offers an explicit placeholder.
- await page.goto(baseUrl+'/booking/home.html?intro_preview=1',{waitUntil:'domcontentloaded'});
+ await page.goto(baseUrl+'/LINE/booking/home.html?intro_preview=1',{waitUntil:'domcontentloaded'});
  const introDialog=page.getByRole('dialog',{name:'排隊怪獸品牌介紹影片'});
  await introDialog.waitFor({state:'visible',timeout:10000});
  assert.equal(await page.locator('.qm-intro-empty').isVisible(),true,'Placeholder preview must be visible');
