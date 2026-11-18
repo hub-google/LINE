@@ -10,6 +10,7 @@ import os
 import re
 import urllib.error
 import urllib.request
+from urllib.parse import quote
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -22,32 +23,29 @@ CENTER = BASE + "merchant-center.html"
 # Customer records use exactly one LINE OA button; the website shows all three lists together.
 # Canonical cross-store history is my-records.html; old directory?mode=mine links stay redirected.
 CUSTOMER_ITEMS = [
-    ("搜尋店家", "找服務中的門市", "search", {"type":"uri","label":"搜尋店家","uri":BASE+"directory.html?mode=search"}),
-    ("線上預約", "挑選日期與場次", "features", {"type":"uri","label":"線上預約","uri":BASE+"directory.html?mode=search&service=%E9%A0%90%E7%B4%84"}),
-    ("現場取號", "尋找提供領號的店家", "play", {"type":"uri","label":"現場取號","uri":BASE+"directory.html?mode=search&service=%E5%8F%96%E8%99%9F"}),
-    ("線上點餐", "預訂與查詢取餐", "store", {"type":"uri","label":"線上點餐","uri":BASE+"directory.html?mode=search&service=%E9%BB%9E%E9%A4%90"}),
-    ("我的紀錄", "跨店預約・取號・訂餐", "dashboard", {"type":"uri","label":"我的紀錄","uri":BASE+"my-records.html"}),
-    ("常見問題", "快速了解平台使用方式", "guide", {"type":"uri","label":"常見問題","uri":BASE+"home.html#faq"}),
+    ("搜尋店家", "依店名或地區查找", "search", {"type":"uri","label":"搜尋店家","uri":BASE+"directory.html?mode=search&focus=keyword"}),
+    ("我的進度", "查看進行中的服務", "dashboard", {"type":"uri","label":"我的進度","uri":BASE+"my-records.html?scope=active"}),
+    ("常用店家", "快速回訪使用過的店", "heart", {"type":"uri","label":"常用店家","uri":BASE+"directory.html?mode=frequent"}),
+    ("歷史紀錄", "已完成與取消的服務", "history", {"type":"uri","label":"歷史紀錄","uri":BASE+"my-records.html?scope=history"}),
+    ("熱門店家", "探索近期熱門商家", "store", {"type":"uri","label":"熱門店家","uri":BASE+"directory.html?mode=search"}),
+    ("問題回饋", "提供問題與建議", "support", {"type":"postback","label":"問題回饋","data":"platform:feedback","displayText":"問題回饋"}),
 ]
 
 
 def customer_items_for_platform_liff(liff_id):
-    """Use an official-OA LIFF entry for store discovery, preserving chat context."""
+    """Use platform LINE LIFF for consumer entry; feedback stays inside OA chat."""
     if not re.fullmatch(r"\d{8,}-[A-Za-z0-9]+", liff_id or ""):
         raise RuntimeError("Queue Monster platform LIFF is not configured")
-    root = "https://liff.line.me/" + liff_id + "/directory.html?mode=search&entry=platform-oa"
-    service = {
-        "搜尋店家": "",
-        "線上預約": "&service=%E9%A0%90%E7%B4%84",
-        "現場取號": "&service=%E5%8F%96%E8%99%9F",
-        "線上點餐": "&service=%E9%BB%9E%E9%A4%90",
+    root = "https://liff.line.me/" + liff_id
+    destinations = {
+        "搜尋店家": root + "/directory.html?mode=search&entry=platform-oa&focus=keyword",
+        "熱門店家": root + "/directory.html?mode=search&entry=platform-oa",
+        "我的進度": root + "/?view=customer&entry=platform-oa&site_return=" + quote("my-records.html?scope=active", safe=""),
+        "歷史紀錄": root + "/?view=customer&entry=platform-oa&site_return=" + quote("my-records.html?scope=history", safe=""),
+        "常用店家": root + "/?view=customer&entry=platform-oa&site_return=" + quote("directory.html?mode=frequent", safe=""),
     }
-    records = "https://liff.line.me/" + liff_id + "/?view=customer&entry=platform-oa&site_return=my-records.html"
-    items = []
-    for title, caption, glyph, action in CUSTOMER_ITEMS:
-        target = root + service[title] if title in service else (records if title == "我的紀錄" else action["uri"])
-        items.append((title, caption, glyph, {**action, "uri":target}))
-    return items
+    return [(title, caption, glyph, {**action, "uri":destinations[title]} if action["type"]=="uri" else action)
+            for title, caption, glyph, action in CUSTOMER_ITEMS]
 
 
 def configured_platform_liff_id():
@@ -65,12 +63,12 @@ def configured_platform_liff_id():
 
 
 MERCHANT_ITEMS = [
-    ("免費叫號體驗", "免註冊直接試用", "play", {"type":"uri","label":"免費叫號體驗","uri":BASE+"demo.html"}),
-    ("了解平台功能", "預約・叫號・點餐", "features", {"type":"uri","label":"了解平台功能","uri":BASE+"for-merchants.html"}),
-    ("免費建立店家", "建立自己的門市", "store", {"type":"uri","label":"免費建立店家","uri":BASE+"merchant-register.html?mode=signup"}),
-    ("店家管理後台", "營運與訂單管理", "dashboard", {"type":"uri","label":"店家管理後台","uri":BASE+"?view=staff"}),
-    ("操作與串接", "設定・LINE OA 教學", "guide", {"type":"uri","label":"操作與串接","uri":CENTER+"#guide"}),
-    ("入口分享教學", "門市網址與 QR Code", "guide", {"type":"uri","label":"入口分享教學","uri":CENTER+"#publish"}),
+    ("今日營運", "所有服務即時總覽", "dashboard", {"type":"uri","label":"今日營運","uri":BASE+"?view=staff&tab=dashboard"}),
+    ("現場叫號", "取號與叫號管理", "play", {"type":"uri","label":"現場叫號","uri":BASE+"?view=staff&tab=queue"}),
+    ("預約管理", "預約名單與場次", "features", {"type":"uri","label":"預約管理","uri":BASE+"?view=staff&tab=bookings"}),
+    ("訂單管理", "接單・製作・取餐", "store", {"type":"uri","label":"訂單管理","uri":BASE+"?view=staff&tab=orders"}),
+    ("店家後台", "營業規則與人員設定", "dashboard", {"type":"uri","label":"店家後台","uri":BASE+"?view=staff&tab=settings"}),
+    ("問題回饋", "提供問題與建議", "support", {"type":"postback","label":"問題回饋","data":"platform:feedback","displayText":"問題回饋"}),
 ]
 CUSTOMER_ALIAS = "platform-booking-customers"
 MERCHANT_ALIAS = "platform-booking-merchants"
@@ -120,6 +118,14 @@ def icon(draw, kind, x, y, ink):
         draw.line((x, y - 74, x, y + 86), fill=ink, width=12)
         draw.line((x - 111, y - 66, x - 87, y - 84, x - 42, y - 82, x, y - 65, x + 42, y - 82, x + 87, y - 84, x + 111, y - 66), fill=ink, width=15, joint="curve")
         draw.line((x - 111, y - 66, x - 111, y + 70, x - 54, y + 60, x, y + 86, x + 54, y + 60, x + 111, y + 70, x + 111, y - 66), fill=ink, width=15, joint="curve")
+    elif kind == "heart":
+        draw.polygon([(x, y + 104), (x - 107, y - 16), (x - 95, y - 79),
+                      (x - 43, y - 104), (x, y - 70), (x + 43, y - 104),
+                      (x + 95, y - 79), (x + 107, y - 16)], fill=ink)
+    elif kind == "history":
+        draw.arc((x - 98, y - 98, x + 98, y + 98), 35, 335, fill=ink, width=stroke)
+        draw.line((x - 100, y - 90, x - 107, y - 15, x - 40, y - 32), fill=ink, width=stroke)
+        draw.line((x, y - 65, x, y + 12, x + 58, y + 50), fill=ink, width=stroke, joint="curve")
     elif kind == "support":
         draw.arc((x - 94, y - 95, x + 94, y + 105), 180, 360, fill=ink, width=19)
         draw.rounded_rectangle((x - 110, y - 11, x - 62, y + 80), radius=18, outline=ink, width=15)
