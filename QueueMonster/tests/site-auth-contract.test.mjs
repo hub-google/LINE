@@ -47,7 +47,7 @@ test("LINE logo comes directly from the user-supplied icon asset rather than a t
  assert.match(style,/line-app-icon\.svg/);
  assert.doesNotMatch(style,/\.site-auth-line-logo\{display:inline-grid/);
  assert.doesNotMatch(code,/el\("span","site-auth-line-logo","LINE"\)/);
- assert.match(code,/document\.createTextNode\("使用 LINE 登入"\)/);
+ assert.match(code,/site-auth-customer-login","消費者登入"/);
  assert.match(build,/copyFile\(path\.join\(src, "line-app-icon\.svg"\)/);
  assert.match(workflow,/line-app-icon\.svg/);
 });
@@ -127,7 +127,8 @@ test("anonymous visitor sees functional LINE login and retains return destinatio
  const controlsList=controls(ui.rootNode);
  const login=controlsList.find(x=>x.tag==="button");
  assert.ok(login,"missing login button");
- assert.match(login.children.map(x=>x.textContent).join(""),/LINE 登入/);
+ assert.equal(login.textContent,"消費者登入");
+ assert.equal(controlsList.filter(x=>x.tag==="button").length,2,"guest header offers consumer and merchant entry");
  login.handlers.click();
  assert.ok(ui.state.navigated);
  const dest=new URL(ui.state.navigated);
@@ -157,7 +158,7 @@ test("home and directory LINE logins do not require a merchant",async()=>{
   await flush();
   const login=controls(ui.rootNode).find(x=>x.tag==="button");
   assert.ok(login);
-  assert.match(login.children.map(x=>x.textContent).join(""),/使用 LINE 登入/);
+  assert.equal(login.textContent,"消費者登入");
   login.handlers.click();
   const dest=new URL(ui.state.navigated);
   assert.equal(dest.searchParams.get("view"),"customer");
@@ -234,24 +235,22 @@ test("Email-password users get the password action, Google and LINE accounts do 
  assert.equal(controls(line.rootNode).some(x=>x.tag==="summary"),false);
 });
 
-test("customer pages do not show an operator account from the same browser",async()=>{
+test("signed-in merchant is represented by one account and logout on public pages",async()=>{
  const ui=createScenario({customerSession:false,lineName:"",staffName:"manager@example.test",url:"https://hub-google.github.io/LINE/booking/directory.html?mode=search"});
  await flush();
  const list=controls(ui.rootNode);
- assert.equal(list.some(x=>x.className==="site-auth-name"),false);
- const login=list.find(x=>x.tag==="button");
- assert.match(login.children.map(x=>x.textContent).join(""),/LINE 登入/);
+ assert.ok(list.some(x=>x.className==="site-auth-label"&&x.textContent==="manager@example.test"));
+ assert.equal(list.filter(x=>x.tag==="button"&&x.className.includes("site-auth-login")).length,0);
+ assert.ok(list.some(x=>x.tag==="button"&&x.textContent==="登出"));
 });
-test("merchant portal never falls back to a LINE customer identity",async()=>{
+test("shared header keeps only the active customer identity even on merchant route",async()=>{
  const ui=createScenario({customerSession:true,lineName:"一般顧客",url:"https://hub-google.github.io/LINE/booking/?view=staff&merchant=shop-123"});
  await flush();
  const list=controls(ui.rootNode);
- assert.equal(list.some(x=>x.className==="site-auth-name"),false);
- const login=list.find(x=>x.tag==="button");
- assert.equal(login.textContent,"店家登入");
- assert.equal(login.className,"site-auth-button","店家登入不可顯示 LINE 圖示");
- login.handlers.click();
- assert.equal(ui.state.navigated,"./merchant-register.html?mode=login");
+ assert.ok(list.some(x=>x.className==="site-auth-label"&&x.textContent==="一般顧客"));
+ assert.equal(list.some(x=>x.textContent==="店家登入"),false);
+ assert.equal(list.some(x=>x.textContent==="消費者登入"),false);
+ assert.ok(list.some(x=>x.tag==="button"&&x.textContent==="登出"));
 });
 test("headquarters page shows only headquarters sign-in when the operator lacks HQ role",async()=>{
  const ui=createScenario({staffName:"merchant@example.test",url:"https://hub-google.github.io/LINE/booking/?view=platform"});
