@@ -31,11 +31,13 @@ test("one LINE-verified login queries all three types and preserves exact mercha
  assert.match(js,/customerUrl\(slug,tab,r\.oa_mode\)/);
  assert.match(js,/so_site_header_identity/);
 });
-test("platform OA has one personal-history tile and independent entry points",()=>{
- assert.match(menu,/"我的紀錄".*"my-records\.html"/);
+test("platform OA offers distinct active/history and store entry points in the original 3x2 layout",()=>{
+ assert.match(menu,/"我的進度".*"my-records\.html\?scope=active"/);
+ assert.match(menu,/"歷史紀錄".*"my-records\.html\?scope=history"/);
+ assert.match(menu,/"常用店家".*"directory\.html\?mode=frequent"/);
+ assert.match(menu,/"熱門店家".*"directory\.html\?mode=search"/);
+ assert.match(menu,/platform:feedback/);
  assert.doesNotMatch(menu,/mode=mine&section=/);
- assert.match(menu,/現場取號.*service=%E5%8F%96%E8%99%9F/);
- assert.match(menu,/常見問題.*home\.html#faq/);
  assert.doesNotMatch(menu,/"上次預約看板"|"取號紀錄"|"訂單紀錄"/);
 });
 test("verified cross-store personal history is scoped to the logged-in LINE identity",()=>{
