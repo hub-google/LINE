@@ -814,14 +814,31 @@ function platformRecordsLink(scope: "all" | "history" = "all"): string {
   return "https://liff.line.me/"+encodeURIComponent(liffId)+"/?"+query.toString();
 }
 const PLATFORM_GUIDE_REPLY = "操作教學可依身分查看：\n消費者："+PLATFORM_ENTRY+"for-customers.html\n店家："+PLATFORM_ENTRY+"merchant-center.html#guide";
+function platformQuickActions(): Record<string, unknown>[] {
+  // Keep exactly one set of actions for the temporary Quick Reply and the
+  // persistent message card. No legacy GitHub Pages destinations.
+  return [
+    {type:"uri",label:"免費體驗",uri:PLATFORM_ENTRY+"demo.html"},
+    {type:"postback",label:"操作教學",data:"platform:guide",displayText:"操作教學"},
+    {type:"uri",label:"歷史紀錄",uri:platformRecordsLink("history")},
+  ];
+}
 function platformQuickReply(): Record<string, unknown> {
-  // These three actions are helpful without a selected store. Keep transaction
-  // controls on their own booking/queue/order Flex notices instead.
-  return {items:[
-    {type:"action",action:{type:"uri",label:"免費體驗",uri:PLATFORM_ENTRY+"demo.html"}},
-    {type:"action",action:{type:"postback",label:"操作教學",data:"platform:guide",displayText:"操作教學"}},
-    {type:"action",action:{type:"uri",label:"歷史紀錄",uri:platformRecordsLink("history")}},
-  ]};
+  return {items:platformQuickActions().map(action=>({type:"action",action}))};
+}
+function platformMenuCard(): Record<string, unknown> {
+  // Quick Replies disappear when the conversation advances. A template
+  // remains in the message history so existing followers can reopen it.
+  return {
+    type:"template",
+    altText:"排隊怪獸｜免費體驗、操作教學、歷史紀錄",
+    template:{
+      type:"buttons",title:"排隊怪獸｜快捷功能",
+      text:"以下三項功能可以直接開啟，無須重新加入好友。",
+      actions:platformQuickActions(),
+    },
+    quickReply:platformQuickReply(),
+  };
 }
 // Use record-specific URLs for the platform OA; no fictitious platform queue board.
 const PLATFORM_FEEDBACK_REPLY = "請在此留下您想反饋的問題或建議，若為操作問題或系統問題，可留下截圖方便確認。";
@@ -831,7 +848,7 @@ function platformBotMessage(command: string, welcome = false): Record<string, un
   let link = platformDirectoryLink();
   let label = "找店家預約";
   if (/^(選單|功能選單|快速回覆|快捷選單|主選單|顯示選單)$/.test(input.replace(/\s+/g,""))) {
-    return {type:"text",text:"選擇要使用的快捷功能：",quickReply:platformQuickReply()};
+    return platformMenuCard();
   }
   if (welcome) {
     title = "歡迎加入排隊怪獸！可搜尋店家、預約、取號、線上點餐並查看紀錄。未綁 LINE OA 的店家，可由顧客在本帳號發出確認訊息，免費取得預約、取號及訂餐卡；日後主動叫號或提醒不屬於免費即時回覆。";
