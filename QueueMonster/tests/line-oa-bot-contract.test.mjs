@@ -61,6 +61,14 @@ test("rich-menu feedback and quick-reply guide respond inside the existing LINE 
   assert.doesNotMatch(richMenu, /github\.io/);
 });
 
+test("existing followers can reveal Quick Replies without unfriending or waiting for greeting", () => {
+  assert.match(bridge, /選單\|功能選單\|快速回覆\|快捷選單\|主選單\|顯示選單/);
+  assert.match(bridge, /text:"選擇要使用的快捷功能：",quickReply:platformQuickReply\(\)/);
+  assert.match(bridge, /text:PLATFORM_FEEDBACK_REPLY,quickReply:platformQuickReply\(\)/);
+  assert.match(bridge, /\{type:"text",text,quickReply:platformQuickReply\(\)\}/);
+  assert.match(bridge, /text: PLATFORM_FEEDBACK_REPLY, quickReply: platformQuickReply\(\)/);
+});
+
 test("bot links to working public booking entry points without bypassing verified identity", () => {
   assert.match(bridge, /directory\.html\?mode=search/);
   assert.match(bridge, /my-records\.html/);
