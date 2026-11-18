@@ -149,7 +149,7 @@ function customerQueue(){
  const progress='<div class="queue-board"><div class="queue-board-lead">現在叫到</div><div class="queue-board-current">'+esc(currentNo)+'</div><div class="queue-board-sub">請依現場叫號進度為準</div><div class="queue-board-grid"><div class="queue-board-stat"><span>我的號碼</span><strong>'+esc(own?.id||"—")+'</strong><small>'+(own?esc(statusName[own.status]||own.status):"尚未取號")+'</small></div><div class="queue-board-stat"><span>前面還有</span><strong>'+esc(ahead>=0?ahead+" 組":"—")+'</strong><small>依候位順序計算</small></div></div><p class="queue-board-note">'+(own?.status==="CALLED"?"已叫到您的號碼，請依現場人員指示報到。":"可在此查看候位狀態；展示資料會依店家端操作變更。")+'</p></div>';
  const ticket=own?'<div class="ticket">'+esc(own.id)+'</div><p>'+status(own.status)+'</p><p class="small">這張號碼牌代表一組</p><div class="staff-actionbar">'+btn("查看叫號進度","view-progress")+btn("查看通知示意","view-notice")+'</div>':
  clinic?'<p class="muted">診所預約後請先到現場報到。店家確認報到時，系統才會把病患加入指定診間候診隊列。</p><div class="staff-actionbar">'+btn("查看門診預約","go-reserve","primary full")+'</div>':
- '<p class="muted">現在可以在網站上取得號碼。</p><p>取號者：<strong>試用顧客</strong>（DEMO 已模擬 LINE 身分）</p>'+field("本次候位人數（1～20 人）","queue-party",draft.party,"number",'min="1" max="20" step="1"')+sel("服務需求","queue-service",["手機維修","電池更換","資料轉移","維修諮詢"],draft.service)+'<div style="margin-top:14px">'+btn("立即線上取號","take-number","primary full")+'</div>';
+ '<p class="muted">選擇人數與服務需求後，即可取號。</p>'+field("本次候位人數（1～20 人）","queue-party",draft.party,"number",'min="1" max="20" step="1"')+sel("服務需求","queue-service",["手機維修","電池更換","資料轉移","維修諮詢"],draft.service)+'<div style="margin-top:14px">'+btn("立即線上取號","take-number","primary full")+'</div>';
  return (clinic?box("選擇取號場次",navRoom+'<p class="small">若已預約，請先至店家端「預約管理」報到；報到後會加入對應診間叫號。</p>'):"")+'<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",currentNo)+stat("等候組數",active.length)+stat("我的號碼",own?.id||"—")+'</div>'+box("我的現場號碼",ticket)+(own?box("我的取號",progress):"");
 }
 function customerMine(){
@@ -175,7 +175,7 @@ function customerDetail(){
  if(!o)return box("沒有找到這筆紀錄",back);
  const title=detailKind==="reservation"?(o.status==="CONFIRMED"?"預約成功":o.status==="CANCELLED"?"預約已取消":"預約狀態："+(statusName[o.status]||o.status)):
    detailKind==="order"?(o.status==="NEW"?"訂單已送出":statusName[o.status]||o.status):"我的專屬叫號看板";
- const header='<div class="demo-detail-heading"><p class="small">'+esc(displayShop())+' · 示範紀錄</p><h2>'+esc(title)+'</h2><strong>'+esc(o.id)+'</strong></div>';
+ const header='<div class="demo-detail-heading"><p class="small">'+esc(displayShop())+'</p><h2>'+esc(title)+'</h2><strong>'+esc(o.id)+'</strong></div>';
  if(detailKind==="reservation"){
   const editable=o.status==="CONFIRMED";
   const edit=editable&&detailEditing?'<div class="inset"><h3>修改預約資訊</h3>'+
@@ -301,7 +301,7 @@ function renderNotice(){
  const showMessages=notifyOpen||desktopPreview;
  el.classList.toggle("is-open",notifyOpen);
  el.setAttribute?.("aria-expanded",String(notifyOpen));
- el.innerHTML=guideHtml+'<section class="demo-desktop-notice-card"><div class="demo-notice-head"><div><strong>顧客收到什麼？</strong><p>LINE 訊息與網站狀態模擬</p></div>'+btn(notifyOpen?"收起":"查看通知","toggle-notify","outline")+'</div>'+
+ el.innerHTML=guideHtml+'<section class="demo-desktop-notice-card"><div class="demo-notice-head"><div><strong>顧客收到什麼？</strong><p>LINE 訊息與進度</p></div>'+btn(notifyOpen?"收起":"查看通知","toggle-notify","outline")+'</div>'+
  (showMessages?'<div class="demo-line-phone"><div class="demo-phone-header"><span class="demo-phone-dot"></span>LINE 對話示意 · '+esc(displayShop())+'</div><div class="demo-phone-body">'+(notes.length?notes.slice(0,4).map(n=>'<div class="demo-message"><div class="demo-message-source">'+esc(n.kind)+' · '+esc(n.at)+'</div><strong>'+esc(n.title)+'</strong><div>'+n.lines.map(line=>'<p>'+esc(line)+'</p>').join("")+'</div></div>').join(""):'<div class="demo-message"><strong>尚無新訊息</strong><p>顧客完成訂餐、預約或取號後，這裡會顯示可能看到的確認內容。</p></div>')+'</div></div>':'')+
  '<p class="demo-notice-disclaimer">這是示範內容，不是真實 LINE 推播。正式環境是否發送、發送哪些訊息，依 LINE 授權、店家 OA 設定及後端功能而定；網站內的紀錄與進度仍可查詢。</p></section>';
 }
