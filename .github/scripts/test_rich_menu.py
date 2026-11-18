@@ -50,7 +50,9 @@ class RichMenuContract(unittest.TestCase):
             self.assertTrue(action["uri"].startswith("https://liff.line.me/1234567890-AbCdEf/directory.html?mode=search&entry=platform-oa"))
         self.assertIn("service=%E9%A0%90%E7%B4%84", items[1][3]["uri"])
         self.assertIn("service=%E5%8F%96%E8%99%9F", items[2][3]["uri"])
-        self.assertEqual(items[4][3]["uri"], richmenu.BASE+"my-records.html")
+        self.assertEqual(richmenu.BASE, "https://queue.monsterport.com/")
+        self.assertEqual(items[4][3]["uri"],
+                         "https://liff.line.me/1234567890-AbCdEf/?view=customer&entry=platform-oa&site_return=my-records.html")
         with self.assertRaises(RuntimeError):
             richmenu.customer_items_for_platform_liff("")
 

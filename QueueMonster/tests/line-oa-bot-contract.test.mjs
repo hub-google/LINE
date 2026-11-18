@@ -39,6 +39,10 @@ test("follow greeting is gated, deduplicated and never sent from an own-OA chann
 test("bot links to working public booking entry points without bypassing verified identity", () => {
   assert.match(bridge, /directory\.html\?mode=search/);
   assert.match(bridge, /my-records\.html/);
+  assert.match(bridge, /function platformRecordsLink\(\)/);
+  assert.match(bridge, /site_return=my-records\.html/);
+  assert.match(bridge, /https:\/\/queue\.monsterport\.com\//);
+  assert.doesNotMatch(bridge, /link = PLATFORM_ENTRY\+"my-records\.html"/);
   assert.doesNotMatch(bridge, /directory\.html\?mode=mine&section=(ticket|order)/);
   assert.match(bridge, /my-records\.html/);
   assert.match(bridge, /merchant-register\.html/);

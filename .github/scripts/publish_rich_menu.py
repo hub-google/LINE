@@ -16,7 +16,7 @@ from PIL import Image, ImageDraw, ImageFont
 WIDTH, HEIGHT = 2500, 1686
 SPLITS_X = [0, 833, 1666, WIDTH]
 SPLITS_Y = [0, 843, HEIGHT]
-BASE = "https://hub-google.github.io/LINE/booking/"
+BASE = "https://queue.monsterport.com/"
 CENTER = BASE + "merchant-center.html"
 # Each official-account tile has a distinct purpose. Personal history combines all three record types.
 # Customer records use exactly one LINE OA button; the website shows all three lists together.
@@ -42,8 +42,12 @@ def customer_items_for_platform_liff(liff_id):
         "現場取號": "&service=%E5%8F%96%E8%99%9F",
         "線上點餐": "&service=%E9%BB%9E%E9%A4%90",
     }
-    return [(title, caption, glyph, {**action, "uri":root+service[title] if title in service else action["uri"]})
-            for title, caption, glyph, action in CUSTOMER_ITEMS]
+    records = "https://liff.line.me/" + liff_id + "/?view=customer&entry=platform-oa&site_return=my-records.html"
+    items = []
+    for title, caption, glyph, action in CUSTOMER_ITEMS:
+        target = root + service[title] if title in service else (records if title == "我的紀錄" else action["uri"])
+        items.append((title, caption, glyph, {**action, "uri":target}))
+    return items
 
 
 def configured_platform_liff_id():

@@ -2,7 +2,7 @@ name: LINE OA 總公司圖文選單發布
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [release]
     paths:
       - '.github/workflows/line-rich-menu.yml'
       - '.github/scripts/publish_rich_menu.py'
@@ -16,6 +16,7 @@ concurrency:
 
 jobs:
   publish-rich-menu:
+    if: github.ref == 'refs/heads/release'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:

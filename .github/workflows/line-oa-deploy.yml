@@ -2,7 +2,7 @@ name: LINE OA 憑證同步與後端部署
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [release]
     paths:
       - '.github/workflows/line-oa-deploy.yml'
       - 'QueueMonster/supabase/functions/line-bridge/index.ts'
@@ -14,6 +14,7 @@ permissions:
 
 jobs:
   deploy-line:
+    if: github.ref == 'refs/heads/release'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
