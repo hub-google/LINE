@@ -20,7 +20,8 @@ test("all normal site pages reference the exact same header, account script and 
  const pages=["index","home","for-merchants","for-customers","demo","directory",
   "my-records","board","merchant-center","merchant-register","platform-login","privacy","terms"];
  for(const page of pages){
-  const html=read("saas/"+page+".html");
+  // Inspect actual references: the contract helper inlines scripts/styles.
+  const html=rawReadFile(path.join(root,"saas",page+".html"),"utf8");
   assert.match(html,/id="marketing-header"/,page+" missing shared header mount");
   assert.match(html,/assets\/marketing\/shared-header\.css/,page+" missing shared header CSS");
   assert.match(html,/assets\/marketing\/shared-header\.js/,page+" missing shared header JS");
