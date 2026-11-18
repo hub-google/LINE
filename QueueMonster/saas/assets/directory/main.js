@@ -6,11 +6,17 @@ const SB_URL=SUPABASE_URL;
 const SB_KEY=SUPABASE_PUBLISHABLE_KEY;
 const bridge=SB_URL+"/functions/v1/line-bridge?action=config";
 const sb=createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"line-saas-customer-session-v2"}});
-const params=new URLSearchParams(location.search),mode=["search","queue","mine","last-board"].includes(params.get("mode"))?params.get("mode"):"search";
+const params=new URLSearchParams(location.search),mode=["search","queue","mine","last-board","frequent"].includes(params.get("mode"))?params.get("mode"):"search";
 // Old personal record links all show the same combined history page.
 const platformChatEntry=params.get("entry")==="platform-oa";
 const isQueueSection=mode==="queue";
-const isHistorySection=location.pathname.endsWith("/my-records.html")||mode==="mine"||mode==="last-board";
+const isFrequentSection=mode==="frequent";
+const isHistorySection=location.pathname.endsWith("/my-records.html")||mode==="mine"||mode==="last-board"||isFrequentSection;
+const historyScope=["active","history"].includes(params.get("scope"))?params.get("scope"):"all";
+const activeStatuses=new Set(["CONFIRMED","CHECKED_IN","WAITING","HOLD","CALLED","ARRIVED","ADMITTED","SERVING","NEW","ACCEPTED","READY"]);
+const isInHistoryScope=status=>historyScope==="all"||(historyScope==="active"
+ ?activeStatuses.has(String(status||"").toUpperCase())
+ :!activeStatuses.has(String(status||"").toUpperCase()));
 // LINE OA service links open the matching real-store filter, never a demo or blank search.
 const requestedService=isQueueSection?"取號":mode==="search"&&["預約","取號","點餐","看板"].includes(params.get("service"))?params.get("service"):"";
 if(requestedService)document.getElementById("explore-service").value=requestedService;
@@ -79,10 +85,49 @@ function customerUrl(slug,tab,oaMode="PLATFORM"){
 function categoryBadge(t){
  return '<span class="badge">'+e(t.category||"其他")+'</span>';
 }
+function renderFrequentStores(){
+ const heading=document.getElementById("results-heading"),count=document.getElementById("result-count");
+ document.getElementById("result-pages").classList.add("hidden");
+ heading.textContent="常用店家";
+ if(mineIdentityState!=="ready"){
+  const pending=mineIdentityState==="loading",guest=mineIdentityState==="guest";
+  count.textContent=pending?"確認身分中":guest?"請先登入 LINE":"暫時無法取得";
+  els.results.innerHTML='<div class="empty" role="status">'+
+   (pending?'<strong>正在確認 LINE 身分</strong><p>整理曾使用過的店家。</p>':
+    guest?'<strong>請先使用 LINE 登入</strong><p>登入後可查看常用店家。</p><p><button type="button" class="btn" data-site-line-login>LINE 登入後查看</button></p>':
+    '<strong>暫時無法讀取常用店家</strong><p>請稍後重試。</p>')+'</div>';
+  return;
+ }
+ const frequent=new Map();
+ for(const records of Object.values(personalRecords)){
+  for(const record of records){
+   const slug=String(record.slug||"");
+   if(!/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug))continue;
+   if(record.merchant_status&&record.merchant_status!=="ACTIVE")continue;
+   const current=frequent.get(slug)||{slug,name:record.shop_name||"店家",oaMode:record.oa_mode||"PLATFORM",count:0,last:0};
+   current.count+=1;current.last=Math.max(current.last,Date.parse(record.created_at||"")||0);
+   frequent.set(slug,current);
+  }
+ }
+ const keyword=els.keyword.value.trim().toLocaleLowerCase("zh-TW");
+ const shops=[...frequent.values()].filter(x=>!keyword||x.name.toLocaleLowerCase("zh-TW").includes(keyword))
+  .sort((a,b)=>b.count-a.count||b.last-a.last||a.name.localeCompare(b.name,"zh-Hant"));
+ count.textContent=shops.length+" 間店家";
+ els.results.innerHTML=shops.length?shops.map(shop=>{
+  const href=customerUrl(shop.slug,"home",shop.oaMode);
+  return '<article class="merchant-card"><div class="card-content">'+
+   '<div class="card-top"><span class="shop-icon" aria-hidden="true">▤</span><div class="shop-details">'+
+   '<h3 class="shop-name">'+e(shop.name)+'</h3><p class="shop-desc">已載入的服務紀錄 '+shop.count+' 筆</p></div></div>'+
+   '<div class="card-actions"><a class="btn" data-oa-mode="'+e(shop.oaMode)+'" href="'+e(href)+'">前往店家</a></div>'+
+   '</div></article>';
+ }).join(""):'<div class="empty"><strong>'+(keyword?"沒有符合的常用店家":"目前沒有常用店家")+
+  '</strong><p>完成預約、取號或訂餐後，使用過的店家會出現在這裡。</p></div>';
+}
+
 function renderMyRecords(){
  const title=document.getElementById("results-heading"),count=document.getElementById("result-count");
  document.getElementById("result-pages").classList.add("hidden");
- title.textContent="我的紀錄";
+ title.textContent=historyScope==="active"?"我的進度":historyScope==="history"?"歷史紀錄":"我的紀錄";
  // The shared header owns direct LINE authentication across every page.
  if(mineIdentityState!=="ready"){
   const pending=mineIdentityState==="loading",guest=mineIdentityState==="guest";
@@ -99,7 +144,7 @@ function renderMyRecords(){
  const kinds=[["reservation","預約紀錄"],["ticket","取號紀錄"],["order","訂單紀錄"]];
  let total=0;
  const html=kinds.map(([kind,label])=>{
-  const rows=(personalRecords[kind]||[]).filter(r=>!kw||((r.shop_name||"")+" "+(r.number||"")+" "+(r.status||"")).toLocaleLowerCase("zh-TW").includes(kw));
+  const rows=(personalRecords[kind]||[]).filter(r=>isInHistoryScope(r.status)&&(!kw||((r.shop_name||"")+" "+(r.number||"")+" "+(r.status||"")).toLocaleLowerCase("zh-TW").includes(kw)));
   total+=rows.length;
   const cards=rows.map(r=>{
    const slug=String(r.slug||""),uuid=/^[0-9a-f-]{36}$/i.test(String(r.id||""));
@@ -140,7 +185,7 @@ function renderMyRecords(){
 async function loadMoreHistory(kind){
  if(!isHistorySection||!["reservation","ticket","order"].includes(kind)||
     mineIdentityState!=="ready"||!historyHasMore[kind]||historyLoading)return;
- historyLoading=kind;historyError="";renderMyRecords();
+ historyLoading=kind;historyError="";render();
  const offset=historyPages[kind]*historyPageSize;
  try{
   const {data,error}=await sb.rpc("so_my_platform_records_page",
@@ -154,7 +199,7 @@ async function loadMoreHistory(kind){
  }catch(error){
   historyError="無法載入更多紀錄，請稍後重試。";
   console.warn("Customer history paging failed",error);
- }finally{historyLoading="";renderMyRecords();}
+ }finally{historyLoading="";render();}
 }
 document.addEventListener("click",event=>{
  const button=event.target.closest("button[data-history-more]");
@@ -162,6 +207,7 @@ document.addEventListener("click",event=>{
  void loadMoreHistory(button.dataset.historyMore);
 });
 function render(){
+ if(isFrequentSection){renderFrequentStores();return;}
  if(isHistorySection){renderMyRecords();return;}
  const keyword=els.keyword.value.trim().toLocaleLowerCase("zh-TW");
  const searching=searchCriteria();
@@ -378,7 +424,13 @@ async function load(){
   // Parallelize LINE config and identity; guests can see the sign-in CTA without config.
   const confPromise=fetch(bridge+((platformChatEntry||location.hostname==="queue.monsterport.com")?"&site=queue":""),{cache:"no-store"}).then(r=>r.ok?r.json():{}).catch(()=>({}));
   if(needsIdentity){
-    els.intro.innerHTML='<strong>我的紀錄</strong><p>預約、取號、訂餐三種紀錄同時呈現，並可點開所屬店家的詳細資訊。</p>';
+    els.intro.innerHTML=isFrequentSection
+      ?'<strong>常用店家</strong><p>依照您已載入的預約、取號與訂餐紀錄，整理曾使用的店家。</p>'
+      :historyScope==="active"
+      ?'<strong>我的進度</strong><p>查看目前進行中的預約、排隊及訂單。</p>'
+      :historyScope==="history"
+      ?'<strong>歷史紀錄</strong><p>查看已結束、完成或取消的服務紀錄。</p>'
+      :'<strong>我的紀錄</strong><p>預約、取號、訂餐三種紀錄同時呈現。</p>';
     const session=await sb.auth.getSession();
     if(session.error)throw session.error;
     if(!session.data.session){
@@ -430,6 +482,7 @@ async function load(){
   updateFilterSummary();
   if(searchCriteria())await loadSearch();
   else render();
+  if(!needsIdentity&&params.get("focus")==="keyword")els.keyword.focus();
  }catch(error){
   console.warn("Store discovery unavailable",error);
   if(needsIdentity){
