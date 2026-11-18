@@ -333,9 +333,8 @@ export function lineStatusBadge(){
   const detail=lineState.lineLinkStatus==="connecting"?"正在連接 LINE 帳號…":
     lineState.lineLinkStatus==="not-logged-in"?"請使用 LINE 登入後繼續預約或取號。":
     lineState.lineConnectError||"請授權 LINE 使用者資訊後繼續。";
-  const liffUrl=lineState.lineConfig?.liffId?lineLoginUrl():"";
   const loginLabel=lineState.lineLinkStatus==="not-logged-in"?"使用 LINE 登入":"重新登入 LINE";
-  return '<div class="alert">'+esc(detail)+' '+btn(loginLabel,"line-reauth","secondary")+(liffUrl?' <a href="'+esc(liffUrl)+'">使用 LINE 登入（手機／電腦）</a>':'')+'</div>';
+  return '<div class="alert">'+esc(detail)+' '+btn(loginLabel,"line-reauth","secondary")+'</div>';
 }
 
 export function initializeLineSession(){
