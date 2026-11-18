@@ -31,7 +31,7 @@ test("all normal site pages reference the exact same header, account script and 
  const shared=read("saas/assets/marketing/shared-header.js");
  const links=["平台總覽","店家功能","顧客功能","常見問題","免登入功能試用","搜尋店家","我的紀錄"];
  for(const label of links)assert.ok(shared.includes(label),"missing shared navigation item: "+label);
- assert.match(shared,/id=\\"site-auth-root\\"/);
+ assert.match(shared,/id="site-auth-root"/);
  assert.match(style,/\.site-auth-slot/);
  assert.match(style,/\.site-auth-name/);
  assert.match(style,/\.site-auth-login/);
