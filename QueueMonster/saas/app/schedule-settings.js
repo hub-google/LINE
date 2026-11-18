@@ -379,7 +379,9 @@ export function renderScheduleSettings(isManager){
  return box("智慧營業排程",
   '<p class="small">只需設定一次，往後每週自動套用；特殊日期優先於每週規則。適用預約、取號與線上點餐，並保留既有預約和訂單。</p>'+
   '<label class="checklist"><input type="checkbox" id="schedule-enabled"'+(d.enabled?" checked":"")+'> 啟用每週自動排程</label>'+
-  (!d.enabled?'<p class="small">尚未啟用時仍保留原有指定日期場次；完成下面的設定並儲存後才會自動套用。</p>':"")+
+  '<div class="staff-actionbar" style="margin:10px 0 4px">'+btn("儲存自動排程開關","schedule-enabled-save","primary")+'</div>'+
+  '<p class="small">此按鈕只儲存啟用狀態，不會覆蓋下方尚未儲存的營業方案、每週場次或特殊日期；每週場次請另外按「儲存每週營業排程」。</p>'+
+  (!d.enabled?'<p class="small">尚未啟用時仍保留原有指定日期場次；設定每週場次後才會自動套用。若七天都是公休，啟用後仍不會產生新場次。</p>':"")+
   bookingNoticeSection+planSection+batchSection+
   '<section class="schedule-module schedule-module-weekly"><div class="schedule-module-heading"><h3>每週細部調整</h3></div><div class="schedule-module-body">'+
   '<p class="small">以下是套用後的七天排程摘要。若某一天需要不同內容，可展開「個別調整」修改，其他星期不受影響。</p>'+week+
@@ -547,7 +549,23 @@ export async function handleScheduleAction(ev,b,a,id){
   delete d.templates[key];for(let i=1;i<=7;i++)if(d.weekdays[String(i)]===key)d.weekdays[String(i)]="off";
   serviceUnitsState.scheduleEditTemplate=Object.keys(d.templates)[0];render();return true;
  }
- if(a==="schedule-weekly-save"){
+ if(a==="schedule-enabled-save"){
+   const toggle=document.getElementById("schedule-enabled");
+   const saved=serviceUnitsState.scheduleConfig;
+   if(!toggle||!saved){showActionFeedback("尚未讀取到營業排程，請重新載入設定後再儲存。","error");return true;}
+   const enabled=toggle.checked;
+   // Use saved rules, not the uncommitted weekday/plan form edits.
+   const templates=saved.templates&&Object.keys(saved.templates).length?clone(saved.templates):clone(initialTemplates);
+   const weekdayRules={};
+   for(let i=1;i<=7;i++)weekdayRules[String(i)]=saved.weekdays?.[String(i)]||"off";
+   await act(async()=>{
+    await rpc("so_schedule_manage",{p_slug:routeState.slug,p_action:"weekly",
+     p_data:{enabled,weekdays:weekdayRules,templates}});
+    if(serviceUnitsState.scheduleDraft)serviceUnitsState.scheduleDraft.enabled=enabled;
+    return enabled?"已啟用每週自動排程；原有每週場次與特殊日期保持不變":"已停用每週自動排程；原有每週場次與特殊日期保持不變";
+   });return true;
+  }
+  if(a==="schedule-weekly-save"){
   const d=capture();
   try{validate(d);}catch(error){window.alert(error.message);return true;}
   await act(async()=>{
