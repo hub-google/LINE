@@ -810,6 +810,7 @@ function platformRecordsLink(): string {
   return "https://liff.line.me/"+encodeURIComponent(liffId)+"/?view=customer&entry=platform-oa&site_return=my-records.html";
 }
 // Use record-specific URLs for the platform OA; no fictitious platform queue board.
+const PLATFORM_FEEDBACK_REPLY = "請在此留下您想反饋的問題或建議，若為操作問題或系統問題，可留下截圖方便確認。";
 function platformBotMessage(command: string, welcome = false): Record<string, unknown> {
   const input = command.trim().toLowerCase().slice(0, 120);
   let title = "排隊怪獸｜請選擇要使用的服務";
@@ -821,10 +822,9 @@ function platformBotMessage(command: string, welcome = false): Record<string, un
     title = "店家可免費建立門市，使用預約、叫號及線上點餐工具；也能先免註冊體驗免費叫號。已有帳號可登入店家後台。";
     link = PLATFORM_ENTRY+"merchant-register.html";
     label = "申請商家開通";
-  } else if (/客服|協助|幫助|問題|聯絡|人工/.test(input)) {
-    title = "排隊怪獸目前沒有客服中心或人工聊天室。本 LINE 官方帳號僅提供功能入口與自動操作指引，請查看網站的操作教學；請勿傳送密碼、Channel Secret 或 Access Token。";
-    link = PLATFORM_ENTRY+"merchant-center.html#guide";
-    label = "操作教學";
+  } else if (/客服|協助|幫助|問題|聯絡|人工|回饋|建議/.test(input)) {
+    // Support is handled inside this official LINE chat, not on a redirect page.
+    return {type:"text",text:PLATFORM_FEEDBACK_REPLY};
   } else if (!/訂單紀錄|訂餐紀錄|取餐紀錄/.test(input) && /點餐|訂餐|取餐|外帶|餐點/.test(input)) {
     title = "尋找提供線上點餐的店家，選好商品後可依該店設定預約取餐時間；取餐進度請到「我的紀錄」查看。";
     link = platformDirectoryLink("點餐");
@@ -858,18 +858,10 @@ function platformBotMessage(command: string, welcome = false): Record<string, un
     link = platformDirectoryLink("預約");
     label = "搜尋線上預約";
   }
-  return {
-    type: "text",
-    text: title+"\n"+link,
-    quickReply: {
-      items: [
-        {type:"action",action:{type:"uri",label,uri:link}},
-        {type:"action",action:{type:"uri",label:"我的紀錄",uri:platformRecordsLink()}},
-        {type:"action",action:{type:"uri",label:"現場取號",uri:platformDirectoryLink("取號")}},
-        {type:"action",action:{type:"uri",label:"線上預約",uri:platformDirectoryLink("預約")}},
-      ],
-    },
-  };
+  // Do not attach the same four generic buttons to every message.
+  // Navigation already lives in both 3x2 rich-menu tabs. Record-specific
+  // actions remain attached to the reservation/queue/order Flex notices.
+  return {type:"text",text:title+"\n"+link};
 }
 async function replyToLine(token: string, replyToken: string,
                            message: Record<string, unknown>, redelivery = false): Promise<boolean> {
@@ -1091,6 +1083,20 @@ async function webhook(req: Request, origin: string | null, merchantSlug = "") {
       if (event.type === "postback") {
         const postback = event.postback as { data?: unknown } | undefined;
         const command = typeof postback?.data === "string" ? postback.data : "";
+        // Identical feedback action on both consumer and merchant HQ rich menus.
+        // Postback keeps users in LINE; Reply API answers immediately without
+        // a link, a second login, or a push-message polling job.
+        if (command === "platform:feedback" && !merchantTenantId) {
+          const replyToken = event.replyToken;
+          if (typeof replyToken !== "string" || !replyToken || replyToken.length > 512) continue;
+          const token = Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
+          if (!token) throw new Error("LINE_MESSAGING_NOT_CONFIGURED");
+          const sent = await replyToLine(token, replyToken,
+            {type:"text",text:PLATFORM_FEEDBACK_REPLY},
+            (event.deliveryContext as {isRedelivery?:unknown}|undefined)?.isRedelivery===true);
+          if (sent) processed++; else duplicates++;
+          continue;
+        }
         const ticketId = command.startsWith("queue_progress:") ? command.slice("queue_progress:".length) : "";
         const replyToken = event.replyToken;
         if (!validUUID(ticketId) || typeof replyToken !== "string" ||
@@ -1169,7 +1175,7 @@ async function webhook(req: Request, origin: string | null, merchantSlug = "") {
           const token = Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
           const replyToken = event.replyToken;
           const message = feedbackEntry
-            ? { type: "text", text: "有要反饋的問題請在這裡留言" }
+            ? { type: "text", text: PLATFORM_FEEDBACK_REPLY }
             : Deno.env.get("LINE_PLATFORM_WELCOME_REPLY") === "true"
               ? platformBotMessage("", true)
               : null;
