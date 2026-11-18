@@ -1150,18 +1150,30 @@ async function webhook(req: Request, origin: string | null, merchantSlug = "") {
         processed++;
         // Never send platform branding to a merchant-owned OA.
         // Avoid duplicate greetings: only reply on the first processed follow.
-        if (event.type === "follow" && !merchantTenantId &&
-            Deno.env.get("LINE_PLATFORM_WELCOME_REPLY")==="true") {
-          const token=Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
-          const replyToken=event.replyToken;
-          if (token && typeof replyToken==="string" && replyToken.length<=512) {
+        if (event.type === "follow" && !merchantTenantId) {
+          // LINE supplies no friend-source field in follow webhooks. Consume
+          // only an unexpired, verified feedback-page intent for this exact user.
+          const claimed = await db.from("qm_feedback_join_intents")
+            .delete().eq("line_sub", source.userId)
+            .gt("expires_at", new Date().toISOString())
+            .select("line_sub").maybeSingle();
+          if (claimed.error) throw claimed.error;
+          const feedbackEntry = !!claimed.data;
+          const token = Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
+          const replyToken = event.replyToken;
+          const message = feedbackEntry
+            ? { type: "text", text: "有要反饋的問題請在這裡留言" }
+            : Deno.env.get("LINE_PLATFORM_WELCOME_REPLY") === "true"
+              ? platformBotMessage("", true)
+              : null;
+          if (message && token && typeof replyToken === "string" && replyToken.length <= 512) {
             try {
-              await replyToLine(token,replyToken,platformBotMessage("",true),
-                (event.deliveryContext as {isRedelivery?:unknown}|undefined)?.isRedelivery===true);
+              await replyToLine(token, replyToken, message,
+                (event.deliveryContext as { isRedelivery?: unknown } | undefined)?.isRedelivery === true);
             } catch (cause) {
-              // The friendship event has been recorded; a failed greeting must
-              // not reset friend state or make LINE retry the whole event.
-              console.warn("Platform OA welcome reply failed",
+              // The follow was recorded; don't reset friend state or resend
+              // a greeting after a webhook redelivery.
+              console.warn("Platform OA follow reply failed",
                 cause instanceof Error ? cause.name : "unknown");
             }
           }
@@ -1271,6 +1283,37 @@ Deno.serve(async (req: Request) => {
   try {
     const payload = await req.json();
     const db = service();
+    if (payload.action === "feedback-join-intent") {
+      // A normal OA follow webhook has no referrer. Only a LINE-verified visitor
+      // from the dedicated feedback page can register a short-lived intention.
+      if (origin !== "https://queue.monsterport.com")
+        return reply(403, { error: "ORIGIN_DENIED" }, origin);
+      const idToken = typeof payload.idToken === "string" ? payload.idToken : "";
+      if (idToken.length < 20 || idToken.length > 10000)
+        return reply(400, { error: "INVALID_LINE_ID_TOKEN" }, origin);
+      const liffId = Deno.env.get("LINE_LIFF_ID_QUEUE") || "";
+      const channelId = /^([0-9]{8,})-[A-Za-z0-9]+$/.exec(liffId)?.[1] || "";
+      if (!channelId || channelId !== Deno.env.get("LINE_LOGIN_CHANNEL_ID"))
+        return reply(503, { error: "QUEUE_LINE_LOGIN_NOT_READY" }, origin);
+      const verified = await lineVerify(idToken, undefined, { channelId });
+      const oaUrl = await oaAddFriendUrl();
+      if (!oaUrl) return reply(503, { error: "LINE_OA_NOT_AVAILABLE" }, origin);
+      const reachability = await oaRecipientReachability(verified.sub);
+      if (reachability === "UNKNOWN")
+        return reply(503, { error: "LINE_FRIEND_STATUS_UNAVAILABLE" }, origin);
+      if (reachability === "REACHABLE")
+        return reply(200, { ok: true, alreadyFriend: true,
+          oaUrl: "https://line.me/R/oaMessage/" + encodeURIComponent(oaUrl.split("/").pop() || "") }, origin);
+      const now = new Date().toISOString();
+      // No cron jobs: lazily expire abandoned intentions whenever this route is used.
+      const cleanup = await db.from("qm_feedback_join_intents").delete().lt("expires_at", now);
+      if (cleanup.error) throw cleanup.error;
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+      const saved = await db.from("qm_feedback_join_intents")
+        .upsert({ line_sub: verified.sub, expires_at: expiresAt }, { onConflict: "line_sub" });
+      if (saved.error) throw saved.error;
+      return reply(200, { ok: true, alreadyFriend: false, oaUrl }, origin);
+    }
     const user = await identity(req, db);
     if (payload.action === "event-reply-command") {
       const slug=String(payload.slug||""),recordId=String(payload.recordId||"");
