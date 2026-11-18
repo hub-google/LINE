@@ -36,6 +36,14 @@ test("follow greeting is gated, deduplicated and never sent from an own-OA chann
   assert.match(bridge, /LINE_REPLY_FAILED_/);
 });
 
+test("rich-menu feedback uses a direct Reply API postback, while bot Quick Replies are not duplicated", () => {
+  assert.match(richMenu, /"問題回饋".*"platform:feedback"/);
+  assert.match(bridge, /if \(command === "platform:feedback" && !merchantTenantId\)/);
+  assert.match(bridge, /PLATFORM_FEEDBACK_REPLY = "請在此留下您想反饋的問題或建議，若為操作問題或系統問題，可留下截圖方便確認。"/);
+  assert.doesNotMatch(bridge, /label:"現場取號",uri:platformDirectoryLink\("取號"\)/);
+  assert.doesNotMatch(bridge, /label:"線上預約",uri:platformDirectoryLink\("預約"\)/);
+});
+
 test("bot links to working public booking entry points without bypassing verified identity", () => {
   assert.match(bridge, /directory\.html\?mode=search/);
   assert.match(bridge, /my-records\.html/);
