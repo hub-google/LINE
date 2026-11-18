@@ -42,7 +42,7 @@ try{
  assert.ok(mascot.painted>1500,'Mascot must actually render rather than showing a broken/blank SVG');
  console.log('Shared mascot rendered in Chromium:',JSON.stringify(mascot));
  // Production-built homepage must display an intrusive, user-dismissible intro on every entry.
- await page.goto(baseUrl+'/home.html?__line_build=refresh&__line_fresh=1795019991930',{waitUntil:'domcontentloaded'});
+ await page.goto(baseUrl+'/booking/home.html?__line_build=refresh&__line_fresh=1795019991930',{waitUntil:'domcontentloaded'});
  const autoIntro=page.getByRole('dialog',{name:'排隊怪獸品牌介紹影片'});
  await autoIntro.waitFor({state:'visible',timeout:10000});
  assert.equal(await page.locator('.qm-intro-movie').isVisible(),true,'Uploaded MP4 must be visible automatically');
