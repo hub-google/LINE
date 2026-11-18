@@ -100,3 +100,8 @@ body:has(#qa-login-panel) > header > div:first-child{margin:0}
 .site-auth-password-primary{background:#563575;border:1px solid #563575;color:white}
 .site-auth-password-actions button:disabled{opacity:.6;cursor:wait}
 @media(max-width:420px){.site-auth-profile>summary.site-auth-name{max-width:150px}.site-auth-password-dialog{padding:18px}}
+
+/* Shared, equally prominent entrances: LINE consumer and Email/Google merchant. */
+.site-auth-button.site-auth-merchant-login{background:#f7edfb;border-color:#ddc0e8;color:#563575}
+.site-auth-button.site-auth-merchant-login:hover{background:#eddaf7;border-color:#bc8bd5}
+.site-auth-button.site-auth-customer-login,.site-auth-button.site-auth-merchant-login{min-height:42px;border-radius:13px}
