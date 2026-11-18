@@ -1,7 +1,11 @@
-name: Provision independent CTEE LIFF
+name: Manage LINE LIFF apps
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/create-ctee-liff.yml
 
 permissions:
   contents: read
@@ -21,5 +25,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Compile and validate provisioning script
         run: python3 -m py_compile .github/scripts/create-ctee-liff.py
-      - name: Create/reuse CTEE LIFF and verify Queue Monster LIFF apps remain unchanged
-        run: python3 .github/scripts/create-ctee-liff.py
+      - name: Safely rename Queue official LIFF using LINE API and verify all apps unchanged
+        run: python3 .github/scripts/create-ctee-liff.py --rename-queue
