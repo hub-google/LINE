@@ -40,3 +40,14 @@
 .qm-public-header .qm-public-quicklinks a[aria-current=page]{background:#ecd5f8;color:#713f95}
 @media(max-width:1240px){.qm-public-header .qm-public-quicklinks{display:flex}}
 @media(max-width:620px){.qm-public-header .qm-public-quicklinks{display:none}}
+
+/* Keep both guest login choices readable at narrow widths; signed-in state stays compact. */
+@media(max-width:620px){
+ .qm-public-header .qm-public-inner:has(.site-auth-merchant-login){flex-wrap:wrap}
+ .qm-public-header .qm-public-auth:has(.site-auth-merchant-login){order:3;flex:1 0 100%;max-width:100%;justify-content:flex-end;margin-left:0}
+ .qm-public-header .qm-public-auth:has(.site-auth-merchant-login) .site-auth-inner{flex-wrap:nowrap}
+ .qm-public-header .qm-public-mobile{margin-left:auto}
+}
+@media(max-width:360px){
+ .qm-public-header .site-auth-button.site-auth-customer-login{font-size:11px}
+}
