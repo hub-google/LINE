@@ -23,20 +23,28 @@
 <section class="demo-intro">
 <span class="demo-badge">免費試用 · 不必註冊</span>
 <h1>你的店，也能<span>更從容。</span></h1>
-<p>先從叫號開始，也能直接切換點餐或預約。選擇情境後立即操作，不必再點進門市首頁。完成操作後可以免費建立自己的店家。LINE 訊息為條件式示意，正式推播僅使用店家自行綁定的 LINE OA。</p>
-<div class="demo-scenes" aria-label="試用情境">
-<button class="demo-scene active" data-scene="repair" aria-pressed="true"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5a5 5 0 0 0-6 6L4 17a2 2 0 1 0 3 3l4.5-4.5a5 5 0 0 0 6-6L14 12l-2-2z"/></svg></span><span class="demo-scene-copy"><strong>維修店</strong><small>取號、叫號、過號恢復</small></span></button>
-<button class="demo-scene" data-scene="breakfast" aria-pressed="false"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h16M5 10l2-5h10l2 5M4 10l2 8h12l2-8M9 14h6M7 20h10"/></svg></span><span class="demo-scene-copy"><strong>早餐店</strong><small>線上點餐、取餐進度</small></span></button>
-<button class="demo-scene" data-scene="salon" aria-pressed="false"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="m8.2 8.2 11 11M8.2 15.8l11-11"/></svg></span><span class="demo-scene-copy"><strong>美髮店</strong><small>預約、設計師、報到</small></span></button>
-<button class="demo-scene" data-scene="clinic" aria-pressed="false"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 6v8M8 10h8M9 21v-4h6v4"/></svg></span><span class="demo-scene-copy"><strong>診所</strong><small>預約、報到、三診間叫號</small></span></button>
-</div>
+<p>免登入體驗排隊怪獸的實際操作流程。先選擇客戶端或店家端，再挑選店型，即可直接操作取號、點餐、預約或管理功能。此頁僅模擬資料；LINE 通知為示意，正式推播需由店家自行綁定 LINE OA。</p>
 <div class="demo-controls">
-<div class="demo-label" id="demo-scene">維修店｜現場取號</div>
-<div class="roles" role="group" aria-label="切換顧客與店家操作畫面">
-<button data-role="customer" class="active" aria-pressed="true">顧客端</button>
-<button data-role="staff" aria-pressed="false">店家端</button>
+  <div class="demo-picker-title"><span class="demo-step" aria-hidden="true">1</span><div><strong>先選擇體驗身分</strong><small>切換後可直接比較客戶操作與店家管理畫面</small></div></div>
+  <div class="roles" role="group" aria-label="選擇客戶端或店家端">
+    <button type="button" data-role="customer" class="active" aria-pressed="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20v-2a7 7 0 0 1 14 0v2"/></svg>
+      <span class="demo-role-copy"><strong>客戶端</strong><small>取號、點餐、線上預約</small></span>
+    </button>
+    <button type="button" data-role="staff" aria-pressed="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7" width="16" height="14" rx="2"/><path d="M9 7V5a3 3 0 0 1 6 0v2M4 12h16"/></svg>
+      <span class="demo-role-copy"><strong>店家端</strong><small>接單、預約管理、叫號</small></span>
+    </button>
+  </div>
 </div>
+<div class="demo-picker-title demo-scene-heading"><span class="demo-step" aria-hidden="true">2</span><div><strong>再選擇店家情境</strong><small>四種店型可自由切換，保留剛才選的身分</small></div></div>
+<div class="demo-scenes" aria-label="試用情境">
+<button type="button" class="demo-scene active" data-scene="repair" aria-pressed="true"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14.5 6.5a5 5 0 0 0-6 6L4 17a2 2 0 1 0 3 3l4.5-4.5a5 5 0 0 0 6-6L14 12l-2-2z"/></svg></span><span class="demo-scene-copy"><strong>維修店</strong><small>現場取號、叫號與過號處理</small></span></button>
+<button type="button" class="demo-scene" data-scene="breakfast" aria-pressed="false"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 10h16M5 10l2-5h10l2 5M4 10l2 8h12l2-8M9 14h6M7 20h10"/></svg></span><span class="demo-scene-copy"><strong>早餐店</strong><small>立即／預約取餐、訂單進度</small></span></button>
+<button type="button" class="demo-scene" data-scene="salon" aria-pressed="false"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="m8.2 8.2 11 11M8.2 15.8l11-11"/></svg></span><span class="demo-scene-copy"><strong>美髮店</strong><small>設計師預約、修改與報到</small></span></button>
+<button type="button" class="demo-scene" data-scene="clinic" aria-pressed="false"><span class="demo-scene-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 6v8M8 10h8M9 21v-4h6v4"/></svg></span><span class="demo-scene-copy"><strong>診所</strong><small>分診間預約、報到及叫號</small></span></button>
 </div>
+<div class="demo-current-selection" id="demo-scene" role="status">目前體驗：維修店｜現場取號｜客戶端</div>
 </section>
 <div class="demo-stage">
 <div class="mobile-device">
