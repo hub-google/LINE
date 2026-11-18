@@ -38,7 +38,7 @@ async function getSecrets(): Promise<BotSecrets> {
   return await restJson("rpc/line_ai_runtime_secrets", {method:"POST",body:"{}"});
 }
 async function digestId(secret:string,id:string):Promise<string> {
-  const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),"HMAC",false,["sign"]);
+  const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),{name:"HMAC",hash:"SHA-256"},false,["sign"]);
   const hash=await crypto.subtle.sign("HMAC",key,new TextEncoder().encode("line-ai-user-v1:"+id));
   return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,"0")).join("");
 }
@@ -232,8 +232,12 @@ Deno.serve(async (request:Request):Promise<Response>=>{
   try { payload=JSON.parse(raw); } catch {return replyJson({error:"bad_json"},400);}
   if(!Array.isArray(payload.events)) return replyJson({error:"missing_events"},400);
   if(payload.events.length===0) return replyJson({ok:true});
+  console.info("line_ai_received",payload.events.length);
   const job=Promise.allSettled(payload.events.slice(0,30).map(e=>processEvent(e,secrets)));
-  if(later(job)) return replyJson({ok:true});
-  await job;
-  return replyJson({ok:true});
+  // Do not acknowledge the event before processing; previously background
+  // work could disappear without a durable receipt, silently dropping replies.
+  const outcomes=await job;
+  const rejected=outcomes.filter(x=>x.status==="rejected");
+  if(rejected.length) console.error("line_ai_unhandled",rejected.length);
+  return replyJson({ok:true,processed:outcomes.length});
 });
