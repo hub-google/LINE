@@ -115,7 +115,7 @@ fs.writeFileSync(path.join(output, '_redirects'), [
   '/feedback.html ' + lineTarget + ' 302',
   '/line-group ' + lineTarget + ' 302',
   '',
-].join('\\n'));
+].join('\n'));
 console.log('QueueMonster platform OA verified; one-hop /feedback target: ' + lineTarget);
 fs.writeFileSync(path.join(output, '_headers'),
   '/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n' +
