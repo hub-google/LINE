@@ -1,0 +1,41 @@
+name: Queue Monster｜影片實檔與網站開屏稽核
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/queue-intro-audit.yml"
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect uploaded MP4 content and first frame
+        shell: bash
+        run: |
+          set -euo pipefail
+          input="QueueMonster/saas/assets/videos/intro.mp4"
+          test -s "$input"
+          echo '=== ORIGINAL_UPLOAD ==='
+          sha256sum "$input"
+          file "$input"
+          ffprobe -hide_banner -v error -show_entries format=duration,size,format_name -show_entries stream=codec_name,codec_type,width,height,profile -of json "$input"
+          ffmpeg -hide_banner -loglevel error -ss 3 -i "$input" -frames:v 1 -vf "scale=500:-2" -q:v 6 /tmp/intro-review.jpg
+          echo "FRAME_START"
+          base64 -w0 /tmp/intro-review.jpg
+          echo
+          echo "FRAME_END"
+      - name: Check GitHub Pages actual deployment media
+        shell: bash
+        run: |
+          set -euo pipefail
+          for path in home.html assets/videos/intro-video.json assets/videos/intro.mp4; do
+            echo "=== WEBSITE /LINE/booking/$path ==="
+            curl -sSL --retry 3 --max-time 30 -I "https://hub-google.github.io/LINE/booking/$path" | grep -Ei 'HTTP/|content-type:|content-length:|etag:|cache-control:|last-modified:' || true
+          done
+          echo '=== LIVE MANIFEST ==='
+          curl -fsSL --retry 3 --max-time 30 "https://hub-google.github.io/LINE/booking/assets/videos/intro-video.json"
+          echo
