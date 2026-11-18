@@ -5,10 +5,10 @@
 - Supabase project: `unapiwajmgqqtdkixaab`（重用免費專案，不新增收費專案）
 - Edge Function: `line-ai-chatbot`，`verify_jwt=false`，但必須通過 LINE HMAC-SHA256 簽章驗證才能處理事件
 - Webhook: `https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/line-ai-chatbot`
-- AI: `gemma-4-26b-a4b-it`，僅呼叫 Gemini API 的免費 Gemma 模型，不啟用付費備援
+- AI: `gemma-4-26b-a4b-it` → `gemma-4-31b-it`，只呼叫免費 Gemma 4，不啟用付費備援
 - Database: `public.line_ai_messages`、`public.line_ai_events`，均開啟 RLS 並撤銷一般用戶直接讀寫權限
 - Credentials: encrypted Supabase Vault secrets `line_ai_gemini_api_key`、`line_ai_line_channel_secret`、`line_ai_line_access_token`
-- Pending: 三項憑證未提供；Webhook 尚未設為 LINE Channel Endpoint；尚未完成 LINE → Gemini → LINE 實測
+- LINE Channel：BOT（@614ajxft），Webhook 已透過 LINE API 設定到上方 URL，active=true，官方測試 success=true（HTTP 200）\n- Credentials：三項憑證已儲存在 Supabase Vault，無金鑰上傳 GitHub。\n- Runtime：優先 Gemma 4 26B A4B；若模型回覆失敗則嘗試 Gemma 4 31B。兩款 Gemma 4 均是官方免費 API，**沒有啟用可能收費的 Gemini Flash-Lite 備援**。\n- Limitation：Gemma 4 兩款於 2026-11-18 測試均遇到 Google HTTP 503；LINE 官方 Webhook 端點測試成功，但尚無使用者真實對話的完整驗收。\n- LINE Webhook 之前指向 Google Apps Script，切換後該 GAS 不再接收此 Channel 的新 Webhook 事件；如需回復請從 LINE Developers Console 或官方 API 修改回去。
 
 ## GitHub 專業知識庫
 
