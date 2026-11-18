@@ -795,7 +795,8 @@ async function dispatchPendingNotices(req: Request, origin: string | null): Prom
 // require verified LINE identity and tenant-scoped RPCs on the website.
 const PLATFORM_ENTRY = "https://queue.monsterport.com/";
 function platformDirectoryLink(service = ""): string {
-  const liffId = platformCustomerLiffId();
+  // OA navigation must never fall back to the separate legacy GitHub LIFF.
+  const liffId = Deno.env.get("LINE_LIFF_ID_QUEUE") || "";
   if (!/^\d{8,}-[A-Za-z0-9]+$/.test(liffId))
     return PLATFORM_ENTRY+"directory.html?mode=search"+(service?"&service="+encodeURIComponent(service):"");
   const query = new URLSearchParams({mode:"search",entry:"platform-oa"});
@@ -803,7 +804,7 @@ function platformDirectoryLink(service = ""): string {
   return "https://liff.line.me/"+encodeURIComponent(liffId)+"/directory.html?"+query.toString();
 }
 function platformRecordsLink(): string {
-  const liffId = platformCustomerLiffId();
+  const liffId = Deno.env.get("LINE_LIFF_ID_QUEUE") || "";
   if (!/^\d{8,}-[A-Za-z0-9]+$/.test(liffId)) return PLATFORM_ENTRY+"my-records.html";
   // Reuse the existing customer LINE verification and same-origin return flow.
   return "https://liff.line.me/"+encodeURIComponent(liffId)+"/?view=customer&entry=platform-oa&site_return=my-records.html";

@@ -40,6 +40,7 @@ test("bot links to working public booking entry points without bypassing verifie
   assert.match(bridge, /directory\.html\?mode=search/);
   assert.match(bridge, /my-records\.html/);
   assert.match(bridge, /function platformRecordsLink\(\)/);
+  assert.match(bridge, /const liffId = Deno\.env\.get\("LINE_LIFF_ID_QUEUE"\) \|\| "";/);
   assert.match(bridge, /site_return=my-records\.html/);
   assert.match(bridge, /https:\/\/queue\.monsterport\.com\//);
   assert.doesNotMatch(bridge, /link = PLATFORM_ENTRY\+"my-records\.html"/);
