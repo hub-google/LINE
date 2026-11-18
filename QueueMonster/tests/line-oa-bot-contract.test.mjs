@@ -36,20 +36,37 @@ test("follow greeting is gated, deduplicated and never sent from an own-OA chann
   assert.match(bridge, /LINE_REPLY_FAILED_/);
 });
 
-test("rich-menu feedback uses a direct Reply API postback, while bot Quick Replies are not duplicated", () => {
-  assert.match(richMenu, /"問題回饋".*"platform:feedback"/);
-  assert.match(bridge, /if \(command === "platform:feedback" && !merchantTenantId\)/);
-  assert.match(bridge, /PLATFORM_FEEDBACK_REPLY = "請在此留下您想反饋的問題或建議，若為操作問題或系統問題，可留下截圖方便確認。"/);
+test("LINE OA uses exactly three Quick Replies with queue-domain services and a history-scoped LIFF URL", () => {
+  const items=[...bridge.matchAll(/\{type:"action",action:\{type:"(?:uri|postback)",label:"([^"]+)"/g)]
+    .map(match=>match[1]);
+  assert.deepEqual(items, ["免費體驗","操作教學","歷史紀錄"]);
+  assert.match(bridge, /label:"免費體驗",uri:PLATFORM_ENTRY\+"demo\.html"/);
+  assert.match(bridge, /label:"操作教學",data:"platform:guide",displayText:"操作教學"/);
+  assert.match(bridge, /label:"歷史紀錄",uri:platformRecordsLink\("history"\)/);
+  assert.match(bridge, /site_return:destination/);
+  assert.match(bridge, /scope === "history" \? "\?scope=history"/);
+  assert.match(bridge, /PLATFORM_GUIDE_REPLY = "操作教學可依身分查看：/);
+  assert.match(bridge, /PLATFORM_ENTRY\+"for-customers\.html"/);
+  assert.match(bridge, /PLATFORM_ENTRY\+"merchant-center\.html#guide"/);
+  assert.match(bridge, /quickReply:platformQuickReply\(\)/);
   assert.doesNotMatch(bridge, /label:"現場取號",uri:platformDirectoryLink\("取號"\)/);
   assert.doesNotMatch(bridge, /label:"線上預約",uri:platformDirectoryLink\("預約"\)/);
+});
+
+test("rich-menu feedback and quick-reply guide respond inside the existing LINE OA", () => {
+  assert.match(richMenu, /"問題回饋".*"platform:feedback"/);
+  assert.match(bridge, /command === "platform:feedback" \|\| command === "platform:guide"/);
+  assert.match(bridge, /command === "platform:guide" \? PLATFORM_GUIDE_REPLY : PLATFORM_FEEDBACK_REPLY/);
+  assert.match(bridge, /PLATFORM_FEEDBACK_REPLY = "請在此留下您想反饋的問題或建議，若為操作問題或系統問題，可留下截圖方便確認。"/);
+  assert.doesNotMatch(richMenu, /github\.io/);
 });
 
 test("bot links to working public booking entry points without bypassing verified identity", () => {
   assert.match(bridge, /directory\.html\?mode=search/);
   assert.match(bridge, /my-records\.html/);
-  assert.match(bridge, /function platformRecordsLink\(\)/);
+  assert.match(bridge, /function platformRecordsLink\(scope: "all" \| "history" = "all"\)/);
   assert.match(bridge, /const liffId = Deno\.env\.get\("LINE_LIFF_ID_QUEUE"\) \|\| "";/);
-  assert.match(bridge, /site_return=my-records\.html/);
+  assert.match(bridge, /site_return:destination/);
   assert.match(bridge, /https:\/\/queue\.monsterport\.com\//);
   assert.doesNotMatch(bridge, /link = PLATFORM_ENTRY\+"my-records\.html"/);
   assert.doesNotMatch(bridge, /directory\.html\?mode=mine&section=(ticket|order)/);
