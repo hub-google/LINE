@@ -110,3 +110,20 @@ test("online ordering has its own enabled-only sidebar link and records remain u
  assert.match(css,/\.customer-service-switcher button:focus-visible/);
  assert.match(source,/serviceNav\+html/);
 });
+
+test("public demo puts a prominent identity switch before industry examples and preserves the selected role",()=>{
+ const html=read("demo.html");
+ const mobileCss=read("assets/demo/mobile-ui.css");
+ const desktopCss=read("assets/demo/desktop-ui.css");
+ const script=read("assets/demo/real-flow.js");
+ assert.ok(html.indexOf('class="demo-controls"')<html.indexOf('class="demo-scenes"'),"role selector must appear before store selection");
+ assert.equal((html.match(/data-role="/g)||[]).length,2);
+ assert.equal((html.match(/data-scene="/g)||[]).length,4);
+ assert.match(html,/先選擇體驗身分/);
+ assert.match(html,/再選擇店家情境/);
+ assert.match(mobileCss,/\.roles\{display:grid;grid-template-columns:repeat\(2/);
+ assert.match(desktopCss,/\.demo-controls \.roles button\{min-height:82px/);
+ assert.match(script,/tab=role==="customer"\?primaryTab\[s\]:staffTabs\[s\]/);
+ assert.match(script,/guideMap\[role\]\[scene\]/);
+ assert.doesNotMatch(script,/scene=s;role="customer"/);
+});
