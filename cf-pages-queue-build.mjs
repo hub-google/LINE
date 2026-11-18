@@ -51,12 +51,6 @@ function copy(src, dest) {
 }
 copy(source, output);
 
-// Keep the feedback-only LINE entry independent of the auto-refreshed queue-prod
-// snapshot: GitHub Actions replaces that whole directory on each release.
-const feedbackTemplate = path.resolve(source, '..', 'feedback-entry.html');
-if (!fs.existsSync(feedbackTemplate)) throw new Error('Missing feedback-entry.html in gh-pages root');
-fs.copyFileSync(feedbackTemplate, path.join(output, 'feedback.html'));
-
 const app = path.join(output, 'index.html');
 const home = path.join(output, 'home.html');
 if (!fs.existsSync(app) || !fs.existsSync(home)) {
@@ -98,16 +92,12 @@ if (fs.existsSync(sw)) {
     '$1"$2-cf-pages-v1"');
   fs.writeFileSync(sw, content);
 }
-// Discover the real platform LINE OA (not the LINE Login channel or a merchant's OA).
-// This is build-time only; a visitor's /feedback request uses a single static
-// HTTP 302, without loading the website, LIFF, or invoking any Worker/Function.
-const lineInfo = await fetch('https://unapiwajmgqqtdkixaab.supabase.co/functions/v1/line-bridge?action=config&site=queue',
-  { signal: AbortSignal.timeout(12000) });
-if (!lineInfo.ok) throw new Error('Platform LINE OA lookup failed: HTTP ' + lineInfo.status);
-const lineConfig = await lineInfo.json();
-const lineBasicId = String(lineConfig.botBasicId || '');
-if (!/^@[a-z0-9_.-]{2,100}$/i.test(lineBasicId)) throw new Error('Platform LINE OA basicId was not provided or invalid');
-const lineTarget = 'https://line.me/R/ti/p/' + encodeURIComponent(lineBasicId);
+// The platform OA basic ID was verified via the deployed LINE Messaging API
+// bot info: @555wfhod. Cloudflare Pages performs one HTTP 302 straight to LINE.
+// No LIFF, no intermediate website, no Worker, no database read per visitor.
+// This intentionally does not send a source-specific follow greeting: LINE's
+// ordinary follow webhook does not contain the add-friend URL/referrer.
+const lineTarget = 'https://line.me/R/ti/p/%40555wfhod';
 fs.rmSync(path.join(output, 'feedback.html'), { force: true });
 fs.writeFileSync(path.join(output, '_redirects'), [
   '/home.html / 302',
@@ -116,7 +106,7 @@ fs.writeFileSync(path.join(output, '_redirects'), [
   '/line-group ' + lineTarget + ' 302',
   '',
 ].join('\n'));
-console.log('QueueMonster platform OA verified; one-hop /feedback target: ' + lineTarget);
+console.log('QueueMonster feedback: one-hop static redirect to verified OA @555wfhod.');
 fs.writeFileSync(path.join(output, '_headers'),
   '/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n' +
   '/*.html\n  Cache-Control: no-cache\n' +
