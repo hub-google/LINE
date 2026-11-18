@@ -7,8 +7,18 @@
  const preview=new URLSearchParams(location.search).get("intro_preview")==="1";
  const manifestUrl=new URL("./assets/videos/intro-video.json",location.href);
  let manifest=null,overlay=null,video=null,priorFocus=null;
+ // Remember the user's dismissal in this browser even if the video is replaced.
+ const skipKey="qm-home-intro-skipped-v1";
+ function hasSkipped(){
+  try{return localStorage.getItem(skipKey)==="1"}catch{return false}
+ }
+ function rememberSkip(){
+  try{localStorage.setItem(skipKey,"1")}catch{}
+ }
  function dismiss(){
   if(!overlay||overlay.hidden)return;
+  // Close, Escape and background clicks all mean the viewer does not want more auto-popups.
+  if(manifest)rememberSkip();
   if(video){video.pause();video.removeAttribute("src");video.load();video=null}
   overlay.hidden=true;document.documentElement.classList.remove("qm-intro-locked");
   if(priorFocus?.isConnected)priorFocus.focus({preventScroll:true});
@@ -94,9 +104,9 @@
    replayButton.addEventListener("click",()=>open(true));
   }
   if(preview){open(true);return}
-  // Open on EVERY homepage entry (including cache-busting query parameters and signed-in visitors).
-  // Dismissal is exclusively a visitor action; no time/frequency or login gate.
-  if(manifest)open(false);
+  // New visitors see the film; one explicit dismissal suppresses later auto-open.
+  // A manual replay button always remains available, and preview overrides the preference.
+  if(manifest&&!hasSkipped())open(false);
  }
  void init();
 })();

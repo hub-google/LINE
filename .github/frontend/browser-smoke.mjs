@@ -52,13 +52,19 @@ try{
  assert.ok((await page.locator('.qm-intro-movie').getAttribute('src'))?.endsWith('/assets/videos/intro.mp4'),'Intro video source must be the uploaded MP4');
  await autoIntro.getByRole('button',{name:/跳過影片/}).click();
  assert.equal(await autoIntro.isVisible(),false,'Visitor can manually dismiss brand intro');
+ assert.equal(await page.evaluate(()=>localStorage.getItem('qm-home-intro-skipped-v1')),'1','Explicit skip must persist');
  await page.reload({waitUntil:'domcontentloaded'});
- await autoIntro.waitFor({state:'visible',timeout:10000});
- await autoIntro.getByRole('button',{name:/跳過影片/}).click();
+ await page.getByRole('button',{name:/觀看品牌介紹影片/}).waitFor({state:'visible',timeout:10000});
+ assert.equal(await autoIntro.count(),0,'Reload after skip must not auto-open the dialog');
+ await page.goto(baseUrl+'/booking/home.html?__line_fresh=skip-persisted',{waitUntil:'domcontentloaded'});
+ await page.getByRole('button',{name:/觀看品牌介紹影片/}).waitFor({state:'visible',timeout:10000});
+ assert.equal(await autoIntro.count(),0,'New homepage visit must respect the skipped preference');
  await page.getByRole('button',{name:/觀看品牌介紹影片/}).click();
  await autoIntro.waitFor({state:'visible',timeout:10000});
+ assert.ok((await page.locator('.qm-intro-movie').getAttribute('src'))?.endsWith('/assets/videos/intro.mp4'),'Manual replay must use the actual uploaded film');
  await autoIntro.getByRole('button',{name:/跳過影片/}).click();
- console.log('Brand intro automatically opened on each entry, and manual replay/skip passed.');
+ assert.equal(await autoIntro.isVisible(),false,'Manual replay can be dismissed');
+ console.log('Brand intro first visit, persisted skip, later visits, and manual replay passed.');
  // Source preview without a generated manifest still offers an explicit placeholder.
  await page.goto(baseUrl+'/LINE/booking/home.html?intro_preview=1',{waitUntil:'domcontentloaded'});
  const introDialog=page.getByRole('dialog',{name:'排隊怪獸品牌介紹影片'});
