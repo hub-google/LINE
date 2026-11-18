@@ -128,7 +128,7 @@ function createScenario({lineName="",customerSession=false,staffName="",staffPro
    .replace('const {SUPABASE_URL:SB_URL,SUPABASE_PUBLISHABLE_KEY:SB_KEY}=await import("./public-config.js");',
      'const SB_URL="https://test.supabase.co";const SB_KEY="test-publishable-key";');
  vm.runInNewContext(executable,{...sandbox,__siteAuthCreateClient:createClient},{filename:"site-auth.js",timeout:1500});
- return {rootNode,state,memory};
+ return {rootNode,state,memory,window};
 }
 async function flush(){await new Promise(resolve=>setImmediate(resolve));await new Promise(resolve=>setImmediate(resolve));}
 function controls(root){
@@ -158,6 +158,50 @@ test("anonymous visitor sees functional LINE login and retains return destinatio
  assert.match(dest.searchParams.get("site_return")||"",/directory\.html\?mode=game/);
  assert.match(ui.memory["line-site-auth-return-v1"],/directory\.html\?mode=game/);
 });
+test("customer booking, queue and order login reuse the header LIFF action and preserve the selected tab",async()=>{
+ for(const tab of ["reserve","queue","order"]){
+  const url="https://hub-google.github.io/LINE/booking/index.html?view=customer&merchant=store-123&tab="+tab;
+  const ui=createScenario({url});
+  await flush();
+  assert.equal(typeof ui.window.QueueMonsterAuth?.startLineLogin,"function");
+  await ui.window.QueueMonsterAuth.startLineLogin();
+  const dest=new URL(ui.state.liffLogin);
+  assert.equal(dest.pathname,"/LINE/booking/");
+  assert.equal(dest.searchParams.get("view"),"customer");
+  assert.equal(dest.searchParams.get("merchant"),"store-123");
+  assert.equal(dest.searchParams.get("tab"),tab);
+  assert.equal(dest.searchParams.get("site_return"),null);
+  assert.equal(ui.memory["line-site-auth-return-v1"],undefined);
+ }
+});
+test("LINE login preserves the selected customer order detail",async()=>{
+ const id="2bd1d3a7-0f62-492b-a8c1-8f79ca55bd5e";
+ const url="https://hub-google.github.io/LINE/booking/?view=customer&merchant=store-123&tab=detail&kind=order&item="+id;
+ const ui=createScenario({url});
+ await flush();
+ await ui.window.QueueMonsterAuth.startLineLogin();
+ const dest=new URL(ui.state.liffLogin);
+ assert.equal(dest.searchParams.get("tab"),"detail");
+ assert.equal(dest.searchParams.get("kind"),"order");
+ assert.equal(dest.searchParams.get("item"),id);
+ assert.equal(dest.searchParams.has("site_return"),false);
+});
+test("all public LINE sign-in CTAs call one shared official LIFF login handler",()=>{
+ const customer=read("saas/app/customer-booking.js");
+ const records=read("saas/assets/directory/main.js");
+ const badge=read("saas/app/line-session.js");
+ const queueActions=read("saas/app/actions/queue-line-actions.js");
+ assert.ok(customer.includes('data-site-line-login>LINE 登入</button>'));
+ assert.ok(records.includes('data-site-line-login>LINE 登入後查看</button>'));
+ assert.ok(!records.includes("site_login=1&site_return"));
+ assert.ok(!customer.includes("loginHref"));
+ assert.ok(!badge.includes("使用 LINE 登入（手機／電腦）"));
+ assert.ok(queueActions.includes("window.QueueMonsterAuth?.startLineLogin"));
+ assert.ok(!queueActions.includes("recoverLineLogin(true)"));
+ assert.ok(code.includes("window.QueueMonsterAuth=Object.freeze({startLineLogin})"));
+ assert.ok(code.includes('[data-site-line-login]'));
+});
+
 test("LINE login uses the selected merchant, not a built-in sample store",async()=>{
  const ui=createScenario({url:"https://hub-google.github.io/LINE/booking/directory.html?merchant=store-123&mode=search"});
  await flush();
