@@ -200,9 +200,13 @@ try{
     assert.deepEqual(links,['搜尋店家','預約與取號'],'Customer header must not show merchant or headquarters entry');
    }
    if(name==='merchant-register.html'||name==='platform-login.html'){
-    const forbidden=name==='merchant-register.html'?'directory.html,home.html,platform-login.html':'directory.html,home.html,merchant-register.html';
-    const selectors=forbidden.split(',').map(s=>'header a[href*="'+s+'"]').join(',');
-    assert.equal(await page.locator(selectors).count(),0,'Private portal must not link to the other portals');
+    const header=page.locator('#marketing-header .qm-public-header');
+    await header.waitFor({state:'attached',timeout:12000});
+    assert.deepEqual(await header.locator('.qm-public-nav a').allTextContents(),
+     ['平台總覽','店家功能','顧客功能','常見問題','免登入功能試用','搜尋店家','我的紀錄'],
+     'Both sign-in pages must reuse the site-wide navigation');
+    assert.equal(await page.locator('a[href="./?view=platform"]').count(),0,
+     'Public header must not expose a privileged administration link');
    }
    if(name==='merchant-register.html'){
     // Simulate an authenticated merchant account to verify visual geometry
