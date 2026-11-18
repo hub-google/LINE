@@ -1,4 +1,4 @@
-"""Offline contract tests for the LINE OA tabbed menu; no real token needed."""
+"""Offline checks for Queue Monster's original two-tab 3-by-2 LINE OA menu."""
 import importlib.util
 import io
 import pathlib
@@ -12,51 +12,46 @@ spec.loader.exec_module(richmenu)
 
 
 class RichMenuContract(unittest.TestCase):
-    def test_six_customer_and_merchant_buttons(self):
-        self.assertEqual(len(richmenu.CUSTOMER_ITEMS), 6)
-        self.assertEqual(len(richmenu.MERCHANT_ITEMS), 6)
+    def test_exactly_six_functional_buttons_in_each_original_3_by_2_menu(self):
+        self.assertEqual([item[0] for item in richmenu.CUSTOMER_ITEMS],
+                         ["搜尋店家", "我的進度", "常用店家", "歷史紀錄", "熱門店家", "問題回饋"])
+        self.assertEqual([item[0] for item in richmenu.MERCHANT_ITEMS],
+                         ["今日營運", "現場叫號", "預約管理", "訂單管理", "店家後台", "問題回饋"])
+        self.assertEqual(len(richmenu.SPLITS_X), 4)
+        self.assertEqual(len(richmenu.SPLITS_Y), 3)
         for items in (richmenu.CUSTOMER_ITEMS, richmenu.MERCHANT_ITEMS):
+            self.assertEqual(len(items), 6)
+            self.assertEqual(len(set(x[0] for x in items)), 6)
             for title, caption, glyph, action in items:
                 self.assertTrue(title and caption and glyph)
-                self.assertEqual(action["type"], "uri")
+                self.assertIn(action["type"], {"uri", "postback"})
                 if action["type"] == "uri":
                     self.assertTrue(action["uri"].startswith(richmenu.BASE))
                     self.assertNotIn("#activate", action["uri"])
+                else:
+                    self.assertEqual(action["data"], "platform:feedback")
 
-    def test_customer_entry_points_and_no_test_shop(self):
-        dest = [entry[3].get("uri", "") for entry in richmenu.CUSTOMER_ITEMS]
-        self.assertTrue(any("mode=search" in d for d in dest))
-        self.assertTrue(any("service=%E5%8F%96%E8%99%9F" in d for d in dest))
-        self.assertTrue(any("my-records.html" in d for d in dest))
-        self.assertTrue(any("service=%E9%A0%90%E7%B4%84" in d for d in dest))
-        self.assertTrue(any("service=%E9%BB%9E%E9%A4%90" in d for d in dest))
-        self.assertTrue(any("home.html#faq" in d for d in dest))
-        self.assertFalse(any("service=%E7%9C%8B%E6%9D%BF" in d for d in dest))
-        self.assertFalse(any("mode=game" in d for d in dest))
-        self.assertFalse(any("mode=mine&section=" in d for d in dest))
-        self.assertEqual({x[0] for x in richmenu.CUSTOMER_ITEMS},
-                         {"搜尋店家","線上預約","現場取號","線上點餐","我的紀錄","常見問題"})
-        self.assertFalse(any("客服" in title for title, *_ in richmenu.CUSTOMER_ITEMS))
-        self.assertFalse(any("greenfield" in d or "demo-" in d for d in dest))
-        merchant = [entry[3].get("uri", "") for entry in richmenu.MERCHANT_ITEMS]
-        self.assertTrue(any("demo.html" in d for d in merchant))
-        self.assertTrue(any("for-merchants.html" in d for d in merchant))
-        self.assertTrue(any("merchant-center.html#publish" in d for d in merchant))
-        self.assertFalse(any("聯絡平台" in title or "客服" in title for title, *_ in richmenu.MERCHANT_ITEMS))
+    def test_feedback_is_identical_for_customers_and_merchants(self):
+        self.assertEqual(richmenu.CUSTOMER_ITEMS[-1][3],
+                         richmenu.MERCHANT_ITEMS[-1][3])
+        self.assertEqual(richmenu.CUSTOMER_ITEMS[-1][3]["displayText"], "問題回饋")
+        self.assertNotIn("營運報表", [x[0] for x in richmenu.MERCHANT_ITEMS])
+        self.assertFalse(any(x[0].startswith("切換") for items in (
+            richmenu.CUSTOMER_ITEMS, richmenu.MERCHANT_ITEMS) for x in items))
 
-    def test_platform_oa_menu_uses_liff_for_booking_entry(self):
+    def test_customer_liff_entry_preserves_identity_and_feedback_action(self):
         items = richmenu.customer_items_for_platform_liff("1234567890-AbCdEf")
-        for title, caption, glyph, action in items[:4]:
-            self.assertTrue(action["uri"].startswith("https://liff.line.me/1234567890-AbCdEf/directory.html?mode=search&entry=platform-oa"))
-        self.assertIn("service=%E9%A0%90%E7%B4%84", items[1][3]["uri"])
-        self.assertIn("service=%E5%8F%96%E8%99%9F", items[2][3]["uri"])
-        self.assertEqual(richmenu.BASE, "https://queue.monsterport.com/")
-        self.assertEqual(items[4][3]["uri"],
-                         "https://liff.line.me/1234567890-AbCdEf/?view=customer&entry=platform-oa&site_return=my-records.html")
+        self.assertEqual(len(items), 6)
+        self.assertIn("/directory.html?mode=search&entry=platform-oa", items[0][3]["uri"])
+        self.assertIn("site_return=my-records.html%3Fscope%3Dactive", items[1][3]["uri"])
+        self.assertIn("site_return=directory.html%3Fmode%3Dfrequent", items[2][3]["uri"])
+        self.assertIn("site_return=my-records.html%3Fscope%3Dhistory", items[3][3]["uri"])
+        self.assertIn("directory.html?mode=search&entry=platform-oa", items[4][3]["uri"])
+        self.assertEqual(items[5][3]["type"], "postback")
         with self.assertRaises(RuntimeError):
             richmenu.customer_items_for_platform_liff("")
 
-    def test_both_rendered_pngs(self):
+    def test_rendered_images_keep_existing_dimensions_and_styling(self):
         pictures = [richmenu.create_image(richmenu.CUSTOMER_ITEMS, 0),
                     richmenu.create_image(richmenu.MERCHANT_ITEMS, 1)]
         self.assertNotEqual(pictures[0], pictures[1])
@@ -65,13 +60,13 @@ class RichMenuContract(unittest.TestCase):
             with Image.open(io.BytesIO(raw)) as pic:
                 self.assertEqual(pic.size, (2500, 1686))
                 self.assertEqual(pic.format, "PNG")
+        self.assertIn("#462B52", SOURCE.read_text(encoding="utf-8"))
+        self.assertIn("#FFE8F2", SOURCE.read_text(encoding="utf-8"))
+        self.assertIn("#FFF0CF", SOURCE.read_text(encoding="utf-8"))
 
-    def test_aliases_and_tab_geometry(self):
-        self.assertNotEqual(richmenu.CUSTOMER_ALIAS, richmenu.MERCHANT_ALIAS)
-        self.assertIn("排隊怪獸", SOURCE.read_text(encoding="utf-8"))
-        self.assertLessEqual(len(richmenu.CUSTOMER_ALIAS), 32)
-        self.assertLessEqual(len(richmenu.MERCHANT_ALIAS), 32)
-        self.assertGreater(richmenu.TAB_HEIGHT, 0)
+    def test_tab_aliases_unchanged(self):
+        self.assertEqual(richmenu.CUSTOMER_ALIAS, "platform-booking-customers")
+        self.assertEqual(richmenu.MERCHANT_ALIAS, "platform-booking-merchants")
         self.assertLess(richmenu.TAB_HEIGHT, richmenu.HEIGHT // 2)
 
 
