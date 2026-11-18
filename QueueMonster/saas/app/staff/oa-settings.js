@@ -5,21 +5,27 @@ import {box,btn,esc} from "../shared-ui.js";
 const eyeIcon='<svg class="oa-eye-open" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>'+
  '<svg class="oa-eye-closed" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M3 3l18 18M10.6 5.1A11.9 11.9 0 0 1 12 5c6.4 0 10 7 10 7s-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
 
-function newCredentialField(label,id,placeholder){
+const developersConsole="https://developers.line.biz/console/";
+
+function developerSettingLink(tab){
+ return '<a class="oa-field-console-link" href="'+developersConsole+'" target="_blank" rel="noopener noreferrer">開啟 LINE Developers → '+esc(tab)+' ↗</a>';
+}
+
+function newCredentialField(label,id,placeholder,tab){
  return '<div class="oa-credential-field"><label for="'+id+'">'+esc(label)+'</label>'+
   '<div class="oa-credential-input"><input id="'+id+'" class="field" type="password" value=""'+
   ' autocomplete="new-password" placeholder="'+esc(placeholder)+'" spellcheck="false" autocapitalize="off">'+
   '<button type="button" class="oa-eye-btn" data-act="toggle-oa-visibility" data-target="'+id+
-  '" aria-label="顯示新輸入的 '+esc(label)+'" aria-pressed="false" title="顯示／隱藏新輸入的憑證">'+eyeIcon+'</button></div></div>';
+  '" aria-label="顯示新輸入的 '+esc(label)+'" aria-pressed="false" title="顯示／隱藏新輸入的憑證">'+eyeIcon+'</button></div>'+developerSettingLink(tab)+'</div>';
 }
 
-function savedCredential(label){
+function savedCredential(label,tab){
  // This is a purely decorative, unselectable mask. It is NOT an input and
  // does not contain or fetch the stored secret.
  return '<div class="oa-credential-field"><span class="oa-field-label">'+esc(label)+'</span>'+
    '<div class="oa-saved-credential" aria-label="'+esc(label)+' 已安全儲存，不能檢視或複製">'+
    '<span class="oa-mask-symbol" aria-hidden="true"></span><strong>已安全儲存</strong>'+
-   '<span class="oa-mask-lock" aria-hidden="true">🔒</span></div></div>';
+   '<span class="oa-mask-lock" aria-hidden="true">🔒</span></div>'+developerSettingLink(tab)+'</div>';
 }
 
 export function renderOaSettings({isManager}){
@@ -36,12 +42,13 @@ export function renderOaSettings({isManager}){
  if(isManager){
   setup='<div class="oa-step-title"><strong>Messaging API 憑證</strong>'+
    '<span>'+(connected?'已儲存，不需重新填寫':'從 LINE Developers 取得')+'</span></div>'+
+   '<p class="oa-console-hint">請到 <a href="'+developersConsole+'" target="_blank" rel="noopener noreferrer">LINE Developers Console ↗</a>，選擇店家官方帳號所屬的 Messaging API Channel，再取得下列憑證。</p>'+ 
    '<div class="oa-credential-grid">'+
     (connected?
-      savedCredential("Channel access token (long-lived)")+
-      savedCredential("Channel secret"):
-      newCredentialField("Channel access token (long-lived)","own-oa-token","Messaging API → Issue")+
-      newCredentialField("Channel secret","own-oa-secret","Basic settings → Channel secret"))+
+      savedCredential("Channel access token (long-lived)","Messaging API → Channel access token")+
+      savedCredential("Channel secret","Basic settings → Channel secret"):
+      newCredentialField("Channel access token (long-lived)","own-oa-token","Messaging API → Issue","Messaging API → Channel access token")+
+      newCredentialField("Channel secret","own-oa-secret","Basic settings → Channel secret","Basic settings → Channel secret"))+
    '</div>'+
    (connected?'<p class="oa-safety-note">基於安全考量，已儲存的憑證不會載入網頁，也無法檢視或複製。</p>':'')+
    (!connected?'<div class="oa-settings-actions">'+
