@@ -16,14 +16,22 @@ const sql=read("supabase/migrations/20261105150000_site_header_line_identity.sql
 const workflow=read("../.github/workflows/line-saas-pages.yml");
 const build=read("../.github/scripts/build-line-saas.mjs");
 
-test("all pages share a real user identity with clickable login/logout",()=>{
- const pages=["index","home","directory","board","merchant-center","privacy","terms"];
+test("all normal site pages reference the exact same header, account script and CSS",()=>{
+ const pages=["index","home","for-merchants","for-customers","demo","directory",
+  "my-records","board","merchant-center","merchant-register","platform-login","privacy","terms"];
  for(const page of pages){
   const html=read("saas/"+page+".html");
-  assert.match(html,/id="site-auth-root"/,page+" missing account widget");
-  assert.match(html,/href="\.\/site-auth\.css"/,page+" missing styling");
-  assert.match(html,/src="\.\/site-auth\.js"/,page+" missing action code");
+  assert.match(html,/id="marketing-header"/,page+" missing shared header mount");
+  assert.match(html,/assets\/marketing\/shared-header\.css/,page+" missing shared header CSS");
+  assert.match(html,/assets\/marketing\/shared-header\.js/,page+" missing shared header JS");
+  assert.match(html,/href="\.\/site-auth\.css"/,page+" missing account styling");
+  assert.match(html,/src="\.\/site-auth\.js"/,page+" missing account logic");
+  assert.equal((html.match(/id="marketing-header"/g)||[]).length,1,page+" duplicate header mount");
  }
+ const shared=read("saas/assets/marketing/shared-header.js");
+ const links=["平台總覽","店家功能","顧客功能","常見問題","免登入功能試用","搜尋店家","我的紀錄"];
+ for(const label of links)assert.ok(shared.includes(label),"missing shared navigation item: "+label);
+ assert.match(shared,/id=\\"site-auth-root\\"/);
  assert.match(style,/\.site-auth-slot/);
  assert.match(style,/\.site-auth-name/);
  assert.match(style,/\.site-auth-login/);
@@ -288,16 +296,16 @@ test("shared header keeps only the active customer identity even on merchant rou
  assert.equal(list.some(x=>x.textContent==="消費者登入"),false);
  assert.ok(list.some(x=>x.tag==="button"&&x.textContent==="登出"));
 });
-test("headquarters page shows only headquarters sign-in when the operator lacks HQ role",async()=>{
- const ui=createScenario({staffName:"merchant@example.test",url:"https://hub-google.github.io/LINE/booking/?view=platform"});
+test("headquarters route shares account identity without granting administrator access",async()=>{
+ const merchant=createScenario({staffName:"merchant@example.test",url:"https://hub-google.github.io/LINE/booking/?view=platform"});
  await flush();
- const list=controls(ui.rootNode);
- assert.equal(list.some(x=>x.className==="site-auth-name"),false);
- const login=list.find(x=>x.tag==="button");
- assert.equal(login.textContent,"總部登入");
- assert.equal(login.className,"site-auth-button","總部登入不可顯示 LINE 圖示");
- login.handlers.click();
- assert.equal(ui.state.navigated,"./platform-login.html");
+ const list=controls(merchant.rootNode);
+ assert.ok(list.some(x=>x.className==="site-auth-label"&&x.textContent==="merchant@example.test"));
+ assert.ok(list.some(x=>x.tag==="button"&&x.textContent==="登出"));
+ assert.equal(list.some(x=>x.textContent==="總部登入"),false,"HQ credentials must remain inside dedicated admin screen");
+ const guest=createScenario({url:"https://hub-google.github.io/LINE/booking/?view=platform"});
+ await flush();
+ assert.deepEqual(controls(guest.rootNode).filter(x=>x.tag==="button").map(x=>x.textContent),["消費者登入","店家登入"]);
 });
 
 test("platform LINE identity is verified independently from store selection",()=>{
