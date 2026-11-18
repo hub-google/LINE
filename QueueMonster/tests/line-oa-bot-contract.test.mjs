@@ -46,7 +46,7 @@ test("LINE OA uses exactly three Quick Replies with queue-domain services and a 
   assert.match(bridge, /site_return:destination/);
   assert.match(bridge, /scope === "history" \? "\?scope=history"/);
   assert.match(bridge, /PLATFORM_GUIDE_REPLY = "操作教學可依身分查看：/);
-  assert.match(bridge, /PLATFORM_ENTRY\+"for-customers\.html"/);
+  assert.match(bridge, /PLATFORM_ENTRY\+"for-customers\.html/);
   assert.match(bridge, /PLATFORM_ENTRY\+"merchant-center\.html#guide"/);
   assert.match(bridge, /quickReply:platformQuickReply\(\)/);
   assert.doesNotMatch(bridge, /label:"現場取號",uri:platformDirectoryLink\("取號"\)/);
