@@ -93,7 +93,11 @@ if (fs.existsSync(sw)) {
   fs.writeFileSync(sw, content);
 }
 // The former Worker redirected this old homepage URL back to the canonical root.
-fs.writeFileSync(path.join(output, '_redirects'), '/home.html / 302\n');
+fs.writeFileSync(path.join(output, '_redirects'), [
+  '/home.html / 302',
+  '/line-group https://line.me/ti/g2/HSn2TRgLDJWZ7BKcB9mrhDkd4Vw7VF8PqWw-4Q 302',
+  '',
+].join('\n'));
 fs.writeFileSync(path.join(output, '_headers'),
   '/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n' +
   '/*.html\n  Cache-Control: no-cache\n' +
