@@ -44,6 +44,8 @@ body[data-monster-page="home"] .qm-three{display:grid;grid-template-columns:repe
 body[data-monster-page="home"] .qm-mini{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid #ead8ef;border-radius:14px;padding:18px 14px;min-width:0;flex-wrap:wrap}
 body[data-monster-page="home"] .qm-mini .qm-emoji{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;background:#f2dffa;border-radius:10px;color:#8250a0;font-weight:950}
 body[data-monster-page="home"] .qm-mini strong{font-size:16px;color:#52316b}body[data-monster-page="home"] .qm-mini small{color:#836d8b;font-size:12px}
+body[data-monster-page="home"] .qm-mini .qm-scenes{display:flex;flex:0 0 100%;flex-wrap:wrap;gap:6px;margin-top:3px}
+body[data-monster-page="home"] .qm-mini .qm-scenes span{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:4px 10px;background:#f7ecfb;color:#6e4387;font-size:12px;line-height:1.4;font-weight:750;white-space:nowrap}
 body[data-monster-page="home"] .qm-system-map{background:#fff8ff;border:1px solid #e8d3ef;border-radius:23px;padding:35px 28px 26px;display:grid;grid-template-columns:minmax(0,1fr) 65px minmax(130px,.7fr) 65px minmax(0,1fr);align-items:center;gap:9px;margin-top:22px}
 body[data-monster-page="home"] .qm-map-node,body[data-monster-page="home"] .qm-map-hub{min-width:0;border-radius:18px;border:1px solid #e5cbee;padding:19px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;background:white}
 body[data-monster-page="home"] .qm-node-label{font-size:12px;color:#7b5490;font-weight:900;letter-spacing:.04em}
