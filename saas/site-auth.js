@@ -242,16 +242,42 @@ async function startLineLogin(){
  if(busy)return;
  busy=true;
  draw("guest");
- const returnTo=currentReturn();
- try{sessionStorage.setItem(RETURN_KEY,JSON.stringify({target:returnTo,at:Date.now()}))}catch(_){}
- const selectedMerchant=new URLSearchParams(location.search).get("merchant")||"";
+ const params=new URLSearchParams(location.search);
+ const page=location.pathname.split("/").pop()||"";
+ const customerApp=(page===""||page==="index.html")&&params.get("view")==="customer";
+ // Customer-service buttons must resume on their selected shop and tab, not
+ // redirect back to the marketing homepage after successful LINE authorization.
+ const returnTo=customerApp?"":currentReturn();
+ try{
+  if(returnTo)sessionStorage.setItem(RETURN_KEY,JSON.stringify({target:returnTo,at:Date.now()}));
+  else sessionStorage.removeItem(RETURN_KEY);
+ }catch(_){}
+ const selectedMerchant=params.get("merchant")||"";
  const start=new URL("./",location.href);
  start.searchParams.set("view","customer");
  // Keep the selected store only when an actual store URL supplied its slug.
  if(/^[a-z0-9][a-z0-9-]{2,39}$/.test(selectedMerchant))
    start.searchParams.set("merchant",selectedMerchant);
- start.searchParams.set("tab","home");
- start.searchParams.set("site_return",returnTo);
+ const customerTab=params.get("tab")||"home";
+ start.searchParams.set("tab",customerApp&&/^(?:home|reserve|queue|order|mine|progress|detail)$/.test(customerTab)?customerTab:"home");
+ if(customerApp){
+  const ticket=params.get("ticket")||"",item=params.get("item")||"";
+  const uuid=/^[0-9a-f-]{36}$/i;
+  if(uuid.test(ticket))start.searchParams.set("ticket",ticket);
+  const kind=params.get("kind")||"";
+  if(["reservation","order"].includes(kind)&&uuid.test(item)){
+   start.searchParams.set("kind",kind);start.searchParams.set("item",item);
+  }
+  const manage=params.get("manage")||"";
+  if(["reservation","ticket","order"].includes(manage)&&uuid.test(item)){
+   start.searchParams.set("manage",manage);start.searchParams.set("item",item);
+   const mode=params.get("mode")||"";
+   if(["view","cancel","edit"].includes(mode))start.searchParams.set("mode",mode);
+  }
+  const entry=params.get("entry")||"";
+  if(["merchant-oa","platform-oa"].includes(entry))start.searchParams.set("entry",entry);
+ }
+ if(returnTo)start.searchParams.set("site_return",returnTo);
  try{
   const configUrl=new URL(SB_URL+"/functions/v1/line-bridge");
   configUrl.searchParams.set("action","config");
@@ -277,6 +303,15 @@ async function startLineLogin(){
   draw("guest","無法開啟 LINE 登入，請稍後重試。");
  }
 }
+// Every visible LINE login CTA reuses the same official LIFF authorization
+// entry point. Other app modules never construct an alternative login URL.
+window.QueueMonsterAuth=Object.freeze({startLineLogin});
+document.addEventListener("click",event=>{
+ const trigger=event.target?.closest?.("[data-site-line-login]");
+ if(!trigger)return;
+ event.preventDefault();
+ void startLineLogin();
+});
 async function getIdentity(){
  const mode=portalMode();
  const preferOperator=mode!=="customer";
