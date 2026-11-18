@@ -15,7 +15,7 @@ const clinicSessionLabel = unit => unit==="2診"?"下午門診 13:30–17:30":"�
 const clinicQueueSessionLabel = unit => unit==="2診"?"下午診 13:30–17:30":"上午診 09:00–12:00";
 const clinicBookingSlots = unit => unit==="2診"?["13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00"]:["09:30","10:00","10:30","11:00"];
 const unitLabel = unit => scene==="clinic"?(clinicUnitNames[unit]||unit):unit;
-const metadata = {breakfast:["早餐店","線上點餐"],salon:["美髮店","線上預約"],repair:["維修店","現場取號"],clinic:["診所","預約＋多診間叫號"]};
+const metadata = {breakfast:["早餐店","線上點餐／取餐進度"],salon:["美髮店","設計師預約／報到"],repair:["維修店","取號／叫號／過號"],clinic:["診所","分診間預約／報到／叫號"]};
 const modes = {breakfast:["order","mine"],salon:["reserve","mine"],repair:["queue","mine"],clinic:["reserve","queue","mine"]};
 // Start each case in its real task flow; no intermediate store-home/menu click.
 const primaryTab = {repair:"queue",breakfast:"order",salon:"reserve",clinic:"reserve"};
@@ -135,7 +135,7 @@ function customerReserve(){
  const remaining=s=>Math.max(0,(clinic?5:1)-d.bookings.filter(b=>b.unit===chosen&&b.date===draft.day&&b.time===s&&!["CANCELLED","COMPLETED","NO_SHOW"].includes(b.status)).reduce((n,b)=>n+Number(b.party||1),0));
  const slotHtml='<label>可預約時段（示範容量，非真實名額）</label><div class="slots">'+slots.map(s=>'<button type="button" class="slot '+(slot===s?"active":"")+'" data-act="slot" data-value="'+s+'" '+(remaining(s)?"":"disabled")+'>'+s+'<small>剩 '+remaining(s)+' 人</small></button>').join("")+'</div>';
  const service=sel("服務項目","reserve-service",clinic?(chosen==="3診"?["皮膚科門診","複診追蹤"]:["小兒科門診","複診追蹤"]):["洗剪","染髮","燙髮","護髮"],draft.service);
- const form=field("預約日期","booking-day",draft.day,"date")+(clinic?unitsHtml:unitsHtml)+slotHtml+service+'<div style="margin-top:12px">'+field("本次人數","party-size",draft.party,"number",'min="1" max="20"')+'</div>'+contact()+'<p class="small">預約是保留時段，'+(clinic?"預約報到後依各診間叫號順序等待。":"依服務安排到店。")+'</p>';
+ const form=field("預約日期","booking-day",draft.day,"date")+unitsHtml+slotHtml+service+'<div style="margin-top:12px">'+field("本次人數","party-size",draft.party,"number",'min="1" max="20"')+'</div>'+contact()+'<p class="small">預約是保留時段，'+(clinic?"預約報到後依各診間叫號順序等待。":"依服務安排到店。")+'</p>';
  const confirm=review?inset('<strong>確認預約資訊</strong><p>店家：'+esc(displayShop())+'</p><p>'+esc(unitLabel(chosen))+' · '+esc(draft.day)+' '+slot+'</p><p>姓名：'+esc(draft.name||"示範顧客")+'　'+Number(draft.party||1)+' 位</p>'):"";
  const recent=d.bookings.filter(x=>ownedIds[scene].has(x.id)).slice(0,6).map(x=>listline('<div><strong>'+esc(x.id)+' · '+esc(x.name)+'</strong><p class="small">'+esc(x.date)+' '+esc(x.time)+'　'+esc(unitLabel(x.unit))+'</p></div>'+status(x.status))).join("");
  return box(clinic?"選擇預約場次":"選擇預約日期與時間",'<p class="small">先選擇服務人員／診間，再選擇可預約時段。</p>'+form+confirm+'<div class="staff-actionbar">'+(review?btn("返回修改","review-back")+btn("確認送出預約","reserve-submit","primary full"):btn("下一步：確認預約","review-reserve","primary full"))+'</div>')+box("我的近期預約",recent||'<p class="muted">尚無預約紀錄</p>');
@@ -263,18 +263,39 @@ function staffQueue(){
  box("已處理號碼牌（"+done.length+" 筆）",done.map(ticketCard).join("")||'<p class="muted">尚無已處理號碼牌。</p>');
 }
 function dashboard(){
- const d=current();return '<div class="grid4">'+stat("今日預約",d.bookings?.length||0)+stat("現場候位",d.tickets?.filter(t=>t.status==="WAITING").length||0)+stat("取餐訂單",d.orders?.length||0)+stat("目前叫號",scene==="clinic"?"多診間":currentCalled())+'</div>'+box("今日待辦",'<p class="muted">請由左側「預約管理」、「叫號管理」或「取餐訂單」切換此頁的模擬操作畫面。</p>');
+ const d=current(),waiting=(d.tickets||[]).filter(t=>t.status==="WAITING").length;
+ const views={
+  repair:[["目前叫號",currentCalled()],["候位中",waiting],["已過號",d.tickets.filter(t=>t.status==="PASSED").length],["保留中",d.tickets.filter(t=>t.status==="HOLD").length]],
+  breakfast:[["待接單",d.orders.filter(o=>o.status==="NEW"&&(!o.createdAt||Date.now()-o.createdAt>=15000)).length],["製作中",d.orders.filter(o=>["ACCEPTED","PREPARING"].includes(o.status)).length],["待取餐",d.orders.filter(o=>o.status==="READY").length],["已取餐",d.orders.filter(o=>o.status==="PICKED_UP").length]],
+  salon:[["今日預約",d.bookings.filter(o=>o.date===today()).length],["待報到",d.bookings.filter(o=>o.status==="CONFIRMED").length],["已報到",d.bookings.filter(o=>o.status==="CHECKED_IN").length],["已完成",d.bookings.filter(o=>o.status==="COMPLETED").length]],
+  clinic:[["今日預約",d.bookings.filter(o=>o.date===today()).length],["待報到",d.bookings.filter(o=>o.status==="CONFIRMED").length],["診間候位",waiting],["已完成",d.bookings.filter(o=>o.status==="COMPLETED").length]]
+ };
+ const descriptions={
+  repair:"從下方「叫號管理」查看現場候位、叫下一位、重叫，以及已過號、保留與恢復候位操作。",
+  breakfast:"從下方「取餐訂單」接單、製作、標記待取或取消。新訂單的 15 秒顧客取消期結束後才會出現在店家端。",
+  salon:"從下方「預約管理」搜尋預約、標記報到、完成或未到，也能修正已處理狀態。",
+  clinic:"從下方「預約管理」完成報到後，預約會加入對應診間；再由「叫號管理」依診間獨立叫號。"
+ };
+ return '<div class="grid4">'+views[scene].map(([label,value])=>stat(label,value)).join("")+'</div>'+box("今日待辦",'<p class="muted">'+descriptions[scene]+'</p>');
 }
 function renderNotice(){
  const el=$("notifications");if(!el)return;
  // Desktop explains the interactive scenario beside the full-width app; phone UI stays unchanged.
  const guideMap={
-  repair:["現場排隊，3 步就完成","以顧客端領取號碼","切換店家端，依序叫到你的號碼","查看叫號進度與通知示意"],
-  breakfast:["點餐到接單，一次走完","選餐點、數量和預計取餐時間","確認送出訂單，體驗 15 秒取消期","切換店家端接單或改成已完成待取"],
-  salon:["從預約到報到","選擇設計師、日期與時段","送出預約後切換店家端","調整報到或完成狀態"],
-  clinic:["診所的預約與叫號","選擇診間及預約時段","切換店家端確認報到","進入叫號管理，呼叫下一位"]
+  customer:{
+   repair:["現場取號與進度追蹤","領取現場號碼，查看目前叫號","從「我的」開啟號碼專屬進度","切換店家端叫號，觀察通知與過號狀態"],
+   breakfast:["線上點餐到取餐","選擇立即取餐或預約時段，加入餐點","確認訂單，體驗送出後 15 秒取消期","從「我的」追蹤接單、製作與取餐進度"],
+   salon:["設計師預約與修改","選擇設計師、日期、時段與服務","送出預約，從「我的」進入預約詳細頁","體驗修改預約或取消，以及店家報到"],
+   clinic:["分診間預約與候診","選擇診間與預約場次，完成預約","店家端確認報到後加入對應診間候診","切回客戶端查看獨立叫號進度"]
+  },
+  staff:{
+   repair:["維修店｜叫號管理","查看候位並操作「叫下一位」或「再叫一次」","依號碼修改已過號、保留或恢復候位","開啟叫號看板，觀察客戶端進度"],
+   breakfast:["早餐店｜訂單管理","新訂單在 15 秒取消期結束後才出現","操作接單、製作、已完成待取及取消訂單","檢視歷史訂單，必要時更正狀態"],
+   salon:["美髮店｜預約管理","搜尋設計師預約、姓名或服務","點選狀態直接標記已報到、完成或未到","已處理紀錄仍可重新修正狀態"],
+   clinic:["診所｜預約與多診間叫號","在預約管理標記報到，自動建立診間號碼","切到叫號管理，選擇指定診間","按「叫下一位」，各診間分開處理過號"]
+  }
  };
- const g=guideMap[scene];
+ const g=guideMap[role][scene];
  const guideHtml='<section class="demo-desktop-guide"><span class="demo-guide-eyebrow">互動試用教學</span><h3>'+esc(g[0])+'</h3><ol class="demo-guide-steps">'+g.slice(1).map((step,i)=>'<li><span>'+(i+1)+'</span>'+esc(step)+'</li>').join("")+'</ol></section>';
  const desktopPreview=typeof window!=="undefined"&&typeof window.matchMedia==="function"&&window.matchMedia("(min-width: 901px)").matches;
  const showMessages=notifyOpen||desktopPreview;
@@ -291,7 +312,7 @@ function render(){
  const viewSignature=scene+"|"+role+"|"+tab;
  document.body.dataset.portal=role==="customer"?"customer":"staff";
  const d=current(),title=displayShop();
- $("demo-scene").textContent=metadata[scene][0]+"｜"+metadata[scene][1];
+ $("demo-scene").textContent="目前體驗："+metadata[scene][0]+"｜"+metadata[scene][1]+"｜"+(role==="customer"?"客戶端":"店家端");
  document.querySelectorAll("[data-scene]").forEach(el=>{el.classList.toggle("active",el.dataset.scene===scene);el.setAttribute("aria-pressed",String(el.dataset.scene===scene));});
  document.querySelectorAll("[data-role]").forEach(el=>{el.classList.toggle("active",el.dataset.role===role);el.setAttribute("aria-pressed",String(el.dataset.role===role));});
  let body="";
@@ -316,7 +337,7 @@ function render(){
  renderNotice();
 }
 function resetDraft(){draft={name:"",phone:"",phoneType:"mobile",phoneArea:"02",phoneLocal:"",day:later(1),time:"08:00",slot:scene==="clinic"?"09:30":"14:00",unit:scene==="clinic"?"1診":"Ava",service:scene==="clinic"?"小兒科門診":scene==="repair"?"手機維修":"洗剪",party:1,note:""};cart={};review=false;receipt="";}
-function setScene(s){scene=s;role="customer";tab=primaryTab[s];room="1診";lastOwn="";
+function setScene(s){if(!Object.prototype.hasOwnProperty.call(metadata,s))return;scene=s;tab=role==="customer"?primaryTab[s]:staffTabs[s];room="1診";lastOwn="";
  const previous=[...(data[s].tickets||[]),...(data[s].bookings||[]),...(data[s].orders||[])].filter(x=>ownedIds[s].has(x.id));
  if(previous.length)lastOwn=previous[previous.length-1].id;
  newNotice="";notes=[];notifyOpen=false;showBoard=false;bookingFilter="";detailKind="";detailId="";detailEditing=false;resetDraft();render();}
