@@ -232,12 +232,15 @@ Deno.serve(async (request:Request):Promise<Response>=>{
   try { payload=JSON.parse(raw); } catch {return replyJson({error:"bad_json"},400);}
   if(!Array.isArray(payload.events)) return replyJson({error:"missing_events"},400);
   if(payload.events.length===0) return replyJson({ok:true});
-  console.info("line_ai_received",payload.events.length);
-  const job=Promise.allSettled(payload.events.slice(0,30).map(e=>processEvent(e,secrets)));
-  // Do not acknowledge the event before processing; previously background
-  // work could disappear without a durable receipt, silently dropping replies.
-  const outcomes=await job;
-  const rejected=outcomes.filter(x=>x.status==="rejected");
-  if(rejected.length) console.error("line_ai_unhandled",rejected.length);
-  return replyJson({ok:true,processed:outcomes.length});
+  // LINE must receive its acknowledgment promptly; processing continues in
+  // a tracked background task. Unlike the former version, rejected tasks
+  // are logged rather than silently swallowed by Promise.allSettled.
+  const job=Promise.allSettled(payload.events.slice(0,30).map(e=>processEvent(e,secrets))).then(outcomes=>{
+    const rejected=outcomes.filter((x):x is PromiseRejectedResult=>x.status==="rejected");
+    for(const failure of rejected) console.error("line_ai_unhandled",String(failure.reason).slice(0,150));
+    return outcomes.length;
+  });
+  if(later(job)) return replyJson({ok:true,queued:payload.events.length});
+  await job;
+  return replyJson({ok:true,processed:payload.events.length});
 });
