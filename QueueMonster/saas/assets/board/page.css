@@ -397,3 +397,16 @@ html.board-fit #unit-board .unit-card .unit-open{
   align-self:end;
   margin:0;
 }
+
+/* Canonical site header occupies its own row above the store-specific board
+   status. Never overlap those rows; preserve the fullscreen kiosk experience. */
+html.board-fit body[data-monster-page="board"]{
+ grid-template-rows:auto auto auto minmax(0,1fr) auto;
+}
+html.board-fit body[data-monster-page="board"] > #marketing-header{grid-row:1;min-height:0}
+html.board-fit body[data-monster-page="board"] > header.board-store-header{grid-row:2;min-height:0}
+html.board-fit body[data-monster-page="board"] > #board-session-nav:not([hidden]){grid-row:3}
+html.board-fit body[data-monster-page="board"] > #single-board:not([hidden]),
+html.board-fit body[data-monster-page="board"] > #unit-board:not([hidden]){grid-row:4}
+html.board-fit body[data-monster-page="board"] > footer{grid-row:5}
+html:fullscreen body[data-monster-page="board"] > #marketing-header{display:none}
