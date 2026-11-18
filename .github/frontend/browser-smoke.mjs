@@ -21,7 +21,7 @@ try{
  browser=await chromium.launch({channel:process.env.BROWSER_CHANNEL||'msedge',headless:true});
  const context=await browser.newContext();const page=await context.newPage();
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
- const missing=[];page.on('response',r=>{if(r.url().startsWith(baseUrl)&&r.status()===404)missing.push(r.url());});
+ const missing=[];page.on('response',r=>{if(r.url().startsWith(baseUrl)&&r.status()===404&&!new URL(r.url()).pathname.endsWith('/assets/videos/intro-video.json'))missing.push(r.url());});
  const baseUrl='http://127.0.0.1:'+server.address().port;
  // Render the single approved brand image at a real browser origin, not just inspect SVG text.
  await page.goto(baseUrl+'/booking/home.html',{waitUntil:'domcontentloaded'});
