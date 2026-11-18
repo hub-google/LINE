@@ -1,0 +1,69 @@
+name: Queue Monster｜Main 實站開屏瀏覽器驗收
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/queue-intro-live-audit.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install browser test dependencies
+        run: |
+          npm ci --prefix .github/frontend
+          npm exec --prefix .github/frontend -- playwright install --with-deps chromium
+      - name: Verify actual public GitHub Pages homepage and video controls
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {chromium} from './.github/frontend/node_modules/playwright/index.mjs';
+          const target='d1525271266e314156342dd3c02c6e8b59e5092c';
+          const homepage='https://hub-google.github.io/LINE/booking/home.html';
+          const delay=ms=>new Promise(r=>setTimeout(r,ms));
+          let deployed=false;
+          for(let i=0;i<24;i++){
+            const html=await (await fetch(homepage+'?__line_fresh='+Date.now(),{cache:'no-store'})).text();
+            if(html.includes(target)){deployed=true;break}
+            console.log('Waiting for public Pages build to contain expected verified main commit',i+1);
+            await delay(10000);
+          }
+          assert.ok(deployed,'Current main homepage not yet published to actual public URL');
+          const browser=await chromium.launch({channel:'chromium',headless:true});
+          try{
+            const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+            const page=await context.newPage();
+            const url=homepage+'?__line_build='+target+'&__line_fresh='+Date.now();
+            await page.goto(url,{waitUntil:'domcontentloaded',timeout:60000});
+            const modal=page.getByRole('dialog',{name:'排隊怪獸品牌介紹影片'});
+            await modal.waitFor({state:'visible',timeout:20000});
+            const view=await page.evaluate(()=>{
+              const panel=document.querySelector('.qm-intro-panel');
+              const stage=document.querySelector('.qm-intro-stage');
+              const video=document.querySelector('.qm-intro-movie');
+              return {portrait:panel?.classList.contains('qm-intro-portrait'),
+                ratio:stage?getComputedStyle(stage).aspectRatio:null,
+                videoSrc:video?.getAttribute('src'),
+                videoError:video?.error?.code||null,videoWidth:video?.videoWidth,videoHeight:video?.videoHeight};
+            });
+            console.log('LIVE_MOBILE_DIALOG',JSON.stringify(view));
+            assert.equal(view.portrait,true,'Real vertical intro must open with 9:16 video stage');
+            assert.equal(view.ratio?.replaceAll(' ',''),'9/16');
+            assert.ok(view.videoSrc?.endsWith('/LINE/booking/assets/videos/intro.mp4'),'Actual uploaded video must be loaded');
+            await modal.getByRole('button',{name:/跳過影片/}).click();
+            assert.equal(await modal.isVisible(),false,'User can close video');
+            await page.reload({waitUntil:'domcontentloaded'});
+            await modal.waitFor({state:'visible',timeout:20000});
+            await modal.getByRole('button',{name:/跳過影片/}).click();
+            await page.getByRole('button',{name:/觀看品牌介紹影片/}).click();
+            await modal.waitFor({state:'visible',timeout:20000});
+            const replay=await page.locator('.qm-intro-movie').getAttribute('src');
+            assert.equal(replay,view.videoSrc,'Replay must use exactly the same real film as autoplay');
+            console.log('LIVE_PASS: homepage auto-opened on first and repeated entry, manually closed, replayed actual uploaded video');
+          }finally{await browser.close();}
+          NODE
