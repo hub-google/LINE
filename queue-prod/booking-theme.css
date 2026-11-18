@@ -689,11 +689,15 @@ body[data-portal="staff"] .staff-picker-secondary>.staff-choice{flex:1 1 100%;mi
 .schedule-weekday-count{display:flex;align-items:center;flex-wrap:wrap;gap:9px}
 .schedule-weekday-count .field{max-width:112px;width:100px;min-height:43px;text-align:center;font-weight:700;font-size:16px}
 .schedule-weekday-count span{font-size:13px;color:#7b7284;white-space:nowrap}
+.schedule-weekday-copy{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:11px}
+.schedule-weekday-copy label{font-size:13px;font-weight:650;color:#75657f;margin:0;white-space:nowrap}
+.schedule-weekday-copy .field{min-height:36px;max-width:220px;width:auto;flex:1 1 160px;padding:6px 10px;font-size:13px}
+.schedule-weekday-copy .btn{min-height:36px;padding:7px 16px;font-size:13px;white-space:nowrap}
 .schedule-weekday-details{margin:13px 0 0;border-top:1px solid #eee4f1;padding-top:12px}
 .schedule-weekday-details>summary{cursor:pointer;color:#663c80;font-weight:650;font-size:14px;padding:4px 0}
 .schedule-session-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr));gap:12px;margin-top:12px}
 .schedule-session-editor{margin:0!important;min-width:0}
-.schedule-session-editor>strong{color:#603b80;display:block;margin-bottom:8px}
+.schedule-session-editor>.schedule-session-name{display:block;width:100%;min-height:44px;margin-bottom:12px;padding:8px 12px;background:#f1e5fa;border:1px solid #dfcce9;border-left:4px solid #82479e;border-radius:7px;color:#562f79;font-size:16px;font-weight:750}
 .schedule-closed-hint{margin:8px 0 0;color:#899188}
 .schedule-special-count{border:1px solid #e9dceb;background:#fbf8fd;border-radius:13px;padding:12px 14px;margin:16px 0}
 .schedule-special-count label{display:block;font-weight:650;margin-bottom:9px;color:#554062}
@@ -705,5 +709,156 @@ body[data-portal="staff"] .staff-picker-secondary>.staff-choice{flex:1 1 100%;mi
  .schedule-weekday-count{gap:6px;justify-content:flex-end}
  .schedule-weekday-count .field{width:68px;min-width:58px;max-width:80px;font-size:15px;padding:8px 4px}
  .schedule-weekday-count span{font-size:11px}
+ .schedule-weekday-copy{gap:7px}
+ .schedule-weekday-copy label{flex-basis:100%}
+ .schedule-weekday-copy .field{max-width:none;min-width:0}
  .schedule-session-list{grid-template-columns:minmax(0,1fr)}
 }
+
+/* Multi-plan editor: compact plans, one batch day picker, and collapsible weekday overrides. */
+.schedule-plan-list{display:grid;gap:12px}
+.schedule-plan-panel{border:1px solid #e5dce9;border-radius:16px;background:#fff;padding:14px 16px;min-width:0}
+.schedule-plan-head{display:flex;align-items:flex-end;flex-wrap:wrap;gap:12px}
+.schedule-plan-head label{display:block;margin:0 0 5px;font-size:12px;font-weight:650;color:#675b73}
+.schedule-plan-size{flex:0 0 94px}
+.schedule-plan-size .field{width:100%;min-height:42px;text-align:center;font-weight:700}
+.schedule-plan-head>.btn{min-height:42px}
+.schedule-plan-details{margin-top:12px;padding-top:12px;border-top:1px solid #f0e8f1}
+.schedule-plan-details>summary{font-weight:650;color:#603b80;cursor:pointer;font-size:14px}
+.schedule-batch-box{margin:20px 0 24px;padding:18px;border:1px solid #dfcbe9;border-radius:17px;background:#faf7fc}
+.schedule-batch-box h3{margin:0 0 13px;color:#55366b}
+.schedule-batch-box>label{font-weight:650;font-size:13px;display:block;margin-bottom:7px}
+.schedule-batch-box>select{max-width:480px}
+.schedule-batch-label{font-weight:650;font-size:13px;margin:17px 0 9px}
+.schedule-day-checks{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}
+.schedule-day-check{display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid #e0d5e7;border-radius:10px;background:#fff;min-height:44px;padding:6px;font-weight:650;font-size:13px;color:#4b3b54;cursor:pointer}
+.schedule-day-check input{margin:0;accent-color:#6d4087}
+.schedule-day-check:has(input:checked){background:#f0e7f7;border-color:#ad87c4}
+.schedule-batch-actions{margin:16px 0 10px}
+.schedule-weekday-overview{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.schedule-weekday-overview span{font-weight:750;color:#4d3b5b;white-space:nowrap}
+.schedule-weekday-overview small{color:#877b90;font-size:12px}
+.schedule-weekday-head>strong{font-weight:750;font-size:15px;color:#405b4c}
+.schedule-weekday-details .schedule-weekday-count{margin:12px 0;justify-content:flex-start}
+.schedule-weekday-details .schedule-weekday-count label{font-size:13px;color:#675b73;margin:0 6px 0 0}
+@media(max-width:720px){.schedule-day-checks{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:420px){.schedule-day-checks{grid-template-columns:repeat(2,minmax(0,1fr))}.schedule-weekday-overview{gap:6px}.schedule-weekday-overview small{width:100%}.schedule-plan-panel{padding:12px}}
+/* Operating schedules: grouped plan panels */
+.schedule-module{margin:20px 0 24px;border:1px solid #dfd0ec;border-radius:18px;background:#fff;overflow:hidden;box-shadow:0 5px 16px rgba(68,39,92,.055)}
+.schedule-module-heading{padding:15px 20px;background:linear-gradient(100deg,#f1e8fa,#e6d8f3);border-bottom:1px solid #e3d4ef}
+.schedule-module-heading h3{margin:0;color:#502c6c;font-size:17px;font-weight:750}
+.schedule-module-body{padding:19px 20px 21px}
+.schedule-module-body>.small:first-child{margin-top:0;color:#756b7d}
+.schedule-module-weekly{border-color:#d0e5d7}
+.schedule-module-weekly>.schedule-module-heading{background:linear-gradient(100deg,#ebf7ef,#dcefe3);border-bottom-color:#d1e6d8}
+.schedule-module-weekly>.schedule-module-heading h3{color:#315e42}
+.schedule-module-special{border-color:#e0d5e9}
+.schedule-module-special>.schedule-module-heading{background:linear-gradient(100deg,#f7eff9,#eee3f5)}
+.schedule-plan-list{gap:16px}
+.schedule-plan-panel{padding:0;border:1px solid #e0d0e9;border-radius:16px;background:#fff;overflow:hidden;box-shadow:0 3px 12px rgba(65,36,88,.05)}
+.schedule-plan-panel.is-editing{border-color:#ad83ca;box-shadow:0 0 0 2px rgba(122,70,157,.07)}
+.schedule-plan-banner{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,#eee2f9,#faf7fc);padding:12px 16px;border-bottom:1px solid #e8dff0;color:#4e2970}
+.schedule-plan-banner .schedule-plan-name{flex:1 1 220px;min-width:0;max-width:620px;min-height:40px;padding:6px 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:#4e2970;font-size:17px;font-weight:800}
+.schedule-plan-banner .schedule-plan-name:not(:disabled){border-color:#c8a8dc;background:#fff}
+.schedule-plan-indicator{display:block;flex:none;width:5px;height:21px;background:#7d45a0;border-radius:5px}
+.schedule-plan-status{margin-left:auto;font-size:12px;font-weight:600;color:#79688b}
+.schedule-plan-panel.is-editing .schedule-plan-status{color:#68368e}
+.schedule-plan-inner{padding:16px}
+.schedule-plan-head{align-items:flex-end;gap:12px}
+.schedule-plan-head label{font-size:13px;color:#594968;font-weight:700}
+.schedule-plan-size{flex:0 0 105px}
+.schedule-plan-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.schedule-plan-actions .btn{min-height:42px;white-space:nowrap}
+.schedule-plan-save-btn{background:#713a90!important;border-color:#713a90!important;color:#fff!important}
+.schedule-plan-save-btn:disabled{opacity:.43;cursor:not-allowed}
+.schedule-plan-edit-btn{border-color:#ba9ad0!important}
+.schedule-plan-delete-btn{border:1px solid #e7aabb!important;color:#bd3655!important;background:#fff8fa!important}
+.schedule-plan-delete-btn:hover{background:#fdeaf0!important}
+.schedule-plan-panel input:disabled,.schedule-plan-panel select:disabled{opacity:1;background:#fbf9fc;color:#74697d;cursor:default}
+.schedule-plan-panel .schedule-plan-banner .schedule-plan-name:disabled{background:transparent;color:#4e2970;-webkit-text-fill-color:#4e2970}
+.schedule-plan-panel .schedule-session-editor>.schedule-session-name:disabled{background:#f1e5fa;color:#562f79;-webkit-text-fill-color:#562f79}
+.schedule-plan-details{margin-top:16px;padding:0;border:1px solid #c6e1d0;background:#f7fcf8;border-radius:14px;overflow:hidden}
+.schedule-plan-details>summary{display:list-item;padding:13px 15px;background:#e6f4e9;color:#326a47;font-size:14px;font-weight:750}
+.schedule-plan-details[open]>summary{border-bottom:1px solid #cbe4d1}
+.schedule-plan-details>summary::marker{color:#3d7a51}
+.schedule-plan-detail-body{padding:14px}
+.schedule-plan-detail-body .schedule-session-list{margin-top:0}
+.schedule-plan-detail-body .schedule-session-editor{padding:13px;border:1px solid #e4d6ea;border-radius:13px;background:#fff}
+.schedule-plan-add-bar{margin:16px 0 0}
+.schedule-module.schedule-batch-box{padding:0;background:#fff}
+.schedule-batch-box>.schedule-module-body>label{display:block;font-weight:700;margin-bottom:8px;color:#554466}
+.schedule-batch-box>.schedule-module-body>select{max-width:500px}
+.schedule-weekly-panel{background:#fff}
+@media(max-width:850px){
+ .schedule-plan-actions{flex-basis:100%}
+ .schedule-plan-actions .btn{flex:1 1 auto}
+}
+@media(max-width:560px){
+ .schedule-module-heading{padding:13px 15px}
+ .schedule-module-body,.schedule-plan-inner{padding:13px}
+ .schedule-plan-size{flex:1 1 100px}
+ .schedule-plan-actions{width:100%;gap:7px}
+ .schedule-plan-actions .btn{flex:1 1 105px;padding:8px;font-size:12px}
+ .schedule-plan-banner{padding:12px}
+ .schedule-plan-status{font-size:11px}
+ .schedule-plan-detail-body{padding:10px}
+}
+
+
+/* Merchant settings: contextual explanations shared by every settings category. */
+body[data-portal="staff"] .settings-help-label-row{
+  display:flex;align-items:center;gap:7px;max-width:100%;width:fit-content;
+  margin:8px 0 5px;min-width:0;
+}
+body[data-portal="staff"] .settings-help-label-row>label{
+  margin:0;min-width:0;max-width:100%;
+}
+body[data-portal="staff"] .settings-help-checkbox-row{
+  width:100%;align-items:center;
+}
+body[data-portal="staff"] .settings-help-checkbox-row>label.checklist{
+  flex:0 1 auto;min-width:0;
+}
+body[data-portal="staff"] .settings-help-button{
+  display:inline-grid;place-items:center;flex:0 0 auto;
+  width:19px;height:19px;padding:0;border:1px solid #BCA7CA;border-radius:999px;
+  background:#F7F0FB;color:#694A7C;font:700 12px/1 system-ui,sans-serif;
+  cursor:help;vertical-align:middle;box-shadow:none;touch-action:manipulation;
+}
+body[data-portal="staff"] .settings-help-button:hover,
+body[data-portal="staff"] .settings-help-button[aria-expanded="true"]{
+  background:#674780;color:#FFF;border-color:#674780;
+}
+body[data-portal="staff"] .settings-help-button:focus-visible{
+  outline:3px solid #AC8EC7;outline-offset:3px;
+}
+body[data-portal="staff"] .schedule-plan-banner>.settings-help-button,
+body[data-portal="staff"] .schedule-session-item>.settings-help-button{
+  margin-left:4px;
+}
+.settings-help-popover{
+  position:fixed;z-index:100000;box-sizing:border-box;
+  max-width:calc(100vw - 24px);padding:12px 14px;
+  border:1px solid #E5D4EC;border-radius:12px;
+  background:#FFF;color:#392E40;
+  font:500 13px/1.65 system-ui,"Microsoft JhengHei",sans-serif;
+  white-space:normal;overflow-wrap:anywhere;
+  box-shadow:0 12px 30px rgba(54,34,67,.2);
+}
+.settings-help-popover[hidden]{display:none!important}
+@media(max-width:620px){
+  body[data-portal="staff"] .settings-help-button{
+    width:24px;height:24px;font-size:13px;cursor:pointer;
+  }
+  .settings-help-popover{font-size:14px;padding:13px 15px}
+}
+
+/* QueueMonster kitchen preparation view — responsive and readable on tablets or TVs. */
+.qm-kitchen-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px;margin:16px 0}
+.qm-kitchen-card{background:var(--surface,#fff);border:2px solid var(--border,#d8e0ea);border-radius:16px;padding:20px;box-shadow:0 2px 8px #00000008;min-width:0}
+.qm-kitchen-number{font-size:clamp(1.65rem,3vw,2.5rem);font-variant-numeric:tabular-nums}
+.qm-kitchen-time{font-size:clamp(1.15rem,2vw,1.6rem);font-weight:800}
+.qm-kitchen-items{border-block:1px solid var(--border,#d8e0ea);padding:10px 0;margin-bottom:10px}
+.qm-kitchen-items p{font-size:clamp(1.07rem,1.6vw,1.3rem);margin:8px 0;line-height:1.4}
+.qm-kitchen-card .staff-actionbar{flex-wrap:wrap}
+@media (max-width:600px){.qm-kitchen-card{padding:14px}.qm-kitchen-grid{gap:10px}}

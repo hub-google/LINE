@@ -78,17 +78,20 @@ function draw(status,message){
    holder.append(plain,logout);
   }
  }else{
-  const mode=portalMode();
-  const login=el("button",mode==="customer"?"site-auth-button site-auth-login":"site-auth-button");
-  login.type="button";login.disabled=busy;
-  if(mode==="customer"){
-   login.append(document.createTextNode("使用 LINE 登入"));
-   login.addEventListener("click",startLineLogin);
-  }else{
-   login.textContent=mode==="headquarters"?"總部登入":"店家登入";
-   login.addEventListener("click",()=>location.assign(mode==="headquarters"?"./platform-login.html":"./merchant-register.html?mode=login"));
-  }
-  holder.append(login);
+  // Every site page uses the same two guest entry buttons.
+  const customerLogin=el("button","site-auth-button site-auth-login site-auth-customer-login","消費者登入");
+  customerLogin.type="button";
+  customerLogin.disabled=busy;
+  customerLogin.title="使用 LINE 帳號登入";
+  customerLogin.setAttribute("aria-label","消費者登入（LINE）");
+  customerLogin.addEventListener("click",startLineLogin);
+  const merchantLogin=el("button","site-auth-button site-auth-merchant-login","店家登入");
+  merchantLogin.type="button";
+  merchantLogin.disabled=busy;
+  merchantLogin.title="使用 Email 或 Google 帳號登入";
+  merchantLogin.addEventListener("click",()=>location.assign("./merchant-register.html?mode=login"));
+  holder.append(customerLogin,merchantLogin);
+  
  }
  if(message){const hint=el("div","site-auth-feedback",message);hint.setAttribute("role","alert");holder.append(hint);}
  mount.append(holder);
@@ -218,25 +221,97 @@ function currentReturn(){
  const result=name+(qs.toString()?"?"+qs.toString():"");
  return isReturnAllowed(result)?result:"home.html";
 }
-function startLineLogin(){
+// Load the official LIFF SDK on demand. Marketing pages should never have to
+// navigate through the customer app just to show the LINE login screen.
+let headerLiffScript=null;
+function loadHeaderLiff(){
+ if(window.liff)return Promise.resolve(window.liff);
+ if(!headerLiffScript){
+  headerLiffScript=new Promise((resolve,reject)=>{
+   const script=document.createElement("script");
+   script.src="https://static.line-scdn.net/liff/edge/2/sdk.js";
+   script.async=true;
+   script.onload=()=>window.liff?resolve(window.liff):reject(Error("LINE SDK 無法初始化"));
+   script.onerror=()=>reject(Error("LINE SDK 無法載入"));
+   document.head.append(script);
+  }).catch(error=>{headerLiffScript=null;throw error});
+ }
+ return headerLiffScript;
+}
+async function startLineLogin(){
  if(busy)return;
  busy=true;
  draw("guest");
- const returnTo=currentReturn();
- try{sessionStorage.setItem(RETURN_KEY,JSON.stringify({target:returnTo,at:Date.now()}))}catch(_){}
- const selectedMerchant=new URLSearchParams(location.search).get("merchant")||"";
+ const params=new URLSearchParams(location.search);
+ const page=location.pathname.split("/").pop()||"";
+ const customerApp=(page===""||page==="index.html")&&params.get("view")==="customer";
+ // Customer-service buttons must resume on their selected shop and tab, not
+ // redirect back to the marketing homepage after successful LINE authorization.
+ const returnTo=customerApp?"":currentReturn();
+ try{
+  if(returnTo)sessionStorage.setItem(RETURN_KEY,JSON.stringify({target:returnTo,at:Date.now()}));
+  else sessionStorage.removeItem(RETURN_KEY);
+ }catch(_){}
+ const selectedMerchant=params.get("merchant")||"";
  const start=new URL("./",location.href);
  start.searchParams.set("view","customer");
- // The platform LINE account does not need a merchant selection.
- // Keep merchant context only when a real QR-code/store URL supplied it.
+ // Keep the selected store only when an actual store URL supplied its slug.
  if(/^[a-z0-9][a-z0-9-]{2,39}$/.test(selectedMerchant))
    start.searchParams.set("merchant",selectedMerchant);
- start.searchParams.set("tab","home");
- // Only an explicit header click starts OAuth automatically on the destination page.
- start.searchParams.set("site_login","1");
- start.searchParams.set("site_return",returnTo);
- location.assign(start.href);
+ const customerTab=params.get("tab")||"home";
+ start.searchParams.set("tab",customerApp&&/^(?:home|reserve|queue|order|mine|progress|detail)$/.test(customerTab)?customerTab:"home");
+ if(customerApp){
+  const ticket=params.get("ticket")||"",item=params.get("item")||"";
+  const uuid=/^[0-9a-f-]{36}$/i;
+  if(uuid.test(ticket))start.searchParams.set("ticket",ticket);
+  const kind=params.get("kind")||"";
+  if(["reservation","order"].includes(kind)&&uuid.test(item)){
+   start.searchParams.set("kind",kind);start.searchParams.set("item",item);
+  }
+  const manage=params.get("manage")||"";
+  if(["reservation","ticket","order"].includes(manage)&&uuid.test(item)){
+   start.searchParams.set("manage",manage);start.searchParams.set("item",item);
+   const mode=params.get("mode")||"";
+   if(["view","cancel","edit"].includes(mode))start.searchParams.set("mode",mode);
+  }
+  const entry=params.get("entry")||"";
+  if(["merchant-oa","platform-oa"].includes(entry))start.searchParams.set("entry",entry);
+ }
+ if(returnTo)start.searchParams.set("site_return",returnTo);
+ try{
+  const configUrl=new URL(SB_URL+"/functions/v1/line-bridge");
+  configUrl.searchParams.set("action","config");
+  configUrl.searchParams.set("merchant",/^[a-z0-9][a-z0-9-]{2,39}$/.test(selectedMerchant)?selectedMerchant:"");
+  configUrl.searchParams.set("site",location.hostname==="queue.monsterport.com"?"queue":"legacy");
+  const configResponse=await fetch(configUrl.href,{cache:"no-store"});
+  if(!configResponse.ok)throw Error("LINE 登入設定無法取得");
+  const config=await configResponse.json();
+  const liffId=String(config?.liffId||"");
+  if(!/^\d+-[A-Za-z0-9]+$/.test(liffId))throw Error("LINE LIFF 設定尚未完成");
+  const liff=await loadHeaderLiff();
+  // liff.login() opens LINE's official authorization screen in the current tab.
+  // After authorization, the existing customer flow verifies the LINE ID token
+  // and returns the user to the original, allowlisted page.
+  await liff.init({liffId});
+  if(liff.isInClient?.()===true||liff.isLoggedIn?.()===true){
+   location.assign(start.href);
+  }else{
+   liff.login({redirectUri:start.href});
+  }
+ }catch(error){
+  busy=false;
+  draw("guest","無法開啟 LINE 登入，請稍後重試。");
+ }
 }
+// Every visible LINE login CTA reuses the same official LIFF authorization
+// entry point. Other app modules never construct an alternative login URL.
+window.QueueMonsterAuth=Object.freeze({startLineLogin});
+document.addEventListener("click",event=>{
+ const trigger=event.target?.closest?.("[data-site-line-login]");
+ if(!trigger)return;
+ event.preventDefault();
+ void startLineLogin();
+});
 async function getIdentity(){
  const mode=portalMode();
  const preferOperator=mode!=="customer";
@@ -266,13 +341,13 @@ async function getIdentity(){
    needsPasswordSetup:emailAccount && staffUser.user_metadata?.queue_monster_password_pending===true
   };
  }
- if(!preferOperator)return lineIdentity;
- if(!operatorIdentity)return null;
- if(mode==="headquarters"){
-  const role=await operator.rpc("so_my_context");
-  if(role.error||role.data?.platform_admin!==true)return null;
- }
- return operatorIdentity;
+ // A signed-in merchant also remains visible on customer/marketing headers,
+ // and a signed-in customer remains visible on merchant/marketing headers.
+ // Never display a second login button while either identity is active.
+ // Account display is consistent across every page. Headquarters data access
+ // remains separately protected by its dedicated permissions checks.
+ if(lineIdentity&&operatorIdentity)return preferOperator?operatorIdentity:lineIdentity;
+ return operatorIdentity||lineIdentity;
 }
 async function refresh(){
  if(busy)return;
@@ -288,8 +363,15 @@ async function logOut(){
  if(busy||!currentIdentity)return;
  busy=true;draw("linked");
  try{
-  const result=await currentIdentity.client.auth.signOut();
-  if(result.error)throw result.error;
+  // Clear both independently stored sessions so "登出" really returns the
+  // shared header to its two-login guest state, even after older dual logins.
+  const sessions=await Promise.all([customer,operator].map(async client=>{
+   const session=await client.auth.getSession();
+   if(session.error)throw session.error;
+   if(!session.data?.session)return;
+   const signedOut=await client.auth.signOut();
+   if(signedOut.error)throw signedOut.error;
+  }));
   if(currentIdentity.type==="operator"){try{localStorage.removeItem("line_saas_real_qa_v1")}catch(_){}}
   try{sessionStorage.removeItem(RETURN_KEY)}catch(_){}
   currentIdentity=null;
