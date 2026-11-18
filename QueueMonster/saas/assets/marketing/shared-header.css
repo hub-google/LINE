@@ -51,3 +51,31 @@
 @media(max-width:360px){
  .qm-public-header .site-auth-button.site-auth-customer-login{font-size:11px}
 }
+
+
+/* The same canonical site bar is used on application, sign-in, board and legal pages.
+   Their legacy broad "header" selectors must not change this component. */
+#marketing-header{display:block;width:100%;flex:0 0 auto;margin:0;padding:0;position:sticky;top:0;z-index:1000;background:#fffaff;line-height:1.5}
+#marketing-header > header.qm-public-header{display:block;position:relative;inset:auto;width:100%;min-width:0;max-width:none;min-height:0;height:auto;margin:0;padding:0;background:#fffafff5;color:#462b52;border:0;border-bottom:1px solid #e8d4ef;box-shadow:0 2px 13px #462b520a;font:16px/1.5 system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif;text-align:left}
+#marketing-header .qm-public-inner{box-sizing:border-box;max-width:1740px;margin:0 auto;display:flex;align-items:center;justify-content:flex-start;flex-wrap:nowrap}
+#marketing-header .qm-public-logo{color:#503462;text-decoration:none}
+#marketing-header .qm-public-nav a{color:#503462;text-decoration:none;font-weight:850}
+#marketing-header .qm-public-nav a:hover,#marketing-header .qm-public-nav a[aria-current="page"]{color:#8750a7}
+#marketing-header .qm-public-auth{display:flex;justify-content:flex-end;align-items:center;flex:0 1 auto;min-width:0;margin-left:auto;color:#503462}
+#marketing-header .site-auth-inner{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+#marketing-header .site-auth-name{color:#503462}
+#marketing-header .site-auth-button{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:7px 13px;border-radius:13px;font-size:13px;font-weight:800;line-height:1.4;white-space:nowrap}
+#marketing-header .site-auth-button.site-auth-login{background:#078b4b;border-color:#078b4b;color:#fff}
+#marketing-header .site-auth-button.site-auth-login:hover{background:#056f3b}
+#marketing-header .site-auth-button.site-auth-merchant-login{background:#fffaff;border-color:#dfbfe9;color:#583970}
+#marketing-header .site-auth-button.site-auth-merchant-login:hover{background:#f2e2f9}
+.qm-legacy-header[hidden]{display:none!important}
+/* The television board previously suppressed its old auth widget in fit mode.
+   The universal header's login/logout must remain visible outside fullscreen. */
+html.board-fit #marketing-header #site-auth-root{display:flex!important}
+@media(max-width:620px){
+ #marketing-header .qm-public-inner{padding:8px 10px;min-height:60px;gap:7px}
+ #marketing-header .qm-public-inner:has(.site-auth-merchant-login){flex-wrap:wrap}
+ #marketing-header .qm-public-auth:has(.site-auth-merchant-login){order:3;flex:1 0 100%;max-width:100%;margin-left:0;justify-content:flex-end}
+ #marketing-header .site-auth-button{min-height:38px;padding:6px 8px;font-size:11px}
+}
