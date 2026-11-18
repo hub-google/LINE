@@ -229,7 +229,24 @@ function currentReturn(){
  const result=name+(qs.toString()?"?"+qs.toString():"");
  return isReturnAllowed(result)?result:"home.html";
 }
-function startLineLogin(){
+// Load the official LIFF SDK on demand. Marketing pages should never have to
+// navigate through the customer app just to show the LINE login screen.
+let headerLiffScript=null;
+function loadHeaderLiff(){
+ if(window.liff)return Promise.resolve(window.liff);
+ if(!headerLiffScript){
+  headerLiffScript=new Promise((resolve,reject)=>{
+   const script=document.createElement("script");
+   script.src="https://static.line-scdn.net/liff/edge/2/sdk.js";
+   script.async=true;
+   script.onload=()=>window.liff?resolve(window.liff):reject(Error("LINE SDK 無法初始化"));
+   script.onerror=()=>reject(Error("LINE SDK 無法載入"));
+   document.head.append(script);
+  }).catch(error=>{headerLiffScript=null;throw error});
+ }
+ return headerLiffScript;
+}
+async function startLineLogin(){
  if(busy)return;
  busy=true;
  draw("guest");
@@ -238,15 +255,35 @@ function startLineLogin(){
  const selectedMerchant=new URLSearchParams(location.search).get("merchant")||"";
  const start=new URL("./",location.href);
  start.searchParams.set("view","customer");
- // The platform LINE account does not need a merchant selection.
- // Keep merchant context only when a real QR-code/store URL supplied it.
+ // Keep the selected store only when an actual store URL supplied its slug.
  if(/^[a-z0-9][a-z0-9-]{2,39}$/.test(selectedMerchant))
    start.searchParams.set("merchant",selectedMerchant);
  start.searchParams.set("tab","home");
- // Only an explicit header click starts OAuth automatically on the destination page.
- start.searchParams.set("site_login","1");
  start.searchParams.set("site_return",returnTo);
- location.assign(start.href);
+ try{
+  const configUrl=new URL(SB_URL+"/functions/v1/line-bridge");
+  configUrl.searchParams.set("action","config");
+  configUrl.searchParams.set("merchant",/^[a-z0-9][a-z0-9-]{2,39}$/.test(selectedMerchant)?selectedMerchant:"");
+  configUrl.searchParams.set("site",location.hostname==="queue.monsterport.com"?"queue":"legacy");
+  const configResponse=await fetch(configUrl.href,{cache:"no-store"});
+  if(!configResponse.ok)throw Error("LINE 登入設定無法取得");
+  const config=await configResponse.json();
+  const liffId=String(config?.liffId||"");
+  if(!/^\d+-[A-Za-z0-9]+$/.test(liffId))throw Error("LINE LIFF 設定尚未完成");
+  const liff=await loadHeaderLiff();
+  // liff.login() opens LINE's official authorization screen in the current tab.
+  // After authorization, the existing customer flow verifies the LINE ID token
+  // and returns the user to the original, allowlisted page.
+  await liff.init({liffId});
+  if(liff.isInClient?.()===true||liff.isLoggedIn?.()===true){
+   location.assign(start.href);
+  }else{
+   liff.login({redirectUri:start.href});
+  }
+ }catch(error){
+  busy=false;
+  draw("guest","無法開啟 LINE 登入，請稍後重試。");
+ }
 }
 async function getIdentity(){
  const mode=portalMode();
