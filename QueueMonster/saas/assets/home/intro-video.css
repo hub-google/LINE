@@ -31,6 +31,20 @@ html.qm-intro-locked{overflow:hidden!important}
 .qm-intro-action{background:#693c8b;color:white!important;border:1px solid #693c8b}
 .qm-intro-restart{background:#fff8ea;color:#59316f;border:1px solid #dcbbea}
 .qm-intro-overlay :focus-visible{outline:3px solid #fec55a!important;outline-offset:3px}
+
+/* Brand clip is vertical 1080x1920; avoid shrinking it inside a 16:9 stage. */
+.qm-intro-panel.qm-intro-portrait{
+ width:min(100%,520px);
+ width:min(100%,520px,calc((100dvh - 184px) * .5625));
+}
+.qm-intro-panel.qm-intro-portrait .qm-intro-stage{aspect-ratio:9/16}
+.qm-intro-panel.qm-intro-portrait .qm-intro-top{padding:9px 13px}
+.qm-intro-panel.qm-intro-portrait .qm-intro-footer{padding:9px 14px 12px}
+.qm-intro-panel.qm-intro-portrait .qm-intro-footer h2{font-size:clamp(16px,2.4vw,21px);margin:0 0 4px}
+.qm-intro-panel.qm-intro-portrait .qm-intro-footer p{font-size:12px;line-height:1.35}
+.qm-intro-panel.qm-intro-portrait .qm-intro-actions{margin-top:8px}
+.qm-intro-panel.qm-intro-portrait .qm-intro-action,
+.qm-intro-panel.qm-intro-portrait .qm-intro-restart{min-height:36px;padding:7px 14px;font-size:13px}
 @media(max-width:540px){
  .qm-intro-overlay{padding:10px}
  .qm-intro-panel{border-width:2px;border-radius:19px;max-height:calc(100dvh - 20px)}

@@ -23,7 +23,7 @@
   overlay.innerHTML='<section class="qm-intro-panel" role="dialog" aria-modal="true" aria-label="排隊怪獸品牌介紹影片">'+
    '<header class="qm-intro-top"><strong><img src="./monster-mascot.svg" alt="" width="34" height="32">排隊怪獸｜品牌介紹</strong>'+
    '<button class="qm-intro-skip" type="button">跳過影片 <span aria-hidden="true">×</span></button></header>'+
-   '<div class="qm-intro-stage"><video class="qm-intro-movie" controls playsinline muted preload="metadata" aria-label="45 秒品牌介紹影片" hidden></video>'+
+   '<div class="qm-intro-stage"><video class="qm-intro-movie" controls autoplay playsinline muted preload="auto" aria-label="45 秒品牌介紹影片" hidden></video>'+
    '<div class="qm-intro-empty" hidden><img src="./monster-mascot.svg" alt="" width="100" height="95"><strong>排隊怪獸介紹影片</strong><p>影片尚未上傳，這是開屏廣告的預覽畫面。</p></div></div>'+
    '<div class="qm-intro-footer"><h2>排隊交給怪獸，時間留給自己！</h2>'+
    '<p>排隊叫號、線上預約・線上點餐，怪獸幫你搞定。</p>'+
@@ -53,10 +53,17 @@
   const player=panel.querySelector(".qm-intro-movie");
   const placeholder=panel.querySelector(".qm-intro-empty");
   const restart=panel.querySelector(".qm-intro-restart");
+  const dialog=panel.querySelector(".qm-intro-panel");
+  // The uploaded 45s brand film is portrait (1080x1920). Fit it from first paint.
+  // Detect orientation when metadata arrives to support any future replacement.
+  dialog.classList.toggle("qm-intro-portrait",Boolean(manifest));
   player.hidden=true;placeholder.hidden=true;restart.hidden=true;
   if(manifest){
    video=player;player.hidden=false;
    player.muted=true;player.playsInline=true;
+   player.onloadedmetadata=()=>{
+    dialog.classList.toggle("qm-intro-portrait",player.videoHeight>player.videoWidth);
+   };
    player.src=new URL(manifest.videoUrl,location.href).href;
    player.onended=()=>{restart.hidden=false};
    player.onerror=()=>{
