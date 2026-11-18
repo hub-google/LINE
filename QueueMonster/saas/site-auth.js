@@ -269,7 +269,7 @@ async function startLineLogin(){
   if(!configResponse.ok)throw Error("LINE 登入設定無法取得");
   const config=await configResponse.json();
   const liffId=String(config?.liffId||"");
-  if(!/^\\d+-[A-Za-z0-9]+$/.test(liffId))throw Error("LINE LIFF 設定尚未完成");
+  if(!/^\d+-[A-Za-z0-9]+$/.test(liffId))throw Error("LINE LIFF 設定尚未完成");
   const liff=await loadHeaderLiff();
   // liff.login() opens LINE's official authorization screen in the current tab.
   // After authorization, the existing customer flow verifies the LINE ID token
