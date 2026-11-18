@@ -37,7 +37,7 @@ test("follow greeting is gated, deduplicated and never sent from an own-OA chann
 });
 
 test("LINE OA uses exactly three Quick Replies with queue-domain services and a history-scoped LIFF URL", () => {
-  const items=[...bridge.matchAll(/\{type:"action",action:\{type:"(?:uri|postback)",label:"([^"]+)"/g)]
+  const items=[...bridge.matchAll(/\{type:"(?:uri|postback)",label:"([^"]+)"/g)]
     .map(match=>match[1]);
   assert.deepEqual(items, ["免費體驗","操作教學","歷史紀錄"]);
   assert.match(bridge, /label:"免費體驗",uri:PLATFORM_ENTRY\+"demo\.html"/);
@@ -63,7 +63,11 @@ test("rich-menu feedback and quick-reply guide respond inside the existing LINE 
 
 test("existing followers can reveal Quick Replies without unfriending or waiting for greeting", () => {
   assert.match(bridge, /選單\|功能選單\|快速回覆\|快捷選單\|主選單\|顯示選單/);
-  assert.match(bridge, /text:"選擇要使用的快捷功能：",quickReply:platformQuickReply\(\)/);
+  assert.match(bridge, /return platformMenuCard\(\)/);
+  assert.match(bridge, /type:"template"/);
+  assert.match(bridge, /type:"buttons",title:"排隊怪獸｜快捷功能"/);
+  assert.match(bridge, /actions:platformQuickActions\(\)/);
+  assert.match(bridge, /items:platformQuickActions\(\)\.map/);
   assert.match(bridge, /text:PLATFORM_FEEDBACK_REPLY,quickReply:platformQuickReply\(\)/);
   assert.match(bridge, /\{type:"text",text,quickReply:platformQuickReply\(\)\}/);
   assert.match(bridge, /text: PLATFORM_FEEDBACK_REPLY, quickReply: platformQuickReply\(\)/);
