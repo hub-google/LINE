@@ -150,15 +150,12 @@ export function customerRender(){
      routeState.customerTab==="queue"?"現場取號":
      routeState.customerTab==="order"?"線上點餐":
      ["mine","progress","detail"].includes(routeState.customerTab)?"歷史紀錄":"線上預約與取號";
-   const loginHref=lineState.lineConfig?.liffId?lineLoginUrl():"";
    const waiting=lineState.lineLinkStatus==="connecting"||
      lineState.lineLinkStatus==="not-ready"&&lineState.lineLinkAttempted===false;
    const prompt=waiting?
      '<p class="muted" role="status">正在確認 LINE 登入狀態…</p>':
      '<p class="muted">為避免機器人或惡意假預約，請先透過 LINE 登入，再進行預約或取號。</p>'+
-       (loginHref?
-         '<a class="btn primary" href="'+esc(loginHref)+'">LINE 登入</a>':
-         '<p class="alert">LINE 登入暫時無法使用，請稍後重新整理。</p>');
+     '<button type="button" class="btn primary" data-site-line-login>LINE 登入</button>';
    return brandHeader+
      '<section class="card customer-entry-card"><h2>'+entryTitle+'</h2>'+prompt+'</section>'+
      '<p class="customer-public-board-link"><a href="./board.html?merchant='+
