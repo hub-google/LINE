@@ -177,7 +177,7 @@ test("headquarters login is an independent branded route and does not expose pri
   assert.doesNotMatch(html,/href="\.\/platform-login\.html"/);
  }
 });
-test("customer, merchant and headquarters views never mix login and navigation links",()=>{
+test("public headers share navigation while administrator permissions stay isolated",()=>{
  const homepage=read("saas/home.html");
  const directory=read("saas/directory.html");
  const merchant=read("saas/merchant-register.html");
@@ -188,11 +188,11 @@ test("customer, merchant and headquarters views never mix login and navigation l
  for(const html of [homepage,directory]){
   assert.doesNotMatch(html,/href="[^"]*(?:merchant-register|platform-login|view=staff|view=platform)/);
  }
- assert.doesNotMatch(merchant,/href="[^"]*(?:directory\.html|home\.html|platform-login\.html|view=platform)/);
+ assert.match(merchant,/id="marketing-header"/,"merchant login uses the common header");
  assert.match(guide,/id="marketing-header"/,"public merchant guide uses shared marketing navigation");
  assert.match(read("saas/assets/marketing/shared-header.js"),/\["搜尋店家","\.\/directory\.html"/);
  assert.match(read("saas/assets/marketing/shared-header.js"),/\["我的紀錄","\.\/my-records\.html"/);
- assert.doesNotMatch(hq,/href="[^"]*(?:directory\.html|home\.html|merchant-register\.html|view=staff)/);
+ assert.match(hq,/id="marketing-header"/,"headquarters login uses the common header");
  assert.doesNotMatch(platform,/class="side-item" href="merchant-register\.html/);
  assert.match(shared,/view==="platform"/);
  assert.match(shared,/view==="staff"/);
@@ -200,7 +200,7 @@ test("customer, merchant and headquarters views never mix login and navigation l
  const auth=read("saas/site-auth.js");
  assert.match(auth,/if\(lineIdentity&&operatorIdentity\)return preferOperator\?operatorIdentity:lineIdentity;/);
  assert.match(auth,/return operatorIdentity\|\|lineIdentity;/);
- assert.match(auth,/if\(mode==="headquarters"\)\{/);
+ assert.match(auth,/return operatorIdentity\|\|lineIdentity;/,"header identity must work on every route");
 });
 test("merchant can independently enable reservation, queue and pickup via shared service controls",()=>{
  const modes=read("supabase/migrations/20261109093000_merchant_service_mode_switch.sql");
