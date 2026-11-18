@@ -8,7 +8,7 @@ import {act,rpc,val} from "./../data-loading.js";
 import {showActionFeedback} from "./../shared-ui.js";
 import {refreshQueueProgress,stopQueueRealtime} from "./../queue-progress.js";
 import {render} from "./../staff-layout.js";
-import {bridgeConfig,connectLineSession,customerNoticeSuffix,recoverLineLogin,sendLineNotice,lineReplyHandoff} from "./../line-session.js";
+import {connectLineSession,customerNoticeSuffix,sendLineNotice,lineReplyHandoff} from "./../line-session.js";
 import {finishManageLink} from "./../booking-edit.js";
 
 export async function handleQueueLineActions(ev,b,a,id){
@@ -46,13 +46,14 @@ if(a==="save-queue-near-alert"){
     "LINE 官方帳號查詢失敗，請確認 LINE 官方帳號與 Login 頻道設定";
  });return true;}
  if(a==="line-connect"||a==="line-reauth"){
-   await act(async()=>{
-     const cfg=await bridgeConfig();
-     if(!cfg.liffId)throw Error("LINE LIFF 尚未配置");
-     // A failed OAuth callback must not be processed twice.
-     recoverLineLogin(true);
-     return "正在開啟 LINE 登入…";
-   });return true;
+   const login=window.QueueMonsterAuth?.startLineLogin;
+   if(typeof login!=="function"){
+    showActionFeedback("LINE 登入元件尚未載入，請重新整理。","error");
+    return true;
+   }
+   // Reuse the official LINE login flow of the top-right consumer button.
+   void login();
+   return true;
   }
  if(a==="hold-my-number"||a==="resume-my-number"){
    const resume=a==="resume-my-number";
