@@ -56,7 +56,8 @@ test("platform history is cross-store; individual merchant history and detail ro
 test("LINE OAuth, official account and publishing all recognize the standalone history URL",()=>{
  assert.match(siteAuth,/directory\|my-records\|board/);
  assert.match(callback,/directory\|my-records\|board/);
- assert.match(menu,/"歷史紀錄".*"my-records\.html\?scope=history"/);\n assert.match(menu,/"我的進度".*"my-records\.html\?scope=active"/);
+ assert.match(menu,/"歷史紀錄".*"my-records\.html\?scope=history"/);
+ assert.match(menu,/"我的進度".*"my-records\.html\?scope=active"/);
  assert.match(bot,/my-records\.html/);
  assert.match(build,/"my-records\.html"/);
  assert.match(deploy,/directory\.html my-records\.html merchant-register\.html/);
