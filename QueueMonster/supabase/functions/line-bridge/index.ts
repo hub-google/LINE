@@ -803,11 +803,25 @@ function platformDirectoryLink(service = ""): string {
   if (service) query.set("service",service);
   return "https://liff.line.me/"+encodeURIComponent(liffId)+"/directory.html?"+query.toString();
 }
-function platformRecordsLink(): string {
+function platformRecordsLink(scope: "all" | "history" = "all"): string {
+  const destination = "my-records.html" + (scope === "history" ? "?scope=history" : "");
   const liffId = Deno.env.get("LINE_LIFF_ID_QUEUE") || "";
-  if (!/^\d{8,}-[A-Za-z0-9]+$/.test(liffId)) return PLATFORM_ENTRY+"my-records.html";
-  // Reuse the existing customer LINE verification and same-origin return flow.
-  return "https://liff.line.me/"+encodeURIComponent(liffId)+"/?view=customer&entry=platform-oa&site_return=my-records.html";
+  if (!/^\d{8,}-[A-Za-z0-9]+$/.test(liffId)) return PLATFORM_ENTRY+destination;
+  // The Queue Monster LINE LIFF is mapped to queue.monsterport.com, never GitHub Pages.
+  const query=new URLSearchParams({
+    view:"customer",entry:"platform-oa",site_return:destination,
+  });
+  return "https://liff.line.me/"+encodeURIComponent(liffId)+"/?"+query.toString();
+}
+const PLATFORM_GUIDE_REPLY = "操作教學可依身分查看：\n消費者："+PLATFORM_ENTRY+"for-customers.html\n店家："+PLATFORM_ENTRY+"merchant-center.html#guide";
+function platformQuickReply(): Record<string, unknown> {
+  // These three actions are helpful without a selected store. Keep transaction
+  // controls on their own booking/queue/order Flex notices instead.
+  return {items:[
+    {type:"action",action:{type:"uri",label:"免費體驗",uri:PLATFORM_ENTRY+"demo.html"}},
+    {type:"action",action:{type:"postback",label:"操作教學",data:"platform:guide",displayText:"操作教學"}},
+    {type:"action",action:{type:"uri",label:"歷史紀錄",uri:platformRecordsLink("history")}},
+  ]};
 }
 // Use record-specific URLs for the platform OA; no fictitious platform queue board.
 const PLATFORM_FEEDBACK_REPLY = "請在此留下您想反饋的問題或建議，若為操作問題或系統問題，可留下截圖方便確認。";
@@ -858,10 +872,9 @@ function platformBotMessage(command: string, welcome = false): Record<string, un
     link = platformDirectoryLink("預約");
     label = "搜尋線上預約";
   }
-  // Do not attach the same four generic buttons to every message.
-  // Navigation already lives in both 3x2 rich-menu tabs. Record-specific
-  // actions remain attached to the reservation/queue/order Flex notices.
-  return {type:"text",text:title+"\n"+link};
+  // Exactly three permanent suggestions in navigation replies; do not
+  // duplicate store-specific booking, queue or ordering actions.
+  return {type:"text",text:title+"\n"+link,quickReply:platformQuickReply()};
 }
 async function replyToLine(token: string, replyToken: string,
                            message: Record<string, unknown>, redelivery = false): Promise<boolean> {
@@ -1086,13 +1099,14 @@ async function webhook(req: Request, origin: string | null, merchantSlug = "") {
         // Identical feedback action on both consumer and merchant HQ rich menus.
         // Postback keeps users in LINE; Reply API answers immediately without
         // a link, a second login, or a push-message polling job.
-        if (command === "platform:feedback" && !merchantTenantId) {
+        if ((command === "platform:feedback" || command === "platform:guide") && !merchantTenantId) {
           const replyToken = event.replyToken;
           if (typeof replyToken !== "string" || !replyToken || replyToken.length > 512) continue;
           const token = Deno.env.get("LINE_MESSAGING_ACCESS_TOKEN");
           if (!token) throw new Error("LINE_MESSAGING_NOT_CONFIGURED");
+          const text = command === "platform:guide" ? PLATFORM_GUIDE_REPLY : PLATFORM_FEEDBACK_REPLY;
           const sent = await replyToLine(token, replyToken,
-            {type:"text",text:PLATFORM_FEEDBACK_REPLY},
+            {type:"text",text},
             (event.deliveryContext as {isRedelivery?:unknown}|undefined)?.isRedelivery===true);
           if (sent) processed++; else duplicates++;
           continue;
