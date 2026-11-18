@@ -42,7 +42,7 @@ def customer_items_for_platform_liff(liff_id):
         "熱門店家": root + "/directory.html?mode=search&entry=platform-oa",
         "我的進度": root + "/?view=customer&entry=platform-oa&site_return=" + quote("my-records.html?scope=active", safe=""),
         "歷史紀錄": root + "/?view=customer&entry=platform-oa&site_return=" + quote("my-records.html?scope=history", safe=""),
-        "常用店家": root + "/?view=customer&entry=platform-oa&site_return=" + quote("directory.html?mode=frequent", safe=""),
+        "常用店家": root + "/?view=customer&entry=platform-oa&site_return=" + quote("directory.html?mode=frequent&entry=platform-oa", safe=""),
     }
     return [(title, caption, glyph, {**action, "uri":destinations[title]} if action["type"]=="uri" else action)
             for title, caption, glyph, action in CUSTOMER_ITEMS]
