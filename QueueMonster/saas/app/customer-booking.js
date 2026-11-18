@@ -12,7 +12,7 @@ import {render} from "./staff-layout.js";
 import {renderCustomerPickup,pickupState} from "./pickup-mode.js";
 import {rpc} from "./data-loading.js";
 import {box,btn,esc,field,formatTaipeiCreated,layout,menuChoiceReady,menuSelectSection,nav,selectedItemsHtml,stat,tag,taipei} from "./shared-ui.js";
-import {lineStatusBadge,lineLoginUrl} from "./line-session.js";
+import {lineStatusBadge} from "./line-session.js";
 import {unitBookingPanel,unitBookingReady,unitBookingFingerprint,unitList,unitQueuePanel,selectedUnitSession} from "./service-units.js";
 import {renderBookings,renderMyTickets} from "./customer-records.js";
 import {queueProgressBoard} from "./queue-progress.js";
