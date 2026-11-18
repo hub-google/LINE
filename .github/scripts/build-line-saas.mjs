@@ -1,4 +1,5 @@
-import {copyFile, mkdir, readFile, writeFile} from "node:fs/promises";
+import {copyFile, mkdir, readFile, writeFile, stat} from "node:fs/promises";
+import {createHash} from "node:crypto";
 import path from "node:path";
 import {buildFrontend} from "./frontend-build.mjs";
 import {deflateSync} from "node:zlib";
@@ -30,6 +31,24 @@ await copyFile(path.join(src, "line-app-icon.svg"), path.join(dest, "line-app-ic
 await copyFile(path.join(src, "site-auth.css"), path.join(dest, "site-auth.css"));
 await copyFile(path.join(src, "site-auth.js"), path.join(dest, "site-auth.js"));
 await copyFile(path.join(src, "public-config.js"), path.join(dest, "public-config.js"));
+// Generate a disabled campaign when no movie is present; uploads enable automatically.
+const introSource=path.join(src,"assets/videos/intro.mp4");
+const introDest=path.join(dest,"assets/videos");
+await mkdir(introDest,{recursive:true});
+const introManifest={enabled:false,videoUrl:"./assets/videos/intro.mp4",version:null,repeatDays:7};
+let introStat=null;
+try{introStat=await stat(introSource)}catch(error){if(error.code!=="ENOENT")throw error}
+if(introStat){
+ if(!introStat.isFile()||introStat.size===0||introStat.size>25*1024*1024)
+  throw Error("Brand intro MP4 must be nonempty and no more than 25 MiB");
+ const bytes=await readFile(introSource);
+ if(bytes.subarray(4,8).toString("ascii")!=="ftyp")throw Error("Brand intro must be an MP4 container");
+ await copyFile(introSource,path.join(introDest,"intro.mp4"));
+ introManifest.enabled=true;
+ introManifest.version=createHash("sha256").update(bytes).digest("hex").slice(0,16);
+}
+await writeFile(path.join(introDest,"intro-video.json"),JSON.stringify(introManifest,null,2)+"\n","utf8");
+
 await mkdir(path.join(dest,"vendor"),{recursive:true});
 await copyFile(path.join(src,"vendor/qrcode.min.js"),path.join(dest,"vendor/qrcode.min.js"));
 await copyFile(path.join(src,"vendor/QR-CODE-LICENSE"),path.join(dest,"vendor/QR-CODE-LICENSE"));

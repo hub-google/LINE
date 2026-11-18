@@ -44,6 +44,7 @@ jobs:
         run: |
           node --check .github/scripts/build-line-saas.mjs
           node --check QueueMonster/saas/site-auth.js
+          node --check QueueMonster/saas/assets/home/intro-video.js
           node --check QueueMonster/saas/version-watch.js
           node --check QueueMonster/saas/pwa-sw.js
       - name: Install frontend build dependencies
@@ -54,6 +55,7 @@ jobs:
             QueueMonster/tests/booking-buttons-regression-20261116.test.mjs \
             QueueMonster/tests/site-auth-contract.test.mjs \
             QueueMonster/tests/marketing-home-contract.test.mjs \
+            QueueMonster/tests/intro-video-contract.test.mjs \
             QueueMonster/tests/booking-line-reply.test.mjs \
             QueueMonster/tests/public-customer-routes-20261113.test.mjs \
             QueueMonster/tests/frontend-build.test.mjs \
@@ -66,6 +68,7 @@ jobs:
           for f in index.html home.html release.json site-auth.js pwa-sw.js booking-theme.css vendor/qrcode.min.js; do
             test -s "$RUNNER_TEMP/queue-prod-dist/$f"
           done
+          test -s "$RUNNER_TEMP/queue-prod-dist/assets/videos/intro-video.json"
           grep -q "$GITHUB_SHA" "$RUNNER_TEMP/queue-prod-dist/release.json"
       - name: Publish production snapshot without touching the test site
         shell: bash
