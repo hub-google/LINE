@@ -31,6 +31,21 @@ class RichMenuContract(unittest.TestCase):
                 else:
                     self.assertEqual(action["data"], "platform:feedback")
 
+    def test_all_live_menu_urls_use_queue_domain_or_its_dedicated_line_liff(self):
+        self.assertEqual(richmenu.BASE, "https://queue.monsterport.com/")
+        liff_id = "1234567890-AbCdEf"
+        customer_items = richmenu.customer_items_for_platform_liff(liff_id)
+        for title, _, _, action in customer_items:
+            if action["type"] == "uri":
+                self.assertTrue(action["uri"].startswith("https://liff.line.me/" + liff_id + "/"), title)
+                self.assertNotIn("github.io", action["uri"])
+        for title, _, _, action in richmenu.MERCHANT_ITEMS:
+            if action["type"] == "uri":
+                self.assertTrue(action["uri"].startswith("https://queue.monsterport.com/"), title)
+                self.assertNotIn("github.io", action["uri"])
+        self.assertNotIn("hub-google.github.io", SOURCE.read_text(encoding="utf-8"))
+        self.assertNotIn("github.io", richmenu.CUSTOMER_ITEMS[1][3]["uri"])
+
     def test_feedback_is_identical_for_customers_and_merchants(self):
         self.assertEqual(richmenu.CUSTOMER_ITEMS[-1][3],
                          richmenu.MERCHANT_ITEMS[-1][3])
