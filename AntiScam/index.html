@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0c1834">
+<meta name="description" content="AntiScam — LINE OpenChat 社群防詐管理系統測試與管理後台">
+<title>AntiScam｜LINE 社群防詐管理</title>
+<link rel="stylesheet" href="./styles.css">
+<script type="module" src="./ui.js"></script>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <div class="brand"><span class="brand-icon">A<span>✦</span></span><span><strong>AntiScam</strong><small>OPENCHAT GUARD</small></span></div>
+    <div class="side-label">管理中心</div>
+    <nav aria-label="主要選單" class="nav">
+      <button class="nav-item active" data-view="overview"><span>▦</span> 總覽儀表板</button>
+      <button class="nav-item" data-view="events"><span>◉</span> 風險事件</button>
+      <button class="nav-item" data-view="test"><span>◎</span> 詐騙測試台</button>
+      <button class="nav-item" data-view="settings"><span>⚙</span> 社群與規則</button>
+      <button class="nav-item" data-view="system"><span>☷</span> 系統狀態</button>
+    </nav>
+    <div class="side-bottom"><span class="tiny-light"></span><span>AntiScam v0.1</span><small>主程式於 main 測試分支</small></div>
+  </aside>
+  <main class="main">
+    <header class="topbar"><div class="topbar-title">LINE OpenChat 社群安全管理</div><div class="topbar-tools"><span class="pill" id="top-mode">未連線</span><button class="btn btn-ghost" id="auth-btn">登入後台</button></div></header>
+    <section class="content">
+      <div id="system-banner" class="banner"><span class="banner-dot">●</span><div><strong>展示模式</strong><p>目前為靜態介面示範，尚未接通 LINE OpenChat，刪文與踢人均不會真正執行。</p></div></div>
+      <section id="view-overview" class="view">
+        <div class="section-head"><div><div class="eyebrow">SECURITY OVERVIEW</div><h1>社群防護總覽</h1><p>掌握可疑訊息、審核狀態與連接器健康度。</p></div><button class="btn btn-light refresh">重新整理</button></div>
+        <div class="metrics"><article class="metric"><span>受管理社群</span><strong id="metric-groups">0</strong><small>OpenChat 社群</small></article><article class="metric"><span>可疑事件</span><strong id="metric-events">0</strong><small>最近事件紀錄</small></article><article class="metric"><span>高風險警報</span><strong id="metric-critical">0</strong><small>高風險及緊急事件</small></article><article class="metric"><span>已確認處置</span><strong id="metric-success">0</strong><small>實際成功的刪除／踢出</small></article></div>
+        <div class="two-cols"><section class="panel"><div class="panel-head"><h2>最近安全事件</h2><button class="text-action" data-go="events">查看全部</button></div><div id="latest-events" class="event-list"></div></section><section class="panel"><div class="panel-head"><h2>防護狀態</h2></div><div id="health-list" class="health-list"></div><div class="information"><strong>安全設計</strong><p>系統預設只監控。必須同時啟用全自動模式、關閉 Dry Run，且連接器回報已驗證權限，才可能執行刪文或踢出。</p></div></section></div>
+      </section>
+      <section id="view-events" class="view hidden"><div class="section-head"><div><div class="eyebrow">INCIDENT CENTER</div><h1>風險事件</h1><p>查看命中原因與實際處置結果，避免 AI 誤判。</p></div><button class="btn btn-light refresh">重新整理</button></div><section class="panel"><div class="filters"><label>社群 <select id="event-group"><option value="">全部社群</option></select></label><label>風險 <select id="event-level"><option value="">全部等級</option><option value="critical">緊急</option><option value="high">高</option><option value="medium">中</option><option value="low">低</option></select></label></div><div id="event-table" class="table-scroll"></div></section></section>
+      <section id="view-test" class="view hidden"><div class="section-head"><div><div class="eyebrow">RISK ANALYSIS LAB</div><h1>詐騙測試台</h1><p>貼上可疑訊息，即可檢測風險與命中規則；不會傳送任何 LINE 訊息。</p></div></div><div class="two-cols testing"><section class="panel"><h2>訊息輸入</h2><label for="test-text" class="field-label">測試訊息</label><textarea id="test-text" maxlength="10000" placeholder="例如：保證獲利、立即轉帳、點擊可疑連結等..." rows="8"></textarea><div class="inline-check"><label><input type="checkbox" id="test-new" checked> 模擬新加入成員</label><label id="test-ai-wrap" class="hidden"><input type="checkbox" id="test-ai"> 使用 AI 二次判斷（可能耗費配額）</label></div><label for="test-group" class="field-label">參照社群規則</label><select id="test-group"><option value="">一般規則</option></select><div class="button-row"><button id="analyze-btn" class="btn btn-primary">開始分析</button><button id="sample-normal" class="btn btn-light">正常訊息範例</button><button id="sample-risk" class="btn btn-light">詐騙範例</button></div></section><section class="panel result-panel"><h2>判斷結果</h2><div id="analysis-result"><div class="empty">輸入文字並按「開始分析」，這裡會顯示風險分數、觸發理由與處置建議。</div></div></section></div></section>
+      <section id="view-settings" class="view hidden"><div class="section-head"><div><div class="eyebrow">COMMUNITY SETTINGS</div><h1>社群與規則</h1><p>逐群設定處置模式與封鎖網域；未授權的社群不會被監控。</p></div></div><div class="two-cols"><section class="panel"><h2>新增社群</h2><form id="create-group"><label class="field-label" for="create-name">社群名稱</label><input id="create-name" required maxlength="80" placeholder="例：投資交流防詐測試群"><label class="field-label" for="create-id">連接器識別碼</label><input id="create-id" required minlength="3" maxlength="90" pattern="[a-zA-Z0-9_-]+" placeholder="例如 my-openchat-test"><p class="help">必須與已授權連接器傳送的 communityId 相同。</p><button class="btn btn-primary" type="submit">新增社群</button></form><p class="form-notice" id="create-feedback"></p></section><section class="panel"><h2>編輯社群防護</h2><label class="field-label" for="settings-group">選擇社群</label><select id="settings-group"></select><label class="field-label" for="settings-mode">處置模式</label><select id="settings-mode"><option value="monitor">僅監控（安全預設）</option><option value="assist">人工輔助審核</option><option value="auto">高信心全自動（需另驗證連接器）</option></select><label class="field-label" for="settings-domains">封鎖網域（每行一個網域）</label><textarea id="settings-domains" rows="5" placeholder="example-phishing.test"></textarea><label class="field-label" for="settings-confirm">啟用全自動時輸入 ENABLE_AUTOMATION</label><input id="settings-confirm" placeholder="只在選擇全自動時需要"><button class="btn btn-primary" id="save-group">儲存設定</button><p class="form-notice" id="settings-feedback"></p></section></div></section>
+      <section id="view-system" class="view hidden"><div class="section-head"><div><div class="eyebrow">SYSTEM STATUS</div><h1>系統狀態</h1><p>每項權限分開確認；無回應不可視為成功。</p></div></div><section class="panel"><h2>OpenChat 連接器</h2><div id="capabilities"></div><div class="information"><strong>整合尚未完成</strong><p>LINE 官方 Messaging API 不能直接提供 OpenChat 訊息監控、移除他人訊息及踢人功能。必須另行取得經合法授權、實機驗證的連接器。</p></div></section></section>
+    </section>
+  </main>
+</div>
+<div id="login-modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="管理員登入"><div class="modal-card"><div class="modal-title"><h2>管理員登入</h2><button id="login-close" class="close" aria-label="關閉">×</button></div><p>請輸入部署於伺服器端的後台管理密碼。</p><form id="login-form"><input id="admin-password" type="password" required autocomplete="current-password" placeholder="管理密碼"><button type="submit" class="btn btn-primary">登入</button></form><p id="login-feedback" class="error-text"></p></div></div>
+<div id="toast" class="toast hidden" role="status"></div>
+</body></html>
