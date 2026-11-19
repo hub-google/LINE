@@ -10,7 +10,8 @@ const landing=read("saas/video.html");
 const script=read("saas/assets/videos/share-video.js");
 const css=read("saas/assets/videos/share-video.css");
 const build=read("../.github/scripts/build-line-saas.mjs");
-const media=read("../.github/scripts/prepare-intro-video.mjs");
+const og=readFileSync(path.resolve(root,"saas/assets/videos/intro-og.jpg"));
+const poster=readFileSync(path.resolve(root,"saas/assets/videos/intro-poster.jpg"));
 
 test("independent video page has complete crawler-readable Open Graph metadata",()=>{
  for(const property of ["og:url","og:type","og:title","og:description","og:image","og:image:width","og:image:height","og:video","og:video:type"])
@@ -33,15 +34,16 @@ test("shared video opens directly, with reliable inline mobile controls and no l
  for(const term of ["object-fit:contain","@media(max-width:700px)","@media(max-width:360px)","watch-player","watch-detail"])
   assert.ok(css.includes(term),"Missing responsive share movie rule: "+term);
 });
-test("build makes authentic JPG poster from uploaded film for social and mobile",()=>{
+test("build preserves approved 1200x630 and 540x960 film thumbnails without runtime FFmpeg",()=>{
  assert.match(build,/"video\.html"/);
- assert.match(build,/makeIntroShareImages/);
+ assert.match(build,/jpegSize/);
+ assert.match(build,/copyFile/);
  assert.match(build,/QUEUE_MONSTER_SITE_URL/);
- assert.match(media,/intro-og\.jpg/);
- assert.match(media,/intro-poster\.jpg/);
- assert.match(media,/1200:630/);
- assert.match(media,/540:960/);
- assert.match(media,/ffmpeg/);
+ assert.match(build,/intro-og\.jpg/);
+ assert.match(build,/intro-poster\.jpg/);
+ assert.match(build,/1200,630/);
+ assert.match(build,/540,960/);
+ for(const img of [og,poster])assert.deepEqual([...img.subarray(0,3)],[255,216,255]);
  for(const name of ["line-saas-pages.yml","queue-monster-production-release.yml"]){
   const workflow=read("../.github/workflows/"+name);
   assert.match(workflow,/video\.html/);
