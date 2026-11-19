@@ -74,12 +74,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          node .github/scripts/build-line-saas.mjs "$RUNNER_TEMP/queue-prod-dist"
+          QUEUE_MONSTER_SITE_URL=https://queue.monsterport.com node .github/scripts/build-line-saas.mjs "$RUNNER_TEMP/queue-prod-dist"
           for f in index.html home.html release.json site-auth.js pwa-sw.js booking-theme.css vendor/qrcode.min.js; do
             test -s "$RUNNER_TEMP/queue-prod-dist/$f"
           done
           test -s "$RUNNER_TEMP/queue-prod-dist/assets/videos/intro-video.json"
           test -s "$RUNNER_TEMP/queue-prod-dist/assets/videos/intro-video-info.json"
+          test -s "$RUNNER_TEMP/queue-prod-dist/video.html"
+          test -s "$RUNNER_TEMP/queue-prod-dist/assets/videos/intro-og.jpg"
+          test -s "$RUNNER_TEMP/queue-prod-dist/assets/videos/intro-poster.jpg"
+          grep -q 'property="og:image" content="https://queue.monsterport.com/assets/videos/intro-og.jpg"' "$RUNNER_TEMP/queue-prod-dist/video.html"
           grep -q "$GITHUB_SHA" "$RUNNER_TEMP/queue-prod-dist/release.json"
       - name: Publish production snapshot without touching the test site
         shell: bash
