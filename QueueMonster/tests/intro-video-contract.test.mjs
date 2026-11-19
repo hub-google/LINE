@@ -10,10 +10,12 @@ test("brand intro is isolated on homepage and mobile responsive",()=>{
  assert.match(home,/id="watch-intro-video"/);
  assert.match(home,/assets\/home\/intro-video\.js\?build=__LINE_SAAS_BUILD__/);
  assert.match(home,/assets\/home\/intro-video\.css\?build=__LINE_SAAS_BUILD__/);
- assert.match(css,/@media\(max-width:540px\)/);
+ assert.match(css,/@media\(max-width:700px\)/);
  assert.match(css,/#watch-intro-video\[hidden\]/);
  assert.match(css,/\.qm-intro-panel\.qm-intro-portrait/);
- assert.match(css,/aspect-ratio:9\/16/);
+ assert.match(css,/grid-template-columns:minmax\(0,44%\) minmax\(0,56%\)/);
+ assert.match(css,/grid-template-rows:54px minmax\(0,1fr\) auto/);
+ assert.doesNotMatch(css,/calc\(\(100dvh - 184px\) \* \.5625\)/);
 });
 test("campaign auto-opens until the visitor explicitly skips it, then offers manual replay",()=>{
  const source=read("saas/assets/home/intro-video.js"),build=read("../.github/scripts/build-line-saas.mjs");
