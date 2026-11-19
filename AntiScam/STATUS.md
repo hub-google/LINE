@@ -1,18 +1,21 @@
 # AntiScam 開發狀態（2026-11-19）
 
-## v0.1 已提交到 main
+## v0.2（main 測試）
 
-- 防詐規則引擎、網域封鎖、洗版與新成員偵測、反詐新聞減權。
-- Gemini AI 選擇性複核（預設關閉，不單獨作為踢人依據）。
-- 網頁管理後台：總覽、事件、測試台、社群設定、系統狀態；GitHub Pages 僅展示模式。
-- Node.js 22 API：管理密碼登入、簽章 webhook、處置冪等、稽核、Dry Run。
-- 本機檔案儲存與 Supabase PostgREST 後端驅動；提供 `supabase/schema.sql`，尚未在正式資料庫執行。
-- `npm test` 已在本地執行：**16/16 通過**；GitHub Actions 工作流程已提交，線上執行狀態另驗。
-- `release` 未修改。
+- 原有 v0.1：規則引擎、AI 選擇性複核、管理 UI、Node API、HMAC webhook、稽核、Dry Run、Supabase Schema。
+- **新增 `bridge/` 開源 OpenChat LINE.js 轉接器**（Apache-2.0 上游 `mars-tw/anti-scam-helper` 的 WebSocket Bot API）。
+- 已寫實際協定轉換：`message` → AntiScam 簽章 webhook；`message:delete`、`member:remove`、`message:send` 的發送與成功回應判定。
+- 限制：社群白名單、管理員保護、成員與訊息 ID 配對、重複處置保護、連線斷開降級、所有真實操作預設禁止。
+- 上游 `blockMember`（禁止再次入群）與可靠 `readJoin` **不支援／待驗證**，不可宣稱完成。
+- 本機：`npm test` **25/25 通過**，含模擬 LINE.js → 真實 AntiScam HTTP API → 模擬 LINE.js 確認的端到端測試。
+- `release` 正式分支未修改。
 
-## 尚未完成／開通條件
+## 尚未完成及實際阻礙
 
-- **OpenChat 真實連接器尚未取得**：官方 Messaging API 無法直接完成 OpenChat 監控、刪除他人訊息與踢出；因此尚不可真正自動處置。
-- 尚未部署持續運行的 Node API、正式資料庫 migration，也尚未用真實 LINE 社群驗證。
-- 正式商用的多租戶權限、資料保留清理與多實例公告限流尚未完成。
-- [必備 Token／權限說明](./README.md#需要的-token權限)；[連接器規格](./docs/CONNECTOR.md)。
+1. 專用 LINE 測試帳號 QR 掃碼登入、測試 OpenChat 邀請／授予共同管理員權限。
+2. 上游程式安裝、設定、登入及實機驗證；只有這一步能證實真實刪文、踢人、公告是否可用，且非官方登入可能違反 LINE 條款、導致封號。
+3. 在合適運行環境正式部署 Node API + Bridge + 上游 LINE.js；設定所需機密與 Supabase 資料表（尚未部署）。
+4. 規則誤判、重新登入、斷線、持久化冪等、圖片 QR 判斷及多管理員權限的正式驗收。
+5. 如要禁止重新入群，需另找有經驗證的對應管理介面，現有 Bridge 無此能力。
+
+參考 [`bridge/README.md`](./bridge/README.md) 和 [`README.md`](./README.md)。
