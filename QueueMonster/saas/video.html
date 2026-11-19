@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#20142e">
+  <meta name="line-saas-build" content="__LINE_SAAS_BUILD__">
+  <title>排隊怪獸｜45 秒品牌介紹影片</title>
+  <meta name="description" content="排隊交給怪獸，時間留給自己！45 秒認識線上預約、排隊叫號與線上點餐。">
+  <link rel="canonical" href="https://hub-google.github.io/LINE/booking/video.html">
+  <meta property="og:type" content="video.other">
+  <meta property="og:site_name" content="排隊怪獸 Queue Monster">
+  <meta property="og:locale" content="zh_TW">
+  <meta property="og:title" content="排隊怪獸｜45 秒品牌介紹影片">
+  <meta property="og:description" content="排隊交給怪獸，時間留給自己！立即觀看排隊怪獸 45 秒品牌影片。">
+  <meta property="og:url" content="https://hub-google.github.io/LINE/booking/video.html">
+  <meta property="og:image" content="https://hub-google.github.io/LINE/booking/assets/videos/intro-og.jpg">
+  <meta property="og:image:secure_url" content="https://hub-google.github.io/LINE/booking/assets/videos/intro-og.jpg">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="排隊怪獸品牌影片畫面，點擊觀看">
+  <meta property="og:video" content="https://hub-google.github.io/LINE/booking/assets/videos/intro.mp4">
+  <meta property="og:video:secure_url" content="https://hub-google.github.io/LINE/booking/assets/videos/intro.mp4">
+  <meta property="og:video:type" content="video/mp4">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="排隊怪獸｜45 秒品牌介紹影片">
+  <meta name="twitter:description" content="排隊交給怪獸，時間留給自己！點擊觀看品牌影片。">
+  <meta name="twitter:image" content="https://hub-google.github.io/LINE/booking/assets/videos/intro-og.jpg">
+  <link rel="icon" type="image/svg+xml" href="./monster-mascot.svg">
+  <link rel="preload" as="image" href="./assets/videos/intro-poster.jpg">
+  <link rel="stylesheet" href="./assets/videos/share-video.css?build=__LINE_SAAS_BUILD__">
+  <script defer src="./version-watch.js?build=__LINE_SAAS_BUILD__"></script>
+  <script defer src="./assets/videos/share-video.js?build=__LINE_SAAS_BUILD__"></script>
+</head>
+<body>
+ <header class="topbar">
+  <a class="brand" href="./home.html" aria-label="排隊怪獸首頁">
+    <img src="./monster-mascot.svg" width="39" height="39" alt="">
+    <span>排隊怪獸 <small>QUEUE MONSTER</small></span>
+  </a>
+  <div class="top-actions">
+    <button id="share-link" type="button">分享影片</button>
+    <a href="./home.html" class="top-home">官方首頁</a>
+  </div>
+ </header>
+ <main class="page">
+  <section class="watch-shell" aria-labelledby="movie-title">
+   <div class="watch-player" id="watch-player">
+    <video id="brand-film" autoplay muted playsinline controls preload="metadata"
+      poster="./assets/videos/intro-poster.jpg"
+      aria-label="排隊怪獸品牌介紹影片"
+      src="./assets/videos/intro.mp4">
+      您的瀏覽器不支援 HTML5 影片，請<a href="./assets/videos/intro.mp4">開啟影片原檔</a>。
+    </video>
+    <div id="loading" class="watch-loading" role="status">影片載入中…</div>
+    <button id="big-play" class="big-play" type="button" hidden>▶ 播放影片</button>
+    <div id="video-error" class="watch-error" hidden>
+      <strong>影片目前無法播放</strong>
+      <p>可以重新載入，或使用瀏覽器直接開啟原始影片。</p>
+      <button id="retry-video" type="button">重試播放</button>
+      <a href="./assets/videos/intro.mp4" target="_blank" rel="noopener">直接開啟影片</a>
+    </div>
+    <button id="sound-toggle" class="sound-toggle" type="button">開啟聲音</button>
+   </div>
+   <div class="watch-detail">
+    <span class="eyebrow">45 秒認識 QUEUE MONSTER</span>
+    <h1 id="movie-title">排隊交給怪獸，<br>時間留給自己！</h1>
+    <p>線上預約、排隊叫號、線上點餐，怪獸幫你搞定。</p>
+    <div class="detail-actions">
+     <a class="primary-cta" href="./demo.html">立即免費體驗</a>
+     <button id="copy-link" class="secondary-cta" type="button">複製影片網址</button>
+    </div>
+   </div>
+  </section>
+  <p class="page-note">影片可直接播放；部分手機瀏覽器會限制有聲自動播放，請點「開啟聲音」。</p>
+ </main>
+ <div id="share-toast" class="share-toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
