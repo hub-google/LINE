@@ -4,6 +4,11 @@ This is an original adapter for the **documented WebSocket bot API** of the open
 
 The upstream project describes `message` frames and `message:delete`, `member:remove`, `message:send` bot actions; we only map those frames to AntiScam's existing signed webhook / REST connector. This bridge **does not support banning re-entry** (`blockMember=false`), and OpenChat join events have not been validated (`readJoin=false`).
 
+
+## Windows 本機模式（建議先實機驗證）
+
+如果不想把 LINE 登入工作階段放到任何雲端，改用 [Windows 本機 5 小時測試流程](./local/README.md)。兩個 PowerShell 腳本會在你自己的電腦安裝固定版 LINE.js、完成本機 QR 登入，並啟動本機監控；整個過程預設 **Dry Run／只監控**，不進行任何真實刪文或踢人。無需 GitHub Actions 或 VPS。
+
 ## Setup (dedicated test account only)
 
 1. On a *separate trusted computer* with Node.js ≥22, clone the open-source upstream: `git clone https://github.com/mars-tw/anti-scam-helper.git`, follow its `README.md` and `guard/DEPLOY.md`, and use a **separate test LINE account** to perform QR login. Review LINE terms and account-risk first. Do not disclose LINE credentials or QR session files in this repository.
