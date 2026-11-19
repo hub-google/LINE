@@ -13,7 +13,6 @@ on:
       - "QueueMonster/saas/**"
       - "QueueMonster/tests/**"
       - ".github/scripts/build-line-saas.mjs"
-      - ".github/scripts/prepare-intro-video.mjs"
       - ".github/scripts/frontend-build.mjs"
       - ".github/frontend/**"
       - ".github/workflows/queue-monster-production-release.yml"
@@ -62,15 +61,6 @@ jobs:
             QueueMonster/tests/public-customer-routes-20261113.test.mjs \
             QueueMonster/tests/frontend-build.test.mjs \
             QueueMonster/tests/queue-deployment-isolation.test.mjs
-      - name: Ensure FFmpeg and FFprobe for verified HTML5 video
-        shell: bash
-        run: |
-          if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
-            sudo apt-get update -qq
-            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg
-          fi
-          ffprobe -version | head -n 1
-          node --check .github/scripts/prepare-intro-video.mjs
       - name: Build versioned production assets
         shell: bash
         run: |
