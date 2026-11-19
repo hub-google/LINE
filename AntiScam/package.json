@@ -1,0 +1,13 @@
+{
+  "name": "antiscam-openchat",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "LINE OpenChat anti-scam moderation engine, dashboard, and verified connector protocol",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test tests/*.test.js",
+    "check": "node --check src/server.js && node --check src/service.js && node --check ui.js"
+  }
+}
