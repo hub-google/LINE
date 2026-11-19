@@ -10,6 +10,15 @@
 - 本機：`npm test` **25/25 通過**，含模擬 LINE.js → 真實 AntiScam HTTP API → 模擬 LINE.js 確認的端到端測試。
 - `release` 正式分支未修改。
 
+
+## v0.3 Windows 本機測試工具（2026-11-19）
+
+- 已新增 `bridge/local/`：Windows `01-install-and-login.ps1`、`02-run-monitor.ps1`、本機憑證初始化及五小時監控啟動器。
+- 無需 GitHub Actions、雲端主機、Supabase；Node API 以 `HOST=127.0.0.1` 綁定本機，FileStore 留在本機。
+- 首次登入須由使用者在本機瀏覽器掃 QR Code，無法從 ChatGPT 對話直接遠端操控其 Windows 電腦。
+- **此版只開通真實訊息的監控驗證，絕不自動刪文／踢人**；在實機人工測試通過前不得標記處置功能驗收完成。
+- 本機測試未執行在使用者 Windows 電腦；QR 登入、讀取 OpenChat、刪文與踢人均待真實帳號驗收。
+
 ## 尚未完成及實際阻礙
 
 1. 專用 LINE 測試帳號 QR 掃碼登入、測試 OpenChat 邀請／授予共同管理員權限。
