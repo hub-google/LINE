@@ -108,3 +108,33 @@ export async function prepareIntroVideo(source,dest){
  console.log("Queue Monster intro video verified:",JSON.stringify(info));
  return info;
 }
+
+
+/** Generate a genuine video-frame preview for link crawlers (JPEG 1200x630)
+ *  plus a portrait poster for the embedded HTML5 video. No generated
+ *  branded/illustrative images are used in place of the uploaded movie. */
+export async function makeIntroShareImages(movie,outputDirectory,durationSeconds){
+ const frameAt=Math.min(4,Math.max(.25,durationSeconds/8)).toFixed(2);
+ const opts=["-hide_banner","-nostdin","-loglevel","error","-y","-ss",frameAt,"-i",movie];
+ const landscape=[
+  "[0:v]split=2[background][foreground]",
+  "[background]scale=1200:630:force_original_aspect_ratio=increase,crop=1200:630,boxblur=20:2,eq=brightness=-0.23[bg]",
+  "[foreground]scale=1080:590:force_original_aspect_ratio=decrease,setsar=1[fg]",
+  "[bg][fg]overlay=(W-w)/2:(H-h)/2:format=auto,format=yuv420p[out]"
+ ].join(";");
+ const images=[
+  {name:"intro-og.jpg",args:["-filter_complex",landscape,"-map","[out]","-frames:v","1","-q:v","4"]},
+  {name:"intro-poster.jpg",args:["-vf","scale=540:960:force_original_aspect_ratio=decrease,pad=540:960:(ow-iw)/2:(oh-ih)/2:color=0x21152d,format=yuv420p","-frames:v","1","-q:v","4"]}
+ ];
+ for(const asset of images){
+  const target=new URL("file://"+outputDirectory.replace(/\/$/,"")+"/"+asset.name).pathname;
+  try{
+   execFileSync("ffmpeg",[...opts,...asset.args,target],{stdio:["ignore","pipe","pipe"],timeout:45000,maxBuffer:2*1024*1024});
+   const file=await stat(target);
+   if(file.size<1500)throw Error("Image output too small: "+file.size);
+   console.log("Prepared share thumbnail:",asset.name,file.size+" bytes");
+  }catch(error){
+   throw Error("Cannot generate MP4 frame thumbnail "+asset.name+": "+(error.stderr?.toString()||error.message));
+  }
+ }
+}
