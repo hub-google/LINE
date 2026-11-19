@@ -85,3 +85,10 @@ const signature = 'sha256=' + createHmac('sha256', WEBHOOK_SECRET)
 4. 改 `DRY_RUN=false` 前先驗證所有能力、刪文是否為全群移除、踢出／禁入結果及權限撤銷。
 5. Connector 必須自身實作動作冪等、頻率限制、斷線復原及認證；目前不在本 Repo。
 6. 不儲存明文帳號 ID，資料庫僅存 HMAC 會員識別碼、AES-256-GCM 加密的操作用 ID；嚴禁紀錄機密憑證。
+
+
+## 5. 已實作的開源 LINE.js Bridge（2026-11-19）
+
+請見 [`../bridge/README.md`](../bridge/README.md)。上游為 Apache-2.0 的 `mars-tw/anti-scam-helper`，目前橋接器會對真實 `message` event 做簽章轉送，並將 `message:delete`、`member:remove`、`message:send` 對應到本文件的 `/v1/actions`。另有本地端對端模擬測試，**不是已經完成 LINE 真實驗收**。
+
+已知能力差異：`blockMember=false`（只能踢人，不能封鎖再加入），`readJoin=false`（上游未保證新入群事件）。即使橋接器已建置，正式運行前仍要在測試社群驗證真實帳號與權限。
