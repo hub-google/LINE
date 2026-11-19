@@ -23,7 +23,13 @@ export async function buildFrontend(src,dest,pages){
   }
  }
  for(const [name,html]of htmlByPage)htmlByPage.set(name,html.replace(/((?:src|href)=")(\.\/(?:assets\/|app\/)[^"?]+)(\?[^\"]*)?(".*?)/g,(all,prefix,url,query='',tail)=>{
-  const replacement=replacements.get(path.resolve(src,url));if(!replacement)throw Error('Unbuilt frontend asset: '+url);
+  const replacement=replacements.get(path.resolve(src,url));
+  // HTML5 media/poster URLs are static files, not esbuild entrypoints. The
+  // publishing step copies/generates those assets without URL rewriting.
+  if(!replacement){
+   if(!/\.(?:js|css)$/.test(url))return all;
+   throw Error('Unbuilt frontend asset: '+url);
+  }
   return prefix+replacement+query+tail;
  }));
  return htmlByPage;
