@@ -96,5 +96,5 @@ export async function buildApp(env=process.env){
   return createAppServer({service,store,connector,password:ADMIN_PASSWORD,webhookSecret:WEBHOOK_SECRET,secureCookie:env.NODE_ENV==='production'});
 }
 if(process.argv[1] && fileURLToPath(import.meta.url)===process.argv[1]) {
-  buildApp().then(server=>server.listen(Number(process.env.PORT??3000),'0.0.0.0',()=>console.log(`AntiScam listening on port ${process.env.PORT??3000}`))).catch(error=>{console.error(error.message);process.exitCode=1;});
+  buildApp().then(server=>server.listen(Number(process.env.PORT??3000),process.env.HOST??'0.0.0.0',()=>console.log(`AntiScam listening on ${process.env.HOST??'0.0.0.0'}:${process.env.PORT??3000}`))).catch(error=>{console.error(error.message);process.exitCode=1;});
 }
