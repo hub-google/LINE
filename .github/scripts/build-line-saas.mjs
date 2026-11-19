@@ -1,7 +1,7 @@
 import {copyFile, mkdir, readFile, writeFile, stat} from "node:fs/promises";
 import path from "node:path";
 import {buildFrontend} from "./frontend-build.mjs";
-import {prepareIntroVideo,makeIntroShareImages} from "./prepare-intro-video.mjs";
+import {createHash} from "node:crypto";
 import {deflateSync} from "node:zlib";
 
 const sha = (process.env.GITHUB_SHA || "").trim();
@@ -48,11 +48,37 @@ if(introStat){
   throw Error("Brand intro MP4 must be nonempty and no more than 25 MiB");
  const bytes=await readFile(introSource);
  if(bytes.subarray(4,8).toString("ascii")!=="ftyp")throw Error("Brand intro must be an MP4 container");
- const info=await prepareIntroVideo(introSource,path.join(introDest,"intro.mp4"));
- await makeIntroShareImages(path.join(introDest,"intro.mp4"),introDest,info.durationSeconds);
+ const videoHash=createHash("sha256").update(bytes).digest("hex");
+ await copyFile(introSource,path.join(introDest,"intro.mp4"));
+ // Publish approved, version-controlled video-frame thumbnails. Generating
+ // JPEGs on every site build was wasteful and required 100+ apt packages.
+ // Uploading a replacement movie should also update these two companion JPGs.
+ function jpegSize(data){
+  if(data.length<5000||data[0]!==255||data[1]!==216||data[2]!==255)
+   throw Error("Brand film preview is not a valid JPEG");
+  for(let off=2;off+9<data.length;){
+   if(data[off]!==255){off++;continue}
+   const marker=data[off+1],len=data.readUInt16BE(off+2);
+   if([192,193,194,195,198,199,201,202,203,205,206,207].includes(marker))
+    return {width:data.readUInt16BE(off+7),height:data.readUInt16BE(off+5)};
+   if(len<2)break;
+   off+=len+2;
+  }
+  throw Error("Brand film preview has no valid JPEG dimensions");
+ }
+ for(const [name,w,h] of [["intro-og.jpg",1200,630],["intro-poster.jpg",540,960]]){
+  const jpg=await readFile(path.join(src,"assets/videos",name));
+  const actual=jpegSize(jpg);
+  if(actual.width!==w||actual.height!==h)
+   throw Error(name+" must be "+w+"x"+h+" for social/player previews");
+  await copyFile(path.join(src,"assets/videos",name),path.join(introDest,name));
+ }
+ const info={file:"intro.mp4",format:"MP4",sizeBytes:bytes.length,
+  sha256:videoHash,codecVerified:false,thumbnail:"intro-og.jpg",
+  thumbnailWidth:1200,thumbnailHeight:630,poster:"intro-poster.jpg"};
  await writeFile(path.join(introDest,"intro-video-info.json"),JSON.stringify(info,null,2)+"\n","utf8");
  introManifest.enabled=true;
- introManifest.version=info.sha256.slice(0,16);
+ introManifest.version=videoHash.slice(0,16);
 }
 await writeFile(path.join(introDest,"intro-video.json"),JSON.stringify(introManifest,null,2)+"\n","utf8");
 
