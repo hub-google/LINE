@@ -31,7 +31,7 @@ test("campaign auto-opens until the visitor explicitly skips it, then offers man
   assert.ok(source.includes(term),"Missing resilient playback feature "+term);
  for(const forbidden of ["awaitGuest","shownRecently","acceptedParams","navigator.userAgent","saveExposure"])
   assert.ok(!source.includes(forbidden),"Intro must not suppress homepage opening via "+forbidden);
- for(const term of ["intro.mp4","createHash","25*1024*1024","ftyp","introManifest.enabled=true","intro-video.json"])
+ for(const term of ["intro.mp4","prepareIntroVideo","25*1024*1024","ftyp","introManifest.enabled=true","intro-video.json","intro-video-info.json"])
   assert.ok(build.includes(term),"Missing build step "+term);
 });
 test("both test and release workflows validate the intro and generated manifest",()=>{
@@ -39,6 +39,8 @@ test("both test and release workflows validate the intro and generated manifest"
   const workflow=read("../.github/workflows/"+name);
   assert.match(workflow,/intro-video-contract\.test\.mjs/);
   assert.match(workflow,/intro-video\.json/);
+  assert.match(workflow,/intro-video-info\.json/);
+  assert.match(workflow,/ffprobe/);
   assert.match(workflow,/node --check QueueMonster\/saas\/assets\/home\/intro-video\.js/);
  }
 });
