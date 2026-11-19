@@ -1,5 +1,4 @@
 import {copyFile, mkdir, readFile, writeFile, stat} from "node:fs/promises";
-import {createHash} from "node:crypto";
 import path from "node:path";
 import {buildFrontend} from "./frontend-build.mjs";
 import {prepareIntroVideo} from "./prepare-intro-video.mjs";
