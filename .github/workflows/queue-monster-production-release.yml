@@ -57,6 +57,7 @@ jobs:
             QueueMonster/tests/site-auth-contract.test.mjs \
             QueueMonster/tests/marketing-home-contract.test.mjs \
             QueueMonster/tests/intro-video-contract.test.mjs \
+            QueueMonster/tests/video-share-contract.test.mjs \
             QueueMonster/tests/booking-line-reply.test.mjs \
             QueueMonster/tests/public-customer-routes-20261113.test.mjs \
             QueueMonster/tests/frontend-build.test.mjs \
