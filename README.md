@@ -1,11 +1,12 @@
-# LINE — 四個獨立產品
+# LINE — 五個獨立產品
 
 > **LINE LIFF 自動管理與憑證使用（已實際成功建立/修改）**：請先查看 [LIFF 管理作業手冊](./.github/scripts/LINE-LIFF-MANAGEMENT.md)。原有 GitHub Actions 可利用加密的 LINE Login 憑證建立新 LIFF、修改名稱與檢查其他 LIFF 無異動；不要誤稱必須手工新增。
 
-這個 repository 不是單一產品，而是四個面向不同客群、可獨立部署與銷售的 LINE 相關產品。其中原「LINE 預約」產品的正式名稱為 **Queue Monster（排隊怪獸）**，專案識別名稱為 [**`QueueMonster`**](./QueueMonster/)。
+這個 repository 不是單一產品，而是五個面向不同客群、可獨立部署與銷售的 LINE 相關產品。其中原「LINE 預約」產品的正式名稱為 **Queue Monster（排隊怪獸）**，專案識別名稱為 [**`QueueMonster`**](./QueueMonster/)。
 
 | 目錄 | 產品 | 主要客群 | 技術 |
 |---|---|---|---|
+| [`AntiScam/`](./AntiScam/PRD.md) | **AntiScam — LINE OpenChat AI 防詐社群管理**（PRD 階段） | LINE OpenChat 社群管理員 | 規則引擎／AI 分析／Web 管理後台（規劃中；管理權限待實測） |
 | `group-cleanup/` | LINE 群組清理工具 | 一般 LINE 重度使用者 | Python / Windows UI Automation / LINE Bot |
 | `recurring-billing/` | LINE 定期收款對帳小幫手 | 社團、團購、家長群、固定分攤團體 | Next.js / LIFF / Messaging API / PostgreSQL |
 | [`QueueMonster/`](./QueueMonster/) | **Queue Monster（排隊怪獸）** — 原 LINE 預約 | 需要預約、取號、叫號的店家與顧客 | GitHub Pages / LINE LIFF / Supabase |
@@ -23,6 +24,8 @@
 既有可執行產品沿用現行 GitHub Actions 驗證；`workforce-management/` 已有獨立 GitHub Actions 部署腳本，並執行前端語法檢查；完整 PRD 尚未全部完成。
 
 ## 產品入口
+
+- [AntiScam（LINE OpenChat AI 防詐社群管理，PRD）](./AntiScam/PRD.md)
 
 - [Queue Monster（排隊怪獸，原 LINE 預約）](./QueueMonster/)
 - [group-cleanup](./group-cleanup)
