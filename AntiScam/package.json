@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node src/server.js",
-    "test": "node --test tests/*.test.js bridge/test/*.test.js",
-    "check": "node --check src/server.js && node --check src/service.js && node --check ui.js && node --check bridge/bridge.js && node --check bridge/runner.js"
+    "test": "node --test tests/*.test.js bridge/test/*.test.js bridge/local/test/*.test.mjs",
+    "check": "node --check src/server.js && node --check src/service.js && node --check ui.js && node --check bridge/bridge.js && node --check bridge/runner.js && node --check bridge/local/configure.mjs && node --check bridge/local/run-local.mjs"
   }
 }
