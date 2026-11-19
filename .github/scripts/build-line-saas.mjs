@@ -2,6 +2,7 @@ import {copyFile, mkdir, readFile, writeFile, stat} from "node:fs/promises";
 import {createHash} from "node:crypto";
 import path from "node:path";
 import {buildFrontend} from "./frontend-build.mjs";
+import {prepareIntroVideo} from "./prepare-intro-video.mjs";
 import {deflateSync} from "node:zlib";
 
 const sha = (process.env.GITHUB_SHA || "").trim();
@@ -43,9 +44,10 @@ if(introStat){
   throw Error("Brand intro MP4 must be nonempty and no more than 25 MiB");
  const bytes=await readFile(introSource);
  if(bytes.subarray(4,8).toString("ascii")!=="ftyp")throw Error("Brand intro must be an MP4 container");
- await copyFile(introSource,path.join(introDest,"intro.mp4"));
+ const info=await prepareIntroVideo(introSource,path.join(introDest,"intro.mp4"));
+ await writeFile(path.join(introDest,"intro-video-info.json"),JSON.stringify(info,null,2)+"\n","utf8");
  introManifest.enabled=true;
- introManifest.version=createHash("sha256").update(bytes).digest("hex").slice(0,16);
+ introManifest.version=info.sha256.slice(0,16);
 }
 await writeFile(path.join(introDest,"intro-video.json"),JSON.stringify(introManifest,null,2)+"\n","utf8");
 
