@@ -46,7 +46,7 @@ try{
  const autoIntro=page.getByRole('dialog',{name:'排隊怪獸品牌介紹影片'});
  await autoIntro.waitFor({state:'visible',timeout:10000});
  assert.equal(await page.locator('.qm-intro-panel').evaluate(el=>el.classList.contains('qm-intro-portrait')),true,'Portrait film must use 9:16 dialog');
- assert.equal((await page.locator('.qm-intro-stage').evaluate(el=>getComputedStyle(el).aspectRatio)).replaceAll(' ',''),'9/16','Video frame preserves the real 9:16 aspect ratio');
+ assert.equal(await page.locator('.qm-intro-movie').evaluate(el=>getComputedStyle(el).objectFit),'contain','Video must show the entire 9:16 film without cropping');
  // Headless Chromium may omit proprietary MP4 decoders; verify the real upload is wired, not codec support.
  assert.equal(fs.statSync(path.join(dist,'assets/videos/intro.mp4')).size>1000000,true,'Real uploaded MP4 is present in built site');
  assert.ok((await page.locator('.qm-intro-movie').getAttribute('src'))?.endsWith('/assets/videos/intro.mp4'),'Intro video source must be the uploaded MP4');
@@ -65,6 +65,37 @@ try{
  await autoIntro.getByRole('button',{name:/跳過影片/}).click();
  assert.equal(await autoIntro.isVisible(),false,'Manual replay can be dismissed');
  console.log('Brand intro first visit, persisted skip, later visits, and manual replay passed.');
+ // Check viewport geometry in real Chromium at common desktop, phone and landscape sizes.
+ for(const [width,height] of [[1920,1080],[1366,768],[1024,768],[768,1024],[430,932],[390,844],[375,667],[320,568],[844,390]]){
+  await page.setViewportSize({width,height});
+  await page.goto(baseUrl+'/booking/home.html?intro_preview=1',{waitUntil:'domcontentloaded'});
+  await autoIntro.waitFor({state:'visible',timeout:10000});
+  const layout=await page.locator('.qm-intro-panel').evaluate(panel=>{
+   const title=panel.querySelector('.qm-intro-top strong').getBoundingClientRect();
+   const close=panel.querySelector('.qm-intro-skip').getBoundingClientRect();
+   const stage=panel.querySelector('.qm-intro-stage').getBoundingClientRect();
+   const rect=panel.getBoundingClientRect();
+   const movie=panel.querySelector('.qm-intro-movie').getBoundingClientRect();
+   return {rect:{x:rect.x,y:rect.y,right:rect.right,bottom:rect.bottom},
+    title:{right:title.right,left:title.left,bottom:title.bottom},
+    close:{left:close.left,right:close.right},
+    stage:{x:stage.x,y:stage.y,right:stage.right,bottom:stage.bottom},
+    movie:{x:movie.x,y:movie.y,right:movie.right,bottom:movie.bottom},
+    fit:getComputedStyle(panel.querySelector('.qm-intro-movie')).objectFit,
+    horizontalOverflow:panel.scrollWidth>panel.clientWidth+2,
+    verticalOverflow:panel.scrollHeight>panel.clientHeight+2};
+  });
+  assert.ok(layout.rect.x>=0&&layout.rect.right<=width+1, 'Dialog fits viewport width '+width+'x'+height);
+  assert.ok(layout.rect.y>=0&&layout.rect.bottom<=height+1, 'Dialog fits viewport height '+width+'x'+height);
+  assert.ok(layout.title.right<=layout.close.left+1,'Title and skip must not overlap '+width+'x'+height);
+  assert.ok(layout.stage.y>=layout.rect.y&&layout.stage.bottom<=layout.rect.bottom+1,'Movie fits dialog '+width+'x'+height);
+  assert.equal(layout.horizontalOverflow,false,'No horizontal scrollbar '+width+'x'+height);
+  assert.equal(layout.verticalOverflow,false,'No inner vertical scrollbar '+width+'x'+height);
+  assert.equal(layout.fit,'contain','Movie must not crop any frame '+width+'x'+height);
+  await autoIntro.getByRole('button',{name:/跳過影片/}).click();
+ }
+ await page.setViewportSize({width:1280,height:800});
+ console.log('Intro movie responsive geometry validated on 9 desktop/tablet/mobile viewports.');
  // Source preview without a generated manifest still offers an explicit placeholder.
  await page.goto(baseUrl+'/LINE/booking/home.html?intro_preview=1',{waitUntil:'domcontentloaded'});
  const introDialog=page.getByRole('dialog',{name:'排隊怪獸品牌介紹影片'});
