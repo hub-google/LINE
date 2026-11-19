@@ -7,6 +7,29 @@
 - [OpenChat Connector 契約](./docs/CONNECTOR.md)
 - [驗收現況與限制](./docs/ACCEPTANCE.md)
 
+
+## 開源 OpenChat 橋接器（新增：2026-11-19）
+
+已在 [`bridge/`](./bridge/) 新增獨立的 LINE.js WebSocket → AntiScam Connector。參考原始碼為 [mars-tw/anti-scam-helper](https://github.com/mars-tw/anti-scam-helper)（Apache-2.0）；橋接器本身是新寫的轉接程式，不複製 HAO 私有程式碼。
+
+- 上游具 `message` 訊息事件及 `message:delete`、`member:remove`、`message:send` 機器人 API，可與 AntiScam 的 HMAC webhook 和處置 API 相接。
+- 新增同原專案的管理員保護、收件聊天室白名單、實際確認回應、API bearer 身分驗證、冪等鍵、斷線降級。
+- **預設完全不會刪文或踢人**：需真實 LINE OpenChat 專用測試帳號實測，雙重開關及主程式 DRY_RUN 都設定完成才會允許操作。
+- **無法保證封鎖再次加入**：上游只有移出成員，沒有確認 `blockMember`，功能如實標記不支援。`readJoin` 也還沒實機驗證。
+- 測試：`npm test` 目前執行 25 項；包含模擬 LINE.js 幀 → 真正 AntiScam HTTP API → 模擬處置回應的整合測試。**尚未使用真實 LINE 帳號進行驗收。**
+- 一鍵抓取釘選的開源程式：`sh bridge/bootstrap-linejs.sh`（會安裝到 Git 忽略的資料夾，不啟動、不登入）。詳細流程見 [bridge/README.md](./bridge/README.md)。
+
+### Bridge 額外設定
+
+- `LINEJS_WS_URL`：開源 LINE.js 本機 WebSocket，預設 `ws://127.0.0.1:3789/api/ws`。
+- `LINEJS_API_TOKEN`：開源 LINE.js 在**專用測試帳號登入後**由 CLI 產生；不可寫進 Git。
+- `OPENCHAT_CHAT_IDS`：只有列在白名單內的 OpenChat 會轉入 AntiScam。
+- `OPENCHAT_BRIDGE_TOKEN`：自產隨機長密鑰，AntiScam 與 Bridge 兩端相同。
+- `OPENCHAT_LIVE_VERIFIED`、`OPENCHAT_ACTIONS_ENABLED`：預設 false；通過實機權限驗證並核准後才可開啟。
+- `WEBHOOK_SECRET`：AntiScam 主程式與 Bridge 兩端相同的隨機金鑰。
+
+**LINE 風險**：上述上游為非官方 API，可能違反 LINE 條款並導致帳號被限制。請勿用正式 LINE 帳號、未經授權的社群或主帳號測試。
+
 ## 已實作
 
 1. **規則引擎**：繁簡／全半形／零寬字正規化、危險語意組合、網址黑名單、短網址、洗版、新成員觀察、正常防詐新聞語境減權。
@@ -19,7 +42,7 @@
 
 ### 尚未完成（主要阻塞）
 
-LINE 官方 Messaging API **不能直接賦予 OpenChat 的訊息監控、刪除他人訊息與踢出成員能力**。現有程式已經留好獨立 Connector 契約，但**尚無實際 OpenChat Connector、尚未取得社群授權，不能聲稱可以真實自動踢人或刪文**。網頁的 GitHub Pages 版本是展示與本機風險分析，不是已上線的保護服務。
+LINE 官方 Messaging API **不能直接賦予 OpenChat 的訊息監控、刪除他人訊息與踢出成員能力**。現有程式已經留好獨立 Connector 契約，但**現在已新增一個實驗性開源 Bridge，**但尚未由真實 LINE 帳號驗證社群管理權限**；不能聲稱可以真實自動踢人或刪文**。網頁的 GitHub Pages 版本是展示與本機風險分析，不是已上線的保護服務。
 
 不以破解私有協定、盜用 LINE 憑證或繞過服務限制為安裝方式。若未來取得合法穩定的 Connector，先在測試社群逐項實機驗收。
 
@@ -84,7 +107,7 @@ NODE_ENV=production
 | 啟動後端必要（自行產生） | `WEBHOOK_SECRET` | Connector → AntiScam HMAC-SHA256 事件簽章（24+ 字元） |
 | 啟動後端必要（自行產生） | `DATA_ENCRYPTION_KEY` | AES-256-GCM 加密成員操作識別碼（64 hex） |
 | 正式 PostgreSQL 儲存必要 | `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` | 後端資料儲存；需在指定 Supabase 專案建 `as_` 表格 |
-| 真實 OpenChat 自動操作必要 | `OPENCHAT_BRIDGE_URL` + `OPENCHAT_BRIDGE_TOKEN` | 經驗證連接器端點及 Bearer Token；目前**尚未取得，沒有官方 OpenChat API Key 可直接替代** |
+| 真實 OpenChat 自動操作必要 | `OPENCHAT_BRIDGE_URL` + `OPENCHAT_BRIDGE_TOKEN` | 本專案已新增 Bridge 程式，Token 可自行產生；**實機權限尚未驗證**，沒有官方 OpenChat API Key 可直接替代 |
 | 選用 AI | `GEMINI_API_KEY` | Gemini AI 二次判斷；`AI_ENABLED=true` 才會使用 |
 | GitHub | Repo `hub-google/LINE` 的程式碼寫入權限 | 已用於本次 main 開發；GitHub Actions 需允許執行測試 |
 | LINE OpenChat | **測試群共同管理員**（可刪其他成員訊息、踢出與封鎖、發公告） | 權限需在 OpenChat 實際授予經驗證的專用帳號，再逐項實機測試；不是 LINE OA 的 Messaging API Token |
