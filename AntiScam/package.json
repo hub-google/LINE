@@ -4,10 +4,12 @@
   "private": true,
   "type": "module",
   "description": "LINE OpenChat anti-scam moderation engine, dashboard, and verified connector protocol",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "node src/server.js",
-    "test": "node --test tests/*.test.js",
-    "check": "node --check src/server.js && node --check src/service.js && node --check ui.js"
+    "test": "node --test tests/*.test.js bridge/test/*.test.js",
+    "check": "node --check src/server.js && node --check src/service.js && node --check ui.js && node --check bridge/bridge.js && node --check bridge/runner.js"
   }
 }
