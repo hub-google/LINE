@@ -1,14 +1,14 @@
 import {copyFile, mkdir, readFile, writeFile, stat} from "node:fs/promises";
 import path from "node:path";
 import {buildFrontend} from "./frontend-build.mjs";
-import {prepareIntroVideo} from "./prepare-intro-video.mjs";
+import {prepareIntroVideo,makeIntroShareImages} from "./prepare-intro-video.mjs";
 import {deflateSync} from "node:zlib";
 
 const sha = (process.env.GITHUB_SHA || "").trim();
 if (!/^[0-9a-f]{40}$/i.test(sha)) throw Error("GITHUB_SHA must be the deployment commit SHA");
 const src = path.resolve("QueueMonster/saas");
 const dest = path.resolve(process.argv[2] || "line-saas-dist");
-const pages = ["index.html", "template.html", "home.html", "for-merchants.html", "for-customers.html", "demo.html", "board.html", "pickup-board.html", "directory.html", "my-records.html", "merchant-register.html", "platform-login.html", "merchant-center.html", "privacy.html", "terms.html"];
+const pages = ["index.html", "template.html", "home.html", "video.html", "for-merchants.html", "for-customers.html", "demo.html", "board.html", "pickup-board.html", "directory.html", "my-records.html", "merchant-register.html", "platform-login.html", "merchant-center.html", "privacy.html", "terms.html"];
 const placeholder = "__LINE_SAAS_BUILD__";
 
 await mkdir(dest, {recursive:true});
@@ -18,7 +18,12 @@ for (const name of pages) {
   if (!html.includes(placeholder) || !html.includes("version-watch.js")) {
     throw Error(name + " is missing the automatic version update integration");
   }
-  const versioned=html.replaceAll(placeholder,sha)
+  // The independent share page needs absolute, publicly crawlable OG links.
+  // A release build points to the official domain; test builds point to Pages.
+  const webOrigin=(process.env.QUEUE_MONSTER_SITE_URL||"https://hub-google.github.io/LINE/booking").replace(/\/$/,"");
+  const addressed=name==="video.html"?
+    html.replaceAll("https://hub-google.github.io/LINE/booking",webOrigin):html;
+  const versioned=addressed.replaceAll(placeholder,sha)
     .replaceAll('href="./site-auth.css"','href="./site-auth.css?build='+sha+'"')
     .replaceAll('src="./site-auth.js"','src="./site-auth.js?build='+sha+'"');
   await writeFile(path.join(dest,name),versioned,"utf8");
@@ -44,6 +49,7 @@ if(introStat){
  const bytes=await readFile(introSource);
  if(bytes.subarray(4,8).toString("ascii")!=="ftyp")throw Error("Brand intro must be an MP4 container");
  const info=await prepareIntroVideo(introSource,path.join(introDest,"intro.mp4"));
+ await makeIntroShareImages(path.join(introDest,"intro.mp4"),introDest,info.durationSeconds);
  await writeFile(path.join(introDest,"intro-video-info.json"),JSON.stringify(info,null,2)+"\n","utf8");
  introManifest.enabled=true;
  introManifest.version=info.sha256.slice(0,16);
