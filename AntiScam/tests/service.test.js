@@ -1,0 +1,18 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { randomBytes } from 'node:crypto';
+import { FileStore } from '../src/store.js';
+import { OpenChatConnector } from '../src/connector.js';
+import { ModerationService } from '../src/service.js';
+
+async function setup(){const dir=await mkdtemp(join(tmpdir(),'antiscam-test-'));const store=new FileStore(join(dir,'state.json'));await store.init();const connector=new OpenChatConnector({dryRun:true});const service=new ModerationService({store,connector,secret:'test-secret-not-real',encryptionKey:randomBytes(32).toString('hex')});await service.createCommunity('測試群','test-chat');return {dir,store,connector,service};}
+const phish={type:'message.created',eventId:'msg1',communityId:'test-chat',memberId:'user-A',messageId:'source-msg-1',text:'請立即匯款並提供簡訊驗證碼，點擊 https://scam-example.test'};
+test('in monitor mode, a suspicious message is analyzed and NOT acted on',async t=>{const s=await setup();t.after(()=>rm(s.dir,{recursive:true,force:true}));await s.service.updateCommunity('test-chat',{blocked_domains:['scam-example.test']});const r=await s.service.ingest(phish);assert.equal(r.actions.length,0);assert.equal(r.event.level,'critical');assert.equal(r.event.auto_eligible,true);assert.equal((await s.service.getEvent(r.event.id)).actions.length,0);assert.ok(!JSON.stringify(await s.store.listEvents()).includes('user-A'));});
+test('same source event is processed exactly once',async t=>{const s=await setup();t.after(()=>rm(s.dir,{recursive:true,force:true}));const r=await s.service.ingest(phish);const dup=await s.service.ingest(phish);assert.equal(r.duplicate,false);assert.equal(dup.duplicate,true);assert.equal((await s.store.listEvents()).length,1);});
+test('auto mode in Dry Run never claims a LINE action succeeded',async t=>{const s=await setup();t.after(()=>rm(s.dir,{recursive:true,force:true}));await s.service.updateCommunity('test-chat',{mode:'auto',confirm:'ENABLE_AUTOMATION',blocked_domains:['scam-example.test']});const r=await s.service.ingest(phish);assert.equal(r.actions.length,4);assert.equal(r.actions[0].status,'dry_run');assert.equal(r.actions[1].status,'dry_run');assert.equal(r.actions[3].status,'unavailable');assert.equal(r.actions.some(x=>x.status==='succeeded'),false);});
+test('privileged admin is never removed even if content is high risk',async t=>{const s=await setup();t.after(()=>rm(s.dir,{recursive:true,force:true}));await s.service.updateCommunity('test-chat',{mode:'auto',confirm:'ENABLE_AUTOMATION',blocked_domains:['scam-example.test']});const r=await s.service.ingest({...phish,eventId:'msg-admin',memberRole:'admin'});assert.equal(r.actions.length,0);await assert.rejects(()=>s.service.manualAction(r.event.id,'remove_member'),/受保護/);});
+test('member join and message observations persist through file reload',async t=>{const s=await setup();t.after(()=>rm(s.dir,{recursive:true,force:true}));await s.service.ingest({type:'member.joined',eventId:'join-1',communityId:'test-chat',memberId:'user-A'});await s.service.ingest(phish);const store=new FileStore(join(s.dir,'state.json'));await store.init();assert.equal((await store.listEvents()).length,1);assert.equal((await store.listCommunities()).length,1);});
+test('cannot enable automatic removal without explicit confirmation',async t=>{const s=await setup();t.after(()=>rm(s.dir,{recursive:true,force:true}));await assert.rejects(()=>s.service.updateCommunity('test-chat',{mode:'auto'}),/ENABLE_AUTOMATION/);});
