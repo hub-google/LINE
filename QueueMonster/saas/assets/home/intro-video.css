@@ -192,3 +192,94 @@ html.qm-intro-locked{overflow:hidden!important}
  .qm-intro-panel.qm-intro-portrait .qm-intro-restart{min-height:36px;padding:7px 15px}
 }
 @media(prefers-reduced-motion:reduce){.qm-intro-overlay{backdrop-filter:none}}
+
+
+/* Landscape film: unlike a fixed 16:9 card, this grid constrains the movie
+   to the actual viewport height so there is no clipped CTA or inner scrollbar. */
+.qm-intro-panel:not(.qm-intro-portrait){
+ display:grid;
+ grid-template-columns:minmax(0,1fr);
+ grid-template-rows:64px minmax(0,1fr) auto;
+ width:min(940px,calc(100vw - 48px));
+ height:min(670px,calc(100dvh - 48px));
+ max-height:calc(100dvh - 48px);
+ overflow:hidden
+}
+.qm-intro-panel:not(.qm-intro-portrait) .qm-intro-stage{
+ grid-row:2;aspect-ratio:auto;min-height:0
+}
+.qm-intro-panel:not(.qm-intro-portrait) .qm-intro-footer{
+ grid-row:3;padding:12px 20px 16px
+}
+.qm-intro-panel:not(.qm-intro-portrait) .qm-intro-footer h2{
+ font-size:clamp(17px,2.6vw,25px);margin-bottom:3px
+}
+.qm-intro-panel:not(.qm-intro-portrait) .qm-intro-footer p{font-size:13px}
+.qm-intro-panel:not(.qm-intro-portrait) .qm-intro-actions{margin-top:9px}
+.qm-intro-panel:not(.qm-intro-portrait) .qm-intro-action,
+.qm-intro-panel:not(.qm-intro-portrait) .qm-intro-restart{
+ min-height:38px;padding:8px 20px;font-size:13px
+}
+/* The video and each state layer occupy the same stage, not extra grid rows.
+   Contain (not cover) keeps all frames, titles and subtitles visible. */
+.qm-intro-stage{position:relative!important;display:block!important;isolation:isolate}
+.qm-intro-stage .qm-intro-movie{
+ position:absolute;inset:0;width:100%;height:100%;
+ max-width:none;max-height:none;object-fit:contain;object-position:center
+}
+.qm-intro-stage .qm-intro-empty{
+ position:absolute;inset:0;z-index:3;max-width:none;max-height:none
+}
+.qm-intro-loading{
+ position:absolute;z-index:2;top:50%;left:50%;
+ transform:translate(-50%,-50%);
+ padding:12px 20px;border-radius:999px;
+ background:rgba(37,24,49,.82);color:#fff;
+ font-size:14px;font-weight:800;white-space:nowrap;pointer-events:none
+}
+.qm-intro-play{
+ position:absolute;z-index:4;top:50%;left:50%;
+ transform:translate(-50%,-50%);
+ min-height:50px;min-width:175px;padding:11px 19px;
+ border:2px solid #f4d87f;border-radius:14px;
+ background:rgba(255,250,255,.96);color:#462b52;
+ font:inherit;font-size:15px;font-weight:900;cursor:pointer;
+ box-shadow:0 8px 30px #14092170
+}
+.qm-intro-sound{
+ position:absolute;z-index:4;bottom:56px;right:12px;
+ padding:9px 14px;border-radius:999px;
+ border:1px solid #ffffffaa;
+ background:rgba(30,17,42,.85);color:#fff;
+ font:inherit;font-size:13px;font-weight:800;cursor:pointer
+}
+.qm-intro-recovery{
+ display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:14px
+}
+.qm-intro-recovery button,.qm-intro-recovery a{
+ display:inline-flex;align-items:center;justify-content:center;
+ min-height:38px;padding:8px 13px;border-radius:11px;
+ border:1px solid #e0c1ef;background:#fff8ff;color:#462b52;
+ font:inherit;font-size:13px;font-weight:800;text-decoration:none;cursor:pointer
+}
+.qm-intro-loading[hidden],.qm-intro-play[hidden],
+.qm-intro-sound[hidden],.qm-intro-recovery[hidden]{display:none!important}
+@media(max-width:700px){
+ .qm-intro-panel:not(.qm-intro-portrait){
+  width:100%;max-width:500px;
+  height:calc(100dvh - 16px);max-height:calc(100dvh - 16px);
+  grid-template-rows:54px minmax(0,1fr) auto
+ }
+ .qm-intro-panel:not(.qm-intro-portrait) .qm-intro-footer{
+  padding:10px 12px 13px
+ }
+ .qm-intro-sound{right:8px;bottom:56px;font-size:12px;padding:7px 11px}
+ .qm-intro-loading{font-size:12px}
+ .qm-intro-play{min-height:44px;font-size:13px;min-width:150px}
+}
+@media(max-height:470px){
+ .qm-intro-panel:not(.qm-intro-portrait) .qm-intro-footer p{display:none}
+ .qm-intro-panel:not(.qm-intro-portrait) .qm-intro-footer{padding:6px 10px}
+ .qm-intro-panel:not(.qm-intro-portrait) .qm-intro-actions{margin-top:5px}
+ .qm-intro-panel:not(.qm-intro-portrait) .qm-intro-top{padding-block:5px}
+}
