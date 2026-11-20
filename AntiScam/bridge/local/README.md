@@ -65,6 +65,5 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\AntiScam\bridge\local\02-r
 4. 使用非官方 LINE.js 可能受到 LINE 服務條款與風控限制，建議只用專用測試帳號。
 5. `readJoin` 與禁止被踢成員重新加入仍不是已驗證功能；不要把既有的「移除成員」誤認為永久封鎖。
 6. 本機安全碼若遺失，可在你自己的電腦重新產生；請勿將實際金鑰貼給 ChatGPT。
-7. 我在聊天中可以撰寫及維護這些檔案，但**無法直接操作你的 Windows 電腦或掃描你的 LINE QR Code**；啟動與 QR 授權需由你在本機執行。只有真實社群操作成功才會標記通過。
 
 測試狀態記錄：[../../STATUS.md](../../STATUS.md)。

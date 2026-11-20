@@ -40,6 +40,7 @@ test('default: even connected upstream cannot advertise unverified destructive a
   await bridge.receive(JSON.stringify({type:'auth:ready',profile:{userId:'uME123456789012345'}}));
   assert.equal(socket.readyState,1);
   assert.equal(bridge.capabilities().verified,false);
+  assert.equal(bridge.capabilities().capabilities.readMessage,true);
   assert.equal(bridge.capabilities().capabilities.deleteOtherMessage,false);
   assert.equal(bridge.capabilities().capabilities.blockMember,false);
   const r = await bridge.action({type:'send_notice', communityId:room, notice:'請勿提供驗證碼', actionKey:'test:notice'});

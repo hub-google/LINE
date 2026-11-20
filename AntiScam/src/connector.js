@@ -10,7 +10,13 @@ export class OpenChatConnector {
       const r=await this.fetcher(`${this.url}/v1/capabilities`,{headers:{Authorization:`Bearer ${this.token}`},signal:AbortSignal.timeout(4000)});
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data=await r.json();
-      if (data.platform !== 'line-openchat' || data.verified !== true) throw new Error('連接器尚未完成 OpenChat 權限驗證');
+      if (data.platform !== 'line-openchat') throw new Error('連接器並非 OpenChat');
+      if (data.verified !== true) {
+        if (data.connection === 'ready' && data.capabilities?.readMessage === true) {
+          return {status:'monitoring',capabilities:{...unsupported,readMessage:true},detail:'LINE.js 已登入，等待真實訊息驗證'};
+        }
+        throw new Error('連接器尚未完成 OpenChat 權限驗證');
+      }
       return {status:'connected',capabilities:Object.fromEntries(CAPABILITIES.map(x=>[x,data.capabilities?.[x]===true])),verifiedAt:data.verifiedAt??null};
     } catch { return {status:'degraded',capabilities:unsupported,detail:'連接器不可用或權限未驗證'}; }
   }

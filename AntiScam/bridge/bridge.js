@@ -85,7 +85,7 @@ export class AntiScamLineJsBridge {
       platform: 'line-openchat',
       verified: this.usable,
       verifiedAt: this.usable ? new Date().toISOString() : null,
-      capabilities: Object.fromEntries(Object.entries(KNOWN_CAPS).map(([key,value]) => [key, this.usable && value])),
+      capabilities: Object.fromEntries(Object.entries(KNOWN_CAPS).map(([key,value]) => [key, value && (key === 'readMessage' ? this.isOpen && this.isReady : this.usable)])),
       limitations: ['readJoin not supported', 'blockMember not supported: removal does not ban re-entry'],
       connection: this.isReady ? 'ready' : this.isOpen ? 'waiting-auth' : 'disconnected'
     };
@@ -155,7 +155,7 @@ export class AntiScamLineJsBridge {
   async action({ type, communityId, messageId, memberId, notice, actionKey }) {
     if (!this.usable) return { ok: false, confirmed: false, error: 'Bridge not verified/authorized for live operations' };
     if (!this.allowedChats.has(communityId)) return { ok: false, confirmed: false, error: 'Room is not authorized' };
-    if (!OPERATION[type]) return { ok: false, confirmed: false, error: 'Unsupported action (blockMember is not available)' };
+    if (!Object.hasOwn(OPERATION, type)) return { ok: false, confirmed: false, error: 'Unsupported action (blockMember is not available)' };
     if (!actionKey || typeof actionKey !== 'string' || actionKey.length > 200) return { ok: false, confirmed: false, error: 'Valid idempotency key required' };
     if (this.completed.has(actionKey)) return this.completed.get(actionKey);
     if (this.inFlight.has(actionKey)) return this.inFlight.get(actionKey);
@@ -174,8 +174,10 @@ export class AntiScamLineJsBridge {
     const execution = (async () => {
     try {
       const ack = await this.sendRequest(frame, OPERATION[type].response);
+      if (type !== 'send_notice' && (ack.chatId !== communityId || ack.messageId !== messageId)) {
+        throw new Error('Acknowledged room or message does not match');
+      }
       if (type === 'remove_member' && ack.memberId !== memberId) throw new Error('Acknowledged member does not match');
-      if (type === 'delete_message' && ack.messageId !== messageId) throw new Error('Acknowledged message does not match');
       if (type === 'send_notice' && !ack.messageId) throw new Error('No sent message ID acknowledged');
       const result = { ok: true, confirmed: true, confirmationId: `${type}:${communityId}:${ack.messageId ?? messageId}` };
       this.completed.set(actionKey, result);

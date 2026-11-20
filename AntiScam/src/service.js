@@ -73,7 +73,13 @@ export class ModerationService {
   }
   async executeAction(event,type,{memberId,actor='admin'}={}) {
     if(!ACTIONS.includes(type))throw new Error('未知處置類型');
-    if(event.is_privileged && ['remove_member','block_member'].includes(type))throw new Error('受保護管理員或白名單成員不可踢出');
+    if (['remove_member', 'block_member'].includes(type)) {
+      const community = await this.store.getCommunity(event.community_id);
+      if (!community) throw new Error('找不到處置事件所屬的社群');
+      if (event.is_privileged || community.allowed_member_keys?.includes(event.member_key)) {
+        throw new Error('受保護管理員或白名單成員不可踢出');
+      }
+    }
     const key=actionKey(event.id,type);
     const saved=await this.store.addAction({id:randomUUID(),action_key:key,event_id:event.id,community_id:event.community_id,type,status:'pending',actor,detail:null,created_at:date(),updated_at:date()});
     if(!saved.created)return saved.action;

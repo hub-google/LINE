@@ -28,3 +28,10 @@
 5. 如要禁止重新入群，需另找有經驗證的對應管理介面，現有 Bridge 無此能力。
 
 參考 [`bridge/README.md`](./bridge/README.md) 和 [`README.md`](./README.md)。
+
+## 2026-11-20｜Windows 實機驗收進度
+
+- Windows 本機使用 Git 2.55.0.windows.3、Node.js 24.19.0、npm 11.17.0。AntiScam API 與 LINE.js 分別在 `127.0.0.1:3000`、`127.0.0.1:3789` 啟動。LINE.js 已提供 QR 登入頁，需專用測試帳號掃碼。
+- Windows 安裝器保留固定上游原始碼版本，更新 undici 與 Vite。更新後 npm audit 回報 0 個已知弱點。LINE.js 的 Windows 本機組態只接受預期的 loopback Host，實測正確 Host 回應 200，其他 Host 回應 403。
+- 監控模式可顯示 LINE.js 回報的登入狀態。管理員操作會重查最新白名單，刪文及移出成員的確認回應會比對原聊天室與訊息。
+- 真實登入、社群 ID 與管理權限、收訊、刪文、踢人、公告、實機防詐判斷／保護、重連和五小時運作均待驗收。LINE Bridge 暫不支援封鎖重新加入。

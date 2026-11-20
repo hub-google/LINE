@@ -16,3 +16,11 @@ test('auto mode in Dry Run never claims a LINE action succeeded',async t=>{const
 test('privileged admin is never removed even if content is high risk',async t=>{const s=await setup();t.after(()=>rm(s.dir,{recursive:true,force:true}));await s.service.updateCommunity('test-chat',{mode:'auto',confirm:'ENABLE_AUTOMATION',blocked_domains:['scam-example.test']});const r=await s.service.ingest({...phish,eventId:'msg-admin',memberRole:'admin'});assert.equal(r.actions.length,0);await assert.rejects(()=>s.service.manualAction(r.event.id,'remove_member'),/受保護/);});
 test('member join and message observations persist through file reload',async t=>{const s=await setup();t.after(()=>rm(s.dir,{recursive:true,force:true}));await s.service.ingest({type:'member.joined',eventId:'join-1',communityId:'test-chat',memberId:'user-A'});await s.service.ingest(phish);const store=new FileStore(join(s.dir,'state.json'));await store.init();assert.equal((await store.listEvents()).length,1);assert.equal((await store.listCommunities()).length,1);});
 test('cannot enable automatic removal without explicit confirmation',async t=>{const s=await setup();t.after(()=>rm(s.dir,{recursive:true,force:true}));await assert.rejects(()=>s.service.updateCommunity('test-chat',{mode:'auto'}),/ENABLE_AUTOMATION/);});
+test('adding a member to the allowlist also protects previously recorded messages', async t => {
+  const {dir, service} = await setup();
+  t.after(() => rm(dir, {recursive:true,force:true}));
+  const {event} = await service.ingest(phish);
+  await service.updateCommunity(event.community_id, {allowed_member_keys:[event.member_key]});
+  await assert.rejects(() => service.manualAction(event.id, 'remove_member'), /白名單成員不可踢出/);
+  assert.deepEqual((await service.getEvent(event.id)).actions, []);
+});

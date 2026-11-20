@@ -25,6 +25,7 @@ function levelPill(level){return elt('span',labels[level]??level,`level level-${
 function renderBanner(){const banner=$('system-banner');const title=banner.querySelector('strong');const desc=banner.querySelector('p');const connected=state.status.connector.status==='connected';
   if(state.demo){title.textContent='GitHub Pages 展示模式';desc.textContent='以下事件都是示範資料，風險分析在瀏覽器執行。尚未連接 LINE OpenChat，也不會刪文或踢人。';}
   else if(!state.authenticated){title.textContent='尚未登入管理後台';desc.textContent='使用右上角的登入按鈕，登入後才能讀取社群設定與真實事件。';}
+  else if(state.status.connector.status==='monitoring'){title.textContent='LINE.js 已登入，監控模式';desc.textContent=state.status.connector.detail;}
   else{title.textContent=connected?'連接器已回報連線（須實機驗證）':'OpenChat 連接器尚未接通';desc.textContent=`目前 ${state.status.dryRun?'Dry Run 模擬啟用':'Dry Run 已關閉'}；${connected?'操作仍須逐項取得確認結果。':'即使開啟全自動也不能真的刪文／踢人。'}`;}
   banner.classList.toggle('live',!state.demo&&state.authenticated&&connected);
   $('top-mode').textContent=state.demo?'展示模式':!state.authenticated?'尚未登入':state.status.dryRun?'Dry Run':'實際模式';
@@ -42,7 +43,7 @@ function renderOverview(){const e=state.events;const high=e.filter(x=>['critical
     const meta=elt('div',null,'event-meta');append(meta,levelPill(item.level),elt('span',formatDate(item.created_at)));body.append(meta);
     append(list,append(elt('div',null,'event-item'),icon,body));
   });
-  const health=clean($('health-list'));const rows=[['訊息監控',state.status.connector.capabilities?.readMessage?'已確認能力':'未驗證'],['刪除他人訊息',state.status.connector.capabilities?.deleteOtherMessage?'已確認能力':'不可用'],['踢出社群成員',state.status.connector.capabilities?.removeMember?'已確認能力':'不可用'],['操作模式',state.demo?'模擬展示':state.status.dryRun?'Dry Run（模擬）':'可能執行真實操作']];
+  const health=clean($('health-list'));const rows=[['訊息監控',state.status.connector.capabilities?.readMessage?'已回報支援':'未驗證'],['刪除他人訊息',state.status.connector.capabilities?.deleteOtherMessage?'已確認能力':'不可用'],['踢出社群成員',state.status.connector.capabilities?.removeMember?'已確認能力':'不可用'],['操作模式',state.demo?'模擬展示':state.status.dryRun?'Dry Run（模擬）':'可能執行真實操作']];
   rows.forEach(([label,value])=>append(health,append(elt('div',null,'health-row'),elt('span',label,'secondary'),elt('strong',value,'health-value'))));
 }
 function renderEvents(){const group=$('event-group').value,level=$('event-level').value;const events=state.events.filter(e=>(!group||group===e.community_id)&&(!level||level===e.level));const container=clean($('event-table'));
@@ -65,7 +66,7 @@ function renderSettings(){fillSelect($('event-group'),state.communities,{placeho
 }
 function setSettingsFields(){const c=getCommunity($('settings-group').value);$('settings-mode').value=c?.mode??'monitor';$('settings-domains').value=(c?.blocked_domains??[]).join('\n');$('settings-confirm').value='';}
 function renderSystem(){const box=clean($('capabilities'));
-  append(box,append(elt('div',null,'capability'),elt('strong','連接器狀態'),elt('span',state.status.connector.status==='connected'?'已連線（未代表實機通過）':'未連線','bad')));
+  append(box,append(elt('div',null,'capability'),elt('strong','連接器狀態'),elt('span',state.status.connector.status==='connected'?'已連線（未代表實機通過）':state.status.connector.status==='monitoring'?'已登入（監控）':'未連線','bad')));
   Object.entries(caps).forEach(([key,label])=>append(box,append(elt('div',null,'capability'),elt('span',label),elt('strong',state.status.connector.capabilities?.[key]?'已回報支援':'尚未取得權限',state.status.connector.capabilities?.[key]?'good':'bad'))));
   append(box,append(elt('div',null,'capability'),elt('span','資料儲存'),elt('strong',state.demo?'示範資料':state.status.storage??'尚未登入')));
 }

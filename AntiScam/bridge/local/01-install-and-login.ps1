@@ -22,14 +22,20 @@ Check-Code
 if ($ActualRevision -ne $Revision) { throw 'LINE.js source differs from pinned revision. Refusing to replace existing source.' }
 Push-Location $Upstream
 try {
-  & npm.cmd ci --include=dev --no-audit --no-fund
+  & npm.cmd ci --include=dev --ignore-scripts --no-audit --no-fund
+  Check-Code
+  & npm.cmd install --save-exact --ignore-scripts --no-audit --no-fund undici@7.30.2
+  Check-Code
+  & npm.cmd install --save-dev --save-exact --ignore-scripts --no-audit --no-fund vite@6.4.6
+  Check-Code
+  & node.exe (Join-Path $PSScriptRoot 'harden-linejs.mjs') $Upstream
   Check-Code
   & npm.cmd run build
   Check-Code
 } finally { Pop-Location }
 $Bridge = Join-Path $Root 'bridge'
 Push-Location $Bridge
-try { & npm.cmd install --no-audit --no-fund; Check-Code }
+try { & npm.cmd ci --ignore-scripts --no-audit --no-fund; Check-Code }
 finally { Pop-Location }
 & node.exe (Join-Path $PSScriptRoot 'configure.mjs') init
 Check-Code
