@@ -165,3 +165,14 @@ body[data-monster-page="home"] .qm-industry-footnote{text-align:center;font-size
  body[data-monster-page="home"] .qm-industry-tab strong{font-size:14px}
 }
 @media(prefers-reduced-motion:reduce){body[data-monster-page="home"] .qm-industry-tab{transition:none}}
+
+/* Prevent service chips in the three core-function cards from escaping the grid.
+   Earlier flex:0 0 100% combined with column flow could overflow desktop widths. */
+body[data-monster-page="home"] #features .qm-mini{box-sizing:border-box;max-width:100%;overflow:hidden}
+body[data-monster-page="home"] #features .qm-mini .qm-scenes{
+ flex:0 1 auto;align-self:stretch;width:100%;min-width:0;max-width:100%;
+ box-sizing:border-box;justify-content:flex-start
+}
+body[data-monster-page="home"] #features .qm-mini .qm-scenes span{
+ box-sizing:border-box;max-width:100%;white-space:normal
+}
