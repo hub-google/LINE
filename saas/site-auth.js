@@ -31,7 +31,7 @@ function portalMode(){
  const page=location.pathname.split("/").pop()||"";
  const view=new URLSearchParams(location.search).get("view");
  if(view==="platform")return "headquarters";
- if(view==="staff"||["merchant-register.html"].includes(page))return "merchant";
+ if(view==="staff"||["home.html","for-merchants.html","merchant-center.html","merchant-register.html","platform-login.html"].includes(page)||(page==="demo.html"&&new URLSearchParams(location.search).get("role")!=="customer"))return "merchant";
  return "customer";
 }
 function el(tag,className,text){
