@@ -21,6 +21,9 @@ const isInHistoryScope=status=>historyScope==="all"||(historyScope==="active"
 const requestedService=isQueueSection?"取號":mode==="search"&&["預約","取號","點餐","看板"].includes(params.get("service"))?params.get("service"):"";
 if(requestedService)document.getElementById("explore-service").value=requestedService;
 const els={intro:document.getElementById("intro"),results:document.getElementById("results"),keyword:document.getElementById("keyword"),test:null};
+// Accept search terms from the customer portal without dropping service filters.
+const initialKeyword=params.get("q");
+if(initialKeyword&&els.keyword)els.keyword.value=initialKeyword.trim().slice(0,100);
 document.body.dataset.directoryMode=mode;
 const filterDisclosure=document.getElementById("explore-filters");
 const filterViewport=window.matchMedia("(max-width: 760px)");
