@@ -106,7 +106,7 @@ test("merchant homepage displays benefits, three independent tools and a synchro
  const css=read("saas/assets/marketing/dual-portals.css");
  assert.match(css,/\.qm-benefit-grid/);
  assert.match(css,/\.qm-sync-demo/);
- assert.match(css,/\.qm-industry-grid/);
+ assert.match(css,/\.qm-industry-switcher/);
  assert.match(css,/@media\(max-width:450px\)/);
 });
 
