@@ -134,8 +134,8 @@ test("merchant homepage eliminates repeated sections and keeps the promise, demo
  for(const cls of [".qm-home-hero-grid",".qm-live-workbench",".qm-home-industry",".qm-home-start",".qm-home-faq"]){
   assert.ok(css.includes(cls),"Missing layout "+cls);
  }
- assert.match(landing,/home-compact\.css\?build=__LINE_SAAS_BUILD__/);
- assert.match(landing,/home-workbench\.js\?build=__LINE_SAAS_BUILD__/);
+ assert.match(rawReadFileSync(path.join(root,"saas/home.html"),"utf8"),/home-compact\.css\?build=__LINE_SAAS_BUILD__/);
+ assert.match(rawReadFileSync(path.join(root,"saas/home.html"),"utf8"),/home-workbench\.js\?build=__LINE_SAAS_BUILD__/);
 });
 
 
