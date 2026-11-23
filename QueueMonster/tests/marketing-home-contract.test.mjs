@@ -33,7 +33,7 @@ test("store-first homepage offers signup and demo while retaining a secondary cu
  for(const href of ["./merchant-register.html?mode=signup","./demo.html?role=merchant","./customer.html","./privacy.html","./terms.html"]){
   assert.ok(landing.includes('href="'+href+'"'),"Missing homepage link: "+href);
  }
- assert.match(landing,/少一點繁瑣/);
+ assert.match(landing,/少接電話、少忙登記/);
  assert.match(landing,/現場與線上即時同步叫號/);
  assert.match(landing,/店員一鍵叫號/);
  assert.doesNotMatch(landing,/href="[^"]*(?:platform-login|view=staff|view=platform)/);
@@ -86,29 +86,58 @@ test("directory preserves platform OA LIFF context while opening store services"
  assert.match(directory,/customerUrl\(t\.slug,"queue",t\.oa_mode\)/);
 });
 
-test("merchant hero previews its management workflow with clearly marked sample data",()=>{
- assert.match(landing,/class="qm-merchant-preview"/);
- assert.match(landing,/店家後台操作靜態示意/);
- assert.match(landing,/後台畫面示意/);
+test("merchant hero shows a working three-mode management preview rather than static mockups",()=>{
+ const js=read("saas/assets/marketing/home-workbench.js");
+ const css=read("saas/assets/marketing/home-compact.css");
+ assert.match(landing,/class="qm-merchant-preview qm-live-workbench"/);
+ assert.match(landing,/可實際操作的店家介面體驗/);
+ assert.match(landing,/模擬操作/);
  assert.match(landing,/目前叫號/);
  assert.match(landing,/A012/);
- assert.match(landing,/非即時門市資料/);
- assert.doesNotMatch(landing,/<div class="scene-label">介面示意<\/div>/);
+ for(const tab of ["queue","booking","order"])assert.match(landing,new RegExp('data-live-tab="'+tab+'"'));
+ assert.match(landing,/data-live-action="next"/);
+ assert.match(landing,/data-live-mobile/);
+ assert.match(landing,/開啟完整操作介面/);
+ assert.match(js,/data-live-action/);
+ assert.match(js,/data-live-current/);
+ assert.match(js,/data-live-mobile/);
+ assert.match(js,/bookingChecked=true/);
+ assert.match(js,/orderAccepted=true/);
+ assert.match(js,/waiting--/);
+ assert.match(css,/\.qm-live-workbench/);
+ assert.match(css,/@media\(max-width:620px\)/);
+ for(const code of [js]){
+  const syntax=spawnSync(process.execPath,["--check"],{input:code,encoding:"utf8"});
+  assert.equal(syntax.status,0,syntax.stderr);
+ }
 });
 
-test("merchant homepage displays benefits, three independent tools and a synchronized calling illustration",()=>{
- for(const section of ["benefits","features","sync","industries","demo","how-it-works","customer-experience","faq"]){
-  assert.match(landing,new RegExp('id="'+section+'"'));
+
+test("merchant homepage eliminates repeated sections and keeps the promise, demo, industry switcher and setup steps",()=>{
+ for(const section of ["benefits","features","industries","how-it-works","faq"]){
+  assert.match(landing,new RegExp('id="'+section+'"'),"Missing "+section);
  }
- for(const text of ["減少人工登記","現場線上同步叫號","提前掌握訂單","一鍵叫號","店內電視／看板","顧客手機","免費建立店家","店家端"]){
-  assert.ok(landing.includes(text),"Missing merchant conversion text: "+text);
+ for(const old of ["sync","demo","customer-experience"]){
+  assert.doesNotMatch(landing,new RegExp('id="'+old+'"'),"Repeated section "+old+" must be removed");
  }
- const css=read("saas/assets/marketing/dual-portals.css");
- assert.match(css,/\.qm-benefit-grid/);
- assert.match(css,/\.qm-sync-demo/);
- assert.match(css,/\.qm-industry-switcher/);
- assert.match(css,/@media\(max-width:450px\)/);
+ const main=landing.match(/<main id="main">([\s\S]*?)<\/main>/)?.[1];
+ assert.ok(main,"Missing main");
+ assert.equal((main.match(/<section\b/g)||[]).length,4,"Just four distinct homepage sections");
+ assert.equal((main.match(/class="qm-home-benefit"/g)||[]).length,3,"Only three concise merchant benefits");
+ assert.equal((main.match(/class="qm-merchant-preview qm-live-workbench"/g)||[]).length,1);
+ assert.equal((main.match(/href="\.\/demo\.html\?role=merchant"/g)||[]).length,3,"Hero, preview and industry share one demo page");
+ assert.equal((main.match(/href="\.\/merchant-register\.html\?mode=signup"/g)||[]).length,2,"Signup only in hero and setup strip");
+ for(const text of ["少接預約電話","少被問叫到幾號","少漏單、少手寫","現場與線上即時同步叫號","顧客手機","免費建立店家"]){
+  assert.ok(main.includes(text),"Missing merchant value: "+text);
+ }
+ const css=read("saas/assets/marketing/home-compact.css");
+ for(const cls of [".qm-home-hero-grid",".qm-live-workbench",".qm-home-industry",".qm-home-start",".qm-home-faq"]){
+  assert.ok(css.includes(cls),"Missing layout "+cls);
+ }
+ assert.match(landing,/home-compact\.css\?build=__LINE_SAAS_BUILD__/);
+ assert.match(landing,/home-workbench\.js\?build=__LINE_SAAS_BUILD__/);
 });
+
 
 test("merchant SEO remains machine-readable and the test site keeps its own canonical URL",()=>{
  const description=landing.match(/<meta name="description" content="([^"]+)">/);
@@ -294,7 +323,7 @@ test("shared navigation switches by role without creating two login systems",()=
   assert.match(html,/assets\/marketing\/shared-header\.js/);
   assert.match(html,/assets\/marketing\/shared-header\.css/);
  }
- for(const name of ["店家首頁","經營效益","產品功能","適用產業","免費體驗","操作教學","顧客版","找店家","我的紀錄","店家版"]){
+ for(const name of ["功能與效益","適用店型","開始使用","免費體驗","顧客版","找店家","我的紀錄","店家版"]){
   assert.ok(js.includes(name),"Missing role navigation "+name);
  }
  assert.match(js,/merchantPages/);

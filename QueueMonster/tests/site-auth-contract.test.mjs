@@ -30,7 +30,7 @@ test("all normal site pages reference the exact same header, account script and 
   assert.equal((html.match(/id="marketing-header"/g)||[]).length,1,page+" duplicate header mount");
  }
  const shared=read("saas/assets/marketing/shared-header.js");
- const links=["店家首頁","經營效益","產品功能","適用產業","免費體驗","操作教學","顧客版","找店家","我的紀錄","店家版"];
+ const links=["功能與效益","適用店型","開始使用","免費體驗","顧客版","找店家","我的紀錄","店家版"];
  for(const label of links)assert.ok(shared.includes(label),"missing shared navigation item: "+label);
  assert.match(shared,/id="site-auth-root"/);
  assert.match(style,/\.site-auth-slot/);

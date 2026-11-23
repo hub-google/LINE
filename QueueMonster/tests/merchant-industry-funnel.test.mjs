@@ -17,7 +17,7 @@ const deploy=read("../.github/workflows/line-saas-pages.yml");
 test("four industries share one interactive merchant homepage and one demo link",()=>{
  const section=home.match(/<section id="industries"[\s\S]*?<\/section>/)?.[0];
  assert.ok(section,"Merchant industry section");
- assert.match(section,/不同行業，同一套排隊怪獸/);
+ assert.match(section,/你的店，最需要省掉哪件事/);
  assert.match(section,/role="tablist"/);
  assert.match(section,/role="tabpanel"/);
  assert.match(section,/id="industry-switcher"/);

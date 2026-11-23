@@ -228,7 +228,7 @@ try{
      const r=node.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width};
     });
     assert.ok(preview.width>=230&&preview.left>=-2&&preview.right<=width+2,'Merchant dashboard preview fits viewport');
-    assert.match(await page.locator('.hero h1').innerText(),/少一點繁瑣/);
+    assert.match(await page.locator('.hero h1').innerText(),/少接電話/);
     assert.ok(await page.getByRole('link',{name:/免費建立店家/}).count()>=1,'Merchant signup must be visible');
    }
    if(name.startsWith('directory.html')||name==='my-records.html'){
@@ -264,7 +264,7 @@ try{
     const header=page.locator('#marketing-header .qm-public-header');
     await header.waitFor({state:'attached',timeout:12000});
     assert.deepEqual(await header.locator('.qm-public-nav a').allTextContents(),
-     ['店家首頁','經營效益','產品功能','適用產業','免費體驗','操作教學','顧客版'],
+     ['功能與效益','適用店型','開始使用','免費體驗','顧客版'],
      'Merchant sign-in pages must use merchant navigation');
     assert.equal(await page.locator('a[href="./?view=platform"]').count(),0,
      'Public header must not expose a privileged administration link');
@@ -325,12 +325,12 @@ try{
    const tabs=await header.locator('.qm-public-nav a').allTextContents();
    const merchant=['home.html','merchant.html','demo.html','merchant-center.html'].includes(name);
    const expected=merchant?
-    ['店家首頁','經營效益','產品功能','適用產業','免費體驗','操作教學','顧客版']:
+    ['功能與效益','適用店型','開始使用','免費體驗','顧客版']:
     ['找店家','我的紀錄','店家版'];
    assert.deepEqual(tabs,expected,name+' role-specific navigation');
    assert.equal(await header.getAttribute('data-header-role'),merchant?'merchant':'customer',name+' correct portal');
    assert.equal(await header.locator('.qm-public-search,.qm-public-mobile-search').count(),0,name+' no duplicate search CTA');
-   assert.equal(await header.locator('.qm-public-menu nav a').count(),merchant?8:3,name+' role-specific mobile links');
+   assert.equal(await header.locator('.qm-public-menu nav a').count(),merchant?6:3,name+' role-specific mobile links');
    if(width>=1280){
     const sizes=await header.evaluate(node=>({font:parseFloat(getComputedStyle(node.querySelector('.qm-public-nav a')).fontSize),logo:node.querySelector('.qm-public-logo img').getBoundingClientRect().width}));
     assert.ok(sizes.font>=16&&sizes.logo>=54,name+' enlarged header: '+JSON.stringify(sizes));
@@ -342,6 +342,42 @@ try{
   }
  }
 
+
+
+ // Functional first-screen preview: call-next updates both the shop screen and customer phone,
+ // and booking/order buttons update their visible states without production writes.
+ for(const width of [1280,390]){
+  await page.setViewportSize({width,height:900});
+  await page.goto(baseUrl+'/booking/home.html',{waitUntil:'load',timeout:45000});
+  const workbench=page.locator('.qm-live-workbench');
+  await workbench.waitFor({state:'visible'});
+  assert.equal(await page.locator('main section').count(),4,'Landing has no duplicated explanations');
+  assert.equal(await workbench.locator('[data-live-tab]').count(),3,'Three real preview modes');
+  assert.equal(await workbench.locator('[data-live-current]').innerText(),'A012');
+  assert.equal(await workbench.locator('[data-live-mobile]').innerText(),'A012');
+  await workbench.locator('[data-live-action="next"]').click();
+  assert.equal(await workbench.locator('[data-live-current]').innerText(),'A013');
+  assert.equal(await workbench.locator('[data-live-mobile]').innerText(),'A013');
+  assert.equal(await workbench.locator('[data-live-waiting]').innerText(),'7');
+  assert.match(await workbench.locator('.qm-live-feedback').innerText(),/已同步/);
+  await workbench.locator('[data-live-tab="booking"]').click();
+  assert.equal(await workbench.locator('[data-live-tab="booking"]').getAttribute('aria-selected'),'true');
+  await workbench.locator('[data-live-action="checkin"]').click();
+  assert.ok(await workbench.locator('.qm-live-state.done').count()>0,'Booking check-in changed to completed');
+  await workbench.locator('[data-live-tab="order"]').click();
+  await workbench.locator('[data-live-action="accept"]').click();
+  assert.match(await workbench.locator('.qm-live-state.done').innerText(),/製作中/);
+  await workbench.locator('[data-live-tab="queue"]').focus();
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await workbench.locator('[data-live-tab="booking"]').getAttribute('aria-selected'),'true','Preview supports keyboard');
+  const dimensions=await page.evaluate(()=>({
+   viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth,
+   right:document.querySelector('.qm-live-workbench').getBoundingClientRect().right
+  }));
+  assert.ok(dimensions.document<=dimensions.viewport+2,'Compact homepage has no horizontal overflow at '+width+': '+JSON.stringify(dimensions));
+  assert.ok(dimensions.right<=dimensions.viewport+2,'Workbench fits screen');
+ }
+ console.log('Interactive merchant preview passed for queue, booking and order at desktop/mobile widths.');
 
  // Four industries share ONE homepage panel; tab clicks must never navigate.
  for(const width of [1280,390]){

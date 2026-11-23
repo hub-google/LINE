@@ -8,13 +8,11 @@
    (page==="demo.html"&&params.get("role")!=="customer")||
    ((page===""||page==="index.html")&&["staff","platform"].includes(params.get("view")));
  const merchantItems=[
-   ["店家首頁","./home.html","home.html"],
-   ["經營效益","./home.html#benefits",""],
-   ["產品功能","./home.html#features",""],
-   ["適用產業","./home.html#industries",""],
+   ["功能與效益","./home.html#features",""],
+   ["適用店型","./home.html#industries",""],
+   ["開始使用","./home.html#how-it-works",""],
    ["免費體驗","./demo.html?role=merchant","demo.html"],
-   ["操作教學","./merchant.html#guides","for-merchants.html"],
-   ["顧客版","./customer.html",""]
+   ["顧客版","./customer.html","customer.html"]
  ];
  const customerItems=[
    ["找店家","./customer.html","customer.html"],
@@ -23,9 +21,7 @@
  ];
  const items=merchant?merchantItems:customerItems;
  const menuItems=merchant?[...items,["免費建立店家","./merchant-register.html?mode=signup","merchant-register.html"]]:items;
- const quick=merchant?
-   [["免費體驗","./demo.html?role=merchant",""],["建立店家","./merchant-register.html?mode=signup",""]]:
-   [["找店家","./customer.html",""],["我的紀錄","./my-records.html",""]];
+ const quick=merchant?[]:[["找店家","./customer.html",""],["我的紀錄","./my-records.html",""]];
  const link=arr=>arr.map(([label,url,active])=>'<a href="'+url+'"'+(active&&active===page?' aria-current="page"':'')+'>'+label+'</a>').join("");
  const headerRole=merchant?"店家版":"顧客版";
  mount.innerHTML='<header class="qm-public-header'+(page==="home.html"?' site-head':'')+'" data-header-role="'+(merchant?"merchant":"customer")+'"><div class="qm-public-inner">'+
