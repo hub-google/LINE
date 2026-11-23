@@ -11,7 +11,7 @@ test("my history is one page with three simultaneously rendered sections, never 
  assert.match(html,/data-customer-surface="cross-store-history"/);
  assert.doesNotMatch(directory,/class="tabs"/);
  assert.match(directory,/location\.replace\(target\.href\)/);
- assert.match(header,/\["搜尋店家","\.\/directory\.html"/);
+ assert.match(header,/\["搜尋店家","\.\/directory\.html\?mode=search"/);
  assert.match(header,/\["我的紀錄","\.\/my-records\.html"/);
  assert.doesNotMatch(html,/id="combined-switch"|id="section-ticket"|id="section-order"|id="section-reservation"/);
  assert.match(js,/const kinds=\[\["reservation","預約紀錄"\],\["ticket","取號紀錄"\],\["order","訂單紀錄"\]\]/);
