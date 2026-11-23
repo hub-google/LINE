@@ -318,19 +318,19 @@ try{
  // Shared public navigation must match on all introduction pages and all viewport sizes.
  for(const width of [1280,390]){
   await page.setViewportSize({width,height:900});
-  for(const name of ['home.html','for-merchants.html','for-customers.html','demo.html','merchant-center.html','directory.html','my-records.html']){
+  for(const name of ['home.html','merchant.html','customer.html','demo.html','merchant-center.html','directory.html','my-records.html']){
    await page.goto(baseUrl+'/booking/'+name,{waitUntil:'domcontentloaded',timeout:45000});
    const header=page.locator('.qm-public-header');
    await header.waitFor({state:'attached',timeout:10000});
    const tabs=await header.locator('.qm-public-nav a').allTextContents();
-   const merchant=['home.html','for-merchants.html','demo.html','merchant-center.html'].includes(name);
+   const merchant=['home.html','merchant.html','demo.html','merchant-center.html'].includes(name);
    const expected=merchant?
     ['店家首頁','經營效益','產品功能','適用產業','免費體驗','操作教學','顧客版']:
-    ['顧客首頁','搜尋店家','我的紀錄','使用教學','店家版'];
+    ['找店家','我的紀錄','店家版'];
    assert.deepEqual(tabs,expected,name+' role-specific navigation');
    assert.equal(await header.getAttribute('data-header-role'),merchant?'merchant':'customer',name+' correct portal');
    assert.equal(await header.locator('.qm-public-search,.qm-public-mobile-search').count(),0,name+' no duplicate search CTA');
-   assert.equal(await header.locator('.qm-public-menu nav a').count(),merchant?8:5,name+' role-specific mobile links');
+   assert.equal(await header.locator('.qm-public-menu nav a').count(),merchant?8:3,name+' role-specific mobile links');
    if(width>=1280){
     const sizes=await header.evaluate(node=>({font:parseFloat(getComputedStyle(node.querySelector('.qm-public-nav a')).fontSize),logo:node.querySelector('.qm-public-logo img').getBoundingClientRect().width}));
     assert.ok(sizes.font>=16&&sizes.logo>=54,name+' enlarged header: '+JSON.stringify(sizes));
@@ -403,12 +403,31 @@ try{
  assert.equal(await page.locator('#site-auth-root').count(),1);
  console.log('Industry pages and role-aware demo passed.');
 
- // Customer homepage search carries terms into live store discovery.
- await page.goto(baseUrl+'/booking/for-customers.html',{waitUntil:'load'});
- await page.locator('.qm-customer-search input[name="q"]').fill('板橋');
- await page.locator('.qm-customer-search button').click();
- await page.waitForURL(/directory\.html\?mode=search&q=/,{timeout:12000});
- assert.equal(await page.locator('#keyword').inputValue(),'板橋');
+ // Customer page is a functional search app: no hero, real directory and service filters on arrival.
+ for(const width of [1280,390]){
+  await page.setViewportSize({width,height:900});
+  await page.goto(baseUrl+'/booking/customer.html',{waitUntil:'load',timeout:45000});
+  await page.locator('#results').waitFor({state:'attached'});
+  assert.equal(await page.locator('.qm-role-hero,.qm-hero-art').count(),0,'No marketing hero on customer app');
+  assert.equal(await page.locator('h1').first().innerText(),'找店家');
+  assert.equal(await page.locator('.qm-customer-service-tabs button').count(),4);
+  assert.ok(await page.locator('#keyword').isVisible(),'Search field immediately visible');
+  await page.locator('[data-customer-service="取號"]').click();
+  assert.equal(await page.locator('#explore-service').inputValue(),'取號');
+  assert.equal(await page.locator('[data-customer-service="取號"]').getAttribute('aria-pressed'),'true');
+  await page.locator('[data-customer-service="全部"]').click();
+  assert.equal(await page.locator('#explore-service').inputValue(),'全部');
+  await page.locator('#keyword').fill('板橋');
+  assert.equal(await page.locator('#keyword').inputValue(),'板橋');
+  const bounds=await page.evaluate(()=>({doc:document.documentElement.scrollWidth,view:document.documentElement.clientWidth}));
+  assert.ok(bounds.doc<=bounds.view+2,'Customer app must fit '+width+'px: '+JSON.stringify(bounds));
+  assert.ok(await page.locator('a[href="./my-records.html"]').count()>=1,'My records stays accessible');
+ }
+ // Both old public marketing URLs forward to the shorter paths.
+ await page.goto(baseUrl+'/booking/for-customers.html?utm_source=legacy',{waitUntil:'load'});
+ await page.waitForURL(/\/customer\.html\?utm_source=legacy/,{timeout:12000});
+ await page.goto(baseUrl+'/booking/for-merchants.html',{waitUntil:'load'});
+ await page.waitForURL(/\/merchant\.html/,{timeout:12000});
 
  // Verify the old publicly distributed personal-record links resolve to the new page.
  for(const legacy of ['directory.html?mode=mine','directory.html?mode=mine&section=order','directory.html?mode=last-board']){

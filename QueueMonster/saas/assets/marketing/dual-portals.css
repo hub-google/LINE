@@ -176,3 +176,6 @@ body[data-monster-page="home"] #features .qm-mini .qm-scenes{
 body[data-monster-page="home"] #features .qm-mini .qm-scenes span{
  box-sizing:border-box;max-width:100%;white-space:normal
 }
+
+/* Keep shared customer navigation minimal across both legacy and new service links. */
+body[data-customer-home="true"] .qm-public-quicklinks{gap:5px}

@@ -9,7 +9,7 @@
  const params=new URLSearchParams(location.search);
  const safeText=(v,max=50)=>String(v||"").replace(/[^a-zA-Z0-9_-]/g,"").slice(0,max);
  const scene=()=>["breakfast","salon","clinic","repair"].includes(new URLSearchParams(location.search).get("scene"))?new URLSearchParams(location.search).get("scene"):"";
- const source=pathname==="home.html"?"home":pathname==="for-customers.html"?"customer":
+ const source=pathname==="home.html"?"home":(pathname==="customer.html"||pathname==="for-customers.html")?"customer":
    pathname==="for-merchants.html"?"merchant":pathname==="video.html"?"video":
    pathname==="demo.html"?"demo":pathname==="directory.html"?"directory":"unknown";
  function track(type,extra={}){

@@ -17,7 +17,7 @@ const deploy=read("../../.github/workflows/line-saas-pages.yml");
 const sitemap=read("../saas/sitemap.xml");
 
 test("Search Stores and My Records are distinct pages in the same public top navigation",()=>{
- assert.match(header,/\["搜尋店家","\.\/directory\.html\?mode=search","directory\.html"\]/);
+ assert.match(header,/\["找店家","\.\/customer\.html","customer\.html"\]/);
  assert.match(header,/\["我的紀錄","\.\/my-records\.html","my-records\.html"\]/);
  assert.match(header,/qm-public-quicklinks/);
  assert.doesNotMatch(search,/<nav class="tabs"/);

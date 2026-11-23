@@ -1,90 +1,10 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow">
 <meta name="line-saas-build" content="__LINE_SAAS_BUILD__">
-<script defer src="./version-watch.js?build=__LINE_SAAS_BUILD__"></script>
-<meta name="theme-color" content="#462B52">
-<title>顧客版｜搜尋店家、預約、取號與點餐｜排隊怪獸</title>
-<meta name="description" content="排隊怪獸顧客版：直接搜尋店家、線上預約、排隊取號、線上點餐與查看我的紀錄。現場與線上同步叫號，透過 LINE 或 QR Code 開始使用服務。">
-<link rel="canonical" href="https://hub-google.github.io/LINE/booking/for-customers.html">
-<meta property="og:type" content="website"><meta property="og:site_name" content="排隊怪獸">
-<meta property="og:title" content="顧客版｜搜尋店家、預約、取號與點餐｜排隊怪獸"><meta property="og:description" content="搜尋店家、線上預約、現場取號與點餐，手機掌握叫號及取餐進度。">
-<meta property="og:url" content="https://hub-google.github.io/LINE/booking/for-customers.html">
-<link rel="icon" type="image/svg+xml" href="./monster-mascot.svg">
-<link rel="stylesheet" href="./assets/roles/role-pages.css?build=__LINE_SAAS_BUILD__"><link rel="stylesheet" href="./site-auth.css"><link rel="stylesheet" href="./assets/marketing/shared-header.css?build=__LINE_SAAS_BUILD__"><script defer src="./assets/marketing/shared-header.js?build=__LINE_SAAS_BUILD__"></script><script defer src="./site-auth.js"></script>
-<link rel="stylesheet" href="./assets/marketing/dual-portals.css?build=__LINE_SAAS_BUILD__"><script defer src="./assets/marketing/funnel-events.js?build=__LINE_SAAS_BUILD__"></script></head><body data-monster-page="role" data-role="customer">
-<a class="qm-skip" href="#main">跳到主要內容</a><div id="marketing-header"><a href="./home.html">排隊怪獸</a></div>
-<main id="main">
-  <section class="qm-role-hero">
-    <div class="qm-role-shell qm-hero-layout">
-      <div>
-        <span class="qm-kicker">排隊怪獸｜顧客服務入口</span>
-        <h1>預約、取號、點餐，<em>手機就搞定。</em></h1>
-        <p>找到想去的店家，選擇店家開放的服務，輕鬆掌握候位與取餐進度。</p>
-        <form class="qm-customer-search" action="./directory.html" method="get" role="search">
-          <input type="hidden" name="mode" value="search">
-          <input type="search" name="q" aria-label="搜尋店家名稱或地點" placeholder="輸入店名或地區，留空可看熱門店家" maxlength="100" autocomplete="off">
-          <button type="submit">搜尋店家 →</button>
-        </form>
-        <div class="qm-hero-points"><span>不必另外下載 App</span><span>LINE／QR Code 直接使用</span><span>手機掌握最新進度</span></div>
-        <div class="qm-role-actions"><a class="qm-button qm-button-primary" href="./my-records.html">查看我的紀錄 →</a><a class="qm-button qm-button-light" href="./demo.html?role=customer">體驗顧客操作</a></div>
-      </div>
-      <div class="qm-hero-art" aria-label="排隊怪獸吉祥物和候位進度示意">
-        <img src="./monster-mascot.svg" alt="排隊怪獸吉祥物">
-        <div class="qm-float qm-float-top">我的號碼　A019</div>
-        <div class="qm-float qm-float-bottom">目前叫號　A012</div>
-      </div>
-    </div>
-  </section>
-
-  <section class="qm-role-section" id="services">
-    <div class="qm-role-shell">
-      <div class="qm-role-heading"><span class="qm-kicker">立即使用</span><h2>你今天需要哪一種服務？</h2><p>點選後直接搜尋有提供這項服務的店家。</p></div>
-      <div class="qm-customer-shortcuts">
-        <a class="qm-customer-shortcut" href="./directory.html?mode=search&amp;service=預約"><span class="qm-shortcut-icon" aria-hidden="true">▦</span><span>線上預約 →</span></a>
-        <a class="qm-customer-shortcut" href="./directory.html?mode=search&amp;service=取號"><span class="qm-shortcut-icon" aria-hidden="true">№</span><span>排隊取號 →</span></a>
-        <a class="qm-customer-shortcut" href="./directory.html?mode=search&amp;service=點餐"><span class="qm-shortcut-icon" aria-hidden="true">▤</span><span>線上點餐 →</span></a>
-      </div>
-      <p class="qm-customer-note">實際提供的功能由店家決定；如果你收到店家的 LINE 連結或掃描店家 QR Code，可直接進入該店服務，不必重新搜尋。</p>
-    </div>
-  </section>
-
-  <section class="qm-role-section qm-role-section-alt" id="records">
-    <div class="qm-role-shell">
-      <div class="qm-customer-recents"><div><h2>我的預約、取號與點餐紀錄</h2><p>想知道預約時間、目前叫號或取餐進度？從這裡直接查看，不必重新找店家。</p></div><a href="./my-records.html">開啟我的紀錄 →</a></div>
-      <div class="qm-customer-recents" style="margin-top:14px"><div><h2>搜尋與熱門店家</h2><p>查看目前使用排隊怪獸的店家、服務類型與熱門排行。</p></div><a href="./directory.html?mode=search">瀏覽店家 →</a></div>
-    </div>
-  </section>
-
-  <section class="qm-role-section" id="how-to">
-    <div class="qm-role-shell">
-      <div class="qm-role-heading"><span class="qm-kicker">使用方式</span><h2>簡單三步驟，開始使用。</h2><p>不必了解店家管理系統，只需要找到店家提供的服務。</p></div>
-      <div class="qm-flow" role="group" aria-label="顧客操作流程：搜尋或掃碼、選擇服務、查詢進度">
-        <div class="qm-flow-step"><span class="qm-step-no">01</span><strong>搜尋店家或掃描 QR Code</strong><small>也可以從店家分享的 LINE 連結直接進入。</small></div>
-        <div class="qm-flow-arrow" aria-hidden="true">↓</div>
-        <div class="qm-flow-step"><span class="qm-step-no">02</span><strong>選擇店家開放的服務</strong><small>依需要預約、取號或線上點餐，必要時完成 LINE 身分驗證。</small></div>
-        <div class="qm-flow-arrow" aria-hidden="true">↓</div>
-        <div class="qm-flow-step qm-flow-last"><span class="qm-step-no">03</span><strong>手機查詢最新進度</strong><small>到「我的紀錄」查看預約、候位、叫號和取餐狀態。</small></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="qm-role-section qm-role-section-alt" id="customer-benefits">
-    <div class="qm-role-shell">
-      <div class="qm-role-heading"><span class="qm-kicker">顧客便利服務</span><h2>不必一直等，自己的進度自己掌握。</h2></div>
-      <div class="qm-benefits">
-        <article><span>線上預約</span><h3>自己選方便時段</h3><p>查看店家開放的日期與時段，不必為了預約再打電話。</p></article>
-        <article><span>即時叫號</span><h3>現場與手機同步</h3><p>店員更新叫號後，手機即時看板也顯示最新進度。</p></article>
-        <article><span>預約取餐</span><h3>先下單再取餐</h3><p>店家開放點餐時，可以提前訂餐、選擇取餐時間。</p></article>
-      </div>
-    </div>
-  </section>
-
-  <section class="qm-role-bottom">
-    <div class="qm-role-shell"><div><span class="qm-kicker">立即開始</span><h2>找好店家，就能開始使用服務。</h2><p>預約、取號與點餐依各店家實際提供項目為準。</p></div>
-      <div class="qm-role-actions"><a class="qm-button qm-button-primary" href="./directory.html?mode=search">搜尋店家</a><a class="qm-button qm-button-light" href="./my-records.html">我的紀錄</a></div>
-    </div>
-  </section>
-</main>
-<footer class="qm-role-footer"><div class="qm-role-shell"><span>排隊怪獸是獨立服務，非 LINE 官方產品；實際可用功能以店家設定為準。</span><span><a href="./privacy.html">隱私權說明</a>　·　<a href="./terms.html">服務條款</a></span></div></footer>
-</body></html>
+<link rel="canonical" href="https://hub-google.github.io/LINE/booking/customer.html">
+<title>正在前往顧客服務｜排隊怪獸</title>
+<script>location.replace(new URL("./customer.html"+location.search+location.hash,location.href).href)</script>
+<noscript><meta http-equiv="refresh" content="0;url=./customer.html"></noscript>
+</head><body><p>正在前往顧客服務…<a href="./customer.html">點此繼續</a></p></body></html>

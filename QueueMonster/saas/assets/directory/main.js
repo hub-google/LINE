@@ -43,6 +43,23 @@ function updateFilterSummary(){
 });
 updateFilterSummary();
 
+// Customer app keeps all actions on one screen; tabs update the actual directory filter.
+const customerServiceTabs=[...document.querySelectorAll("[data-customer-service]")];
+function syncCustomerTabs(){
+ const current=document.getElementById("explore-service").value;
+ for(const tab of customerServiceTabs)tab.setAttribute("aria-pressed",String(tab.dataset.customerService===current));
+}
+for(const tab of customerServiceTabs){
+ tab.addEventListener("click",()=>{
+  const control=document.getElementById("explore-service");
+  control.value=tab.dataset.customerService;
+  syncCustomerTabs();
+  control.dispatchEvent(new Event("change",{bubbles:true}));
+  window.qmMarketingTrack?.("customer_service",{source:"customer"});
+ });
+}
+document.getElementById("explore-service").addEventListener("change",syncCustomerTabs);
+syncCustomerTabs();
 // Navigation is owned by the common site header, not a duplicate card-level tab.
 
 let all=[],popular=[],searchResults=[],searchTotal=0,searchPage=1;
@@ -77,7 +94,7 @@ function setupExploreFilters(){
  options("explore-category",[...new Set(all.map(x=>x.category||"其他"))].sort((a,b)=>a.localeCompare(b,"zh-Hant")),"全部類別");
  options("explore-area",[...new Set(all.map(areaOf))].sort((a,b)=>a.localeCompare(b,"zh-Hant")),"所有地區");
  document.getElementById("explore-filters").classList.toggle("hidden",needsIdentity);
- document.querySelector(".search-wrap label").textContent=isHistorySection?"搜尋跨店紀錄":"搜尋店家名稱或地點";
+ document.querySelector(".search-wrap label").textContent=isHistorySection?"搜尋跨店紀錄":document.body.dataset.customerHome?"搜尋店家":"搜尋店家名稱或地點";
  document.querySelector(".public-note")?.classList.toggle("hidden",needsIdentity);
 }
 
