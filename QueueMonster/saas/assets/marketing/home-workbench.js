@@ -14,9 +14,12 @@
    '<div class="qm-live-queue"><div class="qm-live-primary-panel"><span class="qm-live-caption">目前叫號</span>'+
    '<strong class="qm-live-number" data-live-current>A'+number()+'</strong><small>還有 <b data-live-waiting>'+waiting+'</b> 組候位</small>'+
    button("next",waiting?'叫下一位 <span aria-hidden="true">→</span>':'今日叫號完成',!waiting)+
-   '</div><div class="qm-live-customer-panel"><span class="qm-live-phone-head">顧客手機</span><div class="qm-live-phone-screen">'+
-   '<span>目前叫號</span><strong data-live-mobile>A'+number()+'</strong><small>進度同步更新</small></div></div></div>'+
-   '<div class="qm-live-synced"><span aria-hidden="true">✓</span> 店內看板與顧客手機同步更新</div>',
+   '</div><div class="qm-live-mirrors">'+
+   '<div class="qm-live-board-panel"><span class="qm-live-board-head">店內全螢幕看板</span><strong data-live-board>A'+number()+'</strong>'+
+   '<button type="button" class="qm-live-board-open" data-live-action="board" aria-label="放大顯示叫號看板示範">全螢幕看板 ↗</button><small>模擬展示</small></div>'+
+   '<div class="qm-live-customer-panel"><span class="qm-live-phone-head">顧客手機</span><div class="qm-live-phone-screen">'+
+   '<span>目前叫號</span><strong data-live-mobile>A'+number()+'</strong><small>進度同步更新</small></div></div></div></div>'+
+   '<div class="qm-live-synced"><span aria-hidden="true">✓</span> 店員叫一次，店內全螢幕看板與顧客手機同步更新</div>',
   booking:()=>'<div class="qm-live-screen-title"><span>今天的預約</span><small>預約集中管理</small></div>'+
    '<div class="qm-live-booking-panel"><div class="qm-live-statline"><span>待報到</span><strong>'+(bookingChecked?'1':'2')+' 筆</strong></div>'+
    '<div class="qm-live-list-row"><span class="qm-live-time">10:30</span><div><strong>剪髮服務</strong><small>線上預約・1 位</small></div><span class="qm-live-state'+(bookingChecked?' done':'')+'">'+(bookingChecked?'已報到':'待報到')+'</span></div>'+
@@ -31,7 +34,7 @@
    '</div><div class="qm-live-synced"><span aria-hidden="true">✓</span> 接單狀態集中更新，不用口頭記單</div>'
  };
  const tips={
-  queue:"試按「叫下一位」，顧客手機會同步顯示新的號碼。",
+  queue:"按「叫下一位」，看板和顧客手機會同步顯示新號碼。",
   booking:"試按「確認報到」，預約狀態會立即更新。",
   order:"試按「確認接單」，訂單就會變成製作中。"
  };
@@ -55,9 +58,19 @@
   if(t&&root.contains(t)){setTab(t.dataset.liveTab,false);return}
   const a=e.target.closest("[data-live-action]");
   if(!a||!root.contains(a)||a.disabled)return;
+  if(a.dataset.liveAction==="board"){
+   const panel=root.querySelector(".qm-live-board-panel");
+   if(!panel)return;
+   if(document.fullscreenElement===panel){void document.exitFullscreen?.();return}
+   if(panel.classList.contains("qm-live-board-expanded")){panel.classList.remove("qm-live-board-expanded");return}
+   if(typeof panel.requestFullscreen==="function"){
+    void panel.requestFullscreen().catch(()=>panel.classList.add("qm-live-board-expanded"));
+   }else panel.classList.add("qm-live-board-expanded");
+   return;
+  }
   if(a.dataset.liveAction==="next"&&waiting>0){
    queueNumber++;waiting--;
-   setMessage("已叫 A"+number()+"，店內看板與顧客手機已同步。");
+   setMessage("已叫 A"+number()+"，店內全螢幕看板與顧客手機已同步。");
   }else if(a.dataset.liveAction==="checkin"){
    bookingChecked=true;setMessage("10:30 的預約已報到，後台狀態更新。");
   }else if(a.dataset.liveAction==="accept"){
@@ -65,6 +78,14 @@
   }else return;
   render();
   window.qmMarketingTrack?.("demo_complete",{source:"home",role:"staff"});
+ });
+ document.addEventListener("fullscreenchange",()=>{
+  const panel=root.querySelector(".qm-live-board-panel");
+  const button=panel?.querySelector(".qm-live-board-open");
+  if(button)button.textContent=document.fullscreenElement===panel?"離開全螢幕":"全螢幕看板 ↗";
+ });
+ document.addEventListener("keydown",e=>{
+  if(e.key==="Escape")root.querySelector(".qm-live-board-expanded")?.classList.remove("qm-live-board-expanded");
  });
  root.addEventListener("keydown",e=>{
   const t=e.target.closest("[data-live-tab]");

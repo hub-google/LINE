@@ -228,7 +228,7 @@ try{
      const r=node.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width};
     });
     assert.ok(preview.width>=230&&preview.left>=-2&&preview.right<=width+2,'Merchant dashboard preview fits viewport');
-    assert.match(await page.locator('.hero h1').innerText(),/少接電話/);
+    assert.match(await page.locator('.hero h1').innerText(),/把時間留給生意，.*把雜事留給排隊怪獸。/s);
     assert.ok(await page.getByRole('link',{name:/免費建立店家/}).count()>=1,'Merchant signup must be visible');
    }
    if(name.startsWith('directory.html')||name==='my-records.html'){
@@ -355,9 +355,16 @@ try{
   assert.equal(await workbench.locator('[data-live-tab]').count(),3,'Three real preview modes');
   assert.equal(await workbench.locator('[data-live-current]').innerText(),'A012');
   assert.equal(await workbench.locator('[data-live-mobile]').innerText(),'A012');
+  assert.equal(await workbench.locator('[data-live-board]').innerText(),'A012','Store display starts at same number');
   await workbench.locator('[data-live-action="next"]').click();
   assert.equal(await workbench.locator('[data-live-current]').innerText(),'A013');
   assert.equal(await workbench.locator('[data-live-mobile]').innerText(),'A013');
+  assert.equal(await workbench.locator('[data-live-board]').innerText(),'A013','Fullscreen shop display tracks the call number');
+  await workbench.locator('[data-live-action="board"]').click();
+  await page.waitForFunction(()=>document.fullscreenElement===document.querySelector('.qm-live-board-panel')||document.querySelector('.qm-live-board-panel')?.classList.contains('qm-live-board-expanded'),null,{timeout:5000});
+  assert.equal(await workbench.locator('[data-live-board]').innerText(),'A013','Board presentation keeps current number');
+  await workbench.locator('[data-live-action="board"]').click();
+  await page.waitForFunction(()=>!document.fullscreenElement&&!document.querySelector('.qm-live-board-panel')?.classList.contains('qm-live-board-expanded'),null,{timeout:5000});
   assert.equal(await workbench.locator('[data-live-waiting]').innerText(),'7');
   assert.match(await workbench.locator('.qm-live-feedback').innerText(),/已同步/);
   await workbench.locator('[data-live-tab="booking"]').click();

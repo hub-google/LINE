@@ -33,7 +33,7 @@ test("store-first homepage offers signup and demo while retaining a secondary cu
  for(const href of ["./merchant-register.html?mode=signup","./demo.html?role=merchant","./customer.html","./privacy.html","./terms.html"]){
   assert.ok(landing.includes('href="'+href+'"'),"Missing homepage link: "+href);
  }
- assert.match(landing,/少接電話、少忙登記/);
+ assert.match(landing,/把時間留給生意，<br><em>把雜事留給排隊怪獸。<\/em>/);
  assert.match(landing,/現場與線上即時同步叫號/);
  assert.match(landing,/店員一鍵叫號/);
  assert.doesNotMatch(landing,/href="[^"]*(?:platform-login|view=staff|view=platform)/);
@@ -97,10 +97,16 @@ test("merchant hero shows a working three-mode management preview rather than st
  for(const tab of ["queue","booking","order"])assert.match(landing,new RegExp('data-live-tab="'+tab+'"'));
  assert.match(landing,/data-live-action="next"/);
  assert.match(landing,/data-live-mobile/);
+ assert.match(landing,/data-live-board/);
+ assert.match(landing,/全螢幕叫號看板/);
+ assert.match(landing,/提前點餐/);
  assert.match(landing,/開啟完整操作介面/);
  assert.match(js,/data-live-action/);
  assert.match(js,/data-live-current/);
  assert.match(js,/data-live-mobile/);
+ assert.match(js,/data-live-board/);
+ assert.match(js,/requestFullscreen/);
+ assert.match(js,/fullscreenchange/);
  assert.match(js,/bookingChecked=true/);
  assert.match(js,/orderAccepted=true/);
  assert.match(js,/waiting--/);
@@ -127,7 +133,7 @@ test("merchant homepage eliminates repeated sections and keeps the promise, demo
  assert.equal((main.match(/class="qm-merchant-preview qm-live-workbench"/g)||[]).length,1);
  assert.equal((main.match(/href="\.\/demo\.html\?role=merchant"/g)||[]).length,3,"Hero, preview and industry share one demo page");
  assert.equal((main.match(/href="\.\/merchant-register\.html\?mode=signup"/g)||[]).length,2,"Signup only in hero and setup strip");
- for(const text of ["少接預約電話","少被問叫到幾號","少漏單、少手寫","現場與線上即時同步叫號","顧客手機","免費建立店家"]){
+ for(const text of ["預約、提前點餐","現場與線上同步叫號","全螢幕叫號看板","獨立看板網頁","少點等待與催促","顧客更願意再來","顧客手機","免費建立店家"]){
   assert.ok(main.includes(text),"Missing merchant value: "+text);
  }
  const css=read("saas/assets/marketing/home-compact.css");
@@ -138,6 +144,18 @@ test("merchant homepage eliminates repeated sections and keeps the promise, demo
  assert.match(rawReadFileSync(path.join(root,"saas/home.html"),"utf8"),/home-workbench\.js\?build=__LINE_SAAS_BUILD__/);
 });
 
+
+test("homepage board claim is grounded in the actual dedicated fullscreen store board",()=>{
+ const board=rawReadFileSync(path.join(root,"saas/board.html"),"utf8");
+ const boardScript=rawReadFileSync(path.join(root,"saas/assets/board/main.js"),"utf8");
+ assert.match(board,/id="fullscreen"/);
+ assert.match(board,/全螢幕/);
+ assert.match(boardScript,/requestFullscreen/);
+ assert.match(boardScript,/params\.get\("merchant"\)/);
+ assert.match(landing,/全螢幕叫號看板網頁/);
+ assert.match(landing,/店內電視／投影/);
+ assert.match(landing,/顧客提前預約、先點餐/);
+});
 
 test("merchant SEO remains machine-readable and the test site keeps its own canonical URL",()=>{
  const description=landing.match(/<meta name="description" content="([^"]+)">/);
