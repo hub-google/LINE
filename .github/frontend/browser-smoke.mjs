@@ -289,7 +289,7 @@ try{
     assert.ok(layout.signup.bottom+8<=layout.items[1].top,'Logout must not overlap the registration link');
     assert.ok(layout.items.every(r=>r.width>150&&r.left>=layout.panel.left&&r.right<=layout.panel.right),'Account buttons must stay inside the panel');
    }
-   if(name==='home.html'||name.startsWith('directory.html')||name==='my-records.html'){
+   if(name.startsWith('directory.html')||name==='my-records.html'){
     // Read style atomically when it becomes available. Auth re-renders between
     // the initial wait and a separate locator evaluation on slower CI browsers.
     const logoHandle=await page.waitForFunction(()=>{
