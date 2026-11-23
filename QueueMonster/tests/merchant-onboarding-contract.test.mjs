@@ -185,9 +185,9 @@ test("public headers share navigation while administrator permissions stay isola
  const hq=read("saas/platform-login.html");
  const platform=read("saas/app/platform-view.js");
  const shared=read("saas/app/shared-ui.js");
- for(const html of [homepage,directory]){
-  assert.doesNotMatch(html,/href="[^"]*(?:merchant-register|platform-login|view=staff|view=platform)/);
- }
+ assert.match(homepage,/href="\.\/merchant-register\.html\?mode=signup"/);
+ assert.doesNotMatch(homepage,/href="[^"]*(?:platform-login|view=staff|view=platform)/);
+ assert.doesNotMatch(directory,/href="[^"]*(?:merchant-register|platform-login|view=staff|view=platform)/);
  assert.match(merchant,/id="marketing-header"/,"merchant login uses the common header");
  assert.match(guide,/id="marketing-header"/,"public merchant guide uses shared marketing navigation");
  assert.match(read("saas/assets/marketing/shared-header.js"),/\["搜尋店家","\.\/directory\.html"/);
