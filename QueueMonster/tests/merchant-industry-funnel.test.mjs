@@ -74,7 +74,8 @@ test("DEMO scene/role switch preserves browser deep links and shared account mou
  assert.match(header,/qm:demo-mode-change/);
  assert.match(header,/const merchantPages=new Set/);
  assert.match(header,/querySelector\("\.qm-public-menu nav"\)/);
- assert.match(header,/querySelector\("\.qm-header-cta"\)\.hidden/);
+ assert.match(header,/header\.querySelector\("\.qm-header-cta"\)/);
+ assert.match(header,/cta\.remove\(\)/);
  assert.doesNotMatch(header,/window\.location\.reload/);
  assert.match(auth,/qm:demo-mode-change/);
  assert.match(auth,/return operatorIdentity\|\|lineIdentity/);
