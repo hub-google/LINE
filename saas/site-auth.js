@@ -31,7 +31,7 @@ function portalMode(){
  const page=location.pathname.split("/").pop()||"";
  const view=new URLSearchParams(location.search).get("view");
  if(view==="platform")return "headquarters";
- if(view==="staff"||["home.html","for-merchants.html","merchant-center.html","merchant-register.html","platform-login.html"].includes(page)||(page==="demo.html"&&new URLSearchParams(location.search).get("role")!=="customer"))return "merchant";
+ if(view==="staff"||["home.html","for-merchants.html","merchant-center.html","merchant-register.html","platform-login.html","industry-breakfast.html","industry-salon.html","industry-clinic.html","industry-repair.html"].includes(page)||(page==="demo.html"&&new URLSearchParams(location.search).get("role")!=="customer"))return "merchant";
  return "customer";
 }
 function el(tag,className,text){
@@ -388,6 +388,7 @@ customer.auth.onAuthStateChange(()=>{setTimeout(()=>{void refresh()},0)});
 operator.auth.onAuthStateChange(()=>{setTimeout(()=>{void refresh()},0)});
 window.addEventListener("focus",()=>{if(!document.hidden)void refresh()});
 window.addEventListener("pageshow",()=>{void refresh()});
+window.addEventListener("qm:demo-mode-change",()=>{void refresh()});
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)void refresh()});
 void refresh();
 })();
