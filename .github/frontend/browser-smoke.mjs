@@ -224,18 +224,16 @@ try{
    }
    assert.ok((await page.locator('body').innerText()).trim().length>30,name);
    if(name==='home.html'){
-    const rects=await page.locator('.hero-demo').evaluateAll(nodes=>nodes.map(n=>{
-     const r=n.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width};
-    }));
-    assert.equal(rects.length,2,'Homepage must show booking and queue examples together');
-    assert.ok(rects.every(r=>r.width>=150&&r.left>=-2&&r.right<=width+2),'Hero cards must fit viewport');
-    if(width<=620)assert.ok(rects[1].top>=rects[0].bottom-2,'Mobile examples should stack cleanly');
-    else assert.ok(rects[1].left>=rects[0].right-2,'Desktop examples should display side by side');
-    console.log('Homepage dual-examples layout:',width,JSON.stringify(rects));
+    const preview=await page.locator('.qm-merchant-preview').evaluate(node=>{
+     const r=node.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width};
+    });
+    assert.ok(preview.width>=230&&preview.left>=-2&&preview.right<=width+2,'Merchant dashboard preview fits viewport');
+    assert.match(await page.locator('.hero h1').innerText(),/少一點繁瑣工作/);
+    assert.ok(await page.getByRole('link',{name:/免費建立店家/}).count()>=1,'Merchant signup must be visible');
    }
-   if(name==='home.html'||name.startsWith('directory.html')||name==='my-records.html'){
+   if(name.startsWith('directory.html')||name==='my-records.html'){
     const excluded=await page.locator('a[href*="merchant-register"],a[href*="platform-login"],a[href*="view=staff"],a[href*="view=platform"]').count();
-    assert.equal(excluded,0,'Public portals must not display manager or headquarters links');
+    assert.equal(excluded,0,'Customer service pages must not show merchant or headquarters links');
    }
    if(width===390&&name==='directory.html?mode=search'){
     const geometry=await page.evaluate(()=>({
@@ -266,8 +264,8 @@ try{
     const header=page.locator('#marketing-header .qm-public-header');
     await header.waitFor({state:'attached',timeout:12000});
     assert.deepEqual(await header.locator('.qm-public-nav a').allTextContents(),
-     ['平台總覽','店家功能','顧客功能','常見問題','免登入功能試用','搜尋店家','我的紀錄'],
-     'Both sign-in pages must reuse the site-wide navigation');
+     ['店家首頁','經營效益','產品功能','適用產業','免費體驗','操作教學','顧客版'],
+     'Merchant sign-in pages must use merchant navigation');
     assert.equal(await page.locator('a[href="./?view=platform"]').count(),0,
      'Public header must not expose a privileged administration link');
    }
@@ -325,11 +323,14 @@ try{
    const header=page.locator('.qm-public-header');
    await header.waitFor({state:'attached',timeout:10000});
    const tabs=await header.locator('.qm-public-nav a').allTextContents();
-   assert.deepEqual(tabs,['平台總覽','店家功能','顧客功能','常見問題','免登入功能試用','搜尋店家','我的紀錄'],name+' identical navigation');
-   assert.equal(await header.locator('.qm-public-search,.qm-public-mobile-search').count(),0,name+' no redundant search CTA');
-   assert.equal(await header.locator('.qm-public-nav a').nth(5).getAttribute('href'),'./directory.html',name+' search link');
-   assert.equal(await header.locator('.qm-public-nav a').last().getAttribute('href'),'./my-records.html',name+' distinct history link');
-   assert.equal(await header.locator('.qm-public-menu nav a').count(),7,name+' unique mobile links');
+   const merchant=['home.html','for-merchants.html','demo.html','merchant-center.html'].includes(name);
+   const expected=merchant?
+    ['店家首頁','經營效益','產品功能','適用產業','免費體驗','操作教學','顧客版']:
+    ['顧客首頁','搜尋店家','我的紀錄','使用教學','店家版'];
+   assert.deepEqual(tabs,expected,name+' role-specific navigation');
+   assert.equal(await header.getAttribute('data-header-role'),merchant?'merchant':'customer',name+' correct portal');
+   assert.equal(await header.locator('.qm-public-search,.qm-public-mobile-search').count(),0,name+' no duplicate search CTA');
+   assert.equal(await header.locator('.qm-public-menu nav a').count(),merchant?8:5,name+' role-specific mobile links');
    if(width>=1280){
     const sizes=await header.evaluate(node=>({font:parseFloat(getComputedStyle(node.querySelector('.qm-public-nav a')).fontSize),logo:node.querySelector('.qm-public-logo img').getBoundingClientRect().width}));
     assert.ok(sizes.font>=16&&sizes.logo>=54,name+' enlarged header: '+JSON.stringify(sizes));
