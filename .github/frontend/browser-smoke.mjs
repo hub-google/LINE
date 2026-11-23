@@ -654,7 +654,7 @@ try{
  }
  await page.setViewportSize({width:390,height:844});
  await page.clock.install({time:new Date()});
- await page.goto(baseUrl+'/booking/demo.html',{waitUntil:'load'});
+ await page.goto(baseUrl+'/booking/demo.html?role=customer',{waitUntil:'load'});
  // DEMO starts in the live repair queue; switching to breakfast goes straight to the ordering form.
  assert.match(await page.locator('#root').innerText(),/立即線上取號/);
  await page.locator('[data-scene="breakfast"]').click();
