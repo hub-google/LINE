@@ -107,3 +107,12 @@ body[data-role="customer"] .qm-customer-bottom-links a{font-weight:900;color:#71
  body[data-role="customer"] .qm-customer-search{flex-wrap:wrap}
  body[data-role="customer"] .qm-customer-search button{width:100%}
 }
+
+/* Role-aware shared navigation without changing auth/session widgets. */
+#marketing-header .qm-public-role{font-size:12px;font-weight:850;color:#8c63a5;background:#f2e4f9;padding:4px 8px;border-radius:999px;white-space:nowrap}
+#marketing-header .qm-header-cta{display:inline-flex;align-items:center;justify-content:center;min-height:42px;border-radius:12px;padding:8px 14px;background:#724391;color:#fff;font-size:13px;font-weight:900;text-decoration:none;white-space:nowrap}
+#marketing-header .qm-header-cta:hover{background:#603573}
+#marketing-header .qm-public-header[data-header-role="customer"] .qm-public-quicklinks a{background:#f3e7fa}
+body[data-portal="customer"] #demo-footer-signup,body[data-portal="customer"] #demo-conversion{display:none!important}
+@media(max-width:1530px){#marketing-header .qm-header-cta{display:none}}
+@media(max-width:1240px){#marketing-header .qm-public-role{display:none}}
