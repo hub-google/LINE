@@ -343,23 +343,37 @@ try{
  }
 
 
- // Merchant-first vertical pages fit phone and desktop, maintain conversions and SEO.
+ // Four industries share ONE homepage panel; tab clicks must never navigate.
  for(const width of [1280,390]){
   await page.setViewportSize({width,height:900});
+  await page.goto(baseUrl+'/booking/home.html',{waitUntil:'load',timeout:45000});
+  const switcher=page.locator('#industry-switcher');
+  await switcher.waitFor({state:'visible'});
+  const tabs=switcher.locator('[role="tab"]');
+  assert.equal(await tabs.count(),4);
+  assert.equal(await switcher.locator('.qm-industry-single-cta').count(),1);
+  assert.equal(await switcher.locator('.qm-industry-single-cta').getAttribute('href'),'./demo.html?role=merchant');
+  const originalUrl=page.url();
+  const titles=new Set();
   for(const scene of ['breakfast','salon','clinic','repair']){
-   await page.goto(baseUrl+'/booking/industry-'+scene+'.html',{waitUntil:'load',timeout:45000});
-   const header=page.locator('.qm-public-header');
-   await header.waitFor({state:'attached'});
-   assert.equal(await header.getAttribute('data-header-role'),'merchant','Industry page retains merchant nav');
-   assert.ok((await page.locator('.qm-industry-hero h1').innerText()).length>7,'Industry hero heading');
-   assert.ok(await page.locator('a[href*="demo.html?role=merchant"]').count()>0,'Industry trial CTA');
-   assert.ok(await page.locator('a[href*="merchant-register.html?mode=signup"]').count()>0,'Industry signup CTA');
-   const bounds=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));
-   assert.ok(bounds.document<=bounds.viewport+2,'Industry '+scene+' overflow: '+JSON.stringify(bounds));
-   const events=await page.evaluate(()=>window.dataLayer?.map(item=>item.qm_event));
-   assert.ok(events?.includes('industry_view'),'Industry page dispatches a no-cookie funnel event');
+   const tab=switcher.locator('[data-industry="'+scene+'"]');
+   await tab.click();
+   assert.equal(await tab.getAttribute('aria-selected'),'true',scene+' selected');
+   assert.equal(await switcher.getAttribute('data-industry-current'),scene);
+   titles.add(await switcher.locator('[data-industry-text="title"]').innerText());
+   assert.equal(page.url(),originalUrl,'Switching industry must not open a new URL');
   }
+  assert.equal(titles.size,4,'All four sectors explain distinct merchant benefits');
+  assert.equal(await switcher.locator('a[href*="industry-"]').count(),0);
+  await switcher.locator('[data-industry="breakfast"]').focus();
+  await page.keyboard.press('ArrowDown');
+  assert.equal(await switcher.getAttribute('data-industry-current'),'salon','Keyboard changes sector');
+  const bounds=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));
+  assert.ok(bounds.document<=bounds.viewport+2,'Industry selector overflow: '+JSON.stringify(bounds));
+  const events=await page.evaluate(()=>window.dataLayer?.map(item=>item.qm_event));
+  assert.ok(events?.includes('industry_view'),'Sector clicks should emit no-cookie funnel events');
  }
+ console.log('Four industries share one accessible homepage panel and one DEMO URL.');
 
  // DEMO switching role and scene must update browser URLs and the public header
  // without reloading the page or recreating its shared account mount.

@@ -3,7 +3,7 @@
  const mount=document.getElementById("marketing-header");if(!mount)return;
  const page=location.pathname.split("/").pop();
  const params=new URLSearchParams(location.search);
- const merchantPages=new Set(["home.html","for-merchants.html","merchant-center.html","merchant-register.html","platform-login.html","industry-breakfast.html","industry-salon.html","industry-clinic.html","industry-repair.html"]);
+ const merchantPages=new Set(["home.html","for-merchants.html","merchant-center.html","merchant-register.html","platform-login.html"]);
  const merchant=merchantPages.has(page)||
    (page==="demo.html"&&params.get("role")!=="customer")||
    ((page===""||page==="index.html")&&["staff","platform"].includes(params.get("view")));

@@ -14,52 +14,53 @@ const sitemap=read("saas/sitemap.xml");
 const build=read("../.github/scripts/build-line-saas.mjs");
 const deploy=read("../.github/workflows/line-saas-pages.yml");
 
-test("four industry SEO pages deliver a complete merchant funnel",()=>{
+test("four industries share one interactive merchant homepage and one demo link",()=>{
+ const section=home.match(/<section id="industries"[\s\S]*?<\/section>/)?.[0];
+ assert.ok(section,"Merchant industry section");
+ assert.match(section,/不同行業，同一套排隊怪獸/);
+ assert.match(section,/role="tablist"/);
+ assert.match(section,/role="tabpanel"/);
+ assert.match(section,/id="industry-switcher"/);
+ assert.equal((section.match(/data-industry="(?:breakfast|salon|clinic|repair)"/g)||[]).length,4);
+ assert.equal((section.match(/class="qm-industry-single-cta"/g)||[]).length,1);
+ assert.match(section,/href="\.\/demo\.html\?role=merchant"/);
  for(const sector of sectors){
-  const file="industry-"+sector+".html";
-  const html=read("saas/"+file);
-  assert.match(html,/<meta name="line-saas-build" content="__LINE_SAAS_BUILD__">/,file);
-  assert.match(html,/version-watch\.js\?build=__LINE_SAAS_BUILD__/,file);
-  assert.match(html,/<title>[^<]+<\/title>/,file);
-  assert.match(html,/<meta name="description" content="[^"]{25,}">/,file);
-  assert.ok(html.includes('<link rel="canonical" href="'+origins+file+'">'),file+" canonical");
-  assert.ok(html.includes('<meta property="og:url" content="'+origins+file+'">'),file+" OG URL");
-  assert.match(html,/meta name="twitter:card" content="summary_large_image"/,file);
-  assert.match(html,/name="viewport"/,file);
-  assert.match(html,/data-role="merchant"/,file);
-  assert.match(html,/id="marketing-header"/,file);
-  assert.match(html,/assets\/marketing\/shared-header\.js/,file);
-  assert.match(html,/assets\/marketing\/industry-pages\.css/,file);
-  assert.match(html,/assets\/marketing\/funnel-events\.js/,file);
-  assert.ok(html.includes('href="./demo.html?role=merchant&amp;scene='+sector),file+" demo link");
-  assert.ok(html.includes('href="./merchant-register.html?mode=signup&amp;from=industry&amp;scene='+sector+'"'),file+" signup conversion");
-  assert.ok(home.includes('href="./'+file+'"'),file+" homepage entry");
-  assert.ok(sitemap.includes("<loc>"+origins+file+"</loc>"),file+" sitemap");
-  assert.ok(build.includes('"'+file+'"'),file+" build pipeline");
-  assert.ok(deploy.includes(file),file+" Pages deployment");
-  const scripts=[...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
-  assert.equal(scripts.length,1,file+" must have one JSON-LD script");
-  const data=JSON.parse(scripts[0][1]);
-  assert.equal(data["@context"],"https://schema.org");
-  assert.ok(data["@graph"].some(x=>x["@type"]==="FAQPage"),file+" FAQ structured data");
-  assert.ok(data["@graph"].some(x=>x["@type"]==="WebPage"),file+" webpage structured data");
-  assert.doesNotMatch(html,/href="[^"]*(?:view=platform|platform-login)/,file);
+  assert.match(section,new RegExp('data-industry="'+sector+'"'),sector+" tab");
+  assert.doesNotMatch(section,new RegExp('industry-'+sector+'\.html'),"No duplicated industry URLs");
  }
+ assert.match(home,/assets\/marketing\/industry-switcher\.js\?build=__LINE_SAAS_BUILD__/);
+ assert.doesNotMatch(home,/href="\.\/industry-(?:breakfast|salon|clinic|repair)\.html"/);
 });
 
-test("industry pages share one mobile style sheet, and cross-link other business types",()=>{
- const css=read("saas/assets/marketing/industry-pages.css");
- assert.match(css,/@media\(max-width:900px\)/);
- assert.match(css,/@media\(max-width:600px\)/);
+test("industry selector switches informative copy in place without changing the URL",()=>{
+ const js=read("saas/assets/marketing/industry-switcher.js");
+ const css=read("saas/assets/marketing/dual-portals.css");
+ const syntax=spawnSync(process.execPath,["--check"],{input:js,encoding:"utf8"});
+ assert.equal(syntax.status,0,syntax.stderr);
+ for(const sector of sectors)assert.ok(js.includes(sector+':{'),sector+" source data");
+ for(const role of ["tablist","tabpanel"])assert.ok(home.includes('role="'+role+'"'));
+ assert.match(js,/aria-selected/);
+ assert.match(js,/ArrowRight/);
+ assert.match(js,/ArrowDown/);
+ assert.match(js,/Home/);
+ assert.match(js,/End/);
+ assert.match(js,/textContent=value\[name\]/);
+ assert.match(js,/qmMarketingTrack\?\.\("industry_view"/);
+ assert.doesNotMatch(js,/location\.href|location\.assign|history\.pushState/);
+ assert.match(css,/\.qm-industry-switcher/);
+ assert.match(css,/@media\(max-width:570px\)/);
  assert.match(css,/prefers-reduced-motion/);
+});
+
+test("no separate industry pages are built, indexed or served from GitHub Pages",()=>{
  for(const sector of sectors){
-  const html=read("saas/industry-"+sector+".html");
-  assert.equal((html.match(/<main\b/g)||[]).length,1);
-  assert.equal((html.match(/<footer\b/g)||[]).length,1);
-  assert.equal((html.match(/<details>/g)||[]).length,3);
-  for(const other of sectors.filter(x=>x!==sector))
-   assert.ok(html.includes('href="./industry-'+other+'.html"'),sector+" needs related "+other);
+  const old="industry-"+sector+".html";
+  assert.ok(!build.includes('"'+old+'"'),"Do not rebuild "+old);
+  assert.ok(!sitemap.includes("<loc>"+origins+old+"</loc>"),"Remove old sitemap "+old);
+  assert.ok(deploy.includes('"$pubdir/$product/'+old+'"'),"GitHub Pages deployment retires "+old);
  }
+ assert.match(deploy,/branches: \[main\]/);
+ assert.match(deploy,/for product in booking saas/);
 });
 
 test("DEMO scene/role switch preserves browser deep links and shared account mount",()=>{

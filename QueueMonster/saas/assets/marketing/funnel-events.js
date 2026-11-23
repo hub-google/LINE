@@ -9,8 +9,7 @@
  const params=new URLSearchParams(location.search);
  const safeText=(v,max=50)=>String(v||"").replace(/[^a-zA-Z0-9_-]/g,"").slice(0,max);
  const scene=()=>["breakfast","salon","clinic","repair"].includes(new URLSearchParams(location.search).get("scene"))?new URLSearchParams(location.search).get("scene"):"";
- const source=pathname.startsWith("industry-")?pathname.slice("industry-".length,-".html".length):
-   pathname==="home.html"?"home":pathname==="for-customers.html"?"customer":
+ const source=pathname==="home.html"?"home":pathname==="for-customers.html"?"customer":
    pathname==="for-merchants.html"?"merchant":pathname==="video.html"?"video":
    pathname==="demo.html"?"demo":pathname==="directory.html"?"directory":"unknown";
  function track(type,extra={}){
@@ -30,7 +29,6 @@
  }
  window.qmMarketingTrack=track;
  track("page_view");
- if(source==="breakfast"||source==="salon"||source==="clinic"||source==="repair")track("industry_view");
  if(source==="demo")track("demo_start",{role:params.get("role")==="customer"?"customer":"staff",scene:scene()});
  document.addEventListener("click",event=>{
   const target=event.target?.closest?.("a,button");
