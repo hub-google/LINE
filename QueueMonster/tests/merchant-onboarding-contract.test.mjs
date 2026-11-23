@@ -191,7 +191,7 @@ test("public headers share navigation while administrator permissions stay isola
  assert.doesNotMatch(rawReadFileSync(path.join(root,"saas/directory.html"),"utf8"),/href="[^"]*(?:merchant-register|platform-login|view=staff|view=platform)/);
  assert.match(merchant,/id="marketing-header"/,"merchant login uses the common header");
  assert.match(guide,/id="marketing-header"/,"public merchant guide uses shared marketing navigation");
- assert.match(read("saas/assets/marketing/shared-header.js"),/\["搜尋店家","\.\/directory\.html"/);
+ assert.match(read("saas/assets/marketing/shared-header.js"),/\["搜尋店家","\.\/directory\.html\?mode=search"/);
  assert.match(read("saas/assets/marketing/shared-header.js"),/\["我的紀錄","\.\/my-records\.html"/);
  assert.match(hq,/id="marketing-header"/,"headquarters login uses the common header");
  assert.doesNotMatch(platform,/class="side-item" href="merchant-register\.html/);
