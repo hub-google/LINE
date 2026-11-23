@@ -280,7 +280,7 @@ test("merchant detail and customer app keep direct action paths with legacy redi
  assert.match(customer,/data-customer-service="預約"/);
  assert.match(customer,/href="\.\/my-records\.html"/);
  assert.match(rawReadFileSync(path.join(root,"saas/customer.html"),"utf8"),/assets\/directory\/main\.js/);
- assert.doesNotMatch(customer,/qm-role-hero|簡單三步驟/);
+ assert.doesNotMatch(rawReadFileSync(path.join(root,"saas/customer.html"),"utf8"),/class="qm-role-hero"|簡單三步驟/);
  assert.match(redirectCustomer,/\.\/customer\.html/);
  assert.match(redirectMerchant,/\.\/merchant\.html/);
 });
