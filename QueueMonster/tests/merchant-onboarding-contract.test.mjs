@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "./helpers/source-fs.mjs";
+import {readFileSync as rawReadFileSync} from "node:fs";
 import {spawnSync} from "node:child_process";
 import vm from "node:vm";
 import path from "node:path";
@@ -187,7 +188,7 @@ test("public headers share navigation while administrator permissions stay isola
  const shared=read("saas/app/shared-ui.js");
  assert.match(homepage,/href="\.\/merchant-register\.html\?mode=signup"/);
  assert.doesNotMatch(homepage,/href="[^"]*(?:platform-login|view=staff|view=platform)/);
- assert.doesNotMatch(directory,/href="[^"]*(?:merchant-register|platform-login|view=staff|view=platform)/);
+ assert.doesNotMatch(rawReadFileSync(path.join(root,"saas/directory.html"),"utf8"),/href="[^"]*(?:merchant-register|platform-login|view=staff|view=platform)/);
  assert.match(merchant,/id="marketing-header"/,"merchant login uses the common header");
  assert.match(guide,/id="marketing-header"/,"public merchant guide uses shared marketing navigation");
  assert.match(read("saas/assets/marketing/shared-header.js"),/\["搜尋店家","\.\/directory\.html"/);
