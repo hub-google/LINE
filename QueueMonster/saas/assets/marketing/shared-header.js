@@ -35,7 +35,7 @@
   '<nav class="qm-public-nav" aria-label="'+headerRole+'導覽"><span>'+link(items.slice(0,4))+'</span><span class="qm-public-extra">'+link(items.slice(4))+'</span></nav>'+
   '<nav class="qm-public-quicklinks" aria-label="快速操作">'+link(quick)+'</nav>'+
   '<div id="site-auth-root" class="site-auth-slot qm-public-auth" aria-label="使用者登入狀態"><span class="site-auth-name" role="status">正在確認登入狀態</span></div>'+
-  '<a href="./merchant-register.html?mode=signup" class="qm-header-cta"'+(merchant?'':' hidden')+'>免費建立店家</a>'+
+  (merchant?'<a href="./merchant-register.html?mode=signup" class="qm-header-cta">免費建立店家</a>':'')+
   '<details class="qm-public-mobile"><summary>選單 <span aria-hidden="true">⌄</span></summary><div class="qm-public-menu"><button type="button" class="qm-public-close">關閉 ×</button><nav aria-label="'+headerRole+'手機選單">'+link(menuItems)+'</nav></div></details>'+
  '</div></header>';
  const menu=mount.querySelector(".qm-public-mobile");
@@ -65,7 +65,14 @@
   nav.innerHTML='<span>'+link(currentItems.slice(0,4))+'</span><span class="qm-public-extra">'+link(currentItems.slice(4))+'</span>';
   header.querySelector(".qm-public-quicklinks").innerHTML=link(currentQuick);
   header.querySelector(".qm-public-menu nav").innerHTML=link(currentMenu);
-  header.querySelector(".qm-header-cta").hidden=!asMerchant;
+  let cta=header.querySelector(".qm-header-cta");
+  if(asMerchant&&!cta){
+   cta=document.createElement("a");
+   cta.href="./merchant-register.html?mode=signup";
+   cta.className="qm-header-cta";
+   cta.textContent="免費建立店家";
+   header.querySelector(".qm-public-mobile").before(cta);
+  }else if(!asMerchant&&cta)cta.remove();
  });
 
 })();
