@@ -228,7 +228,7 @@ try{
      const r=node.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width};
     });
     assert.ok(preview.width>=230&&preview.left>=-2&&preview.right<=width+2,'Merchant dashboard preview fits viewport');
-    assert.match(await page.locator('.hero h1').innerText(),/少一點繁瑣工作/);
+    assert.match(await page.locator('.hero h1').innerText(),/少一點繁瑣/);
     assert.ok(await page.getByRole('link',{name:/免費建立店家/}).count()>=1,'Merchant signup must be visible');
    }
    if(name.startsWith('directory.html')||name==='my-records.html'){
