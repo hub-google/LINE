@@ -141,7 +141,7 @@ test('platform reply requires linked identity and merchant proof is scoped to ki
  const wrongShop=await vm.runInContext('recordReplyMessage(globalThis.dbMockValue,"order",globalThis.record.id,"line-user","another",globalThis.proofValue)',ctx);
  assert.equal(wrongShop.type,'text');
  ctx.dbMockValue=dbNoLink;
- const corrupted=await vm.runInContext('recordReplyMessage(globalThis.dbMockValue,"order",globalThis.record.id,"line-user",null,globalThis.proofValue.slice(0,-1)+"x")',ctx);
+ const corrupted=await vm.runInContext('recordReplyMessage(globalThis.dbMockValue,"order",globalThis.record.id,"line-user",null,globalThis.proofValue.slice(0,-1)+(globalThis.proofValue.endsWith("x")?"y":"x"))',ctx);
  assert.equal(corrupted.type,'text');
 });
 test('signed confirmation webhook calls real reply branch, never push',async()=>{
