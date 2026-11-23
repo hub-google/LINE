@@ -9,21 +9,21 @@
 <script src="./assets/home/register-pwa.js?build=__LINE_SAAS_BUILD__"></script>
   <script defer src="./version-watch.js?build=__LINE_SAAS_BUILD__"></script>
   <meta name="theme-color" content="#462B52">
-  <meta name="description" content="排隊怪獸（Queuing Monster）提供台灣店家 LINE 線上預約、現場排隊取號、即時叫號看板、線上點餐與預約取餐服務。適用餐廳、小吃店、早餐店、咖啡廳、診所、牙醫診所、美髮、美容、美甲、寵物服務、健身教練、課程活動及維修服務窗口。支援 QR Code 店家入口、預約時段設定、門市管理、顧客查詢候位與取餐進度，依需求選用預約、叫號或點餐功能。">
+  <meta name="description" content="排隊怪獸幫店家減少電話預約、人工登記與現場詢問，提供線上預約、現場與線上即時同步叫號、線上點餐及店家後台。適合早餐店、診所、美髮、維修服務等門市，免註冊即可試用操作情境。">
   <link rel="canonical" href="https://hub-google.github.io/LINE/booking/home.html">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="排隊怪獸">
   <meta property="og:locale" content="zh_TW">
-  <meta property="og:title" content="線上預約、排隊叫號、線上點餐系統｜排隊怪獸">
-  <meta property="og:description" content="LINE 線上預約、現場排隊取號、即時叫號與線上點餐。適合餐廳、診所、早餐店、美髮美容及各類門市，顧客輕鬆查詢預約、候位及取餐進度。">
+  <meta property="og:title" content="店家線上預約、同步叫號、點餐管理｜排隊怪獸">
+  <meta property="og:description" content="少接電話、少人工登記、現場與線上同步叫號。排隊怪獸讓門市集中管理預約、叫號及點餐，免費體驗店家操作。">
   <meta property="og:url" content="https://hub-google.github.io/LINE/booking/home.html">
   <meta property="og:image" content="https://hub-google.github.io/LINE/booking/pwa-icon-512.png">
   <meta property="og:image:alt" content="排隊怪獸品牌圖示">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="線上預約、排隊叫號、線上點餐系統｜排隊怪獸">
-  <meta name="twitter:description" content="LINE 線上預約、排隊取號、叫號看板、線上點餐及預約取餐，一站管理。">
+  <meta name="twitter:title" content="店家預約、同步叫號、點餐管理｜排隊怪獸">
+  <meta name="twitter:description" content="減少人工登記、現場與線上同步叫號，一站管理店家預約、叫號和點餐。">
   <meta name="twitter:image" content="https://hub-google.github.io/LINE/booking/pwa-icon-512.png">
-  <title>線上預約、排隊叫號、線上點餐系統｜排隊怪獸</title>
+  <title>店家線上預約、同步叫號、點餐管理｜排隊怪獸</title>
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -74,7 +74,7 @@
   <link rel="stylesheet" href="./assets/home/page.css?build=__LINE_SAAS_BUILD__">
 <link rel="stylesheet" href="./assets/home/intro-video.css?build=__LINE_SAAS_BUILD__">
   <link rel="stylesheet" href="./assets/roles/role-pages.css?build=__LINE_SAAS_BUILD__">
-<link rel="stylesheet" href="./site-auth.css"><link rel="stylesheet" href="./monster-world.css?build=__LINE_SAAS_BUILD__"><link rel="stylesheet" href="./assets/marketing/shared-header.css?build=__LINE_SAAS_BUILD__"><script defer src="./assets/marketing/shared-header.js?build=__LINE_SAAS_BUILD__"></script><script defer src="./site-auth.js"></script><link rel="icon" type="image/svg+xml" href="./monster-mascot.svg"></head>
+<link rel="stylesheet" href="./site-auth.css"><link rel="stylesheet" href="./monster-world.css?build=__LINE_SAAS_BUILD__"><link rel="stylesheet" href="./assets/marketing/shared-header.css?build=__LINE_SAAS_BUILD__"><script defer src="./assets/marketing/shared-header.js?build=__LINE_SAAS_BUILD__"></script><script defer src="./site-auth.js"></script><link rel="icon" type="image/svg+xml" href="./monster-mascot.svg"><link rel="stylesheet" href="./assets/marketing/dual-portals.css?build=__LINE_SAAS_BUILD__"></head>
 <body data-monster-page="home">
 <a class="skip" href="#main">跳到主要內容</a>
 <div id="marketing-header"><a href="./home.html">排隊怪獸</a></div>
@@ -82,127 +82,121 @@
   <section class="hero" aria-labelledby="hero-title">
     <div class="wrap hero-grid">
       <div class="hero-copy">
-        <div class="pill"><span class="pill-dot" aria-hidden="true"></span> 門市預約・叫號・點餐系統</div>
-        <h1 id="hero-title">排隊交給怪獸，<br><em>時間留給自己！</em></h1>
-        <ul class="hero-feature-list" aria-label="排隊怪獸三大功能">
-          <li><strong>線上預約</strong><span>選擇日期、時段，快速完成預約</span></li>
-          <li><strong>排隊叫號</strong><span>線上取號，隨時查看等候進度</span></li>
-          <li><strong>線上點餐</strong><span>提前下單，可指定取餐時間</span></li>
+        <div class="pill"><span class="pill-dot" aria-hidden="true"></span> 專為店家打造的預約・叫號・點餐管理工具</div>
+        <h1 id="hero-title">少一點繁瑣工作，<br><em>多一點做生意的時間。</em></h1>
+        <p class="lead">少接電話、少人工登記、少被問「現在叫到幾號」。線上預約、排隊叫號與線上點餐，讓排隊怪獸幫你集中管理。</p>
+        <ul class="hero-feature-list" aria-label="店家可以得到的三大好處">
+          <li><strong>減少人工登記</strong><span>顧客自己選時段，預約集中管理</span></li>
+          <li><strong>現場線上同步叫號</strong><span>店員操作一次，看板與手機即時更新</span></li>
+          <li><strong>提前掌握訂單</strong><span>線上接單與預約取餐，安排更從容</span></li>
         </ul>
         <div class="hero-cta">
-          <a class="btn btn-white" href="./for-merchants.html">我是店家・了解功能 <span class="arrow" aria-hidden="true">›</span></a>
-          <a class="btn btn-outline" href="./for-customers.html">我是顧客・了解功能 <span class="arrow" aria-hidden="true">›</span></a>
+          <a class="btn btn-white" href="./merchant-register.html?mode=signup">免費建立店家 <span class="arrow" aria-hidden="true">›</span></a>
+          <a class="btn btn-outline" href="./demo.html?role=merchant">免註冊體驗店家端 <span class="arrow" aria-hidden="true">›</span></a>
           <button id="watch-intro-video" class="btn btn-outline" type="button" hidden>▶ 觀看品牌介紹影片</button>
           <button id="install-booking-app" class="btn btn-outline" type="button" hidden>安裝到桌面</button>
         </div>
-        <div class="proof"><b aria-hidden="true">✓</b> 手機、平板、電腦皆適用 <span aria-hidden="true">·</span> <b aria-hidden="true">✓</b> 店家資料各自獨立管理</div>
+        <div class="proof"><b aria-hidden="true">✓</b> 手機、平板、電腦皆可管理 <span aria-hidden="true">·</span> <b aria-hidden="true">✓</b> 依需求選用功能</div>
+        <a class="qm-inline-link" href="./for-customers.html">我是顧客，前往預約／取號／點餐 →</a>
       </div>
-      <div class="mock-scene hero-showcase" aria-label="線上預約與現場抽號叫號的操作範例，展示號碼非即時資料">
-        <div class="mock-ring" aria-hidden="true"></div>
-        <div class="hero-demo-grid" aria-label="兩種可獨立使用的服務">
-          <article class="hero-demo hero-demo--booking" aria-label="線上預約範例">
-            <div class="hero-demo-head"><span class="hero-demo-badge">線上預約</span><strong>先選時間，安心到店</strong></div>
-            <div class="hero-demo-body">
-              <div class="hero-demo-location">診所門診</div>
-              <div class="hero-demo-row"><span>預約日期</span><strong>11 月 12 日（四）</strong></div>
-              <div class="hero-demo-field">選擇可預約時段</div>
-              <div class="hero-demo-slots"><span>10:00</span><span class="is-selected">11:30</span><span>14:00</span></div>
-              <div class="hero-demo-action">確認預約</div>
-            </div>
-            <p class="hero-demo-foot">也適合餐廳、髮廊、美容、課程</p>
-          </article>
-          <article class="hero-demo hero-demo--queue" aria-label="現場抽號叫號範例">
-            <div class="hero-demo-head"><span class="hero-demo-badge">抽號與叫號</span><strong>抽號候位，隨時看進度</strong></div>
-            <div class="hero-demo-body">
-              <div class="hero-demo-location">餐廳現場候位</div>
-              <div class="hero-demo-current"><span>目前叫號</span><strong>A012</strong></div>
-              <div class="hero-demo-queue-row"><div><span>我的號碼</span><strong>A019</strong></div><div><span>前方等候</span><strong>6 組</strong></div></div>
-              <div class="hero-demo-action hero-demo-action--queue">查看叫號進度</div>
-            </div>
-            <p class="hero-demo-foot">適合餐廳、小吃店、診所及現場服務窗口</p>
-          </article>
+      <div class="qm-merchant-preview" aria-label="店家後台操作靜態示意，非即時門市資料">
+        <div class="qm-preview-title"><strong>店家營運管理</strong><small>後台畫面示意</small></div>
+        <div class="qm-preview-stats">
+          <div class="qm-preview-stat"><span>線上預約</span><strong>24</strong></div>
+          <div class="qm-preview-stat"><span>現場候位</span><strong>8</strong></div>
+          <div class="qm-preview-stat"><span>待處理訂單</span><strong>5</strong></div>
         </div>
+        <div class="qm-preview-screen">
+          <div class="qm-preview-screen-head">排隊叫號｜現場與線上同步</div>
+          <div class="qm-preview-current"><div><small>目前叫號</small><strong>A012</strong></div><span class="qm-preview-button">叫下一位 ›</span></div>
+          <div class="qm-preview-sync">店內看板與顧客手機顯示相同進度</div>
+        </div>
+        <p class="qm-preview-foot">此區為操作情境示意，點擊「免註冊體驗」可實際操作模擬店家端。</p>
       </div>
     </div>
   </section>
 
+  <section id="benefits" class="qm-section qm-section--alt" aria-labelledby="benefits-title">
+    <div class="wrap">
+      <div class="qm-heading"><span class="qm-eyebrow">經營效益</span><h2 id="benefits-title">店家每天遇到的麻煩，交給怪獸分擔。</h2><p>先讓經營更輕鬆，再讓顧客更方便。</p></div>
+      <div class="qm-benefit-grid">
+        <article class="qm-benefit-card"><span class="qm-benefit-icon" aria-hidden="true">☎</span><div><h3>減少預約電話與人工登記</h3><p>讓顧客自行查詢店家開放時段、送出預約。店家在後台集中查看和管理。</p></div></article>
+        <article class="qm-benefit-card"><span class="qm-benefit-icon" aria-hidden="true">№</span><div><h3>現場與線上即時同步叫號</h3><p>店員一鍵叫號，店內電視看板和顧客手機顯示同步更新；減少重複叫號與櫃檯詢問。</p></div></article>
+        <article class="qm-benefit-card"><span class="qm-benefit-icon" aria-hidden="true">▣</span><div><h3>訂單集中管理，提前安排出餐</h3><p>顧客線上點餐、選擇取餐時間，店家在同一後台處理接單、備餐與取餐狀態。</p></div></article>
+        <article class="qm-benefit-card"><span class="qm-benefit-icon" aria-hidden="true">✓</span><div><h3>營運流程更清楚</h3><p>依需求開啟服務，透過員工權限與紀錄管理門市。LINE 身分驗證可提高惡意預約門檻，但無法完全杜絕。</p></div></article>
+      </div>
+    </div>
+  </section>
 
   <section id="features" class="qm-section qm-overview" aria-labelledby="qm-overview-title">
     <div class="wrap">
-      <div class="qm-heading">
-        <span class="qm-eyebrow">平台總覽</span>
-        <h2 id="qm-overview-title">一個平台，串起店家與顧客</h2>
-        <p>預約、排隊、點餐，從 LINE 或店家連結開始，服務進度隨時可查。</p>
-      </div>
-      <div class="qm-three" aria-label="三大核心功能">
-        <div class="qm-mini">
-          <span class="qm-emoji" aria-hidden="true">▦</span><strong>線上預約</strong><small>預約日期與時段</small>
-          <div class="qm-scenes" aria-label="線上預約適用行業"><span>美髮店</span><span>診所</span><span>SPA 館</span></div>
-        </div>
-        <div class="qm-mini">
-          <span class="qm-emoji" aria-hidden="true">№</span><strong>排隊叫號</strong><small>取號、過號、即時進度</small>
-          <div class="qm-scenes" aria-label="排隊叫號適用行業"><span>餐廳</span><span>維修廠</span><span>服務櫃台</span></div>
-        </div>
-        <div class="qm-mini">
-          <span class="qm-emoji" aria-hidden="true">▤</span><strong>線上點餐</strong><small>接單與預約取餐</small>
-          <div class="qm-scenes" aria-label="線上點餐適用行業"><span>飲料店</span><span>早餐店</span><span>便當店</span></div>
-        </div>
-      </div>
-      <div class="qm-system-map" role="group" aria-label="平台運作流程：店家設定服務，排隊怪獸同步資訊，顧客用 LINE 預約取號點餐，進度同步至手機及店內螢幕">
-        <div class="qm-map-node">
-          <span class="qm-node-label">店家端</span><strong>設定與管理</strong>
-          <small>預約時段・叫號隊列・點餐訂單</small>
-        </div>
-        <div class="qm-connector" aria-hidden="true"><span>↔</span><small>雙向同步</small></div>
-        <div class="qm-map-hub"><img src="./monster-mascot.svg" alt="" width="56" height="56"><strong>排隊怪獸</strong><small>同一平台</small></div>
-        <div class="qm-connector" aria-hidden="true"><span>↔</span><small>服務進度</small></div>
-        <div class="qm-map-node">
-          <span class="qm-node-label">顧客端</span><strong>LINE／QR Code 使用</strong>
-          <small>預約・取號・點餐・查看紀錄</small>
-        </div>
-        <div class="qm-map-output"><strong>即時叫號看板</strong><span>店內電視／投影機</span><span>顧客手機查看</span></div>
+      <div class="qm-heading"><span class="qm-eyebrow">三大核心功能</span><h2 id="qm-overview-title">你需要哪一種，就開哪一種。</h2><p>不用強迫店家一次使用全部功能，選擇符合營運方式的工具即可。</p></div>
+      <div class="qm-three" aria-label="店家可選的三項核心功能">
+        <div class="qm-mini"><span class="qm-emoji" aria-hidden="true">▦</span><strong>線上預約管理</strong><small>設定日期、時段、容量及服務項目，顧客自行預約、店家集中管理。</small><div class="qm-scenes"><span>美髮店</span><span>診所</span><span>美容工作室</span></div></div>
+        <div class="qm-mini"><span class="qm-emoji" aria-hidden="true">№</span><strong>現場與線上同步叫號</strong><small>取號、過號、重叫與即時看板；現場螢幕、顧客手機同步顯示叫號進度。</small><div class="qm-scenes"><span>餐廳</span><span>維修服務</span><span>服務櫃檯</span></div></div>
+        <div class="qm-mini"><span class="qm-emoji" aria-hidden="true">▤</span><strong>線上點餐與預約取餐</strong><small>顧客先點餐，店家集中接單與管理待取、完成等訂單狀態。</small><div class="qm-scenes"><span>早餐店</span><span>飲料店</span><span>外帶餐飲</span></div></div>
       </div>
     </div>
   </section>
-  <section id="use-cases" class="qm-section qm-audience-section" aria-labelledby="qm-roles">
+
+  <section id="sync" class="qm-section qm-section--alt" aria-labelledby="sync-title">
     <div class="wrap">
-      <div class="qm-heading"><span class="qm-eyebrow">依角色快速了解</span><h2 id="qm-roles">你是哪一種使用者？</h2></div>
-      <div class="qm-audiences">
-        <article class="qm-audience qm-merchants">
-          <div class="qm-role-symbol" aria-hidden="true">店</div>
-          <div><span class="qm-node-label">店家</span><h3>少接電話，管理更省力</h3>
-          <ul><li>LINE 身分驗證，降低假預約與棄單風險</li><li>預約、叫號、點餐在同一平台管理</li><li>即時叫號，螢幕投影與手機同步查看</li></ul>
-          <a class="qm-link" href="./for-merchants.html">了解店家功能 <span aria-hidden="true">→</span></a></div>
-        </article>
-        <article class="qm-audience qm-customers">
-          <div class="qm-role-symbol" aria-hidden="true">客</div>
-          <div><span class="qm-node-label">一般消費者</span><h3>少排隊，時間自己安排</h3>
-          <ul><li>不用再打電話詢問可預約時段</li><li>線上取號，手機查看叫號進度</li><li>提前點餐，指定方便的取餐時間</li></ul>
-          <a class="qm-link" href="./for-customers.html">了解顧客功能 <span aria-hidden="true">→</span></a></div>
-        </article>
+      <div class="qm-heading"><span class="qm-eyebrow">同步叫號</span><h2 id="sync-title">店員叫一次，現場、線上同步更新。</h2><p>讓每個人都看得到最新進度，店家不用反覆回答現在叫到幾號。</p></div>
+      <div class="qm-sync-demo" role="group" aria-label="同步叫號示意：店員操作一次，店內看板和顧客手機都顯示 A012">
+        <div class="qm-sync-box"><span>店家操作</span><strong>按下「叫下一位」</strong><b>一鍵叫號</b></div>
+        <span class="qm-sync-arrow" aria-hidden="true">→</span>
+        <div class="qm-sync-box"><span>店內電視／看板</span><strong>目前叫號</strong><b>A012</b></div>
+        <span class="qm-sync-arrow" aria-hidden="true">↔</span>
+        <div class="qm-sync-box"><span>顧客手機</span><strong>目前叫號</strong><b>A012</b></div>
+      </div>
+      <p class="qm-sync-caption">以上是靜態示意；可前往免費 DEMO 操作。LINE 主動通知與即時看板不同，須由店家綁定自己的 LINE OA 才能啟用推播。</p>
+      <div style="text-align:center;margin-top:19px"><a class="qm-button qm-button-primary" style="background:#714193;color:#fff" href="./demo.html?role=merchant">體驗店家叫號操作 →</a></div>
+    </div>
+  </section>
+
+  <section id="industries" class="qm-section" aria-labelledby="industries-title">
+    <div class="wrap">
+      <div class="qm-heading"><span class="qm-eyebrow">產業應用</span><h2 id="industries-title">你的店，適合怎麼用？</h2><p>不同行業都能依自己的服務流程選用功能。</p></div>
+      <div class="qm-industry-grid">
+        <article class="qm-industry-card"><span class="qm-industry-icon" aria-hidden="true">☕</span><h3>早餐店</h3><p>顧客提前點餐、指定取餐時間，減少口頭記單。</p><a href="./demo.html?role=merchant&amp;scene=breakfast">體驗點餐管理 →</a></article>
+        <article class="qm-industry-card"><span class="qm-industry-icon" aria-hidden="true">✂</span><h3>美髮美容</h3><p>顧客自行選擇時段，減少服務中接預約電話。</p><a href="./demo.html?role=merchant&amp;scene=salon">體驗預約管理 →</a></article>
+        <article class="qm-industry-card"><span class="qm-industry-icon" aria-hidden="true">＋</span><h3>診所</h3><p>管理預約與分診間叫號，現場看板和手機同步。</p><a href="./demo.html?role=merchant&amp;scene=clinic">體驗分診間叫號 →</a></article>
+        <article class="qm-industry-card"><span class="qm-industry-icon" aria-hidden="true">⚒</span><h3>維修服務</h3><p>現場取號、按序叫號，減少櫃檯反覆詢問。</p><a href="./demo.html?role=merchant&amp;scene=repair">體驗現場取號 →</a></article>
       </div>
     </div>
   </section>
-  <section id="store-display" class="qm-promo-strip">
-    <div class="wrap qm-promo-inner"><strong>即時叫號畫面，店內外都看得到。</strong><span>電視投影顯示，顧客用手機掌握最新等候進度。</span><a href="./demo.html">操作 DEMO →</a></div>
-  </section>
-  <section id="how-it-works" class="qm-section qm-how">
-    <div class="wrap"><div class="qm-heading"><span class="qm-eyebrow">使用方式</span><h2>三步驟，開始使用</h2></div>
-      <div class="qm-three qm-steps"><div><b>01</b><strong>選擇店家與服務</strong><small>搜尋店家，或掃描 QR Code</small></div><div><b>02</b><strong>LINE 身分驗證</strong><small>預約、取號或線上點餐</small></div><div><b>03</b><strong>隨時查看進度</strong><small>預約紀錄、叫號與取餐狀態</small></div></div>
+
+  <section id="demo" class="qm-section qm-section--alt">
+    <div class="wrap"><div class="qm-heading"><span class="qm-eyebrow">免註冊操作體驗</span><h2>不用先註冊，先試一次店家怎麼操作。</h2><p>從店家端實際操作叫號、預約或接單，再切換顧客端查看服務體驗。DEMO 使用模擬資料，不會影響真實門市。</p></div>
+      <div style="text-align:center"><a class="qm-button qm-button-primary" style="background:#714193;color:#fff" href="./demo.html?role=merchant">立即體驗店家端 →</a></div>
     </div>
   </section>
+
+  <section id="how-it-works" class="qm-section qm-how">
+    <div class="wrap"><div class="qm-heading"><span class="qm-eyebrow">快速開始</span><h2>三步驟，讓自己的店開始使用。</h2></div>
+      <div class="qm-three qm-steps"><div><b>01</b><strong>免費建立店家</strong><small>註冊帳號，建立自己的門市資料。</small></div><div><b>02</b><strong>設定需要的功能</strong><small>選擇預約、叫號或點餐，設定時段與規則。</small></div><div><b>03</b><strong>分享給顧客</strong><small>提供店家連結或 QR Code，讓顧客直接使用服務。</small></div></div>
+    </div>
+  </section>
+
+  <section id="customer-experience" class="qm-section qm-section--alt" aria-labelledby="customer-proof-title">
+    <div class="wrap">
+      <div class="qm-customer-proof"><div><span class="qm-eyebrow">顧客體驗也要好</span><h3 id="customer-proof-title">店家省事，顧客也能少等待。</h3><p>顧客免裝額外 App，就能用 LINE 或店家 QR Code 預約、取號、點餐，隨時看叫號與取餐進度。</p></div><a href="./for-customers.html">查看顧客版 →</a></div>
+    </div>
+  </section>
+
   <section id="faq" class="qm-section qm-faq">
-    <div class="wrap"><div class="qm-heading"><span class="qm-eyebrow">常見問題</span><h2>快速了解</h2></div>
+    <div class="wrap"><div class="qm-heading"><span class="qm-eyebrow">店家常見問題</span><h2>開始使用前，先了解這些。</h2></div>
       <div class="qm-faq-list">
-        <details><summary>沒有 LINE 官方帳號，店家也能使用嗎？</summary><p>可以，店家可使用平台提供的 LINE 入口；各店預約與取號資料仍分開管理。</p></details>
-        <details><summary>預約後會自動取號嗎？</summary><p>不會，預約報到不會自動取號。預約與叫號是獨立服務，依店家設定使用。</p></details>
-        <details><summary>LINE 通知會自動更新叫號嗎？</summary><p>已發送的 LINE 訊息是當時的資訊快照。點進即時叫號看板，才可查看最新進度。</p></details>
+        <details><summary>我只需要排隊叫號，也可以使用嗎？</summary><p>可以。預約、叫號、點餐可依門市需求個別啟用，不必一次使用全部功能。</p></details>
+        <details><summary>沒有 LINE 官方帳號，也能使用嗎？</summary><p>店家仍可使用網頁預約、取號和看板等基本服務；但 LINE 主動通知只支援店家自行綁定的 LINE 官方帳號，平台不代發推播。</p></details>
+        <details><summary>現場和線上同步叫號，需要各叫一次嗎？</summary><p>不用。店員從後台叫號，現場看板與顧客手機的即時叫號畫面會更新。已送出的 LINE 訊息不會隨後續叫號自動改寫。</p></details>
+        <details><summary>需要另外安裝 App 或購買設備嗎？</summary><p>店家可使用手機、平板或電腦的瀏覽器管理；現場要展示大螢幕看板時，需有可開啟網頁的顯示或投影設備。</p></details>
       </div>
     </div>
   </section>
   <section class="qm-final">
-    <div class="wrap qm-final-inner"><div><span class="qm-eyebrow">現在就開始</span><h2>把等待時間，還給自己。</h2></div>
-      <div class="qm-final-actions"><a class="qm-button qm-button-white" href="./demo.html">體驗店家端</a><a class="qm-button qm-button-outline" href="./directory.html?mode=search">搜尋店家</a></div>
+    <div class="wrap qm-final-inner"><div><span class="qm-eyebrow">準備開始？</span><h2>把時間留給服務，把繁瑣交給怪獸。</h2></div>
+      <div class="qm-final-actions"><a class="qm-button qm-button-white" href="./merchant-register.html?mode=signup">免費建立店家</a><a class="qm-button qm-button-outline" href="./demo.html?role=merchant">先體驗店家端</a></div>
     </div>
   </section>
 </main>
