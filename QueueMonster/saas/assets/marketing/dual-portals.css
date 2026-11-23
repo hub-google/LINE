@@ -116,3 +116,7 @@ body[data-role="customer"] .qm-customer-bottom-links a{font-weight:900;color:#71
 body[data-portal="customer"] #demo-footer-signup,body[data-portal="customer"] #demo-conversion{display:none!important}
 @media(max-width:1530px){#marketing-header .qm-header-cta{display:none}}
 @media(max-width:1240px){#marketing-header .qm-public-role{display:none}}
+
+/* On each portal show its relevant guest login, while keeping the shared auth logic intact. */
+#marketing-header .qm-public-header[data-header-role="merchant"] .site-auth-customer-login{display:none}
+#marketing-header .qm-public-header[data-header-role="customer"] .site-auth-merchant-login{display:none}
