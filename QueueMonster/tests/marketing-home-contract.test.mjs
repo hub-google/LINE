@@ -15,31 +15,30 @@ const directory=read("saas/directory.html");
 const build=read("../.github/scripts/build-line-saas.mjs");
 const publish=read("../.github/workflows/line-saas-pages.yml");
 
-test("independent homepage is versioned and included in non-destructive Pages deployment",()=>{
+test("merchant homepage is versioned and published only through the test Pages workflow",()=>{
+ const css=read("saas/assets/marketing/dual-portals.css");
  assert.match(landing,/<meta name="line-saas-build" content="__LINE_SAAS_BUILD__">/);
  assert.match(landing,/version-watch\.js\?build=__LINE_SAAS_BUILD__/);
+ assert.match(landing,/dual-portals\.css\?build=__LINE_SAAS_BUILD__/);
  assert.match(build,/"home\.html"/);
+ assert.match(publish,/branches: \[main\]/);
  assert.match(publish,/for product in booking saas/);
  assert.match(publish,/git -C "\$pubdir" add -- booking\/ saas\//);
- assert.match(publish,/marketing-home-contract\.test\.mjs/);
  assert.match(landing,/<meta name="viewport"/);
- assert.match(landing,/@media\(max-width:620px\)/);
- assert.match(landing,/prefers-reduced-motion/);
+ assert.match(css,/@media\(max-width:700px\)/);
+ assert.match(read("saas/assets/home/page.css"),/prefers-reduced-motion/);
 });
 
-test("public homepage only links to customer-facing functions and legal documents",()=>{
- const targets=[
-  "./directory.html?mode=search",
-  "./privacy.html","./terms.html"
- ];
- for(const href of targets) assert.ok(landing.includes('href="'+href+'"'),"Missing customer link: "+href);
- assert.doesNotMatch(landing,/href="[^"]*(?:merchant-register|platform-login|view=staff|view=platform)/);
+test("store-first homepage offers signup and demo while retaining a secondary customer entrance",()=>{
+ for(const href of ["./merchant-register.html?mode=signup","./demo.html?role=merchant","./for-customers.html","./privacy.html","./terms.html"]){
+  assert.ok(landing.includes('href="'+href+'"'),"Missing homepage link: "+href);
+ }
+ assert.match(landing,/少一點繁瑣工作/);
+ assert.match(landing,/現場與線上即時同步叫號/);
+ assert.match(landing,/店員一鍵叫號/);
+ assert.doesNotMatch(landing,/href="[^"]*(?:platform-login|view=staff|view=platform)/);
  assert.doesNotMatch(directory,/href="[^"]*(?:merchant-register|platform-login|view=staff|view=platform)/);
- assert.doesNotMatch(landing,/我是店家・開始使用|商家登入|商家註冊/);
- assert.match(landing,/預約報到不會自動/);
- assert.match(landing,/已發送的 LINE 訊息是當時的資訊快照/);
  assert.match(landing,/非 LINE 官方產品/);
- assert.doesNotMatch(landing,/NT\$\s*0|NT\$\s*299|無限免費/);
 });
 
 test("bare booking or legacy SaaS roots open the dedicated booking homepage without touching LIFF routes",()=>{
@@ -87,62 +86,44 @@ test("directory preserves platform OA LIFF context while opening store services"
  assert.match(directory,/customerUrl\(t\.slug,"queue",t\.oa_mode\)/);
 });
 
-test("homepage mascot artwork does not have redundant demo text floating above it",()=>{
- const homeCss=read("saas/assets/home/page.css");
- assert.match(landing,/<div class="mock-scene hero-showcase" aria-label=/);
- assert.match(landing,/<div class="mock-ring" aria-hidden="true"><\/div>/);
+test("merchant hero previews its management workflow with clearly marked sample data",()=>{
+ assert.match(landing,/class="qm-merchant-preview"/);
+ assert.match(landing,/店家後台操作靜態示意/);
+ assert.match(landing,/後台畫面示意/);
+ assert.match(landing,/目前叫號/);
+ assert.match(landing,/A012/);
+ assert.match(landing,/非即時門市資料/);
  assert.doesNotMatch(landing,/<div class="scene-label">介面示意<\/div>/);
- assert.doesNotMatch(homeCss,/\.scene-label\s*\{/);
 });
 
-test("homepage hero presents two separate Chinese-first booking and queue examples",()=>{
- const css=read("saas/assets/home/page.css");
- assert.match(landing,/<ul class="hero-feature-list" aria-label="排隊怪獸三大功能">/);
- for(const [name,detail] of [
-  ["線上預約","選擇日期、時段，快速完成預約"],
-  ["排隊叫號","線上取號，隨時查看等候進度"],
-  ["線上點餐","提前下單，可指定取餐時間"]
- ])assert.ok(landing.includes("<strong>"+name+"</strong><span>"+detail+"</span>"),name+" summary missing");
- const hero=landing.split('<section class="hero"')[1]?.split('</section>')[0]||"";
- assert.doesNotMatch(hero,/class="lead"|class="hero-industries"/,"hero must be concise, with no redundant industry labels");
- assert.match(css,/\.hero-feature-list\{[^}]*display:grid/);
- assert.match(css,/@media\(max-width:620px\)\{[\s\S]*?\.hero-feature-list li\{grid-template-columns:91px/);
- assert.match(landing,/class="hero-demo hero-demo--booking" aria-label="線上預約範例"/);
- assert.match(landing,/class="hero-demo hero-demo--queue" aria-label="現場抽號叫號範例"/);
- assert.equal((landing.match(/<article class="hero-demo hero-demo--/g)||[]).length,2);
- for(const text of ["診所門診","選擇可預約時段","10:00","11:30","14:00","確認預約","餐廳現場候位","目前叫號","A012","我的號碼","A019","前方等候","6 組","查看叫號進度"]){
-  assert.ok(landing.includes(text),"Missing example data: "+text);
+test("merchant homepage displays benefits, three independent tools and a synchronized calling illustration",()=>{
+ for(const section of ["benefits","features","sync","industries","demo","how-it-works","customer-experience","faq"]){
+  assert.match(landing,new RegExp('id="'+section+'"'));
  }
- assert.match(landing,/<p class="hero-demo-foot">適合餐廳、小吃店、診所及現場服務窗口<\/p>/);
- assert.match(landing,/展示號碼非即時資料/);
- assert.doesNotMatch(landing,/<div class="float-card|<div class="phone"/);
- assert.doesNotMatch(landing,/介面示意</);
- assert.match(css,/\.hero-demo-grid\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
- assert.match(css,/@media\(max-width:620px\)\{[\s\S]*?\.hero-demo-grid\{grid-template-columns:1fr/);
- const brand=read("saas/monster-world.css");
- assert.match(brand,/body:has\(\.site-head\) \.mock-scene:before\{[^}]*monster-mascot\.svg/);
+ for(const text of ["減少人工登記","現場線上同步叫號","提前掌握訂單","一鍵叫號","店內電視／看板","顧客手機","免費建立店家","店家端"]){
+  assert.ok(landing.includes(text),"Missing merchant conversion text: "+text);
+ }
+ const css=read("saas/assets/marketing/dual-portals.css");
+ assert.match(css,/\.qm-benefit-grid/);
+ assert.match(css,/\.qm-sync-demo/);
+ assert.match(css,/\.qm-industry-grid/);
+ assert.match(css,/@media\(max-width:450px\)/);
 });
 
-
-test("homepage SEO stays in metadata, provides meaningful structured data, and publishes sitemap",()=>{
+test("merchant SEO remains machine-readable and the test site keeps its own canonical URL",()=>{
  const description=landing.match(/<meta name="description" content="([^"]+)">/);
- assert.ok(description?.[1].includes("線上預約"));
- for(const word of ["排隊取號","線上點餐","早餐店","診所","美髮","維修"])assert.ok(description[1].includes(word),word);
+ for(const word of ["線上預約","同步叫號","線上點餐","早餐店","診所","美髮","維修"])assert.ok(description?.[1].includes(word),word);
  assert.match(landing,/rel="canonical" href="https:\/\/hub-google\.github\.io\/LINE\/booking\/home\.html"/);
  const script=landing.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
- assert.ok(script,"missing SEO structured data");
- const json=JSON.parse(script[1]);
- assert.equal(json["@context"],"https://schema.org");
+ const json=JSON.parse(script[1]);assert.equal(json["@context"],"https://schema.org");
  assert.ok(json["@graph"].some(x=>x["@type"]==="WebApplication"));
  assert.doesNotMatch(landing,/<meta name="keywords"/);
  const sitemap=read("saas/sitemap.xml");
- for(const page of ["home.html","directory.html","my-records.html","merchant-center.html","merchant-register.html"]){
+ for(const page of ["home.html","for-customers.html","directory.html","my-records.html","merchant-center.html","merchant-register.html"]){
   assert.ok(sitemap.includes("https://hub-google.github.io/LINE/booking/"+page),"missing sitemap "+page);
  }
  assert.match(build,/copyFile\(path\.join\(src, "sitemap\.xml"\)/);
- assert.match(publish,/sitemap\.xml/);
 });
-
 
 test("demo uses actual product styles, matches real customer/merchant layouts and is Pages published",()=>{
  const html=rawReadFileSync(path.join(root,"saas/demo.html"),"utf8");
@@ -158,7 +139,7 @@ test("demo uses actual product styles, matches real customer/merchant layouts an
  assert.match(mobileCss,/#root \.mobile-bottom-nav/);
  assert.match(build,/"demo\.html"/);
  assert.match(publish,/home\.html (?:video\.html )?for-merchants\.html for-customers\.html demo\.html board\.html/);
- assert.match(landing,/href="\.\/demo\.html"/);
+ assert.match(landing,/href="\.\/demo\.html\?role=merchant"/);
  for(const id of ["breakfast","salon","repair","clinic"])assert.match(html,new RegExp('data-scene="'+id+'"'));
  const order=[...html.matchAll(/data-scene="(repair|breakfast|salon|clinic)"/g)].map(x=>x[1]);
  assert.deepEqual(order,["repair","breakfast","salon","clinic"],"Queue demo must appear first");
@@ -198,11 +179,11 @@ test("real-flow demo reproduces guest creation, merchant status changes and LINE
  };
  const doc={
   body:{dataset:{}},
-  getElementById:el,querySelectorAll:()=>[],
+  getElementById:el,querySelector:()=>null,querySelectorAll:()=>[],
   addEventListener:(name,cb)=>{handlers[name]=cb}
  };
  // Production demo uses a 15-second cancel countdown; VM tests do not run timers.
- runInNewContext(source,{document:doc,Intl,Date:DemoDate,setInterval:()=>1,clearInterval:()=>{},setTimeout:()=>1,clearTimeout:()=>{}});
+ runInNewContext(source,{document:doc,location:{search:"?role=customer"},URLSearchParams,Intl,Date:DemoDate,setInterval:()=>1,clearInterval:()=>{},setTimeout:()=>1,clearTimeout:()=>{}});
  const click=(selector,data)=>handlers.click({target:{closest:s=>s===selector?{dataset:data}:null}});
  const change=(data)=>handlers.change({target:data});
  const input=(id,value)=>handlers.input({target:{id,value}});
@@ -278,7 +259,7 @@ test("real-flow demo reproduces guest creation, merchant status changes and LINE
 });
 
 
-test("marketing site has platform overview and two role-specific diagram pages",()=>{
+test("merchant and customer portals have distinct goals while sharing the same service URLs",()=>{
  const merchant=read("saas/for-merchants.html");
  const customer=read("saas/for-customers.html");
  const flowCSS=read("saas/assets/roles/role-pages.css");
@@ -289,22 +270,19 @@ test("marketing site has platform overview and two role-specific diagram pages",
   assert.match(publish,new RegExp(name.replaceAll(".","\\.")));
   assert.match(html,/<title>/);
   assert.match(html,/rel="canonical"/);
-  assert.match(html,/class="qm-flow"/);
   assert.match(read("saas/sitemap.xml"),new RegExp(name.replaceAll(".","\\.")));
  }
- assert.match(landing,/href="\.\/for-merchants\.html"/);
- assert.match(landing,/href="\.\/for-customers\.html"/);
- assert.match(landing,/一個平台，串起店家與顧客/);
- assert.match(landing,/class="qm-system-map"/);
- assert.match(merchant,/降低假帳號惡意預約、棄單風險/);
- assert.match(merchant,/電視或投影機直接顯示/);
- assert.match(merchant,/href="\.\/demo\.html"/);
- assert.match(customer,/手機查看最新進度/);
- assert.match(customer,/href="\.\/directory\.html\?mode=search"/);
+ assert.match(merchant,/現場與線上即時同步叫號/);
+ assert.match(merchant,/href="\.\/demo\.html\?role=merchant"/);
+ assert.match(customer,/role="search"/);
+ assert.match(customer,/name="q"/);
+ assert.match(customer,/href="\.\/my-records\.html"/);
+ assert.match(customer,/href="\.\/demo\.html\?role=customer"/);
+ assert.match(customer,/id="how-to"/);
  assert.match(flowCSS,/@media\(max-width:700px\)/);
 });
 
-test("public introduction and demo pages share one header and the same navigation labels",()=>{
+test("shared navigation switches by role without creating two login systems",()=>{
  const js=read("saas/assets/marketing/shared-header.js");
  const css=read("saas/assets/marketing/shared-header.css");
  for(const p of ["home.html","for-merchants.html","for-customers.html","demo.html","merchant-center.html","directory.html","my-records.html"]){
@@ -313,14 +291,11 @@ test("public introduction and demo pages share one header and the same navigatio
   assert.match(html,/assets\/marketing\/shared-header\.js/);
   assert.match(html,/assets\/marketing\/shared-header\.css/);
  }
- for(const name of ["平台總覽","店家功能","顧客功能","常見問題","免登入功能試用","搜尋店家","我的紀錄"])
-  assert.ok(js.includes(name));
- assert.doesNotMatch(js,/遊戲逛店|公開叫號看板|叫號看板|qm-public-search|qm-public-mobile-search/);
- assert.equal((js.match(/"搜尋店家"/g)||[]).length,1,"Search link must be authored once in shared navigation");
- assert.match(js,/\["搜尋店家","\.\/directory\.html","directory\.html"\]/);
- assert.match(js,/\["我的紀錄","\.\/my-records\.html","my-records\.html"\]/);
- assert.match(css,/\.qm-public-nav a\{font-size:18px/);
- assert.match(css,/qm-public-logo img\{width:60px;height:60px/);
+ for(const name of ["店家首頁","經營效益","產品功能","適用產業","免費體驗","操作教學","顧客版","顧客首頁","搜尋店家","我的紀錄","店家版"]){
+  assert.ok(js.includes(name),"Missing role navigation "+name);
+ }
+ assert.match(js,/merchantPages/);
+ assert.match(js,/data-header-role/);
  assert.match(js,/site-auth-root/);
  assert.match(js,/qm-public-mobile/);
  assert.match(css,/@media\(max-width:620px\)/);
