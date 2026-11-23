@@ -45,7 +45,10 @@ const make = () => ({
  repair:{tickets:[{id:"R012",name:"張先生",service:"手機維修",status:"CALLED",party:1},{id:"R013",name:"李小姐",service:"電池更換",status:"WAITING",party:1},{id:"R014",name:"王先生",service:"檢測諮詢",status:"WAITING",party:1}],seq:15,current:"R012"},
  clinic:{bookings:[{id:"P001",name:"王小姐",phone:"0912000005",unit:"1診",service:"小兒科門診",date:today(),time:"09:30",status:"CONFIRMED",ticket:""},{id:"P002",name:"林先生",phone:"0912000006",unit:"2診",service:"小兒科門診",date:today(),time:"14:00",status:"CHECKED_IN",ticket:"C2-002"},{id:"P003",name:"許小姐",phone:"0912000007",unit:"3診",service:"皮膚科門診",date:today(),time:"10:30",status:"CHECKED_IN",ticket:"C3-003"}],tickets:[{id:"C1-001",name:"陳先生",unit:"1診",status:"CALLED",party:1},{id:"C2-002",name:"林先生",unit:"2診",status:"WAITING",party:1},{id:"C3-003",name:"許小姐",unit:"3診",status:"WAITING",party:1}],seq:4,bookingSeq:4,current:{"1診":"C1-001","2診":"","3診":""}}
 });
-let data=make(),scene="repair",role="customer",tab="queue",room="1診",detailKind="",detailId="",detailEditing=false,review=false,receipt="",lastOwn="",newNotice="",notifyOpen=false,notes=[],cart={},method="scheduled",showBoard=false,bookingFilter="";
+const demoParams=new URLSearchParams(location.search);
+const initialScene=Object.prototype.hasOwnProperty.call(metadata,demoParams.get("scene"))?demoParams.get("scene"):"repair";
+const initialRole=demoParams.get("role")==="customer"?"customer":"staff";
+let data=make(),scene=initialScene,role=initialRole,tab=initialRole==="customer"?primaryTab[initialScene]:staffTabs[initialScene],room="1診",detailKind="",detailId="",detailEditing=false,review=false,receipt="",lastOwn="",newNotice="",notifyOpen=false,notes=[],cart={},method="scheduled",showBoard=false,bookingFilter="";
 const ownedIds={breakfast:new Set(),salon:new Set(),repair:new Set(),clinic:new Set()};
 let draft={name:"",phone:"",phoneType:"mobile",phoneArea:"02",phoneLocal:"",day:later(1),time:"08:00",slot:"14:00",qty:1,unit:"Ava",service:"洗剪",party:1,note:""};
 function current(){return data[scene];}
@@ -503,4 +506,10 @@ setInterval(()=>{
  }
 },1000);
 resetDraft();render();
+const introTitle=document.querySelector(".demo-intro h1");
+const introText=document.querySelector(".demo-intro p");
+if(initialRole==="customer"){
+ if(introTitle)introTitle.textContent="預約、取號、點餐，先體驗看看。";
+ if(introText)introText.textContent="免登入試用四種店家情境，直接操作預約、取號或點餐。此頁使用模擬資料，不會送出真實服務或 LINE 訊息。";
+}
 })();
