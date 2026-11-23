@@ -27,7 +27,10 @@
  }
  function updateLinks(){if(mainLink)mainLink.href=registerUrl();if(footerLink)footerLink.href=registerUrl();}
  function hide(){panel.hidden=true;}
+ function isCustomerMode(){return document.body.dataset.portal==="customer";}
+ function syncRoleView(){if(footerLink)footerLink.hidden=isCustomerMode();if(isCustomerMode())hide();}
  function show(message){
+  if(isCustomerMode())return;
   if(title)title.textContent=message;
   updateLinks();
   panel.hidden=false;
@@ -53,6 +56,7 @@
  document.addEventListener("click",event=>{
   const target=event.target;
   if(!(target instanceof Element))return;
+  if(target.closest("[data-role]")){queueMicrotask(syncRoleView);return;}
   if(target.closest("[data-scene]")){hide();queueMicrotask(updateLinks);return;}
   const action=target.closest("[data-act]")?.dataset.act;
   if(action==="dismiss-conversion"||action==="reset"){hide();return;}
@@ -64,4 +68,5 @@
   }
  });
  updateLinks();
+ syncRoleView();
 })();
