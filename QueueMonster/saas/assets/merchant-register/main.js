@@ -58,6 +58,7 @@ async function requestSignupEmail(email){
   data:{app:"queue-monster",queue_monster_password_pending:true}
  }});
  if(error)throw error;
+ window.qmMarketingTrack?.("signup_email_requested");
  lastEmailSentAt=Date.now();
 }
 const setMode=(mode)=>{

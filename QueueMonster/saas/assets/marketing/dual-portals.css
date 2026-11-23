@@ -120,3 +120,6 @@ body[data-portal="customer"] #demo-footer-signup,body[data-portal="customer"] #d
 /* On each portal show its relevant guest login, while keeping the shared auth logic intact. */
 #marketing-header .qm-public-header[data-header-role="merchant"] .site-auth-customer-login{display:none}
 #marketing-header .qm-public-header[data-header-role="customer"] .site-auth-merchant-login{display:none}
+
+/* Dynamic DEMO role toggle: honor the hidden CTA even with explicit display rules. */
+#marketing-header .qm-header-cta[hidden]{display:none!important}

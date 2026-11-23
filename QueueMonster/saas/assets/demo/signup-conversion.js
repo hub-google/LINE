@@ -32,6 +32,7 @@
  function show(message){
   if(isCustomerMode())return;
   if(title)title.textContent=message;
+  window.qmMarketingTrack?.("demo_complete",{role:"staff",scene:selectedScene()});
   updateLinks();
   panel.hidden=false;
  }

@@ -50,6 +50,26 @@ const initialScene=Object.prototype.hasOwnProperty.call(metadata,demoParams.get(
 const initialRole=demoParams.get("role")==="customer"?"customer":"staff";
 let data=make(),scene=initialScene,role=initialRole,tab=initialRole==="customer"?primaryTab[initialScene]:staffTabs[initialScene],room="1診",detailKind="",detailId="",detailEditing=false,review=false,receipt="",lastOwn="",newNotice="",notifyOpen=false,notes=[],cart={},method="scheduled",showBoard=false,bookingFilter="";
 const ownedIds={breakfast:new Set(),salon:new Set(),repair:new Set(),clinic:new Set()};
+function syncDemoLink(eventName=""){
+ if(typeof window==="undefined"||typeof history==="undefined"||typeof CustomEvent==="undefined")return;
+ const url=new URL(location.href);
+ url.searchParams.set("role",role==="customer"?"customer":"merchant");
+ url.searchParams.set("scene",scene);
+ history.replaceState(null,"",url.pathname+url.search+url.hash);
+ window.dispatchEvent(new CustomEvent("qm:demo-mode-change",{detail:{role,scene}}));
+ if(eventName)window.qmMarketingTrack?.(eventName,{role,scene});
+}
+function updateIntro(){
+ const title=document.querySelector(".demo-intro h1"),summary=document.querySelector(".demo-intro p");
+ if(role==="customer"){
+  if(title)title.innerHTML="預約、取號、點餐，<span>先體驗看看。</span>";
+  if(summary)summary.textContent="免登入試用四種店家情境，直接操作預約、取號或點餐。所有資料均為模擬，不會送出真實服務或 LINE 訊息。";
+ }else{
+  if(title)title.innerHTML="你的店，也能<span>更從容。</span>";
+  if(summary)summary.textContent="先以店家身分體驗接單、預約管理或同步叫號，再切換顧客端比較使用流程。這是獨立模擬，不會修改真實門市資料或推播 LINE。";
+ }
+}
+
 let draft={name:"",phone:"",phoneType:"mobile",phoneArea:"02",phoneLocal:"",day:later(1),time:"08:00",slot:"14:00",qty:1,unit:"Ava",service:"洗剪",party:1,note:""};
 function current(){return data[scene];}
 function status(v){return '<span class="tag '+(["COMPLETED","CONFIRMED","ACCEPTED","READY","CHECKED_IN"].includes(v)?"ok":["REJECTED","PASSED","CANCELLED"].includes(v)?"warn":"")+'">'+esc(statusName[v]||v)+'</span>';}
@@ -343,7 +363,7 @@ function resetDraft(){draft={name:"",phone:"",phoneType:"mobile",phoneArea:"02",
 function setScene(s){if(!Object.prototype.hasOwnProperty.call(metadata,s))return;scene=s;tab=role==="customer"?primaryTab[s]:staffTabs[s];room="1診";lastOwn="";
  const previous=[...(data[s].tickets||[]),...(data[s].bookings||[]),...(data[s].orders||[])].filter(x=>ownedIds[s].has(x.id));
  if(previous.length)lastOwn=previous[previous.length-1].id;
- newNotice="";notes=[];notifyOpen=false;showBoard=false;bookingFilter="";detailKind="";detailId="";detailEditing=false;resetDraft();render();}
+ newNotice="";notes=[];notifyOpen=false;showBoard=false;bookingFilter="";detailKind="";detailId="";detailEditing=false;resetDraft();render();syncDemoLink("demo_scene");}
 function inform(s){newNotice=s;render();}
 function noticeItem(obj,kind){notifyFor(kind,obj);render();}
 function find(type,id){return current()[type]?.find(o=>o.id===id);}
@@ -351,7 +371,7 @@ function contactReady(){return !!draft.name.trim()&&/^09\d{8}$/.test(draft.phone
 function requireContact(){if(contactReady())return true;inform("請先輸入預約姓名及有效的 09 開頭十碼手機號碼（試用可用 0912345678）。");return false;}
 document.addEventListener("click",e=>{
  const sceneBtn=e.target.closest("[data-scene]");if(sceneBtn){setScene(sceneBtn.dataset.scene);return;}
- const roleBtn=e.target.closest("[data-role]");if(roleBtn){role=roleBtn.dataset.role;tab=role==="customer"?primaryTab[scene]:staffTabs[scene];newNotice="";review=false;notifyOpen=false;render();return;}
+ const roleBtn=e.target.closest("[data-role]");if(roleBtn){role=roleBtn.dataset.role;tab=role==="customer"?primaryTab[scene]:staffTabs[scene];newNotice="";review=false;notifyOpen=false;render();updateIntro();syncDemoLink("demo_role");return;}
  const navBtn=e.target.closest("[data-tab]");if(navBtn){tab=navBtn.dataset.tab;newNotice="";review=false;render();return;}
  const button=e.target.closest("[data-act]");if(!button)return;
  const a=button.dataset.act,id=button.dataset.id,value=button.dataset.value,d=current();
@@ -505,11 +525,5 @@ setInterval(()=>{
   if(newlyReady.length){newlyReady.forEach(o=>{o.staffShown=true;});render();}
  }
 },1000);
-resetDraft();render();
-const introTitle=document.querySelector(".demo-intro h1");
-const introText=document.querySelector(".demo-intro p");
-if(initialRole==="customer"){
- if(introTitle)introTitle.textContent="預約、取號、點餐，先體驗看看。";
- if(introText)introText.textContent="免登入試用四種店家情境，直接操作預約、取號或點餐。此頁使用模擬資料，不會送出真實服務或 LINE 訊息。";
-}
+resetDraft();render();updateIntro();syncDemoLink();
 })();

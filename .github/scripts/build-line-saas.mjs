@@ -8,8 +8,10 @@ const sha = (process.env.GITHUB_SHA || "").trim();
 if (!/^[0-9a-f]{40}$/i.test(sha)) throw Error("GITHUB_SHA must be the deployment commit SHA");
 const src = path.resolve("QueueMonster/saas");
 const dest = path.resolve(process.argv[2] || "line-saas-dist");
-const pages = ["index.html", "template.html", "home.html", "video.html", "for-merchants.html", "for-customers.html", "demo.html", "board.html", "pickup-board.html", "directory.html", "my-records.html", "merchant-register.html", "platform-login.html", "merchant-center.html", "privacy.html", "terms.html"];
+const pages = ["index.html", "template.html", "home.html", "video.html", "for-merchants.html", "for-customers.html", "industry-breakfast.html", "industry-salon.html", "industry-clinic.html", "industry-repair.html", "demo.html", "board.html", "pickup-board.html", "directory.html", "my-records.html", "merchant-register.html", "platform-login.html", "merchant-center.html", "privacy.html", "terms.html"];
 const placeholder = "__LINE_SAAS_BUILD__";
+// Test stays on GitHub Pages; a later approved release can swap crawlable origins.
+const webOrigin=(process.env.QUEUE_MONSTER_SITE_URL||"https://hub-google.github.io/LINE/booking").replace(/\/$/,"");
 
 await mkdir(dest, {recursive:true});
 const frontendPages=await buildFrontend(src,dest,pages);
@@ -20,9 +22,7 @@ for (const name of pages) {
   }
   // The independent share page needs absolute, publicly crawlable OG links.
   // A release build points to the official domain; test builds point to Pages.
-  const webOrigin=(process.env.QUEUE_MONSTER_SITE_URL||"https://hub-google.github.io/LINE/booking").replace(/\/$/,"");
-  const addressed=name==="video.html"?
-    html.replaceAll("https://hub-google.github.io/LINE/booking",webOrigin):html;
+  const addressed=html.replaceAll("https://hub-google.github.io/LINE/booking",webOrigin);
   const versioned=addressed.replaceAll(placeholder,sha)
     .replaceAll('href="./site-auth.css"','href="./site-auth.css?build='+sha+'"')
     .replaceAll('src="./site-auth.js"','src="./site-auth.js?build='+sha+'"');
@@ -88,6 +88,10 @@ await copyFile(path.join(src,"vendor/QR-CODE-LICENSE"),path.join(dest,"vendor/QR
 
 await copyFile(path.join(src, "manifest.webmanifest"), path.join(dest, "manifest.webmanifest"));
 await copyFile(path.join(src, "sitemap.xml"), path.join(dest, "sitemap.xml"));
+if(webOrigin!=="https://hub-google.github.io/LINE/booking"){
+ const sitemap=await readFile(path.join(dest,"sitemap.xml"),"utf8");
+ await writeFile(path.join(dest,"sitemap.xml"),sitemap.replaceAll("https://hub-google.github.io/LINE/booking",webOrigin),"utf8");
+}
 await copyFile(path.join(src, "offline.html"), path.join(dest, "offline.html"));
 const worker = await readFile(path.join(src, "pwa-sw.js"), "utf8");
 if (!worker.includes(placeholder)) throw Error("PWA service worker missing version placeholder");

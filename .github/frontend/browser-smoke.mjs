@@ -342,6 +342,52 @@ try{
   }
  }
 
+
+ // Merchant-first vertical pages fit phone and desktop, maintain conversions and SEO.
+ for(const width of [1280,390]){
+  await page.setViewportSize({width,height:900});
+  for(const scene of ['breakfast','salon','clinic','repair']){
+   await page.goto(baseUrl+'/booking/industry-'+scene+'.html',{waitUntil:'load',timeout:45000});
+   const header=page.locator('.qm-public-header');
+   await header.waitFor({state:'attached'});
+   assert.equal(await header.getAttribute('data-header-role'),'merchant','Industry page retains merchant nav');
+   assert.ok((await page.locator('.qm-industry-hero h1').innerText()).length>7,'Industry hero heading');
+   assert.ok(await page.locator('a[href*="demo.html?role=merchant"]').count()>0,'Industry trial CTA');
+   assert.ok(await page.locator('a[href*="merchant-register.html?mode=signup"]').count()>0,'Industry signup CTA');
+   const bounds=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));
+   assert.ok(bounds.document<=bounds.viewport+2,'Industry '+scene+' overflow: '+JSON.stringify(bounds));
+   const events=await page.evaluate(()=>window.dataLayer?.map(item=>item.qm_event));
+   assert.ok(events?.includes('industry_view'),'Industry page dispatches a no-cookie funnel event');
+  }
+ }
+
+ // DEMO switching role and scene must update browser URLs and the public header
+ // without reloading the page or recreating its shared account mount.
+ await page.goto(baseUrl+'/booking/demo.html?role=merchant&scene=clinic',{waitUntil:'load',timeout:45000});
+ await page.locator('#root .mobile-bottom-nav').waitFor();
+ assert.equal(await page.locator('.qm-public-header').getAttribute('data-header-role'),'merchant');
+ assert.match(await page.locator('#root').innerText(),/預約管理/);
+ await page.locator('[data-role="customer"]').click();
+ assert.equal(await page.locator('.qm-public-header').getAttribute('data-header-role'),'customer');
+ assert.equal(new URL(page.url()).searchParams.get('scene'),'clinic');
+ assert.equal(new URL(page.url()).searchParams.get('role'),'customer');
+ assert.equal(await page.locator('#site-auth-root').count(),1);
+ await page.locator('[data-scene="breakfast"]').click();
+ assert.equal(new URL(page.url()).searchParams.get('scene'),'breakfast');
+ await page.locator('[data-role="staff"]').click();
+ assert.equal(new URL(page.url()).searchParams.get('role'),'merchant');
+ assert.equal(await page.locator('.qm-public-header').getAttribute('data-header-role'),'merchant');
+ assert.match(await page.locator('#root').innerText(),/取餐訂單管理/);
+ assert.equal(await page.locator('#site-auth-root').count(),1);
+ console.log('Industry pages and role-aware demo passed.');
+
+ // Customer homepage search carries terms into live store discovery.
+ await page.goto(baseUrl+'/booking/for-customers.html',{waitUntil:'load'});
+ await page.locator('.qm-customer-search input[name="q"]').fill('板橋');
+ await page.locator('.qm-customer-search button').click();
+ await page.waitForURL(/directory\.html\?mode=search&q=/,{timeout:12000});
+ assert.equal(await page.locator('#keyword').inputValue(),'板橋');
+
  // Verify the old publicly distributed personal-record links resolve to the new page.
  for(const legacy of ['directory.html?mode=mine','directory.html?mode=mine&section=order','directory.html?mode=last-board']){
   await page.goto(baseUrl+'/booking/'+legacy,{waitUntil:'domcontentloaded',timeout:45000});

@@ -46,9 +46,9 @@
     '<button class="qm-intro-sound" type="button" hidden aria-label="開啟影片聲音">開啟聲音</button>'+
     '<div class="qm-intro-empty" hidden><img src="./monster-mascot.svg" alt="" width="100" height="95"><strong>影片暫時無法播放</strong><p>請檢查網路連線，或改用原始影片開啟。</p><div class="qm-intro-recovery"><button type="button" class="qm-intro-retry">重試播放</button><a class="qm-intro-direct" href="#" target="_blank" rel="noopener">直接開啟影片</a></div></div>'+
    '</div>'+
-   '<div class="qm-intro-footer"><h2>排隊交給怪獸，時間留給自己！</h2>'+
-   '<p>排隊叫號、線上預約・線上點餐，怪獸幫你搞定。</p>'+
-   '<div class="qm-intro-actions"><a href="./demo.html" class="qm-intro-action">立即免費體驗</a>'+
+   '<div class="qm-intro-footer"><h2>少一點繁瑣工作，多一點做生意的時間。</h2>'+
+   '<p>現場與線上同步叫號，預約、點餐集中管理。</p>'+
+   '<div class="qm-intro-actions"><a href="./demo.html?role=merchant" class="qm-intro-action" data-qm-event="demo_click" data-qm-source="home">免費體驗店家端</a>'+
    '<button class="qm-intro-restart" type="button" hidden>重新播放</button></div></div></section>';
   document.body.append(overlay);
   const player=overlay.querySelector(".qm-intro-movie");
