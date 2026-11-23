@@ -35,7 +35,9 @@ test("home and real operations view register the same product-scoped worker",()=
  assert.match(home,/id="install-booking-app"/);
  assert.match(home,/beforeinstallprompt/);
  assert.match(home,/appinstalled/);
- assert.match(home,/if\(!promptEvent\)return/);
+ assert.match(home,/if\(promptEvent\)/);
+ assert.match(home,/加入主畫面/);
+ assert.doesNotMatch(home,/安裝到桌面/);
 });
 
 test("service worker is offline-shell-only, never writes customer, auth or API responses into Cache Storage",()=>{
