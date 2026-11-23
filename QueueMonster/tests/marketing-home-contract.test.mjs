@@ -138,7 +138,7 @@ test("demo uses actual product styles, matches real customer/merchant layouts an
  assert.match(mobileCss,/@media\(max-width:540px\)/);
  assert.match(mobileCss,/#root \.mobile-bottom-nav/);
  assert.match(build,/"demo\.html"/);
- assert.match(publish,/home\.html (?:video\.html )?for-merchants\.html for-customers\.html demo\.html board\.html/);
+ assert.match(publish,/home\.html (?:video\.html )?for-merchants\.html for-customers\.html industry-breakfast\.html industry-salon\.html industry-clinic\.html industry-repair\.html demo\.html board\.html/);
  assert.match(landing,/href="\.\/demo\.html\?role=merchant"/);
  for(const id of ["breakfast","salon","repair","clinic"])assert.match(html,new RegExp('data-scene="'+id+'"'));
  const order=[...html.matchAll(/data-scene="(repair|breakfast|salon|clinic)"/g)].map(x=>x[1]);
