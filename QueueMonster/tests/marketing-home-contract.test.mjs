@@ -19,7 +19,7 @@ test("merchant homepage is versioned and published only through the test Pages w
  const css=read("saas/assets/marketing/dual-portals.css");
  assert.match(landing,/<meta name="line-saas-build" content="__LINE_SAAS_BUILD__">/);
  assert.match(landing,/version-watch\.js\?build=__LINE_SAAS_BUILD__/);
- assert.match(landing,/dual-portals\.css\?build=__LINE_SAAS_BUILD__/);
+ assert.match(rawReadFileSync(path.join(root,"saas/home.html"),"utf8"),/dual-portals\.css\?build=__LINE_SAAS_BUILD__/);
  assert.match(build,/"home\.html"/);
  assert.match(publish,/branches: \[main\]/);
  assert.match(publish,/for product in booking saas/);
@@ -37,7 +37,7 @@ test("store-first homepage offers signup and demo while retaining a secondary cu
  assert.match(landing,/現場與線上即時同步叫號/);
  assert.match(landing,/店員一鍵叫號/);
  assert.doesNotMatch(landing,/href="[^"]*(?:platform-login|view=staff|view=platform)/);
- assert.doesNotMatch(directory,/href="[^"]*(?:merchant-register|platform-login|view=staff|view=platform)/);
+ assert.doesNotMatch(rawReadFileSync(path.join(root,"saas/directory.html"),"utf8"),/href="[^"]*(?:merchant-register|platform-login|view=staff|view=platform)/);
  assert.match(landing,/非 LINE 官方產品/);
 });
 
