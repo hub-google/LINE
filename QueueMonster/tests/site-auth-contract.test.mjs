@@ -17,7 +17,7 @@ const workflow=read("../.github/workflows/line-saas-pages.yml");
 const build=read("../.github/scripts/build-line-saas.mjs");
 
 test("all normal site pages reference the exact same header, account script and CSS",()=>{
- const pages=["index","home","for-merchants","for-customers","demo","directory",
+ const pages=["index","home","merchant","customer","demo","directory",
   "my-records","board","merchant-center","merchant-register","platform-login","privacy","terms"];
  for(const page of pages){
   // Inspect actual references: the contract helper inlines scripts/styles.
@@ -30,7 +30,7 @@ test("all normal site pages reference the exact same header, account script and 
   assert.equal((html.match(/id="marketing-header"/g)||[]).length,1,page+" duplicate header mount");
  }
  const shared=read("saas/assets/marketing/shared-header.js");
- const links=["店家首頁","經營效益","產品功能","適用產業","免費體驗","操作教學","顧客版","顧客首頁","搜尋店家","我的紀錄","店家版"];
+ const links=["店家首頁","經營效益","產品功能","適用產業","免費體驗","操作教學","顧客版","找店家","我的紀錄","店家版"];
  for(const label of links)assert.ok(shared.includes(label),"missing shared navigation item: "+label);
  assert.match(shared,/id="site-auth-root"/);
  assert.match(style,/\.site-auth-slot/);
