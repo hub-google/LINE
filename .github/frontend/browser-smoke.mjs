@@ -368,7 +368,15 @@ try{
   await switcher.locator('[data-industry="breakfast"]').focus();
   await page.keyboard.press('ArrowDown');
   assert.equal(await switcher.getAttribute('data-industry-current'),'salon','Keyboard changes sector');
-  const bounds=await page.evaluate(()=>({viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth}));
+  const bounds=await page.evaluate(()=>{
+   const viewport=document.documentElement.clientWidth;
+   const overflow=[...document.querySelectorAll('body *')].map(el=>({el,r:el.getBoundingClientRect()}))
+    .filter(x=>x.r.right>viewport+3&&x.r.width>0&&getComputedStyle(x.el).display!=='none')
+    .map(x=>({tag:x.el.tagName,cls:String(x.el.className).slice(0,80),id:x.el.id,right:Math.round(x.r.right),width:Math.round(x.r.width)})).slice(0,16);
+   const rect=document.querySelector('#industry-switcher').getBoundingClientRect();
+   return {viewport,document:document.documentElement.scrollWidth,industryLeft:rect.left,industryRight:rect.right,overflow};
+  });
+  console.log('Industry layout diagnostics',JSON.stringify(bounds));
   assert.ok(bounds.document<=bounds.viewport+2,'Industry selector overflow: '+JSON.stringify(bounds));
   const events=await page.evaluate(()=>window.dataLayer?.map(item=>item.qm_event));
   assert.ok(events?.includes('industry_view'),'Sector clicks should emit no-cookie funnel events');
