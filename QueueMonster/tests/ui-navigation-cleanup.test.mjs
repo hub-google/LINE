@@ -102,7 +102,7 @@ test("online ordering has its own enabled-only sidebar link and records remain u
  assert.match(source,/const pickupEnabled=pickupState\.customer\?\.settings\?\.enabled===true/);
  assert.match(source,/\(pickupEnabled\?nav\("線上點餐","order",routeState\.customerTab,"customer"\):""\)/);
  assert.match(source,/const serviceView=\["progress","mine","detail"\]\.includes\(routeState\.customerTab\)/);
- assert.match(source,/nav\("歷史紀錄","mine",serviceView\?"mine":routeState\.customerTab,"customer"\)/);
+ assert.match(source,/nav\("我的紀錄","mine",serviceView\?"mine":routeState\.customerTab,"customer"\)/);
  assert.doesNotMatch(source,/serviceTabButton\("order","線上點餐"\)/);
  assert.match(source,/renderCustomerDetail/);
  for(const tab of ["order","progress","mine","detail"])assert.ok(route.includes('"'+tab+'"'),"must retain existing tab deep link "+tab);

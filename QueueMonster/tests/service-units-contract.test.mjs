@@ -95,7 +95,8 @@ test("new customer and board module JavaScript parses", () => {
 test("settings groups service windows, menu, branches and business profile under a single entry",()=>{
  const view=read("saas/app/staff-view.js");
  const hub=read("saas/app/staff/settings.js");
- assert.match(view,/const menu=nav\("設定","settings"/);
+ assert.match(view,/nav\("設定","settings",staffState\.staffTab,"staff"\)/);
+ assert.equal((view.match(/nav\("設定","settings"/g)||[]).length,1);
  assert.doesNotMatch(view,/nav\("菜單及服務設定","menu"/);
  assert.doesNotMatch(view,/nav\("多分店管理","branches"/);
  for(const section of ["profile","operations","catalog","public"])

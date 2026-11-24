@@ -123,7 +123,8 @@ test("guest sees merchant identity before LINE authentication without exposing c
  const front=read("saas/app/customer-booking.js");
  assert.match(customer,/so_unit_public_board/);
  assert.match(front,/publicBrand/);
- assert.match(front,/由排隊怪獸提供預約與取號服務/);
+ assert.match(front,/customer-shop-title/);
+ assert.match(front,/esc\(brand\.name\)/);
  assert.match(front,/customer-shop-avatar/);
 });
 

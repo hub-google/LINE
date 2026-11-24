@@ -325,7 +325,7 @@ test("merchant detail and customer app keep direct action paths with legacy redi
  assert.match(customer,/id="keyword"/);
  assert.match(customer,/id="results"/);
  assert.match(customer,/data-customer-service="預約"/);
- assert.match(customer,/href="\.\/my-records\.html"/);
+ assert.match(read("saas/assets/marketing/shared-header.js"),/\["我的紀錄","\.\/my-records\.html","my-records\.html"\]/);
  assert.match(rawReadFileSync(path.join(root,"saas/customer.html"),"utf8"),/assets\/directory\/main\.js/);
  assert.doesNotMatch(rawReadFileSync(path.join(root,"saas/customer.html"),"utf8"),/class="qm-role-hero"|簡單三步驟/);
  assert.match(redirectCustomer,/\.\/customer\.html/);
@@ -341,7 +341,7 @@ test("shared navigation switches by role without creating two login systems",()=
   assert.match(html,/assets\/marketing\/shared-header\.js/);
   assert.match(html,/assets\/marketing\/shared-header\.css/);
  }
- for(const name of ["功能與效益","適用店型","開始使用","免費體驗","顧客版","找店家","我的紀錄","店家版"]){
+ for(const name of ["功能體驗","操作教學","找店家","我的紀錄","店家版"]){
   assert.ok(js.includes(name),"Missing role navigation "+name);
  }
  assert.match(js,/merchantPages/);
@@ -369,4 +369,13 @@ test("directory merchant cards expose enabled actions without duplicate labels o
  assert.match(style,/\.merchant-card\{[^}]*min-height:180px/);
  const check=spawnSync(process.execPath,["--input-type=module","--check"],{input:script,encoding:"utf8"});
  assert.equal(check.status,0,check.stderr);
+});
+
+
+test("homepage removes duplicated demo copy and preserves the original mascot",()=>{
+ assert.match(landing,/monster-mascot\.svg/);
+ assert.match(landing,/href="#features">免註冊體驗/);
+ assert.doesNotMatch(landing,/class="qm-home-eyebrow"|class="qm-live-synced"|class="qm-industry-points"/);
+ const header=read("saas/assets/marketing/shared-header.js");
+ assert.match(header,/page!=="home\.html"/);
 });

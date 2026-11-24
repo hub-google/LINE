@@ -40,3 +40,6 @@ body[data-monster-page="merchant-center"] .panel,body[data-monster-page="merchan
  body[data-monster-page="directory"] .page-header{padding:14px 0 8px}
  body[data-monster-page="directory"] .main-panel{padding-top:12px}
 }
+
+body[data-monster-page="directory"] .qm-customer-service-tabs{display:flex;flex-wrap:wrap;gap:8px}
+body[data-monster-page="directory"] .qm-customer-service-tabs button{flex:1 1 auto;min-width:0;white-space:nowrap}

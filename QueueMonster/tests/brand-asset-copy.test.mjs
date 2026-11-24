@@ -35,6 +35,6 @@ test('decorative English is removed from customer-facing headers and sections',(
   assert.doesNotMatch(markup,/FIND YOUR STORE|PIXEL STREET|ORIGINAL|WHY THIS PLATFORM|TWO FLOWS|GET STARTED|BUILT FOR EVERYDAY BUSINESS|IN-STORE QUEUE DISPLAY|READY WHEN YOU ARE|HELP CENTER|FOR MERCHANTS|>FAQ</);
  }
  const directory=read('directory.html');
- assert.match(directory,/<h1 class="eyebrow">搜尋店家，立即使用服務<\/h1>/);
- assert.equal((directory.match(/搜尋店家，立即使用服務/g)||[]).length,1);
+ assert.match(directory,/<h1 class="eyebrow">找店家<\/h1>/);
+ assert.equal((directory.match(/找店家/g)||[]).length,1);
 });

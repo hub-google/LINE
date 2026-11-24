@@ -22,10 +22,11 @@ test("Search Stores and My Records are distinct pages in the same public top nav
  assert.match(header,/qm-public-quicklinks/);
  assert.doesNotMatch(search,/<nav class="tabs"/);
  assert.doesNotMatch(history,/<nav class="tabs"/);
- assert.match(search,/<h1 class="eyebrow">搜尋店家，立即使用服務<\/h1>/);
+ assert.match(search,/<h1 class="eyebrow">找店家<\/h1>/);
  assert.match(history,/<h1 class="eyebrow">我的紀錄<\/h1>/);
  assert.match(history,/data-customer-surface="cross-store-history"/);
- assert.match(history,/所有店家的預約、取號與訂餐紀錄/);
+ assert.match(history,/id="results"/);
+ assert.match(history,/搜尋跨店紀錄/);
 });
 
 test("old public store discovery and personal record links retain their meaning",()=>{
@@ -47,7 +48,7 @@ test("platform history is cross-store; individual merchant history and detail ro
  assert.match(directoryJs,/dest\.searchParams\.set\("item",r\.id\)/);
  assert.match(directoryJs,/dest\.searchParams\.set\("ticket",r\.id\)/);
  assert.match(directoryJs,/anchor\.dataset\.oaMode==="PLATFORM"/);
- assert.match(merchantPage,/nav\("歷史紀錄","mine"/);
+ assert.match(merchantPage,/nav\("我的紀錄","mine"/);
  assert.match(merchantPage,/renderCustomerDetail/);
  assert.match(merchantPage,/href="\.\/my-records\.html">我的跨店紀錄/);
  assert.match(sharedUi,/href="\.\/my-records\.html"/);

@@ -110,7 +110,7 @@ test("all three successful customer flows navigate to a single detail/queue boar
  assert.match(queue,/queueState\.progressTicketId=result\.id/);
  assert.match(history,/customer-history-entry/);
  assert.match(history,/open-cross-order/);
- assert.match(portal,/nav\("歷史紀錄"/);
+ assert.match(portal,/nav\("我的紀錄"/);
  assert.match(portal,/renderCustomerDetail\(\)/);
  assert.match(router,/"detail"/);
  assert.match(read("saas/app/line-session.js"),/routeState\.customerTab==="detail"/);

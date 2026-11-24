@@ -37,8 +37,8 @@ test("generated staff and customer links support both GitHub Pages and custom do
  assert.match(app,/route=\(v,s=slug,tab=""\)=>bookingPath/);
  assert.match(app,/customerEntryUrl\(merchant,/);
  assert.match(app,/new URL\(location\.origin\+location\.pathname\)/);
- assert.match(app,/排隊怪獸 · 顧客服務/);
- assert.match(app,/排隊怪獸 · 門市管理/);
+ assert.match(app,/customer-shop-identity/);
+ assert.match(app,/data-portal|staff-mobile-nav/);
 });
 
 test("Pages builds the stylesheet and deploys only booking and legacy SaaS paths",()=>{

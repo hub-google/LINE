@@ -264,7 +264,7 @@ try{
     const header=page.locator('#marketing-header .qm-public-header');
     await header.waitFor({state:'attached',timeout:12000});
     assert.deepEqual(await header.locator('.qm-public-nav a').allTextContents(),
-     ['功能與效益','適用店型','開始使用','免費體驗','顧客版'],
+     ['功能體驗','操作教學','找店家'],
      'Merchant sign-in pages must use merchant navigation');
     assert.equal(await page.locator('a[href="./?view=platform"]').count(),0,
      'Public header must not expose a privileged administration link');
@@ -325,12 +325,12 @@ try{
    const tabs=await header.locator('.qm-public-nav a').allTextContents();
    const merchant=['home.html','merchant.html','demo.html','merchant-center.html'].includes(name);
    const expected=merchant?
-    ['功能與效益','適用店型','開始使用','免費體驗','顧客版']:
+    ['功能體驗','操作教學','找店家']:
     ['找店家','我的紀錄','店家版'];
    assert.deepEqual(tabs,expected,name+' role-specific navigation');
    assert.equal(await header.getAttribute('data-header-role'),merchant?'merchant':'customer',name+' correct portal');
    assert.equal(await header.locator('.qm-public-search,.qm-public-mobile-search').count(),0,name+' no duplicate search CTA');
-   assert.equal(await header.locator('.qm-public-menu nav a').count(),merchant?6:3,name+' role-specific mobile links');
+   assert.equal(await header.locator('.qm-public-menu nav a').count(),merchant?4:3,name+' role-specific mobile links');
    if(width>=1280){
     const sizes=await header.evaluate(node=>({font:parseFloat(getComputedStyle(node.querySelector('.qm-public-nav a')).fontSize),logo:node.querySelector('.qm-public-logo img').getBoundingClientRect().width}));
     assert.ok(sizes.font>=16&&sizes.logo>=54,name+' enlarged header: '+JSON.stringify(sizes));
@@ -453,7 +453,7 @@ try{
   await page.locator('#results').waitFor({state:'attached'});
   assert.equal(await page.locator('.qm-role-hero,.qm-hero-art').count(),0,'No marketing hero on customer app');
   assert.equal(await page.locator('h1').first().innerText(),'找店家');
-  assert.equal(await page.locator('.qm-customer-service-tabs button').count(),4);
+  assert.equal(await page.locator('.qm-customer-service-tabs button').count(),5);
   assert.ok(await page.locator('#keyword').isVisible(),'Search field immediately visible');
   await page.locator('[data-customer-service="取號"]').click();
   assert.equal(await page.locator('#explore-service').inputValue(),'取號');
@@ -481,7 +481,7 @@ try{
  }
  await page.goto(baseUrl+'/booking/directory.html',{waitUntil:'domcontentloaded',timeout:45000});
  assert.equal(await page.locator('.main-panel .tabs').count(),0,'store search has no nested history tabs');
- assert.equal(await page.locator('h1.eyebrow').innerText(),'搜尋店家，立即使用服務');
+ assert.equal(await page.locator('h1.eyebrow').innerText(),'找店家');
 
  // The retired game route must now return to normal merchant discovery.
  for(const viewport of [{width:320,height:720},{width:390,height:844},{width:1200,height:844}]){
