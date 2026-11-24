@@ -8,11 +8,9 @@
    (page==="demo.html"&&params.get("role")!=="customer")||
    ((page===""||page==="index.html")&&["staff","platform"].includes(params.get("view")));
  const merchantItems=[
-   ["功能與效益","./home.html#features",""],
-   ["適用店型","./home.html#industries",""],
-   ["開始使用","./home.html#how-it-works",""],
-   ["免費體驗","./demo.html?role=merchant","demo.html"],
-   ["顧客版","./customer.html","customer.html"]
+   ["功能體驗","./home.html#features",""],
+   ["操作教學","./merchant-center.html","merchant-center.html"],
+   ["找店家","./customer.html","customer.html"]
  ];
  const customerItems=[
    ["找店家","./customer.html","customer.html"],
@@ -25,11 +23,11 @@
  const link=arr=>arr.map(([label,url,active])=>'<a href="'+url+'"'+(active&&active===page?' aria-current="page"':'')+'>'+label+'</a>').join("");
  const headerRole=merchant?"店家版":"顧客版";
  mount.innerHTML='<header class="qm-public-header'+(page==="home.html"?' site-head':'')+'" data-header-role="'+(merchant?"merchant":"customer")+'"><div class="qm-public-inner">'+
-  '<a href="'+(merchant?"./home.html":"./customer.html")+'" class="qm-public-logo" aria-label="排隊怪獸'+headerRole+'首頁"><img src="./monster-mascot.svg" alt="" width="60" height="60"><b>排隊怪獸</b><small class="qm-public-role">'+headerRole+'</small></a>'+
+  '<a href="'+"./home.html"+'" class="qm-public-logo" aria-label="排隊怪獸'+headerRole+'首頁"><img src="./monster-mascot.svg" alt="" width="60" height="60"><b>排隊怪獸</b><small class="qm-public-role" aria-hidden="true">'+headerRole+'</small></a>'+
   '<nav class="qm-public-nav" aria-label="'+headerRole+'導覽"><span>'+link(items.slice(0,4))+'</span><span class="qm-public-extra">'+link(items.slice(4))+'</span></nav>'+
   '<nav class="qm-public-quicklinks" aria-label="快速操作">'+link(quick)+'</nav>'+
   '<div id="site-auth-root" class="site-auth-slot qm-public-auth" aria-label="使用者登入狀態"><span class="site-auth-name" role="status">正在確認登入狀態</span></div>'+
-  (merchant?'<a href="./merchant-register.html?mode=signup" class="qm-header-cta">免費建立店家</a>':'')+
+  (merchant&&page!=="home.html"&&page!=="merchant-register.html"?'<a href="./merchant-register.html?mode=signup" class="qm-header-cta">免費建立店家</a>':'')+
   '<details class="qm-public-mobile"><summary>選單 <span aria-hidden="true">⌄</span></summary><div class="qm-public-menu"><button type="button" class="qm-public-close">關閉 ×</button><nav aria-label="'+headerRole+'手機選單">'+link(menuItems)+'</nav></div></details>'+
  '</div></header>';
  const menu=mount.querySelector(".qm-public-mobile");
@@ -51,7 +49,7 @@
   const roleText=asMerchant?"店家版":"顧客版";
   header.dataset.headerRole=asMerchant?"merchant":"customer";
   const brand=header.querySelector(".qm-public-logo");
-  brand.href=asMerchant?"./home.html":"./customer.html";
+  brand.href="./home.html";
   brand.setAttribute("aria-label","排隊怪獸"+roleText+"首頁");
   brand.querySelector(".qm-public-role").textContent=roleText;
   const nav=header.querySelector(".qm-public-nav");

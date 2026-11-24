@@ -245,3 +245,46 @@ body[data-monster-page="home"] .qm-live-board-panel.qm-live-board-expanded small
  body[data-monster-page="home"] .qm-live-board-panel strong{font-size:23px}
  body[data-monster-page="home"] .qm-live-queue{grid-template-columns:minmax(0,1.1fr) minmax(99px,.9fr)}
 }
+
+/* Landing hierarchy: one promise, one live workspace, one compact industry selector. Keep original purple/pink brand. */
+body[data-monster-page="home"] .qm-home-first{background:#fffafc;padding:clamp(34px,5vw,74px) 0}
+body[data-monster-page="home"] .qm-home-first::after{opacity:.14}
+body[data-monster-page="home"] .qm-home-hero-grid{gap:clamp(24px,4vw,64px)}
+body[data-monster-page="home"] .qm-home-copy h1{margin:0 0 18px;letter-spacing:-.035em}
+body[data-monster-page="home"] .qm-home-copy h1 em::after{display:none}
+body[data-monster-page="home"] .qm-home-benefits{grid-template-columns:1fr;gap:0;margin:22px 0 26px}
+body[data-monster-page="home"] .qm-home-benefit{background:none;border:0;border-radius:0;padding:9px 0;align-items:center}
+body[data-monster-page="home"] .qm-home-benefit>div{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px}
+body[data-monster-page="home"] .qm-home-benefit strong{font-size:15px}
+body[data-monster-page="home"] .qm-home-benefit small{margin:0;font-size:13px;line-height:1.6}
+body[data-monster-page="home"] .qm-home-actions .btn{box-shadow:none;border-radius:10px}
+body[data-monster-page="home"] .qm-live-workbench{border-radius:16px;box-shadow:0 8px 24px #58316d0d;padding:16px}
+body[data-monster-page="home"] .qm-live-brand img{width:62px;height:62px}
+body[data-monster-page="home"] .qm-live-screen{min-height:0;border:0;background:transparent;padding:5px 0}
+body[data-monster-page="home"] .qm-live-tabs{border:0;border-radius:8px}
+body[data-monster-page="home"] .qm-live-primary-panel,body[data-monster-page="home"] .qm-live-customer-panel{border-radius:9px}
+body[data-monster-page="home"] .qm-live-feedback:empty{margin:0;padding:0;min-height:0;display:none}
+body[data-monster-page="home"] .qm-live-bottom{justify-content:flex-end;padding-top:10px}
+body[data-monster-page="home"] .qm-home-industry,body[data-monster-page="home"] .qm-home-start,body[data-monster-page="home"] .qm-home-faq{padding-block:clamp(28px,4vw,52px)}
+body[data-monster-page="home"] .qm-industry-switcher{grid-template-columns:1fr;gap:12px}
+body[data-monster-page="home"] .qm-industry-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+body[data-monster-page="home"] .qm-industry-tab{min-height:58px;padding:9px 12px;border-radius:9px;box-shadow:none}
+body[data-monster-page="home"] .qm-industry-tab-symbol{width:30px;height:30px;flex-basis:30px;font-size:18px}
+body[data-monster-page="home"] .qm-industry-tab strong{font-size:15px}
+body[data-monster-page="home"] .qm-industry-tab small,body[data-monster-page="home"] .qm-industry-tab-arrow{display:none}
+body[data-monster-page="home"] .qm-industry-panel{padding:20px 0;background:transparent;border:0;border-radius:0;box-shadow:none;display:grid;grid-template-columns:1fr auto;gap:4px 24px;align-items:center}
+body[data-monster-page="home"] .qm-industry-panel-tag{display:none}
+body[data-monster-page="home"] .qm-industry-panel h3{font-size:clamp(20px,2.2vw,26px);margin:0}
+body[data-monster-page="home"] .qm-industry-answer{grid-column:1;margin:0;line-height:1.6}
+body[data-monster-page="home"] .qm-industry-panel-bottom{grid-column:2;grid-row:1/3;border:0;margin:0;padding:0}
+body[data-monster-page="home"] .qm-home-start-steps li{box-shadow:none}
+body[data-monster-page="home"] .qm-public-role{display:none}
+@media(max-width:700px){
+ body[data-monster-page="home"] .qm-home-first{padding:28px 0}
+ body[data-monster-page="home"] .qm-home-benefits{margin:14px 0 18px}
+ body[data-monster-page="home"] .qm-home-benefit{padding:6px 0}
+ body[data-monster-page="home"] .qm-home-copy h1{font-size:clamp(28px,7vw,40px)}
+ body[data-monster-page="home"] .qm-industry-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body[data-monster-page="home"] .qm-industry-panel{display:flex;align-items:stretch;gap:10px}
+ body[data-monster-page="home"] .qm-industry-panel-bottom{padding:0}
+}

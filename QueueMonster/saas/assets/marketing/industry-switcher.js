@@ -50,7 +50,7 @@
    tab.setAttribute("aria-selected",String(selected));
    tab.tabIndex=selected?0:-1;
   }
-  for(const name of ["eyebrow","title","answer"])parts[name].textContent=value[name];
+  for(const name of ["eyebrow","title","answer"])if(parts[name])parts[name].textContent=value[name];
   parts.list.forEach((el,i)=>{el.textContent=value.steps[i]});
   root.dataset.industryCurrent=key;
   root.querySelector("#qm-industry-panel")?.setAttribute("aria-labelledby","qm-industry-"+key);
