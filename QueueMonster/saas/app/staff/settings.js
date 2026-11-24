@@ -139,7 +139,7 @@ export function renderStaffSettings({t,isManager,html,customersOnly=false}){
     catalog:"設定預約、叫號、點餐規則，以及菜單與服務項目。",
     public:"設定顧客首頁、公開搜尋、分享入口與 LINE 通知。"
   };
-  html+='<div class="settings-hub-head"><h2>設定</h2><p class="small">'+descriptions[section]+'</p></div>'+tabs;
+  html+='<div class="settings-hub-head"><h2>設定</h2></div>'+tabs;
   html+=cards.filter(([key])=>key===section).map(([,markup])=>markup).join("");
   if(section==="profile")html=renderStaffBranches({role:staffState.staff.role,html});
   if(section==="operations"){

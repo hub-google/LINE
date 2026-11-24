@@ -64,8 +64,8 @@ export function syncBookingPartyInput(raw){
  }
  const helper=document.getElementById("booking-capacity-hint");
  if(helper)helper.textContent=bookingState.bookingParty?
-   "已依 "+bookingState.bookingParty+" 位篩選時段；名額不足的時間不能選擇。":
-   "請輸入 1～20 位的有效預約人數。";
+   "名額須至少 "+bookingState.bookingParty+" 位。":
+   "人數須為 1～20 位。";
  syncBookingSubmitButtons();
 }
 
@@ -142,14 +142,14 @@ export function customerRender(){
       '<div class="customer-shop-avatar">'+(safeLogo?
        '<img src="'+esc(safeLogo)+'" alt="'+esc(brand.name)+' 店家 LOGO">':
        '<span class="customer-shop-avatar-fallback" aria-hidden="true">'+esc(brand.name.slice(0,2))+'</span>')+'</div>'+
-      '<div class="customer-shop-title"><div class="customer-shop-overline">店家預約與取號</div><h1>'+esc(brand.name)+'</h1>'+
-      '<div class="muted">由排隊怪獸提供預約與取號服務</div></div></div></section>':"";
+      '<div class="customer-shop-title"><h1>'+esc(brand.name)+'</h1>'+
+      '</div></div></section>':"";
    // Primary action follows the customer's intent. The public board is optional,
    // not the first screen for somebody opening a booking/number URL.
    const entryTitle=routeState.customerTab==="reserve"?"線上預約":
      routeState.customerTab==="queue"?"現場取號":
      routeState.customerTab==="order"?"線上點餐":
-     ["mine","progress","detail"].includes(routeState.customerTab)?"歷史紀錄":"線上預約與取號";
+     ["mine","progress","detail"].includes(routeState.customerTab)?"我的紀錄":"線上預約與取號";
    const waiting=lineState.lineLinkStatus==="connecting"||
      lineState.lineLinkStatus==="not-ready"&&lineState.lineLinkAttempted===false;
    const prompt=waiting?
@@ -159,9 +159,9 @@ export function customerRender(){
    return brandHeader+
      '<section class="card customer-entry-card"><h2>'+entryTitle+'</h2>'+prompt+'</section>'+
      '<p class="customer-public-board-link"><a href="./board.html?merchant='+
-       encodeURIComponent(routeState.slug)+'">只想查看目前叫號？前往即時叫號看板</a></p>';
+       encodeURIComponent(routeState.slug)+'">即時叫號看板</a></p>';
   }
-  if(!customerState.customer)return box("正在讀取顧客網站",'<p class="muted">正在確認企業設定與登入狀態...</p>');
+  if(!customerState.customer)return box("載入中",'');
   const t=customerState.customer.tenant,m=t.modules||{},items=customerState.customer.my_reservations||[],tickets=customerState.customer.my_tickets||[],live=tickets.find(x=>["WAITING","HOLD","CALLED","ARRIVED","ADMITTED","SERVING"].includes(x.status))||tickets.find(x=>x.status==="PASSED"&&x.date===taipei());
   const catalogue=customerState.customer.menu_items||[];
  applyCustomerBrand(t);
@@ -173,13 +173,13 @@ export function customerRender(){
    (m.reservation?nav("線上預約","reserve",routeState.customerTab,"customer"):"")+
    (m.queue?nav("現場取號","queue",routeState.customerTab,"customer"):"")+
    (pickupEnabled?nav("線上點餐","order",routeState.customerTab,"customer"):"")+
-   nav("歷史紀錄","mine",serviceView?"mine":routeState.customerTab,"customer");
+   nav("我的紀錄","mine",serviceView?"mine":routeState.customerTab,"customer");
  const serviceNav=serviceView?
    '<section class="customer-service-nav" aria-label="歷史紀錄與單筆進度">'+
    '<div class="customer-service-title"><h2>'+(
      routeState.customerTab==="mine"?"歷史紀錄":
      routeState.customerTab==="progress"?"我的叫號進度":"預約／訂單詳情")+
-   '</h2><p class="small">每筆紀錄都可獨立開啟，只顯示該店家的服務進度。</p></div></section>':"";
+   '</h2></div></section>':"";
  let html='';
  if(routeState.customerTab==="home"){
   const homepage=customerState.customer.homepage||{};
@@ -191,11 +191,11 @@ export function customerRender(){
    (displayTitle?'<h2 style="font-size:clamp(18px,4vw,24px);line-height:1.4;margin:0 0 6px">'+esc(displayTitle)+'</h2>':"")+
    (displaySubtitle?'<p class="muted" style="margin:0 0 7px;white-space:pre-wrap">'+esc(displaySubtitle)+'</p>':"")+
    (t.address?'<p class="muted" style="font-size:13px;margin:0">'+esc(t.address)+'</p>':"")+'</section>')+
- '<div class="grid3" style="margin-bottom:16px">'+stat("目前叫號",customerState.customer.current||"—")+stat("現場候位",customerState.customer.waiting+" 組")+stat("我的有效預約",items.filter(x=>x.status==="CONFIRMED").length)+'</div>'+
- '<div class="grid">'+(m.reservation?'<button class="routecard" data-nav="customer" data-tab="reserve"><h2>線上預約</h2><p class="muted">選擇日期與時段，完成預約</p><strong>立即預約 →</strong></button>':"")+
- (m.queue?'<button class="routecard" data-nav="customer" data-tab="queue"><h2>現場取號</h2><p class="muted">直接取得候位號碼與查看進度</p><strong>立即取號 →</strong></button>':"")+(pickupEnabled?'<button class="routecard" data-nav="customer" data-tab="order"><h2>線上點餐</h2><p class="muted">選擇餐點和取餐時間，查看店家進度</p><strong>立即點餐 →</strong></button>':"")+
- '<button class="routecard" data-nav="customer" data-tab="mine"><h2>歷史紀錄</h2><p class="muted">開啟每間店的預約、取號或訂餐詳情</p><strong>查看歷史紀錄 →</strong></button>'+
-(m.queue&&m.calling?'<a class="routecard" href="./board.html?merchant='+encodeURIComponent(routeState.slug)+'"><h2>公開即時叫號看板</h2><p class="muted">直接查看目前叫號及接下來的順序。</p><strong>查看公開看板 →</strong></a>':"")+'</div>';
+ '<div class="grid3 customer-home-stats">'+(m.queue?stat("目前叫號",customerState.customer.current||"—")+stat("現場候位",customerState.customer.waiting+" 組"):"")+(m.reservation?stat("有效預約",items.filter(x=>x.status==="CONFIRMED").length):"")+'</div>'+
+ '<div class="grid customer-actions">'+(m.reservation?'<button class="routecard" data-nav="customer" data-tab="reserve"><strong>立即預約</strong><span aria-hidden="true">›</span></button>':"")+
+ (m.queue?'<button class="routecard" data-nav="customer" data-tab="queue"><strong>立即取號</strong><span aria-hidden="true">›</span></button>':"")+(pickupEnabled?'<button class="routecard" data-nav="customer" data-tab="order"><strong>線上點餐</strong><span aria-hidden="true">›</span></button>':"")+
+ '<button class="routecard" data-nav="customer" data-tab="mine"><strong>我的紀錄</strong><span aria-hidden="true">›</span></button>'+
+(m.queue&&m.calling?'<a class="routecard" href="./board.html?merchant='+encodeURIComponent(routeState.slug)+'"><strong>即時看板</strong><span aria-hidden="true">›</span></a>':"")+'</div>';
  }
  else if(routeState.customerTab==="order"){
    html=renderCustomerPickup();
@@ -210,7 +210,7 @@ export function customerRender(){
    const amountKnown=bookingItems.length>0&&bookingItems.every(item=>item.price!==null&&item.price!==undefined&&Number.isFinite(Number(item.price)));
    const estimatedCost=amountKnown?bookingItems.reduce((sum,item)=>sum+Number(item.price),0):null;
    html=box("選擇預約日期與時間",'<div class="grid"><div>'+field("預約日期","customer-day",routeState.day,"date",'min="'+taipei()+'"')+'</div><div>'+field("預約人數","customer-party",bookingState.bookingParty||"","number",'min="1" max="20" required')+'</div></div><label>可預約時段</label>'+
-    '<p class="small" id="booking-capacity-hint" role="status">'+(bookingState.bookingParty?"已依 "+bookingState.bookingParty+" 位篩選時段；名額不足的時間不能選擇。":"請輸入 1～20 位的有效預約人數。")+'</p>'+
+    '<p class="small" id="booking-capacity-hint" role="status">'+(bookingState.bookingParty?"名額須至少 "+bookingState.bookingParty+" 位。":"請輸入 1～20 位的有效預約人數。")+'</p>'+
     (bookingState.serviceSlotError?'<p class="alert">'+esc(bookingState.serviceSlotError)+'</p>':bookingState.serviceSlotPreview?.key===serviceSlotsKey()?"":'<p class="small">正在確認實際服務時間與資源剩餘名額…</p>')+
     '<div class="slots">'+currentBookingSlots().map(s=>'<button class="slot '+(bookingState.chosenSlot===s.time&&availableForParty(s)?"active":"")+'" data-slot="'+esc(s.time)+'" '+(!availableForParty(s)?"disabled aria-disabled=\"true\"":"")+'>'+esc(s.time)+'<small>'+(!availableForParty(s)?"名額不足・":"")+'剩 '+esc(s.available)+' 位</small></button>').join("")+'</div>'+
     menuSelectSection(t.menu_booking_mode||"DISABLED",catalogue,bookingState.bookingChosenItems,"booking")+

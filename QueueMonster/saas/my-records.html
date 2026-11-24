@@ -14,14 +14,14 @@ body[data-customer-surface="cross-store-history"] .search-wrap{margin-top:0}
 body[data-customer-surface="cross-store-history"] .main-panel{padding-top:28px}
 </style><link rel="stylesheet" href="./assets/marketing/dual-portals.css?build=__LINE_SAAS_BUILD__">
 <script defer src="./assets/marketing/funnel-events.js?build=__LINE_SAAS_BUILD__"></script>
-</head>
+<link rel="stylesheet" href="./assets/marketing/ui-simplified.css?build=__LINE_SAAS_BUILD__"></head>
 <body data-monster-page="directory" data-customer-surface="cross-store-history">
 <div id="marketing-header"><a href="./home.html">排隊怪獸</a></div>
 <header class="page-header">
  <div class="container">
   <div class="hero-heading">
    <h1 class="eyebrow">我的紀錄</h1>
-   <p>一個 LINE 帳號，查看在所有店家的預約、取號與訂餐紀錄。</p>
+   
   </div>
  </div>
 </header>
@@ -32,7 +32,7 @@ body[data-customer-surface="cross-store-history"] .main-panel{padding-top:28px}
    <label for="keyword">搜尋跨店紀錄</label>
    <div class="search-field">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
-    <input id="keyword" class="search" type="search" placeholder="例如：店家名稱、號碼或狀態" aria-label="輸入店家名稱或地點" autocomplete="off">
+    <input id="keyword" class="search" type="search" placeholder="例如：店家名稱、號碼或狀態" aria-label="搜尋紀錄" autocomplete="off">
    </div>
   </div>
   <details id="explore-filters" class="filter-details" aria-label="搜尋篩選" open>
@@ -47,10 +47,10 @@ body[data-customer-surface="cross-store-history"] .main-panel{padding-top:28px}
     </div>
    </details>
    <div class="intro-row">
-    <div id="intro" class="intro-copy" role="status"><strong>正在載入店家</strong><p>資料更新中，請稍後。</p></div>
+    <div id="intro" class="intro-copy" role="status">正在載入紀錄…</div>
     <span class="public-note">公開看板</span>
    </div>
-  <div class="results-header"><h2 id="results-heading">熱門店家排行</h2><span id="result-count" class="result-count" aria-live="polite">載入中</span></div>
+  <div class="results-header"><h2 id="results-heading">我的紀錄</h2><span id="result-count" class="result-count" aria-live="polite">載入中</span></div>
   <div class="merchant-grid" id="results" aria-live="polite"></div>
   <div id="result-pages" class="result-pages hidden" aria-label="搜尋結果分頁">
     <button type="button" id="page-prev">上一頁</button><span id="page-label">第 1 頁</span>
@@ -60,5 +60,5 @@ body[data-customer-surface="cross-store-history"] .main-panel{padding-top:28px}
 
  </section>
 </main>
-<footer class="footer"><div class="container">跨店紀錄須以 LINE 身分核對。各店自己的歷史紀錄仍由個別店家的頁面管理。　<a href="privacy.html">隱私權說明</a>　·　<a href="terms.html">服務條款</a></div></footer>
+<footer class="footer"><div class="container"><a href="privacy.html">隱私權說明</a>　·　<a href="terms.html">服務條款</a></div></footer>
 <script type="module" src="./assets/directory/main.js?build=__LINE_SAAS_BUILD__"></script></body></html>

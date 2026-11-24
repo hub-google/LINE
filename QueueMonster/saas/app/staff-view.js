@@ -36,12 +36,12 @@ export function staffRender(){
  const active=openTickets.find(x=>x.status==="CALLED"),waiting=openTickets.filter(x=>x.status==="WAITING"),passed=openTickets.filter(x=>x.status==="PASSED"),held=openTickets.filter(x=>x.status==="HOLD");
  const pendingBookings=openBookings.filter(x=>x.status==="CONFIRMED"), finishedBookings=doneBookings.filter(x=>x.status==="COMPLETED");
  const role=staffState.staff.role,isManager=["OWNER","MANAGER","PLATFORM"].includes(role);
- const menu=nav("設定","settings",staffState.staffTab,"staff")+'<div class="staff-side-label">日常作業</div>'+
+ const menu='<div class="staff-side-label">日常作業</div>'+
  nav("工作台","dashboard",staffState.staffTab,"staff")+nav("預約管理","bookings",staffState.staffTab,"staff")+
  nav("叫號管理","queue",staffState.staffTab,"staff")+nav("取餐訂單","orders",staffState.staffTab,"staff")+nav("預約日曆","calendar",staffState.staffTab,"staff")+
  '<div class="staff-side-label">營運管理</div>'+
  nav("營運分析","analytics",staffState.staffTab,"staff")+nav("顧客管理","customers",staffState.staffTab,"staff")+
- nav("員工管理","members",staffState.staffTab,"staff")+ '<div class="staff-side-label">使用支援</div><a class="side-item guide-link" href="./merchant-center.html#guide">操作說明 ↗</a>';
+ nav("員工管理","members",staffState.staffTab,"staff")+nav("設定","settings",staffState.staffTab,"staff")+ '<div class="staff-side-label">使用支援</div><a class="side-item guide-link" href="./merchant-center.html#guide">操作說明 ↗</a>';
  let html=(["bookings","queue"].includes(staffState.staffTab)?
   '<div class="staff-context-bar staff-context-compact"><div class="staff-history-controls">'+
   '<label for="staff-history-days">歷史紀錄</label><select class="field" id="staff-history-days" aria-label="已處理紀錄範圍">'+

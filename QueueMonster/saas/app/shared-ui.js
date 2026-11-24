@@ -138,11 +138,12 @@ export function platformReady(){return !!authState.context?.platform_admin}
 export function nav(label,tab,current,which){return '<button class="side-item '+(tab===current?"active":"")+'" data-nav="'+which+'" data-tab="'+tab+'">'+label+'</button>'}
 
 export function layout(title,subtitle,menu,body){
- const staffQuickNav=routeState.view==="staff"?'<nav class="staff-mobile-nav" aria-label="門市功能快速導覽">'+nav("設定","settings",staffState.staffTab,"staff")+
+ const staffQuickNav=routeState.view==="staff"?'<nav class="staff-mobile-nav" aria-label="門市功能快速導覽">'+nav("工作台","dashboard",staffState.staffTab,"staff")+
   nav("預約","bookings",staffState.staffTab,"staff")+
   nav("叫號","queue",staffState.staffTab,"staff")+
    nav("訂餐","orders",staffState.staffTab,"staff")+
-  '<details class="staff-mobile-more"><summary aria-label="開啟更多管理功能">更多</summary><div class="staff-mobile-popup">'+nav("工作台","dashboard",staffState.staffTab,"staff")+
+  '<details class="staff-mobile-more"><summary aria-label="開啟更多管理功能">更多</summary><div class="staff-mobile-popup">'+nav("設定","settings",staffState.staffTab,"staff")+
+  nav("顧客管理","customers",staffState.staffTab,"staff")+
   nav("預約日曆","calendar",staffState.staffTab,"staff")+nav("營運分析","analytics",staffState.staffTab,"staff")+
   nav("員工管理","members",staffState.staffTab,"staff")+
   
@@ -156,8 +157,8 @@ export function layout(title,subtitle,menu,body){
    '<a class="customer-shop-avatar" href="'+esc(sharedUiState.route("customer",routeState.slug,"home"))+'" aria-label="返回此店家首頁">'+(safeLogo?
     '<img src="'+esc(safeLogo)+'" alt="'+esc(title)+' 店家 LOGO" loading="eager" referrerpolicy="no-referrer">':
     '<span class="customer-shop-avatar-fallback" aria-hidden="true">'+esc(String(title||"店家").slice(0,2))+'</span>')+'</a>'+
-   '<div class="customer-shop-title"><div class="customer-shop-overline">店家預約與取號</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div></div>':
-  '<div><div class="eyebrow">'+(routeState.view==="customer"?"排隊怪獸 · 顧客服務":routeState.view==="staff"?"排隊怪獸 · 門市管理":"排隊怪獸 · 平台管理")+'</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(subtitle)+'</div></div>';
+   '<div class="customer-shop-title"><h1>'+esc(title)+'</h1></div></div>':
+  '<div><h1>'+esc(title)+'</h1></div>';
  const poweredBy=merchant?'<div class="customer-platform-credit">預約及取號服務由 <a href="./home.html" aria-label="前往排隊怪獸平台首頁"><span class="customer-platform-icon" aria-hidden="true"></span>排隊怪獸</a> 提供</div>':"";
  return '<div class="toolbar'+(merchant?' customer-shop-toolbar':'')+'">'+customerHeading+'</div><div class="layout'+(routeState.view==="customer"?" customer-layout":"")+'"><aside>'+menu+'</aside><section class="content">'+body+poweredBy+'</section></div>'+staffQuickNav;
 }

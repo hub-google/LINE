@@ -41,7 +41,7 @@ export function enhanceStaffUI(){
   const key=staffState.staffTab+":record:"+id;
   const detail=document.createElement("details");detail.className="staff-record-fold";
   detail.dataset.staffUiKey=key;detail.open=staffLayoutState.staffUiExpanded.get(key)===true;
-  const summary=document.createElement("summary");summary.textContent="查看詳細與處理";
+  const summary=document.createElement("summary");summary.textContent="詳細資料";
   const body=document.createElement("div");body.className="staff-record-fold-body";
   for(const item of rest)body.appendChild(item);
   detail.append(summary,body);card.appendChild(detail);
@@ -55,7 +55,7 @@ staffLayoutState.staffUiExpanded=new Map();
 staffLayoutState.staffSecondaryByTab={
  dashboard:["已處理預約"],
  analytics:["每日預約與取號量"],
- bookings:["預約編號設定","搜尋與篩選預約","預約管理方式","已處理預約","已刪除預約","完整預約歷史"],
+ bookings:["預約編號設定","預約管理方式","已處理預約","已刪除預約","完整預約歷史"],
  calendar:[],
  queue:["叫號編號設定","取號場次管理","已結束號碼牌","已刪除號碼牌"],
  menu:["預約資源","服務時長與緩衝"],

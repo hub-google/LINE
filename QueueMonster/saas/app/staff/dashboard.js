@@ -15,20 +15,20 @@ export function renderStaffDashboard({isManager,pendingBookings,openBookings,wai
     stat("待報到",pendingBookings.length)+stat("已報到",openBookings.filter(x=>x.status==="CHECKED_IN").length)+
     stat("候位中",waiting.length)+stat("目前叫號",active?.number||"—")+'</div>'+
     '<div class="staff-stats grid4">'+stat("待接單",pendingOrders.length)+stat("製作中",makingOrders.length)+
-    stat("待取餐",readyOrders.length)+stat("取餐待處理",pendingOrders.length+makingOrders.length+readyOrders.length)+'</div>'+
+    stat("待取餐",readyOrders.length)+'</div>'+
     '<div class="staff-dashboard-quick">'+
-    btn("查看預約（"+openBookings.length+"）","open-bookings","primary")+
-    btn("進入叫號（"+openTickets.length+"）","open-queue","outline")+
-    '<button type="button" class="btn outline" data-nav="staff" data-tab="orders">取餐訂單（'+(pendingOrders.length+makingOrders.length+readyOrders.length)+'）</button></div>'+
+    btn("預約管理","open-bookings","primary")+
+    btn("叫號管理","open-queue","outline")+
+    '<button type="button" class="btn outline" data-nav="staff" data-tab="orders">取餐訂單</button></div>'+
     '<div class="staff-dashboard-grid">'+
     box("近期待處理預約",openBookings.length?openBookings.slice(0,5).map(x=>
       '<div class="staff-dash-row"><div><strong>'+esc(x.day)+'　'+esc(x.time)+'</strong><span>'+esc(x.name)+' · '+esc(x.party||1)+' 人</span></div>'+tag(x.status)+'</div>'
-    ).join(""):'<p class="muted">目前沒有待處理預約。</p>')+
+    ).join(""):'<p class="muted">無待處理預約</p>')+
     box("候位清單",waiting.length?waiting.slice(0,5).map(x=>
       '<div class="staff-dash-row"><div><strong>'+esc(x.number)+'</strong><span>'+esc(x.name)+' · '+esc(x.party||1)+' 人</span></div>'+tag(x.status)+'</div>'
-    ).join(""):'<p class="muted">目前沒有候位號碼。</p>')+
+    ).join(""):'<p class="muted">無候位</p>')+
     box("近期取餐訂單",orders.filter(o=>!["PICKED_UP","REJECTED","CANCELLED"].includes(o.status)).slice(0,5).map(o=>
       '<div class="staff-dash-row"><div><strong>'+esc(o.number)+' ・ '+esc(o.pickup_at)+'</strong><span>'+esc((o.items||[]).map(i=>i.name+"×"+i.qty).join("、"))+'</span></div><span>'+esc(pickupStatusLabel(o.status))+'</span></div>'
-    ).join("")||'<p class="muted">目前沒有待處理訂單。</p>')+'</div>';
+    ).join("")||'<p class="muted">無待處理訂單</p>')+'</div>';
   return html;
 }

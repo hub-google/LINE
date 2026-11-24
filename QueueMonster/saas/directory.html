@@ -22,14 +22,14 @@ body[data-monster-page="directory"] .page-header .hero-heading{margin-top:0}
 body[data-monster-page="directory"] .page-header{padding-top:45px}
 </style><link rel="stylesheet" href="./assets/marketing/dual-portals.css?build=__LINE_SAAS_BUILD__">
 <script defer src="./assets/marketing/funnel-events.js?build=__LINE_SAAS_BUILD__"></script>
-</head>
+<link rel="stylesheet" href="./assets/marketing/ui-simplified.css?build=__LINE_SAAS_BUILD__"></head>
 <body data-monster-page="directory">
 <div id="marketing-header"><a href="./customer.html">排隊怪獸</a></div>
 <header class="page-header">
  <div class="container">
   <div class="hero-heading">
-   <h1 class="eyebrow">搜尋店家，立即使用服務</h1>
-   <p>預約、現場取號、即時叫號看板，都能從這裡找到。</p>
+   <h1 class="eyebrow">找店家</h1>
+   
   </div>
  </div>
 </header>
@@ -37,13 +37,13 @@ body[data-monster-page="directory"] .page-header{padding-top:45px}
  <section class="main-panel">
   <div id="explore-list" class="explore-list">
   <div class="search-wrap">
-   <label for="keyword">搜尋店家名稱或地點</label>
+   <label for="keyword" class="qm-sr-only">搜尋店家</label>
    <div class="search-field">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
     <input id="keyword" class="search" type="search" placeholder="例如：餐廳名稱、地區、門市" aria-label="輸入店家名稱或地點" autocomplete="off">
    </div>
   </div>
-  <details id="explore-filters" class="filter-details" aria-label="搜尋篩選" open>
+  <details id="explore-filters" class="filter-details" aria-label="搜尋篩選">
     <summary class="filter-summary" id="filter-summary">進階篩選 <span class="filter-chevron" aria-hidden="true"></span></summary>
     <div class="explore-filter-row" role="group" aria-label="篩選條件">
     <label>店家類別<select id="explore-category"><option value="全部">全部類別</option></select></label>
@@ -55,8 +55,8 @@ body[data-monster-page="directory"] .page-header{padding-top:45px}
     </div>
    </details>
    <div class="intro-row">
-    <div id="intro" class="intro-copy" role="status"><strong>正在載入店家</strong><p>資料更新中，請稍後。</p></div>
-    <span class="public-note">公開看板</span>
+    <div id="intro" class="intro-copy" role="status">正在載入店家…</div>
+    
    </div>
   <div class="results-header"><h2 id="results-heading">熱門店家排行</h2><span id="result-count" class="result-count" aria-live="polite">載入中</span></div>
   <div class="merchant-grid" id="results" aria-live="polite"></div>
