@@ -30,7 +30,7 @@ export function renderStaffBookings({openBookings,doneBookings,deletedBookings,i
       '<select id="staff-booking-unit-filter" class="field"><option value="">全部服務單位</option>'+
       (serviceUnitsState.unitConfig.units||[]).map(u=>'<option value="'+esc(u.id)+'" '+(bookingState.bookingUnitFilter===u.id?'selected':'')+'>'+esc(u.name)+'</option>').join("")+
       '</select>'):"")+
-   box("搜尋與篩選預約",'<p class="small">篩選未結案及最近 '+staffHistoryState.staffHistoryDays+' 天已處理紀錄。</p>'+
+   box("搜尋與篩選預約",'<p class="small">篩選目前已載入的資料：未結案及最近 '+staffHistoryState.staffHistoryDays+' 天已處理紀錄。其餘請使用「完整預約歷史」。</p>'+
     '<div class="grid3"><div>'+field("搜尋預約編號、姓名或服務","staff-booking-search",staffHistoryState.staffBookingSearch,"search",'placeholder="輸入關鍵字"')+'</div>'+
     '<div><label for="staff-booking-date">預約日期</label><select id="staff-booking-date" class="field">'+
      [["all","全部日期"],["today","今天"],["tomorrow","明天"],["next7","未來 7 天"]].map(([id,label])=>'<option value="'+id+'" '+(staffHistoryState.staffBookingDateFilter===id?"selected":"")+'>'+label+'</option>').join("")+'</select></div>'+
@@ -67,7 +67,7 @@ export function renderStaffBookings({openBookings,doneBookings,deletedBookings,i
     '<div class="staff-actionbar">'+btn("查詢完整歷史","historical-search","primary")+
       btn("重設歷史篩選","historical-reset","outline")+
       (isManager&&staffHistoryState.historicalBookingResult?btn("匯出完整搜尋結果 CSV","historical-export","secondary"):"")+
-      '</div><p class="small">單次最多匯出 20,000 筆，超過請分日期下載。</p>'+historyBookingResultHtml())+numberSettingsPanel("booking",t,isManager);
+      '</div><p class="small">單次最多匯出 20,000 筆，超過請分日期下載，不會截斷。</p>'+historyBookingResultHtml())+numberSettingsPanel("booking",t,isManager);
 
 return html;
 }

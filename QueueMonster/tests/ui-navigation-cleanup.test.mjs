@@ -119,8 +119,8 @@ test("public demo puts a prominent identity switch before industry examples and 
  assert.ok(html.indexOf('class="demo-controls"')<html.indexOf('class="demo-scenes"'),"role selector must appear before store selection");
  assert.equal((html.match(/data-role="/g)||[]).length,2);
  assert.equal((html.match(/data-scene="/g)||[]).length,4);
- assert.match(html,/先選擇體驗身分/);
- assert.match(html,/再選擇店家情境/);
+ assert.match(html,/<strong>體驗身分<\/strong>/);
+ assert.match(html,/<strong>店型<\/strong>/);
  assert.match(mobileCss,/\.roles\{display:grid;grid-template-columns:repeat\(2/);
  assert.match(desktopCss,/\.demo-controls \.roles button\{min-height:82px/);
  assert.match(script,/tab=role==="customer"\?primaryTab\[s\]:staffTabs\[s\]/);

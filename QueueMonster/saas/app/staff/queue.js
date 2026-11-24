@@ -51,7 +51,7 @@ export function renderStaffQueue({isManager,t,html}){
      '<label for="staff-unit-session">操作隊列</label><select id="staff-unit-session" class="field">'+
      sessions.map(s=>'<option value="'+esc(s.id)+'" '+(s.id===selected?.id?'selected':'')+'>'+
        esc(unitNameForSession(s.id))+' · '+esc(s.name)+' '+esc(s.start)+'</option>').join("")+'</select>'+
-     (!selected?'<p class="muted">無可操作場次，請新增場次。</p>':""));
+     (!selected?'<p class="muted">沒有可操作的場次，請新增。</p>':""));
  }
  html+='<div class="grid4 queue-status-summary" style="margin-bottom:16px">'+
    stat("正在叫號",active?.number||"—")+stat("候位中",waiting.length)+
