@@ -43,3 +43,17 @@ body[data-monster-page="merchant-center"] .panel,body[data-monster-page="merchan
 
 body[data-monster-page="directory"] .qm-customer-service-tabs{display:flex;flex-wrap:wrap;gap:8px}
 body[data-monster-page="directory"] .qm-customer-service-tabs button{flex:1 1 auto;min-width:0;white-space:nowrap}
+
+body[data-monster-page="index"][data-portal="customer"][data-customer-tab="home"] .customer-layout{grid-template-columns:minmax(0,1fr)}
+body[data-monster-page="index"][data-portal="customer"][data-customer-tab="home"] .customer-layout>aside{display:none}
+body[data-monster-page="role"][data-role="merchant"] .qm-role-hero{padding-block:32px}
+body[data-monster-page="role"][data-role="merchant"] .qm-hero-art{min-height:0;max-height:200px}
+body[data-monster-page="role"][data-role="merchant"] .qm-hero-art img{max-height:170px;max-width:100%;object-fit:contain}
+body[data-monster-page="role"][data-role="merchant"] .qm-guide-card{box-shadow:none;border-radius:10px;padding:16px}
+body[data-monster-page="merchant-register"] .intro{padding-block:20px}
+body[data-monster-page="merchant-register"] .intro h1{font-size:clamp(25px,3vw,40px)}
+body.mobile-demo .demo-intro{padding:14px 16px}
+body.mobile-demo .demo-intro h1{font-size:clamp(23px,3vw,32px);margin:0 0 5px}
+body.mobile-demo .demo-picker-title{margin:8px 0}
+body.mobile-demo .demo-role-copy strong,body.mobile-demo .demo-scene-copy strong{font-size:14px}
+body.mobile-demo .demo-current-selection{display:none}

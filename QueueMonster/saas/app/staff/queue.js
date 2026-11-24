@@ -46,12 +46,12 @@ export function renderStaffQueue({isManager,t,html}){
  const canRecall=!!active&&active.status==="CALLED"&&(!unitMode||!!selected);
  if(unitMode){
    html+=box("按場次獨立叫號",
-     '<p class="small">各場次獨立叫號，全部場次的完成、取消與刪除紀錄統一在下方查看。</p>'+
+     '<p class="small">各場次獨立叫號。</p>'+
      '<div class="staff-actionbar"><a class="btn outline" href="'+esc(sharedUiState.route("staff",routeState.slug)+"&tab=settings&section=sessions")+'">前往設定場次</a></div>'+
      '<label for="staff-unit-session">操作隊列</label><select id="staff-unit-session" class="field">'+
      sessions.map(s=>'<option value="'+esc(s.id)+'" '+(s.id===selected?.id?'selected':'')+'>'+
        esc(unitNameForSession(s.id))+' · '+esc(s.name)+' '+esc(s.start)+'</option>').join("")+'</select>'+
-     (!selected?'<p class="muted">目前沒有可操作的場次，請到設定新增場次；歷史顧客仍可在下方查閱。</p>':""));
+     (!selected?'<p class="muted">無可操作場次，請新增場次。</p>':""));
  }
  html+='<div class="grid4 queue-status-summary" style="margin-bottom:16px">'+
    stat("正在叫號",active?.number||"—")+stat("候位中",waiting.length)+
@@ -68,7 +68,7 @@ export function renderStaffQueue({isManager,t,html}){
      (unitMode?"本隊列看板":"電視即時叫號看板")+'</a></div>'+
      '<p class="staff-help">叫號通知使用票券識別碼，避免跨天同號誤通知。已發出的 LINE 訊息無法撤回。</p>')+
    (!unitMode?box("取號場次管理",
-     '<p class="small">此處是一般取號的手動早／午／晚場切換；自訂場次與每週排程則在「設定 → 營業與場次」管理。</p><p class="small">目前：<strong>'+esc(queueSessionName(staffState.staff.queue_session?.code||"MORNING"))+
+     '<p class="small">手動切換早／午／晚場。</p><p class="small">目前：<strong>'+esc(queueSessionName(staffState.staff.queue_session?.code||"MORNING"))+
      '</strong>。休場只暫停新的取號，先前號碼仍可繼續叫號；切場不會重設流水號。</p>'+
      '<div class="staff-actionbar">'+
      [["MORNING","早場"],["AFTERNOON","午場"],["EVENING","晚場"],["REST","休場"]].map(([code,name])=>

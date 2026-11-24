@@ -48,7 +48,7 @@ export function enhanceStaffUI(){
  }
 }
 
-export function render(){document.body.dataset.portal=routeState.view;head();routeState.$("root").innerHTML=message()+(routeState.view==="platform"?platformRender():routeState.view==="staff"?staffRender():routeState.view==="customer"?customerRender():renderHome())+customerHistoryDialog()+'<footer>排隊怪獸服務 ・ <a href="privacy.html">隱私權說明</a> ・ <a href="terms.html">使用條款</a></footer>';enhanceStaffUI();enhanceSettingsHints(routeState.$("root"))}
+export function render(){document.body.dataset.portal=routeState.view;document.body.dataset.customerTab=routeState.view==="customer"?routeState.customerTab:"";head();routeState.$("root").innerHTML=message()+(routeState.view==="platform"?platformRender():routeState.view==="staff"?staffRender():routeState.view==="customer"?customerRender():renderHome())+customerHistoryDialog()+'<footer>排隊怪獸服務 ・ <a href="privacy.html">隱私權說明</a> ・ <a href="terms.html">使用條款</a></footer>';enhanceStaffUI();enhanceSettingsHints(routeState.$("root"))}
 
 export function initializeStaffLayout(){
 staffLayoutState.staffUiExpanded=new Map();

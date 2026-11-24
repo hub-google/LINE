@@ -308,7 +308,7 @@ export function renderScheduleSettings(isManager){
  const plans=Object.entries(d.templates).filter(([key])=>planKey(key));
  const minNotice=staffState.staff?.bookingPolicy?.min_notice_minutes??0;
  const bookingNoticeSection='<section class="schedule-module schedule-module-notice"><div class="schedule-module-heading"><h3>預約受理限制</h3></div>'+
-  '<div class="schedule-module-body"><p class="small">最晚提前多久接受預約？填 0 表示不限制。休息時間與公休請透過下面的場次及特殊日期管理。儲存本設定時會清除舊版每日休息時間。</p>'+
+  '<div class="schedule-module-body"><p class="small">0 表示不限制。儲存後會清除舊版每日休息時間。</p>'+
   '<div style="max-width:360px">'+field("最晚提前預約分鐘數","schedule-min-notice",minNotice,"number",'min="0" max="10080" step="1"')+'</div>'+
   '<div class="staff-actionbar" style="margin:14px 0 0">'+btn("儲存提前預約限制","save-booking-policy","primary")+'</div></div></section>';
  const planCards=plans.map(([key,windows])=>{
@@ -355,7 +355,7 @@ export function renderScheduleSettings(isManager){
    '</details></section>';
  }).join("");
  const planSection='<section class="schedule-module schedule-module-plans"><div class="schedule-module-heading"><h3>營業方案</h3></div>'+
-  '<div class="schedule-module-body"><p class="small">每個方案可自訂名稱及 0～50 場；先按「編輯方案」修改，再按「儲存方案」。已套用的星期不會自動改變。</p>'+
+  '<div class="schedule-module-body"><p class="small">修改方案不會自動變更已套用的星期。</p>'+
   '<div class="schedule-plan-list">'+planCards+'</div>'+
   '<div class="staff-actionbar schedule-plan-add-bar">'+btn("＋ 新增營業方案","schedule-plan-add","primary")+'</div></div></section>';
  const batchSection='<section class="schedule-module schedule-batch-box"><div class="schedule-module-heading"><h3>批次套用營業方案</h3></div>'+
@@ -377,18 +377,18 @@ export function renderScheduleSettings(isManager){
      btn("移除此設定","schedule-special-remove","outline",'data-start="'+esc(x.start)+'" data-end="'+esc(x.end)+'"')+'</div>').join(""):
      '<p class="muted">目前沒有設定特殊日期。</p>';
  return box("智慧營業排程",
-  '<p class="small">只需設定一次，往後每週自動套用；特殊日期優先於每週規則。適用預約、取號與線上點餐，並保留既有預約和訂單。</p>'+
+  '<p class="small">特殊日期優先於每週排程；已成立的預約與訂單保留。</p>'+
   '<label class="checklist"><input type="checkbox" id="schedule-enabled"'+(d.enabled?" checked":"")+'> 啟用每週自動排程</label>'+
   '<div class="staff-actionbar" style="margin:10px 0 4px">'+btn("儲存自動排程開關","schedule-enabled-save","primary")+'</div>'+
-  '<p class="small">此按鈕只儲存啟用狀態，不會覆蓋下方尚未儲存的營業方案、每週場次或特殊日期；每週場次請另外按「儲存每週營業排程」。</p>'+
+  '<p class="small">此按鈕只儲存啟用狀態。</p>'+
   (!d.enabled?'<p class="small">尚未啟用時仍保留原有指定日期場次；設定每週場次後才會自動套用。若七天都是公休，啟用後仍不會產生新場次。</p>':"")+
   bookingNoticeSection+planSection+batchSection+
   '<section class="schedule-module schedule-module-weekly"><div class="schedule-module-heading"><h3>每週細部調整</h3></div><div class="schedule-module-body">'+
-  '<p class="small">以下是套用後的七天排程摘要。若某一天需要不同內容，可展開「個別調整」修改，其他星期不受影響。</p>'+week+
+  ''+week+
   '<div class="staff-actionbar" style="margin:16px 0">'+btn("儲存每週營業排程","schedule-weekly-save","primary")+
   btn("放棄尚未儲存的修改","schedule-weekly-reset","outline")+'</div></div></section>'+
-  '<section class="schedule-module schedule-module-special"><div class="schedule-module-heading"><h3>特殊日期（節假日、裝修、臨時調整）</h3></div><div class="schedule-module-body">'+
-  '<p class="small">直接填寫這段期間每天的場次數：0 場為公休，1～50 場可逐場設定時間、名額與服務窗口。特殊日期會優先於每週排程。</p>'+
+  '<section class="schedule-module schedule-module-special"><div class="schedule-module-heading"><h3>特殊日期</h3></div><div class="schedule-module-body">'+
+  '<p class="small">0 場為公休，1～50 場可逐場設定。</p>'+
   '<div class="grid"><div>'+field("開始日期","schedule-special-start",e.start,"date")+'</div><div>'+field("結束日期","schedule-special-end",e.end,"date")+'</div></div>'+
   '<div class="schedule-special-count"><label for="schedule-special-count">每天場次數（0 為公休）</label>'+
    '<input class="field" type="number" id="schedule-special-count" min="0" max="50" step="1" value="'+specialCount+'"></div>'+

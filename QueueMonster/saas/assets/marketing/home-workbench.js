@@ -24,13 +24,13 @@
    '<div class="qm-live-list-row"><span class="qm-live-time">10:30</span><div><strong>剪髮服務</strong><small>線上預約・1 位</small></div><span class="qm-live-state'+(bookingChecked?' done':'')+'">'+(bookingChecked?'已報到':'待報到')+'</span></div>'+
    '<div class="qm-live-list-row"><span class="qm-live-time">11:00</span><div><strong>染髮服務</strong><small>線上預約・1 位</small></div><span class="qm-live-state">待報到</span></div>'+
    button("checkin",bookingChecked?'已完成報到 ✓':'確認 10:30 報到',bookingChecked)+
-   '</div><div class="qm-live-synced"><span aria-hidden="true">✓</span> 免人工重複登記，預約清楚列出</div>',
+   '</div>',
   order:()=>'<div class="qm-live-screen-title"><span>取餐訂單</span></div>'+
    '<div class="qm-live-booking-panel"><div class="qm-live-statline"><span>待接單</span><strong>'+(orderAccepted?'0':'1')+' 筆</strong></div>'+
    '<div class="qm-live-list-row"><span class="qm-live-time">B014</span><div><strong>原味蛋餅 × 2</strong><small>冰紅茶 × 1 ・ 08:45 取餐</small></div><span class="qm-live-state'+(orderAccepted?' done':'')+'">'+(orderAccepted?'製作中':'待接單')+'</span></div>'+
    
    button("accept",orderAccepted?'已接單 ✓':'確認接單',orderAccepted)+
-   '</div><div class="qm-live-synced"><span aria-hidden="true">✓</span> 接單狀態集中更新，不用口頭記單</div>'
+   '</div>'
  };
  const tips={
   queue:"按「叫下一位」，看板和顧客手機會同步顯示新號碼。",

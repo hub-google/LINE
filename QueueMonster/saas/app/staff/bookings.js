@@ -30,7 +30,7 @@ export function renderStaffBookings({openBookings,doneBookings,deletedBookings,i
       '<select id="staff-booking-unit-filter" class="field"><option value="">全部服務單位</option>'+
       (serviceUnitsState.unitConfig.units||[]).map(u=>'<option value="'+esc(u.id)+'" '+(bookingState.bookingUnitFilter===u.id?'selected':'')+'>'+esc(u.name)+'</option>').join("")+
       '</select>'):"")+
-   box("搜尋與篩選預約",'<p class="small">此處僅篩選目前已載入的資料：跨日未結案預約，以及最近 '+staffHistoryState.staffHistoryDays+' 天已處理紀錄；完整歷史請使用下方「歷史預約查詢」，也可切換日／週／月曆查看。</p>'+
+   box("搜尋與篩選預約",'<p class="small">篩選未結案及最近 '+staffHistoryState.staffHistoryDays+' 天已處理紀錄。</p>'+
     '<div class="grid3"><div>'+field("搜尋預約編號、姓名或服務","staff-booking-search",staffHistoryState.staffBookingSearch,"search",'placeholder="輸入關鍵字"')+'</div>'+
     '<div><label for="staff-booking-date">預約日期</label><select id="staff-booking-date" class="field">'+
      [["all","全部日期"],["today","今天"],["tomorrow","明天"],["next7","未來 7 天"]].map(([id,label])=>'<option value="'+id+'" '+(staffHistoryState.staffBookingDateFilter===id?"selected":"")+'>'+label+'</option>').join("")+'</select></div>'+
@@ -41,7 +41,7 @@ export function renderStaffBookings({openBookings,doneBookings,deletedBookings,i
     (isManager?btn("匯出篩選結果 CSV","export-bookings","secondary"):"")+'</div>')+
    '<div class="grid4" style="margin-bottom:16px">'+stat("待處理預約",openBookings.length)+stat("待報到",pendingBookings.length)+
     stat("已報到未結案",openBookings.filter(x=>x.status==="CHECKED_IN").length)+stat("已處理預約",doneBookings.length)+'</div>'+
-   box("預約管理方式",'<p class="muted">只要沒有標記完成、未到或取消，預約就不因跨過午夜而消失。店員可直接勾選狀態，也可重新選擇修正手誤。</p>'+
+   box("預約管理方式",'<p class="muted">未結案預約跨日保留；可更正狀態。</p>'+
     '<p class="staff-help">'+(serviceUnitsState.unitConfig?.linked?
      '已啟用連動：報到後會為此場次建立一張候診票券，重複報到不會重複發號。':
      '預約獨立管理：報到不會產生叫號號碼。')+'未來預約僅可取消或恢復。</p>'+
@@ -54,7 +54,7 @@ export function renderStaffBookings({openBookings,doneBookings,deletedBookings,i
    box("已刪除預約（最近 "+staffHistoryState.staffHistoryDays+" 天，"+visibleDeleted.length+" / "+deletedBookings.length+" 筆）",
     '<p class="staff-help">顧客不會看到這些預約，也不會收到刪除通知。取消勾選即可恢復。</p>'+
     (visibleDeleted.length?staffListPage(visibleDeleted,"booking-deleted",card):'<p class="muted">目前沒有已刪除預約。</p>'))+
-   box("完整預約歷史",'<p class="small">查詢本店全部歷史預約，不受工作清單「最近 7～90 天／每類最多 500 筆」限制。本區僅提供查閱，不修改狀態，也不發送 LINE 通知。</p>'+
+   box("完整預約歷史",'<p class="small">查詢全部歷史；僅供查閱，不修改狀態或發送通知。</p>'+
     '<div class="grid3"><div>'+field("姓名、編號、參考碼、服務","historical-booking-search",staffHistoryState.historicalBookingQuery,"search",'maxlength="100"')+'</div>'+
     '<div>'+field("預約日期起","historical-booking-from",staffHistoryState.historicalBookingStart,"date")+'</div>'+
     '<div>'+field("預約日期迄","historical-booking-to",staffHistoryState.historicalBookingEnd,"date")+'</div></div>'+
@@ -67,7 +67,7 @@ export function renderStaffBookings({openBookings,doneBookings,deletedBookings,i
     '<div class="staff-actionbar">'+btn("查詢完整歷史","historical-search","primary")+
       btn("重設歷史篩選","historical-reset","outline")+
       (isManager&&staffHistoryState.historicalBookingResult?btn("匯出完整搜尋結果 CSV","historical-export","secondary"):"")+
-      '</div><p class="small">匯出檔案會依目前搜尋條件整理，單次最多匯出 20,000 筆；超過限制須分日期區間下載，絕不默默截斷。</p>'+historyBookingResultHtml())+numberSettingsPanel("booking",t,isManager);
+      '</div><p class="small">單次最多匯出 20,000 筆，超過請分日期下載。</p>'+historyBookingResultHtml())+numberSettingsPanel("booking",t,isManager);
 
 return html;
 }

@@ -92,7 +92,7 @@ export function renderPickupSettings(isManager){
  const select=(id,options,value)=>'<select class="field" id="'+id+'">'+options.map(([v,label])=>
    '<option value="'+esc(v)+'" '+(String(v)===String(value)?"selected":"")+'>'+esc(label)+'</option>').join("")+'</select>';
  return box("線上點餐與取餐進度",
-   '<p class="muted">沿用「設定 → 服務設定」的餐點，不另建第二份菜單。此模式與原本預約、取號獨立；不處理線上付款。</p>'+
+   '<p class="muted">沿用已設定的菜單，不含線上付款。</p>'+
    (!isManager?'<p>線上點餐：'+(s.enabled?"已啟用":"未啟用")+'；取餐方式：'+esc(modeName[s.schedule_mode]||"預約")+'</p>':
    '<p class="settings-guidance">線上點餐是否開放，請使用本頁上方的「顧客服務開放設定」。這裡只需調整取餐方式與時段。</p>'+
    '<label for="pickup-mode">顧客選擇取餐時間</label>'+
@@ -107,7 +107,7 @@ export function renderPickupSettings(isManager){
    field("至少提前幾分鐘下單","pickup-notice",s.min_notice_minutes??20,"number",'min="0" max="1440"')+
    field("可提前預訂天數（0～30）","pickup-days",s.days_ahead??3,"number",'min="0" max="30"')+'</div></div>'+
    field("預估製作時間（分鐘）","pickup-prep",s.prep_minutes??20,"number",'min="1" max="180"')+
-   '<p class="small">取餐時段容量可選「訂單數」或「餐點份數」。選擇份數後，08:00 的 20 份漢堡會占用 20 份容量；已成立訂單的取餐時間不變。</p>'+
+   '<p class="small">已成立訂單的取餐時間不變。</p>'+
    '<div class="staff-actionbar">'+btn("儲存取餐設定","pickup-save","primary")+'</div>')+
    '<div class="inset" style="margin-top:12px"><strong>點餐連結</strong><p class="small">服務啟用後，可把下方網址提供給顧客。</p>'+
    (s.enabled?'<p style="overflow-wrap:anywhere"><a target="_blank" rel="noopener noreferrer" href="'+esc(new URL("./index.html?view=customer&merchant="+encodeURIComponent(routeState.slug)+"&tab=order",location.href).href)+'">'+
@@ -201,7 +201,7 @@ export function renderCustomerPickup(){
  if(!s.enabled)return box("尚未開放線上點餐",'<p>店家暫停接受新訂單，既有訂單仍可查看。</p>'+(orderCards||'<p>目前沒有訂餐紀錄。</p>')+historyControls);
  const available=(d.slots||[]).filter(x=>x.left>0);
  return box("線上點餐",
-  '<p class="muted">直接使用本店上架菜單，送出後可在此追蹤接單、製餐、可取餐與已取餐進度。</p>'+btn('更新訂單進度','pickup-refresh','outline')+
+  ''+btn('更新訂單進度','pickup-refresh','outline')+
   pickupGroupPanel()+
   (featuredCancelCard?'<section role="region" aria-label="新訂單取消倒數" style="margin:10px 0 18px"><h3>訂單已送出</h3>'+featuredCancelCard+'</section>':
   '<p class="notice"><strong>下單後 15 秒內可取消。</strong>送出訂單後會顯示倒數；倒數結束，訂單才會交給店家接單，之後無法自行取消。</p>')+
@@ -242,7 +242,7 @@ export function renderCustomerPickup(){
    '<div style="margin-top:12px">'+field("給店家的備註（最多 200 字）","pickup-note",pickupState.note,"text",'maxlength="200" placeholder="例如：不要加辣"')+'</div>'+
   renderCouponCustomer(total,pickupState.groupId)+
   '<div class="listline"><strong>共 '+esc(count)+' 份</strong><strong>'+money(total)+'</strong></div>'+
-  '<p class="small">此處僅建立訂單，不會線上收款；請依店家現場方式結帳。</p>'+
+  '<p class="small">到店付款。</p>'+
   (pickupState.groupId?(
     pickupState.groupData?.submitted?'<p class="notice">團購已完成下單。請到上方查看訂單狀態。</p>':
     '<div class="staff-actionbar">'+btn("儲存我的餐點到團購","pickup-group-save","primary")+

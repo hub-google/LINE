@@ -13,21 +13,20 @@
 <script defer src="./assets/marketing/funnel-events.js?build=__LINE_SAAS_BUILD__"></script><link rel="stylesheet" href="./assets/marketing/ui-simplified.css?build=__LINE_SAAS_BUILD__"></head><body data-monster-page="merchant-register">
 <div id="marketing-header"><a href="./home.html">排隊怪獸</a></div>
 <main>
-<section class="intro"><div id="demo-origin" class="demo-origin" hidden><span>從免費操作示範而來</span><strong id="demo-origin-title">接下來，建立你的店家</strong><p>剛才操作的是模擬資料。註冊後可設定自己的店名、服務與營業時間，正式提供顧客使用。</p></div><div class="eyebrow">商家管理專區</div><h1>少接電話、少人工登記，<br><span>店家營運更輕鬆。</span></h1>
-<p>一個帳號就能開始建立專屬的預約、現場取號與叫號服務。先註冊，再自行填寫店家資料；資料完成前不會公開在搜尋名單。</p>
-<div class="benefit"><div><b>1</b> 註冊店家帳號並驗證電子信箱</div><div><b>2</b> 登入後填寫自己的店名、地址及營運設定</div><div><b>3</b> 完成資料後正式開放搜尋及預約取號</div></div>
+<section class="intro"><div id="demo-origin" class="demo-origin" hidden><strong id="demo-origin-title">建立你的店家</strong></div><h1>店家登入／註冊</h1>
+<p>完成店家資料後才會公開門市。</p>
 </section>
 <section class="panel">
 <div id="auth-zone">
 <div class="tabs" role="tablist" aria-label="店家帳號操作"><button id="tab-login" type="button" role="tab" aria-selected="true">登入</button><button id="tab-signup" type="button" role="tab" aria-selected="false">註冊</button></div>
 <div id="invitation-hint" class="help" role="status"></div>
-<div class="google-first"><div id="google-gis-button" class="google-gis-button" hidden aria-label="Google 帳號登入"></div><button id="google-auth" type="button" class="google-auth-button"><span class="google-mark" aria-hidden="true">G</span>使用 Google 帳號繼續</button><p class="help">使用 Google 帳號即可登入或註冊，不必另外設定密碼。</p></div>
+<div class="google-first"><div id="google-gis-button" class="google-gis-button" hidden aria-label="Google 帳號登入"></div><button id="google-auth" type="button" class="google-auth-button"><span class="google-mark" aria-hidden="true">G</span>使用 Google 帳號繼續</button></div>
 <div class="email-divider" role="separator"><span>或使用電子信箱</span></div>
-<form id="login-form"><h2>店家／員工登入</h2><p class="sub">使用自己的電子信箱與密碼登入，受邀員工登入後可接受企業邀請。</p>
-<label for="login-email">電子信箱（登入帳號）</label><input type="email" id="login-email" autocomplete="username" required>
+<form id="login-form"><h2>店家／員工登入</h2>
+<label for="login-email">電子信箱</label><input type="email" id="login-email" autocomplete="username" required>
 <label for="login-pass">密碼</label><input type="password" id="login-pass" autocomplete="current-password" required>
 <button type="submit" class="primary">登入</button><button type="button" id="email-link-login" class="secondary-action">寄送電子郵件登入連結</button><button type="button" id="forgot-pass" class="secondary-action">忘記密碼？寄送重設連結</button>
-<p class="help">還沒有帳號？點選上方「註冊」。</p></form>
+</form>
 <form id="signup-form" class="hidden"><h2>Email 註冊</h2><p class="sub">先驗證您擁有這個電子信箱，再設定密碼。受邀員工請使用邀請信指定的信箱。</p>
 <label for="signup-email">電子信箱（登入帳號）</label><input type="email" id="signup-email" autocomplete="email" required>
 <button type="submit" class="primary">寄送 Email 驗證連結</button>

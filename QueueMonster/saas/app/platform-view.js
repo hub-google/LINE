@@ -17,8 +17,8 @@ function enabledMerchantServices(tenant){
 }
 
 export function platformRender(){
- if(!authReady())return box("總部管理員登入",'<p>請從總部專用入口登入，完成授權後才能使用總部管理功能。</p><a class="btn primary" href="./platform-login.html">前往總部登入</a>');
- if(!platformReady())return box("沒有總部管理權限",'<p>目前帳號無法進入總部管理後台。請使用總部專用入口登入。</p><a class="btn primary" href="./platform-login.html">前往總部登入</a>');
+ if(!authReady())return box("總部管理員登入",'<p>請登入總部帳號。</p><a class="btn primary" href="./platform-login.html">前往總部登入</a>');
+ if(!platformReady())return box("沒有總部管理權限",'<p>目前帳號沒有管理權限。</p><a class="btn primary" href="./platform-login.html">前往總部登入</a>');
  const menu=nav("平台營運總覽","dashboard",routeState.platformTab,"platform")+nav("企業列表","list",routeState.platformTab,"platform")+nav("開通新企業","create",routeState.platformTab,"platform")+nav("平台說明","about",routeState.platformTab,"platform");
  let html="";
  if(routeState.platformTab==="dashboard"){
@@ -51,7 +51,7 @@ export function platformRender(){
     '</tbody></table></div>';
 
  }else if(routeState.platformTab==="create"){
-  html=box("新增企業客戶",'<p class="muted">完成後將建立獨立的店家網站與資料空間，LOGO、品牌色及營業設定會同步套用。</p>'+
+  html=box("新增企業客戶",''+
     '<div class="grid"><div>'+field("網址英文代碼","create-slug","","text",'pattern="[a-z0-9-]{3,40}" placeholder="例如：my-shop"')+
     '</div><div>'+field("第一位企業管理者 Email（選填）","create-owner","","email")+
     '<p class="small">若填寫，將建立管理者邀請，請對方以該信箱註冊後接受。</p></div></div>'+

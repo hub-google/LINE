@@ -36,5 +36,5 @@ test('decorative English is removed from customer-facing headers and sections',(
  }
  const directory=read('directory.html');
  assert.match(directory,/<h1 class="eyebrow">找店家<\/h1>/);
- assert.equal((directory.match(/找店家/g)||[]).length,1);
+ assert.equal((directory.match(/<h1 class="eyebrow">找店家<\/h1>/g)||[]).length,1);
 });

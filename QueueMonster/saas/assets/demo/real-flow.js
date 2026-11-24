@@ -62,8 +62,8 @@ function syncDemoLink(eventName=""){
 function updateIntro(){
  const title=document.querySelector(".demo-intro h1"),summary=document.querySelector(".demo-intro p");
  if(role==="customer"){
-  if(title)title.innerHTML="預約、取號、點餐，<span>先體驗看看。</span>";
-  if(summary)summary.textContent="免登入試用四種店家情境，直接操作預約、取號或點餐。所有資料均為模擬，不會送出真實服務或 LINE 訊息。";
+  if(title)title.textContent="操作體驗";
+  if(summary)summary.textContent="免登入，使用模擬資料。";
  }else{
   if(title)title.innerHTML="你的店，也能<span>更從容。</span>";
   if(summary)summary.textContent="先以店家身分體驗接單、預約管理或同步叫號，再切換顧客端比較使用流程。這是獨立模擬，不會修改真實門市資料或推播 LINE。";
