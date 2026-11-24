@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
-<meta name="line-saas-build" content="3cf90fb4d4d3f38e2dda32d52845637074de717b">
-<script defer src="./version-watch.js?build=3cf90fb4d4d3f38e2dda32d52845637074de717b"></script>
+<meta name="line-saas-build" content="5dffe563baffde3d25580cbaa49118c8340d6206">
+<script defer src="./version-watch.js?build=5dffe563baffde3d25580cbaa49118c8340d6206"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>找店家・預約・取號・點餐｜排隊怪獸</title>
 <meta name="description" content="排隊怪獸顧客入口，直接搜尋真實店家，線上預約、排隊取號、線上點餐，查看現場叫號進度及我的紀錄。">
@@ -17,24 +17,24 @@
  target.search=query.toString();
  location.replace(target.href);
 })();</script>
-<link rel="stylesheet" href="./assets/directory/page-SFZJXTQO.css?build=3cf90fb4d4d3f38e2dda32d52845637074de717b"><link rel="stylesheet" href="./site-auth.css?build=3cf90fb4d4d3f38e2dda32d52845637074de717b"><link rel="stylesheet" href="./monster-world.css?build=3cf90fb4d4d3f38e2dda32d52845637074de717b"><link rel="stylesheet" href="./assets/marketing/shared-header-ADBN6TNM.css?build=3cf90fb4d4d3f38e2dda32d52845637074de717b"><script defer src="./assets/marketing/shared-header-FJW3WVNB.js?build=3cf90fb4d4d3f38e2dda32d52845637074de717b"></script><script defer src="./site-auth.js?build=3cf90fb4d4d3f38e2dda32d52845637074de717b"></script><link rel="icon" type="image/svg+xml" href="./monster-mascot.svg"><style>/* Directory search header is now the shared marketing navigation; keep its own hero separately. */
+<link rel="stylesheet" href="./assets/directory/page-SFZJXTQO.css?build=5dffe563baffde3d25580cbaa49118c8340d6206"><link rel="stylesheet" href="./site-auth.css?build=5dffe563baffde3d25580cbaa49118c8340d6206"><link rel="stylesheet" href="./monster-world.css?build=5dffe563baffde3d25580cbaa49118c8340d6206"><link rel="stylesheet" href="./assets/marketing/shared-header-ADBN6TNM.css?build=5dffe563baffde3d25580cbaa49118c8340d6206"><script defer src="./assets/marketing/shared-header-SAKGKW72.js?build=5dffe563baffde3d25580cbaa49118c8340d6206"></script><script defer src="./site-auth.js?build=5dffe563baffde3d25580cbaa49118c8340d6206"></script><link rel="icon" type="image/svg+xml" href="./monster-mascot.svg"><style>/* Directory search header is now the shared marketing navigation; keep its own hero separately. */
 body[data-monster-page="directory"] .page-header .hero-heading{margin-top:0}
 body[data-monster-page="directory"] .page-header{padding-top:45px}
-</style><link rel="stylesheet" href="./assets/marketing/dual-portals-KRERD5RM.css?build=3cf90fb4d4d3f38e2dda32d52845637074de717b">
-<script defer src="./assets/marketing/funnel-events-YUBY36HD.js?build=3cf90fb4d4d3f38e2dda32d52845637074de717b"></script>
-<link rel="stylesheet" href="./assets/marketing/customer-app-7WNL7SMA.css?build=3cf90fb4d4d3f38e2dda32d52845637074de717b">
-</head>
+</style><link rel="stylesheet" href="./assets/marketing/dual-portals-KRERD5RM.css?build=5dffe563baffde3d25580cbaa49118c8340d6206">
+<script defer src="./assets/marketing/funnel-events-YUBY36HD.js?build=5dffe563baffde3d25580cbaa49118c8340d6206"></script>
+<link rel="stylesheet" href="./assets/marketing/customer-app-7WNL7SMA.css?build=5dffe563baffde3d25580cbaa49118c8340d6206">
+<link rel="stylesheet" href="./assets/marketing/ui-simplified-AIM6DJNG.css?build=5dffe563baffde3d25580cbaa49118c8340d6206"></head>
 <body data-monster-page="directory" data-role="customer" data-customer-home="true">
 <div id="marketing-header"><a href="./home.html">排隊怪獸</a></div>
 <header class="page-header qm-customer-app-title"><div class="container qm-customer-title">
-  <div><h1>找店家</h1><p>預約・取號・點餐</p></div>
-  <a href="./my-records.html" class="qm-customer-records" aria-label="查看我的預約、取號與點餐紀錄">我的紀錄 <span aria-hidden="true">›</span></a>
+  <div><h1>找店家</h1></div>
+  
  </div></header>
 <main class="container">
  <section class="main-panel">
   <div id="explore-list" class="explore-list">
   <div class="search-wrap">
-   <label for="keyword">搜尋店家</label>
+   <label for="keyword" class="qm-sr-only">搜尋店家</label>
    <div class="search-field">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
     <input id="keyword" class="search" type="search" placeholder="輸入店名、地區或服務" aria-label="輸入店家名稱或地點" autocomplete="off">
@@ -45,13 +45,14 @@ body[data-monster-page="directory"] .page-header{padding-top:45px}
     <button type="button" data-customer-service="預約" aria-pressed="false">線上預約</button>
     <button type="button" data-customer-service="取號" aria-pressed="false">排隊取號</button>
     <button type="button" data-customer-service="點餐" aria-pressed="false">線上點餐</button>
+    <button type="button" data-customer-service="看板" aria-pressed="false">即時看板</button>
    </div>
-  <details id="explore-filters" class="filter-details" aria-label="搜尋篩選" open>
+  <details id="explore-filters" class="filter-details" aria-label="搜尋篩選">
     <summary class="filter-summary" id="filter-summary">進階篩選 <span class="filter-chevron" aria-hidden="true"></span></summary>
     <div class="explore-filter-row" role="group" aria-label="篩選條件">
     <label>店家類別<select id="explore-category"><option value="全部">全部類別</option></select></label>
     <label>地區<select id="explore-area"><option value="全部">所有地區</option></select></label>
-    <label>服務類型<select id="explore-service">
+    <label class="qm-service-select">服務類型<select id="explore-service">
       <option value="全部">全部服務</option><option value="預約">提供預約</option><option value="取號">提供取號</option><option value="點餐">提供線上點餐</option><option value="看板">提供叫號看板</option>
     </select></label>
     <label>排序<select id="explore-sort"><option value="popular">熱門排行</option><option value="name">店家名稱</option><option value="category">依店家分類</option></select></label>
@@ -72,4 +73,4 @@ body[data-monster-page="directory"] .page-header{padding-top:45px}
  </section>
 </main>
 <footer class="footer"><div class="container">僅顯示實際公開的店家與服務。　<a href="privacy.html">隱私權說明</a>　·　<a href="terms.html">服務條款</a></div></footer>
-<script type="module" src="./assets/directory/main-TSLVK7IE.js?build=3cf90fb4d4d3f38e2dda32d52845637074de717b"></script></body></html>
+<script type="module" src="./assets/directory/main-TSLVK7IE.js?build=5dffe563baffde3d25580cbaa49118c8340d6206"></script></body></html>
