@@ -200,9 +200,9 @@ test("public headers share navigation while administrator permissions stay isola
  assert.match(shared,/view==="staff"/);
  assert.match(shared,/\["browse","搜尋店家"\]/);
  const auth=read("saas/site-auth.js");
- assert.match(auth,/if\(lineIdentity&&operatorIdentity\)return preferOperator\?operatorIdentity:lineIdentity;/);
- assert.match(auth,/return operatorIdentity\|\|lineIdentity;/);
- assert.match(auth,/return operatorIdentity\|\|lineIdentity;/,"header identity must work on every route");
+ assert.match(auth,/if\(mode==="customer"\)\{\s*const result=await customer\.auth\.getSession\(\)/);
+ assert.match(auth,/const result=await operator\.auth\.getSession\(\)/);
+ assert.doesNotMatch(auth,/return operatorIdentity\|\|lineIdentity/,"header must never fall back to another portal identity");
 });
 test("merchant can independently enable reservation, queue and pickup via shared service controls",()=>{
  const modes=read("supabase/migrations/20261109093000_merchant_service_mode_switch.sql");
