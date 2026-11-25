@@ -365,7 +365,7 @@ try{
  }
  console.log('Real queue, customer progress and board shown and call-next works on both viewports.');
 
- r industries share ONE homepage panel; tab clicks must never navigate.
+ // Four industries share ONE homepage panel; tab clicks must never navigate.
  for(const width of [1280,390]){
   await page.setViewportSize({width,height:900});
   await page.goto(baseUrl+'/booking/home.html',{waitUntil:'load',timeout:45000});
