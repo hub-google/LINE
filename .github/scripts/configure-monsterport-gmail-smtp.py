@@ -116,7 +116,7 @@ def configure():
         "smtp_admin_email": SENDER,
         "smtp_sender_name": "MonsterPort",
         "smtp_host": HOST,
-        "smtp_port": port,
+        "smtp_port": str(port),
         "smtp_user": SENDER,
         "smtp_pass": password,
     }
