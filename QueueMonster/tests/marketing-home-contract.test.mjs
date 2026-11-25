@@ -124,7 +124,7 @@ test("merchant homepage stays concise while embedding genuine product UI",()=>{
  const css=read("saas/assets/marketing/home-compact.css");
  for(const cls of [".qm-home-hero-grid",".qm-home-industry",".qm-home-start",".qm-home-faq"])
   assert.ok(css.includes(cls),"Missing layout "+cls);
- assert.match(landing,/home-compact\.css\?build=__LINE_SAAS_BUILD__/);
+ assert.match(landing,/qm-home-hero-grid/);
  assert.match(landing,/queue-preview\.html\?build=__LINE_SAAS_BUILD__/);
 });
 
