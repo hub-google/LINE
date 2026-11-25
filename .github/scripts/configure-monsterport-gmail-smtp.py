@@ -7,6 +7,7 @@ Keep both independent Auth configs and branded templates intact.
 """
 import json
 import os
+import re
 import smtplib
 import ssl
 import urllib.error
@@ -15,7 +16,7 @@ import urllib.request
 TOKEN = os.getenv("SUPABASE_ACCESS_TOKEN", "")
 QUEUE_REF = "unapiwajmgqqtdkixaab"
 PROJECTS = [("Queue Monster", QUEUE_REF), ("Monster Arena", "fanffwnhkxpfhttylntw")]
-SENDER = "monsterport@gmail.com"
+SENDER = os.getenv("MONSTERPORT_SMTP_SENDER", "").strip().lower()
 HOST = "smtp.gmail.com"
 PORT = 465
 VAULT_NAME = "MONSTERPORT_GMAIL_SMTP_APP_PASSWORD"
@@ -105,6 +106,8 @@ def verify_gmail(password):
 
 
 def configure():
+    if not re.fullmatch(r"[a-z0-9._%+\\-]+@gmail\\.com", SENDER):
+        raise RuntimeError("MONSTERPORT_SMTP_SENDER must be the actual registered Gmail address")
     originals = preflight()
     target = os.getenv("MONSTERPORT_SMTP_TARGET", "")
     if target not in ("arena", "queue"):
