@@ -88,6 +88,7 @@ test("directory preserves platform OA LIFF context while opening store services"
 
 test("merchant hero embeds the actual queue management, live board and customer progress",()=>{
  const preview=read("saas/queue-preview.html");
+ const logic=read("saas/assets/queue-preview/main.js");
  assert.match(landing,/id="features" class="qm-real-preview"/);
  assert.match(landing,/id="qm-real-queue" src="\.\/queue-preview\.html/);
  assert.match(landing,/正式產品叫號體驗/);
@@ -95,13 +96,12 @@ test("merchant hero embeds the actual queue management, live board and customer 
  assert.match(preview,/id="staff-root"/);
  assert.match(preview,/id="board-preview"/);
  assert.match(preview,/id="customer-root"/);
- assert.match(preview,/renderStaffQueue/);
- assert.match(preview,/queueProgressBoard/);
- assert.match(preview,/function call\(ticket\)/);
- assert.match(preview,/sendBoard\(\)/);
+ assert.match(logic,/renderStaffQueue/);
+ assert.match(logic,/queueProgressBoard/);
+ assert.match(logic,/function call\(ticket\)/);
+ assert.match(logic,/sendBoard\(\)/);
  assert.match(preview,/id="reset-preview"/);
- const parsed=spawnSync(process.execPath,["--input-type=module","--check"],{
-  input:preview.match(/<script type="module">([\s\S]*?)<\/script>/)?.[1]||"",encoding:"utf8"});
+ const parsed=spawnSync(process.execPath,["--input-type=module","--check"],{input:logic,encoding:"utf8"});
  assert.equal(parsed.status,0,parsed.stderr);
 });
 
