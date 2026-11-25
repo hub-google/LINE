@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
 import {chromium} from "./node_modules/playwright/index.mjs";
+import {effectivePassword} from "../../QueueMonster/saas/app/password-credential.js";
 
 const dist=path.resolve(process.argv[2]||"line-saas-dist");
 const screenshots=path.resolve(process.argv[3]||"password-recovery-screenshots");
@@ -35,8 +36,8 @@ try{
      return {auth:{
        onAuthStateChange(callback){queueMicrotask(()=>callback("PASSWORD_RECOVERY",{access_token:"mock-valid-session"}));return{data:{subscription:{unsubscribe(){}}}};},
        async getSession(){return{data:{session:{access_token:"mock-valid-session",user:{id:"test-user"}}},error:null};},
-       async getUser(){return{data:{user:{id:"test-user"}},error:null};},
-       async updateUser({password}){window.__recoveryMock.passwordWrites.push(password.length);return{error:null};},
+       async getUser(){return{data:{user:{id:"test-user",email:"qa@example.com"}},error:null};},
+       async updateUser({password}){window.__recoveryMock.passwordWrites.push(password);return{error:null};},
        async signOut(){window.__recoveryMock.signouts++;return{error:null};}
      }};
    }`
@@ -61,7 +62,7 @@ try{
  await desktop.page.locator("#confirm-password").fill("ResetDemoPassword123");
  await desktop.page.locator("#reset-submit").click();
  await desktop.page.locator("#reset-success").waitFor({state:"visible",timeout:8000});
- assert.deepEqual(await desktop.page.evaluate(()=>window.__recoveryMock.passwordWrites),[20]);
+ assert.deepEqual(await desktop.page.evaluate(()=>window.__recoveryMock.passwordWrites),["ResetDemoPassword123"]);
  assert.equal(await desktop.page.evaluate(()=>window.__recoveryMock.signouts),1);
  await desktop.page.screenshot({path:path.join(screenshots,"desktop-reset-success.png"),fullPage:true});
  assert.deepEqual(desktop.errors,[],"No browser runtime errors on valid recovery");
@@ -73,6 +74,14 @@ try{
  assert.equal(await mobile.page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,
   "Password reset form must not overflow the mobile viewport");
  await mobile.page.screenshot({path:path.join(screenshots,"mobile-reset-form.png"),fullPage:true});
+ assert.deepEqual(await mobile.page.evaluate(()=>window.__recoveryMock.passwordWrites),[],"Opening or leaving reset page must not change password");
+ await mobile.page.locator("#new-password").fill("7");
+ await mobile.page.locator("#confirm-password").fill("7");
+ await mobile.page.locator("#reset-submit").click();
+ await mobile.page.locator("#reset-success").waitFor({state:"visible",timeout:8000});
+ assert.deepEqual(await mobile.page.evaluate(()=>window.__recoveryMock.passwordWrites),
+  [await effectivePassword("qa@example.com","7")],
+  "A one-character reset must save precisely the existing merchant login credential");
  assert.deepEqual(mobile.errors,[]);
  await mobile.context.close();
 
@@ -84,6 +93,6 @@ try{
  await invalid.page.screenshot({path:path.join(screenshots,"mobile-expired-link.png"),fullPage:true});
  await invalid.context.close();
 
- console.log("PASS: Chromium recovered legacy email link, mobile/desktop new password form, mismatch guard, successful updateUser and expired-link states.");
+ console.log("PASS: Chromium old email URL, one-character reset credential matching merchant login, unchanged password before submit, normal update, invalid link and mobile/desktop UI.");
  console.log("PASS: 4 screenshots written to "+screenshots);
 }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
