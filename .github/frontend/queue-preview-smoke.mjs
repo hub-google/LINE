@@ -32,7 +32,7 @@ try{
  }
  await verify("A012",["A013","A014"],8);
  await page.screenshot({path:path.join(out,"queue-preview-initial.png")});
- await page.locator('#staff-root [data-act="call"]').click();
+ await page.locator('#staff-root .preview-primary-actions [data-act="call"]').click();
  await verify("A013",["A014","A015"],7);
  await page.screenshot({path:path.join(out,"queue-preview-after-call.png")});
  await page.locator("#reset-preview").click();
@@ -45,7 +45,7 @@ try{
  await verify("A012",["A013","A014"],8);
  await page.locator("#qm-real-queue").scrollIntoViewIfNeeded();
  await page.locator("#qm-real-queue").screenshot({path:path.join(out,"queue-homepage-initial.png")});
- await preview.locator('#staff-root [data-act="call"]').click();
+ await preview.locator('#staff-root .preview-primary-actions [data-act="call"]').click();
  await verify("A013",["A014","A015"],7);
  await page.locator("#qm-real-queue").screenshot({path:path.join(out,"queue-homepage-after-call.png")});
 }finally{await browser?.close();server.close();}
