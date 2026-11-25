@@ -75,7 +75,14 @@
   <link rel="stylesheet" href="./assets/home/page.css?build=__LINE_SAAS_BUILD__">
 <link rel="stylesheet" href="./assets/home/intro-video.css?build=__LINE_SAAS_BUILD__">
   <link rel="stylesheet" href="./assets/roles/role-pages.css?build=__LINE_SAAS_BUILD__">
-<link rel="stylesheet" href="./site-auth.css"><link rel="stylesheet" href="./monster-world.css?build=__LINE_SAAS_BUILD__"><link rel="stylesheet" href="./assets/marketing/shared-header.css?build=__LINE_SAAS_BUILD__"><script defer src="./assets/marketing/shared-header.js?build=__LINE_SAAS_BUILD__"></script><script defer src="./site-auth.js"></script><link rel="icon" type="image/svg+xml" href="./monster-mascot.svg"><link rel="stylesheet" href="./assets/marketing/dual-portals.css?build=__LINE_SAAS_BUILD__"><link rel="stylesheet" href="./assets/marketing/merchant-layout.css?build=__LINE_SAAS_BUILD__"><script defer src="./assets/marketing/funnel-events.js?build=__LINE_SAAS_BUILD__"></script><script defer src="./assets/marketing/industry-switcher.js?build=__LINE_SAAS_BUILD__"></script><link rel="stylesheet" href="./assets/marketing/home-compact.css?build=__LINE_SAAS_BUILD__"><script defer src="./assets/marketing/home-workbench.js?build=__LINE_SAAS_BUILD__"></script></head>
+<link rel="stylesheet" href="./site-auth.css"><link rel="stylesheet" href="./monster-world.css?build=__LINE_SAAS_BUILD__"><link rel="stylesheet" href="./assets/marketing/shared-header.css?build=__LINE_SAAS_BUILD__"><script defer src="./assets/marketing/shared-header.js?build=__LINE_SAAS_BUILD__"></script><script defer src="./site-auth.js"></script><link rel="icon" type="image/svg+xml" href="./monster-mascot.svg"><link rel="stylesheet" href="./assets/marketing/dual-portals.css?build=__LINE_SAAS_BUILD__"><link rel="stylesheet" href="./assets/marketing/merchant-layout.css?build=__LINE_SAAS_BUILD__"><script defer src="./assets/marketing/funnel-events.js?build=__LINE_SAAS_BUILD__"></script><script defer src="./assets/marketing/industry-switcher.js?build=__LINE_SAAS_BUILD__"></script><link rel="stylesheet" href="./assets/marketing/home-compact.css?build=__LINE_SAAS_BUILD__"><style>
+.qm-home-first .qm-home-hero-grid{grid-template-columns:minmax(0,1fr)!important;gap:24px!important}
+.qm-real-preview{min-width:0;width:100%;background:#fff;border:1px solid #e4dce9;border-radius:16px;padding:12px;box-sizing:border-box;overflow:hidden}
+.qm-real-preview>h2{font-size:clamp(18px,2vw,24px);margin:4px 8px 12px;color:#462b52}
+#qm-real-queue{display:block;width:100%;height:1060px;min-height:300px;border:0;background:#fff}
+.qm-real-preview-links{padding:12px 8px;font-size:14px}.qm-real-preview-links a{color:#462b52;font-weight:700}
+@media(max-width:680px){.qm-real-preview{padding:4px}#qm-real-queue{height:1600px}}
+</style></head>
 <body data-monster-page="home">
 <a class="skip" href="#main">跳到主要內容</a>
 <div id="marketing-header"><a href="./home.html">排隊怪獸</a> <a href="./customer.html">找店家</a></div>
@@ -100,27 +107,11 @@
         <p id="qm-pwa-guide" class="qm-pwa-guide" hidden>請使用 Safari 的「分享」選單，選擇「加入主畫面」，就能快速開啟。<button id="qm-pwa-close" type="button" aria-label="關閉安裝說明">關閉</button></p>
       </div>
 
-      <div id="features" class="qm-merchant-preview qm-live-workbench" aria-label="可實際操作的店家介面體驗，使用模擬資料">
-        <div class="qm-live-top">
-          <div class="qm-live-brand"><img src="./monster-mascot.svg" alt="" width="43" height="43"><div><strong>店家工作台</strong></div></div>
-          <span class="qm-live-testmark">模擬操作</span>
-        </div>
-        <div class="qm-live-tabs" role="tablist" aria-label="體驗店家三種操作">
-          <button id="qm-live-tab-queue" type="button" role="tab" aria-controls="qm-live-screen" aria-selected="true" tabindex="0" data-live-tab="queue">排隊叫號</button>
-          <button id="qm-live-tab-booking" type="button" role="tab" aria-controls="qm-live-screen" aria-selected="false" tabindex="-1" data-live-tab="booking">線上預約</button>
-          <button id="qm-live-tab-order" type="button" role="tab" aria-controls="qm-live-screen" aria-selected="false" tabindex="-1" data-live-tab="order">線上點餐</button>
-        </div>
-        <div id="qm-live-screen" class="qm-live-screen" role="tabpanel" aria-labelledby="qm-live-tab-queue">
-          
-          <div class="qm-live-queue">
-            <div class="qm-live-primary-panel"><span class="qm-live-caption">目前叫號</span><strong class="qm-live-number" data-live-current>A012</strong><small>還有 <b data-live-waiting>8</b> 組候位</small><button class="qm-live-action" type="button" data-live-action="next">叫下一位 <span aria-hidden="true">→</span></button></div>
-            <div class="qm-live-mirrors"><div class="qm-live-board-panel"><span class="qm-live-board-head">店內全螢幕看板</span><strong data-live-board>A012</strong><button type="button" class="qm-live-board-open" data-live-action="board" aria-label="放大顯示叫號看板示範">全螢幕看板 ↗</button></div><div class="qm-live-customer-panel"><span class="qm-live-phone-head">顧客手機</span><div class="qm-live-phone-screen"><span>目前叫號</span><strong data-live-mobile>A012</strong></div></div></div>
-          </div>
-          
-        </div>
-        <p class="qm-live-feedback" role="status" aria-live="polite"></p>
-        <div class="qm-live-bottom"><a href="./demo.html?role=merchant">完整操作體驗 <span aria-hidden="true">↗</span></a></div>
-      </div>
+      <section id="features" class="qm-real-preview" aria-label="正式產品叫號體驗">
+        <h2>現場與線上同步叫號</h2>
+        <iframe id="qm-real-queue" src="./queue-preview.html?build=__LINE_SAAS_BUILD__" title="排隊怪獸正式叫號管理、看板與顧客進度" allowfullscreen></iframe>
+        <div class="qm-real-preview-links"><a href="./demo.html?role=merchant">其他功能操作體驗：線上預約、線上點餐 →</a></div>
+      </section>
     </div>
   </section>
 
@@ -178,5 +169,7 @@
 </footer>
 <script src="./assets/home/main.js?build=__LINE_SAAS_BUILD__"></script>
 <script defer src="./assets/home/intro-video.js?build=__LINE_SAAS_BUILD__"></script>
-</body>
+<script>
+(()=>{const frame=document.getElementById("qm-real-queue");window.addEventListener("message",event=>{if(event.origin!==location.origin||event.source!==frame?.contentWindow||event.data?.type!=="qm-queue-preview-height")return;const height=Number(event.data.height);if(Number.isFinite(height)&&height>=300&&height<=6000&&Math.abs(frame.offsetHeight-height)>2)frame.style.height=height+"px";});})();
+</script></body>
 </html>
