@@ -2,6 +2,13 @@
 <html lang="zh-Hant"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="line-saas-build" content="__LINE_SAAS_BUILD__">
+<script>
+/* Old recovery emails still point here. Preserve their one-time hash/code and
+   redirect BEFORE merchant login, platform-admin routing or tenant RPCs run. */
+if(new URLSearchParams(location.search).get("intent")==="recovery"){
+  location.replace(new URL("./password-reset.html"+location.search+location.hash,location.href).href);
+}
+</script>
 <script defer src="./version-watch.js?build=__LINE_SAAS_BUILD__"></script>
 <meta name="theme-color" content="#523B70">
 <title>店家與員工登入｜排隊怪獸</title>
