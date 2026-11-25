@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {spawnSync} from "node:child_process";
+import {effectivePassword} from "../saas/app/password-credential.js";
 
 const read=p=>readFileSync(new URL("../"+p,import.meta.url),"utf8");
 const reset=read("saas/password-reset.html");
@@ -25,11 +26,16 @@ test("recovery form verifies auth session before changing password, without merc
   assert.match(reset,new RegExp('id="'+id+'"'));
  }
  assert.match(reset,/autocomplete="new-password"/);
- assert.match(reset,/minlength="8"/);
+ assert.match(reset,/minlength="1"/);
+ assert.doesNotMatch(reset,/maxlength=|minlength="8"/);
+ assert.match(reset,/支援 1 碼以上/);
  assert.match(logic,/fragment\.get\("type"\)==="recovery"/);
  assert.match(logic,/getSession\(\)/);
  assert.match(logic,/getUser\(\)/);
- assert.match(logic,/auth\.updateUser\(\{password\}\)/);
+ assert.match(logic,/auth\.updateUser\(\{password:credential\}\)/);
+ assert.match(logic,/effectivePassword\(verifiedEmail,password\)/);
+ assert.match(logic,/verifiedEmail=identity\.user\.email/);
+ assert.match(oldLogic,/import \{effectivePassword\} from "\.\.\/\.\.\/app\/password-credential\.js"/);
  assert.match(logic,/auth\.signOut\(\{scope:"local"\}\)/);
  assert.match(logic,/scrubCallback\(\)/);
  assert.match(logic,/history\.replaceState/);
@@ -48,4 +54,17 @@ test("new page and hashed assets are emitted in build and GitHub Pages publishin
  assert.match(reset,/assets\/password-reset\/main\.js/);
  assert.match(reset,/assets\/password-reset\/page\.css/);
  assert.match(reset,/version-watch\.js/);
+});
+
+test("1-character password recovery uses the exact same credential as ordinary sign-in",async()=>{
+ const email="User@Example.com";
+ const single=await effectivePassword(email,"7");
+ assert.equal(single.length,68,"Supabase's minimum is satisfied by the existing compatibility encoding");
+ assert.match(single,/^qm1-[0-9a-f]{64}$/);
+ assert.equal(single,await effectivePassword("user@example.com","7"),"email normalization matches sign in");
+ assert.notEqual(single,await effectivePassword(email,"8"));
+ assert.notEqual(single,await effectivePassword("other@example.com","7"));
+ assert.equal((await effectivePassword(email,"12345")).length,68);
+ assert.equal(await effectivePassword(email,"123456"),"123456","6+ characters remain unchanged");
+ await assert.rejects(()=>effectivePassword(email,""),/請輸入密碼/);
 });
