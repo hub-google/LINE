@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>實際叫號介面體驗</title>
+<link rel="stylesheet" href="./assets/index/page.css?build=__LINE_SAAS_BUILD__">
+<link rel="stylesheet" href="./booking-theme.css?build=__LINE_SAAS_BUILD__">
+<link rel="stylesheet" href="./monster-world.css?build=__LINE_SAAS_BUILD__">
+<link rel="stylesheet" href="./assets/marketing/ui-simplified.css?build=__LINE_SAAS_BUILD__">
+<style>
+html,body{margin:0!important;background:#fff!important;min-height:0!important;height:auto!important;overflow:auto}
+#preview-root{padding:12px;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;align-items:start}
+.preview-column{min-width:0;display:grid;gap:8px}.preview-column>h2{font-size:16px;margin:0;color:#462b52}
+#staff-root{min-width:0;max-height:960px;overflow:auto;overscroll-behavior:contain;padding:0 4px 6px 0}
+#customer-root{min-width:0}.preview-board{width:100%;height:320px;border:1px solid #ddd;border-radius:12px;background:#fff}
+.preview-tools{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border-bottom:1px solid #eee}
+.preview-tools p{margin:0;font-size:13px;color:#666}.preview-tools button{white-space:nowrap}
+#preview-feedback{min-height:1.4em;margin:0;padding:0 12px;color:#462b52;font-size:13px}
+#preview-root .grid4.queue-status-summary{grid-template-columns:repeat(auto-fit,minmax(84px,1fr))}
+#preview-root .grid4.queue-status-summary .stat{min-width:0}
+@media(max-width:680px){#preview-root{grid-template-columns:minmax(0,1fr)}#staff-root{max-height:570px}.preview-board{height:300px}}
+</style></head><body data-monster-page="index" data-portal="staff">
+<div class="preview-tools"><p>正式產品介面・示範資料，不會影響任何真實店家</p><button class="btn outline" type="button" id="reset-preview">重設體驗</button></div>
+<p id="preview-feedback" role="status" aria-live="polite"></p>
+<main id="preview-root">
+<section class="preview-column"><h2>店家工作台｜叫號管理</h2><div id="staff-root" aria-label="店家叫號管理">載入正式介面中…</div></section>
+<section class="preview-column"><h2>店內即時叫號看板</h2><iframe class="preview-board" id="board-preview" title="正式電視叫號看板" src="./board.html?preview=queue" allowfullscreen></iframe><h2>顧客手機｜我的叫號進度</h2><div id="customer-root" data-portal="customer" aria-label="顧客手機叫號進度">載入正式介面中…</div></section>
+</main>
+<script type="module">
+import {renderStaffQueue} from "./app/staff/queue.js";
+import {queueProgressBoard} from "./app/queue-progress.js";
+import {stat,esc} from "./app/shared-ui.js";
+import {initializeStaffView} from "./app/staff-list.js";
+import {staffState} from "./app/state/staffState.js";
+import {staffHistoryState} from "./app/state/staffHistoryState.js";
+import {serviceUnitsState} from "./app/state/serviceUnitsState.js";
+import {routeState} from "./app/state/routeState.js";
+import {sharedUiState} from "./app/state/sharedUiState.js";
+import {queueState} from "./app/state/queueState.js";
+import {customerState} from "./app/state/customerState.js";
+import {lineState} from "./app/state/lineState.js";
+import {staffViewState} from "./app/state/staffViewState.js";
+const $=id=>document.getElementById(id);
+const slug="local-preview-only",mineId="demo-17",tenant={name:"示範維修店",modules:{calling:true},queue_prefix:"A",queue_last_number:20};
+let tickets=[],session="MORNING",history=[],alertSetting=0;
+const board=$("board-preview"),feedback=$("preview-feedback");
+routeState.slug=slug;serviceUnitsState.unitEnabled=()=>false;staffHistoryState.staffHistoryDays=7;
+lineState.lineConfig={messagingReady:false};initializeStaffView();
+document.documentElement.dataset.storeLiveMode="realtime";
+const current=()=>tickets.find(t=>!t.deleted_at&&t.status==="CALLED");
+const waiting=()=>tickets.filter(t=>!t.deleted_at&&t.status==="WAITING");
+const find=id=>tickets.find(t=>t.id===id);
+function save(){history.push({tickets:structuredClone(tickets),session,tenant:{...tenant}});if(history.length>50)history.shift()}
+function reset(){tickets=Array.from({length:9},(_,i)=>({id:"demo-"+(i+12),number:"A"+String(i+12).padStart(3,"0"),status:i===0?"CALLED":"WAITING",name:"顧客 "+(i+12),day:new Date().toLocaleDateString("sv-SE",{timeZone:"Asia/Taipei"}),party:i%3+1,source:"WALK_IN",created_at:new Date().toISOString()}));session="MORNING";history=[];alertSetting=0;tenant.queue_prefix="A";tenant.queue_last_number=20;initializeStaffView();render("已重設示範資料。")}
+function sendBoard(){board.contentWindow?.postMessage({type:"qm-queue-preview",current:current()?.number||"",upcoming:waiting().map(t=>t.number)},location.origin)}
+function resize(){if(parent!==window)parent.postMessage({type:"qm-queue-preview-height",height:Math.ceil(document.body.scrollHeight)},location.origin)}
+function render(message=""){
+ const open=tickets.filter(t=>!t.deleted_at&&!["COMPLETED","CANCELLED"].includes(t.status));
+ const done=tickets.filter(t=>!t.deleted_at&&["COMPLETED","CANCELLED"].includes(t.status));
+ staffState.staff={active_tickets:open,processed_tickets:done,deleted_tickets:tickets.filter(t=>t.deleted_at),queue_session:{code:session}};
+ sharedUiState.lastStaffChange=history.length?{slug}:null;
+ $("staff-root").innerHTML=renderStaffQueue({isManager:true,t:tenant,html:""});
+ const boardLink=$("staff-root").querySelector('a[href*="board.html"]');
+ if(boardLink){boardLink.href="#board-preview";boardLink.removeAttribute("target");boardLink.addEventListener("click",e=>{e.preventDefault();board.scrollIntoView({block:"center"});board.requestFullscreen?.().catch(()=>{})})}
+ const own=find(mineId),queue=waiting(),idx=queue.findIndex(t=>t.id===mineId);
+ const visible=own&&!own.deleted_at?{...own,ahead:idx<0?null:idx}:null;
+ customerState.customer={my_tickets:visible?[visible]:[]};
+ Object.assign(queueState,{queueLiveShop:slug,queueLive:{current:current()?.number||"",mine:visible},queueLastSuccessShop:slug,queueLastSuccessAt:new Date().toISOString(),progressTicketId:mineId,queueLiveError:"",queueNearAlertSettings:{[mineId]:alertSetting}});
+ $("customer-root").innerHTML='<div class="grid3">'+stat("等候組數",queue.length)+'</div>'+queueProgressBoard();
+ const back=$("customer-root").querySelector('[data-act="cross-back"]');
+ if(back){back.disabled=true;back.title="此展示只包含叫號進度"}
+ feedback.textContent=message;sendBoard();requestAnimationFrame(resize);
+}
+function call(ticket){if(!ticket||ticket.deleted_at||ticket.status!=="WAITING")return;save();const prior=current();if(prior)prior.status="PASSED";ticket.status="CALLED";render("已叫號 "+ticket.number+"，三端同步更新。")}
+function changeStatus(ticket,status){if(!ticket||ticket.deleted_at||ticket.status===status)return;save();if(status==="CALLED"){const prior=current();if(prior&&prior!==ticket)prior.status="PASSED"}ticket.status=status;render("已更新 "+ticket.number+" 狀態。")}
+document.addEventListener("click",event=>{
+ const el=event.target.closest("[data-act]");if(!el||el.disabled)return;
+ const action=el.dataset.act,ticket=find(el.dataset.id);
+ if(action==="call")call(waiting()[0]);
+ else if(action==="call-selected")call(ticket);
+ else if(action==="recall")render("已重新叫號 "+(current()?.number||""));
+ else if(action==="undo-staff"){const prev=history.pop();if(prev){tickets=prev.tickets;session=prev.session;Object.assign(tenant,prev.tenant);render("已還原上一步。")}}
+ else if(action==="set-queue-session"){save();session=el.dataset.sessionCode;render("已切換取號場次。")}
+ else if(action==="staff-show-more"){const key=el.dataset.listKey;staffViewState.staffVisibleLimits.set(key,(staffViewState.staffVisibleLimits.get(key)||12)+12);render()}
+ else if(action==="hold-my-number")changeStatus(ticket,"HOLD");
+ else if(action==="resume-my-number")changeStatus(ticket,"WAITING");
+ else if(action==="cancel-my-number")changeStatus(ticket,"CANCELLED");
+ else if(action==="queue-refresh")render("已同步最新展示進度。");
+ else if(action==="save-queue-near-alert"){alertSetting=Number($("queue-near-alert-threshold")?.value||0);render("已儲存示範提醒設定，不會發送 LINE 通知。")}
+ else if(action==="save-number-prefix"){save();tenant.queue_prefix=String($("prefix-queue")?.value||"").slice(0,3);render("已儲存示範編號前綴。")}
+ else if(action==="reset-serial"){save();tenant.queue_last_number=0;render("已重置示範流水號，既有號碼不變。")}
+});
+document.addEventListener("change",event=>{const el=event.target,ticket=find(el.dataset.id);if(el.dataset.statusKind==="ticket")changeStatus(ticket,el.value);else if(el.dataset.deleteKind==="ticket"&&ticket){save();ticket.deleted_at=el.checked?new Date().toISOString():null;render("已更新號碼牌顯示狀態。")}});
+window.addEventListener("message",event=>{if(event.origin===location.origin&&event.source===board.contentWindow&&event.data?.type==="qm-board-ready")sendBoard()});
+board.addEventListener("load",sendBoard);$("reset-preview").addEventListener("click",reset);
+new ResizeObserver(resize).observe(document.body);
+reset();
+</script></body></html>
