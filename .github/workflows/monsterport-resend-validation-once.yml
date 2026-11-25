@@ -1,0 +1,20 @@
+name: MonsterPort｜Resend SMTP 腳本驗證一次
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/monsterport-resend-validation-once.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: 驗證 Resend 設定程式與兩個 Supabase 專案的唯讀狀態
+        run: |
+          node --check .github/scripts/configure-monsterport-resend.mjs
+          node .github/scripts/configure-monsterport-resend.mjs --check
