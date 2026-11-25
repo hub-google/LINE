@@ -1,4 +1,5 @@
 import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
+import {effectivePassword} from "../../app/password-credential.js";
 import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 // This route is ONLY entered from an email recovery link. Do not use the
@@ -17,6 +18,7 @@ const client=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{
 });
 let busy=false;
 let verified=false;
+let verifiedEmail="";
 let recoverySeen=false;
 client.auth.onAuthStateChange((event,session)=>{
   if(event==="PASSWORD_RECOVERY"&&session?.access_token)recoverySeen=true;
@@ -67,7 +69,8 @@ async function verify(){
     const {data,error}=await client.auth.getSession();
     if(error||!data?.session?.access_token)throw Error("invalid_recovery_session");
     const {data:identity,error:identityError}=await client.auth.getUser();
-    if(identityError||!identity?.user?.id)throw Error("invalid_recovery_user");
+    if(identityError||!identity?.user?.id||!identity?.user?.email)throw Error("invalid_recovery_user");
+    verifiedEmail=identity.user.email;
     // URL contains the one-time recovery proof, AND Supabase verified the session.
     verified=true;
     scrubCallback();
@@ -85,17 +88,19 @@ $("reset-form").addEventListener("submit",async event=>{
   const confirmation=$("confirm-password").value;
   const error=$("reset-error");
   error.hidden=true;error.textContent="";
-  if(password.length<8){error.textContent="新密碼至少需要 8 個字元。";error.hidden=false;return;}
+  if(password.length<1){error.textContent="請輸入新密碼。";error.hidden=false;return;}
   if(password!==confirmation){error.textContent="兩次輸入的密碼不一致。";error.hidden=false;return;}
   busy=true;
   $("reset-submit").disabled=true;
   $("reset-submit").textContent="正在儲存…";
   try{
-    const {error:changeError}=await client.auth.updateUser({password});
+    const credential=await effectivePassword(verifiedEmail,password);
+    const {error:changeError}=await client.auth.updateUser({password:credential});
     if(changeError)throw changeError;
     $("new-password").value="";
     $("confirm-password").value="";
     verified=false;
+    verifiedEmail="";
     try{await client.auth.signOut({scope:"local"});}catch{ /* Password was already updated. */ }
     show("success");
   }catch(err){error.textContent=message(err);error.hidden=false;}
