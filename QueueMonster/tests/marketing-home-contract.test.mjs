@@ -86,64 +86,47 @@ test("directory preserves platform OA LIFF context while opening store services"
  assert.match(directory,/customerUrl\(t\.slug,"queue",t\.oa_mode\)/);
 });
 
-test("merchant hero shows a working three-mode management preview rather than static mockups",()=>{
- const js=read("saas/assets/marketing/home-workbench.js");
- const css=read("saas/assets/marketing/home-compact.css");
- assert.match(landing,/class="qm-merchant-preview qm-live-workbench"/);
- assert.match(landing,/可實際操作的店家介面體驗/);
- assert.match(landing,/模擬操作/);
- assert.match(landing,/目前叫號/);
- assert.match(landing,/A012/);
- for(const tab of ["queue","booking","order"])assert.match(landing,new RegExp('data-live-tab="'+tab+'"'));
- assert.match(landing,/data-live-action="next"/);
- assert.match(landing,/data-live-mobile/);
- assert.match(landing,/data-live-board/);
- assert.match(landing,/全螢幕叫號看板/);
- assert.match(landing,/提前點餐/);
- assert.match(landing,/完整操作體驗/);
- assert.match(js,/data-live-action/);
- assert.match(js,/data-live-current/);
- assert.match(js,/data-live-mobile/);
- assert.match(js,/data-live-board/);
- assert.match(js,/requestFullscreen/);
- assert.match(js,/fullscreenchange/);
- assert.match(js,/bookingChecked=true/);
- assert.match(js,/orderAccepted=true/);
- assert.match(js,/waiting--/);
- assert.match(css,/\.qm-live-workbench/);
- assert.match(css,/@media\(max-width:620px\)/);
- for(const code of [js]){
-  const syntax=spawnSync(process.execPath,["--check"],{input:code,encoding:"utf8"});
-  assert.equal(syntax.status,0,syntax.stderr);
- }
+test("merchant hero embeds the actual queue management, live board and customer progress",()=>{
+ const preview=read("saas/queue-preview.html");
+ assert.match(landing,/id="features" class="qm-real-preview"/);
+ assert.match(landing,/id="qm-real-queue" src="\.\/queue-preview\.html/);
+ assert.match(landing,/正式產品叫號體驗/);
+ assert.match(landing,/現場與線上同步叫號/);
+ assert.match(preview,/id="staff-root"/);
+ assert.match(preview,/id="board-preview"/);
+ assert.match(preview,/id="customer-root"/);
+ assert.match(preview,/renderStaffQueue/);
+ assert.match(preview,/queueProgressBoard/);
+ assert.match(preview,/function call\(ticket\)/);
+ assert.match(preview,/sendBoard\(\)/);
+ assert.match(preview,/id="reset-preview"/);
+ const parsed=spawnSync(process.execPath,["--input-type=module","--check"],{
+  input:preview.match(/<script type="module">([\s\S]*?)<\/script>/)?.[1]||"",encoding:"utf8"});
+ assert.equal(parsed.status,0,parsed.stderr);
 });
 
-
-test("merchant homepage eliminates repeated sections and keeps the promise, demo, industry switcher and setup steps",()=>{
- for(const section of ["benefits","features","industries","how-it-works","faq"]){
+test("merchant homepage stays concise while embedding genuine product UI",()=>{
+ for(const section of ["benefits","features","industries","how-it-works","faq"])
   assert.match(landing,new RegExp('id="'+section+'"'),"Missing "+section);
- }
- for(const old of ["sync","demo","customer-experience"]){
+ for(const old of ["sync","demo","customer-experience"])
   assert.doesNotMatch(landing,new RegExp('id="'+old+'"'),"Repeated section "+old+" must be removed");
- }
  const main=landing.match(/<main id="main">([\s\S]*?)<\/main>/)?.[1];
  assert.ok(main,"Missing main");
- assert.equal((main.match(/<section\b/g)||[]).length,4,"Just four distinct homepage sections");
- assert.equal((main.match(/class="qm-home-benefit"/g)||[]).length,3,"Only three concise merchant benefits");
- assert.equal((main.match(/class="qm-merchant-preview qm-live-workbench"/g)||[]).length,1);
- assert.equal((main.match(/href="\.\/demo\.html\?role=merchant"/g)||[]).length,2,"Full demo and industry entry only; hero scrolls to workbench");
- assert.equal((main.match(/href="\.\/merchant-register\.html\?mode=signup"/g)||[]).length,2,"Signup only in hero and setup strip");
- for(const text of ["預約、提前點餐","現場與線上即時同步叫號","全螢幕叫號看板","店內電視／投影","少點等待與催促","顧客更願意再來","顧客手機","免費建立店家"]){
-  assert.ok(main.includes(text),"Missing merchant value: "+text);
- }
+ assert.equal((main.match(/<section\b/g)||[]).length,5,
+   "Hero, nested real preview, industries, setup and FAQ only");
+ assert.equal((main.match(/class="qm-home-benefit"/g)||[]).length,3);
+ assert.equal((main.match(/id="qm-real-queue"/g)||[]).length,1,"One genuine embedded queue experience");
+ assert.equal((main.match(/href="\.\/demo\.html\?role=merchant"/g)||[]).length,2);
+ assert.equal((main.match(/href="\.\/merchant-register\.html\?mode=signup"/g)||[]).length,2);
+ for(const value of ["預約、提前點餐","現場與線上即時同步叫號",
+  "全螢幕叫號看板","店內電視／投影","少點等待與催促","顧客更願意再來","免費建立店家"])
+  assert.ok(main.includes(value),"Missing merchant value: "+value);
  const css=read("saas/assets/marketing/home-compact.css");
- for(const cls of [".qm-home-hero-grid",".qm-live-workbench",".qm-home-industry",".qm-home-start",".qm-home-faq"]){
+ for(const cls of [".qm-home-hero-grid",".qm-home-industry",".qm-home-start",".qm-home-faq"])
   assert.ok(css.includes(cls),"Missing layout "+cls);
- }
- assert.match(rawReadFileSync(path.join(root,"saas/home.html"),"utf8"),/home-compact\.css\?build=__LINE_SAAS_BUILD__/);
- assert.match(rawReadFileSync(path.join(root,"saas/home.html"),"utf8"),/home-workbench\.js\?build=__LINE_SAAS_BUILD__/);
+ assert.match(landing,/home-compact\.css\?build=__LINE_SAAS_BUILD__/);
+ assert.match(landing,/queue-preview\.html\?build=__LINE_SAAS_BUILD__/);
 });
-
 
 test("homepage board claim is grounded in the actual dedicated fullscreen store board",()=>{
  const board=rawReadFileSync(path.join(root,"saas/board.html"),"utf8");
