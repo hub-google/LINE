@@ -1,16 +1,23 @@
 <!doctype html>
 <html lang="zh-Hant"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="line-saas-build" content="2479516be9c391acd85d1414609a78322fa1e2ae">
-<script defer src="./version-watch.js?build=2479516be9c391acd85d1414609a78322fa1e2ae"></script>
+<meta name="line-saas-build" content="320c7b094f8d47840d12f1cb34770e743ef7d735">
+<script>
+/* Old recovery emails still point here. Preserve their one-time hash/code and
+   redirect BEFORE merchant login, platform-admin routing or tenant RPCs run. */
+if(new URLSearchParams(location.search).get("intent")==="recovery"){
+  location.replace(new URL("./password-reset.html"+location.search+location.hash,location.href).href);
+}
+</script>
+<script defer src="./version-watch.js?build=320c7b094f8d47840d12f1cb34770e743ef7d735"></script>
 <meta name="theme-color" content="#523B70">
 <title>店家與員工登入｜排隊怪獸</title>
 <meta name="description" content="排隊怪獸店家註冊與登入入口。餐廳、早餐店、診所、美髮美容及各類門市可建立管理帳號，設定 LINE 線上預約、排隊取號、即時叫號與線上點餐服務。">
 <link rel="canonical" href="https://hub-google.github.io/LINE/booking/merchant-register.html">
 
-<link rel="stylesheet" href="./assets/merchant-register/page-KUOQ5FJF.css?build=2479516be9c391acd85d1414609a78322fa1e2ae">
-<link rel="stylesheet" href="./monster-world.css?build=2479516be9c391acd85d1414609a78322fa1e2ae"><link rel="stylesheet" href="./site-auth.css?build=2479516be9c391acd85d1414609a78322fa1e2ae"><link rel="stylesheet" href="./assets/marketing/shared-header-ADBN6TNM.css?build=2479516be9c391acd85d1414609a78322fa1e2ae"><script defer src="./assets/marketing/shared-header-SAKGKW72.js?build=2479516be9c391acd85d1414609a78322fa1e2ae"></script><script defer src="./site-auth.js?build=2479516be9c391acd85d1414609a78322fa1e2ae"></script><link rel="icon" type="image/svg+xml" href="./monster-mascot.svg"><link rel="stylesheet" href="./assets/marketing/dual-portals-KRERD5RM.css?build=2479516be9c391acd85d1414609a78322fa1e2ae">
-<script defer src="./assets/marketing/funnel-events-YUBY36HD.js?build=2479516be9c391acd85d1414609a78322fa1e2ae"></script><link rel="stylesheet" href="./assets/marketing/ui-simplified-AIM6DJNG.css?build=2479516be9c391acd85d1414609a78322fa1e2ae"></head><body data-monster-page="merchant-register">
+<link rel="stylesheet" href="./assets/merchant-register/page-KUOQ5FJF.css?build=320c7b094f8d47840d12f1cb34770e743ef7d735">
+<link rel="stylesheet" href="./monster-world.css?build=320c7b094f8d47840d12f1cb34770e743ef7d735"><link rel="stylesheet" href="./site-auth.css?build=320c7b094f8d47840d12f1cb34770e743ef7d735"><link rel="stylesheet" href="./assets/marketing/shared-header-ADBN6TNM.css?build=320c7b094f8d47840d12f1cb34770e743ef7d735"><script defer src="./assets/marketing/shared-header-SAKGKW72.js?build=320c7b094f8d47840d12f1cb34770e743ef7d735"></script><script defer src="./site-auth.js?build=320c7b094f8d47840d12f1cb34770e743ef7d735"></script><link rel="icon" type="image/svg+xml" href="./monster-mascot.svg"><link rel="stylesheet" href="./assets/marketing/dual-portals-KRERD5RM.css?build=320c7b094f8d47840d12f1cb34770e743ef7d735">
+<script defer src="./assets/marketing/funnel-events-YUBY36HD.js?build=320c7b094f8d47840d12f1cb34770e743ef7d735"></script><link rel="stylesheet" href="./assets/marketing/ui-simplified-AIM6DJNG.css?build=320c7b094f8d47840d12f1cb34770e743ef7d735"></head><body data-monster-page="merchant-register">
 <div id="marketing-header"><a href="./home.html">排隊怪獸</a></div>
 <main>
 <section class="intro"><div id="demo-origin" class="demo-origin" hidden><strong id="demo-origin-title">建立你的店家</strong></div><h1>店家登入／註冊</h1>
@@ -46,4 +53,4 @@
 </div></div>
 <div id="message" role="status" aria-live="polite"></div>
 </section></main>
-<script type="module" src="./assets/merchant-register/main-W34F2JCM.js?build=2479516be9c391acd85d1414609a78322fa1e2ae"></script><script defer src="./assets/demo/signup-conversion-XJ55SRGF.js?build=2479516be9c391acd85d1414609a78322fa1e2ae"></script></body></html>
+<script type="module" src="./assets/merchant-register/main-W34F2JCM.js?build=320c7b094f8d47840d12f1cb34770e743ef7d735"></script><script defer src="./assets/demo/signup-conversion-XJ55SRGF.js?build=320c7b094f8d47840d12f1cb34770e743ef7d735"></script></body></html>
