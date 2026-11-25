@@ -6,7 +6,7 @@
  const merchantPages=new Set(["home.html","for-merchants.html","merchant.html","merchant-center.html","merchant-register.html","platform-login.html"]);
  const merchant=merchantPages.has(page)||
    (page==="demo.html"&&params.get("role")!=="customer")||
-   ((page===""||page==="index.html")&&["staff","platform"].includes(params.get("view")));
+   ((page===""||page==="index.html")&&(["staff","platform"].includes(params.getAll("view").at(-1))||(location.hostname==="queue.monsterport.com"&&!params.has("view")&&!params.has("merchant"))));
  const merchantItems=[
    ["功能體驗","./home.html#features",""],
    ["操作教學","./merchant-center.html","merchant-center.html"],

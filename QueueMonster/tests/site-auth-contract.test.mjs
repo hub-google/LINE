@@ -68,7 +68,7 @@ test("only server-verified LINE account data is shown, not anonymous Supabase us
  assert.match(sql,/grant execute on function public\.so_site_header_identity\(\) to authenticated/);
  assert.match(code,/rpc\("so_site_header_identity"\)/);
  assert.match(code,/typeof response\.data\?\.display_name==="string"/);
- assert.match(code,/auth\.signOut\(\)/);
+ assert.match(code,/auth\.signOut\(\{scope:"local"\}\)/);
  assert.match(code,/location\.reload\(\)/);
  assert.match(code,/site_return/);
  assert.match(index,/function finishPublicHeaderLogin/);
@@ -77,7 +77,7 @@ test("only server-verified LINE account data is shown, not anonymous Supabase us
  assert.match(index,/location\.replace\(destination\.pathname\+destination\.search\)/);
 });
 function createScenario({lineName="",customerSession=false,staffName="",staffProvider="email",lineAlreadyLoggedIn=false,configReady=true,url="https://hub-google.github.io/LINE/booking/directory.html?mode=game"}={}){
- const state={signedOut:null,navigated:null,reloaded:false,liffLogin:null,liffId:null};
+ const state={signedOut:null,signedOutAll:[],navigated:null,reloaded:false,liffLogin:null,liffId:null};
  function node(tag){
   return {tag,className:"",textContent:"",children:[],title:"",disabled:false,handlers:{},
    setAttribute(name,value){this[name]=value},
@@ -110,7 +110,7 @@ function createScenario({lineName="",customerSession=false,staffName="",staffPro
    auth:{
     async getSession(){return {data:{session:logged?{access_token:"session",user:{id:type+"-id",is_anonymous:type==="customer",email:staffName,app_metadata:{provider:type==="customer"?"anonymous":staffProvider}}}:null},error:null}},
     onAuthStateChange(){return {data:{subscription:{unsubscribe(){}}}}},
-    async signOut(){state.signedOut=type;return {error:null}}
+    async signOut(){state.signedOut=type;state.signedOutAll.push(type);return {error:null}}
    },
    async rpc(name){
     if(name==="so_site_header_identity")return {data:lineName?{display_name:lineName}:null,error:null};
@@ -146,7 +146,7 @@ test("anonymous visitor sees functional LINE login and retains return destinatio
  const login=controlsList.find(x=>x.tag==="button");
  assert.ok(login,"missing login button");
  assert.equal(login.textContent,"消費者登入");
- assert.equal(controlsList.filter(x=>x.tag==="button").length,2,"guest header offers consumer and merchant entry");
+ assert.equal(controlsList.filter(x=>x.tag==="button").length,1,"guest header offers only consumer entry");
  await login.handlers.click();
  assert.equal(ui.state.navigated,null,"do not navigate to an intermediate Queue Monster login page");
  assert.equal(ui.state.liffId,"2012346974-bmC3fZuf");
@@ -214,8 +214,8 @@ test("LINE login uses the selected merchant, not a built-in sample store",async(
  assert.equal(dest.searchParams.get("view"),"customer");
  assert.match(dest.searchParams.get("site_return")||"",/merchant=store-123/);
 });
-test("home and directory LINE logins do not require a merchant",async()=>{
- for(const url of ["https://hub-google.github.io/LINE/booking/home.html",
+test("customer and directory LINE logins do not require a merchant",async()=>{
+ for(const url of ["https://hub-google.github.io/LINE/booking/customer.html",
                    "https://hub-google.github.io/LINE/booking/directory.html?mode=search",
                    "https://hub-google.github.io/LINE/booking/directory.html?mode=mine",
                    "https://hub-google.github.io/LINE/booking/my-records.html"]){
@@ -245,13 +245,13 @@ test("unscoped login keeps shop QR code context when present",async()=>{
  assert.match(dest.searchParams.get("site_return")||"",/board\.html/);
 });
 test("existing LIFF login reuses the session without opening another authorization window",async()=>{
- const ui=createScenario({lineAlreadyLoggedIn:true,url:"https://hub-google.github.io/LINE/booking/demo.html"});
+ const ui=createScenario({lineAlreadyLoggedIn:true,url:"https://hub-google.github.io/LINE/booking/demo.html?role=customer"});
  await flush();
  const login=controls(ui.rootNode).find(x=>x.tag==="button");
  await login.handlers.click();
  assert.equal(ui.state.liffLogin,null);
  assert.equal(new URL(ui.state.navigated).pathname,"/LINE/booking/");
- assert.equal(new URL(ui.state.navigated).searchParams.get("site_return"),"demo.html");
+ assert.equal(new URL(ui.state.navigated).searchParams.get("site_return"),"demo.html?role=customer");
 });
 test("LINE configuration failure does not send customers to an intermediate login page",async()=>{
  const ui=createScenario({configReady:false});
@@ -289,6 +289,7 @@ test("staff pages show actual operator identity and logout operator account",asy
  assert.ok(logout,"the separate logout button must remain available");
  logout.handlers.click();await flush();
  assert.equal(ui.state.signedOut,"operator");
+ assert.deepEqual(ui.state.signedOutAll,["operator"]);
 });
 
 test("first Email signup password save clears the pending setup flag",()=>{
@@ -328,22 +329,41 @@ test("Email-password users get the password action, Google and LINE accounts do 
  assert.equal(controls(line.rootNode).some(x=>x.tag==="summary"),false);
 });
 
-test("signed-in merchant is represented by one account and logout on public pages",async()=>{
- const ui=createScenario({customerSession:false,lineName:"",staffName:"manager@example.test",url:"https://hub-google.github.io/LINE/booking/directory.html?mode=search"});
- await flush();
- const list=controls(ui.rootNode);
- assert.ok(list.some(x=>x.className==="site-auth-label"&&x.textContent==="manager@example.test"));
- assert.equal(list.filter(x=>x.tag==="button"&&x.className.includes("site-auth-login")).length,0);
- assert.ok(list.some(x=>x.tag==="button"&&x.textContent==="登出"));
+test("merchant-only login cannot authenticate customer routes",async()=>{
+ for(const path of ["customer.html","directory.html?mode=search","my-records.html","?view=customer","demo.html?role=customer"]){
+  const ui=createScenario({staffName:"manager@example.test",url:"https://hub-google.github.io/LINE/booking/"+path});
+  await flush();
+  const list=controls(ui.rootNode);
+  assert.equal(list.some(x=>x.className==="site-auth-label"),false);
+  assert.deepEqual(list.filter(x=>x.tag==="button").map(x=>x.textContent),["消費者登入"]);
+ }
 });
-test("shared header keeps only the active customer identity even on merchant route",async()=>{
- const ui=createScenario({customerSession:true,lineName:"一般顧客",url:"https://hub-google.github.io/LINE/booking/?view=staff&merchant=shop-123"});
+test("LINE-only login cannot authenticate merchant routes",async()=>{
+ for(const url of ["https://hub-google.github.io/LINE/booking/home.html","https://hub-google.github.io/LINE/booking/merchant.html","https://hub-google.github.io/LINE/booking/?view=staff","https://hub-google.github.io/LINE/booking/demo.html","https://queue.monsterport.com/"]){
+  const ui=createScenario({customerSession:true,lineName:"一般顧客",url});
+  await flush();
+  const list=controls(ui.rootNode);
+  assert.equal(list.some(x=>x.className==="site-auth-label"),false);
+  assert.deepEqual(list.filter(x=>x.tag==="button").map(x=>x.textContent),["店家登入"]);
+  await ui.window.QueueMonsterAuth.startLineLogin();
+  assert.equal(ui.state.liffLogin,null);
+  list.find(x=>x.tag==="button").handlers.click();
+  assert.equal(ui.state.navigated,"./merchant-register.html?mode=login");
+ }
+});
+test("both logins remain independent; customer logout signs out only LINE session",async()=>{
+ const ui=createScenario({customerSession:true,lineName:"一般顧客",staffName:"manager@example.test"});
  await flush();
  const list=controls(ui.rootNode);
  assert.ok(list.some(x=>x.className==="site-auth-label"&&x.textContent==="一般顧客"));
- assert.equal(list.some(x=>x.textContent==="店家登入"),false);
- assert.equal(list.some(x=>x.textContent==="消費者登入"),false);
- assert.ok(list.some(x=>x.tag==="button"&&x.textContent==="登出"));
+ list.find(x=>x.tag==="button"&&x.textContent==="登出").handlers.click();
+ await flush();
+ assert.deepEqual(ui.state.signedOutAll,["customer"]);
+});
+test("operator header refuses LINE as merchant authentication",async()=>{
+ const ui=createScenario({staffName:"line@example.test",staffProvider:"line",url:"https://hub-google.github.io/LINE/booking/home.html"});
+ await flush();
+ assert.deepEqual(controls(ui.rootNode).filter(x=>x.tag==="button").map(x=>x.textContent),["店家登入"]);
 });
 test("headquarters route shares account identity without granting administrator access",async()=>{
  const merchant=createScenario({staffName:"merchant@example.test",url:"https://hub-google.github.io/LINE/booking/?view=platform"});
@@ -354,7 +374,7 @@ test("headquarters route shares account identity without granting administrator 
  assert.equal(list.some(x=>x.textContent==="總部登入"),false,"HQ credentials must remain inside dedicated admin screen");
  const guest=createScenario({url:"https://hub-google.github.io/LINE/booking/?view=platform"});
  await flush();
- assert.deepEqual(controls(guest.rootNode).filter(x=>x.tag==="button").map(x=>x.textContent),["消費者登入","店家登入"]);
+ assert.deepEqual(controls(guest.rootNode).filter(x=>x.tag==="button").map(x=>x.textContent),["店家登入"]);
 });
 
 test("platform LINE identity is verified independently from store selection",()=>{
