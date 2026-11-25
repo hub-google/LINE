@@ -237,7 +237,8 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
         $("current").classList.toggle("is-empty",!current);
         const upcoming=Array.isArray(data.upcoming)?data.upcoming.map(String):[];
         if(label)label.textContent="接下來（"+upcoming.length+" 組等候）";
-        renderUpcoming(upcoming);
+        // Keep the embedded demo readable; the heading still uses the full queue.
+        renderUpcoming(upcoming.slice(0,2));
         health("展示同步正常","ok");
       });
       window.parent.postMessage({type:"qm-board-ready"},location.origin);
