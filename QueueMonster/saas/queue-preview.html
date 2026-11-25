@@ -6,22 +6,68 @@
 <link rel="stylesheet" href="./monster-world.css?build=__LINE_SAAS_BUILD__">
 <link rel="stylesheet" href="./assets/marketing/ui-simplified.css?build=__LINE_SAAS_BUILD__">
 <style>
-html,body{margin:0!important;background:#fff!important;min-height:0!important;height:auto!important;overflow:auto}
-#preview-root{padding:12px;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;align-items:start}
-.preview-column{min-width:0;display:grid;gap:8px}.preview-column>h2{font-size:16px;margin:0;color:#462b52}
-#staff-root{min-width:0;max-height:960px;overflow:auto;overscroll-behavior:contain;padding:0 4px 6px 0}
-#customer-root{min-width:0}.preview-board{width:100%;height:320px;border:1px solid #ddd;border-radius:12px;background:#fff}
-.preview-tools{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border-bottom:1px solid #eee}
-.preview-tools p{margin:0;font-size:13px;color:#666}.preview-tools button{white-space:nowrap}
-#preview-feedback{min-height:1.4em;margin:0;padding:0 12px;color:#462b52;font-size:13px}
-#preview-root .grid4.queue-status-summary{grid-template-columns:repeat(auto-fit,minmax(84px,1fr))}
-#preview-root .grid4.queue-status-summary .stat{min-width:0}
-@media(max-width:680px){#preview-root{grid-template-columns:minmax(0,1fr)}#staff-root{max-height:570px}.preview-board{height:300px}}
+:root{--preview-ink:#382647;--preview-muted:#81758b;--preview-border:#e9deef;--preview-accent:#70428f;--preview-soft:#f8f3fb}
+*{box-sizing:border-box}
+html,body{margin:0!important;min-height:0!important;height:auto!important;overflow-x:hidden!important;background:#fff!important;color:var(--preview-ink)}
+body{font-family:system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif}
+.preview-tools{margin:0 24px;padding:16px 0;display:flex;align-items:center;justify-content:space-between;gap:22px;border-bottom:1px solid #f0eaf2}
+.preview-tools p{margin:0;font-size:13px;line-height:1.7;color:var(--preview-muted)}
+.preview-tools button{padding:10px 18px;min-height:42px;white-space:nowrap;border-radius:14px;background:#fff;border:1px solid #d8c5e7;color:#653e80;font-weight:750}
+#preview-feedback{margin:0 24px;min-height:0;padding:0;color:#70428f;font-size:13px;line-height:1.5}
+#preview-feedback:not(:empty){padding-top:12px}
+#preview-root{padding:30px 24px 36px;display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);gap:clamp(26px,3vw,48px);align-items:start;max-width:1600px;margin:0 auto}
+.preview-column{min-width:0;display:flex;flex-direction:column;gap:22px}
+.preview-section-heading{display:flex;flex-direction:column;gap:8px;min-width:0}
+.preview-eyebrow{font-size:12px;font-weight:800;letter-spacing:.12em;color:#8c65a2}
+.preview-section-heading h2{font-size:clamp(21px,2.1vw,29px);font-weight:860;line-height:1.3;letter-spacing:-.04em;margin:0;color:#3d274a}
+.preview-section-heading p{font-size:14px;line-height:1.75;color:var(--preview-muted);margin:0}
+#staff-root{min-width:0;overflow:visible}
+.preview-workbench{border:1px solid var(--preview-border);border-radius:28px;background:linear-gradient(165deg,#fff 65%,#fcf8fe);padding:clamp(24px,2.7vw,42px);box-shadow:0 14px 36px rgba(60,27,75,.045)}
+.preview-workbench-top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.preview-live-dot{font-weight:800;font-size:13px;color:#527769}
+.preview-live-dot::before{content:"";display:inline-block;width:8px;height:8px;margin-right:8px;vertical-align:1px;border-radius:100%;background:#72ac8c}
+.preview-session{font-size:12px;font-weight:700;color:#998ba2}
+.preview-main-number{padding:34px 0 30px;text-align:left;display:flex;flex-direction:column;gap:7px}
+.preview-main-number span{font-size:15px;font-weight:750;color:#7c6888}
+.preview-main-number strong{font-size:clamp(65px,8vw,114px);line-height:1.1;letter-spacing:-.075em;font-variant-numeric:tabular-nums;color:#512d67;white-space:nowrap;max-width:100%;overflow-wrap:anywhere}
+.preview-quick-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.preview-quick-stats>div{padding:18px 12px;border-radius:18px;background:#f8f3fa;min-width:0;text-align:center}
+.preview-quick-stats span{display:block;color:#81738a;font-size:13px;font-weight:700}
+.preview-quick-stats strong{display:inline-block;font-size:clamp(25px,3vw,35px);font-weight:850;color:#5a3172;line-height:1.45;font-variant-numeric:tabular-nums}
+.preview-quick-stats small{font-size:12px;color:#8a7e95;margin-left:3px}
+.preview-next-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;padding:28px 0;margin-top:6px;border-bottom:1px solid #eee6f2}
+.preview-next-row>span{font-size:14px;color:#87788f;font-weight:700}
+.preview-next-items{display:flex;gap:12px;flex-wrap:wrap}
+.preview-next-number{display:inline-flex;justify-content:center;align-items:center;padding:12px 19px;min-width:106px;border:1px solid #e2d4ea;border-radius:15px;background:#fff;font-size:23px;letter-spacing:-.04em;color:#59316d;font-variant-numeric:tabular-nums}
+.preview-empty{font-size:14px;color:#95859d}
+.preview-primary-actions{display:flex;gap:12px;margin-top:28px;align-items:center;flex-wrap:wrap}
+.preview-primary-actions button{border-radius:16px;min-height:55px;font-weight:800;font-size:16px;padding:13px 24px}
+.preview-primary-actions .preview-call{background:#6c3e86;color:#fff;border:1px solid #6c3e86;flex:1 1 190px;box-shadow:0 7px 18px rgba(95,48,125,.14)}
+.preview-primary-actions .preview-recall{background:#fff;color:#6c3e86;border:1px solid #d9c4e5;flex:0 1 135px}
+.preview-primary-actions button:disabled{opacity:.5;cursor:not-allowed}
+.preview-tip{margin:16px 0 0;color:#93859a;font-size:12px;line-height:1.65}
+.preview-advanced{margin-top:24px;border:1px solid var(--preview-border);border-radius:20px;background:#fff;overflow:hidden}
+.preview-advanced>summary{cursor:pointer;font-size:14px;font-weight:750;color:#70428f;padding:19px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;list-style:none}
+.preview-advanced>summary::-webkit-details-marker{display:none}
+.preview-advanced[open]>summary{border-bottom:1px solid #eee6f2}
+.preview-advanced-content{max-height:570px;overflow:auto;padding:22px 20px;overscroll-behavior:contain}
+.preview-advanced-content .card{padding:22px}
+.board-shell{border:1px solid var(--preview-border);padding:12px;background:#fff;border-radius:26px;box-shadow:0 14px 36px rgba(60,27,75,.045);overflow:hidden}
+.preview-board{display:block;width:100%;height:390px;border:0;border-radius:18px;background:#fff}
+.customer-shell{background:#fff;border-radius:26px;border:1px solid var(--preview-border);padding:18px;overflow:hidden}
+#customer-root{min-width:0}
+#customer-root>.grid3{margin:0 0 14px;grid-template-columns:1fr}
+#customer-root>.grid3 .stat{border-radius:15px;background:#f8f3fa;box-shadow:none}
+#customer-root .queue-board{border-radius:20px}
+#customer-root .queue-board-current{font-size:clamp(50px,6vw,86px)}
+.preview-screen-column .preview-section-heading:not(:first-child){margin-top:22px}
+@media(max-width:1100px){#preview-root{grid-template-columns:1fr;gap:44px}.preview-board{height:410px}.preview-main-number strong{font-size:clamp(66px,12vw,104px)}}
+@media(max-width:650px){.preview-tools{margin:0 14px;padding:12px 0}.preview-tools p{font-size:12px}#preview-feedback{margin:0 14px}#preview-root{padding:22px 14px 28px;gap:36px}.preview-column{gap:16px}.preview-workbench{padding:24px 19px;border-radius:22px}.preview-main-number{padding:27px 0 24px}.preview-main-number strong{font-size:clamp(60px,16vw,86px)}.preview-quick-stats{gap:8px}.preview-quick-stats>div{padding:14px 6px}.preview-next-row{padding:22px 0}.preview-next-number{min-width:94px;font-size:21px;padding:11px}.preview-primary-actions button{min-height:50px}.board-shell{padding:8px;border-radius:21px}.preview-board{height:350px}.customer-shell{padding:12px}.preview-advanced-content{padding:12px}}
 </style></head><body data-monster-page="index" data-portal="staff">
-<div class="preview-tools"><p>正式產品介面・示範資料，不會影響任何真實店家</p><button class="btn outline" type="button" id="reset-preview">重設體驗</button></div>
+<div class="preview-tools"><p>互動體驗 · 使用示範資料，不影響真實店家</p><button class="btn outline" type="button" id="reset-preview">重設體驗</button></div>
 <p id="preview-feedback" role="status" aria-live="polite"></p>
 <main id="preview-root">
-<section class="preview-column"><h2>店家工作台｜叫號管理</h2><div id="staff-root" aria-label="店家叫號管理">載入正式介面中…</div></section>
-<section class="preview-column"><h2>店內即時叫號看板</h2><iframe class="preview-board" id="board-preview" title="正式電視叫號看板" src="./board.html?preview=queue&amp;build=__LINE_SAAS_BUILD__" allowfullscreen></iframe><h2>顧客手機｜我的叫號進度</h2><div id="customer-root" data-portal="customer" aria-label="顧客手機叫號進度">載入正式介面中…</div></section>
+<section class="preview-column preview-staff-column"><div class="preview-section-heading"><span class="preview-eyebrow">01 / 店家工作台</span><h2>叫號，一眼就掌握</h2><p>集中操作當前叫號，完整管理功能仍可隨時展開。</p></div><div id="staff-root" aria-label="店家叫號管理">載入正式介面中…</div></section>
+<section class="preview-column preview-screen-column"><div class="preview-section-heading"><span class="preview-eyebrow">02 / 店內電視</span><h2>清楚告訴每位顧客</h2><p>聚焦現在叫號與接下來兩組，等候總數同步保留。</p></div><div class="board-shell"><iframe class="preview-board" id="board-preview" title="正式電視叫號看板" src="./board.html?preview=queue&amp;build=__LINE_SAAS_BUILD__" allowfullscreen></iframe></div><div class="preview-section-heading"><span class="preview-eyebrow">03 / 顧客手機</span><h2>不必一直守在櫃檯</h2><p>顧客可直接查看自己的叫號進度。</p></div><div class="customer-shell"><div id="customer-root" data-portal="customer" aria-label="顧客手機叫號進度">載入正式介面中…</div></div></section>
 </main>
 <script type="module" src="./assets/queue-preview/main.js?build=__LINE_SAAS_BUILD__"></script></body></html>
