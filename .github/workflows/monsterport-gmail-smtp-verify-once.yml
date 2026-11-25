@@ -8,14 +8,14 @@ on:
 permissions:
   contents: read
 jobs:
-  configure-arena:
+  configure-queue:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       MONSTERPORT_SMTP_SENDER: monsterport.com@gmail.com
-      MONSTERPORT_SMTP_TARGET: arena
+      MONSTERPORT_SMTP_TARGET: queue
     steps:
       - uses: actions/checkout@v4
-      - name: 讀取 Vault 憑證並設定 Arena SMTP
+      - name: 讀取 Vault 憑證並設定排隊怪獸 SMTP
         run: python3 .github/scripts/configure-monsterport-gmail-smtp.py
