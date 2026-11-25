@@ -106,8 +106,12 @@ def verify_gmail(password):
 
 def configure():
     originals = preflight()
+    target = os.getenv("MONSTERPORT_SMTP_TARGET", "")
+    if target not in ("arena", "queue"):
+        raise RuntimeError("Specify staging target: arena or queue")
     password = read_app_password()
-    port = verify_gmail(password)
+    port = 465  # Google-supported implicit SSL, exercised by Supabase itself.
+    print("SMTP connectivity from GitHub runners blocked; testing through real Supabase Auth", flush=True)
     payload = {
         "smtp_admin_email": SENDER,
         "smtp_sender_name": "MonsterPort",
@@ -117,6 +121,8 @@ def configure():
         "smtp_pass": password,
     }
     for name, ref, previous in originals:
+        if ("Arena" in name) != (target == "arena"):
+            continue
         request(ref, "/config/auth", "PATCH", payload)
         current = request(ref, "/config/auth")
         for key, expected in [
@@ -137,7 +143,7 @@ def configure():
             if current.get(key) != previous.get(key):
                 raise RuntimeError(name + ": unrelated Auth config changed: " + key)
         print("PASS:", name, "SMTP setup verified; branded emails retained", flush=True)
-    print("PASS: Both projects now configured to send via Gmail SMTP", flush=True)
+    print("PASS: Staged project "+target+" SMTP configured; real email delivery verification required", flush=True)
 
 
 if __name__ == "__main__":
