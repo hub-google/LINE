@@ -1,0 +1,20 @@
+name: MonsterPort｜SMTP 腳本一次性唯讀驗收
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/monsterport-smtp-check-once.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: 檢查語法與讀取兩套 Auth 設定（不寫入）
+        run: |
+          node --check .github/scripts/configure-monsterport-smtp.mjs
+          node .github/scripts/configure-monsterport-smtp.mjs --check
