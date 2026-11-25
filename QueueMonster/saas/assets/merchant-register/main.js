@@ -1,5 +1,6 @@
 import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,GOOGLE_WEB_CLIENT_ID} from "../../public-config.js";
 import {formatAuthError} from "../../app/auth-errors.js";
+import {effectivePassword} from "../../app/password-credential.js";
 
 import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 const supabaseUrl=SUPABASE_URL;
@@ -10,20 +11,7 @@ const signupSb=createClient(supabaseUrl,publishableKey,{auth:{persistSession:fal
 function customerFacingError(error,operation="general"){
  return formatAuthError(error,operation,"密碼不符合目前登入服務設定，請重新輸入。");
 }
-// Supabase-hosted Auth enforces a six-character minimum. Queue Monster accepts
-// shorter user-entered passwords by deriving a stable, Auth-compatible credential.
-// This is ONLY a compatibility encoding; it does not add password entropy.
-// Six-or-more-character existing passwords are left unchanged.
-async function effectivePassword(email,plaintext){
- if(typeof plaintext!=="string"||!plaintext.length)throw Error("請輸入密碼");
- if(plaintext.length>=6)return plaintext;
- const normalized=(email||"").trim().toLowerCase();
- if(!normalized)throw Error("找不到帳號的電子信箱");
- if(!globalThis.crypto?.subtle)throw Error("瀏覽器無法安全處理密碼，請使用新版瀏覽器");
- const bytes=new TextEncoder().encode("queue-monster-short-password-v1\\0"+normalized+"\\0"+plaintext);
- const digest=await crypto.subtle.digest("SHA-256",bytes);
- return "qm1-"+Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,"0")).join("");
-}
+
 const $=id=>document.getElementById(id);
 const returnToLogin=()=>{const url=new URL("./merchant-register.html?mode=login",location.href);if(invited)url.searchParams.set("staff_invite",invitedId);else url.searchParams.set("from","queue-monster");return url.href;};
 const returnToReset=()=>new URL("./merchant-register.html?mode=login&intent=recovery",location.href).href;
