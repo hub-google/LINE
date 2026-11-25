@@ -1,0 +1,39 @@
+name: Arena｜一次性寄件者名稱設定
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/arena-sender-once.yml'
+permissions:
+  contents: read
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - name: 設定 Arena 寄件者顯示名稱
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, json, urllib.request, urllib.error
+          t=os.getenv("SUPABASE_ACCESS_TOKEN","")
+          if not t: raise RuntimeError("Existing LINE Supabase token unavailable")
+          url="https://api.supabase.com/v1/projects/fanffwnhkxpfhttylntw/config/auth"
+          def call(method,data=None):
+              req=urllib.request.Request(url,method=method,headers={"Authorization":"Bearer "+t,"Content-Type":"application/json"},data=None if data is None else json.dumps(data).encode())
+              try:
+                  with urllib.request.urlopen(req,timeout=30) as r: return json.load(r)
+              except urllib.error.HTTPError as e: raise RuntimeError(f"Supabase Auth configuration HTTP {e.code}") from None
+          old=call("GET")
+          old_name=old.get("smtp_sender_name")
+          assert not old.get("smtp_host"), "Unexpected custom SMTP: abort"
+          name="Monster Arena｜怪獸競技場"
+          print("Current sender display:",repr(old_name))
+          if old_name!=name: call("PATCH",{"smtp_sender_name":name})
+          new=call("GET")
+          assert new.get("smtp_sender_name")==name,"Sender name did not persist"
+          assert new.get("smtp_admin_email")==old.get("smtp_admin_email") and new.get("smtp_host")==old.get("smtp_host"),"Unexpected SMTP config change"
+          print("PASS: Sender display name configured and verified; default SMTP remains unchanged")
+          PY
