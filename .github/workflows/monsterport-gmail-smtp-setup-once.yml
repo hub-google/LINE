@@ -14,9 +14,12 @@ jobs:
     timeout-minutes: 6
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      MONSTERPORT_SMTP_TARGET: arena
     steps:
       - uses: actions/checkout@v4
       - name: Gmail SMTP 驗證與雙專案設定
         run: python3 .github/scripts/configure-monsterport-gmail-smtp.py
 
 # Retry Gmail SMTP validation using port 587 STARTTLS first.
+
+# Stage 1: Arena only; verify delivery before configuring Queue Monster.
