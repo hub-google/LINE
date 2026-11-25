@@ -106,7 +106,7 @@ def verify_gmail(password):
 
 
 def configure():
-    if not re.fullmatch(r"[a-z0-9._%+\\-]+@gmail\\.com", SENDER):
+    if not re.fullmatch(r"[a-z0-9._%+-]+@gmail[.]com", SENDER):
         raise RuntimeError("MONSTERPORT_SMTP_SENDER must be the actual registered Gmail address")
     originals = preflight()
     target = os.getenv("MONSTERPORT_SMTP_TARGET", "")
