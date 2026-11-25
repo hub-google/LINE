@@ -17,7 +17,7 @@ try{
  browser=await chromium.launch({channel:process.env.BROWSER_CHANNEL||"chromium",headless:true});
  const page=await browser.newPage({viewport:{width:1686,height:900}});
  await page.goto("http://127.0.0.1:"+server.address().port+"/queue-preview.html");
- const frame=page.frameLocator("#board-preview");
+ let frame=page.frameLocator("#board-preview");
  async function verify(current,upcoming,count){
   await frame.locator("#current").filter({hasText:current}).waitFor({timeout:20000});
   await frame.locator("#upcoming li").first().waitFor({timeout:20000});
@@ -37,4 +37,15 @@ try{
  await page.screenshot({path:path.join(out,"queue-preview-after-call.png")});
  await page.locator("#reset-preview").click();
  await verify("A012",["A013","A014"],8);
+ await page.goto("http://127.0.0.1:"+server.address().port+"/home.html",{waitUntil:"domcontentloaded"});
+ const intro=page.getByRole("button",{name:/跳過影片/});
+ if(await intro.isVisible())await intro.click();
+ const preview=page.frameLocator("#qm-real-queue");
+ frame=preview.frameLocator("#board-preview");
+ await verify("A012",["A013","A014"],8);
+ await page.locator("#qm-real-queue").scrollIntoViewIfNeeded();
+ await page.locator("#qm-real-queue").screenshot({path:path.join(out,"queue-homepage-initial.png")});
+ await preview.locator('#staff-root [data-act="call"]').click();
+ await verify("A013",["A014","A015"],7);
+ await page.locator("#qm-real-queue").screenshot({path:path.join(out,"queue-homepage-after-call.png")});
 }finally{await browser?.close();server.close();}
