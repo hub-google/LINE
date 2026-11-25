@@ -224,7 +224,7 @@ try{
    }
    assert.ok((await page.locator('body').innerText()).trim().length>30,name);
    if(name==='home.html'){
-    const preview=await page.locator('.qm-merchant-preview').evaluate(node=>{
+    const preview=await page.locator('#qm-real-queue').evaluate(node=>{
      const r=node.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width};
     });
     assert.ok(preview.width>=230&&preview.left>=-2&&preview.right<=width+2,'Merchant dashboard preview fits viewport');
@@ -344,49 +344,28 @@ try{
 
 
 
- // Functional first-screen preview: call-next updates both the shop screen and customer phone,
- // and booking/order buttons update their visible states without production writes.
+ // Fun// The homepage uses actual queue controls, not a retired mockup.
  for(const width of [1280,390]){
   await page.setViewportSize({width,height:900});
-  await page.goto(baseUrl+'/booking/home.html',{waitUntil:'load',timeout:45000});
-  const workbench=page.locator('.qm-live-workbench');
-  await workbench.waitFor({state:'visible'});
-  assert.equal(await page.locator('main section').count(),4,'Landing has no duplicated explanations');
-  assert.equal(await workbench.locator('[data-live-tab]').count(),3,'Three real preview modes');
-  assert.equal(await workbench.locator('[data-live-current]').innerText(),'A012');
-  assert.equal(await workbench.locator('[data-live-mobile]').innerText(),'A012');
-  assert.equal(await workbench.locator('[data-live-board]').innerText(),'A012','Store display starts at same number');
-  await workbench.locator('[data-live-action="next"]').click();
-  assert.equal(await workbench.locator('[data-live-current]').innerText(),'A013');
-  assert.equal(await workbench.locator('[data-live-mobile]').innerText(),'A013');
-  assert.equal(await workbench.locator('[data-live-board]').innerText(),'A013','Fullscreen shop display tracks the call number');
-  await workbench.locator('[data-live-action="board"]').click();
-  await page.waitForFunction(()=>document.fullscreenElement===document.querySelector('.qm-live-board-panel')||document.querySelector('.qm-live-board-panel')?.classList.contains('qm-live-board-expanded'),null,{timeout:5000});
-  assert.equal(await workbench.locator('[data-live-board]').innerText(),'A013','Board presentation keeps current number');
-  await workbench.locator('[data-live-action="board"]').click();
-  await page.waitForFunction(()=>!document.fullscreenElement&&!document.querySelector('.qm-live-board-panel')?.classList.contains('qm-live-board-expanded'),null,{timeout:5000});
-  assert.equal(await workbench.locator('[data-live-waiting]').innerText(),'7');
-  assert.match(await workbench.locator('.qm-live-feedback').innerText(),/已同步/);
-  await workbench.locator('[data-live-tab="booking"]').click();
-  assert.equal(await workbench.locator('[data-live-tab="booking"]').getAttribute('aria-selected'),'true');
-  await workbench.locator('[data-live-action="checkin"]').click();
-  assert.ok(await workbench.locator('.qm-live-state.done').count()>0,'Booking check-in changed to completed');
-  await workbench.locator('[data-live-tab="order"]').click();
-  await workbench.locator('[data-live-action="accept"]').click();
-  assert.match(await workbench.locator('.qm-live-state.done').innerText(),/製作中/);
-  await workbench.locator('[data-live-tab="queue"]').focus();
-  await page.keyboard.press('ArrowRight');
-  assert.equal(await workbench.locator('[data-live-tab="booking"]').getAttribute('aria-selected'),'true','Preview supports keyboard');
-  const dimensions=await page.evaluate(()=>({
-   viewport:document.documentElement.clientWidth,document:document.documentElement.scrollWidth,
-   right:document.querySelector('.qm-live-workbench').getBoundingClientRect().right
+  await page.goto(baseUrl+'/booking/home.html',{waitUntil:'domcontentloaded',timeout:45000});
+  const embedded=page.frameLocator('#qm-real-queue');
+  await embedded.locator('#staff-root button[data-act="call"]').first().waitFor({state:'visible',timeout:15000});
+  assert.match(await embedded.locator('#staff-root').innerText(),/A012/);
+  assert.ok(await embedded.locator('#customer-root').isVisible());
+  assert.equal(await embedded.locator('#board-preview').count(),1);
+  await embedded.locator('#staff-root button[data-act="call"]').first().click();
+  await page.waitForFunction(()=>document.querySelector('#qm-real-queue')?.contentDocument?.getElementById('preview-feedback')?.textContent?.includes('A013'),null,{timeout:10000});
+  const dims=await page.evaluate(()=>({
+   width:document.documentElement.clientWidth,
+   content:document.documentElement.scrollWidth,
+   right:document.querySelector('#qm-real-queue').getBoundingClientRect().right
   }));
-  assert.ok(dimensions.document<=dimensions.viewport+2,'Compact homepage has no horizontal overflow at '+width+': '+JSON.stringify(dimensions));
-  assert.ok(dimensions.right<=dimensions.viewport+2,'Workbench fits screen');
+  assert.ok(dims.content<=dims.width+2,'Homepage horizontal overflow');
+  assert.ok(dims.right<=dims.width+2,'Embedded queue escapes viewport');
  }
- console.log('Interactive merchant preview passed for queue, booking and order at desktop/mobile widths.');
+ console.log('Real queue, customer progress and board shown and call-next works on both viewports.');
 
- // Four industries share ONE homepage panel; tab clicks must never navigate.
+ r industries share ONE homepage panel; tab clicks must never navigate.
  for(const width of [1280,390]){
   await page.setViewportSize({width,height:900});
   await page.goto(baseUrl+'/booking/home.html',{waitUntil:'load',timeout:45000});
