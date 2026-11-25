@@ -61,4 +61,4 @@ jobs:
           print("PASS: GitHub Pages recovery redirect allowed; existing Site URL and SMTP unchanged")
           print("SMTP custom host configured:",bool(after.get("smtp_host")))
           print("SMTP sender already Arena-branded:", "arena" in (after.get("smtp_sender_name") or "").lower() or "怪獸競技場" in (after.get("smtp_sender_name") or ""))
-                    PY
+          PY
