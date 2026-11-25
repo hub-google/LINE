@@ -79,7 +79,9 @@ test("DEMO scene/role switch preserves browser deep links and shared account mou
  assert.match(header,/cta\.remove\(\)/);
  assert.doesNotMatch(header,/window\.location\.reload/);
  assert.match(auth,/qm:demo-mode-change/);
- assert.match(auth,/return operatorIdentity\|\|lineIdentity/);
+ assert.match(auth,/async function getIdentity\(mode\)/);
+ assert.match(auth,/if\(mode==="customer"\)/);
+ assert.doesNotMatch(auth,/return operatorIdentity\|\|lineIdentity/);
 });
 
 test("marketing tracking records no user input and makes no unapproved calls",()=>{
