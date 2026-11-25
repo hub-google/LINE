@@ -18,3 +18,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Gmail SMTP 驗證與雙專案設定
         run: python3 .github/scripts/configure-monsterport-gmail-smtp.py
+
+# Retry Gmail SMTP validation using port 587 STARTTLS first.
