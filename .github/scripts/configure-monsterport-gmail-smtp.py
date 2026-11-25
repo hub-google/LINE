@@ -80,27 +80,39 @@ def preflight():
 
 
 def verify_gmail(password):
-    try:
-        with smtplib.SMTP_SSL(HOST, PORT, context=ssl.create_default_context(), timeout=25) as smtp:
-            smtp.login(SENDER, password)
-    except smtplib.SMTPAuthenticationError as exc:
-        raise RuntimeError("Gmail app password authentication rejected: SMTP " +
-                           str(exc.smtp_code)) from None
-    except Exception as exc:
-        raise RuntimeError("Gmail SMTP connectivity or TLS failed: " +
-                           type(exc).__name__) from None
-    print("PASS: Gmail SMTP authenticated successfully", flush=True)
+    # Retry using STARTTLS, as Gmail supports both 587 and implicit TLS 465.
+    failures = []
+    for port in (587, 465):
+        try:
+            if port == 587:
+                with smtplib.SMTP(HOST, port, timeout=15) as smtp:
+                    smtp.ehlo()
+                    smtp.starttls(context=ssl.create_default_context())
+                    smtp.ehlo()
+                    smtp.login(SENDER, password)
+            else:
+                with smtplib.SMTP_SSL(HOST, port,
+                                     context=ssl.create_default_context(), timeout=15) as smtp:
+                    smtp.login(SENDER, password)
+        except smtplib.SMTPAuthenticationError as exc:
+            raise RuntimeError("Gmail app password rejected: SMTP " + str(exc.smtp_code)) from None
+        except Exception as exc:
+            failures.append(str(port) + ": " + type(exc).__name__)
+            continue
+        print("PASS: Gmail SMTP authenticated on port " + str(port), flush=True)
+        return port
+    raise RuntimeError("SMTP validation blocked: " + ", ".join(failures))
 
 
 def configure():
     originals = preflight()
     password = read_app_password()
-    verify_gmail(password)
+    port = verify_gmail(password)
     payload = {
         "smtp_admin_email": SENDER,
         "smtp_sender_name": "MonsterPort",
         "smtp_host": HOST,
-        "smtp_port": PORT,
+        "smtp_port": port,
         "smtp_user": SENDER,
         "smtp_pass": password,
     }
@@ -111,7 +123,7 @@ def configure():
             ("smtp_admin_email", SENDER),
             ("smtp_sender_name", "MonsterPort"),
             ("smtp_host", HOST),
-            ("smtp_port", PORT),
+            ("smtp_port", port),
             ("smtp_user", SENDER),
         ]:
             if str(current.get(key)) != str(expected):
