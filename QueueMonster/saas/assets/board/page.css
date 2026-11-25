@@ -410,3 +410,86 @@ html.board-fit body[data-monster-page="board"] > #single-board:not([hidden]),
 html.board-fit body[data-monster-page="board"] > #unit-board:not([hidden]){grid-row:4}
 html.board-fit body[data-monster-page="board"] > footer{grid-row:5}
 html:fullscreen body[data-monster-page="board"] > #marketing-header{display:none}
+
+
+/* Embedded interaction demo only: keep the REAL board renderer and live numbers,
+   but give the two forthcoming tickets enough space to remain readable. */
+html.board-fit body[data-queue-preview="true"]{
+  grid-template-rows:minmax(0,auto) minmax(0,1fr) minmax(0,auto)!important;
+  background:#fff!important;
+}
+html.board-fit body[data-queue-preview="true"] > #marketing-header{display:none!important}
+html.board-fit body[data-queue-preview="true"] > header.board-store-header{
+  grid-row:1!important;
+  height:clamp(60px,18vh,82px);
+  max-height:none;
+  padding:12px 18px;
+  border-radius:0;
+  box-shadow:none;
+}
+html.board-fit body[data-queue-preview="true"] > header .board-header-status{max-width:40%}
+html.board-fit body[data-queue-preview="true"] > header #board-update-mode{font-size:10px}
+html.board-fit body[data-queue-preview="true"] > #single-board:not([hidden]){
+  grid-row:2!important;
+  gap:12px;
+  padding:13px 14px;
+  background:#fff;
+}
+html.board-fit body[data-queue-preview="true"] > #single-board[data-board-layout="side"]{
+  grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)!important;
+}
+html.board-fit body[data-queue-preview="true"] #single-board .panel{
+  padding:15px 12px;
+  border-radius:18px;
+  border:1px solid #e5dbea;
+}
+html.board-fit body[data-queue-preview="true"] #single-board .panel.current{
+  background:#f0e9f5;
+  justify-content:center;
+}
+html.board-fit body[data-queue-preview="true"] #single-board .panel.next{
+  background:#faf7fc;
+  justify-content:flex-start;
+}
+html.board-fit body[data-queue-preview="true"] #single-board .label{
+  color:#513064;
+  font-weight:800;
+  line-height:1.15;
+}
+html.board-fit body[data-queue-preview="true"] #single-board .underline{
+  width:48px;
+  height:4px;
+  margin:5px auto 12px;
+  background:#70428f;
+  opacity:.7;
+}
+html.board-fit body[data-queue-preview="true"] #upcoming{
+  gap:12px;
+}
+html.board-fit body[data-queue-preview="true"] #upcoming li{
+  background:#fff;
+  border:1px solid #e4d9eb;
+  border-radius:14px;
+  min-height:0;
+  color:#512e69;
+  box-shadow:0 2px 4px rgba(73,36,91,.025);
+}
+html.board-fit body[data-queue-preview="true"] > footer{
+  grid-row:3!important;
+  padding:8px 15px;
+  gap:8px;
+  border-top:1px solid #f0eaf3;
+  background:#fff;
+}
+html.board-fit body[data-queue-preview="true"] > footer .board-platform-credit{
+  font-size:11px;
+  color:#8b7896;
+}
+html.board-fit body[data-queue-preview="true"] > footer #notice,
+html.board-fit body[data-queue-preview="true"] > footer #health{display:none!important}
+html.board-fit body[data-queue-preview="true"] > footer .board-controls button{
+  font-size:11px;
+  border-radius:10px;
+  min-height:30px;
+  padding:5px 12px;
+}
