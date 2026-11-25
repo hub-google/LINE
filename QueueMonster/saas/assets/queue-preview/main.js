@@ -30,10 +30,20 @@ function render(message=""){
  const done=tickets.filter(t=>!t.deleted_at&&["COMPLETED","CANCELLED"].includes(t.status));
  staffState.staff={active_tickets:open,processed_tickets:done,deleted_tickets:tickets.filter(t=>t.deleted_at),queue_session:{code:session}};
  sharedUiState.lastStaffChange=history.length?{slug}:null;
- $("staff-root").innerHTML=renderStaffQueue({isManager:true,t:tenant,html:""});
+ const queue=waiting(),called=current(),passed=tickets.filter(t=>!t.deleted_at&&t.status==="PASSED").length;
+ const detailOpen=$("staff-root").querySelector(".preview-advanced")?.open===true;
+ const nextTwo=queue.slice(0,2).map(t=>'<strong class="preview-next-number">'+esc(t.number)+'</strong>').join("");
+ $("staff-root").innerHTML='<div class="preview-workbench">'+
+  '<div class="preview-workbench-top"><span class="preview-live-dot">即時叫號</span><span class="preview-session">目前場次 · '+(session==="MORNING"?"早場":session==="AFTERNOON"?"午場":session==="EVENING"?"晚場":"休場")+'</span></div>'+
+  '<div class="preview-main-number"><span>現在叫到</span><strong>'+esc(called?.number||"尚未叫號")+'</strong></div>'+
+  '<div class="preview-quick-stats"><div><span>等待中</span><strong>'+queue.length+'</strong><small>組</small></div><div><span>已過號</span><strong>'+passed+'</strong><small>組</small></div><div><span>已完成</span><strong>'+done.length+'</strong><small>組</small></div></div>'+
+  '<div class="preview-next-row"><span>接下來</span><div class="preview-next-items">'+(nextTwo||'<span class="preview-empty">暫無候位</span>')+'</div></div>'+
+  '<div class="preview-primary-actions"><button class="preview-call" type="button" data-act="call" '+(queue.length?"":"disabled")+'>'+ (queue.length?"叫下一位":"目前沒有候位")+'</button><button class="preview-recall" type="button" data-act="recall" '+(called?"":"disabled")+'>再叫一次</button></div>'+
+  '<p class="preview-tip">操作後，電視看板與顧客手機將同步更新。</p></div>'+
+  '<details class="preview-advanced" '+(detailOpen?"open":"")+'><summary>展開完整店家操作與號碼管理 <span aria-hidden="true">⌄</span></summary><div class="preview-advanced-content">'+renderStaffQueue({isManager:true,t:tenant,html:""})+'</div></details>';
  const boardLink=$("staff-root").querySelector('a[href*="board.html"]');
  if(boardLink){boardLink.href="#board-preview";boardLink.removeAttribute("target");boardLink.addEventListener("click",e=>{e.preventDefault();board.scrollIntoView({block:"center"});board.requestFullscreen?.().catch(()=>{})})}
- const own=find(mineId),queue=waiting(),idx=queue.findIndex(t=>t.id===mineId);
+ const own=find(mineId),idx=queue.findIndex(t=>t.id===mineId);
  const visible=own&&!own.deleted_at?{...own,ahead:idx<0?null:idx}:null;
  customerState.customer={my_tickets:visible?[visible]:[]};
  Object.assign(queueState,{queueLiveShop:slug,queueLive:{current:current()?.number||"",mine:visible},queueLastSuccessShop:slug,queueLastSuccessAt:new Date().toISOString(),progressTicketId:mineId,queueLiveError:"",queueNearAlertSettings:{[mineId]:alertSetting}});
