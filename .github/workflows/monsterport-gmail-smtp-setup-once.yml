@@ -18,10 +18,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Gmail SMTP 驗證與雙專案設定
-        run: python3 .github/scripts/configure-monsterport-gmail-smtp.py
+        run: python3 .github/scripts/rollback-monsterport-gmail-smtp.py
 
 # Retry Gmail SMTP validation using port 587 STARTTLS first.
 
 # Stage 1: Arena only; verify delivery before configuring Queue Monster.
 
 # Retry: correct Management API smtp_port string type.
+
+# Rescue: restore working default Auth sender after Gmail SMTP 535.
