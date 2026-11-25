@@ -6,7 +6,8 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
     import {installBoardFullscreenFit} from "./fullscreen-fit.js";
     const SUPABASE_ANON_KEY=SUPABASE_PUBLISHABLE_KEY;
     // Independent browser session: opening a TV board never signs out a customer or staff.
-    const client=createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{
+    const preview=new URLSearchParams(location.search).get("preview")==="queue" && window.parent!==window;
+    const client=preview?null:createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{
       auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}
     });
     const params=new URLSearchParams(location.search);
@@ -221,7 +222,26 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
       $("fullscreen").textContent=document.fullscreenElement?"結束全螢幕":"全螢幕";
       boardFit.schedule();
     });
-    if(!validSlug){
+    if(preview){
+      $("shop").textContent="示範門市";
+      $("shop-home-link").removeAttribute("href");
+      $("board-update-mode").textContent="展示資料・同步更新";
+      $("notice").textContent="僅展示，不連接真實店家。";
+      health("等待展示資料","loading");
+      const label=document.querySelector("#single-board .next .label");
+      window.addEventListener("message",event=>{
+        if(event.origin!==location.origin||event.source!==window.parent||event.data?.type!=="qm-queue-preview")return;
+        const data=event.data;
+        const current=String(data.current||"").trim();
+        $("current").textContent=current||"尚未叫號";
+        $("current").classList.toggle("is-empty",!current);
+        const upcoming=Array.isArray(data.upcoming)?data.upcoming.map(String):[];
+        if(label)label.textContent="接下來（"+upcoming.length+" 組等候）";
+        renderUpcoming(upcoming);
+        health("展示同步正常","ok");
+      });
+      window.parent.postMessage({type:"qm-board-ready"},location.origin);
+    }else if(!validSlug){
       $("shop").textContent="未指定有效門市";
       health("請先選擇門市","error");
       $("notice").textContent="網址需包含正確的 merchant 門市代碼，例如 board.html?merchant=your-shop。";
