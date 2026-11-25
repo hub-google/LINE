@@ -29,6 +29,7 @@ import {SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY} from "../../public-config.js";
       }
     }
     const $=id=>document.getElementById(id);
+    if(preview)document.body.dataset.queuePreview="true";
     const boardFit=installBoardFullscreenFit();
     const localTime=date=>new Intl.DateTimeFormat("zh-TW",{timeZone:"Asia/Taipei",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(date);
     const validSlug=/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug);
