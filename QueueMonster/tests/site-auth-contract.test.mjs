@@ -298,10 +298,14 @@ test("first Email signup password save clears the pending setup flag",()=>{
 
 test("Email password-change dialog accepts one character and matches the registration login encoding",async()=>{
  const registerSource=read("saas/assets/merchant-register/main.js");
+ const resetSource=read("saas/assets/password-reset/main.js");
+ const shared=read("saas/app/password-credential.js");
  const helper=/async function effectivePassword\(email,plaintext\)\{[\s\S]*?^\}/m;
- const inHeader=code.match(helper),inRegister=registerSource.match(helper);
- assert.ok(inHeader&&inRegister,"short-password compatibility helper must be present in both flows");
- assert.equal(inHeader[0],inRegister[0],"changing a short password must use the same stored credential as login");
+ const inHeader=code.match(helper),canonical=shared.match(helper);
+ assert.ok(inHeader&&canonical,"short-password helper must be present in shared module and site header");
+ assert.equal(inHeader[0],canonical[0],"header and login must encode short passwords identically");
+ assert.match(registerSource,/import \{effectivePassword\} from "\.\.\/\.\.\/app\/password-credential\.js"/);
+ assert.match(resetSource,/import \{effectivePassword\} from "\.\.\/\.\.\/app\/password-credential\.js"/);
  assert.match(code,/input\.minLength=1/);
  assert.doesNotMatch(code,/minLength=8|password\.value\.length<8|至少需要 8 個字元/);
  assert.match(code,/effectivePassword\(verified\.data\.user\.email,password\.value\)/);
