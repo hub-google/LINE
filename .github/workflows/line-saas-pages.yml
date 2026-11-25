@@ -86,7 +86,16 @@ jobs:
           BROWSER_CHANNEL: chromium
         run: |
           npm exec --prefix .github/frontend -- playwright install --with-deps chromium
+          node .github/frontend/password-recovery-smoke.mjs "$RUNNER_TEMP/line-saas-dist" "$RUNNER_TEMP/queue-reset-screenshots"
           node .github/frontend/browser-smoke.mjs "$RUNNER_TEMP/line-saas-dist"
+      - name: Archive actual Chromium reset screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: queue-monster-password-reset-screen-test
+          path: ${{ runner.temp }}/queue-reset-screenshots/*.png
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Publish /booking/ and keep legacy /saas/ compatible
         shell: bash
         run: |
