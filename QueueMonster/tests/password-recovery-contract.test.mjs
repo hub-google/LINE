@@ -15,7 +15,7 @@ const workflow=read("../.github/workflows/line-saas-pages.yml");
 test("old emailed Supabase verification redirects immediately to isolated reset page",()=>{
  assert.match(entry,/new URLSearchParams\(location\.search\)\.get\("intent"\)==="recovery"/);
  assert.match(entry,/location\.replace\(new URL\("\.\/password-reset\.html"\+location\.search\+location\.hash/);
- assert.ok(entry.indexOf('location.replace(new URL("./password-reset.html"')<entry.indexOf('src="./assets/merchant-register/main.js"'));
+ assert.ok(entry.indexOf('location.replace(new URL("./password-reset.html"')<entry.indexOf('src="./assets/merchant-register/main.js'));
  assert.match(oldLogic,/resetPasswordForEmail\(email,\{redirectTo:returnToReset\(\)\}\)/);
  assert.match(oldLogic,/merchant-register\.html\?mode=login&intent=recovery/);
 });
