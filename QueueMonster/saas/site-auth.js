@@ -26,12 +26,13 @@ async function effectivePassword(email,plaintext){
  return "qm1-"+Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,"0")).join("");
 }
 
-let currentIdentity=null,busy=false;
+let currentIdentity=null,busy=false,refreshVersion=0,demoRole=null;
 function portalMode(){
  const page=location.pathname.split("/").pop()||"";
- const view=new URLSearchParams(location.search).get("view");
+ const params=new URLSearchParams(location.search);
+ const view=params.getAll("view").at(-1);
  if(view==="platform")return "headquarters";
- if(view==="staff"||["home.html","for-merchants.html","merchant.html","merchant-center.html","merchant-register.html","platform-login.html"].includes(page)||(page==="demo.html"&&new URLSearchParams(location.search).get("role")!=="customer"))return "merchant";
+ if(view==="staff"||["home.html","for-merchants.html","merchant.html","merchant-center.html","merchant-register.html","platform-login.html"].includes(page)||(page==="demo.html"&&(demoRole||params.get("role"))!=="customer")||(location.hostname==="queue.monsterport.com"&&["","index.html"].includes(page)&&!view&&!params.has("merchant")))return "merchant";
  return "customer";
 }
 function el(tag,className,text){
@@ -78,7 +79,7 @@ function draw(status,message){
    holder.append(plain,logout);
   }
  }else{
-  // Every site page uses the same two guest entry buttons.
+  // Only offer the login method for the current portal.
   const customerLogin=el("button","site-auth-button site-auth-login site-auth-customer-login","消費者登入");
   customerLogin.type="button";
   customerLogin.disabled=busy;
@@ -90,7 +91,7 @@ function draw(status,message){
   merchantLogin.disabled=busy;
   merchantLogin.title="使用 Email 或 Google 帳號登入";
   merchantLogin.addEventListener("click",()=>location.assign("./merchant-register.html?mode=login"));
-  holder.append(customerLogin,merchantLogin);
+  holder.append(portalMode()==="customer"?customerLogin:merchantLogin);
   
  }
  if(message){const hint=el("div","site-auth-feedback",message);hint.setAttribute("role","alert");holder.append(hint);}
@@ -239,7 +240,7 @@ function loadHeaderLiff(){
  return headerLiffScript;
 }
 async function startLineLogin(){
- if(busy)return;
+ if(busy||portalMode()!=="customer")return;
  busy=true;
  draw("guest");
  const params=new URLSearchParams(location.search);
@@ -312,72 +313,61 @@ document.addEventListener("click",event=>{
  event.preventDefault();
  void startLineLogin();
 });
-async function getIdentity(){
- const mode=portalMode();
- const preferOperator=mode!=="customer";
- const [customerResult,operatorResult]=await Promise.all([
-   customer.auth.getSession(),operator.auth.getSession()
- ]);
- const customerSession=customerResult?.data?.session;
- const operatorSession=operatorResult?.data?.session;
- let lineIdentity=null,operatorIdentity=null;
- if(customerSession?.access_token){
+async function getIdentity(mode){
+ // Each portal reads only its own session; never fall back to the other account.
+ if(mode==="customer"){
+  const result=await customer.auth.getSession();
+  if(result.error)throw result.error;
+  if(!result.data?.session?.access_token)return null;
   const response=await customer.rpc("so_site_header_identity");
   if(!response.error && typeof response.data?.display_name==="string"&&response.data.display_name.trim()){
-   lineIdentity={type:"customer",displayName:response.data.display_name.trim(),client:customer};
+   return {type:"customer",displayName:response.data.display_name.trim(),client:customer};
   }
+  return null;
  }
- const staffUser=operatorSession?.user;
- if(staffUser&&!staffUser.is_anonymous){
-  // Supabase Auth exposes the account's provider in app_metadata.
-  // The Google OAuth provider does not create a Queue Monster password.
-  const provider=staffUser.app_metadata?.provider;
-  const emailAccount=provider==="email" ||
+ const result=await operator.auth.getSession();
+ if(result.error)throw result.error;
+ const staffUser=result.data?.session?.user;
+ if(!staffUser||staffUser.is_anonymous)return null;
+ const provider=staffUser.app_metadata?.provider;
+ const emailAccount=provider==="email" ||
    (!provider && staffUser.identities?.some(item=>item.provider==="email")===true);
-  operatorIdentity={
-   type:"operator",displayName:staffUser.email||"商家使用者",provider:emailAccount?"email":provider||"google",
-   userId:staffUser.id,client:operator,
-   canChangePassword:emailAccount,
-   needsPasswordSetup:emailAccount && staffUser.user_metadata?.queue_monster_password_pending===true
-  };
- }
- // A signed-in merchant also remains visible on customer/marketing headers,
- // and a signed-in customer remains visible on merchant/marketing headers.
- // Never display a second login button while either identity is active.
- // Account display is consistent across every page. Headquarters data access
- // remains separately protected by its dedicated permissions checks.
- if(lineIdentity&&operatorIdentity)return preferOperator?operatorIdentity:lineIdentity;
- return operatorIdentity||lineIdentity;
+ const googleAccount=provider==="google" ||
+   (!provider && staffUser.identities?.some(item=>item.provider==="google")===true);
+ if(!emailAccount&&!googleAccount)return null;
+ return {
+  type:"operator",displayName:staffUser.email||"商家使用者",provider:emailAccount?"email":"google",
+  userId:staffUser.id,client:operator,canChangePassword:emailAccount,
+  needsPasswordSetup:emailAccount && staffUser.user_metadata?.queue_monster_password_pending===true
+ };
 }
 async function refresh(){
  if(busy)return;
+ const version=++refreshVersion,mode=portalMode();
+ currentIdentity=null;
  draw("pending");
  try{
-  currentIdentity=await getIdentity();
+  const identity=await getIdentity(mode);
+  if(version!==refreshVersion||busy||mode!==portalMode())return;
+  currentIdentity=identity;
   draw(currentIdentity?"linked":"guest");
  }catch(_error){
+  if(version!==refreshVersion||busy||mode!==portalMode())return;
   currentIdentity=null;draw("guest","暫時無法確認登入狀態，請重新整理。");
  }
 }
 async function logOut(){
  if(busy||!currentIdentity)return;
- busy=true;draw("linked");
+ const identity=currentIdentity;
+ if((portalMode()==="customer")!==(identity.type==="customer"))return;
+ busy=true;++refreshVersion;draw("linked");
  try{
-  // Clear both independently stored sessions so "登出" really returns the
-  // shared header to its two-login guest state, even after older dual logins.
-  const sessions=await Promise.all([customer,operator].map(async client=>{
-   const session=await client.auth.getSession();
-   if(session.error)throw session.error;
-   if(!session.data?.session)return;
-   const signedOut=await client.auth.signOut();
-   if(signedOut.error)throw signedOut.error;
-  }));
-  if(currentIdentity.type==="operator"){try{localStorage.removeItem("line_saas_real_qa_v1")}catch(_){}}
-  try{sessionStorage.removeItem(RETURN_KEY)}catch(_){}
+  const signedOut=await identity.client.auth.signOut({scope:"local"});
+  if(signedOut.error)throw signedOut.error;
+  if(identity.type==="operator"){try{localStorage.removeItem("line_saas_real_qa_v1")}catch(_){}}
+  if(identity.type==="customer"){try{sessionStorage.removeItem(RETURN_KEY)}catch(_){}}
   currentIdentity=null;
   busy=false;
-  // Refresh existing booking forms so their protected actions no longer show
-  // data cached from the previous signed-in Supabase account.
   location.reload();
  }catch(error){
   busy=false;draw("linked","登出失敗，請稍後重試。");
@@ -388,7 +378,7 @@ customer.auth.onAuthStateChange(()=>{setTimeout(()=>{void refresh()},0)});
 operator.auth.onAuthStateChange(()=>{setTimeout(()=>{void refresh()},0)});
 window.addEventListener("focus",()=>{if(!document.hidden)void refresh()});
 window.addEventListener("pageshow",()=>{void refresh()});
-window.addEventListener("qm:demo-mode-change",()=>{void refresh()});
+window.addEventListener("qm:demo-mode-change",event=>{demoRole=event.detail?.role==="customer"?"customer":"merchant";void refresh()});
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)void refresh()});
 void refresh();
 })();
