@@ -30,7 +30,8 @@ test("Google login comes before Email on both signup and login tabs",()=>{
  assert.match(logic,/accounts\.google\.com\/gsi\/client/);
  assert.match(logic,/signInWithIdToken\(\{/);
  assert.match(logic,/provider:"google",token:response\.credential,nonce/);
- assert.match(logic,/crypto\.subtle\.digest\("SHA-256"/);
+ assert.match(logic,/import \{effectivePassword\} from "\.\.\/\.\.\/app\/password-credential\.js"/);
+ assert.match(read("saas/app/password-credential.js"),/crypto\.subtle\.digest\("SHA-256"/);
  assert.match(logic,/useLegacyGoogleLogin/);
  assert.match(logic,/signInWithOAuth\(\{provider:"google"/);
  assert.match(logic,/skipBrowserRedirect:true/);
