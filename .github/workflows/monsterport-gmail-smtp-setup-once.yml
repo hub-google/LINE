@@ -23,3 +23,5 @@ jobs:
 # Retry Gmail SMTP validation using port 587 STARTTLS first.
 
 # Stage 1: Arena only; verify delivery before configuring Queue Monster.
+
+# Retry: correct Management API smtp_port string type.
