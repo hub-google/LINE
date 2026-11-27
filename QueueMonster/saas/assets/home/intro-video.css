@@ -283,3 +283,20 @@ html.qm-intro-locked{overflow:hidden!important}
  .qm-intro-panel:not(.qm-intro-portrait) .qm-intro-actions{margin-top:5px}
  .qm-intro-panel:not(.qm-intro-portrait) .qm-intro-top{padding-block:5px}
 }
+
+/* Official Slogan: explicit two-line layout, never split either sentence. */
+.qm-intro-footer .qm-intro-slogan-line{display:block;white-space:nowrap}
+.qm-intro-panel.qm-intro-portrait .qm-intro-footer h2{
+ max-width:100%;font-size:clamp(23px,2.2vw,34px);
+ letter-spacing:0
+}
+@media(max-width:700px){
+ .qm-intro-panel.qm-intro-portrait .qm-intro-footer h2{
+  font-size:clamp(15px,4.2vw,19px);line-height:1.35
+ }
+}
+@media(max-height:550px) and (min-width:701px){
+ .qm-intro-panel.qm-intro-portrait .qm-intro-footer h2{
+  font-size:clamp(17px,2vw,25px)
+ }
+}
